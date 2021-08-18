@@ -66,6 +66,7 @@ export const pollJobPlugin = {
       options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
+        if (!this.$t) this.$t = i18n.global.t
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {

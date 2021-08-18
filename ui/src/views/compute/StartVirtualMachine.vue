@@ -29,7 +29,7 @@
         @finish="handleSubmit"
         layout="vertical">
         <div v-if="$store.getters.userInfo.roletype === 'Admin'">
-          <a-form-item>
+          <a-form-item name="podid" ref="podid">
             <template #label>
               {{ $t('label.podid') }}
               <a-tooltip :title="apiParams.podid.description">
@@ -52,7 +52,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
+          <a-form-item name="clusterid" ref="clusterid">
             <template #label>
               {{ $t('label.clusterid') }}
               <a-tooltip :title="apiParams.clusterid.description">
@@ -75,7 +75,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
+          <a-form-item name="hostid" ref="hostid">
             <template #label>
               {{ $t('label.hostid') }}
               <a-tooltip :title="apiParams.hostid.description">
@@ -99,7 +99,7 @@
           </a-form-item>
         </div>
 
-        <a-form-item v-if="resource.hypervisor === 'VMware'">
+        <a-form-item name="bootintosetup" ref="bootintosetup" v-if="resource.hypervisor === 'VMware'">
           <template #label>
             {{ $t('label.bootintosetup') }}
             <a-tooltip :title="apiParams.bootintosetup.description">

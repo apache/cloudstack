@@ -46,7 +46,7 @@
         :columns="columns"
         :items="items"
         :loading="loading"
-        @refresh="this.fetchData" />
+        @refresh="fetchData" />
     </div>
   </div>
 </template>

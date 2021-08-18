@@ -25,7 +25,10 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-        <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
+        <a-form-item
+          name="expunge"
+          ref="expunge"
+          v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
           <template #label>
             {{ $t('label.expunge') }}
             <a-tooltip placement="bottom" :title="apiParams.expunge.description">
@@ -35,7 +38,7 @@
           <a-switch v-model:checked="form.expunge" :auto-focus="true" />
         </a-form-item>
 
-        <a-form-item v-if="volumes.length > 0">
+        <a-form-item name="volumeids" ref="volumeids" v-if="volumes.length > 0">
           <template #label>
             {{ $t('label.delete.volumes') }}
             <a-tooltip placement="bottom" :title="apiParams.volumeids.description">

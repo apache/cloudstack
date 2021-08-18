@@ -50,7 +50,7 @@
 
         <a-list size="small" :dataSource="detailColumn" v-if="quickview">
           <div class="close-quickview">
-            <a-button @click="() => { this.quickview = false }">{{ $t('label.close') }}</a-button>
+            <a-button @click="() => { quickview = false }">{{ $t('label.close') }}</a-button>
           </div>
           <template #renderItem="item">
             <a-list-item v-if="item in detail">

@@ -28,7 +28,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
           <template #label>
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">

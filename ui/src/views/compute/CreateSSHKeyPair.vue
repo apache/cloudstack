@@ -25,7 +25,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item name="name" ref="name">
           <template #label :title="apiParams.name.description">
             {{ $t('label.name') }}
             <a-tooltip>
@@ -37,7 +37,7 @@
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="publickey" ref="publickey">
           <template #label :title="apiParams.publickey.description">
             {{ $t('label.publickey') }}
             <a-tooltip>
@@ -48,7 +48,7 @@
             v-model:value="form.publickey"
             :placeholder="apiParams.publickey.description"/>
         </a-form-item>
-        <a-form-item v-if="isAdminOrDomainAdmin()">
+        <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin()">
           <template #label :title="apiParams.domainid.description">
             {{ $t('label.domainid') }}
             <a-tooltip>
@@ -71,7 +71,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="isAdminOrDomainAdmin() && !isObjectEmpty(selectedDomain) && selectedDomain.id !== null">
+        <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin() && !isObjectEmpty(selectedDomain) && selectedDomain.id !== null">
           <template #label :title="apiParams.account.description">
             {{ $t('label.account') }}
             <a-tooltip>

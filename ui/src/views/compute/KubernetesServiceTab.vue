@@ -26,18 +26,18 @@
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.access')" key="access">
-        <a-card :title="$t('label.kubeconfig.cluster')" :loading="this.versionLoading">
-          <div v-if="this.clusterConfig !== ''">
-            <a-textarea :value="this.clusterConfig" :rows="5" readonly />
+        <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
+          <div v-if="clusterConfig !== ''">
+            <a-textarea :value="clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
-              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('label.download.kubernetes.cluster.config') }}</a-button>
+              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ $t('label.download.kubernetes.cluster.config') }}</a-button>
             </div>
           </div>
           <div v-else>
             <p>{{ $t('message.kubeconfig.cluster.not.available') }}</p>
           </div>
         </a-card>
-        <a-card :title="$t('label.using.cli')" :loading="this.versionLoading">
+        <a-card :title="$t('label.using.cli')" :loading="versionLoading">
           <a-timeline>
             <a-timeline-item>
               <p v-html="$t('label.download.kubeconfig.cluster')">
@@ -46,9 +46,9 @@
             <a-timeline-item>
               <p v-html="$t('label.download.kubectl')"></p>
               <p>
-                {{ $t('label.linux') }}: <a :href="this.kubectlLinuxLink">{{ this.kubectlLinuxLink }}</a><br>
-                {{ $t('label.macos') }}: <a :href="this.kubectlMacLink">{{ this.kubectlMacLink }}</a><br>
-                {{ $t('label.windows') }}: <a :href="this.kubectlWindowsLink">{{ this.kubectlWindowsLink }}</a>
+                {{ $t('label.linux') }}: <a :href="kubectlLinuxLink">{{ kubectlLinuxLink }}</a><br>
+                {{ $t('label.macos') }}: <a :href="kubectlMacLink">{{ kubectlMacLink }}</a><br>
+                {{ $t('label.windows') }}: <a :href="kubectlWindowsLink">{{ kubectlWindowsLink }}</a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
@@ -93,8 +93,8 @@
         <a-table
           class="table"
           size="small"
-          :columns="this.vmColumns"
-          :dataSource="this.virtualmachines"
+          :columns="vmColumns"
+          :dataSource="virtualmachines"
           :rowKey="item => item.id"
           :pagination="false"
         >
@@ -110,13 +110,13 @@
         </a-table>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.firewall')" key="firewall" v-if="publicIpAddress">
-        <FirewallRules :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <FirewallRules :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.portforwarding')" key="portforwarding" v-if="publicIpAddress">
-        <PortForwarding :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <PortForwarding :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
-        <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <LoadBalancing :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
     </a-tabs>
   </a-spin>

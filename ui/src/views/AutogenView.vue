@@ -169,108 +169,97 @@
                   </a-tooltip>
                 </template>
 
-                <span v-if="field.type==='boolean'">
-                  <a-switch
-                    v-model:checked="form[field.name]"
-                    :placeholder="field.description"
-                    :autoFocus="fieldIndex === firstIndex"
-                  />
-                </span>
-                <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
-                  <a-select
-                    :loading="field.loading"
-                    v-model:value="form[field.name]"
-                    :placeholder="field.description"
-                    :autoFocus="fieldIndex === firstIndex"
-                  >
-                    <a-select-option key="" >{{ }}</a-select-option>
-                    <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
-                      {{ opt }}
-                    </a-select-option>
-                  </a-select>
-                </span>
-                <span
+                <a-switch
+                  v-if="field.type==='boolean'"
+                  v-model:checked="form[field.name]"
+                  :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
+                />
+                <a-select
+                  v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options"
+                  :loading="field.loading"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
+                >
+                  <a-select-option key="" >{{ }}</a-select-option>
+                  <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
+                    {{ opt }}
+                  </a-select-option>
+                </a-select>
+                <a-select
                   v-else-if="field.name==='keypair' ||
-                    (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))">
-                  <a-select
-                    showSearch
-                    optionFilterProp="label"
-                    v-model:value="form[field.name]"
-                    :loading="field.loading"
-                    :placeholder="field.description"
-                    :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }"
-                    :autoFocus="fieldIndex === firstIndex"
-                  >
-                    <a-select-option key="">{{ }}</a-select-option>
-                    <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                      {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
-                    </a-select-option>
-                  </a-select>
-                </span>
-                <span
-                  v-else-if="field.type==='uuid'">
-                  <a-select
-                    showSearch
-                    optionFilterProp="label"
-                    v-model:value="form[field.name]"
-                    :loading="field.loading"
-                    :placeholder="field.description"
-                    :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }"
-                    :autoFocus="fieldIndex === firstIndex"
-                  >
-                    <a-select-option key="">{{ }}</a-select-option>
-                    <a-select-option v-for="opt in field.opts" :key="opt.id">
-                      {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
-                    </a-select-option>
-                  </a-select>
-                </span>
-                <span v-else-if="field.type==='list'">
-                  <a-select
-                    :loading="field.loading"
-                    mode="multiple"
-                    v-model:value="form[field.name]"
-                    :placeholder="field.description"
-                    :autoFocus="fieldIndex === firstIndex"
-                  >
-                    <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                      {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
-                    </a-select-option>
-                  </a-select>
-                </span>
-                <span v-else-if="field.type==='long'">
-                  <a-input-number
-                    :autoFocus="fieldIndex === firstIndex"
-                    style="width: 100%;"
-                    v-model:value="form[field.name]"
-                    :placeholder="field.description"
-                  />
-                </span>
-                <span v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'">
-                  <a-input-password
-                    v-model:value="form[field.name]"
-                    :placeholder="field.description"
-                    @blur="($event) => handleConfirmBlur($event, field.name)"
-                    :autoFocus="fieldIndex === firstIndex"
-                  />
-                </span>
-                <span v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'">
-                  <a-textarea
-                    rows="2"
-                    v-model:value="form[field.name]"
-                    :placeholder="field.description"
-                    :autoFocus="fieldIndex === firstIndex"
-                  />
-                </span>
-                <span v-else>
-                  <a-input
-                    :autoFocus="fieldIndex === firstIndex"
-                    v-model:value="form[field.name]"
-                    :placeholder="field.description" />
-                </span>
+                    (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))"
+                  showSearch
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
+                  :loading="field.loading"
+                  :placeholder="field.description"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :autoFocus="fieldIndex === firstIndex"
+                >
+                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  </a-select-option>
+                </a-select>
+                <a-select
+                  v-else-if="field.type==='uuid'"
+                  showSearch
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
+                  :loading="field.loading"
+                  :placeholder="field.description"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :autoFocus="fieldIndex === firstIndex"
+                >
+                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option v-for="opt in field.opts" :key="opt.id">
+                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  </a-select-option>
+                </a-select>
+                <a-select
+                  v-else-if="field.type==='list'"
+                  :loading="field.loading"
+                  mode="multiple"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
+                >
+                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
+                  </a-select-option>
+                </a-select>
+                <a-input-number
+                  v-else-if="field.type==='long'"
+                  :autoFocus="fieldIndex === firstIndex"
+                  style="width: 100%;"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                />
+                <a-input-password
+                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  @blur="($event) => handleConfirmBlur($event, field.name)"
+                  :autoFocus="fieldIndex === firstIndex"
+                />
+                <a-textarea
+                  v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'"
+                  rows="2"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
+                />
+                <a-input
+                  v-else
+                  :autoFocus="fieldIndex === firstIndex"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description" />
               </a-form-item>
             </div>
           </a-form>
@@ -688,7 +677,9 @@ export default {
     },
     execAction (action, isGroupAction) {
       const self = this
-      this.form = {}
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         this.$router.push({ name: action.api })
         return
@@ -739,9 +730,10 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        this.form[param.name] = undefined
-        this.rules[param.name] = []
-        this.setRules(param)
+        if (!(this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].value)) {
+          this.rules[param.name] = []
+          this.setRules(param)
+        }
 
         if (param.type === 'list' && ['tags', 'hosttags'].includes(param.name)) {
           param.type = 'string'

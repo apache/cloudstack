@@ -196,16 +196,16 @@
           <a-form-item ref="acl" name="acl" :label="$t('label.aclid')">
             <a-select
               v-model:value="createNetworkForm.acl"
-              @change="val => { this.handleNetworkAclChange(val) }">
+              @change="val => { handleNetworkAclChange(val) }">
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-alert v-if="this.selectedNetworkAcl.name==='default_allow'" type="warning" show-icon>
+          <a-alert v-if="selectedNetworkAcl.name==='default_allow'" type="warning" show-icon>
             <template #message><div v-html="$t('message.network.acl.default.allow')"/></template>
           </a-alert>
-          <a-alert v-else-if="this.selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
+          <a-alert v-else-if="selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
             <template #message><div v-html="$t('message.network.acl.default.deny')"/></template>
           </a-alert>
         </a-form>

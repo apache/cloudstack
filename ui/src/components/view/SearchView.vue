@@ -39,69 +39,67 @@
           <a-popover
             placement="bottomRight"
             trigger="click"
-            v-model="visibleFilter">
+            @click="onVisibleForm">
             <template #content>
-              <div v-if="visibleFilter">
-                <a-form
-                  style="min-width: 170px"
-                  :ref="formRef"
-                  :model="form"
-                  :rules="rules"
-                  layout="vertical"
-                  @submit="handleSubmit">
-                  <a-form-item
-                    v-for="(field, index) in fields"
-                    :key="index"
-                    :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
-                    <a-select
-                      allowClear
-                      v-if="field.type==='list'"
-                      v-model:value="form[field.name]"
-                      :loading="field.loading">
-                      <a-select-option
-                        v-for="(opt, idx) in field.opts"
-                        :key="idx"
-                        :value="opt.id">{{ $t(opt.name) }}</a-select-option>
-                    </a-select>
-                    <a-input
-                      v-else-if="field.type==='input'"
-                      v-model:value="form[field.name]" />
-                    <div v-else-if="field.type==='tag'">
-                      <a-input-group
-                        type="text"
-                        size="small"
-                        compact>
-                        <a-input ref="input" v-model:value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                        <a-input
-                          class="tag-disabled-input"
-                          style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
-                          placeholder="="
-                          disabled />
-                        <a-input v-model:value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                        <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
-                      </a-input-group>
-                    </div>
-                  </a-form-item>
-                  <div class="filter-group-button">
-                    <a-button
-                      class="filter-group-button-clear"
-                      type="default"
+              <a-form
+                style="min-width: 170px"
+                :ref="formRef"
+                :model="form"
+                :rules="rules"
+                layout="vertical"
+                @submit="handleSubmit">
+                <a-form-item
+                  v-for="(field, index) in fields"
+                  :key="index"
+                  :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
+                  <a-select
+                    allowClear
+                    v-if="field.type==='list'"
+                    v-model:value="form[field.name]"
+                    :loading="field.loading">
+                    <a-select-option
+                      v-for="(opt, idx) in field.opts"
+                      :key="idx"
+                      :value="opt.id">{{ $t(opt.name) }}</a-select-option>
+                  </a-select>
+                  <a-input
+                    v-else-if="field.type==='input'"
+                    v-model:value="form[field.name]" />
+                  <div v-else-if="field.type==='tag'">
+                    <a-input-group
+                      type="text"
                       size="small"
-                      @click="onClear">
-                      <template #icon><stop-outlined /></template>
-                      {{ $t('label.reset') }}
-                    </a-button>
-                    <a-button
-                      class="filter-group-button-search"
-                      type="primary"
-                      size="small"
-                      html-type="submit">
-                      <template #icon><search-outlined /></template>
-                      {{ $t('label.search') }}
-                    </a-button>
+                      compact>
+                      <a-input ref="input" v-model:value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
+                      <a-input
+                        class="tag-disabled-input"
+                        style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
+                        placeholder="="
+                        disabled />
+                      <a-input v-model:value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
+                    </a-input-group>
                   </div>
-                </a-form>
-              </div>
+                </a-form-item>
+                <div class="filter-group-button">
+                  <a-button
+                    class="filter-group-button-clear"
+                    type="default"
+                    size="small"
+                    @click="onClear">
+                    <template #icon><stop-outlined /></template>
+                    {{ $t('label.reset') }}
+                  </a-button>
+                  <a-button
+                    class="filter-group-button-search"
+                    type="primary"
+                    size="small"
+                    html-type="submit">
+                    <template #icon><search-outlined /></template>
+                    {{ $t('label.search') }}
+                  </a-button>
+                </div>
+              </a-form>
             </template>
             <a-button
               class="filter-button"
@@ -158,11 +156,6 @@ export default {
     this.rules = reactive({})
   },
   watch: {
-    visibleFilter (newValue, oldValue) {
-      if (newValue) {
-        this.initFormFieldData()
-      }
-    },
     '$route' (to, from) {
       this.searchQuery = ''
       if (to && to.query && 'q' in to.query) {
@@ -200,6 +193,11 @@ export default {
     }
   },
   methods: {
+    onVisibleForm () {
+      this.visibleFilter = !this.visibleFilter
+      if (!this.visibleFilter) return
+      this.initFormFieldData()
+    },
     async initFormFieldData () {
       const arrayField = []
       this.fields = []

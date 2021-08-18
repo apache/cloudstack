@@ -146,7 +146,7 @@
               </a-form-item>
 
               <a-form-item class="controls">
-                <a-button @click="this.sslModalClose" class="close-button">
+                <a-button @click="sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
                 <a-button type="primary" htmlType="submit" :loading="sslFormSubmitting">

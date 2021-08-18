@@ -27,7 +27,7 @@
         <div class="subtitle">{{ $t('label.introduction.to.cloudstack') }}</div>
         <p>{{ $t('message.installwizard.copy.whatiscloudstack') }}</p>
         <img class="center" src="assets/bg-what-is-cloudstack.png">
-        <a-button @click="() => { this.step = 1 }" type="primary">
+        <a-button @click="() => { step = 1 }" type="primary">
           {{ $t('label.continue.install') }}
           <double-right-outlined />
         </a-button>
@@ -35,7 +35,7 @@
     </div>
     <a-modal
       :title="$t('message.change.password')"
-      :visible="this.step === 1"
+      :visible="step === 1"
       :closable="true"
       :maskClosable="false"
       :footer="null"
@@ -44,13 +44,13 @@
       centered
       width="auto">
       <change-user-password
-        :resource="this.resource"
-        @close-action="() => { if (this.step !== 2) this.step = 0 }"
-        @refresh-data="() => { this.step = 2 }" />
+        :resource="resource"
+        @close-action="() => { if (step !== 2) step = 0 }"
+        @refresh-data="() => { step = 2 }" />
     </a-modal>
     <a-modal
       :title="$t('label.installwizard.addzoneintro.title')"
-      :visible="this.step === 2"
+      :visible="step === 2"
       :closable="true"
       :maskClosable="false"
       :footer="null"

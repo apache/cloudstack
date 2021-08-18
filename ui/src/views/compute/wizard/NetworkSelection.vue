@@ -34,13 +34,13 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }"
     >
-      <template #expandedRowRender="record">
+      <template #expandedRowRender="{ record }">
         <a-list
           :key="record.id"
           :dataSource="getDetails(record)"
           size="small"
         >
-          <template #renderItem="item">
+          <template #renderItem="{ item }">
             <a-list-item :key="item.id">
               <a-list-item-meta
                 :description="item.description"
@@ -228,14 +228,21 @@ export default {
     }
   },
   created () {
-    api('listVPCs', {
-      projectid: store.getters.project.id
-    }).then((response) => {
-      this.vpcs = _.get(response, 'listvpcsresponse.vpc')
-    })
+    this.fetchVPCs()
   },
   inject: ['vmFetchNetworks'],
   methods: {
+    fetchVPCs () {
+      const projectId = store?.getters?.project?.id || null
+      if (!projectId) {
+        return false
+      }
+      api('listVPCs', {
+        projectid: store.getters.project.id
+      }).then((response) => {
+        this.vpcs = _.get(response, 'listvpcsresponse.vpc')
+      })
+    },
     getDetails (network) {
       const detail = [
         {

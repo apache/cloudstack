@@ -87,36 +87,32 @@
             v-for="(field, index) in currentAction.fieldParams"
             :key="index"
             :label="$t('label.' + field.name)">
-            <span v-if="field.name==='password'">
-              <a-input-password
-                :autoFocus="index===0"
-                v-model:value="form[field.name]"
-                :placeholder="field.description" />
-            </span>
-            <span v-else-if="field.type==='boolean'">
-              <a-switch
-                :autoFocus="index===0"
-                v-model:checked="form[field.name]"
-                :placeholder="field.description"
-              />
-            </span>
-            <span v-else-if="field.type==='uuid'">
-              <a-select
-                :autoFocus="index===0"
-                v-model:value="form[field.name]"
-                :loading="field.loading"
-                :placeholder="field.description">
-                <a-select-option
-                  v-for="(opt, idx) in field.opts"
-                  :key="idx">{{ opt.name || opt.description }}</a-select-option>
-              </a-select>
-            </span>
-            <span v-else>
-              <a-input
-                :autoFocus="index===0"
-                v-model:value="form[field.name]"
-                :placeholder="field.description" />
-            </span>
+            <a-input-password
+              v-if="field.name==='password'"
+              :autoFocus="index===0"
+              v-model:value="form[field.name]"
+              :placeholder="field.description" />
+            <a-switch
+              v-else-if="field.type==='boolean'"
+              :autoFocus="index===0"
+              v-model:checked="form[field.name]"
+              :placeholder="field.description"
+            />
+            <a-select
+              v-else-if="field.type==='uuid'"
+              :autoFocus="index===0"
+              v-model:value="form[field.name]"
+              :loading="field.loading"
+              :placeholder="field.description">
+              <a-select-option
+                v-for="(opt, idx) in field.opts"
+                :key="idx">{{ opt.name || opt.description }}</a-select-option>
+            </a-select>
+            <a-input
+              v-else
+              :autoFocus="index===0"
+              v-model:value="form[field.name]"
+              :placeholder="field.description" />
           </a-form-item>
         </a-form>
       </a-modal>

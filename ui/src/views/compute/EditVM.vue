@@ -24,7 +24,7 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit">
-      <a-form-item>
+      <a-form-item name="name" ref="name">
         <template #label>
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
@@ -35,7 +35,7 @@
           v-model:value="form.name"
           autoFocus />
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="displayname" ref="displayname">
         <template #label>
           {{ $t('label.displayname') }}
           <a-tooltip :title="apiParams.displayname.description">
@@ -44,7 +44,7 @@
         </template>
         <a-input v-model:value="form.displayname" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="ostypeid" ref="ostypeid">
         <template #label>
           {{ $t('label.ostypeid') }}
           <a-tooltip :title="apiParams.ostypeid.description">
@@ -64,7 +64,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
         <template #label>
           {{ $t('label.isdynamicallyscalable') }}
           <a-tooltip :title="apiParams.isdynamicallyscalable.description">
@@ -73,7 +73,7 @@
         </template>
         <a-switch v-model:checked="form.isdynamicallyscalable" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="haenable" ref="haenable">
         <template #label>
           {{ $t('label.haenable') }}
           <a-tooltip :title="apiParams.haenable.description">
@@ -82,7 +82,7 @@
         </template>
         <a-switch v-model:checked="form.haenable" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="group" ref="group">
         <template #label>
           {{ $t('label.group') }}
           <a-tooltip :title="apiParams.group.description">

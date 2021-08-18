@@ -21,7 +21,7 @@
     :resource="quotaResource"
     :tabs="tabs"
     :historyTab="activeTab"
-    @onTabChange="(tab) => { this.activeTab = tab }"/>
+    @onTabChange="(tab) => { activeTab = tab }"/>
 </template>
 
 <script>

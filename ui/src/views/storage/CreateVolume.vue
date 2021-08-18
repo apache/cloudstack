@@ -75,7 +75,7 @@
         </a-select>
       </a-form-item>
       <span v-if="customDiskOffering">
-        <a-form-item>
+        <a-form-item ref="size" name="size">
           <template #label>
             {{ $t('label.sizegb') }}
             <a-tooltip :title="apiParams.size.description">
@@ -88,7 +88,7 @@
         </a-form-item>
       </span>
       <span v-if="isCustomizedDiskIOps">
-        <a-form-item>
+        <a-form-item ref="miniops" name="miniops">
           <template #label>
             {{ $t('label.miniops') }}
             <a-tooltip :title="apiParams.miniops.description">
@@ -97,9 +97,9 @@
           </template>
           <a-input
             v-model:value="form.miniops"
-            :placeholder="this.$t('label.miniops')"/>
+            :placeholder="$t('label.miniops')"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item ref="maxiops" name="maxiops">
           <template #label>
             {{ $t('label.maxiops') }}
             <a-tooltip :title="apiParams.maxiops.description">
@@ -108,7 +108,7 @@
           </template>
           <a-input
             v-model:value="form.maxiops"
-            :placeholder="this.$t('label.maxiops')"/>
+            :placeholder="$t('label.maxiops')"/>
         </a-form-item>
       </span>
       <div :span="24" class="action-button">

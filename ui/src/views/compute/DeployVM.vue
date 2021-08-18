@@ -536,15 +536,17 @@
                       v-for="(license, licenseIndex) in templateLicenses"
                       :key="licenseIndex"
                       :v-bind="license.id">
-                      <template #label style="text-transform: capitalize">
-                        {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
+                      <template #label>
+                        <span style="text-transform: capitalize">
+                          {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
+                        </span>
                       </template>
                       <a-textarea
                         :value="license.text"
                         :auto-size="{ minRows: 3, maxRows: 8 }"
                         readOnly />
                     </a-form-item>
-                    <a-form-item>
+                    <a-form-item name="licensesaccepted" ref="licensesaccepted">
                       <a-checkbox
                         style="margin-top: 10px"
                         v-model:checked="form.licensesaccepted">
@@ -556,7 +558,7 @@
               </a-step>
             </a-steps>
             <div class="card-footer">
-              <a-form-item>
+              <a-form-item name="stayonpage" ref="stayonpage">
                 <a-switch
                   class="form-item-hidden"
                   v-model:checked="form.stayonpage" />

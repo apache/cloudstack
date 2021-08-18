@@ -23,7 +23,7 @@
     :rowKey="item => item.id"
     :pagination="false"
   >
-    <template #expandedRowRender="record">
+    <template #expandedRowRender="{ record }">
       <slot name="actions" :nic="record" />
       <a-descriptions style="margin-top: 10px" layout="vertical" :column="1" :bordered="false" size="small">
         <a-descriptions-item :label="$t('label.id')">

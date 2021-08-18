@@ -28,7 +28,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item name="size" ref="size">
           <template #label>
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
@@ -40,7 +40,7 @@
             :placeholder="apiParams.size.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
           <template #label>
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">

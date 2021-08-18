@@ -35,7 +35,7 @@
           :resource="resource"
           :historyTab="activeTab"
           :tabs="tabs"
-          @onTabChange="(tab) => { this.activeTab = tab }" />
+          @onTabChange="(tab) => { activeTab = tab }" />
       </template>
     </autogen-view>
   </div>

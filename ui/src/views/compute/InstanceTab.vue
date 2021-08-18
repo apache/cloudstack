@@ -129,9 +129,9 @@
           :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="this.resource.securitygroup && this.resource.securitygroup.length > 0">
+      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="resource.securitygroup && this.resource.securitygroup.length > 0">
         <ListResourceTable
-          :items="this.resource.securitygroup"
+          :items="resource.securitygroup"
           :columns="['name', 'description']"
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>

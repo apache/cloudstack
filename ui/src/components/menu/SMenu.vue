@@ -30,8 +30,8 @@
               <render-icon
               v-if="item.meta.icon && typeof (item.meta.icon) === 'string'"
               :icon="item.meta.icon"
-              @click="() => { this.handleClickParentMenu(item) }" />
-              <span @click="() => { this.handleClickParentMenu(item) }">{{ $t(item.meta.title) }}</span>
+              @click="() => { handleClickParentMenu(item) }" />
+              <span @click="() => { handleClickParentMenu(item) }">{{ $t(item.meta.title) }}</span>
             </span>
           </template>
           <template v-for="children in item.children" :key="children.path">
@@ -51,7 +51,7 @@
             <render-icon
               v-if="item.meta.icon && typeof (item.meta.icon) === 'string'"
               :icon="item.meta.icon"
-              @click="() => { this.handleClickParentMenu(item) }" />
+              @click="() => { handleClickParentMenu(item) }" />
             <span>{{ $t(item.meta.title) }}</span>
           </router-link>
         </a-menu-item>

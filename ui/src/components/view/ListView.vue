@@ -35,7 +35,7 @@
     </template>
 
     <!--
-    <div #expandedRowRender="resource">
+    <div #expandedRowRender="{ resource }">
       <info-card :resource="resource style="margin-left: 0px; width: 50%">
         <div #actions style="padding-top: 12px">
           <a-tooltip

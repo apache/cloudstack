@@ -87,7 +87,7 @@
           {{ $t('label.add') }}
         </a-button>
       </template>
-      <template #expandedRowRender="record">
+      <template #expandedRowRender="{ record }">
         <div class="rule-instance-list">
           <div v-for="instance in record.ruleInstances" :key="instance.loadbalancerruleinstance.id">
             <div v-for="ip in instance.lbvmipaddresses" :key="ip" class="rule-instance-list__item">
