@@ -51,6 +51,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
@@ -1932,6 +1933,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
+            setVmBootDetails(vm, conn, details);
         }
 
         // Add configuration settings VM record for User VM instances before creating VM
@@ -1940,6 +1942,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.info("Appending user extra configuration settings to VM");
             ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
+    }
+
+    protected void setVmBootDetails(final VM vm, final Connection conn, final Map<String, String> details) throws XenAPIException, XmlRpcException {
+        String bootType = details.get("boottype");
+        if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
+            bootType = ApiConstants.BootType.BIOS.toString();
+        }
+        boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
+                ApiConstants.BootMode.SECURE.toString().equals(details.get("bootmode"));
+        final Map<String, String> bootParams = vm.getHVMBootParams(conn);
+        bootParams.replace("firmware", bootType);
+        vm.setHVMBootParams(conn, bootParams);
+        final Map<String, String> platform = vm.getPlatform(conn);
+        platform.put("secureboot", isSecure ? "true" : "false");
+        vm.setPlatform(conn, platform);
     }
 
     /**
