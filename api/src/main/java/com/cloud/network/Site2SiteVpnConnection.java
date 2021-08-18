@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdentity, Displayable {
     enum State {
-        Pending, Connected, Disconnected, Error,
+        Pending, Connecting, Connected, Disconnected, Error,
     }
 
     @Override
