@@ -37,8 +37,8 @@
           :layout="isMobile() ? 'horizontal': 'inline'"
           :form="form"
           @submit="handleAddRange">
-          <a-row :gutter="12">
-            <a-col :md="4" :lg="4">
+          <div class="form-row">
+            <div class="form-col">
               <a-form-item>
                 <a-input
                   v-decorator="[ 'gateway', {
@@ -48,8 +48,8 @@
                   autoFocus
                 />
               </a-form-item>
-            </a-col>
-            <a-col :md="4" :lg="4">
+            </div>
+            <div class="form-col">
               <a-form-item>
                 <a-input
                   v-decorator="[ 'netmask', {
@@ -58,16 +58,16 @@
                   :placeholder="$t('label.netmask')"
                 />
               </a-form-item>
-            </a-col>
-            <a-col :md="4" :lg="4">
+            </div>
+            <div class="form-col">
               <a-form-item>
                 <a-input
                   v-decorator="[ 'vlan', { rules: [{ required: false }] }]"
                   :placeholder="$t('label.vlan')"
                 />
               </a-form-item>
-            </a-col>
-            <a-col :md="4" :lg="4">
+            </div>
+            <div class="form-col">
               <a-form-item>
                 <a-input
                   v-decorator="[ 'startIp', {
@@ -86,8 +86,8 @@
                   :placeholder="$t('label.start.ip')"
                 />
               </a-form-item>
-            </a-col>
-            <a-col :md="4" :lg="4">
+            </div>
+            <div class="form-col">
               <a-form-item>
                 <a-input
                   v-decorator="[ 'endIp', {
@@ -105,13 +105,13 @@
                   :placeholder="$t('label.end.ip')"
                 />
               </a-form-item>
-            </a-col>
-            <a-col :md="4" :lg="4">
-              <a-form-item :style="{ display: 'inline-block', float: 'right' }">
+            </div>
+            <div class="form-col">
+              <a-form-item :style="{ display: 'inline-block', float: 'right', marginRight: 0 }">
                 <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
               </a-form-item>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
         </a-form>
       </template>
     </a-table>
@@ -183,12 +183,12 @@ export default {
         {
           title: this.$t('label.gateway'),
           dataIndex: 'gateway',
-          width: 150
+          width: 140
         },
         {
           title: this.$t('label.netmask'),
           dataIndex: 'netmask',
-          width: 150
+          width: 140
         },
         {
           title: this.$t('label.vlan'),
@@ -198,12 +198,12 @@ export default {
         {
           title: this.$t('label.start.ip'),
           dataIndex: 'startIp',
-          width: 130
+          width: 140
         },
         {
           title: this.$t('label.end.ip'),
           dataIndex: 'endIp',
-          width: 130
+          width: 140
         },
         {
           title: '',
@@ -286,3 +286,16 @@ export default {
   }
 }
 </script>
+
+<style scoped lang="less">
+.form-row {
+  display: grid;
+  grid-template-columns: 145px 145px 130px 145px 145px 70px;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+  }
+}
+</style>

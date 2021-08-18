@@ -82,6 +82,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the date when this virtual machine was created")
     private Date created;
 
+    @SerializedName("lastupdated")
+    @Param(description="the date when this virtual machine was updated last time", since="4.16.0")
+    private Date lastUpdated;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the virtual machine")
     private String state;
@@ -911,4 +915,12 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getPoolType() { return poolType; }
 
     public void setPoolType(String poolType) { this.poolType = poolType; }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 }

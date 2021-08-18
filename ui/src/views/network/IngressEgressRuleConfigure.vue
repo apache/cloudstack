@@ -90,7 +90,7 @@
       :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '200'], showSizeChanger: true}"
       :rowKey="record => record.ruleid">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="account" slot-scope="record">
         <div v-if="record.account && record.securitygroupname">
@@ -265,7 +265,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -276,6 +275,10 @@ export default {
     fetchData () {
       this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     handleAddRule () {
       if (this.isSubmitted) return

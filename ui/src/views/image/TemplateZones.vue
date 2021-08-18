@@ -382,6 +382,9 @@ export default {
       }
     },
     deleteTemplate (template) {
+      if (!template.id) {
+        template = this.currentRecord
+      }
       const params = {
         id: template.id,
         forced: this.forcedDelete,

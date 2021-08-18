@@ -37,58 +37,57 @@
       :md="24">
       <div>
         <a-card>
-          <a-card class="row-element"><span v-html="$t('message.desc.importexportinstancewizard')" /></a-card>
-          <a-row :gutter="18">
-            <a-form
-              style="min-width: 170px"
-              :form="form"
-              layout="vertical">
-              <a-col :md="24" :lg="8">
-                <a-form-item :label="this.$t('label.zoneid')">
-                  <a-select
-                    v-decorator="['zoneid', {}]"
-                    showSearch
-                    optionFilterProp="children"
-                    :filterOption="filterOption"
-                    :options="zoneSelectOptions"
-                    @change="onSelectZoneId"
-                    :loading="optionLoading.zones"
-                    autoFocus
-                  ></a-select>
-                </a-form-item>
-              </a-col>
-              <a-col :md="24" :lg="8">
-                <a-form-item
-                  :label="this.$t('label.podid')">
-                  <a-select
-                    v-decorator="['podid']"
-                    showSearch
-                    optionFilterProp="children"
-                    :filterOption="filterOption"
-                    :options="podSelectOptions"
-                    :loading="optionLoading.pods"
-                    @change="onSelectPodId"
-                  ></a-select>
-                </a-form-item>
-              </a-col>
-              <a-col :md="24" :lg="8">
-                <a-form-item
-                  :label="this.$t('label.clusterid')">
-                  <a-select
-                    v-decorator="['clusterid']"
-                    showSearch
-                    optionFilterProp="children"
-                    :filterOption="filterOption"
-                    :options="clusterSelectOptions"
-                    :loading="optionLoading.clusters"
-                    @change="onSelectClusterId"
-                  ></a-select>
-                </a-form-item>
-              </a-col>
-            </a-form>
-          </a-row>
+          <a-alert type="info" :showIcon="true" :message="$t('label.desc.importexportinstancewizard')" :description="$t('message.desc.importexportinstancewizard')" />
+          <br />
+          <a-form
+            style="min-width: 170px"
+            :form="form"
+            layout="vertical">
+            <a-col :md="24" :lg="8">
+              <a-form-item :label="this.$t('label.zoneid')">
+                <a-select
+                  v-decorator="['zoneid', {}]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="filterOption"
+                  :options="zoneSelectOptions"
+                  @change="onSelectZoneId"
+                  :loading="optionLoading.zones"
+                  autoFocus
+                ></a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="8">
+              <a-form-item
+                :label="this.$t('label.podid')">
+                <a-select
+                  v-decorator="['podid']"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="filterOption"
+                  :options="podSelectOptions"
+                  :loading="optionLoading.pods"
+                  @change="onSelectPodId"
+                ></a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="8">
+              <a-form-item
+                :label="this.$t('label.clusterid')">
+                <a-select
+                  v-decorator="['clusterid']"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="filterOption"
+                  :options="clusterSelectOptions"
+                  :loading="optionLoading.clusters"
+                  @change="onSelectClusterId"
+                ></a-select>
+              </a-form-item>
+            </a-col>
+          </a-form>
           <a-divider />
-          <a-row :gutter="12" style="display: flex">
+          <a-row :gutter="12">
             <a-col :md="24" :lg="12">
               <a-card class="instances-card">
                 <span slot="title">
@@ -104,7 +103,7 @@
                     shape="round"
                     @click="fetchUnmanagedInstances()" >
                   </a-button>
-                  <span style="margin-left: 12px">
+                  <span style="float: right; width: 50%">
                     <search-view
                       :searchFilters="searchFilters.unmanaged"
                       :searchParams="searchParams.unmanaged"
@@ -142,7 +141,7 @@
                       <span>{{ props.value }} / {{ $t('label.page') }}</span>
                     </template>
                   </a-pagination>
-                  <div :span="24" class="action-button-left">
+                  <div :span="24" class="action-button-right">
                     <a-button
                       :loading="importUnmanagedInstanceLoading"
                       :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
@@ -170,7 +169,7 @@
                     shape="round"
                     @click="fetchManagedInstances()" >
                   </a-button>
-                  <span style="margin-left: 12px">
+                  <span style="float: right; width: 50%">
                     <search-view
                       :searchFilters="searchFilters.managed"
                       :searchParams="searchParams.managed"
@@ -815,4 +814,16 @@ export default {
   .action-button-right {
     text-align: right;
   }
+
+  .breadcrumb-card {
+  margin-left: -24px;
+  margin-right: -24px;
+  margin-top: -16px;
+  margin-bottom: 12px;
+}
+
+.ant-breadcrumb {
+  vertical-align: text-bottom;
+}
+
 </style>

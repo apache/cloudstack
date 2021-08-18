@@ -44,6 +44,7 @@
           v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"
+          ref="submit"
           @click="handleSubmit">{{ $t('label.submit') }}</a-button>
       </div>
     </a-form>

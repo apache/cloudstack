@@ -185,6 +185,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             pools = reorderPoolsByCapacity(plan, pools);
         }
 
+        if (vmProfile.getVirtualMachine() == null) {
+            s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            return pools;
+        }
+
         if (vmProfile.getHypervisorType() == HypervisorType.VMware &&
                 !storageMgr.DiskProvisioningStrictness.valueIn(plan.getDataCenterId())) {
             pools = reorderPoolsByDiskProvisioningType(pools, dskCh);

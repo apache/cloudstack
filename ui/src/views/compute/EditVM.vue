@@ -200,10 +200,13 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        params.isdynamicallyscalable = values.isdynamicallyscalable || false
-        params.haenable = values.haenable || false
+        if (values.isdynamicallyscalable !== undefined) {
+          params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.haenable !== undefined) {
+          params.haenable = values.haenable
+        }
         params.group = values.group
-
         this.loading = true
 
         api('updateVirtualMachine', params).then(json => {
