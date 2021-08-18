@@ -141,10 +141,10 @@ export default {
           icon: 'camera',
           label: 'label.action.clone.vm',
           message: 'message.action.clone.instance',
-          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          docHelp: 'adminguide/virtual_machines.html#cloning-vms',
           dataView: true,
           show: (record) => { return true },
-          args: ['virtualmachineid'],
+          args: ['name', 'virtualmachineid'],
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }

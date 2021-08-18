@@ -34,6 +34,7 @@ import java.util.Optional;
 public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CloneVMCmd.class.getName());
     private static final String s_name = "clonevirtualmachineresponse";
+    private static final String CLONE_IDENTIFIER = "Clone";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -42,6 +43,9 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
     private Long virtualmachineid;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the cloned virtual machine")
+    private String name;
 
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
@@ -56,6 +60,14 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Long getId() {
@@ -80,9 +92,8 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     public void create() throws ResourceAllocationException {
         try {
             _userVmService.validateCloneCondition(this);
-            _userVmService.prepareCloneVirtualMachine(this);
         }
-        catch (ResourceUnavailableException | InsufficientCapacityException e) {
+        catch (ResourceUnavailableException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         } catch (InvalidParameterValueException e) {
@@ -100,11 +111,14 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public String getVMName() {
-        return getTargetVM().getInstanceName();
+        if (getName() == null) {
+            return getTargetVM().getInstanceName() + "-" + CLONE_IDENTIFIER;
+        }
+        return getName();
     }
 
     public String getTemplateName() {
-        return (getVMName() + "-Clone-" + _uuidMgr.generateUuid(VirtualMachineTemplate.class, null)).substring(0, 32);
+        return (getVMName() + "-" + _uuidMgr.generateUuid(VirtualMachineTemplate.class, null)).substring(0, 32);
     }
 
     @Override
@@ -112,6 +126,7 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
         Optional<UserVm> result;
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
+            _userVmService.prepareCloneVirtualMachine(this);
             s_logger.info("starting actual VM id: " + getEntityId());
             result = _userVmService.cloneVirtualMachine(this, _volumeService, _snapshotService);
         } catch (ResourceUnavailableException ex) {

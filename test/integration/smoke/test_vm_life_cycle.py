@@ -2094,6 +2094,10 @@ class TestCloneVM(cloudstackTestCase):
     @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_clone_vm_and_volumes(self):
         small_disk_offering = DiskOffering.list(self.apiclient, name='Small')[0];
+        Configurations.update(self.api_client,
+                              name="kvm.snapshot.enabled",
+                              value="true"
+                              )
         small_virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.services["small"],
@@ -2116,3 +2120,7 @@ class TestCloneVM(cloudstackTestCase):
             self.debug("Clone --" + str(e))
             raise e
         self.assertTrue(VirtualMachine.list(self.apiclient, id=clone_response.id) is not None, "vm id should be populated")
+        Configurations.update(self.api_client,
+                              name="kvm.snapshot.enabled",
+                              value="false"
+                              )
