@@ -19,6 +19,11 @@ package org.apache.cloudstack.resourcedetail.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
@@ -66,4 +71,25 @@ public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOffer
         }
         return detailValue;
     }
+
+    @Override
+    public List<Long> findOfferingIdsByDomainIds(List<Long> domainIds) {
+        Object[] dIds = domainIds.stream().map(s -> String.valueOf(s)).collect(Collectors.toList()).toArray();
+
+        GenericSearchBuilder<DiskOfferingDetailVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getResourceId());
+        sb.and("name", sb.entity().getName(), Op.EQ);
+        sb.and().op("value", sb.entity().getValue(), Op.IN);
+        sb.or("valueNull", sb.entity().getValue(), Op.NULL);
+        sb.cp();
+        sb.done();
+
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("name", "domainid");
+        sc.setParameters("value", dIds);
+
+        return customSearch(sc, null);
+    }
+
 }
+
