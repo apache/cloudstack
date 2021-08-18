@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -124,6 +126,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -226,7 +229,6 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -2997,6 +2999,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+        if (volumeId != null && CollectionUtils.isNotEmpty(result.first())) {
+            Volume volume = volumeDao.findById(volumeId);
+            currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
+            String[] currentTagsArray = currentDiskOffering.getTagsArray();
+            if (currentTagsArray.length != 0 && VolumeApiServiceImpl.StoragePoolTagsDiskOfferingStrictness.valueIn(zoneId)) {
+                ListIterator<DiskOfferingJoinVO> iteratorForTagsChecking = result.first().listIterator();
+                while (iteratorForTagsChecking.hasNext()) {
+                    DiskOfferingJoinVO offering = iteratorForTagsChecking.next();
+                    String offeringTags = offering.getTags();
+                    String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
+                    if (!CollectionUtils.isSubCollection(Arrays.asList(currentTagsArray), Arrays.asList(offeringTagsArray))) {
+                        iteratorForTagsChecking.remove();
+                    }
+                }
+            }
+        }
+
         return new Pair<>(result.first(), result.second());
     }
 
