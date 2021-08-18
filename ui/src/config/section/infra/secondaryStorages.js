@@ -25,7 +25,10 @@ export default {
   columns: () => {
     var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
-      fields.push('readonly')
+      fields.push({
+        field: 'readonly',
+        customTitle: 'access'
+      })
     }
     return fields
   },
@@ -45,14 +48,6 @@ export default {
   }],
   actions: [
     {
-      api: 'migrateSecondaryStorageData',
-      icon: 'drag',
-      label: 'label.migrate.data.from.image.store',
-      listView: true,
-      popup: true,
-      component: () => import('@/views/infra/MigrateData.vue')
-    },
-    {
       api: 'addImageStore',
       icon: 'plus',
       docHelp: 'installguide/configuration.html#add-secondary-storage',
@@ -60,6 +55,14 @@ export default {
       listView: true,
       popup: true,
       component: () => import('@/views/infra/AddSecondaryStorage.vue')
+    },
+    {
+      api: 'migrateSecondaryStorageData',
+      icon: 'drag',
+      label: 'label.migrate.data.from.image.store',
+      listView: true,
+      popup: true,
+      component: () => import('@/views/infra/MigrateData.vue')
     },
     {
       api: 'updateImageStore',

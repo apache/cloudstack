@@ -21,11 +21,12 @@ import mockRouter from '../mock/mockRouter'
 
 import localVue from '../setup'
 import { mount } from '@vue/test-utils'
-import { pollJobPlugin, notifierPlugin, configUtilPlugin } from '@/utils/plugins'
+import { pollJobPlugin, notifierPlugin, configUtilPlugin, apiMetaUtilPlugin } from '@/utils/plugins'
 
 localVue.use(pollJobPlugin)
 localVue.use(notifierPlugin)
 localVue.use(configUtilPlugin)
+localVue.use(apiMetaUtilPlugin)
 
 function createMockRouter (newRoutes = []) {
   let routes = []
@@ -42,8 +43,8 @@ function createMockI18n (locale = 'en', messages = {}) {
   return mockI18n.mock(locale, messages)
 }
 
-function createMockStore (state = {}, actions = {}) {
-  return mockStore.mock(state, actions)
+function createMockStore (state = {}, actions = {}, mutation = {}) {
+  return mockStore.mock(state, actions, mutation)
 }
 
 function decodeHtml (html) {

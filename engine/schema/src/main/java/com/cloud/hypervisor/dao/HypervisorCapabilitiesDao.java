@@ -38,5 +38,5 @@ public interface HypervisorCapabilitiesDao extends GenericDao<HypervisorCapabili
 
     List<HypervisorType> getHypervisorsWithDefaultEntries();
 
-    Boolean isStorageMotionSupported(HypervisorType hypervisorType, String hypervisorVersion);
+    boolean isStorageMotionSupported(HypervisorType hypervisorType, String hypervisorVersion);
 }

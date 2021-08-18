@@ -20,6 +20,9 @@ set -e
 set -x
 
 function configure_grub() {
+  # Remove the old/unused kernel
+  dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p' | xargs sudo apt-get remove -y --purge || true
+  apt-get -y autoremove --purge
   echo "blacklist floppy" > /etc/modprobe.d/blacklist-floppy.conf
   rmmod floppy || true
   update-initramfs -u

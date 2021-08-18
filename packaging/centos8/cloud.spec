@@ -423,6 +423,14 @@ grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.pr
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 
+# Update DB properties having master and slave(s), with source and replica(s) respectively (for inclusiveness)
+grep -s -q "^db.cloud.slaves=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.slaves=/db.cloud.replicas=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.cloud.secondsBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.secondsBeforeRetryMaster=/db.cloud.secondsBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.cloud.queriesBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.queriesBeforeRetryMaster=/db.cloud.queriesBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.slaves=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.slaves=/db.usage.replicas=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.secondsBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.secondsBeforeRetryMaster=/db.usage.secondsBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.queriesBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.queriesBeforeRetryMaster=/db.usage.queriesBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloudstack.org/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/

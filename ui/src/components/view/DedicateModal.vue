@@ -18,16 +18,20 @@
 <template>
   <a-modal
     v-model="dedicatedDomainModal"
+    v-ctrl-enter="handleDedicateForm"
     :title="label"
+    :closable="true"
     :maskClosable="false"
-    :okText="$t('label.ok')"
-    :cancelText="$t('label.cancel')"
-    @cancel="closeModal"
-    @ok="handleDedicateForm">
+    :footer="null"
+    @cancel="closeModal">
     <DedicateDomain
       @domainChange="id => domainId = id"
       @accountChange="id => dedicatedAccount = id"
       :error="domainError" />
+    <div :span="24" class="action-button">
+      <a-button @click="closeModal">{{ this.$t('label.cancel') }}</a-button>
+      <a-button type="primary" ref="submit" @click="handleDedicateForm">{{ this.$t('label.ok') }}</a-button>
+    </div>
   </a-modal>
 </template>
 
@@ -63,7 +67,8 @@ export default {
       dedicatedDomainModal: false,
       domainId: null,
       dedicatedAccount: null,
-      domainError: false
+      domainError: false,
+      isSubmitted: false
     }
   },
   watch: {
@@ -93,24 +98,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatezoneresponse.jobid,
-          successMessage: this.$t('label.zone.dedicated'),
+          title: this.$t('label.dedicate.zone'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
+          successMessage: `${this.$t('label.zone.dedicated')}`,
           successMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('label.zone.dedicated'),
-              jobid: response.dedicatezoneresponse.jobid,
-              description: `${this.$t('label.domain.id')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
+            this.isSubmitted = false
           },
           errorMessage: this.$t('error.dedicate.zone.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.dedicating.zone'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -118,11 +119,13 @@ export default {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
         this.$notifyError(error)
         this.dedicatedDomainModal = false
+        this.isSubmitted = false
       })
     },
     dedicatePod () {
@@ -137,24 +140,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatepodresponse.jobid,
+          title: this.$t('label.dedicate.pod'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
           successMessage: this.$t('label.pod.dedicated'),
           successMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('label.pod.dedicated'),
-              jobid: response.dedicatepodresponse.jobid,
-              description: `${this.$t('label.domainid')}: ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
+            this.isSubmitted = false
           },
           errorMessage: this.$t('error.dedicate.pod.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.dedicating.pod'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -162,11 +161,13 @@ export default {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
         this.$notifyError(error)
         this.dedicatedDomainModal = false
+        this.isSubmitted = false
       })
     },
     dedicateCluster () {
@@ -181,24 +182,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicateclusterresponse.jobid,
+          title: this.$t('label.dedicate.cluster'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
           successMessage: this.$t('message.cluster.dedicated'),
           successMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.cluster.dedicated'),
-              jobid: response.dedicateclusterresponse.jobid,
-              description: `${this.$t('label.domainid')}: ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
+            this.isSubmitted = false
           },
           errorMessage: this.$t('error.dedicate.cluster.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.dedicating.cluster'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -206,11 +203,13 @@ export default {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
         this.$notifyError(error)
         this.dedicatedDomainModal = false
+        this.isSubmitted = false
       })
     },
     dedicateHost () {
@@ -225,24 +224,20 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatehostresponse.jobid,
+          title: this.$t('label.dedicate.host'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
           successMessage: this.$t('message.host.dedicated'),
           successMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.host.dedicated'),
-              jobid: response.dedicatehostresponse.jobid,
-              description: `${this.$t('label.domainid')}: ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
+            this.isSubmitted = false
           },
           errorMessage: this.$t('error.dedicate.host.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.dedicating.host'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -250,14 +245,20 @@ export default {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainModal = false
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
         this.$notifyError(error)
         this.dedicatedDomainModal = false
+        this.isSubmitted = false
       })
     },
     handleDedicateForm () {
+      if (this.isSubmitted) {
+        return
+      }
+      this.isSubmitted = true
       if (this.$route.meta.name === 'zone') {
         this.dedicateZone()
       }
