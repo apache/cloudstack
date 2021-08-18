@@ -63,8 +63,8 @@ public class SystemVmTemplateRegistration {
     private static final String PARTIAL_TEMPLATE_FOLDER = "/template/tmpl/1/";
     // TODO: filter out only zones with NFS based 'Image' stores - to rule out image cache scenario
     private static final String FETCH_DISTINCT_ELIGIBLE_ZONES = "SELECT DISTINCT(data_center_id) FROM `cloud`.`image_store` WHERE protocol = \"nfs\"  AND role = \"Image\" AND removed is null";
-    private static final String FETCH_DISTINCT_HYPERVISORS_IN_ZONE = "SELECT DISTINCT(hypervisor_type) FROM `cloud`.`cluster` where  data_center_id=? AND role = \"Image\" AND image_provider_name = \"NFS\" AND removed is null";
-    private static final String FETCH_IMAGE_STORE_PER_ZONE = "SELECT url,id FROM `cloud`.`image_store` WHERE data_center_id=? AND removed IS NULL LIMIT 1";
+    private static final String FETCH_DISTINCT_HYPERVISORS_IN_ZONE = "SELECT DISTINCT(hypervisor_type) FROM `cloud`.`cluster` where  removed is null AND data_center_id=?";
+    private static final String FETCH_IMAGE_STORE_PER_ZONE = "SELECT url,id FROM `cloud`.`image_store` WHERE data_center_id=? AND role = \"Image\" AND image_provider_name = \"NFS\" AND removed IS NULL LIMIT 1";
     private static final String INSERT_VM_TEMPLATE_TABLE = "INSERT INTO `cloud`.`vm_template` (uuid, unique_name, name, public, featured, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, cross_zones, hypervisor_type, state, deploy_as_is)" +
         "VALUES (?, ?, ?, 0, 0, ?, 'SYSTEM', 0, 64, 1, ?, ?, 0, ?, ?, ?, 1, ?, 'Inactive', ?)";
     private static final String INSERT_TEMPLATE_STORE_REF_TABLE = "INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, last_updated, job_id, download_pct, download_state, error_str, local_path, install_path, url, state, destroyed, is_copy," +
@@ -401,6 +401,9 @@ public class SystemVmTemplateRegistration {
             LOGGER.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
+        if (url == null || storeId == null) {
+            throw new CloudRuntimeException(String.format("Failed to get an NFS store in zone: %s", zoneId));
+        }
         return new Pair<>(url, storeId);
     }
 
@@ -615,7 +618,6 @@ public class SystemVmTemplateRegistration {
         Long templateId = null;
         try {
             Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
-            mountStore(storeUrlAndId.first());
             final String templateName = UUID.randomUUID().toString();
             Date created = new Date(DateUtil.currentGMTTime().getTime());
             SystemVMTemplateDetails details = new SystemVMTemplateDetails(templateName, NewTemplateNameList.get(hypervisor), created,
@@ -732,6 +734,7 @@ public class SystemVmTemplateRegistration {
                 List<Long> zoneIds = getEligibleZoneIds(conn);
                 for (Long zoneId : zoneIds) {
                     Pair<String, Long> storeUrlAndId = getNfsStoreInZone(conn, zoneId);
+                    mountStore(storeUrlAndId.first());
                     List<String> hypervisorList = fetchAllHypervisors(conn, zoneId);
                     for (String hypervisor : hypervisorList) {
                         Hypervisor.HypervisorType name = Hypervisor.HypervisorType.getType(hypervisor);
