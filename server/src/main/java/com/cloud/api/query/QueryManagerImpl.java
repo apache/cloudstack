@@ -2044,7 +2044,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
-        Boolean forSystemVms = cmd.getForsystemvm();
+        Boolean forSystemVms = cmd.getForSystemVm();
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -2170,7 +2170,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sc.setParameters("type", VirtualMachine.Type.User);
 
         // Display all volumes for ROOT admin
-        if (forSystemVms && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (forSystemVms != null && forSystemVms && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             sc.setParameters("systemUse", 0, 1);
             sc.setParameters("type",
                     VirtualMachine.Type.User, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);

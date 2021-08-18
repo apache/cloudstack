@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -36,6 +35,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
@@ -94,7 +94,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "list volumes of systemvms and routervm", since = "4.16", authorized = {
             RoleType.Admin})
-    private Boolean forsystemvm;
+    private Boolean forSystemVm;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -140,8 +140,8 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
         return storageId;
     }
 
-    public Boolean getForsystemvm() {
-        return forsystemvm;
+    public Boolean getForSystemVm() {
+        return BooleanUtils.isTrue(forSystemVm);
     }
 
     @Override
