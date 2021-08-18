@@ -50,10 +50,6 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    private Long temporaryTemlateId;
-
-    private Long temporarySnapShotId;
-
     public String getAccountName() {
         return accountName;
     }
@@ -78,23 +74,6 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Override
     public String getEventDescription() {
         return "Cloning user VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
-    }
-
-    public Long getTemporaryTemlateId() {
-        return this.temporaryTemlateId;
-    }
-
-    public void setTemporarySnapShotId(Long snapshotId) {
-        this.temporarySnapShotId = snapshotId;
-    }
-
-    public Long getTemporarySnapShotId() {
-        return temporarySnapShotId;
-    }
-
-
-    public void setTemporaryTemlateId(long tempId) {
-        this.temporaryTemlateId = tempId;
     }
 
     @Override

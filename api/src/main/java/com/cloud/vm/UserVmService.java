@@ -445,7 +445,7 @@ public interface UserVmService {
     UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
         StorageUnavailableException, ResourceAllocationException;
 
-    UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+    UserVm recordVirtualMachineToDB(CloneVMCmd cmd, long templateId) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
             StorageUnavailableException, ResourceAllocationException;
 
     UserVm getUserVm(long vmId);
