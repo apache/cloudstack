@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1898,7 +1897,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             newHypervisorSnapshotReserve[0] = volume.getHypervisorSnapshotReserve() != null ? newDiskOffering.getHypervisorSnapshotReserve() : null;
         }
 
-        if (diskOffering.getDiskSizeStrictness() && (volume.getSize() != newSize[0])) {
+        if (diskOffering.getDiskSizeStrictness() && !(volume.getSize().equals(newSize[0]))) {
             throw new InvalidParameterValueException(String.format("Resize volume for %s is not allowed since disk offering's size is fixed", volume.getName()));
         }
         checkIfVolumeIsRootAndVmIsRunning(newSize[0], volume, vmInstanceVO);
