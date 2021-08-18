@@ -44,10 +44,9 @@
         :visible="showGetHealthChecksForm"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
-        @ok="handleGetHealthChecksSubmit"
+        :footer="null"
         @cancel="onCloseGetHealthChecksForm"
+        v-ctrl-enter="handleGetHealthChecksSubmit"
         centered>
         <a-spin :spinning="loading">
           <a-form
@@ -55,17 +54,17 @@
             @submit="handleGetHealthChecksSubmit"
             layout="vertical">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.perform.fresh.checks') }}
-                <a-tooltip :title="apiParams.performfreshchecks.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>
               <a-switch
                 v-decorator="[$t('performfreshchecks')]"
                 :placeholder="apiParams.performfreshchecks.description"
                 autoFocus/>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="onCloseGetHealthChecksForm">{{ $t('label.cancel') }}</a-button>
+              <a-button ref="submit" type="primary" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
       </a-modal>
@@ -76,11 +75,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RouterHealthCheck',
   components: {
-    Status
+    Status,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -120,11 +121,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfigParams = (this.$store.getters.apis.getRouterHealthCheckResults && this.$store.getters.apis.getRouterHealthCheckResults.params) || []
-    this.apiParams = {}
-    this.apiConfigParams.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('getRouterHealthCheckResults')
   },
   watch: {
     resource: function (newItem, oldItem) {
@@ -153,6 +150,7 @@ export default {
     },
     handleGetHealthChecksSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

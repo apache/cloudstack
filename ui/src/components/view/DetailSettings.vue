@@ -44,7 +44,11 @@
             :dataSource="Object.keys(detailOptions)"
             :placeholder="$t('label.name')"
             @change="e => onAddInputChange(e, 'newKey')" />
-          <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+          <a-input
+            class="tag-disabled-input"
+            style=" width: 30px; border-left: 0; pointer-events: none; text-align: center"
+            placeholder="="
+            disabled />
           <a-auto-complete
             class="detail-input"
             :filterOption="filterOption"
@@ -110,7 +114,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from './TooltipButton.vue'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   components: { TooltipButton },

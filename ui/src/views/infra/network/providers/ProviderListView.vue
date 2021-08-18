@@ -116,7 +116,7 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ProviderListView',
@@ -188,7 +188,7 @@ export default {
       return columns
     }
   },
-  inject: ['providerChangePage', 'provideReload', 'parentPollActionCompletion'],
+  inject: ['providerChangePage', 'provideReload'],
   methods: {
     changePage (page, pageSize) {
       this.providerChangePage(this.title, page, pageSize)
@@ -286,13 +286,13 @@ export default {
             try {
               const jobId = await this.executeDeleteRecord(apiName, params)
               if (jobId) {
-                this.$store.dispatch('AddAsyncJob', {
+                this.$pollJob({
+                  jobId,
                   title: this.$t(label),
-                  jobid: jobId,
                   description: this.$t(name),
-                  status: 'progress'
+                  loadingMessage: `${this.$t(label)} - ${this.$t(name)}`,
+                  catchMessage: this.$t('error.fetching.async.job.result')
                 })
-                this.parentPollActionCompletion(jobId, this.action)
               } else {
                 this.$success('Success')
                 this.provideReload()
@@ -322,13 +322,13 @@ export default {
           try {
             const jobId = await this.configureOvsElement(params)
             if (jobId) {
-              this.$store.dispatch('AddAsyncJob', {
+              this.$pollJob({
+                jobId,
                 title: this.$t('label.configure.ovs'),
-                jobid: jobId,
                 description: this.$t(record.id),
-                status: 'progress'
+                loadingMessage: `${this.$t('label.configure.ovs')} - ${this.$t(record.id)}`,
+                catchMessage: this.$t('error.fetching.async.job.result')
               })
-              this.parentPollActionCompletion(jobId, this.action)
             } else {
               this.$success('Success')
               this.provideReload()

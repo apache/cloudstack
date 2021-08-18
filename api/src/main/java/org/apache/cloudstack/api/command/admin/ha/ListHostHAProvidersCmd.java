@@ -26,7 +26,6 @@ import com.cloud.user.Account;
 import com.google.common.base.Enums;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -57,7 +56,7 @@ public final class ListHostHAProvidersCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true,
-            description = "Hypervisor type of the resource", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "Hypervisor type of the resource")
     private String hypervisorType;
 
     /////////////////////////////////////////////////////

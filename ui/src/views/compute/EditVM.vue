@@ -21,35 +21,21 @@
       class="form-layout"
       layout="vertical"
       :form="form"
+      v-ctrl-enter="handleSubmit"
       @submit="handleSubmit">
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-decorator="['name', { initialValue: resource.name || '' }]"
           autoFocus />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.displayname') }}
-          <a-tooltip :title="apiParams.displayname.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
         <a-input
           v-decorator="['displayname', { initialValue: resource.displayname || '' }]" />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.ostypeid') }}
-          <a-tooltip :title="apiParams.ostypeid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
         <a-select
           showSearch
           optionFilterProp="children"
@@ -64,35 +50,20 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.isdynamicallyscalable') }}
-          <a-tooltip :title="apiParams.isdynamicallyscalable.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
         <a-switch
           :default-checked="resource.isdynamicallyscalable"
           v-decorator="['isdynamicallyscalable']"
           :disabled="!canDynamicScalingEnabled()" />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.haenable') }}
-          <a-tooltip :title="apiParams.haenable.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
         <a-switch
           :default-checked="resource.haenable"
           v-decorator="['haenable']" />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.group') }}
-          <a-tooltip :title="apiParams.group.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.group')" :tooltip="apiParams.group.description"/>
         <a-auto-complete
           v-decorator="['group', { initialValue: resource.group }]"
           :filterOption="(input, option) => {
@@ -103,7 +74,7 @@
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -111,9 +82,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'EditVM',
+  components: {
+    TooltipLabel
+  },
   props: {
     action: {
       type: Object,
@@ -142,11 +117,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    const apiConfig = this.$store.getters.apis.updateVirtualMachine || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('updateVirtualMachine')
   },
   created () {
     this.fetchData()
@@ -229,10 +200,13 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        params.isdynamicallyscalable = values.isdynamicallyscalable || false
-        params.haenable = values.haenable || false
+        if (values.isdynamicallyscalable !== undefined) {
+          params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.haenable !== undefined) {
+          params.haenable = values.haenable
+        }
         params.group = values.group
-
         this.loading = true
 
         api('updateVirtualMachine', params).then(json => {

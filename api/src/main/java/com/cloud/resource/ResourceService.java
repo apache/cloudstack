@@ -24,10 +24,12 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.AgentUnavailableException;
@@ -66,6 +68,10 @@ public interface ResourceService {
     List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
     Host maintain(PrepareForMaintenanceCmd cmd);
+
+    Host declareHostAsDegraded(DeclareHostAsDegradedCmd cmd) throws NoTransitionException;
+
+    Host cancelHostAsDegraded(CancelHostAsDegradedCmd cmd) throws NoTransitionException;
 
     /**
      * Deletes a host

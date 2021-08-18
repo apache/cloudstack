@@ -256,6 +256,9 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         """Test add primary storage pool with disabled host
         """
 
+        if self.zone.localstorageenabled :
+            self.skipTest("Skipping since localstorageenabled")
+
         # Disable a host
         clusters = list_clusters(
             self.apiclient,
