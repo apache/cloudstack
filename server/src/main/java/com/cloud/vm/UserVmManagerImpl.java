@@ -3824,9 +3824,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
-        else {
-            throw new InvalidParameterValueException("Keypairs was not found.");
-        }
 
         LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
 
@@ -4113,11 +4110,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.details.putAll(details);
                 }
 
-                if (sshPublicKey != null) {
+                if (sshPublicKey != "") {
                     vm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
                 }
 
-                if (sshkeypairs != null) {
+                if (sshkeypairs != "") {
                     vm.setDetail(VmDetailConstants.KEY_PAIR_NAMES, sshkeypairs);
                 }
 
