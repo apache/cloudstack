@@ -84,33 +84,22 @@ function install_packages() {
   wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
   dpkg -i python-netaddr_0.7.19-1_all.deb
 
-  # python2-netaddr workaround
-  wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
-  dpkg -i python-netaddr_0.7.19-1_all.deb
-
-  apt-get -y autoremove --purge
-  apt-get clean
-  apt-get autoclean
-
   apt_clean
-  ${apt_get} install links
 
-   curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-   apt-key fingerprint 0EBFCD88
-
-  #32 bit architecture support for vhd-util: not required for 32 bit template
+  # 32 bit architecture support for vhd-util
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
     apt-get update
     ${apt_get} install libuuid1:i386 libc6:i386
-
-    add-apt-repository \
-    "deb [arch=amd64] https://download.docker.com/linux/debian \
-    $(lsb_release -cs) \
-    stable"
-    apt-get update
-    ${apt_get} install docker-ce docker-ce-cli containerd.io
   fi
+
+  # Install docker and containerd for CKS
+  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+  apt-key fingerprint 0EBFCD88
+  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  apt-get update
+  ${apt_get} install docker-ce docker-ce-cli containerd.io
+
   apt_clean
 
   install_vhd_util
