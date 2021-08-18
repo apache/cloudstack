@@ -150,8 +150,8 @@ export default {
               value: (record, params) => { return record.id }
             },
             name: {
-              value: (record, params) => {return record.name}
-            }
+              value: (record, params) => { return record.name }
+            },
           }
         },
         {
