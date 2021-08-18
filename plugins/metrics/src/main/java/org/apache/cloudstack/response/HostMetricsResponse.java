@@ -138,6 +138,10 @@ public class HostMetricsResponse extends HostResponse {
         }
     }
 
+    public String getCpuAllocatedGhz() {
+        return cpuAllocated;
+    }
+
     public void setMemTotal(final Long memTotal) {
         if (memTotal != null) {
             this.memTotal = String.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
