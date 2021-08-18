@@ -438,8 +438,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public List<String> getSSHKeyPairNames() {
-        if(sshKeyPairName != null) sshKeyPairNames.add(sshKeyPairName);
-        return sshKeyPairNames;
+        List<String> sshKeyPairs;
+        if(sshKeyPairNames != null) {
+            sshKeyPairs = sshKeyPairNames;
+        }
+        if(sshKeyPairName != null && !sshKeyPairName.isEmpty()) {
+            sshKeyPairs.add(sshKeyPairName);
+        }
+        return sshKeyPairs;
     }
 
     public Long getHostId() {
