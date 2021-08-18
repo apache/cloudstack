@@ -327,7 +327,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
                 if (userVmDetailVO.getName().startsWith(VmDetailConstants.KEY_PAIR_NAMES)) {
-                    s_logger.info(userVmDetailVO.getValue());
+                    s_logger.info("SSH Keypair names saved in VMDetails are " + userVmDetailVO.getValue());
                     userVmResponse.setKeyPairNames(userVmDetailVO.getValue());
                 }
                 if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
