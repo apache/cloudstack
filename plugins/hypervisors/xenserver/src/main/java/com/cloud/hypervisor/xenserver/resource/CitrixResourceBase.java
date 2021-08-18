@@ -1439,6 +1439,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
+        try {
+            setVmBootDetails(vm, conn, vmSpec.getBootMode(), vmSpec.getBootType());
+        } catch (final XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+        }
         return vm;
     }
 
@@ -1933,7 +1938,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vm.setPlatform(conn, platform);
                 }
             }
-            setVmBootDetails(vm, conn, details);
         }
 
         // Add configuration settings VM record for User VM instances before creating VM
@@ -1944,13 +1948,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void setVmBootDetails(final VM vm, final Connection conn, final Map<String, String> details) throws XenAPIException, XmlRpcException {
-        String bootType = details.get("boottype");
+    protected void setVmBootDetails(final VM vm, final Connection conn, String bootType, String bootMode) throws XenAPIException, XmlRpcException {
         if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
             bootType = ApiConstants.BootType.BIOS.toString();
         }
         boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
-                ApiConstants.BootMode.SECURE.toString().equals(details.get("bootmode"));
+                ApiConstants.BootMode.SECURE.toString().equals(bootMode);
         final Map<String, String> bootParams = vm.getHVMBootParams(conn);
         bootParams.replace("firmware", bootType);
         vm.setHVMBootParams(conn, bootParams);
