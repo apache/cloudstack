@@ -1888,10 +1888,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
             throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + snapshot.getId());
         }
-
         return snapshot;
     }
-    
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner, VolumeApiService volumeService, Snapshot snapshot) throws ResourceAllocationException {
@@ -1913,7 +1911,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create private template record, unable to find root volume " + volumeId);
         }
-
         // check permissions
         _accountMgr.checkAccess(caller, null, true, volume);
 
