@@ -4647,24 +4647,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void prepareCloneVirtualMachine(CloneVMCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
+        Long temporarySnapshotId = null;
         try {
-            VirtualMachineTemplate template = _tmplService.createPrivateTemplateRecord(cmd, _accountService.getAccount(cmd.getEntityOwnerId()), _volumeService);
+            Account owner = _accountService.getAccount(cmd.getEntityOwnerId());
+            Snapshot snapshot = _tmplService.createSnapshotFromTemplateOwner(cmd.getId(), cmd.getTargetVM(), owner, _volumeService);
+            temporarySnapshotId = snapshot.getId();
+            VirtualMachineTemplate template = _tmplService.createPrivateTemplateRecord(cmd, owner, _volumeService, snapshot);
             if (template == null) {
                 throw new CloudRuntimeException("failed to create a template to db");
             }
             s_logger.info("The template id recorded is: " + template.getId());
-            cmd.setTemporaryTemlateId(template.getId());
-            _tmplService.createPrivateTemplate(cmd);
-            UserVm vmRecord = recordVirtualMachineToDB(cmd);
+            _tmplService.createPrivateTemplate(cmd, snapshot.getId(), template.getId());
+            UserVm vmRecord = recordVirtualMachineToDB(cmd, template.getId());
             if (vmRecord == null) {
                 throw new CloudRuntimeException("Unable to record the VM to DB!");
             }
             cmd.setEntityUuid(vmRecord.getUuid());
             cmd.setEntityId(vmRecord.getId());
         } finally {
-            if (cmd.getTemporarySnapShotId() != null) {
-                _snapshotService.deleteSnapshot(cmd.getTemporarySnapShotId());
-                s_logger.warn("clearing the temporary snapshot: " + cmd.getTemporarySnapShotId());
+            if (temporarySnapshotId != null) {
+                _snapshotService.deleteSnapshot(temporarySnapshotId);
+                s_logger.warn("clearing the temporary snapshot: " + temporarySnapshotId);
             }
         }
     }
@@ -5740,7 +5743,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException, ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd, long templateId) throws ConcurrentOperationException, ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
         //network configurations and check, then create the template
         UserVm curVm = cmd.getTargetVM();
         // check if host is available
@@ -5769,13 +5772,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String displayName = hostName + "-Clone";
         Long diskOfferingId = curVm.getDiskOfferingId();
         Long size = null; // mutual exclusive with disk offering id
-        HTTPMethod httpMethod = cmd.getHttpMethod();
         String userData = curVm.getUserData();
         String sshKeyPair = null;
         Map<Long, IpAddresses> ipToNetoworkMap = null; // Since we've specified Ip
         boolean isDisplayVM = curVm.isDisplayVm();
         boolean dynamicScalingEnabled = curVm.isDynamicallyScalable();
-        Long templateId = cmd.getTemporaryTemlateId();
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         if (template == null) {
             throw new CloudRuntimeException("the temporary template is not created, server error, contact your sys admin");

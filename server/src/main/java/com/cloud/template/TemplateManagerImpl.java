@@ -1747,10 +1747,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating actual private template", create = true)
-    public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException {
+    public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd, long snapshotId, long templateId) throws CloudRuntimeException {
         UserVm curVm = cmd.getTargetVM();
-        long templateId = cmd.getTemporaryTemlateId();
-        long snapshotId = cmd.getTemporarySnapShotId();
         final Long accountId = curVm.getAccountId();
         Account caller = CallContext.current().getCallingAccount();
         List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
@@ -1865,8 +1863,36 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    public Snapshot createSnapshotFromTemplateOwner(long vmId, UserVm curVm, Account templateOwner, VolumeApiService volumeService) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, templateOwner);
+//        UserVm curVm = cmd.getTargetVM();
+        Long nextSnapId = _tmpltDao.getNextInSequence(Long.class, "id");
+        Long volumeId = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT).get(0).getId();
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Failed to create private template record, unable to find root volume " + volumeId);
+        }
+
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, volume);
+        s_logger.info("Creating snapshot for the tempalte creation");
+        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, Snapshot.INTERNAL_POLICY_ID, curVm.getDisplayName() + "-Clone-" + nextSnapId, null);
+        if (snapshot == null) {
+            throw new CloudRuntimeException("Unable to create a snapshot during the template creation recording");
+        }
+        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, Snapshot.INTERNAL_POLICY_ID, snapshot.getId(), caller, false, null, false, new HashMap<>());
+        if (snapshotEntity == null) {
+            throw new CloudRuntimeException("Error when creating the snapshot entity");
+        }
+        if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
+            throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + snapshot.getId());
+        }
+        return snapshot;
+    }
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
-    public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner, VolumeApiService volumeService) throws ResourceAllocationException {
+    public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner, VolumeApiService volumeService, Snapshot snapshot) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, templateOwner);
         String name = cmd.getTemplateName();
@@ -1885,7 +1911,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create private template record, unable to find root volume " + volumeId);
         }
-
         // check permissions
         _accountMgr.checkAccess(caller, null, true, volume);
 
@@ -1915,19 +1940,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         // get snapshot from this step
         Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
-        s_logger.info("Creating snapshot for the tempalte creation");
-        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, Snapshot.INTERNAL_POLICY_ID, curVm.getDisplayName() + "-Clone-" + nextTemplateId, null);
-        if (snapshot == null) {
-            throw new CloudRuntimeException("Unable to create a snapshot during the template creation recording");
-        }
-        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, Snapshot.INTERNAL_POLICY_ID, snapshot.getId(), caller, false, null, false, new HashMap<>());
-        if (snapshotEntity == null) {
-            throw new CloudRuntimeException("Error when creating the snapshot entity");
-        }
-        if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
-            throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + snapshot.getId());
-        }
-        cmd.setTemporarySnapShotId(snapshot.getId());
         String description = ""; // TODO: add this to clone parameter in the future
         boolean isExtractable = false;
         Long sourceTemplateId = null;
@@ -1992,7 +2004,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage,
-                    snapshot.getSize());
+                    ((SnapshotVO) snapshot).getSize());
         }
 
         return template;
