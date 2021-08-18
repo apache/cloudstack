@@ -148,9 +148,6 @@ export default {
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
-            },
-            name: {
-              value: (record, params) => { return record.name }
             }
           }
         },

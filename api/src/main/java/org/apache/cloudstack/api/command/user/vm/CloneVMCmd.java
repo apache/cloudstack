@@ -92,8 +92,9 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     public void create() throws ResourceAllocationException {
         try {
             _userVmService.validateCloneCondition(this);
+            _userVmService.prepareCloneVirtualMachine(this);
         }
-        catch (ResourceUnavailableException e) {
+        catch (ResourceUnavailableException | InsufficientCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         } catch (InvalidParameterValueException e) {
