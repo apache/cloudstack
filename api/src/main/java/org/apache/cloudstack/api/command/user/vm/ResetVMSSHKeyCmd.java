@@ -60,7 +60,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.LIST, collectionType = CommandType.STRING ,description = "name of the ssh key pair to bt used to login to the virtual machine")
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING ,description = "name of the ssh key pair to bt used to login to the virtual machine")
     String name;
 
     @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING ,description = "name of the multiple ssh key pairs to be used to login to the virtual machine")
@@ -84,8 +84,10 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     public List<String> getNames() {
-        if (name != null && name != "") names.add(name);
-        return names;
+        List<String> keypairnames;
+        if(names != null) { keypairnames = names; }
+        if(name != null && !name.isEmpty()) { keypairnames.add(name); }
+        return keypairnames;
     }
 
     public Long getId() {
