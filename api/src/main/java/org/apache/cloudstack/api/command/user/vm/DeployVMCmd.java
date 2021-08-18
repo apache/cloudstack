@@ -438,7 +438,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public List<String> getSSHKeyPairNames() {
-        List<String> sshKeyPairs;
+        List<String> sshKeyPairs = new ArrayList<String>();
         if(sshKeyPairNames != null) {
             sshKeyPairs = sshKeyPairNames;
         }

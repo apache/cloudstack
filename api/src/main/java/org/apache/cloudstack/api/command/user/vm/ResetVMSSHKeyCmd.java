@@ -84,7 +84,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     public List<String> getNames() {
-        List<String> keypairnames;
+        List<String> keypairnames = new ArrayList<String>();
         if(names != null) { keypairnames = names; }
         if(name != null && !name.isEmpty()) { keypairnames.add(name); }
         return keypairnames;
