@@ -68,20 +68,12 @@ function createMetadataFile() {
 
 declare -A templates
 getTemplateVersion $1
-# TODO: Update correct url post testing
-#templates=( ["kvm"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-kvm.qcow2.bz2"
-#            ["vmware"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-vmware.ova"
-#            ["xenserver"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-xen.vhd.bz2"
-#            ["hyperv"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-hyperv.vhd.zip"
-#            ["lxc"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-kvm.qcow2.bz2"
-#            ["ovm3"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-ovm.raw.bz2" )
-
-templates=( ["kvm"]="http://10.0.3.122/systemvmtemplate/custom/cks-debian/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-kvm.qcow2.bz2"
-            ["vmware"]="http://10.0.3.122/systemvmtemplate/custom/cks-debian/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-vmware.ova"
-            ["xenserver"]="http://10.0.3.122/systemvmtemplate/custom/cks-debian/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-xen.vhd.bz2"
-            ["hyperv"]="http://10.0.3.122/systemvmtemplate/custom/cks-debian/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-hyperv.vhd.zip"
-            ["lxc"]="http://10.0.3.122/systemvmtemplate/custom/cks-debian/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-kvm.qcow2.bz2"
-            ["ovm3"]="http://10.0.3.122/systemvmtemplate/custom/cks-debian/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-ovm.raw.bz2" )
+templates=( ["kvm"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-kvm.qcow2.bz2"
+            ["vmware"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-vmware.ova"
+            ["xenserver"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-xen.vhd.bz2"
+            ["hyperv"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-hyperv.vhd.zip"
+            ["lxc"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-kvm.qcow2.bz2"
+            ["ovm3"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-ovm.raw.bz2" )
 
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
