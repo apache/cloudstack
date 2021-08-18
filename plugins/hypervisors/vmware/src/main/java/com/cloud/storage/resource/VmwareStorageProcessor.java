@@ -2025,7 +2025,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 try {
                     if (workerVm != null) {
                         // detach volume and destroy worker vm
-                        workerVm.detachAllDisks();
                         workerVm.destroy();
                     }
                 } catch (Throwable e) {
