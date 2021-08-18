@@ -151,7 +151,7 @@ export default {
             },
             name: {
               value: (record, params) => { return record.name }
-            },
+            }
           }
         },
         {
