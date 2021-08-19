@@ -1655,7 +1655,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
-        List<String> hostTags = cmd.getHostTags();
+        final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
