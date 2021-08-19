@@ -54,15 +54,22 @@ class CsDhcp(CsDataBag):
         self.configure_server()
 
         restart_dnsmasq = False
+        need_delete_leases = False
 
         if self.conf.commit():
             restart_dnsmasq = True
+            need_delete_leases = True
 
-        self.dhcp_hosts.commit()
-        self.dhcp_leases.commit()
+        if self.dhcp_hosts.commit():
+            need_delete_leases = True
+
+        if self.dhcp_leases.commit():
+            need_delete_leases = True
+
         self.dhcp_opts.commit()
 
-        self.delete_leases()
+        if need_delete_leases:
+            self.delete_leases()
         self.write_hosts()
 
         if not self.cl.is_redundant() or self.cl.is_master():
