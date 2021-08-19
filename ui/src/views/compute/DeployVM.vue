@@ -310,16 +310,20 @@
                               :preFillContent="dataPreFill"
                               :isIsoSelected="tabKey==='isoid'"
                               :isRootDiskOffering="true"
+                              @on-selected-root-disk-size="onSelectRootDiskSize"
                               @select-disk-offering-item="($event) => updateOverrideDiskOffering($event)"
                               @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                             ></disk-offering-selection>
                             <disk-size-selection
-                              v-if="overrideDiskOffering && overrideDiskOffering.iscustomized"
+                              v-if="overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops)"
                               input-decorator="rootdisksize"
                               :preFillContent="dataPreFill"
                               :minDiskSize="dataPreFill.minrootdisksize"
-                              @update-disk-size="updateFieldValue"
-                              style="margin-top: 10px;"/>
+                              :rootDiskSelected="rootDiskSelected"
+                              :isCustomized="overrideDiskOffering.iscustomized"
+                              @handler-error="handlerError"
+                              @update-root-disk-iops-value="updateIOPSValue"
+                              @update-disk-size="updateFieldValue"/>
                             <a-form-item class="form-item-hidden">
                               <a-input v-decorator="['rootdisksize']"/>
                             </a-form-item>
@@ -899,6 +903,7 @@ export default {
       rootDiskSizeFixed: 0,
       error: false,
       diskSelected: {},
+      rootDiskSelected: {},
       diskIOpsMin: 0,
       diskIOpsMax: 0,
       minIops: 0,
@@ -1148,7 +1153,7 @@ export default {
       return this.diskSelected?.iscustomizediops || false
     },
     isCustomizedIOPS () {
-      return this.serviceOffering?.iscustomizediops || false
+      return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
     }
   },
   watch: {
@@ -1709,7 +1714,8 @@ export default {
         } else {
           deployVmData.templateid = values.isoid
         }
-        if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
+
+        if ((this.showRootDiskSizeChanger || this.rootDiskSelected?.iscustomized) && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
         } else if (this.rootDiskSizeFixed > 0) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
@@ -2299,6 +2305,9 @@ export default {
     },
     onSelectDiskSize (rowSelected) {
       this.diskSelected = rowSelected
+    },
+    onSelectRootDiskSize (rowSelected) {
+      this.rootDiskSelected = rowSelected
     },
     updateIOPSValue (input, value) {
       this[input] = value

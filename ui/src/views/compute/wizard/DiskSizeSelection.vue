@@ -44,6 +44,18 @@
         <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
       </a-form-item>
     </a-col>
+    <a-col :span="8" v-if="isCustomizedIOps">
+      <a-form-item :label="$t('label.diskiopsmin')">
+        <a-input-number v-model="minIOps" @change="updateDiskIOps" />
+        <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
+      </a-form-item>
+    </a-col>
+    <a-col :span="8" v-if="isCustomizedIOps">
+      <a-form-item :label="$t('label.diskiopsmax')">
+        <a-input-number v-model="maxIOps" @change="updateDiskIOps" />
+        <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
+      </a-form-item>
+    </a-col>
   </a-row>
 </template>
 
@@ -67,6 +79,10 @@ export default {
       type: Object,
       default: () => {}
     },
+    rootDiskSelected: {
+      type: Object,
+      default: () => {}
+    },
     isCustomized: {
       type: Boolean,
       default: false
@@ -83,6 +99,9 @@ export default {
   computed: {
     isCustomizedDiskIOps () {
       return this.diskSelected?.iscustomizediops || false
+    },
+    isCustomizedIOps () {
+      return this.rootDiskSelected?.iscustomizediops || false
     }
   },
   data () {
@@ -143,6 +162,8 @@ export default {
       }
       this.$emit('update-iops-value', 'diskIOpsMin', this.minIOps)
       this.$emit('update-iops-value', 'diskIOpsMax', this.maxIOps)
+      this.$emit('update-root-disk-iops-value', 'minIops', this.minIOps)
+      this.$emit('update-root-disk-iops-value', 'maxIops', this.maxIOps)
       this.$emit('handler-error', false)
     }
   }

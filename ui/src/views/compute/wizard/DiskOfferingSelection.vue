@@ -254,6 +254,7 @@ export default {
             this.selectedRowKeys = [record.key]
             this.$emit('select-disk-offering-item', record.key)
             this.$emit('on-selected-disk-size', this.diskSelected)
+            this.$emit('on-selected-root-disk-size', this.diskSelected)
           }
         }
       }
