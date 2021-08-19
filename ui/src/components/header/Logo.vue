@@ -27,6 +27,7 @@
       v-shortkey="['f']"
       @shortkey="toggleShowShortkey"
       class="logo-image" />
+    <span class="none" v-shortkey="['backspace']" @shortkey="goBack"></span>
   </div>
 </template>
 
@@ -51,6 +52,9 @@ export default {
   methods: {
     toggleShowShortkey () {
       this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
+    },
+    goBack () {
+      this.$router.go(-1)
     }
   }
 }
@@ -73,6 +77,9 @@ export default {
 .logo-image {
   display: inline-block;
   vertical-align: middle;
+}
+.none {
+  display: none;
 }
 
 </style>
