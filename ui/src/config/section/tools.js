@@ -28,9 +28,9 @@ export default {
       docHelp: 'adminguide/events.html',
       permission: ['listAnnotations'],
       columns: () => {
-        const cols = ['entityid', 'entitytype', 'annotation', 'created']
+        const cols = ['entityid', 'entitytype', 'annotation', 'created', 'username']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          cols.push('username', 'adminsonly')
+          cols.push('adminsonly')
         }
         return cols
       },
