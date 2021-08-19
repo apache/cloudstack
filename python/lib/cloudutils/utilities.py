@@ -138,6 +138,13 @@ class Distribution:
                 self.distro = "Ubuntu"
             else:
                 raise UnknownSystemException(distributor)
+        elif os.path.exists("/etc/os-release"):
+            version = open("/etc/os-release").readline()
+            distributor = version.split("=")[1].replace('"', '').strip()
+            if "SUSE" in distributor or "SLES" in distributor:
+                self.distro = "SUSE"
+            else:
+                raise UnknownSystemException(distributor)
         else:
             raise UnknownSystemException
 
@@ -252,3 +259,6 @@ class serviceOpsRedhat7Later(serviceOps):
             return True
         else:
             return False
+
+class serviceOpsSUSE(serviceOpsRedhat7Later):
+    pass
