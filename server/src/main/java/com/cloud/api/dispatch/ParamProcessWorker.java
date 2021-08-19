@@ -41,6 +41,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -71,7 +72,7 @@ public class ParamProcessWorker implements DispatchWorker {
     private static final Logger s_logger = Logger.getLogger(ParamProcessWorker.class.getName());
     public final DateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
     public final DateFormat newInputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    public static final List<String> avoidList = new ArrayList<>(Arrays.asList("username", "password"));
+    public static final List<String> avoidList = new ArrayList<>(Arrays.asList(ApiConstants.USERNAME, ApiConstants.PASSWORD));
 
     @Inject
     protected AccountManager _accountMgr;
