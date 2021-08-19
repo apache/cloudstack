@@ -20,6 +20,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.annotation.AnnotationService.EntityType;
 import org.apache.cloudstack.annotation.AnnotationVO;
 import org.apache.commons.collections.CollectionUtils;
@@ -106,7 +107,7 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
     }
 
     @Override
-    public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter, String keyword) {
+    public List<AnnotationVO> listAllAnnotations(String userUuid, RoleType roleType, String annotationFilter, String keyword) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         if (StringUtils.isNotBlank(keyword)) {
             sc.setParameters("annotation", "%" + keyword + "%");
@@ -114,14 +115,31 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         if (StringUtils.isNotBlank(userUuid)) {
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         }
-        if (!isCallerAdmin) {
+        if (roleType != RoleType.Admin) {
             sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
-            sc.setParameters("entityTypeNotIn", EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING,
-                    EntityType.NETWORK_OFFERING, EntityType.ZONE, EntityType.POD, EntityType.CLUSTER, EntityType.HOST,
-                    EntityType.DOMAIN, EntityType.PRIMARY_STORAGE, EntityType.SECONDARY_STORAGE,
-                    EntityType.VR, EntityType.SYSTEM_VM);
+            List<EntityType> notAllowedTypes = getNotAllowedTypesForNonAdmins(roleType);
+            sc.setParameters("entityTypeNotIn", notAllowedTypes.toArray());
         }
         return listAnnotationsOrderedByCreatedDate(sc);
+    }
+
+    private List<EntityType> getNotAllowedTypesForNonAdmins(RoleType roleType) {
+        List<EntityType> list = new ArrayList<>();
+        list.add(EntityType.NETWORK_OFFERING);
+        list.add(EntityType.ZONE);
+        list.add(EntityType.POD);
+        list.add(EntityType.CLUSTER);
+        list.add(EntityType.HOST);
+        list.add(EntityType.PRIMARY_STORAGE);
+        list.add(EntityType.SECONDARY_STORAGE);
+        list.add(EntityType.VR);
+        list.add(EntityType.SYSTEM_VM);
+        if (roleType != RoleType.DomainAdmin) {
+            list.add(EntityType.DOMAIN);
+            list.add(EntityType.SERVICE_OFFERING);
+            list.add(EntityType.DISK_OFFERING);
+        }
+        return list;
     }
 
     @Override

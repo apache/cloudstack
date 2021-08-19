@@ -189,7 +189,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     public AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly) {
         UserVO userVO = getCallingUserFromContext();
         String userUuid = userVO.getUuid();
-        checkAnnotationPermissions(uuid, type, userVO);
+        checkAnnotationPermissions(type, userVO);
         isEntityOwnedByTheUser(type.name(), uuid, userVO);
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
@@ -198,8 +198,13 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return createAnnotationResponse(annotation);
     }
 
-    private void checkAnnotationPermissions(String entityUuid, EntityType type, UserVO user) {
-        if (isCallingUserAdmin()) {
+    private boolean isDomainAdminAllowedType(EntityType type) {
+        return type == EntityType.DOMAIN || type == EntityType.DISK_OFFERING || type == EntityType.SERVICE_OFFERING;
+    }
+
+    private void checkAnnotationPermissions(EntityType type, UserVO user) {
+        if (isCallingUserRole(RoleType.Admin) ||
+                (isCallingUserRole(RoleType.DomainAdmin) && isDomainAdminAllowedType(type))) {
             return;
         }
         if (!type.isUserAllowed()) {
@@ -230,7 +235,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String uuid = cmd.getUuid();
         Boolean adminsOnly = cmd.getAdminsOnly();
         AnnotationVO annotation = annotationDao.findByUuid(uuid);
-        if (annotation == null || !isCallingUserAdmin()) {
+        if (annotation == null || !isCallingUserRole(RoleType.Admin)) {
             String errDesc = (annotation == null) ? String.format("Annotation id:%s does not exist", uuid) :
                     String.format("Type: %s", annotation.getEntityType().name());
             throw new CloudRuntimeException(String.format("Only admins can update annotations' visibility. " +
@@ -248,7 +253,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (annotation == null) {
             return false;
         }
-        if (isCallingUserAdmin()) {
+        if (isCallingUserRole(RoleType.Admin)) {
             return true;
         }
         UserVO callingUser = getCallingUserFromContext();
@@ -266,7 +271,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return userVO;
     }
 
-    private boolean isCallingUserAdmin() {
+    private RoleType getCallingUserRole() {
         UserVO userVO = getCallingUserFromContext();
         long accountId = userVO.getAccountId();
         AccountVO accountVO = accountDao.findById(accountId);
@@ -278,7 +283,12 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (role == null) {
             throw new CloudRuntimeException("Cannot find role with ID " + roleId);
         }
-        return adminRoles.contains(role.getRoleType());
+        return role.getRoleType();
+    }
+
+    private boolean isCallingUserRole(RoleType roleType) {
+        RoleType userRoleType = getCallingUserRole();
+        return roleType == userRoleType;
     }
 
     private Pair<List<AnnotationVO>, Integer> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
@@ -287,7 +297,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String entityUuid = cmd.getEntityUuid();
         String entityType = cmd.getEntityType();
         String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
-        boolean isCallerAdmin = isCallingUserAdmin();
+        boolean isCallerAdmin = isCallingUserRole(RoleType.Admin);
         UserVO callingUser = getCallingUserFromContext();
         String callingUserUuid = callingUser.getUuid();
         String keyword = cmd.getKeyword();
@@ -316,7 +326,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
             userUuid = callingUserUuid;
         }
-        List<AnnotationVO> annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter, keyword);
+        List<AnnotationVO> annotations = annotationDao.listAllAnnotations(userUuid, getCallingUserRole(),
+                annotationFilter, keyword);
         if (!isCallerAdmin) {
             annotations = filterUserOwnedAnnotations(annotations);
         }
@@ -394,8 +405,17 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     private boolean isEntityOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
         try {
-            if (!isCallingUserAdmin()) {
-                EntityType type = EntityType.valueOf(entityType);
+            EntityType type = EntityType.valueOf(entityType);
+            if (isCallingUserRole(RoleType.DomainAdmin)) {
+                if (!isDomainAdminAllowedType(type)) {
+                    return false;
+                }
+                if (type == EntityType.DOMAIN) {
+                    DomainVO domain = domainDao.findByUuid(entityUuid);
+                    AccountVO account = accountDao.findById(callingUser.getAccountId());
+                    accountService.checkAccess(account, domain);
+                }
+            } else if (!isCallingUserRole(RoleType.Admin)) {
                 ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
                 if (entity == null) {
                     String errMsg = String.format("Could not find an entity with type: %s and ID: %s", entityType, entityUuid);
