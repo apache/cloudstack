@@ -428,7 +428,8 @@
         <div class="resource-detail-item" v-if="resource.templateid">
           <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="picture" />
+            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="picture" />
             <div v-if="resource.isoid">
               <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
             </div>
