@@ -120,7 +120,7 @@
         <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
       </div>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div class="tags-container">
         <span class="tags" v-for="(tag) in tags" :key="tag.key">

@@ -38,7 +38,7 @@
             :autoFocus="true"
             :filterOption="filterOption"
             :options="apis"
-            :value="newRule"
+            v-model:value="newRule"
             @change="val => newRule = val"
             :placeholder="$t('label.rule')"
             :class="{'rule-dropdown-error' : newRuleSelectError}" />

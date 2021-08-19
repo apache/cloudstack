@@ -38,7 +38,7 @@ export default {
       actions: [
         {
           api: 'addLdapConfiguration',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.configure.ldap',
           listView: true,
           args: [

@@ -85,7 +85,7 @@
           :error="domainError" />
       </template>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div class="actions">
         <a-button @click="() => $parent.$parent.close()">{{ $t('label.cancel') }}</a-button>

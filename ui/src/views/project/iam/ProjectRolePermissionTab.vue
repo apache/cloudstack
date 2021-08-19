@@ -31,8 +31,8 @@
           <a-auto-complete
             :autoFocus="true"
             :filterOption="filterOption"
-            :dataSource="apis"
-            :value="newRule"
+            :options="apis"
+            v-model:value="newRule"
             @change="val => newRule = val"
             placeholder="Rule"
             :class="{'rule-dropdown-error' : newRuleSelectError}" />

@@ -35,7 +35,7 @@
       :pagination="false"
     >
       <template #forsystemvms="{ record }">
-        <a-checkbox :checked="record.forsystemvms" />
+        <a-checkbox v-model:checked="record.forsystemvms" />
       </template>
       <template #actions="{ record }">
         <div class="actions">

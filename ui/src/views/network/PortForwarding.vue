@@ -149,7 +149,7 @@
         <a-button type="primary" @click="() => handleAddTag()">{{ $t('label.add') }}</a-button>
       </div>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">

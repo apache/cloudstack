@@ -125,7 +125,7 @@
           <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
-        <a-divider style="margin-top: 0;"></a-divider>
+        <a-divider style="margin-top: 0;" />
 
         <div class="tags-container">
           <div class="tags" v-for="(tag, index) in tags" :key="index">

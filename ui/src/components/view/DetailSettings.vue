@@ -26,7 +26,7 @@
         <a-button
           type="dashed"
           style="width: 100%"
-          icon="plus"
+          icon="plus-outlined"
           :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
           @click="onShowAddDetail">
           <template #icon><plus-outlined /></template>
@@ -41,7 +41,7 @@
             class="detail-input"
             ref="keyElm"
             :filterOption="filterOption"
-            :value="newKey"
+            v-model:value="newKey"
             :options="Object.keys(detailOptions)"
             :placeholder="$t('label.name')"
             @change="e => onAddInputChange(e, 'newKey')" />
@@ -53,7 +53,7 @@
           <a-auto-complete
             class="detail-input"
             :filterOption="filterOption"
-            :value="newValue"
+            v-model:value="newValue"
             :options="detailOptions[newKey]"
             :placeholder="$t('label.value')"
             @change="e => onAddInputChange(e, 'newValue')" />
@@ -73,7 +73,7 @@
             <span v-if="item.edit" style="display: flex">
               <a-auto-complete
                 style="width: 100%"
-                :value="item.value"
+                v-model:value="item.value"
                 :options="detailOptions[item.name]"
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />

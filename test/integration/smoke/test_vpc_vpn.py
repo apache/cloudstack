@@ -618,7 +618,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         vm1 = None
-        # Deploy a vm in network 2
+        # Deploy a vm in network 1
         try:
             vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
                                         templateid=self.template.id,
@@ -990,7 +990,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         self.cleanup.append(ntwk2)
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
-        # Deploy a vm in network 2
+        # Deploy a vm in network 1
         vm1 = None
         try:
             vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
@@ -1370,7 +1370,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         vm1 = None
-        # Deploy a vm in network 2
+        # Deploy a vm in network 1
         try:
             vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
                                         templateid=self.template.id,

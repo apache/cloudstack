@@ -217,7 +217,7 @@ export default {
           this.form.ispublic = true
         }
       }
-      if ('domainid' in this.form.fieldsStore.fieldsMeta) {
+      if (!this.form.ispublic) {
         this.form.domainid = this.selectedDomains
       }
     },

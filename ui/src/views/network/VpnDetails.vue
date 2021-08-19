@@ -40,7 +40,7 @@
       :maskClosable="false">
       <p>{{ $t('message.disable.vpn') }}</p>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div class="actions">
         <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
@@ -62,7 +62,7 @@
       :maskClosable="false">
       <p>{{ $t('message.enable.vpn') }}</p>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div class="actions">
         <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
