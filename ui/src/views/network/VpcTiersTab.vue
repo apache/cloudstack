@@ -161,23 +161,23 @@
       @ok="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
-          <a-form-item>
+          <a-form-item :colon="false">
             <span slot="label">
               {{ $t('label.name') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.name.description')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
               :placeholder="$t('label.create.tier.name.description')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
               autoFocus />
           </a-form-item>
-          <a-form-item>
+          <a-form-item :colon="false">
             <span slot="label">
               {{ $t('label.networkofferingid') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.networkofferingid.description')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -187,44 +187,44 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
+          <a-form-item :colon="false">
             <span slot="label">
               {{ $t('label.gateway') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.gateway.description')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
               :placeholder="$t('label.create.tier.gateway.description')"
               v-decorator="['gateway',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
-          <a-form-item>
+          <a-form-item :colon="false">
             <span slot="label">
               {{ $t('label.netmask') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.netmask.description')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
               :placeholder="$t('label.create.tier.netmask.description')"
               v-decorator="['netmask',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
-          <a-form-item>
+          <a-form-item :colon="false">
             <span slot="label">
               {{ $t('label.externalid') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.externalid.description')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
               :placeholder=" $t('label.create.tier.externalid.description')"
               v-decorator="['externalId']"></a-input>
           </a-form-item>
-          <a-form-item>
+          <a-form-item :colon="false">
             <span slot="label">
               {{ $t('label.aclid') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.aclid.description')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
