@@ -631,7 +631,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         if self.hypervisor.lower() in ["lxc"]:
             self.skipTest("Migration is not supported on LXC")
 
-        # For KVM, two hosts used for migration should  be present in same cluster
+        # For KVM, two hosts used fo r migration should  be present in same cluster
         # For XenServer and VMware, migration is possible between hosts belonging to different clusters
         # with the help of XenMotion and Vmotion respectively.
 
@@ -2094,25 +2094,31 @@ class TestCloneVM(cloudstackTestCase):
     @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_clone_vm_and_volumes(self):
         small_disk_offering = DiskOffering.list(self.apiclient, name='Small')[0];
-        small_virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.services["small"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.small_offering.id,)
-        vol1 = Volume.create(
-            self.apiclient,
-            self.services,
-            account=self.account.name,
-            diskofferingid=small_disk_offering.id,
-            domainid=self.account.domainid,
-            zoneid=self.zone.id
-        )
-        small_virtual_machine.attach_volume(self.apiclient, vol1)
-        self.debug("Clone VM - ID: %s" % small_virtual_machine.id)
-        try:
-            clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
-        except Exception as e:
-            self.debug("Clone --" + str(e))
-            raise e
-        self.assertTrue(VirtualMachine.list(self.apiclient, id=clone_response.id) is not None, "vm id should be populated")
+        config = Configurations.list(self.apiclient,
+                              name="kvm.snapshot.enabled"
+                              )
+        if len(config) == 0 or config[0].value != "true":
+            self.skipTest("Please enable kvm.snapshot.enable global config")
+        if self.hypervisor.lower() in ["kvm", "simulator"]:
+            small_virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.services["small"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.small_offering.id,)
+            vol1 = Volume.create(
+                self.apiclient,
+                self.services,
+                account=self.account.name,
+                diskofferingid=small_disk_offering.id,
+                domainid=self.account.domainid,
+                zoneid=self.zone.id
+            )
+            small_virtual_machine.attach_volume(self.apiclient, vol1)
+            self.debug("Clone VM - ID: %s" % small_virtual_machine.id)
+            try:
+                clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
+            except Exception as e:
+                self.debug("Clone --" + str(e))
+                raise e
+            self.assertTrue(VirtualMachine.list(self.apiclient, id=clone_response.id) is not None, "vm id should be populated")
