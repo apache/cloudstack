@@ -16,7 +16,8 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 #from marvin.cloudstackAPI import *
 from marvin.lib.utils import (
                               is_snapshot_on_nfs,
@@ -190,7 +191,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
             # Create a snapshot from the ROOTDISK
             cls.snapshot = Snapshot.create(cls.api_client, volume.id)
-        except Exception, e:
+        except Exception as e:
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
             raise e

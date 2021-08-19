@@ -215,7 +215,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         # 1. listNetworkOfferings should show created offering for RvR
         # 2. listNetworks should show the created network in allocated state
         # 3. VM should be deployed and in Running state
-        # 4. There should be two routers (MASTER and BACKUP) for this network
+        # 4. There should be two routers (PRIMARY and BACKUP) for this network
         #    ensure both routers should be on different pods
 
         self.debug("Checking if the current zone has 2 active pods in it..")
@@ -317,12 +317,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
         self.assertNotEqual(
                             routers[0].podid,
@@ -350,7 +350,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         # 1. listNetworkOfferings should show created offering for RvR
         # 2. listNetworks should show the created network in allocated state
         # 3. VM should be deployed and in Running state
-        # 4. There should be two routers (MASTER and BACKUP) for this network
+        # 4. There should be two routers (PRIMARY and BACKUP) for this network
         #    ensure both routers should be on different pods
 
         self.debug("Checking if the current zone has 2 active pods in it..")
@@ -481,12 +481,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
         hosts = Host.list(
@@ -555,7 +555,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         # 2. listNetworks should show the created network in allocated state
         # 3. VM should be deployed and in Running state and on the specified
         #    host
-        # 4. There should be two routers (MASTER and BACKUP) for this network
+        # 4. There should be two routers (PRIMARY and BACKUP) for this network
         #    ensure both routers should be on different storage pools
 
         self.debug(
@@ -732,12 +732,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
         self.assertNotEqual(
                     routers[0].hostid,
@@ -792,7 +792,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         # 1. listNetworkOfferings should show created offering for RvR
         # 2. listNetworks should show the created network in allocated state
         # 3. VM should be deployed and in Running state and on specified host
-        # 4. There should be two routers (MASTER and BACKUP) for this network
+        # 4. There should be two routers (PRIMARY and BACKUP) for this network
         #    ensure both routers should be on different hosts
 
         self.debug(
@@ -969,12 +969,12 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                   )
         self.assertNotEqual(
                             routers[0].hostid,

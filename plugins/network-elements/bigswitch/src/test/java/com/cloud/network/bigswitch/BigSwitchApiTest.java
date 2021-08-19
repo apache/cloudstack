@@ -254,13 +254,13 @@ public class BigSwitchApiTest {
     }
 
     @Test
-    public void testExecuteCreateObjectSlave() throws BigSwitchBcfApiException, IOException {
+    public void testExecuteCreateObjectSecondary() throws BigSwitchBcfApiException, IOException {
         NetworkData network = new NetworkData();
         _method = mock(PostMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_SEE_OTHER);
         String hash = _api.executeCreateObject(network, "/", Collections.<String, String> emptyMap());
         assertEquals(hash, BigSwitchBcfApi.HASH_IGNORE);
-        assertEquals(_api.getControllerData().isMaster(), false);
+        assertEquals(_api.getControllerData().isPrimary(), false);
     }
 
     @Test(expected = BigSwitchBcfApiException.class)
@@ -320,7 +320,7 @@ public class BigSwitchApiTest {
     }
 
     @Test
-    public void testExecuteUpdateObjectSlave() throws BigSwitchBcfApiException, IOException {
+    public void testExecuteUpdateObjectSecondary() throws BigSwitchBcfApiException, IOException {
         NetworkData network = new NetworkData();
         _method = mock(PutMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_SEE_OTHER);
@@ -396,7 +396,7 @@ public class BigSwitchApiTest {
     }
 
     @Test
-    public void testExecuteRetrieveControllerMasterStatus() throws BigSwitchBcfApiException, IOException {
+    public void testExecuteRetrieveControllerPrimaryStatus() throws BigSwitchBcfApiException, IOException {
         _method = mock(GetMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         when(((HttpMethodBase)_method).getResponseBodyAsString(2048)).thenReturn("{'healthy': true, 'topologySyncRequested': false}");
@@ -404,11 +404,11 @@ public class BigSwitchApiTest {
         }.getType(), "/", null);
         verify(_method, times(1)).releaseConnection();
         verify(_client, times(1)).executeMethod(_method);
-        assertEquals(_api.getControllerData().isMaster(), true);
+        assertEquals(_api.getControllerData().isPrimary(), true);
     }
 
     @Test
-    public void testExecuteRetrieveControllerMasterStatusWithTopoConflict() throws BigSwitchBcfApiException, IOException {
+    public void testExecuteRetrieveControllerPrimaryStatusWithTopoConflict() throws BigSwitchBcfApiException, IOException {
         _method = mock(GetMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_CONFLICT);
         when(((HttpMethodBase)_method).getResponseBodyAsString(2048)).thenReturn("{'healthy': true, 'topologySyncRequested': true}");
@@ -416,11 +416,11 @@ public class BigSwitchApiTest {
         }.getType(), "/", null);
         verify(_method, times(1)).releaseConnection();
         verify(_client, times(1)).executeMethod(_method);
-        assertEquals(_api.getControllerData().isMaster(), true);
+        assertEquals(_api.getControllerData().isPrimary(), true);
     }
 
     @Test
-    public void testExecuteRetrieveControllerSlaveStatus() throws BigSwitchBcfApiException, IOException {
+    public void testExecuteRetrieveControllerSecondaryStatus() throws BigSwitchBcfApiException, IOException {
         _method = mock(GetMethod.class);
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_SEE_OTHER);
         when(((HttpMethodBase)_method).getResponseBodyAsString(1024)).thenReturn("{'healthy': true, 'topologySyncRequested': false}");
@@ -428,6 +428,6 @@ public class BigSwitchApiTest {
         }.getType(), "/", null);
         verify(_method, times(1)).releaseConnection();
         verify(_client, times(1)).executeMethod(_method);
-        assertEquals(_api.getControllerData().isMaster(), false);
+        assertEquals(_api.getControllerData().isPrimary(), false);
     }
 }

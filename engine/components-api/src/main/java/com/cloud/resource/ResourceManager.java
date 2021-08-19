@@ -53,6 +53,14 @@ public interface ResourceManager extends ResourceService, Configurable {
             "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
             false);
 
+    ConfigKey<String> HOST_MAINTENANCE_LOCAL_STRATEGY = new ConfigKey<>("Advanced", String.class,
+            "host.maintenance.local.storage.strategy", "Error",
+            "Defines the strategy towards VMs with volumes on local storage when putting a host in maintenance. "
+                    + "The default strategy is 'Error', preventing maintenance in such a case. "
+                    + "Choose 'Migration' strategy to migrate away VMs running on local storage. "
+                    + "To force-stop VMs, choose 'ForceStop' strategy",
+            true, ConfigKey.Scope.Global);
+
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.

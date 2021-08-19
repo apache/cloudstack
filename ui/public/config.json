@@ -1,13 +1,20 @@
 {
   "apiBase": "/client/api",
+  "servers": [
+    {
+      "name": "Local-Server",
+      "apiHost": "",
+      "apiBase": "/client/api"
+    }
+  ],
   "docBase": "http://docs.cloudstack.apache.org/en/latest",
   "appTitle": "CloudStack",
   "footer": "Licensed under the <a href='http://www.apache.org/licenses/' target='_blank'>Apache License</a>, Version 2.0.",
   "logo": "assets/logo.svg",
   "banner": "assets/banner.svg",
   "error": {
-    "404": "assets/404.png",
     "403": "assets/403.png",
+    "404": "assets/404.png",
     "500": "assets/500.png"
   },
   "theme": {
@@ -46,5 +53,8 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
-  "plugins": []
+  "plugins": [],
+  "basicZoneEnabled": true,
+  "multipleServer": false,
+  "docHelpMappings": {}
 }

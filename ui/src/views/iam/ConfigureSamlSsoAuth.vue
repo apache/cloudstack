@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form :form="form" @submit="handleSubmit" layout="vertical" :loading="loading">
       <a-form-item :label="$t('label.samlenable')">
         <a-switch
@@ -25,6 +25,7 @@
           }]"
           :checked="isSamlEnabled"
           @change="val => { isSamlEnabled = val }"
+          autoFocus
         />
       </a-form-item>
       <a-form-item :label="$t('label.samlentity')">
@@ -37,9 +38,9 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <div class="card-footer">
+      <div class="action-button">
         <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -65,7 +66,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -91,10 +92,12 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
         }
+        this.loading = true
         api('authorizeSamlSso', {
           enable: values.samlEnable,
           userid: this.resource.id,
@@ -126,13 +129,6 @@ export default {
 
   @media (min-width: 700px) {
     width: 40vw;
-  }
-}
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
   }
 }
 </style>

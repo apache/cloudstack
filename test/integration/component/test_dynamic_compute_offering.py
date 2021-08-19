@@ -25,7 +25,8 @@
     Feature Specifications: https://cwiki.apache.org/confluence/display/
     CLOUDSTACK/Dynamic+Compute+Offering+FS
 """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
                               random_gen,

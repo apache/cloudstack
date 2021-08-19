@@ -40,6 +40,17 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
+import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.ExceptionUtil;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestOsDescriptor;
@@ -56,7 +67,6 @@ import com.vmware.vim25.VirtualCdromRemotePassthroughBackingInfo;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConnectInfo;
-import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
@@ -72,20 +82,9 @@ import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualPCNet32;
+import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
-
-import com.cloud.hypervisor.vmware.mo.DiskControllerType;
-import com.cloud.hypervisor.vmware.mo.DatastoreMO;
-import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
-import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
-import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
-import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.exception.ExceptionUtil;
 
 public class VmwareHelper {
     @SuppressWarnings("unused")

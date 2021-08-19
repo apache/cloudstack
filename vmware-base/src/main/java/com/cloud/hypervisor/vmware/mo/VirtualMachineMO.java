@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -34,10 +36,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.vim25.InvalidStateFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.VirtualMachineTicket;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.script.Script;
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
 import com.vmware.vim25.ChoiceOption;
@@ -91,6 +106,7 @@ import com.vmware.vim25.VirtualMachineConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSummary;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineMessage;
@@ -105,18 +121,6 @@ import com.vmware.vim25.VirtualMachineSnapshotInfo;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
-import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
-
-import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.script.Script;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
@@ -126,6 +130,15 @@ public class VirtualMachineMO extends BaseMO {
     public static final String ANSWER_NO = "1";
 
     private ManagedObjectReference _vmEnvironmentBrowser = null;
+    private String internalCSName;
+
+    public String getInternalCSName() {
+        return internalCSName;
+    }
+
+    public void setInternalCSName(String internalVMName) {
+        this.internalCSName = internalVMName;
+    }
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
         super(context, morVm);
@@ -459,9 +472,13 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean changeDatastore(ManagedObjectReference morDataStore) throws Exception {
+    public boolean changeDatastore(ManagedObjectReference morDataStore, VmwareHypervisorHost targetHost) throws Exception {
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
         relocateSpec.setDatastore(morDataStore);
+        if (targetHost != null) {
+            relocateSpec.setHost(targetHost.getMor());
+            relocateSpec.setPool(targetHost.getHyperHostOwnerResourcePool());
+        }
 
         ManagedObjectReference morTask = _context.getService().relocateVMTask(_mor, relocateSpec, null);
 
@@ -770,7 +787,7 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs)
+    public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Storage.ProvisioningType diskProvisioningType)
             throws Exception {
 
         VirtualMachineCloneSpec cloneSpec = new VirtualMachineCloneSpec();
@@ -781,6 +798,9 @@ public class VirtualMachineMO extends BaseMO {
 
         relocSpec.setDatastore(morDs);
         relocSpec.setPool(morResourcePool);
+
+        setDiskProvisioningType(relocSpec, morDs, diskProvisioningType);
+
         ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
@@ -792,6 +812,33 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         return false;
+    }
+
+    private void setDiskProvisioningType(VirtualMachineRelocateSpec relocSpec, ManagedObjectReference morDs,
+                                         Storage.ProvisioningType diskProvisioningType) throws Exception {
+        if (diskProvisioningType == null){
+            return;
+        }
+        List<VirtualMachineRelocateSpecDiskLocator> relocateDisks = relocSpec.getDisk();
+        List<VirtualDisk> disks = this.getVirtualDisks();
+        for (VirtualDisk disk: disks){
+            VirtualDiskFlatVer2BackingInfo backing = (VirtualDiskFlatVer2BackingInfo) disk.getBacking();
+            if (diskProvisioningType == Storage.ProvisioningType.FAT) {
+                backing.setThinProvisioned(false);
+                backing.setEagerlyScrub(true);
+            } else if (diskProvisioningType == Storage.ProvisioningType.THIN) {
+                backing.setThinProvisioned(true);
+            } else if (diskProvisioningType == Storage.ProvisioningType.SPARSE) {
+                backing.setThinProvisioned(false);
+                backing.setEagerlyScrub(false);
+            }
+
+            VirtualMachineRelocateSpecDiskLocator diskLocator = new VirtualMachineRelocateSpecDiskLocator();
+            diskLocator.setDiskId(disk.getKey());
+            diskLocator.setDiskBackingInfo(backing);
+            diskLocator.setDatastore(morDs);
+            relocateDisks.add(diskLocator);
+        }
     }
 
     public boolean createLinkedClone(String cloneName, ManagedObjectReference morBaseSnapshot, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool,
@@ -1491,117 +1538,11 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.trace("vCenter API trace - detachAllDisk() done(successfully)");
     }
 
-    // isoDatastorePath: [datastore name] isoFilePath
-    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs, boolean connect, boolean connectAtBoot) throws Exception {
-        attachIso(isoDatastorePath, morDs, connect, connectAtBoot, null);
-    }
-
-    // isoDatastorePath: [datastore name] isoFilePath
-    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs,
-    boolean connect, boolean connectAtBoot, Integer key) throws Exception {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " +
-                    morDs.getValue() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
-
-        assert (isoDatastorePath != null);
-        assert (morDs != null);
-
-        boolean newCdRom = false;
-        VirtualCdrom cdRom;
-        if (key == null) {
-            cdRom = (VirtualCdrom) getIsoDevice();
-        } else {
-            cdRom = (VirtualCdrom) getIsoDevice(key);
-        }
-        if (cdRom == null) {
-            newCdRom = true;
-            cdRom = new VirtualCdrom();
-            cdRom.setControllerKey(getIDEDeviceControllerKey());
-
-            int deviceNumber = getNextIDEDeviceNumber();
-            cdRom.setUnitNumber(deviceNumber);
-            cdRom.setKey(-deviceNumber);
-        }
-
-        VirtualDeviceConnectInfo cInfo = new VirtualDeviceConnectInfo();
-        cInfo.setConnected(connect);
-        cInfo.setStartConnected(connectAtBoot);
-        cdRom.setConnectable(cInfo);
-
-        VirtualCdromIsoBackingInfo backingInfo = new VirtualCdromIsoBackingInfo();
-        backingInfo.setFileName(isoDatastorePath);
-        backingInfo.setDatastore(morDs);
-        cdRom.setBacking(backingInfo);
-
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-
-        deviceConfigSpec.setDevice(cdRom);
-        if (newCdRom) {
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-        } else {
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-        }
-
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
-
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
-
-        if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - attachIso() done(failed)");
-            throw new Exception("Failed to attach ISO due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-        }
-
-        _context.waitForTaskProgressDone(morTask);
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachIso() done(successfully)");
-    }
-
-    public int detachIso(String isoDatastorePath) throws Exception {
-        return detachIso(isoDatastorePath, false);
-    }
-
-    public int detachIso(String isoDatastorePath, final boolean force) throws Exception {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath);
-
-        VirtualDevice device = getIsoDevice(isoDatastorePath);
-        if (device == null) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - detachIso() done(failed)");
-            throw new Exception("Unable to find a CDROM device");
-        }
-
-        VirtualCdromRemotePassthroughBackingInfo backingInfo = new VirtualCdromRemotePassthroughBackingInfo();
-        backingInfo.setDeviceName("");
-        device.setBacking(backingInfo);
-
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-
-        deviceConfigSpec.setDevice(device);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
-
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-
-        // Monitor VM questions
-        final Boolean[] flags = {false};
-        final VirtualMachineMO vmMo = this;
+    private Future<?> answerVmwareQuestion(Boolean[] flags, VirtualMachineMO vmMo, boolean force) {
         Future<?> future = MonitorServiceExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 s_logger.info("VM Question monitor started...");
-
                 while (!flags[0]) {
                     try {
                         VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
@@ -1663,6 +1604,119 @@ public class VirtualMachineMO extends BaseMO {
                 s_logger.info("VM Question monitor stopped");
             }
         });
+        return future;
+    }
+    // isoDatastorePath: [datastore name] isoFilePath
+    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs, boolean connect, boolean connectAtBoot, boolean forced) throws Exception {
+        attachIso(isoDatastorePath, morDs, connect, connectAtBoot, null, forced);
+    }
+
+    // isoDatastorePath: [datastore name] isoFilePath
+    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs,
+    boolean connect, boolean connectAtBoot, Integer key, boolean force) throws Exception {
+
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " +
+                    morDs.getValue() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
+
+        assert (isoDatastorePath != null);
+        assert (morDs != null);
+
+        boolean newCdRom = false;
+        VirtualCdrom cdRom;
+        if (key == null) {
+            cdRom = (VirtualCdrom) getIsoDevice();
+        } else {
+            cdRom = (VirtualCdrom) getIsoDevice(key);
+        }
+        if (cdRom == null) {
+            newCdRom = true;
+            cdRom = new VirtualCdrom();
+            cdRom.setControllerKey(getIDEDeviceControllerKey());
+
+            int deviceNumber = getNextIDEDeviceNumber();
+            cdRom.setUnitNumber(deviceNumber);
+            cdRom.setKey(-deviceNumber);
+        }
+
+        VirtualDeviceConnectInfo cInfo = new VirtualDeviceConnectInfo();
+        cInfo.setConnected(connect);
+        cInfo.setStartConnected(connectAtBoot);
+        cdRom.setConnectable(cInfo);
+
+        VirtualCdromIsoBackingInfo backingInfo = new VirtualCdromIsoBackingInfo();
+        backingInfo.setFileName(isoDatastorePath);
+        backingInfo.setDatastore(morDs);
+        cdRom.setBacking(backingInfo);
+
+        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+        deviceConfigSpec.setDevice(cdRom);
+        if (newCdRom) {
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        } else {
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+        }
+
+        //deviceConfigSpecArray[0] = deviceConfigSpec;
+        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+
+        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+
+        final Boolean[] flags = {false};
+        final VirtualMachineMO vmMo = this;
+        Future<?> future = answerVmwareQuestion(flags, vmMo, force);
+        try {
+            boolean result = _context.getVimClient().waitForTask(morTask);
+
+            if (!result) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("vCenter API trace - attachIso() done(failed)");
+                throw new Exception("Failed to attach ISO due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+            _context.waitForTaskProgressDone(morTask);
+
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - attachIso() done(successfully)");
+        } finally {
+            flags[0] = true;
+            future.cancel(true);
+        }
+    }
+
+    public int detachIso(String isoDatastorePath, final boolean force) throws Exception {
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath);
+
+        VirtualDevice device = getIsoDevice(isoDatastorePath);
+        if (device == null) {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - detachIso() done(failed)");
+            throw new Exception("Unable to find a CDROM device");
+        }
+
+        VirtualCdromRemotePassthroughBackingInfo backingInfo = new VirtualCdromRemotePassthroughBackingInfo();
+        backingInfo.setDeviceName("");
+        device.setBacking(backingInfo);
+
+        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+        deviceConfigSpec.setDevice(device);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+
+        //deviceConfigSpecArray[0] = deviceConfigSpec;
+        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+
+        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+
+        // Monitor VM questions
+        final Boolean[] flags = {false};
+        final VirtualMachineMO vmMo = this;
+        Future<?> future = answerVmwareQuestion(flags, vmMo, force);
         try {
             boolean result = _context.getVimClient().waitForTask(morTask);
             if (!result) {
@@ -3292,6 +3346,18 @@ public class VirtualMachineMO extends BaseMO {
         return vhOption.getHwVersion();
     }
 
+    /**
+     * Return a hardware version string in the format expected by Vmware
+     * Format: "vmx-DD" where DD represents the hardware version number
+     * @param virtualHardwareVersion numeric virtual hardware version
+     */
+    public static String getVmxFormattedVirtualHardwareVersion(int virtualHardwareVersion) {
+        if (virtualHardwareVersion < 1) {
+            throw new CloudRuntimeException("Invalid hardware version: " + virtualHardwareVersion);
+        }
+        return String.format("vmx-%02d", virtualHardwareVersion);
+    }
+
     public VirtualHardwareOption getVirtualHardwareOption() throws Exception {
         VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
         return vmConfigOption.getHardwareOptions();
@@ -3315,7 +3381,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports cpu hotadd
-        if (guestOsDescriptor.isSupportsCpuHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsCpuHotAdd()) {
             guestOsSupportsCpuHotAdd = true;
         }
 
@@ -3517,5 +3583,14 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.error(msg, e);
             return false;
         }
+    }
+
+    /**
+     * Acquire VNC ticket for console proxy.
+     * Since VMware version 7
+     */
+    public String acquireVncTicket() throws InvalidStateFaultMsg, RuntimeFaultFaultMsg {
+        VirtualMachineTicket ticket = _context.getService().acquireTicket(_mor, "webmks");
+        return ticket.getTicket();
     }
 }

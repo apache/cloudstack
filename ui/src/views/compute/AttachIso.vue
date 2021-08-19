@@ -15,27 +15,32 @@
 // specific language governing permissions and limitations
 // under the License.
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
-        layout="vertical">
+        layout="vertical"
+        @submit="handleSubmit">
         <a-form-item :label="$t('label.iso.name')">
           <a-select
             :loading="loading"
             v-decorator="['id', {
               initialValue: this.selectedIso,
               rules: [{ required: true, message: `${this.$t('label.required')}`}]
-            }]" >
+            }]"
+            autoFocus>
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item :label="$t('label.forced')" v-if="resource && resource.hypervisor === 'VMware'">
+          <a-switch v-decorator="['forced']" :auto-focus="true" />
+        </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit" ref="submit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -52,7 +57,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       loading: false,
@@ -63,7 +67,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -107,6 +111,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -115,6 +120,11 @@ export default {
           id: values.id,
           virtualmachineid: this.resource.id
         }
+
+        if (values.forced) {
+          params.forced = values.forced
+        }
+
         this.loading = true
         const title = this.$t('label.action.attach.iso')
         api('attachIso', params).then(json => {
@@ -122,14 +132,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  status: this.$t('progress')
-                })
-                this.parentFetchData()
-              },
+              title: title,
+              description: values.id,
               successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')
@@ -156,12 +160,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

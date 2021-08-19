@@ -156,9 +156,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             if (result) {
                 final String message = String.format("Transitioned host HA state from:%s to:%s due to event:%s for the host id:%d",
                         currentHAState, nextState, event, haConfig.getResourceId());
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace(message);
-                }
+                LOG.debug(message);
+
                 if (nextState == HAConfig.HAState.Recovering || nextState == HAConfig.HAState.Fencing || nextState == HAConfig.HAState.Fenced) {
                     ActionEventUtils.onActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                             Domain.ROOT_DOMAIN, EventTypes.EVENT_HA_STATE_TRANSITION, message);
@@ -166,9 +165,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
             return result;
         } catch (NoTransitionException e) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Unable to find next HA state for current HA state: " + currentHAState + " for event: " + event + " for host" + haConfig.getResourceId());
-            }
+            LOG.warn(String.format("Unable to find next HA state for current HA state=[%s] for event=[%s] for host=[%s].", currentHAState, event, haConfig.getResourceId()), e);
         }
         return false;
     }
@@ -284,8 +281,21 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     public void validateHAProviderConfigForResource(final Long resourceId, final HAResource.ResourceType resourceType, final HAProvider<HAResource> haProvider) {
         if (HAResource.ResourceType.Host.equals(resourceType)) {
             final Host host = hostDao.findById(resourceId);
-            if (host.getHypervisorType() == null || haProvider.resourceSubType() == null || !host.getHypervisorType().toString().equals(haProvider.resourceSubType().toString())) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Incompatible haprovider provided for the resource of hypervisor type:" + host.getHypervisorType());
+
+            if (host == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Resource [%s] not found.", resourceId));
+            }
+
+            if (host.getHypervisorType() == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("No hypervisor type provided on resource [%s].", resourceId));
+            }
+
+            if (haProvider.resourceSubType() == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "No hypervisor type provided on haprovider.");
+            }
+
+            if (!host.getHypervisorType().toString().equals(haProvider.resourceSubType().toString())) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getId(),host.getHypervisorType()));
             }
         }
     }
@@ -298,14 +308,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                if (LOG.isDebugEnabled()){
-                    LOG.debug("HA: Host is fenced " + host.getId());
-                }
+                LOG.debug(String.format("HA: Host [%s] is fenced.", host.getId()));
                 return false;
             }
-            if (LOG.isDebugEnabled()){
-                LOG.debug("HA: HOST is alive " + host.getId());
-            }
+            LOG.debug(String.format("HA: Host [%s] is alive.", host.getId()));
             return true;
         }
         throw new Investigator.UnknownVM();
@@ -315,14 +321,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                if (LOG.isDebugEnabled()){
-                    LOG.debug("HA: Agent is available/suspect/checking Up " + host.getId());
-                }
+                LOG.debug(String.format("HA: Agent [%s] is available/suspect/checking Up.", host.getId()));
                 return Status.Down;
             } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
-                if (LOG.isDebugEnabled()){
-                    LOG.debug("HA: Agent is disconnected " + host.getId());
-                }
+                LOG.debug(String.format("HA: Agent [%s] is disconnected. State: %s, %s.", host.getId(), haConfig.getState(), haConfig.getState().getDescription()));
                 return Status.Disconnected;
             }
             return Status.Up;
@@ -351,7 +353,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     haConfig.setResourceId(resourceId);
                     haConfig.setResourceType(resourceType);
                     if (Strings.isNullOrEmpty(haConfig.getHaProvider())) {
-                        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "HAProvider is not provided for the resource, failing configuration.");
+                        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("HAProvider is not provided for the resource [%s], failing configuration.", resourceId));
                     }
                     if (haConfigDao.persist(haConfig) != null) {
                         return true;
@@ -364,7 +366,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                         haConfig.setHaProvider(haProvider);
                     }
                     if (Strings.isNullOrEmpty(haConfig.getHaProvider())) {
-                        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "HAProvider is not provided for the resource, failing configuration.");
+                        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("HAProvider is not provided for the resource [%s], failing configuration.", resourceId));
                     }
                     return haConfigDao.update(haConfig.getId(), haConfig);
                 }
@@ -381,7 +383,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         Preconditions.checkArgument(!Strings.isNullOrEmpty(haProvider));
 
         if (!haProviderMap.containsKey(haProvider.toLowerCase())) {
-            throw new CloudRuntimeException("Given HA provider does not exist.");
+            throw new CloudRuntimeException(String.format("Given HA provider [%s] does not exist.", haProvider));
         }
         validateHAProviderConfigForResource(resourceId, resourceType, haProviderMap.get(haProvider.toLowerCase()));
         return configureHA(resourceId, resourceType, null, haProvider.toLowerCase());
@@ -533,22 +535,21 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         if (oldState != newState || newState == HAConfig.HAState.Suspect || newState == HAConfig.HAState.Checking) {
             return false;
         }
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("HA state pre-transition:: new state=" + newState + ", old state=" + oldState + ", for resource id=" + haConfig.getResourceId() + ", status=" + status + ", ha config state=" + haConfig.getState());
-        }
+
+        LOG.debug(String.format("HA state pre-transition:: new state=[%s], old state=[%s], for resource id=[%s], status=[%s], ha config state=[%s]." , newState, oldState, haConfig.getResourceId(), status, haConfig.getState()));
+
         if (status && haConfig.getState() != newState) {
-            LOG.warn("HA state pre-transition:: HA state is not equal to transition state, HA state=" + haConfig.getState() + ", new state=" + newState);
+            LOG.warn(String.format("HA state pre-transition:: HA state is not equal to transition state, HA state=[%s], new state=[%s].", haConfig.getState(), newState));
         }
         return processHAStateChange(haConfig, newState, status);
     }
 
     @Override
     public boolean postStateTransitionEvent(final StateMachine2.Transition<HAConfig.HAState, HAConfig.Event> transition, final HAConfig haConfig, final boolean status, final Object opaque) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("HA state post-transition:: new state=" + transition.getToState() + ", old state=" + transition.getCurrentState() + ", for resource id=" + haConfig.getResourceId() + ", status=" + status + ", ha config state=" + haConfig.getState());
-        }
+        LOG.debug(String.format("HA state post-transition:: new state=[%s], old state=[%s], for resource id=[%s], status=[%s], ha config state=[%s].", transition.getToState(), transition.getCurrentState(),  haConfig.getResourceId(), status, haConfig.getState()));
+
         if (status && haConfig.getState() != transition.getToState()) {
-            LOG.warn("HA state post-transition:: HA state is not equal to transition state, HA state=" + haConfig.getState() + ", new state=" + transition.getToState());
+            LOG.warn(String.format("HA state post-transition:: HA state is not equal to transition state, HA state=[%s], new state=[%s].", haConfig.getState(), transition.getToState()));
         }
         return processHAStateChange(haConfig, transition.getToState(), status);
     }
@@ -605,7 +606,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         pollManager.submitTask(new HAManagerBgPollTask());
         HAConfig.HAState.getStateMachine().registerListener(this);
 
-        LOG.debug("HA manager has been configured");
+        LOG.debug("HA manager has been configured.");
         return true;
     }
 
@@ -639,12 +640,15 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     private final class HAManagerBgPollTask extends ManagedContextRunnable implements BackgroundPollTask {
         @Override
         protected void runInContext() {
+            HAConfig currentHaConfig = null;
+
             try {
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("HA health check task is running...");
-                }
+                LOG.debug("HA health check task is running...");
+
                 final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
                 for (final HAConfig haConfig : haConfigList) {
+                    currentHaConfig = haConfig;
+
                     if (haConfig == null) {
                         continue;
                     }
@@ -712,7 +716,11 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     }
                 }
             } catch (Throwable t) {
-                LOG.error("Error trying to perform health checks in HA manager", t);
+                if (currentHaConfig != null) {
+                    LOG.error(String.format("Error trying to perform health checks in HA manager [%s].", currentHaConfig.getHaProvider()), t);
+                } else {
+                    LOG.error("Error trying to perform health checks in HA manager.", t);
+                }
             }
         }
 

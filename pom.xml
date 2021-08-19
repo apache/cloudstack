@@ -112,7 +112,7 @@
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
-        <cs.wiremock.version>2.11.0</cs.wiremock.version>
+        <cs.wiremock.version>2.27.2</cs.wiremock.version>
         <cs.xercesImpl.version>2.12.0</cs.xercesImpl.version>
 
         <!-- Dependencies versions -->
@@ -165,8 +165,8 @@
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
         <cs.tomcat-embed-core.version>8.5.61</cs.tomcat-embed-core.version>
-        <cs.trilead.version>1.0.0-build222</cs.trilead.version>
-        <cs.vmware.api.version>6.7</cs.vmware.api.version>
+        <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
+        <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
@@ -334,7 +334,7 @@
                 <version>${cs.xstream.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.trilead</groupId>
+                <groupId>org.jenkins-ci</groupId>
                 <artifactId>trilead-ssh2</artifactId>
                 <version>${cs.trilead.version}</version>
             </dependency>
@@ -739,6 +739,20 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <id>repo.jenkins-ci.org.releases</id>
+            <url>https://repo.jenkins-ci.org/releases/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>repo.jenkins-ci.org.public</id>
+            <url>https://repo.jenkins-ci.org/public/</url>
+        </repository>
+    </repositories>
+
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
@@ -960,6 +974,7 @@
                             <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
+                            <exclude>systemvm/.pythen-version</exclude>
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>

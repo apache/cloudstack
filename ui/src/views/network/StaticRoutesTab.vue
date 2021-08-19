@@ -17,8 +17,8 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    <div class="new-route">
-      <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')"></a-input>
+    <div class="new-route" v-ctrl-enter="handleAdd">
+      <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
       <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
     </div>
 
@@ -29,13 +29,20 @@
           <div>{{ route.cidr }}</div>
         </div>
         <div class="actions">
-          <a-button shape="circle" icon="tag" @click="() => openTagsModal(route)"></a-button>
-          <a-button :disabled="!('deleteStaticRoute' in $store.getters.apis)" shape="circle" icon="delete" type="danger" @click="() => handleDelete(route)"></a-button>
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" @click="() => openTagsModal(route)" />
+          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteStaticRoute' in $store.getters.apis)" icon="delete" type="danger" @click="() => handleDelete(route)" />
         </div>
       </div>
     </div>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -43,7 +50,9 @@
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
-              <a-input v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+              <a-input
+                autoFocus
+                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
@@ -74,9 +83,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'StaticRoutesTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -99,7 +112,7 @@ export default {
       newRoute: null
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -121,6 +134,7 @@ export default {
       })
     },
     handleAdd () {
+      if (this.componentLoading) return
       if (!this.newRoute) return
 
       this.componentLoading = true
@@ -130,13 +144,10 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createstaticrouteresponse.jobid,
+          title: this.$t('message.success.add.static.route'),
+          description: this.newRoute,
           successMethod: () => {
             this.fetchData()
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.success.add.static.route'),
-              jobid: response.createstaticrouteresponse.jobid,
-              status: 'progress'
-            })
             this.componentLoading = false
             this.newRoute = null
           },
@@ -165,13 +176,10 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletestaticrouteresponse.jobid,
+          title: this.$t('message.success.delete.static.route'),
+          description: route.id,
           successMethod: () => {
             this.fetchData()
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.success.delete.static.route'),
-              jobid: response.deletestaticrouteresponse.jobid,
-              status: 'progress'
-            })
             this.componentLoading = false
           },
           errorMessage: this.$t('message.delete.static.route.failed'),
@@ -236,6 +244,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()

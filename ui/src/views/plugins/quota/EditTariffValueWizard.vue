@@ -25,10 +25,9 @@
     :closable="true"
     :maskClosable="false"
     :visible="showAction"
-    :okText="$t('label.ok')"
-    :cancelText="$t('label.cancel')"
-    @ok="submitTariff"
+    :footer="null"
     @cancel="onClose"
+    v-ctrl-enter="submitTariff"
   >
     <a-form
       :form="form"
@@ -36,6 +35,7 @@
       @submit="submitTariff">
       <a-form-item :label="$t('label.quota.value')">
         <a-input
+          autoFocus
           v-decorator="['value', {
             rules: [{
               required: true,
@@ -55,6 +55,11 @@
             }]
           }]"></a-date-picker>
       </a-form-item>
+
+      <div :span="24" class="action-button">
+        <a-button @click="onClose">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="submitTariff">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-form>
   </a-modal>
 </template>
@@ -96,6 +101,7 @@ export default {
     },
     submitTariff (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((error, values) => {
         if (error) return
 

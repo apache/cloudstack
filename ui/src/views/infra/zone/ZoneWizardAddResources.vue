@@ -17,14 +17,20 @@
 
 <template>
   <div style="width: auto;">
-    <a-steps progressDot :current="currentStep" size="small" style="margin-left: 0; margin-top: 16px;">
+    <a-steps
+      ref="resourceStep"
+      progressDot
+      :current="currentStep"
+      size="small"
+      style="margin-left: 0; margin-top: 16px;">
       <a-step
-        v-for="step in steps"
-        :key="step.title"
+        v-for="(step, index) in steps"
+        :ref="`resourceStep${index}`"
+        :key="step.formKey"
         :title="$t(step.title)"></a-step>
     </a-steps>
     <static-inputs-form
-      v-if="currentStep === 0"
+      v-if="checkVisibleResource('clusterResource')"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
@@ -37,7 +43,7 @@
 
     <div v-if="hypervisor !== 'VMware'">
       <static-inputs-form
-        v-if="currentStep === 1"
+        v-if="checkVisibleResource('hostResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -48,7 +54,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 2"
+        v-if="(!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -59,7 +65,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 3"
+        v-if="checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -72,7 +78,7 @@
     </div>
     <div v-else>
       <static-inputs-form
-        v-if="currentStep === 1"
+        v-if="checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -83,7 +89,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 2"
+        v-if="checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -97,13 +103,15 @@
   </div>
 </template>
 <script>
-import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
+import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 
 export default {
   components: {
     StaticInputsForm
   },
+  mixins: [mixinDevice],
   props: {
     prefillContent: {
       type: Object,
@@ -127,11 +135,15 @@ export default {
     hypervisor () {
       return this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
     },
+    localstorageenabled () {
+      return this.prefillContent?.localstorageenabled?.value || false
+    },
+    localstorageenabledforsystemvm () {
+      return this.prefillContent?.localstorageenabledforsystemvm?.value || false
+    },
     steps () {
       const steps = []
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
-      const localStorageEnabled = this.prefillContent.localstorageenabled.value
-      const localStorageEnabledForSystemVM = this.prefillContent.localstorageenabledforsystemvm.value
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
@@ -144,7 +156,7 @@ export default {
           description: 'message.desc.host'
         })
       }
-      if (!localStorageEnabled || !localStorageEnabledForSystemVM) {
+      if (!this.localstorageenabled || !this.localstorageenabledforsystemvm) {
         steps.push({
           title: 'label.primary.storage',
           fromKey: 'primaryResource',
@@ -351,7 +363,7 @@ export default {
           }
         },
         {
-          title: 'label.SR.name',
+          title: 'label.sr.name',
           key: 'primaryStorageSRLabel',
           placeHolder: 'message.error.sr.namelabel',
           required: true,
@@ -687,14 +699,16 @@ export default {
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
       storageProviders: [],
-      currentStep: 0,
+      currentStep: null,
       options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider']
     }
   },
-  mounted () {
+  created () {
+    this.currentStep = this.prefillContent.resourceStep ? this.prefillContent.resourceStep : 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.fromKey === this.stepChild)
     }
+    this.scrollToStepActive()
     if (this.prefillContent.hypervisor.value === 'BareMetal') {
       this.$emit('nextPressed')
     } else {
@@ -719,14 +733,35 @@ export default {
         this.$emit('nextPressed')
       } else {
         this.currentStep++
+        this.$emit('fieldsChanged', { resourceStep: this.currentStep })
       }
+
+      this.scrollToStepActive()
     },
     handleBack (e) {
       if (this.currentStep === 0) {
         this.$emit('backPressed')
       } else {
         this.currentStep--
+        this.$emit('fieldsChanged', { resourceStep: this.currentStep })
       }
+
+      this.scrollToStepActive()
+    },
+    scrollToStepActive () {
+      if (!this.isMobile()) {
+        return
+      }
+      this.$nextTick(() => {
+        if (!this.$refs.resourceStep) {
+          return
+        }
+        if (this.currentStep === 0) {
+          this.$refs.resourceStep.$el.scrollLeft = 0
+          return
+        }
+        this.$refs.resourceStep.$el.scrollLeft = this.$refs['resourceStep' + (this.currentStep - 1)][0].$el.offsetLeft
+      })
     },
     fieldsChanged (changed) {
       this.$emit('fieldsChanged', changed)
@@ -895,6 +930,10 @@ export default {
     },
     submitLaunchZone () {
       this.$emit('submitLaunchZone')
+    },
+    checkVisibleResource (key) {
+      const formKey = this.steps[this.currentStep]?.fromKey || ''
+      return formKey === key
     }
   }
 }

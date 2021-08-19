@@ -16,12 +16,17 @@
 // under the License.
 
 <template>
-  <div class="migrate-volume-container">
-
+  <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
+        <a-alert type="warning">
+          <span slot="message" v-html="$t('message.migrate.volume')" />
+        </a-alert>
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
-        <a-select v-model="selectedStoragePool" style="width: 100%;">
+        <a-select
+          v-model="selectedStoragePool"
+          style="width: 100%;"
+          :autoFocus="storagePools.length > 0">
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
             {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
           </a-select-option>
@@ -53,7 +58,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" @click="submitMigrateVolume">
+      <a-button type="primary" ref="submit" @click="submitMigrateVolume">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -79,10 +84,11 @@ export default {
       selectedStoragePool: null,
       diskOfferings: [],
       replaceDiskOffering: false,
-      selectedDiskOffering: null
+      selectedDiskOffering: null,
+      isSubmitted: false
     }
   },
-  mounted () {
+  created () {
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },
@@ -130,10 +136,12 @@ export default {
       this.$parent.$parent.close()
     },
     submitMigrateVolume () {
+      if (this.isSubmitted) return
       if (this.storagePools.length === 0) {
         this.closeModal()
         return
       }
+      this.isSubmitted = true
       api('migrateVolume', {
         livemigrate: this.resource.vmstate === 'Running',
         storageid: this.selectedStoragePool,
@@ -143,23 +151,21 @@ export default {
         this.$pollJob({
           jobId: response.migratevolumeresponse.jobid,
           successMessage: this.$t('message.success.migrate.volume'),
-          successMethod: () => {
-            this.parentFetchData()
-          },
           errorMessage: this.$t('message.migrate.volume.failed'),
           errorMethod: () => {
-            this.parentFetchData()
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.migrate.volume.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
+            this.isSubmitted = false
           }
         })
         this.closeModal()
-        this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)
+        this.isSubmitted = false
       })
     }
   }
@@ -168,11 +174,10 @@ export default {
 
 <style scoped lang="scss">
   .migrate-volume-container {
-    width: 95vw;
-    max-width: 100%;
+    width: 85vw;
 
     @media (min-width: 760px) {
-      width: 50vw;
+      width: 500px;
     }
   }
 

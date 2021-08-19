@@ -50,9 +50,11 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
 
     public KubernetesClusterUpgradeWorker(final KubernetesCluster kubernetesCluster,
                                           final KubernetesSupportedVersion upgradeVersion,
-                                          final KubernetesClusterManagerImpl clusterManager) {
+                                          final KubernetesClusterManagerImpl clusterManager,
+                                          final String[] keys) {
         super(kubernetesCluster, clusterManager);
         this.upgradeVersion = upgradeVersion;
+        this.keys = keys;
     }
 
     private void retrieveUpgradeScriptFile() {
@@ -110,6 +112,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             try {
+                int port = (sshPort == CLUSTER_NODES_DEFAULT_START_SSH_PORT) ? sshPort + i : sshPort;
+                deployProvider();
                 result = runInstallScriptOnVM(vm, i);
             } catch (Exception e) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
@@ -123,9 +127,9 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             if (!KubernetesClusterUtil.uncordonKubernetesClusterNode(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), vm, upgradeTimeoutTime, 15000)) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to uncordon Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
-            if (i == 0) { // Wait for master to get in Ready state
+            if (i == 0) { // Wait for control node to get in Ready state
                 if (!KubernetesClusterUtil.isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), hostName, upgradeTimeoutTime, 15000)) {
-                    logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get master Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                    logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get control Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
             if (LOGGER.isInfoEnabled()) {

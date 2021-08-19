@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
+            v-ctrl-enter="handleSubmit"
             :form="form"
             @submit="handleSubmit"
             layout="vertical"
@@ -41,6 +42,7 @@
                         :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
+                        autoFocus
                       ></a-select>
                     </a-form-item>
                     <a-form-item
@@ -105,12 +107,18 @@
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
-                          <a-switch @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <a-switch
+                            :default-checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            :disabled="rootDiskSizeFixed > 0 || template.deployasis"
+                            @change="val => { this.showRootDiskSizeChanger = val }"
+                            style="margin-left: 10px;"/>
+                          <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
                           v-show="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
+                          :isCustomized="true"
                           :minDiskSize="dataPreFill.minrootdisksize"
                           @update-disk-size="updateFieldValue"
                           style="margin-top: 10px;"/>
@@ -156,12 +164,7 @@
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <a-form-item v-if="zoneSelected && templateConfigurationExists">
-                      <span slot="label">
-                        {{ $t('label.configuration') }}
-                        <a-tooltip :title="$t('message.ovf.configurations')">
-                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                        </a-tooltip>
-                      </span>
+                      <tooltip-label slot="label" :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
                       <a-select
                         showSearch
                         optionFilterProp="children"
@@ -183,6 +186,7 @@
                     </a-form-item>
                     <compute-offering-selection
                       :compute-items="options.serviceOfferings"
+                      :selected-template="template ? template : {}"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
                       :value="serviceOffering ? serviceOffering.id : ''"
@@ -195,10 +199,10 @@
                       @handle-search-filter="($event) => handleSearchFilter('serviceOfferings', $event)"
                     ></compute-offering-selection>
                     <compute-selection
-                      v-if="serviceOffering && serviceOffering.iscustomized"
-                      cpunumber-input-decorator="cpunumber"
-                      cpuspeed-input-decorator="cpuspeed"
-                      memory-input-decorator="memory"
+                      v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
+                      cpuNumberInputDecorator="cpunumber"
+                      cpuSpeedInputDecorator="cpuspeed"
+                      memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
@@ -206,6 +210,10 @@
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
                       :maxMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+                      :isCustomized="serviceOffering.iscustomized"
+                      :isCustomizedIOps="'iscustomizediops' in serviceOffering && serviceOffering.iscustomizediops"
+                      @handler-error="handlerError"
+                      @update-iops-value="updateIOPSValue"
                       @update-compute-cpunumber="updateFieldValue"
                       @update-compute-cpuspeed="updateFieldValue"
                       @update-compute-memory="updateFieldValue" />
@@ -253,14 +261,19 @@
                       :loading="loading.diskOfferings"
                       :preFillContent="dataPreFill"
                       :isIsoSelected="tabKey==='isoid'"
+                      @on-selected-disk-size="onSelectDiskSize"
                       @select-disk-offering-item="($event) => updateDiskOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
                     <disk-size-selection
-                      v-if="diskOffering && diskOffering.iscustomized"
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
-                      @update-disk-size="updateFieldValue" />
+                      :diskSelected="diskSelected"
+                      :isCustomized="diskOffering.iscustomized"
+                      @handler-error="handlerError"
+                      @update-disk-size="updateFieldValue"
+                      @update-iops-value="updateIOPSValue"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-decorator="['size']"/>
                     </a-form-item>
@@ -278,12 +291,7 @@
                         v-for="(nic, nicIndex) in templateNics"
                         :key="nicIndex"
                         :v-bind="nic.name" >
-                        <span slot="label">
-                          {{ nic.elementName + ' - ' + nic.name }}
-                          <a-tooltip :title="nic.networkDescription">
-                            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                          </a-tooltip>
-                        </span>
+                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
                         <a-select
                           showSearch
                           optionFilterProp="children"
@@ -370,12 +378,7 @@
                         v-for="(property, propertyIndex) in props"
                         :key="propertyIndex"
                         :v-bind="property.key" >
-                        <span slot="label" style="text-transform: capitalize">
-                          {{ property.label }}
-                          <a-tooltip :title="property.description">
-                            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                          </a-tooltip>
-                        </span>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
@@ -477,6 +480,7 @@
                       v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
+                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
                           v-decorator="['boottype']"
                           @change="fetchBootModes"
                         >
@@ -500,6 +504,16 @@
                       <a-switch
                         v-decorator="['bootintosetup']">
                       </a-switch>
+                    </a-form-item>
+                    <a-form-item>
+                      <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
+                      <a-form-item>
+                        <a-switch
+                          v-decorator="['dynamicscalingenabled']"
+                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
+                          :disabled="!isDynamicallyScalable()"
+                          @change="val => { dynamicscalingenabled = val }"/>
+                      </a-form-item>
                     </a-form-item>
                     <a-form-item :label="$t('label.userdata')">
                       <a-textarea
@@ -543,6 +557,9 @@
                         :options="keyboardSelectOptions"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item :label="$t('label.action.start.instance')">
+                      <a-switch v-decorator="['startvm', { initialValue: true }]" :checked="this.startvm" @change="checked => { this.startvm = checked }" />
+                    </a-form-item>
                   </div>
                 </template>
               </a-step>
@@ -559,9 +576,7 @@
                         v-for="(license, licenseIndex) in templateLicenses"
                         :key="licenseIndex"
                         :v-bind="license.id">
-                        <span slot="label" style="text-transform: capitalize">
-                          {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
-                        </span>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
                         <a-textarea
                           :value="license.text"
                           :auto-size="{ minRows: 3, maxRows: 8 }"
@@ -589,14 +604,27 @@
               </a-step>
             </a-steps>
             <div class="card-footer">
+              <a-form-item>
+                <a-switch
+                  class="form-item-hidden"
+                  v-decorator="['stayonpage']"
+                ></a-switch>
+              </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
               </a-button>
-              <a-button type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
                 {{ this.$t('label.launch.vm') }}
-              </a-button>
+                <a-icon slot="icon" type="down" />
+                <a-menu type="primary" slot="overlay" @click="handleSubmitAndStay" theme="dark">
+                  <a-menu-item type="primary" key="1">
+                    <a-icon type="rocket" />
+                    {{ $t('label.launch.vm.and.stay') }}
+                  </a-menu-item>
+                </a-menu>
+              </a-dropdown-button>
             </div>
           </a-form>
         </a-card>
@@ -630,6 +658,7 @@ import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Wizard',
@@ -645,7 +674,8 @@ export default {
     InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
-    SecurityGroupSelection
+    SecurityGroupSelection,
+    TooltipLabel
   },
   props: {
     visible: {
@@ -663,6 +693,8 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      startvm: true,
+      dynamicscalingenabled: true,
       vm: {
         name: null,
         zoneid: null,
@@ -698,7 +730,8 @@ export default {
         groups: [],
         keyboards: [],
         bootTypes: [],
-        bootModes: []
+        bootModes: [],
+        dynamicScalingVmConfig: false
       },
       rowCount: {},
       loading: {
@@ -746,7 +779,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultNetwork: '',
+      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabList: [
@@ -763,7 +796,14 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
-      securitygroupids: []
+      securitygroupids: [],
+      rootDiskSizeFixed: 0,
+      error: false,
+      diskSelected: {},
+      diskIOpsMin: 0,
+      diskIOpsMax: 0,
+      minIops: 0,
+      maxIops: 0
     }
   },
   computed: {
@@ -879,6 +919,13 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        dynamicScalingVmConfig: {
+          list: 'listConfigurations',
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            name: 'enable.dynamic.scale.vm'
+          }
         }
       }
     },
@@ -957,6 +1004,15 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    dynamicScalingVmConfigValue () {
+      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+    },
+    isCustomizedDiskIOPS () {
+      return this.diskSelected?.iscustomizediops || false
+    },
+    isCustomizedIOPS () {
+      return this.serviceOffering?.iscustomizediops || false
     }
   },
   watch: {
@@ -1025,6 +1081,7 @@ export default {
 
       if (this.networks) {
         this.vm.networks = this.networks
+        this.vm.defaultnetworkid = this.defaultnetworkid
       }
 
       if (this.template) {
@@ -1073,6 +1130,16 @@ export default {
       }
     }
   },
+  serviceOffering (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
+  template (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
   created () {
     this.form = this.$form.createForm(this, {
       onValuesChange: (props, fields) => {
@@ -1097,12 +1164,12 @@ export default {
     this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
+    this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('memory', { initialValue: undefined, preserve: true })
-  },
-  mounted () {
+
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.fetchData()
   },
@@ -1166,6 +1233,9 @@ export default {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
         this.instanceConfig = this.form.getFieldsValue() // ToDo: maybe initialize with some other defaults
       })
+    },
+    isDynamicallyScalable () {
+      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1325,7 +1395,10 @@ export default {
       })
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
+      this.form.setFieldsValue({
+        defaultnetworkid: id
+      })
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
@@ -1350,9 +1423,19 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
+    handleSubmitAndStay (e) {
+      this.form.setFieldsValue({
+        stayonpage: true
+      })
+      this.handleSubmit(e.domEvent)
+      this.form.setFieldsValue({
+        stayonpage: false
+      })
+    },
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
+      if (this.loading.deploy) return
       this.form.validateFields(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
@@ -1390,6 +1473,13 @@ export default {
           })
           return
         }
+        if (this.error) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
+          })
+          return
+        }
 
         this.loading.deploy = true
 
@@ -1404,6 +1494,7 @@ export default {
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
+        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
@@ -1415,10 +1506,15 @@ export default {
         }
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
+        } else if (this.rootDiskSizeFixed > 0) {
+          deployVmData.rootdisksize = this.rootDiskSizeFixed
         }
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
+
+        deployVmData.startvm = values.startvm
+
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
         if (this.serviceOffering && this.serviceOffering.iscustomized) {
@@ -1434,6 +1530,10 @@ export default {
         }
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
+        }
+        if (this.isCustomizedIOPS) {
+          deployVmData['details[0].minIops'] = this.minIops
+          deployVmData['details[0].maxIops'] = this.maxIops
         }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
@@ -1453,6 +1553,10 @@ export default {
             deployVmData.size = values.size
           }
         }
+        if (this.isCustomizedDiskIOPS) {
+          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
+          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
+        }
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
         // step 6: select network
@@ -1470,9 +1574,9 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultNetwork) {
+                if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
-                    networkid: this.defaultNetwork
+                    networkid: this.defaultnetworkid
                   }
                   arrNetwork.unshift(ipToNetwork)
                 } else {
@@ -1536,6 +1640,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: description,
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
@@ -1546,31 +1652,27 @@ export default {
                     duration: 0
                   })
                 }
-                eventBus.$emit('vm-refresh-data')
-              },
-              errorMethod: () => {
-                eventBus.$emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
               catchMethod: () => {
                 eventBus.$emit('vm-refresh-data')
+              },
+              action: {
+                isFetchData: false
               }
-            })
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
-              description: description,
-              status: 'progress'
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM
           new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
             eventBus.$emit('vm-refresh-data')
           })
-          this.$router.back()
+          if (!values.stayonpage) {
+            this.$router.back()
+          }
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
           this.loading.deploy = false
         })
       })
@@ -1948,6 +2050,19 @@ export default {
           this.updateFieldValue('memory', this.selectedTemplateConfiguration.memory)
         }
       }
+      if (offering && offering.rootdisksize > 0) {
+        this.rootDiskSizeFixed = offering.rootdisksize
+        this.showRootDiskSizeChanger = false
+      }
+    },
+    handlerError (error) {
+      this.error = error
+    },
+    onSelectDiskSize (rowSelected) {
+      this.diskSelected = rowSelected
+    },
+    updateIOPSValue (input, value) {
+      this[input] = value
     }
   }
 }

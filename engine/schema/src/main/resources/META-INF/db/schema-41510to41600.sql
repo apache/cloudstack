@@ -19,6 +19,96 @@
 -- Schema upgrade from 4.15.1.0 to 4.16.0.0
 --;
 
+-- Adding dynamic scalable flag for service offering table
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamic_scaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
+DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
+CREATE VIEW `cloud`.`service_offering_view` AS
+    SELECT
+        `service_offering`.`id` AS `id`,
+        `disk_offering`.`uuid` AS `uuid`,
+        `disk_offering`.`name` AS `name`,
+        `disk_offering`.`display_text` AS `display_text`,
+        `disk_offering`.`provisioning_type` AS `provisioning_type`,
+        `disk_offering`.`created` AS `created`,
+        `disk_offering`.`tags` AS `tags`,
+        `disk_offering`.`removed` AS `removed`,
+        `disk_offering`.`use_local_storage` AS `use_local_storage`,
+        `disk_offering`.`system_use` AS `system_use`,
+        `disk_offering`.`customized_iops` AS `customized_iops`,
+        `disk_offering`.`min_iops` AS `min_iops`,
+        `disk_offering`.`max_iops` AS `max_iops`,
+        `disk_offering`.`hv_ss_reserve` AS `hv_ss_reserve`,
+        `disk_offering`.`bytes_read_rate` AS `bytes_read_rate`,
+        `disk_offering`.`bytes_read_rate_max` AS `bytes_read_rate_max`,
+        `disk_offering`.`bytes_read_rate_max_length` AS `bytes_read_rate_max_length`,
+        `disk_offering`.`bytes_write_rate` AS `bytes_write_rate`,
+        `disk_offering`.`bytes_write_rate_max` AS `bytes_write_rate_max`,
+        `disk_offering`.`bytes_write_rate_max_length` AS `bytes_write_rate_max_length`,
+        `disk_offering`.`iops_read_rate` AS `iops_read_rate`,
+        `disk_offering`.`iops_read_rate_max` AS `iops_read_rate_max`,
+        `disk_offering`.`iops_read_rate_max_length` AS `iops_read_rate_max_length`,
+        `disk_offering`.`iops_write_rate` AS `iops_write_rate`,
+        `disk_offering`.`iops_write_rate_max` AS `iops_write_rate_max`,
+        `disk_offering`.`iops_write_rate_max_length` AS `iops_write_rate_max_length`,
+        `disk_offering`.`cache_mode` AS `cache_mode`,
+        `disk_offering`.`disk_size` AS `root_disk_size`,
+        `service_offering`.`cpu` AS `cpu`,
+        `service_offering`.`speed` AS `speed`,
+        `service_offering`.`ram_size` AS `ram_size`,
+        `service_offering`.`nw_rate` AS `nw_rate`,
+        `service_offering`.`mc_rate` AS `mc_rate`,
+        `service_offering`.`ha_enabled` AS `ha_enabled`,
+        `service_offering`.`limit_cpu_use` AS `limit_cpu_use`,
+        `service_offering`.`host_tag` AS `host_tag`,
+        `service_offering`.`default_use` AS `default_use`,
+        `service_offering`.`vm_type` AS `vm_type`,
+        `service_offering`.`sort_key` AS `sort_key`,
+        `service_offering`.`is_volatile` AS `is_volatile`,
+        `service_offering`.`deployment_planner` AS `deployment_planner`,
+        `service_offering`.`dynamic_scaling_enabled` AS `dynamic_scaling_enabled`,
+        `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        IFNULL(`min_compute_details`.`value`, `cpu`) AS min_cpu,
+        IFNULL(`max_compute_details`.`value`, `cpu`) AS max_cpu,
+        IFNULL(`min_memory_details`.`value`, `ram_size`) AS min_memory,
+        IFNULL(`max_memory_details`.`value`, `ram_size`) AS max_memory
+    FROM
+        `cloud`.`service_offering`
+            INNER JOIN
+        `cloud`.`disk_offering_view` AS `disk_offering` ON service_offering.id = disk_offering.id
+            LEFT JOIN
+        `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `disk_offering`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`service_offering_details` AS `zone_details` ON `zone_details`.`service_offering_id` = `disk_offering`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+			LEFT JOIN
+		`cloud`.`service_offering_details` AS `min_compute_details` ON `min_compute_details`.`service_offering_id` = `disk_offering`.`id`
+				AND `min_compute_details`.`name` = 'mincpunumber'
+			LEFT JOIN
+		`cloud`.`service_offering_details` AS `max_compute_details` ON `max_compute_details`.`service_offering_id` = `disk_offering`.`id`
+				AND `max_compute_details`.`name` = 'maxcpunumber'
+			LEFT JOIN
+		`cloud`.`service_offering_details` AS `min_memory_details` ON `min_memory_details`.`service_offering_id` = `disk_offering`.`id`
+				AND `min_memory_details`.`name` = 'minmemory'
+			LEFT JOIN
+		`cloud`.`service_offering_details` AS `max_memory_details` ON `max_memory_details`.`service_offering_id` = `disk_offering`.`id`
+				AND `max_memory_details`.`name` = 'maxmemory'
+			LEFT JOIN
+		`cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `disk_offering`.`id`
+				AND `vsphere_storage_policy`.`name` = 'storagepolicy'
+    WHERE
+        `disk_offering`.`state`='Active'
+    GROUP BY
+        `service_offering`.`id`;
 
 --;
 -- Stored procedure to do idempotent column add;
@@ -301,3 +391,369 @@ from
         left join
     `cloud`.`resource_count` secondary_storage_count ON domain.id = secondary_storage_count.domain_id
         and secondary_storage_count.type = 'secondary_storage';
+
+
+DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
+CREATE
+    VIEW `user_vm_view` AS
+SELECT
+    `vm_instance`.`id` AS `id`,
+    `vm_instance`.`name` AS `name`,
+    `user_vm`.`display_name` AS `display_name`,
+    `user_vm`.`user_data` AS `user_data`,
+    `account`.`id` AS `account_id`,
+    `account`.`uuid` AS `account_uuid`,
+    `account`.`account_name` AS `account_name`,
+    `account`.`type` AS `account_type`,
+    `domain`.`id` AS `domain_id`,
+    `domain`.`uuid` AS `domain_uuid`,
+    `domain`.`name` AS `domain_name`,
+    `domain`.`path` AS `domain_path`,
+    `projects`.`id` AS `project_id`,
+    `projects`.`uuid` AS `project_uuid`,
+    `projects`.`name` AS `project_name`,
+    `instance_group`.`id` AS `instance_group_id`,
+    `instance_group`.`uuid` AS `instance_group_uuid`,
+    `instance_group`.`name` AS `instance_group_name`,
+    `vm_instance`.`uuid` AS `uuid`,
+    `vm_instance`.`user_id` AS `user_id`,
+    `vm_instance`.`last_host_id` AS `last_host_id`,
+    `vm_instance`.`vm_type` AS `type`,
+    `vm_instance`.`limit_cpu_use` AS `limit_cpu_use`,
+    `vm_instance`.`created` AS `created`,
+    `vm_instance`.`state` AS `state`,
+    `vm_instance`.`update_time` AS `update_time`,
+    `vm_instance`.`removed` AS `removed`,
+    `vm_instance`.`ha_enabled` AS `ha_enabled`,
+    `vm_instance`.`hypervisor_type` AS `hypervisor_type`,
+    `vm_instance`.`instance_name` AS `instance_name`,
+    `vm_instance`.`guest_os_id` AS `guest_os_id`,
+    `vm_instance`.`display_vm` AS `display_vm`,
+    `guest_os`.`uuid` AS `guest_os_uuid`,
+    `vm_instance`.`pod_id` AS `pod_id`,
+    `host_pod_ref`.`uuid` AS `pod_uuid`,
+    `vm_instance`.`private_ip_address` AS `private_ip_address`,
+    `vm_instance`.`private_mac_address` AS `private_mac_address`,
+    `vm_instance`.`vm_type` AS `vm_type`,
+    `data_center`.`id` AS `data_center_id`,
+    `data_center`.`uuid` AS `data_center_uuid`,
+    `data_center`.`name` AS `data_center_name`,
+    `data_center`.`is_security_group_enabled` AS `security_group_enabled`,
+    `data_center`.`networktype` AS `data_center_type`,
+    `host`.`id` AS `host_id`,
+    `host`.`uuid` AS `host_uuid`,
+    `host`.`name` AS `host_name`,
+    `vm_template`.`id` AS `template_id`,
+    `vm_template`.`uuid` AS `template_uuid`,
+    `vm_template`.`name` AS `template_name`,
+    `vm_template`.`display_text` AS `template_display_text`,
+    `vm_template`.`enable_password` AS `password_enabled`,
+    `iso`.`id` AS `iso_id`,
+    `iso`.`uuid` AS `iso_uuid`,
+    `iso`.`name` AS `iso_name`,
+    `iso`.`display_text` AS `iso_display_text`,
+    `service_offering`.`id` AS `service_offering_id`,
+    `svc_disk_offering`.`uuid` AS `service_offering_uuid`,
+    `disk_offering`.`uuid` AS `disk_offering_uuid`,
+    `disk_offering`.`id` AS `disk_offering_id`,
+    (CASE
+         WHEN ISNULL(`service_offering`.`cpu`) THEN `custom_cpu`.`value`
+         ELSE `service_offering`.`cpu`
+        END) AS `cpu`,
+    (CASE
+         WHEN ISNULL(`service_offering`.`speed`) THEN `custom_speed`.`value`
+         ELSE `service_offering`.`speed`
+        END) AS `speed`,
+    (CASE
+         WHEN ISNULL(`service_offering`.`ram_size`) THEN `custom_ram_size`.`value`
+         ELSE `service_offering`.`ram_size`
+        END) AS `ram_size`,
+    `backup_offering`.`uuid` AS `backup_offering_uuid`,
+    `backup_offering`.`id` AS `backup_offering_id`,
+    `svc_disk_offering`.`name` AS `service_offering_name`,
+    `disk_offering`.`name` AS `disk_offering_name`,
+    `backup_offering`.`name` AS `backup_offering_name`,
+    `storage_pool`.`id` AS `pool_id`,
+    `storage_pool`.`uuid` AS `pool_uuid`,
+    `storage_pool`.`pool_type` AS `pool_type`,
+    `volumes`.`id` AS `volume_id`,
+    `volumes`.`uuid` AS `volume_uuid`,
+    `volumes`.`device_id` AS `volume_device_id`,
+    `volumes`.`volume_type` AS `volume_type`,
+    `security_group`.`id` AS `security_group_id`,
+    `security_group`.`uuid` AS `security_group_uuid`,
+    `security_group`.`name` AS `security_group_name`,
+    `security_group`.`description` AS `security_group_description`,
+    `nics`.`id` AS `nic_id`,
+    `nics`.`uuid` AS `nic_uuid`,
+    `nics`.`device_id` AS `nic_device_id`,
+    `nics`.`network_id` AS `network_id`,
+    `nics`.`ip4_address` AS `ip_address`,
+    `nics`.`ip6_address` AS `ip6_address`,
+    `nics`.`ip6_gateway` AS `ip6_gateway`,
+    `nics`.`ip6_cidr` AS `ip6_cidr`,
+    `nics`.`default_nic` AS `is_default_nic`,
+    `nics`.`gateway` AS `gateway`,
+    `nics`.`netmask` AS `netmask`,
+    `nics`.`mac_address` AS `mac_address`,
+    `nics`.`broadcast_uri` AS `broadcast_uri`,
+    `nics`.`isolation_uri` AS `isolation_uri`,
+    `vpc`.`id` AS `vpc_id`,
+    `vpc`.`uuid` AS `vpc_uuid`,
+    `networks`.`uuid` AS `network_uuid`,
+    `networks`.`name` AS `network_name`,
+    `networks`.`traffic_type` AS `traffic_type`,
+    `networks`.`guest_type` AS `guest_type`,
+    `user_ip_address`.`id` AS `public_ip_id`,
+    `user_ip_address`.`uuid` AS `public_ip_uuid`,
+    `user_ip_address`.`public_ip_address` AS `public_ip_address`,
+    `ssh_keypairs`.`keypair_name` AS `keypair_name`,
+    `resource_tags`.`id` AS `tag_id`,
+    `resource_tags`.`uuid` AS `tag_uuid`,
+    `resource_tags`.`key` AS `tag_key`,
+    `resource_tags`.`value` AS `tag_value`,
+    `resource_tags`.`domain_id` AS `tag_domain_id`,
+    `domain`.`uuid` AS `tag_domain_uuid`,
+    `domain`.`name` AS `tag_domain_name`,
+    `resource_tags`.`account_id` AS `tag_account_id`,
+    `account`.`account_name` AS `tag_account_name`,
+    `resource_tags`.`resource_id` AS `tag_resource_id`,
+    `resource_tags`.`resource_uuid` AS `tag_resource_uuid`,
+    `resource_tags`.`resource_type` AS `tag_resource_type`,
+    `resource_tags`.`customer` AS `tag_customer`,
+    `async_job`.`id` AS `job_id`,
+    `async_job`.`uuid` AS `job_uuid`,
+    `async_job`.`job_status` AS `job_status`,
+    `async_job`.`account_id` AS `job_account_id`,
+    `affinity_group`.`id` AS `affinity_group_id`,
+    `affinity_group`.`uuid` AS `affinity_group_uuid`,
+    `affinity_group`.`name` AS `affinity_group_name`,
+    `affinity_group`.`description` AS `affinity_group_description`,
+    `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`
+FROM
+    (((((((((((((((((((((((((((((((((`user_vm`
+        JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
+            AND ISNULL(`vm_instance`.`removed`))))
+        JOIN `account` ON ((`vm_instance`.`account_id` = `account`.`id`)))
+        JOIN `domain` ON ((`vm_instance`.`domain_id` = `domain`.`id`)))
+        LEFT JOIN `guest_os` ON ((`vm_instance`.`guest_os_id` = `guest_os`.`id`)))
+        LEFT JOIN `host_pod_ref` ON ((`vm_instance`.`pod_id` = `host_pod_ref`.`id`)))
+        LEFT JOIN `projects` ON ((`projects`.`project_account_id` = `account`.`id`)))
+        LEFT JOIN `instance_group_vm_map` ON ((`vm_instance`.`id` = `instance_group_vm_map`.`instance_id`)))
+        LEFT JOIN `instance_group` ON ((`instance_group_vm_map`.`group_id` = `instance_group`.`id`)))
+        LEFT JOIN `data_center` ON ((`vm_instance`.`data_center_id` = `data_center`.`id`)))
+        LEFT JOIN `host` ON ((`vm_instance`.`host_id` = `host`.`id`)))
+        LEFT JOIN `vm_template` ON ((`vm_instance`.`vm_template_id` = `vm_template`.`id`)))
+        LEFT JOIN `vm_template` `iso` ON ((`iso`.`id` = `user_vm`.`iso_id`)))
+        LEFT JOIN `service_offering` ON ((`vm_instance`.`service_offering_id` = `service_offering`.`id`)))
+        LEFT JOIN `disk_offering` `svc_disk_offering` ON ((`vm_instance`.`service_offering_id` = `svc_disk_offering`.`id`)))
+        LEFT JOIN `disk_offering` ON ((`vm_instance`.`disk_offering_id` = `disk_offering`.`id`)))
+        LEFT JOIN `backup_offering` ON ((`vm_instance`.`backup_offering_id` = `backup_offering`.`id`)))
+        LEFT JOIN `volumes` ON ((`vm_instance`.`id` = `volumes`.`instance_id`)))
+        LEFT JOIN `storage_pool` ON ((`volumes`.`pool_id` = `storage_pool`.`id`)))
+        LEFT JOIN `security_group_vm_map` ON ((`vm_instance`.`id` = `security_group_vm_map`.`instance_id`)))
+        LEFT JOIN `security_group` ON ((`security_group_vm_map`.`security_group_id` = `security_group`.`id`)))
+        LEFT JOIN `nics` ON (((`vm_instance`.`id` = `nics`.`instance_id`)
+            AND ISNULL(`nics`.`removed`))))
+        LEFT JOIN `networks` ON ((`nics`.`network_id` = `networks`.`id`)))
+        LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
+            AND ISNULL(`vpc`.`removed`))))
+        LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
+        LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
+            AND (`ssh_details`.`name` = 'SSH.PublicKey'))))
+        LEFT JOIN `ssh_keypairs` ON (((`ssh_keypairs`.`public_key` = `ssh_details`.`value`)
+            AND (`ssh_keypairs`.`account_id` = `account`.`id`))))
+        LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)
+            AND (`resource_tags`.`resource_type` = 'UserVm'))))
+        LEFT JOIN `async_job` ON (((`async_job`.`instance_id` = `vm_instance`.`id`)
+            AND (`async_job`.`instance_type` = 'VirtualMachine')
+            AND (`async_job`.`job_status` = 0))))
+        LEFT JOIN `affinity_group_vm_map` ON ((`vm_instance`.`id` = `affinity_group_vm_map`.`instance_id`)))
+        LEFT JOIN `affinity_group` ON ((`affinity_group_vm_map`.`affinity_group_id` = `affinity_group`.`id`)))
+        LEFT JOIN `user_vm_details` `custom_cpu` ON (((`custom_cpu`.`vm_id` = `vm_instance`.`id`)
+            AND (`custom_cpu`.`name` = 'CpuNumber'))))
+        LEFT JOIN `user_vm_details` `custom_speed` ON (((`custom_speed`.`vm_id` = `vm_instance`.`id`)
+            AND (`custom_speed`.`name` = 'CpuSpeed'))))
+        LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
+        AND (`custom_ram_size`.`name` = 'memory'))));
+
+-- Update name for global configuration user.vm.readonly.ui.details
+Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
+
+-- Update name for global configuration 'user.vm.readonly.ui.details' to 'user.vm.denied.details'
+UPDATE `cloud`.`configuration` SET name='user.vm.denied.details' WHERE name='user.vm.blacklisted.details';
+
+-- Update name for global configuration 'blacklisted.routes' to 'denied.routes'
+UPDATE `cloud`.`configuration` SET name='denied.routes', description='Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway' WHERE name='blacklisted.routes';
+
+-- Rename 'master_node_count' to 'control_node_count' in kubernetes_cluster table
+ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_count bigint NOT NULL default '0' COMMENT 'the number of the control nodes deployed for this Kubernetes cluster';
+
+UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_state = 'MASTER';
+
+DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
+DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_ovf_properties`;
+DROP TABLE IF EXISTS `cloud`.`op_host_upgrade`;
+DROP TABLE IF EXISTS `cloud`.`stack_maid`;
+DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`swift`;
+
+ALTER TABLE `cloud`.`snapshots` DROP FOREIGN KEY `fk_snapshots__s3_id` ;
+ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id` ;
+DROP TABLE IF EXISTS `cloud`.`s3`;
+
+-- Re-create host view to prevent multiple entries for hosts with multiple tags
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+CREATE VIEW `cloud`.`host_view` AS
+    SELECT
+        host.id,
+        host.uuid,
+        host.name,
+        host.status,
+        host.disconnected,
+        host.type,
+        host.private_ip_address,
+        host.version,
+        host.hypervisor_type,
+        host.hypervisor_version,
+        host.capabilities,
+        host.last_ping,
+        host.created,
+        host.removed,
+        host.resource_state,
+        host.mgmt_server_id,
+        host.cpu_sockets,
+        host.cpus,
+        host.speed,
+        host.ram,
+        cluster.id cluster_id,
+        cluster.uuid cluster_uuid,
+        cluster.name cluster_name,
+        cluster.cluster_type,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        GROUP_CONCAT(DISTINCT(host_tags.tag)) AS tag,
+        guest_os_category.id guest_os_category_id,
+        guest_os_category.uuid guest_os_category_uuid,
+        guest_os_category.name guest_os_category_name,
+        mem_caps.used_capacity memory_used_capacity,
+        mem_caps.reserved_capacity memory_reserved_capacity,
+        cpu_caps.used_capacity cpu_used_capacity,
+        cpu_caps.reserved_capacity cpu_reserved_capacity,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id,
+        oobm.enabled AS `oobm_enabled`,
+        oobm.power_state AS `oobm_power_state`,
+        ha_config.enabled AS `ha_enabled`,
+        ha_config.ha_state AS `ha_state`,
+        ha_config.provider AS `ha_provider`,
+        `last_annotation_view`.`annotation` AS `annotation`,
+        `last_annotation_view`.`created` AS `last_annotated`,
+        `user`.`username` AS `username`
+    FROM
+        `cloud`.`host`
+            LEFT JOIN
+        `cloud`.`cluster` ON host.cluster_id = cluster.id
+            LEFT JOIN
+        `cloud`.`data_center` ON host.data_center_id = data_center.id
+            LEFT JOIN
+        `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
+            LEFT JOIN
+        `cloud`.`host_details` ON host.id = host_details.host_id
+            AND host_details.name = 'guest.os.category.id'
+            LEFT JOIN
+        `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT ( host_details.value, UNSIGNED )
+            LEFT JOIN
+        `cloud`.`host_tags` ON host_tags.host_id = host.id
+            LEFT JOIN
+        `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
+            AND mem_caps.capacity_type = 0
+            LEFT JOIN
+        `cloud`.`op_host_capacity` cpu_caps ON host.id = cpu_caps.host_id
+            AND cpu_caps.capacity_type = 1
+            LEFT JOIN
+        `cloud`.`async_job` ON async_job.instance_id = host.id
+            AND async_job.instance_type = 'Host'
+            AND async_job.job_status = 0
+            LEFT JOIN
+        `cloud`.`oobm` ON oobm.host_id = host.id
+            left join
+        `cloud`.`ha_config` ON ha_config.resource_id=host.id
+            and ha_config.resource_type='Host'
+            LEFT JOIN
+        `cloud`.`last_annotation_view` ON `last_annotation_view`.`entity_uuid` = `host`.`uuid`
+            LEFT JOIN
+        `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
+    GROUP BY
+        `host`.`id`;
+
+-- PR#4699 Drop the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` if it already exist.
+DROP PROCEDURE IF EXISTS `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING`;
+
+-- PR#4699 Create the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add guest_os and guest_os_hypervisor mapping.
+CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
+    IN guest_os_category_id bigint(20) unsigned,
+    IN guest_os_display_name VARCHAR(255),
+    IN guest_os_hypervisor_hypervisor_type VARCHAR(32),
+    IN guest_os_hypervisor_hypervisor_version VARCHAR(32),
+    IN guest_os_hypervisor_guest_os_name VARCHAR(255)
+)
+BEGIN	
+	INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created) 
+	SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
+	FROM    DUAL
+	WHERE 	not exists( SELECT  1 
+	                    FROM    cloud.guest_os
+	                    WHERE   cloud.guest_os.category_id = guest_os_category_id
+	                    AND     cloud.guest_os.display_name = guest_os_display_name)	
+						
+;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created) 
+	SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
+	FROM 	cloud.guest_os
+	WHERE 	guest_os.category_id = guest_os_category_id
+	AND 	guest_os.display_name = guest_os_display_name
+	AND	NOT EXISTS (SELECT  1 
+	                    FROM    cloud.guest_os_hypervisor as hypervisor
+	                    WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type			
+	                    AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
+	                    AND     hypervisor.guest_os_id = guest_os.id
+	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)    
+;END;
+
+-- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 21.04', 'KVM', 'default', 'Ubuntu 21.04');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'pfSense 2.4', 'KVM', 'default', 'pfSense 2.4');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.7', 'KVM', 'default', 'OpenBSD 6.7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.8', 'KVM', 'default', 'OpenBSD 6.8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 8.3', 'KVM', 'default', 'AlmaLinux 8.3');
+
+-- Alter value column of *_details table to prevent NULL values
+UPDATE cloud.account_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.account_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.cluster_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.cluster_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.data_center_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.data_center_details MODIFY value varchar(1024) NOT NULL;
+UPDATE cloud.domain_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.domain_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.image_store_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.image_store_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.storage_pool_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.storage_pool_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.template_deploy_as_is_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.template_deploy_as_is_details MODIFY value text NOT NULL;
+UPDATE cloud.user_vm_deploy_as_is_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
+UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-ctrl-enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 24px;"
@@ -46,6 +46,7 @@
               }]
             }]"
             style="width: 100%;"
+            autoFocus
           />
         </a-form-item>
         <span :style="{ display: 'inline-block', width: '24px', textAlign: 'center' }">
@@ -75,7 +76,7 @@
         @click="handleBack">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button class="button-next" type="primary" @click="handleSubmit">
+      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
     </div>
@@ -193,11 +194,10 @@ export default {
     min-height: 200px;
     text-align: center;
     vertical-align: center;
-    padding-top: 16px;
-    padding-top: 16px;
     margin-top: 8px;
     max-height: 300px;
     overflow-y: auto;
+    padding: 16px 20px 0;
 
     /deep/.has-error {
       .ant-form-explain {

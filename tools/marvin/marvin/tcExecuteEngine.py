@@ -70,7 +70,7 @@ class TestCaseExecuteEngine(object):
 
     def run(self):
         if self.__suite:
-            print "\n==== Test Suite :%s Started ====" % (str(self.__suite))
+            print("\n==== Test Suite :%s Started ====" % (str(self.__suite)))
             unittest.TextTestRunner(stream=self.__debugStream,
                                     verbosity=2).run(self.__suite)
-            print "\n==== Test Suite :%s Finished ====" % (str(self.__suite))
+            print("\n==== Test Suite :%s Finished ====" % (str(self.__suite)))

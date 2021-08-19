@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.BooleanUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -77,6 +78,12 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
+    @Parameter(name = ApiConstants.AUTO_SELECT,
+            since = "4.16.0",
+            type = CommandType.BOOLEAN,
+            description = "Automatically select a destination host which do not require storage migration, if hostId and storageId are not specified. false by default")
+    private Boolean autoSelect;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +98,10 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     public Long getStoragePoolId() {
         return storageId;
+    }
+
+    public Boolean isAutoSelect() {
+        return BooleanUtils.isNotFalse(autoSelect);
     }
 
     /////////////////////////////////////////////////////
@@ -142,17 +153,6 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         }
 
         Host destinationHost = null;
-        if (getHostId() != null) {
-            destinationHost = _resourceService.getHost(getHostId());
-            if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
-            }
-            if (destinationHost.getType() != Host.Type.Routing) {
-                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
-            }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
-        }
-
         // OfflineMigration performed when this parameter is specified
         StoragePool destStoragePool = null;
         if (getStoragePoolId() != null) {
@@ -161,6 +161,17 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                 throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
             }
             CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
+        } else if (getHostId() != null) {
+            destinationHost = _resourceService.getHost(getHostId());
+            if (destinationHost == null) {
+                throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+            }
+            if (destinationHost.getType() != Host.Type.Routing) {
+                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
+            }
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
+        } else if (! isAutoSelect()) {
+            throw new InvalidParameterValueException("Please specify a host or storage as destination, or pass 'autoselect=true' to automatically select a destination host which do not require storage migration");
         }
 
         try {

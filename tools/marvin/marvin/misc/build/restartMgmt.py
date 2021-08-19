@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from optparse import OptionParser
 import marvin
 from marvin import configGenerator

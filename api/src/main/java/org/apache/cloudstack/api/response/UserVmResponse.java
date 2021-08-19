@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -79,6 +81,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this virtual machine was created")
     private Date created;
+
+    @SerializedName("lastupdated")
+    @Param(description="the date when this virtual machine was updated last time", since="4.16.0")
+    private Date lastUpdated;
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the virtual machine")
@@ -209,7 +215,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory thats free in vm")
+    @Param(description = "the internal memory that's free in vm or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")
@@ -270,9 +276,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
 
-    @SerializedName("readonlyuidetails")
-    @Param(description = "List of UI read-only Vm details as comma separated string.", since = "4.13.0")
-    private String readOnlyUIDetails;
+    @SerializedName("readonlydetails")
+    @Param(description = "List of read-only Vm details as comma separated string.", since = "4.16.0")
+    private String readOnlyDetails;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "ssh key-pair")
@@ -314,9 +320,17 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the pool type of the virtual machine", since = "4.16")
     private String poolType;
 
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
-        nics = new LinkedHashSet<NicResponse>();
+        nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
         tags = new LinkedHashSet<ResourceTagResponse>();
         tagIds = new LinkedHashSet<Long>();
         affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
@@ -854,8 +868,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.details = details;
     }
 
-    public void setReadOnlyUIDetails(String readOnlyUIDetails) {
-        this.readOnlyUIDetails = readOnlyUIDetails;
+    public void setReadOnlyDetails(String readOnlyDetails) {
+        this.readOnlyDetails = readOnlyDetails;
     }
 
     public void setOsTypeId(String osTypeId) {
@@ -878,8 +892,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return details;
     }
 
-    public String getReadOnlyUIDetails() {
-        return readOnlyUIDetails;
+    public String getReadOnlyDetails() {
+        return readOnlyDetails;
     }
 
     public Boolean getDynamicallyScalable() {
@@ -909,4 +923,20 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getPoolType() { return poolType; }
 
     public void setPoolType(String poolType) { this.poolType = poolType; }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(Long bytesSent) {
+        this.bytesSent = bytesSent;
+    }
 }

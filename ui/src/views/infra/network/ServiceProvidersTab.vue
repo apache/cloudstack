@@ -35,7 +35,8 @@
             :itemNsp="item"
             :nsp="nsps[item.title]"
             :resourceId="resource.id"
-            :zoneId="resource.zoneid"/>
+            :zoneId="resource.zoneid"
+            :tabKey="tabKey"/>
         </a-tab-pane>
       </a-tabs>
     </a-spin>
@@ -46,7 +47,6 @@
           :visible="showFormAction"
           :closable="true"
           :maskClosable="false"
-          :cancelText="$t('label.cancel')"
           style="top: 20px;"
           @cancel="onCloseAction"
           :confirmLoading="actionLoading"
@@ -63,12 +63,11 @@
         :title="$t(currentAction.label)"
         :visible="showFormAction"
         :confirmLoading="actionLoading"
+        :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
-        style="top: 20px;"
-        @ok="handleSubmit"
         @cancel="onCloseAction"
+        v-ctrl-enter="handleSubmit"
+        style="top: 20px;"
         centered
       >
         <a-form
@@ -80,6 +79,7 @@
             :label="$t('label.' + field.name)">
             <span v-if="field.name==='password'">
               <a-input-password
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [
                     {
@@ -92,6 +92,7 @@
             </span>
             <span v-else-if="field.type==='boolean'">
               <a-switch
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [{
                     required: field.required,
@@ -103,6 +104,7 @@
             </span>
             <span v-else-if="field.type==='uuid'">
               <a-select
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [{
                     required: field.required,
@@ -118,6 +120,7 @@
             </span>
             <span v-else>
               <a-input
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [
                     {
@@ -129,6 +132,11 @@
                 :placeholder="field.description" />
             </span>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-modal>
     </div>
@@ -1103,7 +1111,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -1124,6 +1132,9 @@ export default {
   },
   methods: {
     fetchData () {
+      if (!this.resource || !('id' in this.resource)) {
+        return
+      }
       this.fetchServiceProvider()
     },
     fetchServiceProvider (name) {
@@ -1148,11 +1159,11 @@ export default {
       this.nsp = nsp
     },
     async handleSubmit () {
+      if (this.actionLoading) return
       if (this.currentAction.confirm) {
         await this.executeConfirmAction()
         return
       }
-
       await this.form.validateFields(async (err, values) => {
         if (err) {
           return
@@ -1354,13 +1365,7 @@ export default {
             if (obj.includes('response') || obj.includes(apiName)) {
               for (const res in json[obj]) {
                 if (res === 'jobid') {
-                  this.$store.dispatch('AddAsyncJob', {
-                    title: this.$t(this.currentAction.label),
-                    jobid: json[obj][res],
-                    description: this.$t(this.nsp.name),
-                    status: 'progress'
-                  })
-                  this.parentPollActionCompletion(json[obj][res], this.currentAction)
+                  this.parentPollActionCompletion(json[obj][res], this.currentAction, this.$t(this.nsp.name))
                   hasJobId = true
                   break
                 }

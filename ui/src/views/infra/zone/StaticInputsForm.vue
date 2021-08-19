@@ -23,6 +23,7 @@
       v-html="$t(description)">
     </a-card>
     <a-form
+      v-ctrl-enter="handleSubmit"
       class="form-content"
       :form="form"
       @submit="handleSubmit">
@@ -45,6 +46,7 @@
             ]
           }]"
           :allowClear="true"
+          :autoFocus="index === 0"
         >
           <a-select-option
             v-for="option in field.options"
@@ -58,6 +60,7 @@
           v-else-if="field.switch"
           v-decorator="[field.key]"
           :default-checked="isChecked(field)"
+          :autoFocus="index === 0"
         />
         <a-input
           v-else-if="field.password"
@@ -71,6 +74,7 @@
               }
             ]
           }]"
+          :autoFocus="index === 0"
         />
         <a-input
           v-else
@@ -89,6 +93,7 @@
               }
             ]
           }]"
+          :autoFocus="index === 0"
         />
       </a-form-item>
     </a-form>
@@ -99,7 +104,7 @@
         @click="handleBack">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button class="button-next" type="primary" @click="handleSubmit">
+      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
     </div>
@@ -247,11 +252,10 @@ export default {
     min-height: 200px;
     text-align: center;
     vertical-align: center;
-    padding-top: 16px;
-    padding-top: 16px;
     margin-top: 8px;
     max-height: 300px;
     overflow-y: auto;
+    padding: 16px 20px 0;
 
     /deep/.has-error {
       .ant-form-explain {

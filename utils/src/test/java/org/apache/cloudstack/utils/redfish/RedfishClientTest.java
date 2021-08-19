@@ -207,4 +207,26 @@ public class RedfishClientTest {
         Mockito.verify(newRedfishClientspy, Mockito.times(1)).retryHttpRequest(Mockito.anyString(), Mockito.any(), Mockito.any());
         Mockito.verify(client, Mockito.times(3)).execute(Mockito.any());
     }
+
+    @Test(expected = RedfishException.class)
+    public void retryHttpRequestExceptionAfterTwoRetries() throws IOException {
+        Mockito.when(client.execute(httpReq)).thenThrow(IOException.class).thenThrow(IOException.class);
+
+        RedfishClient newRedfishClientspy = Mockito.spy(new RedfishClient(USERNAME, PASSWORD, true, true, REDFISHT_REQUEST_RETRIES));
+        newRedfishClientspy.retryHttpRequest(url, httpReq, client);
+
+        Mockito.verify(newRedfishClientspy, Mockito.never()).retryHttpRequest(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.verify(client, Mockito.never()).execute(Mockito.any());
+    }
+
+    @Test
+    public void retryHttpRequestSuccessAtTheSecondRetry() throws IOException {
+        Mockito.when(client.execute(httpReq)).thenThrow(IOException.class).thenReturn(httpResponse);
+
+        RedfishClient newRedfishClientspy = Mockito.spy(new RedfishClient(USERNAME, PASSWORD, true, true, REDFISHT_REQUEST_RETRIES));
+        newRedfishClientspy.retryHttpRequest(url, httpReq, client);
+
+        Mockito.verify(newRedfishClientspy, Mockito.times(1)).retryHttpRequest(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.verify(client, Mockito.times(REDFISHT_REQUEST_RETRIES)).execute(Mockito.any());
+    }
 }

@@ -46,6 +46,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -267,4 +268,12 @@ public interface VirtualMachineManager extends Manager {
     boolean checkIfVmHasClusterWideVolumes(Long vmId);
 
     DataCenterDeployment getMigrationDeployment(Long vmId, Host host, Long poolId, ExcludeList excludes);
+
+    /**
+     * Returns true if the VM's Root volume is allocated at a local storage pool
+     */
+    boolean isRootVolumeOnLocalStorage(long vmId);
+
+    Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
+
 }

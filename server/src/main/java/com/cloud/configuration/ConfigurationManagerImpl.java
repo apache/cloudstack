@@ -39,8 +39,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -87,6 +85,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -144,6 +143,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.domain.Domain;
@@ -161,7 +161,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -207,10 +209,12 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.test.IPRangeConfig;
@@ -392,6 +396,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private VMTemplateZoneDao templateZoneDao;
     @Inject
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
+    @Inject
+    HostTagsDao hostTagDao;
+    @Inject
+    StoragePoolTagsDao storagePoolTagDao;
 
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -404,6 +412,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
+    public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -423,6 +432,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
                         true, ConfigKey.Scope.Zone, null);
 
+    public static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<Integer>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
+            "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
     public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
             "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
@@ -477,6 +488,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
         configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
+        configValuesForValidation.add(VM_USERDATA_MAX_LENGTH_STRING);
     }
 
     private void weightBasedParametersForValidation() {
@@ -497,6 +512,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
         weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
+        weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
 
     }
 
@@ -950,6 +966,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
                     }
                 }
+                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
+                    if (val > 1048576) {
+                        throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
+                    }
+                }
             } catch (final NumberFormatException e) {
                 s_logger.error("There was an error trying to parse the integer value for:" + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
@@ -1024,7 +1045,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (route != null) {
                         final String routeToVerify = route.trim();
                         if (!NetUtils.isValidIp4Cidr(routeToVerify)) {
-                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route + ". Valid format is list"
+                            throw new InvalidParameterValueException("Invalid value for route: " + route + " in deny list. Valid format is list"
                                     + " of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
                         }
                     }
@@ -2484,7 +2505,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId);
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2495,7 +2516,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2527,7 +2548,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
-                hostTag, deploymentPlanner);
+                hostTag, deploymentPlanner, dynamicScalingEnabled);
 
         if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
                 minIops = null;
@@ -2705,6 +2726,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long userId = CallContext.current().getCallingUserId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        String storageTags = cmd.getStorageTags();
+        String hostTags = cmd.getHostTags();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2786,7 +2809,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by id user: %s because it is not root-admin or domain-admin", offeringHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null;
+        final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null;
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
@@ -2806,29 +2829,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offering.setSortKey(sortKey);
         }
 
-        // Note: tag editing commented out for now; keeping the code intact,
-        // might need to re-enable in next releases
-        // if (tags != null)
-        // {
-        // if (tags.trim().isEmpty() && offeringHandle.getTags() == null)
-        // {
-        // //no new tags; no existing tags
-        // offering.setTagsArray(csvTagsToList(null));
-        // }
-        // else if (!tags.trim().isEmpty() && offeringHandle.getTags() != null)
-        // {
-        // //new tags + existing tags
-        // List<String> oldTags = csvTagsToList(offeringHandle.getTags());
-        // List<String> newTags = csvTagsToList(tags);
-        // oldTags.addAll(newTags);
-        // offering.setTagsArray(oldTags);
-        // }
-        // else if(!tags.trim().isEmpty())
-        // {
-        // //new tags; NO existing tags
-        // offering.setTagsArray(csvTagsToList(tags));
-        // }
-        // }
+        updateOfferingTagsIfIsNotNull(storageTags, offering);
+
+        updateServiceOfferingHostTagsIfNotNull(hostTags, offering);
 
         if (updateNeeded && !_serviceOfferingDao.update(id, offering)) {
             return null;
@@ -3283,7 +3286,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             diskOffering.setDisplayOffering(displayDiskOffering);
         }
 
-        updateDiskOfferingTagsIfIsNotNull(tags, diskOffering);
+        updateOfferingTagsIfIsNotNull(tags, diskOffering);
 
         validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
         validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
@@ -3335,19 +3338,60 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     /**
-     * Check the tags parameters to the diskOffering
+     * Check the tags parameters to the disk/service offering
      * <ul>
      *     <li>If tags is null, do nothing and return.</li>
-     *     <li>If tags is not null, set tag to the diskOffering.</li>
-     *     <li>If tags is an blank string, set null on diskOffering tag.</li>
+     *     <li>If tags is not null, will set tag to the disk/service offering if the pools with active volumes have the new tags.</li>
+     *     <li>If tags is an blank string, set null on disk/service offering tag.</li>
      * </ul>
      */
-    protected void updateDiskOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
+    protected void updateOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
         if (tags == null) { return; }
         if (StringUtils.isNotBlank(tags)) {
+            tags = StringUtils.cleanupTags(tags);
+            List<StoragePoolVO> pools = _storagePoolDao.listStoragePoolsWithActiveVolumesByOfferingId(diskOffering.getId());
+            if (CollectionUtils.isNotEmpty(pools)) {
+                List<String> listOfTags = Arrays.asList(tags.split(","));
+                for (StoragePoolVO storagePoolVO : pools) {
+                    List<String> tagsOnPool = storagePoolTagDao.getStoragePoolTags(storagePoolVO.getId());
+                    if (CollectionUtils.isEmpty(tagsOnPool) || !tagsOnPool.containsAll(listOfTags)) {
+                        throw new InvalidParameterValueException(String.format("There are active volumes using offering [%s], and the pools [%s] don't have the new tags", diskOffering.getId(), pools));
+                    }
+                }
+            }
             diskOffering.setTags(tags);
         } else {
             diskOffering.setTags(null);
+        }
+    }
+
+    /**
+     * Check the host tags parameters to the service offering
+     * <ul>
+     *     <li>If host tags is null, do nothing and return.</li>
+     *     <li>If host tags is not null, will set host tag to the service offering if the hosts with active VMs have the new tags.</li>
+     *     <li>If host tags is an blank string, set null on service offering tag.</li>
+     * </ul>
+     */
+    protected void updateServiceOfferingHostTagsIfNotNull(String hostTags, ServiceOfferingVO offering) {
+        if (hostTags == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(hostTags)) {
+            hostTags = StringUtils.cleanupTags(hostTags);
+            List<HostVO> hosts = _hostDao.listHostsWithActiveVMs(offering.getId());
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                List<String> listOfHostTags = Arrays.asList(hostTags.split(","));
+                for (HostVO host : hosts) {
+                    List<String> tagsOnHost = hostTagDao.gethostTags(host.getId());
+                    if (CollectionUtils.isEmpty(tagsOnHost) || !tagsOnHost.containsAll(listOfHostTags)) {
+                        throw new InvalidParameterValueException(String.format("There are active VMs using offering [%s], and the hosts [%s] don't have the new tags", offering.getId(), hosts));
+                    }
+                }
+            }
+            offering.setHostTag(hostTags);
+        } else {
+            offering.setHostTag(null);
         }
     }
 
@@ -3768,7 +3812,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (newVlanGateway == null && newVlanNetmask == null) {
             newVlanGateway = vlanGateway;
             newVlanNetmask = vlanNetmask;
-            // this means he is trying to add to the existing subnet.
+            // this means we are trying to add to the existing subnet.
             if (NetUtils.sameSubnet(newStartIP, newVlanGateway, newVlanNetmask)) {
                 if (NetUtils.sameSubnet(newEndIP, newVlanGateway, newVlanNetmask)) {
                     return NetUtils.SupersetOrSubset.sameSubnet;
@@ -3843,7 +3887,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // this implies the user is trying to add a new subnet
                 // which is not a superset or subset of this subnet.
             } else if (val == NetUtils.SupersetOrSubset.isSubset) {
-                // this means he is trying to add to the same subnet.
+                // this means we are trying to add to the same subnet.
                 throw new InvalidParameterValueException("The subnet you are trying to add is a subset of the existing subnet having gateway " + vlanGateway
                         + " and netmask " + vlanNetmask);
             } else if (val == NetUtils.SupersetOrSubset.sameSubnet) {
@@ -5507,9 +5551,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(final ListNetworkOfferingsCmd cmd) {
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = isAscending == null ? Boolean.TRUE : isAscending;
-        final Filter searchFilter = new Filter(NetworkOfferingJoinVO.class, "sortKey", isAscending, null, null);
+        final Filter searchFilter = new Filter(NetworkOfferingJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
+        searchFilter.addOrderBy(NetworkOfferingJoinVO.class, "id", true);
         final Account caller = CallContext.current().getCallingAccount();
         final SearchCriteria<NetworkOfferingJoinVO> sc = networkOfferingJoinDao.createSearchCriteria();
 
@@ -6489,6 +6532,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
-                MIGRATE_VM_ACROSS_CLUSTERS};
+                VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS};
     }
 }

@@ -58,8 +58,8 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
         cls.supportedHypervisor = True
 
         if cls.hypervisor.lower() in [
-                "hyperv",
-                "lxc"]:
+            "hyperv",
+            "lxc"]:
             cls.supportedHypervisor = False
             return
 
@@ -168,14 +168,14 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
             name="concurrent.snapshots.threshold.perhost"
         )
         if config[0].value:
-		self.assertEqual(
-				isinstance(
-					config,
-					list),
-				True,
-				"concurrent.snapshots.threshold.perhost should be present\
-				in global config")
-		concurrentSnapshots = int(config[0].value)
+            self.assertEqual(
+                isinstance(
+                    config,
+                    list),
+                True,
+                "concurrent.snapshots.threshold.perhost should be present\
+                in global config")
+            concurrentSnapshots = int(config[0].value)
         self.debug("concurrent Snapshots: %s" % concurrentSnapshots)
 
         threads = []
@@ -228,14 +228,14 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
             name="concurrent.snapshots.threshold.perhost"
         )
         if config[0].value:
-		self.assertEqual(
-				isinstance(
-					config,
-					list),
-				True,
-				"concurrent.snapshots.threshold.perhost should be present\
-				in global config")
-		concurrentSnapshots = int(config[0].value)
+            self.assertEqual(
+                isinstance(
+                    config,
+                    list),
+                True,
+                "concurrent.snapshots.threshold.perhost should be present\
+                in global config")
+            concurrentSnapshots = int(config[0].value)
         else:
             self.skipTest("Skipping tests as the config value \
                     concurrent.snapshots.threshold.perhost is Null")
@@ -304,9 +304,9 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
              concurrent.snapshots.threshold.perhost parameter.
         """
         with self.assertRaises(Exception):
-           Configurations.update(
-             self.apiclient,
-             "concurrent.snapshots.threshold.perhost",
-             "String"
-           )
+            Configurations.update(
+                self.apiclient,
+                "concurrent.snapshots.threshold.perhost",
+                "String"
+            )
         return

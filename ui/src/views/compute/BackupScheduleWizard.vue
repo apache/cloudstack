@@ -63,7 +63,7 @@ export default {
       closeSchedule: this.closeAction
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

@@ -40,7 +40,7 @@
           slot="addonBefore"
           trigger="click"
           v-model="visibleFilter">
-          <template slot="content">
+          <template slot="content" v-if="visibleFilter">
             <a-form
               style="min-width: 170px"
               :form="form"
@@ -53,7 +53,9 @@
                 <a-select
                   allowClear
                   v-if="field.type==='list'"
-                  v-decorator="[field.name]"
+                  v-decorator="[field.name, {
+                    initialValue: fieldValues[field.name] || null
+                  }]"
                   :loading="field.loading">
                   <a-select-option
                     v-for="(opt, idx) in field.opts"
@@ -62,7 +64,9 @@
                 </a-select>
                 <a-input
                   v-else-if="field.type==='input'"
-                  v-decorator="[field.name]" />
+                  v-decorator="[field.name, {
+                    initialValue: fieldValues[field.name] || null
+                  }]" />
                 <div v-else-if="field.type==='tag'">
                   <div>
                     <a-input-group
@@ -70,11 +74,13 @@
                       size="small"
                       compact>
                       <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                      <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                      <a-input
+                        class="tag-disabled-input"
+                        style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
+                        placeholder="="
+                        disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <a-button shape="circle" size="small" @click="inputKey = inputValue = ''">
-                        <a-icon type="close"/>
-                      </a-button>
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
                 </div>
@@ -100,7 +106,7 @@
             class="filter-button"
             size="small"
             @click="() => { searchQuery = null }">
-            <a-icon type="filter" :theme="Object.keys(searchParams).length > 0 ? 'twoTone' : 'outlined'" />
+            <a-icon type="filter" :theme="isFiltered ? 'twoTone' : 'outlined'" />
           </a-button>
         </a-popover>
       </a-input-search>
@@ -110,9 +116,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'SearchView',
+  components: {
+    TooltipButton
+  },
   props: {
     searchFilters: {
       type: Array,
@@ -127,7 +137,6 @@ export default {
       default: () => {}
     }
   },
-  inject: ['parentSearch', 'parentChangeFilter'],
   data () {
     return {
       searchQuery: null,
@@ -135,7 +144,9 @@ export default {
       visibleFilter: false,
       fields: [],
       inputKey: null,
-      inputValue: null
+      inputValue: null,
+      fieldValues: {},
+      isFiltered: false
     }
   },
   beforeCreate () {
@@ -152,6 +163,13 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
+      this.isFiltered = false
+      this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          this.isFiltered = true
+          return true
+        }
+      })
     }
   },
   mounted () {
@@ -275,7 +293,6 @@ export default {
         }
         if (clusterIndex > -1) {
           const cluster = response.filter(item => item.type === 'clusterid')
-          console.log(cluster)
           if (cluster && cluster.length > 0) {
             this.fields[clusterIndex].opts = cluster[0].data
           }
@@ -294,7 +311,19 @@ export default {
         if (clusterIndex > -1) {
           this.fields[clusterIndex].loading = false
         }
+        this.fillFormFieldValues()
       })
+    },
+    fillFormFieldValues () {
+      this.fieldValues = {}
+      if (Object.keys(this.$route.query).length > 0) {
+        this.fieldValues = this.$route.query
+      }
+      if (this.$route.meta.params) {
+        Object.assign(this.fieldValues, this.$route.meta.params)
+      }
+      this.inputKey = this.fieldValues['tags[0].key'] || null
+      this.inputValue = this.fieldValues['tags[0].value'] || null
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
@@ -393,7 +422,7 @@ export default {
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
-      this.parentSearch({ searchQuery: this.searchQuery })
+      this.$emit('search', { searchQuery: this.searchQuery })
     },
     onClear () {
       this.searchFilters.map(item => {
@@ -401,11 +430,12 @@ export default {
         field[item] = undefined
         this.form.setFieldsValue(field)
       })
+      this.isFiltered = false
       this.inputKey = null
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
-      this.parentSearch(this.paramsFilter)
+      this.$emit('search', this.paramsFilter)
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -414,6 +444,7 @@ export default {
         if (err) {
           return
         }
+        this.isFiltered = true
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {
@@ -427,7 +458,7 @@ export default {
             this.paramsFilter['tags[0].value'] = this.inputValue
           }
         }
-        this.parentSearch(this.paramsFilter)
+        this.$emit('search', this.paramsFilter)
       })
     },
     handleKeyChange (e) {
@@ -437,7 +468,7 @@ export default {
       this.inputValue = e.target.value
     },
     changeFilter (filter) {
-      this.parentChangeFilter(filter)
+      this.$emit('change-filter', filter)
     }
   }
 }

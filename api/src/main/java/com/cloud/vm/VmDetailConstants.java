@@ -21,6 +21,7 @@ public interface VmDetailConstants {
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
+    String NAME_ON_HYPERVISOR= "nameonhypervisor";
 
     // VMware specific
     String NIC_ADAPTER = "nicAdapter";
