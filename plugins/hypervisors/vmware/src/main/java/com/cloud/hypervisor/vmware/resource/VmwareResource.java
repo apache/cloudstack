@@ -1709,8 +1709,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unable to execute ScaleVmCommand");
             }
         } catch (Exception e) {
-            s_logger.error("Unexpected exception: ", e);
-            return new ScaleVmAnswer(cmd, false, "Unable to execute ScaleVmCommand due to " + e.toString());
+            s_logger.error(String.format("ScaleVmCommand failed due to: [%s]", VmwareHelper.getExceptionMessage(e)), e);
+            return new ScaleVmAnswer(cmd, false, String.format("Unable to execute ScaleVmCommand due to: [%s]", e.toString()));
         }
         return new ScaleVmAnswer(cmd, true, null);
     }
@@ -2441,33 +2441,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return startAnswer;
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "StartCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.warn(msg, e);
-            StartAnswer startAnswer = new StartAnswer(cmd, msg);
+            StartAnswer startAnswer = new StartAnswer(cmd, createLogMessageException(e, cmd));
             if (vmAlreadyExistsInVcenter) {
                 startAnswer.setContextParam("stopRetry", "true");
             }
 
             // Since VM start failed, if there was an existing VM in a different cluster that was unregistered, register it back.
             if (existingVmName != null && existingVmFileInfo != null) {
-                s_logger.debug("Since VM start failed, registering back an existing VM: " + existingVmName + " that was unregistered");
+                s_logger.debug(String.format("Since VM start failed, registering back an existing VM: [%s] that was unregistered.", existingVmName));
                 try {
                     DatastoreFile fileInDatastore = new DatastoreFile(existingVmFileInfo.getVmPathName());
                     DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
                     registerVm(existingVmName, existingVmDsMo);
                 } catch (Exception ex) {
-                    String message = "Failed to register an existing VM: " + existingVmName + " due to " + VmwareHelper.getExceptionMessage(ex);
-                    s_logger.warn(message, ex);
+                    String message = String.format("Failed to register an existing VM: [%s] due to [%s].", existingVmName, VmwareHelper.getExceptionMessage(ex));
+                    s_logger.error(message, ex);
                 }
             }
-
             return startAnswer;
-        } finally {
         }
     }
 
@@ -3888,17 +3879,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             HostStatsEntry entry = getHyperHostStats(hyperHost);
             if (entry != null) {
+                s_logger.debug(String.format("Host stats response from hypervisor is: [%s].", getHumanReadableBytesJson(_gson.toJson(entry))));
                 entry.setHostId(cmd.getHostId());
                 answer = new GetHostStatsAnswer(cmd, entry);
             }
         } catch (Exception e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "Unable to execute GetHostStatsCommand due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
+            s_logger.error(createLogMessageException(e, cmd), e);
         }
 
         if (s_logger.isTraceEnabled()) {
@@ -3930,28 +3916,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            if (vmNames != null) {
+            if (CollectionUtils.isNotEmpty(vmNames)) {
                 vmStatsMap = getVmStats(vmNames);
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            s_logger.error("Unable to execute GetVmStatsCommand due to : " + VmwareHelper.getExceptionMessage(e), e);
+            createLogMessageException(e, cmd);
         }
 
-        Answer answer = new GetVmStatsAnswer(cmd, vmStatsMap);
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Report GetVmStatsAnswer: " + _gson.toJson(answer));
-        }
-        return answer;
+        s_logger.debug(String.format("VM Stats Map is: [%s].", getHumanReadableBytesJson(_gson.toJson(vmStatsMap))));
+        return new GetVmStatsAnswer(cmd, vmStatsMap);
     }
 
     protected Answer execute(GetVmDiskStatsCommand cmd) {
         try {
+            logInDebugCommand(cmd);
+
             final VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             final ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
             VimPortType service = getServiceContext().getService();
@@ -4055,15 +4034,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                     diskStats.add(new VmDiskStatsEntry(vmName, VmwareHelper.getDiskDeviceFileName(disk), writeReq, readReq, writeBytes, readBytes));
                 }
-                if (diskStats.size() > 0) {
+                if (CollectionUtils.isNotEmpty(diskStats)) {
                     vmStatsMap.put(vmName, diskStats);
                 }
             }
-            if (vmStatsMap.size() > 0) {
+
+            s_logger.debug(String.format("VM Disks Maps is: [%s].", getHumanReadableBytesJson(_gson.toJson(vmStatsMap))));
+            if (MapUtils.isNotEmpty(vmStatsMap)) {
                 return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(), vmStatsMap);
             }
         } catch (Exception e) {
-            s_logger.error("Unable to execute GetVmDiskStatsCommand due to " + VmwareHelper.getExceptionMessage(e), e);
+            s_logger.error(String.format("Unable to execute GetVmDiskStatsCommand due to [%s].", VmwareHelper.getExceptionMessage(e)), e);
         }
         return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
@@ -4074,6 +4055,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected GetVolumeStatsAnswer execute(GetVolumeStatsCommand cmd) {
         try {
+            logInDebugCommand(cmd);
+
             VmwareHypervisorHost srcHyperHost = getHyperHost(getServiceContext());
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, cmd.getPoolUuid());
             assert (morDs != null);
@@ -4109,9 +4092,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                 }
             }
+            s_logger.debug(String.format("Volume Stats Entry is: [%s].", getHumanReadableBytesJson(_gson.toJson(statEntry))));
             return new GetVolumeStatsAnswer(cmd, "", statEntry);
         } catch (Exception e) {
-            s_logger.info("VOLSTAT GetVolumeStatsCommand failed " + e.getMessage());
+            s_logger.error(String.format("VOLSTAT GetVolumeStatsCommand failed due to [%s].", e.getMessage()), e);
         }
 
         return new GetVolumeStatsAnswer(cmd, "", null);
@@ -4128,12 +4112,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new CheckHealthAnswer(cmd, true);
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            s_logger.error("Unable to execute CheckHealthCommand due to " + VmwareHelper.getExceptionMessage(e), e);
+            createLogMessageException(e, cmd);
         }
         return new CheckHealthAnswer(cmd, false);
     }
@@ -4193,14 +4172,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new StopAnswer(cmd, msg, true);
             }
         } catch (Exception e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "StopCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
-            return new StopAnswer(cmd, msg, false);
+            return new StopAnswer(cmd, createLogMessageException(e, cmd), false);
         }
     }
 
@@ -4266,21 +4238,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new RebootAnswer(cmd, msg, false);
             }
         } catch (Exception e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "RebootCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
-            return new RebootAnswer(cmd, msg, false);
+            return new RebootAnswer(cmd, createLogMessageException(e, cmd), false);
         } finally {
             if (toolsInstallerMounted) {
                 try {
                     vmMo.mountToolsInstaller();
-                    s_logger.debug("Successfully re-mounted vmware tools installer for :[" + cmd.getVmName() + "]");
+                    s_logger.debug(String.format("Successfully re-mounted vmware tools installer for :[%s].", cmd.getVmName()));
                 } catch (Exception e) {
-                    s_logger.warn("Unabled to re-mount vmware tools installer for :[" + cmd.getVmName() + "]");
+                    s_logger.error(String.format("Unabled to re-mount vmware tools installer for: [%s].", cmd.getVmName()), e);
                 }
             }
         }
@@ -4336,20 +4301,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-            s_logger.error("Unexpected exception: " + VmwareHelper.getExceptionMessage(e), e);
-
+            createLogMessageException(e, cmd);
             return new CheckVirtualMachineAnswer(cmd, powerState, vncPort);
         }
     }
 
     protected Answer execute(PrepareForMigrationCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PrepareForMigrationCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
-        }
+        s_logger.info(String.format("Executing resource PrepareForMigrationCommand: [%s]", getHumanReadableBytesJson(_gson.toJson(cmd))));
 
         VirtualMachineTO vm = cmd.getVirtualMachine();
         if (s_logger.isDebugEnabled()) {
@@ -4402,14 +4360,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             return new PrepareForMigrationAnswer(cmd);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "Unexpected exception " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new PrepareForMigrationAnswer(cmd, msg);
+            return new PrepareForMigrationAnswer(cmd, createLogMessageException(e, cmd));
         }
     }
 
@@ -4590,14 +4541,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "MigrationCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.warn(msg, e);
-            return new MigrateAnswer(cmd, false, msg, null);
+            return new MigrateAnswer(cmd, false, createLogMessageException(e, cmd), null);
         }
     }
 
@@ -5048,17 +4992,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return answer;
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-
-                invalidateServiceContext();
-            }
-
-            String msg = "ModifyStoragePoolCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-
-            s_logger.error(msg, e);
-
-            return new Answer(cmd, false, msg);
+            return new Answer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -5092,18 +5026,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return answer;
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-
-                invalidateServiceContext();
-            }
-
-            String msg = "GetStoragePoolCapabilitiesCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-
-            s_logger.error(msg, e);
             GetStoragePoolCapabilitiesAnswer answer = new GetStoragePoolCapabilitiesAnswer(cmd);
             answer.setResult(false);
-            answer.setDetails(msg);
+            answer.setDetails(createLogMessageException(e, cmd));
             return answer;
         }
     }
@@ -5159,7 +5084,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             StorageFilerTO pool = cmd.getPool();
-            String msg = "DeleteStoragePoolCommand (pool: " + pool.getHost() + ", path: " + pool.getPath() + ") failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = String.format("DeleteStoragePoolCommand (pool: [%s], path: [%s]) failed due to [%s].", pool.getHost(), pool.getPath(), VmwareHelper.getExceptionMessage(e));
+            s_logger.error(msg, e);
 
             return new Answer(cmd, false, msg);
         }
@@ -5245,15 +5171,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 invalidateServiceContext();
             }
 
-            if (cmd.isAttach()) {
-                String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
-                s_logger.error(msg, e);
-                return new AttachIsoAnswer(cmd, false, msg);
-            } else {
-                String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
-                s_logger.warn(msg, e);
-                return new AttachIsoAnswer(cmd, false, msg);
-            }
+            String message = String.format("AttachIsoCommand(%s) failed due to [%s].", cmd.isAttach()? "attach" : "detach", VmwareHelper.getExceptionMessage(e));
+            s_logger.error(message, e);
+            return new AttachIsoAnswer(cmd, false, message);
         }
     }
 
@@ -5348,14 +5268,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return mgr.getStorageManager().execute(this, cmd);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String details = "BackupSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details, e);
-            return new BackupSnapshotAnswer(cmd, false, details, null, true);
+            return new BackupSnapshotAnswer(cmd, false, createLogMessageException(e, cmd), null, true);
         }
     }
 
@@ -5408,13 +5321,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return mgr.getStorageManager().execute(this, cmd);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            details = "CreateVolumeFromSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details, e);
+            details = createLogMessageException(e, cmd);
         }
 
         return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
@@ -5432,14 +5339,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return mgr.getStorageManager().execute(this, cmd);
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String details = "CreatePrivateTemplateFromVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details, e);
-            return new CreatePrivateTemplateAnswer(cmd, false, details);
+            return new CreatePrivateTemplateAnswer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -5457,14 +5357,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return mgr.getStorageManager().execute(this, cmd);
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String details = "CreatePrivateTemplateFromSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details, e);
-            return new CreatePrivateTemplateAnswer(cmd, false, details);
+            return new CreatePrivateTemplateAnswer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -5518,8 +5411,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 invalidateServiceContext();
             }
 
-            String msg = "Unable to execute GetStorageStatsCommand(storageId : " + cmd.getStorageId() + ", localPath: " + cmd.getLocalPath() + ", poolType: " + cmd.getPooltype()
-                    + ") due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = String.format("Unable to execute GetStorageStatsCommand(storageId : [%s], localPath: [%s], poolType: [%s]) due to [%s]", cmd.getStorageId(), cmd.getLocalPath(), cmd.getPooltype(), VmwareHelper.getExceptionMessage(e));
             s_logger.error(msg, e);
             return new GetStorageStatsAnswer(cmd, msg);
         }
@@ -5556,14 +5448,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             return new GetVncPortAnswer(cmd, portInfo.first(), portInfo.second());
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "GetVncPortCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new GetVncPortAnswer(cmd, msg);
+            return new GetVncPortAnswer(cmd, createLogMessageException(e, cmd));
         }
     }
 
@@ -5682,11 +5567,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info(details);
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-            details += "Encountered exception : " + VmwareHelper.getExceptionMessage(e);
+            createLogMessageException(e, cmd);
+            details = String.format("%s. Encountered exception: [%s].", details,  VmwareHelper.getExceptionMessage(e));
             s_logger.error(details);
         }
 
@@ -5708,14 +5590,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return (PrimaryStorageDownloadAnswer) mgr.getStorageManager().execute(this, cmd);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "PrimaryStorageDownloadCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
+            return new PrimaryStorageDownloadAnswer(createLogMessageException(e, cmd));
         }
     }
 
@@ -5758,14 +5633,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new Answer(cmd, true, msg);
             }
         } catch (Exception e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "UnregisterVMCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
-            return new Answer(cmd, false, msg);
+            return new Answer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -5811,14 +5679,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             return new Answer(cmd, true, "Unregistered resources for NIC " + cmd.getNicUuid());
         } catch (Exception e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "UnregisterVMCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
-            return new Answer(cmd, false, msg);
+            return new Answer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -5846,14 +5707,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return (CopyVolumeAnswer) mgr.getStorageManager().execute(this, cmd);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String msg = "CopyVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CopyVolumeAnswer(cmd, false, msg, null, null);
+            return new CopyVolumeAnswer(cmd, false, createLogMessageException(e, cmd), null, null);
         }
     }
 
@@ -6542,7 +6396,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 for (final Long value : values) {
                                     sum += value;
                                 }
-                                double avg = sum / values.size();
+                                double avg = sum / (values.size() * 1f);
                                 if (series.getId().getCounterId() == rxPerfCounterInfo.getKey()) {
                                     networkReadKBs = avg;
                                 }
@@ -6990,14 +6844,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd, true, "Success");
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext(null);
-            }
-
-            String msg = "DestroyCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+            return new Answer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -7685,5 +7532,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
         }
+    }
+
+    private String createLogMessageException(Throwable e, Command command) {
+        if (e instanceof RemoteException) {
+            s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context.");
+            invalidateServiceContext();
+        }
+
+        String message = String.format("%s failed due to [%s].", command.getClass().getSimpleName(), VmwareHelper.getExceptionMessage(e));
+        s_logger.error(message, e);
+
+        return message;
+    }
+
+    private void logInDebugCommand(Command cmd) {
+        s_logger.debug(String.format("Executing resource command %s: [%s].", cmd.getClass().getName(), getHumanReadableBytesJson(_gson.toJson(cmd))));
     }
 }

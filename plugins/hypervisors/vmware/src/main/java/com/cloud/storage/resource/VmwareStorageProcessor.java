@@ -1827,8 +1827,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 Script command = new Script(false, "mkdir", _timeout, s_logger);
                 command.add("-p");
                 command.add(exportPath);
-                if (command.execute() != null) {
-                    throw new Exception("unable to prepare snapshot backup directory");
+                String result = command.execute();
+                if (result != null) {
+                    String errorMessage = String.format("Unable to prepare snapshot backup directory: [%s] due to [%s].", exportPath, result);
+                    s_logger.error(errorMessage);
+                    throw new Exception(errorMessage);
                 }
             }
         }
@@ -1860,11 +1863,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
                 vmMo = clonedVm;
             }
+            s_logger.debug(String.format("Exporting volume to export path [%s], with VM config [%s].", exportPath, _gson.toJson(vmMo)));
             vmMo.exportVm(exportPath, exportName, false, false);
 
             return new Pair<>(diskDevice, disks);
         } finally {
             if (clonedVm != null) {
+                s_logger.debug(String.format("Detaching all VM [%s] disks and destroying it.", _gson.toJson(clonedVm)));
                 clonedVm.detachAllDisks();
                 clonedVm.destroy();
             }
@@ -1883,6 +1888,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer backupSnapshot(CopyCommand cmd) {
+        s_logger.debug(String.format("Receive CopyCommand: [%s].", _gson.toJson(cmd)));
+
         SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
         DataStoreTO primaryStore = srcSnapshot.getDataStore();
         SnapshotObjectTO destSnapshot = (SnapshotObjectTO)cmd.getDestTO();
@@ -1946,6 +1953,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     hasOwnerVm = true;
                 }
 
+                s_logger.debug(String.format("Executing backup snapshot with UUID [%s] to secondary storage.", snapshotUuid));
                 backupResult =
                         backupSnapshotToSecondaryStorage(context, vmMo, hyperHost, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl,
                                 prevSnapshotUuid, prevBackupUuid, hostService.getWorkerName(context, cmd, 1, null), _nfsVersion);
@@ -2034,6 +2042,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 try {
                     if (workerVm != null) {
+                        s_logger.debug(String.format("Detaching disks and destroying worker VM: [%S].", _gson.toJson(workerVm)));
                         // detach volume and destroy worker vm
                         workerVm.detachAllDisks();
                         workerVm.destroy();
