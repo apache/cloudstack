@@ -24,7 +24,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,7 +40,6 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -72,7 +70,6 @@ public class ParamProcessWorker implements DispatchWorker {
     private static final Logger s_logger = Logger.getLogger(ParamProcessWorker.class.getName());
     public final DateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
     public final DateFormat newInputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    public static final List<String> avoidList = new ArrayList<>(Arrays.asList(ApiConstants.USERNAME, ApiConstants.PASSWORD));
 
     @Inject
     protected AccountManager _accountMgr;
@@ -97,9 +94,6 @@ public class ParamProcessWorker implements DispatchWorker {
     }
 
     private void validateNonEmptyString(final Object param, final String argName) {
-        if (avoidList.contains(argName)) {
-            return;
-        }
         if (param == null || Strings.isNullOrEmpty(param.toString())) {
             throw new InvalidParameterValueException(String.format("Empty or null value provided for API arg: %s", argName));
         }
