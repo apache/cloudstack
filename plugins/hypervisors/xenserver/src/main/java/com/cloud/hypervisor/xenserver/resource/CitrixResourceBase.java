@@ -1952,13 +1952,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
             bootType = ApiConstants.BootType.BIOS.toString();
         }
-        boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
+        Boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
                 ApiConstants.BootMode.SECURE.toString().equals(bootMode);
         final Map<String, String> bootParams = vm.getHVMBootParams(conn);
         bootParams.replace("firmware", bootType.toLowerCase());
         vm.setHVMBootParams(conn, bootParams);
         final Map<String, String> platform = vm.getPlatform(conn);
-        platform.put("secureboot", Boolean.toString(isSecure));
+        platform.put("secureboot", isSecure.toString());
         vm.setPlatform(conn, platform);
     }
 
