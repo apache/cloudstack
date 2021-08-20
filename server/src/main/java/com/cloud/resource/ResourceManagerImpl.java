@@ -688,7 +688,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
         }
-        if (!hypervisorType.equalsIgnoreCase(HypervisorType.VMware.toString()) &&
+        if (!HypervisorType.VMware.toString().equalsIgnoreCase(hypervisorType) &&
                 (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
             throw new InvalidParameterValueException("Username and Password need to be provided.");
         }
