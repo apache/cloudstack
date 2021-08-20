@@ -167,7 +167,7 @@ ShortKey.keyDown = (pKey) => {
 }
 
 if (process && process.env && process.env.NODE_ENV !== 'test') {
-  ;(function () {
+  (function () {
     document.addEventListener('keydown', (pKey) => {
       const decodedKey = ShortKey.decodeKey(pKey)
       // Check avoidable elements
@@ -198,7 +198,6 @@ if (process && process.env && process.env.NODE_ENV !== 'test') {
           dispatchShortkeyEvent(decodedKey)
         }
       }
-      keyPressed = false
       if (definedCharKeys.length) {
         definedCharKeys.forEach((keySequence) => {
           if (keySequence.base === pKey.key) {
@@ -206,6 +205,7 @@ if (process && process.env && process.env.NODE_ENV !== 'test') {
           }
         })
       }
+      keyPressed = false
     }, true)
   })()
 }

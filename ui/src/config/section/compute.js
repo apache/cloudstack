@@ -28,7 +28,7 @@ export default {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
-      shortKey: ['c', 't'],
+      shortKey: ['c', 'i'],
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
@@ -427,7 +427,7 @@ export default {
       name: 'kubernetes',
       title: 'label.kubernetes',
       icon: kubernetes,
-      shortKey: ['c', 'b'],
+      shortKey: ['c', 'k'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: () => {

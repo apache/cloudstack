@@ -162,26 +162,8 @@ export default {
         </Item>
       )
     },
-    renderAllShortkey (menu) {
-      const on = {
-        shortkey: () => {
-          if (this.cachedPath === menu.path) {
-            return
-          }
-
-          if (menu.path) {
-            this.cachedPath = menu.path
-            setTimeout(() => this.$router.push({ path: menu.path }))
-          }
-        }
-      }
-      return (
-        <span vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} class="none" ></span>
-      )
-    },
     renderSubMenu (menu) {
       const itemArr = []
-      const shortkeyArr = [] // list of all shortkeys
       const on = {
         click: () => {
           this.handleClickParentMenu(menu)
@@ -193,7 +175,6 @@ export default {
       if (!menu.hideChildrenInMenu) {
         menu.children.forEach(item => itemArr.push(this.renderItem(item)))
       }
-      menu.children.forEach(item => shortkeyArr.push(this.renderAllShortkey(item)))
       return (
         <SubMenu {...{ key: menu.path }}>
           <span slot="title">
@@ -212,7 +193,6 @@ export default {
                 ''
               )
             }
-            {shortkeyArr}
           </span>
           {itemArr}
         </SubMenu>
