@@ -1857,8 +1857,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
-    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume,
+                               String customId, long entityOwnerId, String chainInfo, String name) {
+
         Account caller = CallContext.current().getCallingAccount();
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
+            if (path != null || state != null || storageId != null || displayVolume != null || customId != null || chainInfo != null) {
+                throw new InvalidParameterValueException("The domain admin and normal user are not allowed to update volume except volume name");
+            }
+        }
+
         VolumeVO volume = _volsDao.findById(volumeId);
 
         if (volume == null) {
@@ -1901,6 +1909,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (customId != null) {
             volume.setUuid(customId);
+        }
+
+        if (name != null) {
+            volume.setName(name);
         }
 
         updateDisplay(volume, displayVolume);
