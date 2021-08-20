@@ -491,7 +491,7 @@
                   </span>
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware', 'Xenserver'].includes(hypervisor) && !template.deployasis">
+                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
                           v-decorator="['boottype']"

@@ -1440,7 +1440,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
         try {
-            setVmBootDetails(vm, conn, vmSpec.getBootMode(), vmSpec.getBootType());
+            setVmBootDetails(vm, conn, vmSpec.getBootType(), vmSpec.getBootMode());
         } catch (final XenAPIException | XmlRpcException e) {
             throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
         }
@@ -1958,7 +1958,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         bootParams.replace("firmware", bootType.toLowerCase());
         vm.setHVMBootParams(conn, bootParams);
         final Map<String, String> platform = vm.getPlatform(conn);
-        platform.put("secureboot", isSecure ? "true" : "false");
+        platform.put("secureboot", Boolean.toString(isSecure));
         vm.setPlatform(conn, platform);
     }
 
