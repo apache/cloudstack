@@ -61,7 +61,7 @@
       </a-descriptions>
     </p>
     <template slot="networkname" slot-scope="text, item">
-      <resource-icon v-if="networkicon[item.id]" :image="networkicon[item.id]" size="1x" style="margin-right: 5px"/>
+      <resource-icon v-if="!networkIconLoading && networkicon[item.id]" :image="networkicon[item.id]" size="1x" style="margin-right: 5px"/>
       <a-icon v-else type="apartment" style="margin-right: 5px" />
       <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
         {{ text }}
@@ -123,40 +123,39 @@ export default {
           dataIndex: 'gateway'
         }
       ],
-      networkicon: {}
+      networkicon: {},
+      networkIconLoading: false
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
+    resource (newItem, oldItem) {
       this.resource = newItem
-      this.fetchNetworks()
+      if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
+        this.fetchNetworks()
+      }
     }
-  },
-  mounted () {
-    this.fetchNetworks()
   },
   created () {
     this.fetchNetworks()
   },
-  computed () {
-    this.fetchNetworks()
-  },
   methods: {
     fetchNetworks () {
+      if (!this.resource || !this.resource.nic) return
+      this.networkIconLoading = true
+      this.networkicon = {}
       const promises = []
-      if (this.resource && this.resource.nic) {
-        this.resource.nic.forEach((item, index) => {
-          promises.push(this.fetchNetworkIcon(item.id, item.networkid))
-        })
-        Promise.all(promises).catch((reason) => {
-          console.log(reason)
-        }).finally(() => {
-          // this.parentFetchData()
-        })
-      }
+      this.resource.nic.forEach((item, index) => {
+        promises.push(this.fetchNetworkIcon(item.id, item.networkid))
+      })
+      Promise.all(promises).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.networkIconLoading = false
+      })
     },
     fetchNetworkIcon (id, networkid) {
       return new Promise((resolve, reject) => {
+        this.networkicon[id] = null
         api('listNetworks', {
           id: networkid,
           showicon: true
