@@ -2776,6 +2776,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                         }
                                     }
                                 }
+                                SystemVmTemplateRegistration.mountStore(storeUrlAndId.first());
                                 SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
                             } catch (CloudRuntimeException e) {
                                 s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()));

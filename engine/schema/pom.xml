@@ -61,6 +61,37 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>${cs.gmaven.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <bindPropertiesToSeparateVariables> true </bindPropertiesToSeparateVariables>
+                    <scripts>
+                        log.info "$project.version"
+                        def projectVersion = project.version
+                        String[] versionParts =  projectVersion.split("\\.")
+                        project.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
+                        project.properties['patch.version'] = versionParts[2]
+                    </scripts>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>${cs.groovy.version}</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
                 <version>1.6.3</version>
@@ -71,8 +102,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-<!--                            <url>https://download.cloudstack.org/systemvm/4.16/md5sum.txt</url>-->
-                            <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/md5sum.txt</url>
+                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                         </configuration>
                     </execution>
@@ -123,8 +153,7 @@
                                     <goal>wget</goal>
                                 </goals>
                                 <configuration>
-<!--                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2</url>-->
-                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2</url>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                 </configuration>
                             </execution>
@@ -134,8 +163,7 @@
                                     <goal>wget</goal>
                                 </goals>
                                 <configuration>
-<!--                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-vmware.ova</url>-->
-                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/systemvmtemplate-4.16.0-vmware.ova</url>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                 </configuration>
                             </execution>
@@ -145,8 +173,7 @@
                                     <goal>wget</goal>
                                 </goals>
                                 <configuration>
-<!--                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2</url>-->
-                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2</url>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                 </configuration>
                             </execution>

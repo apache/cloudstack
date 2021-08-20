@@ -759,8 +759,9 @@ parse_cmd_line() {
         ntpserverlist)
             export NTP_SERVER_LIST=$VALUE
             ;;
-            authorized_key)
-              export AUTHORIZED_KEYS=$VALUE
+        authorized_key)
+            export AUTHORIZED_KEYS=$VALUE
+            ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
@@ -774,7 +775,7 @@ parse_cmd_line() {
   if [ ! -z "$AUTHORIZED_KEYS" ]
   then
     echo "$AUTHORIZED_KEYS" > $TMP_KEY_PATH
-    base64Val=`base64 -d $TMP_KEY_PATH`
+    base64Val=$(base64 -d $TMP_KEY_PATH)
     echo "$base64Val" > $AUTHORIZED_KEYS_PATH
     chmod go-rwx $AUTHORIZED_KEYS_PATH
     rm -rf $TMP_KEY_PATH
