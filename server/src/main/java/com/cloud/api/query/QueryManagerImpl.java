@@ -3068,17 +3068,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (currentVmOffering != null) {
             List<String> tags = StringUtils.csvTagsToList(currentVmOffering.getTags());
-            SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
-            for(String tag: tags) {
-                sb.and(tag, sb.entity().getTags(), Op.FIND_IN_SET);
-            }
-            sb.done();
+            tags.addAll(StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
+            if (!tags.isEmpty()) {
+                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                for(int i = 0; i < tags.size(); i++) {
+                    sb.and(Integer.toString(i), sb.entity().getTags(), Op.FIND_IN_SET);
+                }
+                sb.done();
 
-            SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
-            for(String tag: tags) {
-                scc.setParameters(tag, tag);
+                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                for(int i = 0; i < tags.size(); i++) {
+                    scc.setParameters(Integer.toString(i), tags.get(i));
+                }
+                sc.addAnd("tags", SearchCriteria.Op.SC, scc);
             }
-            sc.addAnd("tags", SearchCriteria.Op.SC, scc);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
