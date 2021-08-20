@@ -40,7 +40,7 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                verifyNetworkState,
                                add_netscaler,
-                               wait_for_cleanup, list_routers, list_hosts)
+                               wait_for_cleanup, list_routers, list_hosts, list_clusters)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -68,6 +68,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.cluster = list_clusters(cls.api_client)[0]
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -288,6 +289,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         l2_persistent_network_offering = self.createNetworkOffering("nw_off_L2_persistent")
         hosts = list_hosts(self.apiclient, clusterid=self.cluster.id)
         host = hosts[0]
+        vlan_id = 991
 
         Host(hosts[0].__dict__).delete(self.apiclient)  # remove host from zone before creating network
 
@@ -297,7 +299,8 @@ class TestPersistentNetworks(cloudstackTestCase):
             networkofferingid=l2_persistent_network_offering.id,
             accountid=self.account.name,
             domainid=self.domain.id,
-            zoneid=self.zone.id
+            zoneid=self.zone.id,
+            vlan=vlan_id
         )
 
         self.cleanup.append(network)
