@@ -1329,9 +1329,11 @@ def add_fw_framework(brname):
 
     try:
         refs = int(execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
+        refs_in = int(execute("""iptables -n -L %s-IN | awk '/%s-IN(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
+        refs_out = int(execute("""iptables -n -L %s-OUT | awk '/%s-OUT(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
         refs6 = int(execute("""ip6tables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
 
-        if refs == 0:
+        if refs == 0 or refs_in == 0 or refs_out == 0:
             execute("iptables -I FORWARD -i " + brname + " -j DROP")
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
             execute("iptables -I FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
