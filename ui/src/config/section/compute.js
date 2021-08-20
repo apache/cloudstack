@@ -182,7 +182,8 @@ export default {
           dataView: true,
           popup: true,
           show: (record) => {
-            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC'))
+            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
+              (['Stopped'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC'))
           },
           component: () => import('@/views/compute/CreateSnapshotWizard.vue')
         },
