@@ -21,7 +21,7 @@ export default {
   name: 'storagepool',
   title: 'label.primary.storage',
   icon: 'database',
-  shortKey: ['k', 't'],
+  shortKey: ['i', 't'],
   docHelp: 'adminguide/storage.html#primary-storage',
   permission: ['listStoragePoolsMetrics'],
   columns: () => {

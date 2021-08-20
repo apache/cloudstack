@@ -31,13 +31,13 @@ export default {
   name: 'infra',
   title: 'label.infrastructure',
   icon: 'bank',
-  shortKey: ['shift', 'k'],
+  shortKey: ['shift', 'i'],
   permission: ['listInfrastructure'],
   children: [
     {
       name: 'infrasummary',
       title: 'label.summary',
-      shortKey: ['k', 'b'],
+      shortKey: ['i', 'y'],
       icon: 'read',
       permission: ['listInfrastructure'],
       component: () => import('@/views/infra/InfraSummary.vue')
@@ -57,7 +57,7 @@ export default {
       name: 'cpusocket',
       title: 'label.cpu.sockets',
       icon: 'inbox',
-      shortKey: ['k', 'w'],
+      shortKey: ['i', 'u'],
       docHelp: 'adminguide/management.html#reporting-cpu-sockets',
       permission: ['listHosts'],
       component: () => import('@/views/infra/CpuSockets.vue')
@@ -66,7 +66,7 @@ export default {
       name: 'managementserver',
       title: 'label.management.servers',
       icon: 'rocket',
-      shortKey: ['k', 'm'],
+      shortKey: ['i', 'm'],
       permission: ['listManagementServers'],
       columns: ['name', 'state', 'version']
     },
@@ -74,7 +74,7 @@ export default {
       name: 'alert',
       title: 'label.alerts',
       icon: 'flag',
-      shortKey: ['k', 'a'],
+      shortKey: ['i', 'a'],
       docHelp: 'adminguide/management.html#administrator-alerts',
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],
