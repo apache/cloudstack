@@ -3067,20 +3067,34 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (currentVmOffering != null) {
-            List<String> tags = StringUtils.csvTagsToList(currentVmOffering.getTags());
-            tags.addAll(StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
-            if (!tags.isEmpty()) {
+            List<String> storageTags = StringUtils.csvTagsToList(currentVmOffering.getTags());
+            if (!storageTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
-                for(int i = 0; i < tags.size(); i++) {
-                    sb.and(Integer.toString(i), sb.entity().getTags(), Op.FIND_IN_SET);
+                for(String tag : storageTags) {
+                    sb.and(tag, sb.entity().getTags(), Op.FIND_IN_SET);
                 }
                 sb.done();
 
                 SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
-                for(int i = 0; i < tags.size(); i++) {
-                    scc.setParameters(Integer.toString(i), tags.get(i));
+                for(String tag : storageTags) {
+                    scc.setParameters(tag, tag);
                 }
-                sc.addAnd("tags", SearchCriteria.Op.SC, scc);
+                sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
+            }
+
+            List<String> hostTags = StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            if (!hostTags.isEmpty()) {
+                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                for(String tag : hostTags) {
+                    sb.and(tag, sb.entity().getHostTag(), Op.FIND_IN_SET);
+                }
+                sb.done();
+
+                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                for(String tag : hostTags) {
+                    scc.setParameters(tag, tag);
+                }
+                sc.addAnd("hostTags", SearchCriteria.Op.SC, scc);
             }
         }
 
