@@ -31,6 +31,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -121,6 +122,15 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
     private String xenServerIsoName = TemplateManager.XS_TOOLS_ISO;
     private String xenServerIsoDisplayText = "XenServer Tools Installer ISO (xen-pv-drv-iso)";
+
+    public final static String MIN_UEFI_SUPPORTED_VERSION = "8.2";
+
+    public static boolean isUefiSupported(String hostProductVersion) {
+        if (StringUtils.isEmpty(hostProductVersion)) {
+            return false;
+        }
+        return hostProductVersion.compareTo(MIN_UEFI_SUPPORTED_VERSION) >= 0;
+    }
 
     protected XcpServerDiscoverer() {
     }
@@ -309,6 +319,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put("username", username);
                 params.put("username", username);
                 details.put("password", password);
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.toString(isUefiSupported(prodVersion)));
                 params.put("password", password);
                 params.put("zone", Long.toString(dcId));
                 params.put("guid", record.uuid);
