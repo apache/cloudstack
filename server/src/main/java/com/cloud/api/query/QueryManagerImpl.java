@@ -2864,23 +2864,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<>(result.first(), result.second());
     }
 
-    private List<ServiceOfferingJoinVO> filterOfferingsOnCurrentTags(List<ServiceOfferingJoinVO> offerings, ServiceOfferingVO currentVmOffering) {
-        if (currentVmOffering == null) {
-            return offerings;
-        }
-        List<String> currentTagsList = StringUtils.csvTagsToList(currentVmOffering.getTags());
-
-        // New service offering should have all the tags of the current service offering.
-        List<ServiceOfferingJoinVO> filteredOfferings = new ArrayList<>();
-        for (ServiceOfferingJoinVO offering : offerings) {
-            List<String> newTagsList = StringUtils.csvTagsToList(offering.getTags());
-            if (newTagsList.containsAll(currentTagsList)) {
-                filteredOfferings.add(offering);
-            }
-        }
-        return filteredOfferings;
-    }
-
     @Override
     public ListResponse<ServiceOfferingResponse> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
         Pair<List<ServiceOfferingJoinVO>, Integer> result = searchForServiceOfferingsInternal(cmd);
@@ -3083,12 +3066,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        Pair<List<ServiceOfferingJoinVO>, Integer> result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+        if (currentVmOffering != null) {
+            List<String> tags = StringUtils.csvTagsToList(currentVmOffering.getTags());
+            SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+            for(String tag: tags) {
+                sb.and(tag, sb.entity().getTags(), Op.FIND_IN_SET);
+            }
+            sb.done();
 
-        //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
-        List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
+            SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+            for(String tag: tags) {
+                scc.setParameters(tag, tag);
+            }
+            sc.addAnd("tags", SearchCriteria.Op.SC, scc);
+        }
 
-        return new Pair<>(filteredOfferings, result.second());
+        return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
