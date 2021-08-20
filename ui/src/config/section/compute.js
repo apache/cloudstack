@@ -181,6 +181,9 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           popup: true,
+          show: (record) => {
+            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC'))
+          },
           component: () => import('@/views/compute/CreateSnapshotWizard.vue')
         },
         {
