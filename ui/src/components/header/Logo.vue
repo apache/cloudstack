@@ -54,7 +54,9 @@ export default {
       this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
     },
     goBack () {
-      this.$router.go(-1)
+      if (this.$route.path.includes('/')) {
+        this.$router.go(-1)
+      }
     }
   }
 }
