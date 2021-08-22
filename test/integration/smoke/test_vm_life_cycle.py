@@ -2102,6 +2102,7 @@ class TestCloneVM(cloudstackTestCase):
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 serviceofferingid=self.small_offering.id,)
+            self.cleanup.append(small_virtual_machine)
             vol1 = Volume.create(
                 self.apiclient,
                 self.services,
@@ -2110,10 +2111,12 @@ class TestCloneVM(cloudstackTestCase):
                 domainid=self.account.domainid,
                 zoneid=self.zone.id
             )
+            self.cleanup.append(vol1)
             small_virtual_machine.attach_volume(self.apiclient, vol1)
             self.debug("Clone VM - ID: %s" % small_virtual_machine.id)
             try:
                 clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
+                self.cleanup.append(clone_response)
             except Exception as e:
                 self.debug("Clone --" + str(e))
                 raise e
