@@ -4540,9 +4540,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("the VM doesn't exist or not registered in management server!");
         }
         UserVmVO vmStatus = _vmDao.findById(cmd.getId());
-//        if (vmStatus.state != State.Shutdown && vmStatus.state != State.Stopped) {
-//            throw new CloudRuntimeException("You should clone an instance that's shutdown!");
-//        }
         if (vmStatus.getHypervisorType() != HypervisorType.KVM && vmStatus.getHypervisorType() != HypervisorType.Simulator) {
             throw new CloudRuntimeException("The clone operation is only supported on KVM and Simulator!");
         }
@@ -4562,7 +4559,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // verify that the VM doesn't expire
         Map<String, String> details = curVm.getDetails();
         verifyDetails(details);
-//        Account activeOwner = _accountDao.findById(cmd.getEntityOwnerId());
         long zoneId = curVm.getDataCenterId();
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
@@ -5755,14 +5751,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String keyboard = vmProperties.get(VmDetailConstants.KEYBOARD);
         HypervisorType hypervisorType = curVm.getHypervisorType();
         Account curAccount = _accountDao.findById(curVm.getAccountId());
-        long callingUserId = CallContext.current().getCallingUserId();
-        Account callerAccount = CallContext.current().getCallingAccount();
-//        IpAddress ipAddress = _ipAddrMgr.assignPublicIpAddress(zoneId, curVm.getPodIdToDeployIn(), callerAccount, VlanType.DirectAttached, )
-//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, true, null);
         String ipv6Address = null;
         String macAddress = null;
         IpAddresses addr = new IpAddresses(null, ipv6Address, macAddress);
-//        IpAddresses addr = new IpAddresses("172.20.0.98", ipv6Address, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
         List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
