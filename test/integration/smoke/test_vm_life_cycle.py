@@ -2033,16 +2033,19 @@ class TestCloneVM(cloudstackTestCase):
             cls.services["account"],
             domainid=domain.id
         )
-
+        cls._cleanup = []
+        cls._cleanup.append(cls.account)
         cls.small_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.small_offering)
 
         cls.medium_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["medium"]
         )
+        cls._cleanup.append(cls.medium_offering)
         # create small and large virtual machines
         cls.small_virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -2052,6 +2055,7 @@ class TestCloneVM(cloudstackTestCase):
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )
+        cls._cleanup.append(cls.small_virtual_machine)
         cls.medium_virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["small"],
@@ -2060,6 +2064,7 @@ class TestCloneVM(cloudstackTestCase):
             serviceofferingid=cls.medium_offering.id,
             mode=cls.services["mode"]
         )
+        cls._cleanup.append(cls.medium_virtual_machine)
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["small"],
@@ -2068,11 +2073,7 @@ class TestCloneVM(cloudstackTestCase):
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )
-        cls._cleanup = [
-            cls.small_offering,
-            cls.medium_offering,
-            cls.account
-        ]
+        cls._cleanup.append(cls.virtual_machine)
 
     @classmethod
     def tearDownClass(cls):
@@ -2084,12 +2085,7 @@ class TestCloneVM(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created ISOs
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCloneVM, self).tearDown()
 
     @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_clone_vm_and_volumes(self):
