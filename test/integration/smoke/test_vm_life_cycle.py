@@ -631,7 +631,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         if self.hypervisor.lower() in ["lxc"]:
             self.skipTest("Migration is not supported on LXC")
 
-        # For KVM, two hosts used fo r migration should  be present in same cluster
+        # For KVM, two hosts used for migration should  be present in same cluster
         # For XenServer and VMware, migration is possible between hosts belonging to different clusters
         # with the help of XenMotion and Vmotion respectively.
 

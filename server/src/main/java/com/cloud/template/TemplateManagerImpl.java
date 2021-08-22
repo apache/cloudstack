@@ -1763,7 +1763,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             VolumeInfo vInfo = _volFactory.getVolume(volumeId);
             DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             snapshot = _snapshotDao.findById(snapshotId);
-//            future = _tmpltSvr.createTemplateFromVolumeAsync(vInfo, cloneTempalateInfp, store);
             // create template from snapshot
             DataStoreRole dataStoreRole = ApiResponseHelper.getDataStoreRole(snapshot, _snapshotStoreDao, _dataStoreMgr);
             SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
@@ -1913,18 +1912,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         // check permissions
         _accountMgr.checkAccess(caller, null, true, volume);
-
-        // If private template is created from Volume, check that the volume
-        // will not be active when the private template is
-        // created
-//        if (!_volumeMgr.volumeInactive(volume)) {
-//            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM, please stop the VM first";
-//            if (s_logger.isInfoEnabled()) {
-//                s_logger.info(msg);
-//            }
-//          /  throw new CloudRuntimeException(msg);
-//        }
-
         hyperType = _volumeDao.getHypervisorType(volumeId);
         if (HypervisorType.LXC.equals(hyperType)) {
             throw new InvalidParameterValueException("Template creation is not supported for LXC volume: " + volumeId);
@@ -1964,13 +1951,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         privateTemplate.setSourceTemplateId(sourceTemplateId);
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
-        // persist this to the template zone area and remember to remove the resource count in the execute phase once in failure or clean up phase
-//        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, template.getId(), new Date());
-//        _tmpltZoneDao.persist(templateZone);
-//        TemplateDataStoreVO voRecord = _tmplStoreDao.createTemplateDirectDownloadEntry(template.getId(), template.getSize());
-//        voRecord.setDataStoreId(2);
-//        _tmplStoreDao.persist(voRecord);
-        // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();
 
