@@ -2650,6 +2650,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dcMo = new DatacenterMO(context, morDc);
+
             ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
             ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
@@ -2660,7 +2662,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
                     if (vmMo == null) {
                         // Volume might be on a zone-wide storage pool, look for VM in datacenter
-                        DatacenterMO dcMo = new DatacenterMO(context, morDc);
                         vmMo = dcMo.findVm(vmName);
                     }
 
@@ -2715,7 +2716,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
                                 if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
-                                    resource.cleanupNetwork(hostMo, netDetails);
+                                    resource.cleanupNetwork(dcMo, netDetails);
                                 }
                             }
                         }

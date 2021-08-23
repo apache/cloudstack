@@ -5823,27 +5823,54 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    public void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
+    public void cleanupNetwork(DatacenterMO dcMO, NetworkDetails netDetails) {
         if (!VmwareManager.s_vmwareCleanupPortGroups.value()){
             return;
         }
+
         try {
             synchronized(this) {
-                if (netDetails.getName() == null) {
-                    throw new CloudRuntimeException("Unspecified port group name, unable to cleanup network");
-                }
-                NetworkMO networkMo = new NetworkMO(hostMo.getContext(), netDetails.getNetworkMor());
-                List<ManagedObjectReference> vms = networkMo.getVMsOnNetwork();
-                if (CollectionUtils.isEmpty(vms)) {
-                    if(s_logger.isInfoEnabled()) {
-                        s_logger.info("Cleanup network as it is currently not in use: " + netDetails.getName());
-                    }
-                    hostMo.deletePortGroup(netDetails.getName());
+                if (!areVMsOnNetwork(dcMO, netDetails)) {
+                    cleanupPortGroup(dcMO, netDetails.getName());
                 }
             }
         } catch(Throwable e) {
-            s_logger.warn("Unable to cleanup network due to exception: " + e.getMessage());
+            s_logger.warn("Unable to cleanup network due to exception: " + e.getMessage(), e);
         }
+    }
+
+    private void cleanupPortGroup(DatacenterMO dcMO, String portGroupName) throws Exception {
+        if (StringUtils.isBlank(portGroupName)) {
+            s_logger.debug("Unspecified network port group, couldn't cleanup");
+            return;
+        }
+
+        List<HostMO> hosts = dcMO.getAllHostsOnDatacenter();
+        if (!CollectionUtils.isEmpty(hosts)) {
+            for (HostMO host : hosts) {
+                host.deletePortGroup(portGroupName);
+            }
+        }
+    }
+
+    private boolean areVMsOnNetwork(DatacenterMO dcMO, NetworkDetails netDetails) throws Exception {
+        if (netDetails == null || netDetails.getName() == null) {
+            throw new CloudRuntimeException("Unspecified network details / port group, couldn't check VMs on network port group");
+        }
+
+        List<HostMO> hosts = dcMO.getAllHostsOnDatacenter();
+        if (!CollectionUtils.isEmpty(hosts)) {
+            for (HostMO host : hosts) {
+                NetworkMO networkMo = new NetworkMO(host.getContext(), netDetails.getNetworkMor());
+                List<ManagedObjectReference> vms = networkMo.getVMsOnNetwork();
+                if (!CollectionUtils.isEmpty(vms)) {
+                    s_logger.debug("Network port group: " + netDetails.getName() + " is in use");
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override

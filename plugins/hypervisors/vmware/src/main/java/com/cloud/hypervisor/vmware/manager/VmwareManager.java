@@ -47,7 +47,7 @@ public interface VmwareManager {
             "Vmware script timeout for ova packaging process", true, ConfigKey.Scope.Global, 1000);
 
     static final ConfigKey<Boolean> s_vmwareCleanupPortGroups = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.cleanup.port.groups",  "false",
-            "Remove unused port groups. WARNING: When set to true, native VMware HA might not work.", true, ConfigKey.Scope.Global);
+            "When set to true, the unused port groups are removed from VMware hypervisor hosts. WARNING: Native VMware HA might not work when enabled.", true, ConfigKey.Scope.Global);
 
     String composeWorkerName();
 
