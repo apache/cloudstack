@@ -20,14 +20,14 @@
   <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
     <a-spin :spinning="loadingAnnotations">
       <div class="title">
-        {{ $t('label.comments') }} ({{ notes.length }})
+        {{ $t('label.comments') }} ({{ this.itemCount }})
       </div>
       <a-divider :dashed="true" />
       <a-list
         v-if="notes.length"
         :dataSource="notes"
         itemLayout="horizontal"
-        :pagination="true"
+        :pagination="false"
         size="small" >
         <a-list-item slot="renderItem" slot-scope="item">
           <a-comment
@@ -66,6 +66,20 @@
           </a-button>
         </a-list-item>
       </a-list>
+      <a-pagination
+        class="row-element"
+        size="small"
+        :current="page"
+        :pageSize="pageSize"
+        :total="itemCount"
+        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+        :pageSizeOptions="['10']"
+        @change="changePage"
+        showQuickJumper>
+        <template slot="buildOptionText" slot-scope="props">
+          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+        </template>
+      </a-pagination>
 
       <a-divider :dashed="true" />
       <a-comment v-if="'addAnnotation' in $store.getters.apis">
@@ -118,7 +132,10 @@ export default {
       annotation: '',
       annotationType: '',
       annotationAdminsOnly: false,
-      showNotesInput: false
+      showNotesInput: false,
+      page: 1,
+      pageSize: 10,
+      itemCount: 0
     }
   },
   watch: {
@@ -174,15 +191,21 @@ export default {
         this.getAnnotations()
       }
     },
+    changePage (page, pageSize) {
+      this.page = page
+      this.pagesize = pageSize
+      this.getAnnotations()
+    },
     getAnnotations () {
       if (!('listAnnotations' in this.$store.getters.apis)) {
         return
       }
       this.loadingAnnotations = true
       this.notes = []
-      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'all' }).then(json => {
+      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'all', page: this.page, pagesize: this.pageSize }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
+          this.itemCount = json.listannotationsresponse.count
         }
       }).finally(() => {
         this.loadingAnnotations = false
