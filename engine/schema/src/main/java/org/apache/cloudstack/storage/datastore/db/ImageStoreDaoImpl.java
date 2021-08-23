@@ -38,6 +38,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     private SearchBuilder<ImageStoreVO> nameSearch;
     private SearchBuilder<ImageStoreVO> providerSearch;
     private SearchBuilder<ImageStoreVO> regionSearch;
+    private SearchBuilder<ImageStoreVO> storeSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -58,6 +59,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         regionSearch.and("role", regionSearch.entity().getRole(), SearchCriteria.Op.EQ);
         regionSearch.done();
 
+        storeSearch = createSearchBuilder();
+        storeSearch.and("providerName", storeSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
+        storeSearch.and("role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeSearch.and("dataCenterId", storeSearch.entity().getDcId(), SearchCriteria.Op.EQ);
+        storeSearch.done();
+
         return true;
     }
 
@@ -73,6 +80,15 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         SearchCriteria<ImageStoreVO> sc = providerSearch.create();
         sc.setParameters("providerName", provider);
         sc.setParameters("role", DataStoreRole.Image);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ImageStoreVO> listAllStoresInZone(Long zoneId, String provider, DataStoreRole role) {
+        SearchCriteria<ImageStoreVO> sc = storeSearch.create();
+        sc.setParameters("providerName", provider);
+        sc.setParameters("role", role);
+        sc.setParameters("dataCenterId", zoneId);
         return listBy(sc);
     }
 
@@ -138,15 +154,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     public List<ImageStoreVO> listStoresByZoneId(long zoneId) {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("dcId", SearchCriteria.Op.EQ, zoneId);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<ImageStoreVO> listAllStoresInZone(long zoneId, String provider, DataStoreRole role) {
-        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
-        sc.setParameters("data_center_id", zoneId);
-        sc.setParameters("role", role);
-        sc.setParameters("image_provider_name", provider);
         return listBy(sc);
     }
 }

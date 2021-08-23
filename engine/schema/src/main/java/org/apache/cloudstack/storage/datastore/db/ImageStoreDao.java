@@ -44,5 +44,5 @@ public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
 
     List<ImageStoreVO> listStoresByZoneId(long zoneId);
 
-    List<ImageStoreVO> listAllStoresInZone(long zoneId, String provider, DataStoreRole role);
+    List<ImageStoreVO> listAllStoresInZone(Long zoneId, String provider, DataStoreRole role);
 }

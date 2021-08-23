@@ -138,6 +138,8 @@ then
   tar xvf $tmpdestdir/$localfile -C $tmpdestdir &> /dev/null
   sudo cp $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $destdir/
   rm -rf $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $tmpdestdir/*.ova
+else
+  rm -rf $tmpdestdir/*.tmp
 fi
 
 
