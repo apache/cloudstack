@@ -62,7 +62,7 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
     private Long actionTimeout;
 
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = true,
-            validations = {ApiArgValidator.NotNullOrEmpty}, description = "out-of-band management power actions, valid actions are: ON, OFF, CYCLE, RESET, SOFT, STATUS")
+            description = "out-of-band management power actions, valid actions are: ON, OFF, CYCLE, RESET, SOFT, STATUS")
     private String powerAction;
 
     /////////////////////////////////////////////////////

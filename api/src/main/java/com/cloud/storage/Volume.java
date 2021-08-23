@@ -29,6 +29,11 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State>, Displayable {
+
+    // Managed storage volume parameters (specified in the compute/disk offering for PowerFlex)
+    String BANDWIDTH_LIMIT_IN_MBPS = "bandwidthLimitInMbps";
+    String IOPS_LIMIT = "iopsLimit";
+
     enum Type {
         UNKNOWN, ROOT, SWAP, DATADISK, ISO
     };
@@ -79,6 +84,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.DestroyRequested, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.CreateRequested, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.CreateRequested, Creating, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.ResizeRequested, Resizing, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Resizing, Event.OperationSucceeded, Ready, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Resizing, Event.OperationFailed, Ready, null));

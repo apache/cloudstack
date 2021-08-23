@@ -141,7 +141,7 @@ public class IvsVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(InterfaceDef iface) {
+    public void unplug(InterfaceDef iface, boolean deleteBr) {
     }
 
     @Override
@@ -285,6 +285,10 @@ public class IvsVifDriver extends VifDriverBase {
             Script.runSimpleBashScript("ip link add " + privBrName + " type bridge; ip link set " + privBrName + " up");
             Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName, _timeout);
         }
+    }
+
+    @Override
+    public void deleteBr(NicTO nic) {
     }
 
     private boolean isBridgeExists(String bridgeName) {

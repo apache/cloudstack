@@ -22,12 +22,9 @@ import mockData from '../../../mockData/MigrateWizard.mock'
 
 jest.mock('axios', () => mockAxios)
 
-let wrapper, i18n, store, mocks
+let wrapper, i18n, store, mocks, router
 
 const state = {}
-const actions = {
-  AddAsyncJob: jest.fn((jobObject) => {})
-}
 mocks = {
   $message: {
     error: jest.fn((message) => {})
@@ -56,14 +53,16 @@ mocks = {
   })
 }
 i18n = common.createMockI18n('en', mockData.messages)
-store = common.createMockStore(state, actions)
+store = common.createMockStore(state)
 
 const factory = (opts = {}) => {
   i18n = opts.i18n || i18n
   store = opts.store || store
   mocks = opts.mocks || mocks
+  router = opts.router || router
 
   return common.createFactory(MigrateWizard, {
+    router,
     i18n,
     store,
     mocks,
@@ -73,13 +72,16 @@ const factory = (opts = {}) => {
 }
 
 describe('Views > compute > MigrateWizard.vue', () => {
-  jest.spyOn(console, 'warn').mockImplementation(() => {})
+  // jest.spyOn(console, 'warn').mockImplementation(() => {})
 
   beforeEach(() => {
     jest.clearAllMocks()
 
     if (wrapper) {
       wrapper.destroy()
+    }
+    if (router && router.currentRoute.name !== 'home') {
+      router.replace({ name: 'home' })
     }
 
     if (i18n.locale !== 'en') {
@@ -331,7 +333,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
     })
 
     describe('submitForm()', () => {
-      it('check api is called when selectedHost.requiresStorageMotion is true', async (done) => {
+      it('check api is called when selectedHost.requiresStorageMotion is true and isUserVm=true', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id'
@@ -343,8 +345,17 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+        mockAxios.mockResolvedValue(mockData)
 
+        router = common.createMockRouter([{
+          name: 'testRouter1',
+          path: '/test-router-1',
+          meta: {
+            name: 'vm'
+          }
+        }])
         wrapper = factory({
+          router: router,
           props: {
             resource: {
               id: 'test-resource-id',
@@ -359,8 +370,8 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
-        mockAxios.mockResolvedValue(mockData)
+        router.push({ name: 'testRouter1' })
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 
@@ -382,7 +393,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check api is called when selectedHost.requiresStorageMotion is false', async (done) => {
+      it('check api is called when selectedHost.requiresStorageMotion is false and isUserVm=true', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id'
@@ -394,6 +405,15 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+        mockAxios.mockResolvedValue(mockData)
+
+        router = common.createMockRouter([{
+          name: 'testRouter2',
+          path: '/test-router-2',
+          meta: {
+            name: 'vm'
+          }
+        }])
         wrapper = factory({
           props: {
             resource: {
@@ -409,10 +429,9 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
 
-        mockAxios.mockResolvedValue(mockData)
-
+        router.push({ name: 'testRouter2' })
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 
@@ -434,10 +453,10 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have successMethod() is called with requiresStorageMotion is true', async (done) => {
+      it('check api is called when isUserVm=false', async (done) => {
         const mockData = {
-          migratevirtualmachinewithvolumeresponse: {
-            jobid: 'test-job-id-case-1'
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id'
           },
           queryasyncjobresultresponse: {
             jobstatus: 1,
@@ -446,7 +465,16 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter3',
+          path: '/test-router-3',
+          meta: {
+            name: 'test'
+          }
+        }])
         wrapper = factory({
+          router: router,
           props: {
             resource: {
               id: 'test-resource-id',
@@ -461,15 +489,71 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
-
-        mockAxios.mockResolvedValue(mockData)
-
+        router.push({ name: 'testRouter3' })
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'migrateSystemVm',
+              hostid: 'test-host-id',
+              virtualmachineid: 'test-resource-id',
+              response: 'json'
+            }
+          })
+
+          done()
+        })
+      })
+
+      it('check $pollJob have successMethod() is called with requiresStorageMotion is true', async (done) => {
+        const mockData = {
+          migratevirtualmachinewithvolumeresponse: {
+            jobid: 'test-job-id-case-1'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter4',
+          path: '/test-router-4',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter4' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -477,7 +561,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
+      it('check $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id-case-2'
@@ -489,7 +573,16 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter5',
+          path: '/test-router-5',
+          meta: {
+            name: 'vm'
+          }
+        }])
         wrapper = factory({
+          router: router,
           props: {
             resource: {
               id: 'test-resource-id',
@@ -504,15 +597,60 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
-
-        mockAxios.mockResolvedValue(mockData)
-
+        router.push({ name: 'testRouter5' })
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
+          expect(mocks.$pollJob).toHaveBeenCalled()
+          expect(wrapper.emitted()['close-action'][0]).toEqual([])
+          done()
+        })
+      })
+
+      it('check $pollJob have successMethod() is called with isUserVm is false', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id-case-2'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter6',
+          path: '/test-router-6',
+          meta: {
+            name: 'test'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: false,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter6' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -520,7 +658,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have errorMethod() is called', async (done) => {
+      it('check $pollJob have errorMethod() is called', async (done) => {
         const mockData = {
           migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-3'
@@ -532,6 +670,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+        mockAxios.mockResolvedValue(mockData)
         wrapper = factory({
           props: {
             resource: {
@@ -547,15 +686,11 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
-
-        mockAxios.mockResolvedValue(mockData)
-
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -563,12 +698,13 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have catchMethod() is called', async (done) => {
+      it('check $pollJob have catchMethod() is called', async (done) => {
         const mockData = {
           migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-4'
           }
         }
+        mockAxios.mockResolvedValue(mockData)
         wrapper = factory({
           props: {
             resource: {
@@ -584,15 +720,11 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
-
-        mockAxios.mockResolvedValue(mockData)
-
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -604,7 +736,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         const mockError = {
           message: 'Error: throw error message'
         }
-
+        mockAxios.mockRejectedValue(mockError)
         wrapper = factory({
           props: {
             resource: {}
@@ -617,10 +749,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         })
-        jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
-
-        mockAxios.mockRejectedValue(mockError)
-
+        wrapper.vm.loading = false
         await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
 

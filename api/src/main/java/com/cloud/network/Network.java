@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -452,4 +453,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getExternalId();
 
     PVlanType getPvlanType();
+
+    String getRouterIp();
+
+    String getRouterIpv6();
+
+    Date getCreated();
 }

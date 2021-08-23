@@ -23,7 +23,7 @@ export default {
   permission: ['listDomains', 'listDomainChildren'],
   resourceType: 'Domain',
   columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
-  details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain'],
+  details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'created'],
   component: () => import('@/views/iam/DomainView.vue'),
   related: [{
     name: 'account',

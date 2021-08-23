@@ -17,7 +17,12 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
+    <a-form
+      class="form"
+      :form="form"
+      @submit="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+      layout="vertical">
       <a-form-item :label="$t('label.name')">
         <a-input
           autoFocus
@@ -44,7 +49,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -88,6 +93,7 @@ export default {
       })
     },
     handleSubmit (e) {
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -100,24 +106,13 @@ export default {
         }).then(response => {
           this.$pollJob({
             jobId: response.createsnapshotfromvmsnapshotresponse.jobid,
+            title: this.$t('message.success.create.snapshot.from.vmsnapshot'),
+            description: values.name,
             successMessage: this.$t('message.success.create.snapshot.from.vmsnapshot'),
-            successMethod: () => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: this.$t('message.success.create.snapshot.from.vmsnapshot'),
-                jobid: response.createsnapshotfromvmsnapshotresponse.jobid,
-                description: values.name,
-                status: 'progress'
-              })
-              this.$emit('refresh-data')
-            },
             errorMessage: this.$t('message.create.snapshot.from.vmsnapshot.failed'),
-            errorMethod: () => {
-              this.$emit('refresh-data')
-            },
             loadingMessage: this.$t('message.create.snapshot.from.vmsnapshot.progress'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
-          this.$emit('refresh-data')
           this.closeModal()
         }).catch(error => {
           this.$notifyError(error)
@@ -139,14 +134,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

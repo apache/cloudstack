@@ -473,7 +473,7 @@ class TestPublicIp(cloudstackTestCase):
     def test_03_list_publicip_user_domain(self):
         """
         A regular user should be able to display public ip address
-        only in his domain
+        only in their domain
 
         Step 1: Create an isolated network in the user domain
         Step 2: Display all public ip address in that domain
@@ -511,7 +511,7 @@ class TestPublicIp(cloudstackTestCase):
             listall=True,
             forvirtualnetwork=True)
 
-        # Step 3: Ensure that sub domain can list only the ip address in his domain
+        # Step 3: Ensure that sub domain can list only the ip address in their domain
         self.assertEqual(
             len(ipAddresses),
             10,
@@ -610,7 +610,7 @@ class TestPublicIp(cloudstackTestCase):
     def test_04_list_publicip_all_subdomains(self):
         """
         A domain admin should be able to display public ip address
-        in his domain and also all child domains
+        in their domain and also all child domains
 
         Step 1: Display all public ip address in that domain and sub domain
         Step 2: Ensure that the count is 11 (all ip from parent domain and allocated from sub domain)
@@ -677,7 +677,7 @@ class TestPublicIp(cloudstackTestCase):
     def test_05_list_publicip_user_domain(self):
         """
         A domain admin should be able to display public ip address
-        in his domain and also all child domains
+        in their domain and also all child domains
 
         Step 1: Display all public ip address in that domain and sub domain
         Step 2: Ensure that the count is 20

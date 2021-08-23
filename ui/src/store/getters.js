@@ -30,13 +30,16 @@ const getters = {
   userInfo: state => state.user.info,
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
-  asyncJobIds: state => state.user.asyncJobIds,
+  headerNotices: state => state.user.headerNotices,
   isLdapEnabled: state => state.user.isLdapEnabled,
   cloudian: state => state.user.cloudian,
   zones: state => state.user.zones,
   timezoneoffset: state => state.user.timezoneoffset,
   usebrowsertimezone: state => state.user.usebrowsertimezone,
-  domainStore: state => state.user.domainStore
+  server: state => state.app.server,
+  domainStore: state => state.user.domainStore,
+  darkMode: state => state.user.darkMode,
+  themeSetting: state => state.user.themeSetting
 }
 
 export default getters

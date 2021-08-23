@@ -58,7 +58,7 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
 
         if not cls.isUefiEnabledOnAtLeastOnHost(hosts):
             raise unittest.SkipTest("At least one host should support UEFI")
-     
+
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         # Create service, disk offerings  etc
@@ -179,12 +179,12 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
     def checkBootTypeAndMode(self, root, bootmodesecure, isWindowsIso):
 
         machine = root.find(".os/type").get("machine")
-
         self.assertEqual(("q35" in machine), True, "The virtual machine is not with UEFI boot type")
 
-        bootmode = root.find(".os/loader").get("secure")
-
-        self.assertEqual((bootmode == bootmodesecure), True, "The VM is not in the right boot mode")
+        if root.find(".os/loader") is not None :
+            bootmode = root.find(".os/loader").get("secure")
+            if bootmode is not None :
+                self.assertEqual((bootmode == bootmodesecure), True, "The VM is not in the right boot mode")
 
         if isWindowsIso:
             disks = root.findall("devices/disk")

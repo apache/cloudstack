@@ -137,9 +137,9 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.DataStoreRole;
@@ -157,7 +157,6 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -299,7 +298,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private StorageCacheManager cacheMgr;
     @Inject
     private EndPointSelector selector;
-
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -1095,44 +1093,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
-        VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templateHostRef.getTemplateId());
-        long templateId = template.getId();
-        HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
-        long zoneId = secondaryStorageHost.getDataCenterId();
-        DataCenterVO zone = _dcDao.findById(zoneId);
-
-        // Check if there are VMs running in the template host ref's zone that
-        // use the template
-        List<VMInstanceVO> nonExpungedVms = _vmInstanceDao.listNonExpungedByZoneAndTemplate(zoneId, templateId);
-
-        if (!nonExpungedVms.isEmpty()) {
-            s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() +
-                    " is not deleteable because there are non-expunged VMs deployed from this template.");
-            return false;
-        }
-        List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
-        // check if there is any VM using this ISO.
-        if (!userVmUsingIso.isEmpty()) {
-            s_logger.debug("ISO " + template.getName() + " in zone " + zone.getName() + " is not deleteable because it is attached to " + userVmUsingIso.size() + " VMs");
-            return false;
-        }
-        // Check if there are any snapshots for the template in the template
-        // host ref's zone
-        List<VolumeVO> volumes = _volumeDao.findByTemplateAndZone(templateId, zoneId);
-        for (VolumeVO volume : volumes) {
-            List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdVersion(volume.getId(), "2.1");
-            if (!snapshots.isEmpty()) {
-                s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() +
-                        " is not deleteable because there are 2.1 snapshots using this template.");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Override
     public boolean templateIsDeleteable(long templateId) {
         List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
         // check if there is any Vm using this ISO. We only need to check the
@@ -1204,10 +1164,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
         }
 
-        long dcId = vm.getDataCenterId();
-        VMTemplateZoneVO exists = _tmpltZoneDao.findByZoneTemplate(dcId, isoId);
-        if (null == exists) {
-            throw new InvalidParameterValueException("ISO is not available in the zone the VM is in.");
+        if (!TemplateType.PERHOST.equals(iso.getTemplateType())) {
+            VMTemplateZoneVO exists = _tmpltZoneDao.findByZoneTemplate(vm.getDataCenterId(), isoId);
+            if (null == exists) {
+                throw new InvalidParameterValueException("ISO is not available in the zone the VM is in.");
+            }
         }
 
         // check permissions
@@ -1224,11 +1185,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
 
-        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer) {
+        if (XS_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer) {
             throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
 
-        if ("vmware-tools.iso".equals(iso.getName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+        if (VMWARE_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
         boolean result = attachISOToVM(vmId, userId, isoId, true, forced);

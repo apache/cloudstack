@@ -37,4 +37,6 @@ public interface HypervisorCapabilitiesDao extends GenericDao<HypervisorCapabili
     Boolean isVmSnapshotEnabled(HypervisorType hypervisorType, String hypervisorVersion);
 
     List<HypervisorType> getHypervisorsWithDefaultEntries();
+
+    boolean isStorageMotionSupported(HypervisorType hypervisorType, String hypervisorVersion);
 }

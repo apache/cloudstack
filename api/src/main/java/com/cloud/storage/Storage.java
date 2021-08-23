@@ -76,6 +76,16 @@ public class Storage {
 
     }
 
+    public static enum Capability {
+        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION");
+
+        private final String capability;
+
+        private Capability(String capability) {
+            this.capability = capability;
+        }
+    }
+
     public static enum ProvisioningType {
         THIN("thin"),
         SPARSE("sparse"),
@@ -135,6 +145,7 @@ public class Storage {
         OCFS2(true, false),
         SMB(true, false),
         Gluster(true, false),
+        PowerFlex(true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
         ManagedNFS(true, false),
         DatastoreCluster(true, true); // for VMware, to abstract pool of clusters
 

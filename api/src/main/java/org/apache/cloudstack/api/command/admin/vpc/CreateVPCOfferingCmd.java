@@ -95,6 +95,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.13")
     private List<Long> zoneIds;
 
+    @Parameter(name = ApiConstants.ENABLE,
+            type = CommandType.BOOLEAN,
+            description = "set to true if the offering is to be enabled during creation. Default is false",
+            since = "4.16")
+    private Boolean enable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -163,6 +169,13 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             zoneIds.addAll(set);
         }
         return zoneIds;
+    }
+
+    public Boolean getEnable() {
+        if (enable != null) {
+            return enable;
+        }
+        return false;
     }
 
     @Override

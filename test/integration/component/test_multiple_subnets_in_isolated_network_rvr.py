@@ -21,7 +21,8 @@ Tests of acquiring IPs in multiple subnets for isolated network or vpc
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackAPI import rebootRouter
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (validateList,
                               get_host_credentials,
                               get_process_status,
@@ -208,7 +209,7 @@ class TestMultiplePublicIpSubnets(cloudstackTestCase):
         if redundant_state == "FAULT":
             self.logger.debug("Skip as redundant_state is %s" % redundant_state)
             return
-        elif redundant_state == "MASTER":
+        elif redundant_state == "PRIMARY":
             command = 'ip link show |grep BROADCAST | egrep "%s" |grep "state DOWN" |wc -l' % publicNics
         elif redundant_state == "BACKUP":
             command = 'ip link show |grep BROADCAST | egrep "%s" |grep "state UP" |wc -l' % publicNics

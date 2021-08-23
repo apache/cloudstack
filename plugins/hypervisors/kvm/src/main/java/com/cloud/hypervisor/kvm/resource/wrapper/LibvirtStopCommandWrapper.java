@@ -56,7 +56,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
     @Override
     public Answer execute(final StopCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
-
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
         if (command.checkBeforeCleanup()) {
@@ -125,10 +125,11 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                     }
                 } else {
                     for (final InterfaceDef iface : ifaces) {
+                        String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
                         // We don't know which "traffic type" is associated with
                         // each interface at this point, so inform all vif drivers
                         for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                            vifDriver.unplug(iface);
+                            vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                         }
                     }
                 }
@@ -159,5 +160,4 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
             s_logger.warn("Exception occurred when handling LibVirt VM onStop hook: {}", e);
         }
     }
-
 }

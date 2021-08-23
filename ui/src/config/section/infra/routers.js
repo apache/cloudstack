@@ -49,7 +49,10 @@ export default {
       label: 'label.action.start.router',
       message: 'message.action.start.router',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopRouter',
@@ -58,7 +61,10 @@ export default {
       message: 'message.action.stop.router',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'rebootRouter',
@@ -66,7 +72,11 @@ export default {
       label: 'label.action.reboot.router',
       message: 'message.action.reboot.router',
       dataView: true,
-      hidden: (record) => { return record.state === 'Running' }
+      args: ['forced'],
+      hidden: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'scaleSystemVm',
@@ -105,17 +115,18 @@ export default {
       label: 'label.action.migrate.router',
       message: 'message.migrate.router.confirm',
       dataView: true,
-      show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        },
-        hostid: {
-          api: 'findHostsForMigration',
-          params: (record) => { return { virtualmachineid: record.id } }
-        }
-      }
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: () => import('@/views/compute/MigrateWizard'),
+      popup: true
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.systemvm.to.ps',
+      dataView: true,
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: () => import('@/views/compute/MigrateVMStorage'),
+      popup: true
     },
     {
       api: 'runDiagnostics',
@@ -154,7 +165,10 @@ export default {
       label: 'label.destroy.router',
       message: 'message.confirm.destroy.router',
       dataView: true,
-      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }
