@@ -200,7 +200,7 @@ export default {
     ]
     this.innerColumns = [
       {
-        title: this.$t('label.datastore'),
+        title: this.$t('label.secondary.storage'),
         dataIndex: 'datastore'
       },
       {
