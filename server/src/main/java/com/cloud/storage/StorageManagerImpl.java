@@ -43,6 +43,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -98,6 +100,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -316,7 +319,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     SnapshotService _snapshotService;
     @Inject
+    public StorageService storageService;
+    @Inject
     StoragePoolTagsDao _storagePoolTagsDao;
+    @Inject
+    PrimaryDataStoreDao primaryStoreDao;
     @Inject
     DiskOfferingDetailsDao _diskOfferingDetailsDao;
     @Inject
@@ -1578,6 +1585,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             for (DataStore store : imageStores) {
                 try {
                     List<VolumeDataStoreVO> destroyedStoreVOs = _volumeStoreDao.listDestroyed(store.getId());
+                    destroyedStoreVOs.addAll(_volumeDataStoreDao.listByVolumeState(Volume.State.Expunged));
                     s_logger.debug("Secondary storage garbage collector found " + destroyedStoreVOs.size() + " volumes to cleanup on volume_store_ref for store: " + store.getName());
                     for (VolumeDataStoreVO destroyedStoreVO : destroyedStoreVOs) {
                         if (s_logger.isDebugEnabled()) {
@@ -2773,6 +2781,77 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return imageStoreVO;
     }
 
+    /**
+     * @param poolId - Storage pool id for pool to update.
+     * @param failOnChecks - If true, throw an error if pool type and state checks fail.
+     */
+    @Override
+    public void updateStorageCapabilities(Long poolId, boolean failOnChecks) {
+        StoragePoolVO pool = _storagePoolDao.findById(poolId);
+
+        if (pool == null) {
+            throw new CloudRuntimeException("Primary storage not found for id: " + poolId);
+        }
+
+        // Only checking NFS for now - required for disk provisioning type support for vmware.
+        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem) {
+            if (failOnChecks) {
+                throw new CloudRuntimeException("Storage capabilities update only supported on NFS storage mounted.");
+            }
+            return;
+        }
+
+        if (pool.getStatus() != StoragePoolStatus.Initialized && pool.getStatus() != StoragePoolStatus.Up) {
+            if (failOnChecks){
+                throw new CloudRuntimeException("Primary storage is not in the right state to update capabilities");
+            }
+            return;
+        }
+
+        HypervisorType hypervisor = pool.getHypervisor();
+
+        if (hypervisor == null){
+            if (pool.getClusterId() != null) {
+                ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
+                hypervisor = cluster.getHypervisorType();
+            }
+        }
+
+        if (!HypervisorType.VMware.equals(hypervisor)) {
+            if (failOnChecks) {
+                throw new CloudRuntimeException("Storage capabilities update only supported on VMWare.");
+            }
+            return;
+        }
+
+        // find the host
+        List<Long> poolIds = new ArrayList<Long>();
+        poolIds.add(pool.getId());
+        List<Long> hosts = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
+        if (hosts.size() > 0) {
+            GetStoragePoolCapabilitiesCommand cmd = new GetStoragePoolCapabilitiesCommand();
+            cmd.setPool(new StorageFilerTO(pool));
+            GetStoragePoolCapabilitiesAnswer answer = (GetStoragePoolCapabilitiesAnswer) _agentMgr.easySend(hosts.get(0), cmd);
+            if (answer.getPoolDetails() != null && answer.getPoolDetails().containsKey(Storage.Capability.HARDWARE_ACCELERATION.toString())) {
+                StoragePoolDetailVO hardwareAccelerationSupported = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                if (hardwareAccelerationSupported == null) {
+                    StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString(), answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()), false);
+                    _storagePoolDetailsDao.persist(storagePoolDetailVO);
+                } else {
+                    hardwareAccelerationSupported.setValue(answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()));
+                    _storagePoolDetailsDao.update(hardwareAccelerationSupported.getId(), hardwareAccelerationSupported);
+                }
+            } else {
+                if (answer != null && !answer.getResult()) {
+                    s_logger.error("Failed to update storage pool capabilities: " + answer.getDetails());
+                    if (failOnChecks) {
+                        throw new CloudRuntimeException(answer.getDetails());
+                    }
+                }
+            }
+        }
+    }
+
     private void duplicateCacheStoreRecordsToRegionStore(long storeId) {
         _templateStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
         _snapshotStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
@@ -3132,7 +3211,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
-                MaxDataMigrationWaitTime
+                MaxDataMigrationWaitTime,
+                DiskProvisioningStrictness,
+                PreferredStoragePool
         };
     }
 

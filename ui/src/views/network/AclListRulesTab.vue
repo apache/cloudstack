@@ -96,7 +96,15 @@
       </draggable>
     </div>
 
-    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      v-if="tagsModalVisible"
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -115,7 +123,7 @@
               <a-input v-decorator="['value', { rules: [{ required: true, message: $t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
-          <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;"></a-divider>
@@ -132,7 +140,15 @@
       </div>
 
     </a-modal>
-    <a-modal :title="ruleModalTitle" :maskClosable="false" v-model="ruleModalVisible" @ok="handleRuleModalForm">
+    <a-modal
+      v-if="ruleModalVisible"
+      :title="ruleModalTitle"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      v-model="ruleModalVisible"
+      @cancel="ruleModalVisible = false"
+      v-ctrl-enter="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
           <a-input-number autoFocus style="width: 100%" v-decorator="['number']" />
@@ -190,6 +206,11 @@
             :autosize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => { ruleModalVisible = false } ">{{ $t('label.cancel') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </a-spin>
@@ -243,7 +264,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -316,13 +336,10 @@ export default {
         resourceIds: this.selectedAcl.id,
         resourceType: 'NetworkACL'
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.delete.tag.for.networkacl'),
-          jobid: response.deletetagsresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
+          title: this.$t('message.delete.tag.for.networkacl'),
+          description: `${tag.key} = ${tag.value}`,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.fetchTags(this.selectedAcl)
@@ -346,6 +363,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()
@@ -361,13 +379,10 @@ export default {
           resourceIds: this.selectedAcl.id,
           resourceType: 'NetworkACL'
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.add.tag.for.networkacl'),
-            jobid: response.createtagsresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createtagsresponse.jobid,
+            title: this.$t('message.add.tag.for.networkacl'),
+            description: `${values.key} = ${values.value}`,
             successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
               this.fetchTags(this.selectedAcl)
@@ -449,13 +464,10 @@ export default {
         data.partialupgrade = false
 
         api('updateNetworkACLItem', {}, 'POST', data).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.edit.acl.rule'),
-            jobid: response.createnetworkaclresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createnetworkaclresponse.jobid,
+            title: this.$t('label.edit.acl.rule'),
+            description: this.selectedAcl.id,
             successMessage: this.$t('message.success.edit.acl'),
             successMethod: () => {
               this.fetchData()
@@ -482,13 +494,10 @@ export default {
     handleDeleteRule (id) {
       this.fetchLoading = true
       api('deleteNetworkACL', { id }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.delete.acl.rule'),
-          jobid: response.deletenetworkaclresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletenetworkaclresponse.jobid,
+          title: this.$t('message.delete.acl.rule'),
+          description: id,
           successMessage: this.$t('message.success.delete.acl.rule'),
           successMethod: () => {
             this.fetchData()
@@ -512,6 +521,7 @@ export default {
       })
     },
     handleRuleModalForm (e) {
+      if (this.fetchLoading) return
       if (this.ruleFormMode === 'edit') {
         this.handleEditRule(e)
         return
@@ -570,13 +580,10 @@ export default {
         previousaclruleid,
         nextaclruleid
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.move.acl.order'),
-          jobid: response.moveNetworkAclItemResponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.moveNetworkAclItemResponse.jobid,
+          title: this.$t('message.move.acl.order'),
+          description: id,
           successMessage: this.$t('message.success.move.acl.order'),
           successMethod: () => {
             this.fetchData()

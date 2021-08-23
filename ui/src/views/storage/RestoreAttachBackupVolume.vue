@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form layout="vertical" :form="form">
       <a-form-item :label="$t('label.volume')">
         <a-select
@@ -50,7 +50,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading || actionLoading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading || actionLoading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -127,7 +127,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-
+      if (this.actionLoading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -144,15 +144,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.volumeid,
               successMethod: result => {
-                const successDescription = result.jobresult.storagebackup.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,
@@ -179,15 +173,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>

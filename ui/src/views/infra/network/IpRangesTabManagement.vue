@@ -70,7 +70,9 @@
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
-      @ok="handleAddIpRange">
+      :footer="null"
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"
@@ -115,6 +117,11 @@
         <a-form-item :label="$t('label.system.vms')" class="form__item">
           <a-checkbox v-decorator="['vms']"></a-checkbox>
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -257,13 +264,11 @@ export default {
         endip: record.endip,
         vlan: record.vlanid
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.success.remove.iprange'),
-          jobid: response.deletemanagementnetworkiprangeresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletemanagementnetworkiprangeresponse.jobid,
+          title: this.$t('label.remove.ip.range'),
+          description: record.id,
+          successMessage: this.$t('message.success.remove.iprange'),
           successMethod: () => {
             this.componentLoading = false
             this.fetchData()
@@ -287,6 +292,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 
@@ -301,13 +307,11 @@ export default {
           forsystemvms: values.vms,
           vlan: values.vlan || null
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.success.add.iprange'),
-            jobid: response.createmanagementnetworkiprangeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createmanagementnetworkiprangeresponse.jobid,
+            title: this.$t('label.add.ip.range'),
+            description: values.pod,
+            successMessage: this.$t('message.success.add.iprange'),
             successMethod: () => {
               this.componentLoading = false
               this.fetchData()

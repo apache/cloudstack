@@ -2431,7 +2431,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public Map<String, String> getKeys(GetUserKeysCmd cmd) {
         final long userId = cmd.getID();
+        return getKeys(userId);
+    }
 
+    @Override
+    public Map<String, String> getKeys(Long userId) {
         User user = getActiveUser(userId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find user by id");

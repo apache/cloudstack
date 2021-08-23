@@ -414,6 +414,8 @@ class TestServiceOfferings(cloudstackTestCase):
         # Generate new name & displaytext from random data
         random_displaytext = random_gen()
         random_name = random_gen()
+        random_tag = random_gen()
+        random_hosttag = random_gen()
 
         self.debug("Updating service offering with ID: %s" %
                    self.service_offering_1.id)
@@ -423,6 +425,8 @@ class TestServiceOfferings(cloudstackTestCase):
         cmd.id = self.service_offering_1.id
         cmd.displaytext = random_displaytext
         cmd.name = random_name
+        cmd.storagetags = random_tag
+        cmd.hosttags = random_hosttag
         self.apiclient.updateServiceOffering(cmd)
 
         list_service_response = list_service_offering(
@@ -452,6 +456,17 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check server name in updateServiceOffering"
         )
 
+        self.assertEqual(
+            list_service_response[0].storagetags,
+            random_tag,
+            "Check storage tags in updateServiceOffering"
+        )
+
+        self.assertEqual(
+            list_service_response[0].hosttags,
+            random_hosttag,
+            "Check host tags in updateServiceOffering"
+        )
         return
 
     @attr(

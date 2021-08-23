@@ -26,11 +26,11 @@
       <a-step
         v-for="(step, index) in steps"
         :ref="`resourceStep${index}`"
-        :key="step.title"
+        :key="step.formKey"
         :title="$t(step.title)"></a-step>
     </a-steps>
     <static-inputs-form
-      v-if="currentStep === 0"
+      v-if="checkVisibleResource('clusterResource')"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
@@ -43,7 +43,7 @@
 
     <div v-if="hypervisor !== 'VMware'">
       <static-inputs-form
-        v-if="currentStep === 1"
+        v-if="checkVisibleResource('hostResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -54,7 +54,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 2"
+        v-if="(!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -65,7 +65,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 3"
+        v-if="checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -78,7 +78,7 @@
     </div>
     <div v-else>
       <static-inputs-form
-        v-if="currentStep === 1"
+        v-if="checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -89,7 +89,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 2"
+        v-if="checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -135,11 +135,15 @@ export default {
     hypervisor () {
       return this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
     },
+    localstorageenabled () {
+      return this.prefillContent?.localstorageenabled?.value || false
+    },
+    localstorageenabledforsystemvm () {
+      return this.prefillContent?.localstorageenabledforsystemvm?.value || false
+    },
     steps () {
       const steps = []
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
-      const localStorageEnabled = this.prefillContent.localstorageenabled.value
-      const localStorageEnabledForSystemVM = this.prefillContent.localstorageenabledforsystemvm.value
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
@@ -152,7 +156,7 @@ export default {
           description: 'message.desc.host'
         })
       }
-      if (!localStorageEnabled || !localStorageEnabledForSystemVM) {
+      if (!this.localstorageenabled || !this.localstorageenabledforsystemvm) {
         steps.push({
           title: 'label.primary.storage',
           fromKey: 'primaryResource',
@@ -926,6 +930,10 @@ export default {
     },
     submitLaunchZone () {
       this.$emit('submitLaunchZone')
+    },
+    checkVisibleResource (key) {
+      const formKey = this.steps[this.currentStep]?.fromKey || ''
+      return formKey === key
     }
   }
 }

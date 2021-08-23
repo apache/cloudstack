@@ -20,6 +20,7 @@ import { i18n } from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
+import store from '@/store'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -27,6 +28,8 @@ export const pollJobPlugin = {
       /**
        * @param {String} jobId
        * @param {String} [name='']
+       * @param {String} [title='']
+       * @param {String} [description='']
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -41,6 +44,8 @@ export const pollJobPlugin = {
       const {
         jobId,
         name = '',
+        title = '',
+        description = '',
         successMessage = i18n.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.t('label.error'),
@@ -53,6 +58,14 @@ export const pollJobPlugin = {
         bulkAction = false
       } = options
 
+      store.dispatch('AddHeaderNotice', {
+        key: jobId,
+        title: title,
+        description: description,
+        status: 'progress'
+      })
+
+      options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1) {
@@ -68,7 +81,20 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 2
           })
-          eventBus.$emit('async-job-complete', action)
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: description,
+            status: 'done',
+            duration: 2
+          })
+
+          // Ensure we refresh on the same / parent page
+          const currentPage = this.$router.currentRoute.path
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
+          if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
+            eventBus.$emit('async-job-complete')
+          }
           successMethod(result)
         } else if (result.jobstatus === 2) {
           if (!bulkAction) {
@@ -78,9 +104,9 @@ export const pollJobPlugin = {
               duration: 1
             })
           }
-          var title = errorMessage
+          var errMessage = errorMessage
           if (action && action.label) {
-            title = i18n.t(action.label)
+            errMessage = i18n.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
@@ -88,13 +114,22 @@ export const pollJobPlugin = {
           }
           if (!bulkAction) {
             notification.error({
-              message: title,
+              message: errMessage,
               description: desc,
               key: jobId,
               duration: 0
             })
           }
-          eventBus.$emit('async-job-complete', action)
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: description,
+            status: 'failed',
+            duration: 2
+          })
+          if (!action || !('isFetchData' in action) || (action.isFetchData)) {
+            eventBus.$emit('async-job-complete', action)
+          }
           errorMethod(result)
         } else if (result.jobstatus === 0) {
           if (showLoading) {
@@ -116,7 +151,6 @@ export const pollJobPlugin = {
           duration: 0
         })
         catchMethod && catchMethod()
-        // }
       })
     }
   }
