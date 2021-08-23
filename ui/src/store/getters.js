@@ -39,7 +39,9 @@ const getters = {
   server: state => state.app.server,
   domainStore: state => state.user.domainStore,
   darkMode: state => state.user.darkMode,
-  themeSetting: state => state.user.themeSetting
+  themeSetting: state => state.user.themeSetting,
+  defaultPageSize: state => state.user.defaultPageSize,
+  listviewPageSize: state => state.user.listviewPageSize
 }
 
 export default getters

@@ -16,6 +16,7 @@
 // under the License.
 
 import { axios } from '@/utils/request'
+import store from '@/store'
 
 export async function api (command, args = {}, method = 'GET', data = {}) {
   let params = {}
@@ -42,7 +43,7 @@ export async function api (command, args = {}, method = 'GET', data = {}) {
     })
   }
 
-  const pagesize = 10
+  const pagesize = store.getters.defaultPageSize
   let page = 1
   let items = []
   let done = false
