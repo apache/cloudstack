@@ -655,10 +655,10 @@ public class VolumeApiServiceImplTest {
         inOrder.verify(newDiskOfferingMock).isUseLocalStorage();
         inOrder.verify(storagePoolMock).isLocal();
         inOrder.verify(newDiskOfferingMock, times(0)).isShared();
-        inOrder.verify(volumeVoMock).getSize();
-        inOrder.verify(newDiskOfferingMock).getDiskSize();
         inOrder.verify(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
+        inOrder.verify(volumeVoMock).getSize();
+        inOrder.verify(newDiskOfferingMock).getDiskSize();
     }
 
     @Test(expected = InvalidParameterValueException.class)
