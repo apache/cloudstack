@@ -16,6 +16,7 @@
 // under the License.
 
 import store from '@/store'
+import tungsten from '@/assets/icons/tungsten.svg?inline'
 
 export default {
   name: 'network',
@@ -656,6 +657,36 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'tungstenfabric',
+      title: 'label.tungsten.fabric',
+      icon: 'fork',
+      permission: ['listTungstenFabricProviders'],
+      columns: ['name', 'zonename'],
+      details: ['name', 'zonename'],
+      actions: []
+    },
+    {
+      name: 'tungstenfabricrouting',
+      title: 'label.tungsten.fabric.routing',
+      icon: tungsten,
+      permission: ['listTungstenFabricProviders'],
+      columns: ['name', 'zonename'],
+      tabs: [
+        {
+          name: 'network.route.table',
+          component: () => import('@/views/network/tungsten/TungstenNetworkRouteTable.vue')
+        },
+        {
+          name: 'interface.route.table',
+          component: () => import('@/views/network/tungsten/TungstenInterfaceRouteTable.vue')
+        },
+        {
+          name: 'logical.router',
+          component: () => import('@/views/network/tungsten/TungstenLogicalRoute.vue')
         }
       ]
     }
