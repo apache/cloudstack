@@ -56,7 +56,7 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" ref="submit" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -80,7 +80,7 @@
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="startport" slot-scope="record">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
@@ -269,12 +269,6 @@ export default {
   created () {
     this.fetchData()
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return 'All'
-      return val.toUpperCase()
-    }
-  },
   watch: {
     resource: function (newItem, oldItem) {
       if (!newItem || !newItem.id) {
@@ -347,6 +341,10 @@ export default {
       for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true

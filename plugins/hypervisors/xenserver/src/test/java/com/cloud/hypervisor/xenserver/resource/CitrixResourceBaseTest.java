@@ -42,6 +42,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -149,7 +150,7 @@ public class CitrixResourceBaseTest {
 
         String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
 
-        Assert.assertEquals("xs-tools.iso", returnedIsoTemplateName);
+        Assert.assertEquals(TemplateManager.XS_TOOLS_ISO, returnedIsoTemplateName);
     }
 
     @Test
@@ -159,7 +160,7 @@ public class CitrixResourceBaseTest {
 
         String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
 
-        Assert.assertEquals("xs-tools.iso", returnedIsoTemplateName);
+        Assert.assertEquals(TemplateManager.XS_TOOLS_ISO, returnedIsoTemplateName);
     }
 
     @Test
@@ -169,7 +170,7 @@ public class CitrixResourceBaseTest {
 
         String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
 
-        Assert.assertEquals("guest-tools.iso", returnedIsoTemplateName);
+        Assert.assertEquals(CitrixResourceBase.XS_TOOLS_ISO_AFTER_70, returnedIsoTemplateName);
     }
 
     @Test
@@ -179,7 +180,7 @@ public class CitrixResourceBaseTest {
 
         String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
 
-        Assert.assertEquals("guest-tools.iso", returnedIsoTemplateName);
+        Assert.assertEquals(CitrixResourceBase.XS_TOOLS_ISO_AFTER_70, returnedIsoTemplateName);
     }
 
     @Test

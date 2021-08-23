@@ -31,8 +31,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -220,6 +218,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -246,6 +245,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -2801,6 +2801,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // root
 
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(DiskOfferingJoinVO.class, "id", true);
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
         sc.addAnd("type", Op.EQ, DiskOfferingVO.Type.Disk);
 
@@ -2960,6 +2961,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // till
         // root
         Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         Account caller = CallContext.current().getCallingAccount();
         Object name = cmd.getServiceOfferingName();
@@ -3182,6 +3184,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(DataCenterJoinVO.class, "id", true);
         SearchCriteria<DataCenterJoinVO> sc = sb.create();
 
         if (networkType != null) {
@@ -3663,7 +3666,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<TemplateJoinVO> zoneSc = _templateJoinDao.createSearchCriteria();
             zoneSc.addOr("dataCenterId", SearchCriteria.Op.EQ, zoneId);
             zoneSc.addOr("dataStoreScope", SearchCriteria.Op.EQ, ScopeType.REGION);
-            // handle the case where xs-tools.iso and vmware-tools.iso do not
+            // handle the case where TemplateManager.VMWARE_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO do not
             // have data_center information in template_view
             SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
             isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);

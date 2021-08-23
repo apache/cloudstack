@@ -40,10 +40,13 @@ import javax.persistence.Transient;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import java.util.Arrays;
+import org.apache.commons.lang.StringUtils;
 
 @Entity
 @Table(name = "host")
@@ -677,7 +680,7 @@ public class HostVO implements Host {
 
     @Override
     public String toString() {
-        return String.format("Host [{id: \"%s\", name: \"%s\", uuid: \"%s\", type=\"%s\"}]", id, name, uuid, type);
+        return String.format("Host {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\", \"type\"=\"%s\"}", id, name, uuid, type);
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {
@@ -738,6 +741,18 @@ public class HostVO implements Host {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public boolean checkHostServiceOfferingTags(ServiceOffering serviceOffering){
+        if (serviceOffering == null) {
+            return false;
+        }
+        if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
+            return true;
+        }
+
+        List<String> serviceOfferingTags = Arrays.asList(serviceOffering.getHostTag().split(","));
+        return this.getHostTags() != null && this.getHostTags().containsAll(serviceOfferingTags);
     }
 
     @Override

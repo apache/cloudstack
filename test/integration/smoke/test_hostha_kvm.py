@@ -209,6 +209,18 @@ class TestHAKVM(cloudstackTestCase):
         except Exception as e:
             raise self.skipTest("Failed to deploy VM, skipping kvm host-ha test case")
 
+    def skipIfMSIsUnsupported(self) :
+        os_details = SshClient(self.mgtSvrDetails["mgtSvrIp"], 22, self.mgtSvrDetails["user"], self.mgtSvrDetails["passwd"]).execute \
+            ("/usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh | cut -d '=' -f2")
+        os = os_details[0].lower()
+        if 'ubuntu' in os or 'debian' in os :
+            return
+        # RHEL < 8 works fine
+        os_ver = os_details[1].split('.')[0]
+        if float(os_ver) < 8:
+            return
+        self.skipTest("Skipping since RHEL8 / SUSE have known IPMI issues")
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_disable_oobm_ha_state_ineligible(self):
         """
@@ -276,10 +288,10 @@ class TestHAKVM(cloudstackTestCase):
         self.logger.debug("Starting test_hostha_enable_ha_when_host_in_maintenance")
         self.logger.debug("Pausing to wait for VMs to have finished starting")
         time.sleep(300)
-        
+
         # Enable HA
         self.configureAndEnableHostHa()
-        
+
 
         # Prepare for maintenance Host
         self.setHostToMaintanance(self.host.id)
@@ -351,6 +363,7 @@ class TestHAKVM(cloudstackTestCase):
             Tests degraded HA state when agent is stopped/killed
         """
 
+        self.skipIfMSIsUnsupported()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()
@@ -387,6 +400,7 @@ class TestHAKVM(cloudstackTestCase):
             Tests recovery and fencing HA state transitions
         """
 
+        self.skipIfMSIsUnsupported()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()
@@ -426,7 +440,7 @@ class TestHAKVM(cloudstackTestCase):
         """
         self.logger.debug("Starting test_ha_kvm_host_fencing")
 
-
+        self.skipIfMSIsUnsupported()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()

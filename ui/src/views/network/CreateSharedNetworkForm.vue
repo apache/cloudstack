@@ -309,6 +309,12 @@
               :placeholder="this.$t('label.routeripv6')"/>
           </a-form-item>
           <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+            <a-input
+              v-decorator="['endipv6', {}]"
+              :placeholder="this.$t('label.endipv6')"/>
+          </a-form-item>
+          <a-form-item>
             <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
             <a-input
               v-decorator="['networkdomain', {}]"
@@ -327,6 +333,7 @@
             <a-button
               :loading="actionLoading"
               type="primary"
+              ref="submit"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
             </a-button>
@@ -824,7 +831,6 @@ export default {
 
 .tagsTitle {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
 }
 </style>

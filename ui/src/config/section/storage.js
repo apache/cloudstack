@@ -116,6 +116,21 @@ export default {
           }
         },
         {
+          api: 'updateVolume',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: ['name'],
+          mapping: {
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
+        },
+        {
           api: 'createSnapshot',
           icon: 'camera',
           docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
