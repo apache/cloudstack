@@ -104,6 +104,8 @@
                         <configuration>
                             <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                            <skipCache>true</skipCache>
+                            <overwrite>true</overwrite>
                         </configuration>
                     </execution>
                 </executions>
@@ -142,6 +144,27 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>validate-checksums</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>validate-checksum</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
                     <plugin>
                         <groupId>com.googlecode.maven-download-plugin</groupId>
                         <artifactId>download-maven-plugin</artifactId>
