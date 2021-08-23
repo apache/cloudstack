@@ -73,6 +73,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
+    private static final String SECONDARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER = "secondary storage";
+    private static final String PRIMARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER = "primary storage";
+
     private static final Logger s_logger = Logger.getLogger(DefaultSnapshotStrategy.class);
 
     @Inject
@@ -355,8 +358,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
      */
     protected Map<String, SnapshotInfo> retrieveSnapshotEntries(long snapshotId) {
         Map<String, SnapshotInfo> snapshotInfos = new LinkedHashMap<>();
-        snapshotInfos.put("secondary storage", snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image, false));
-        snapshotInfos.put("primary storage", snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary, false));
+        snapshotInfos.put(SECONDARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER, snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image, false));
+        snapshotInfos.put(PRIMARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER, snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary, false));
         return snapshotInfos;
     }
 
