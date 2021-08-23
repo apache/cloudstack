@@ -56,14 +56,20 @@
               </span>
             </a-popconfirm>
           </a-comment>
-          <a-button
-            v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
-            type="danger"
-            icon="delete"
-            shape="circle"
-            size="small"
-            @click="deleteNote(item)" >
-          </a-button>
+          <a-popconfirm
+              :title="$t('label.remove.annotation')"
+              v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
+              slot="actions"
+              key="visibility"
+              @confirm="deleteNote(item)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')" >
+              <a-icon
+                type="delete"
+                shape="circle"
+                theme="twoTone"
+                two-tone-color="#eb2f96" />
+          </a-popconfirm>
         </a-list-item>
       </a-list>
       <a-pagination
@@ -197,7 +203,7 @@ export default {
       this.getAnnotations()
     },
     getAnnotations () {
-      if (!('listAnnotations' in this.$store.getters.apis)) {
+      if (!('listAnnotations' in this.$store.getters.apis) || !this.resource || !this.resource.id) {
         return
       }
       this.loadingAnnotations = true
