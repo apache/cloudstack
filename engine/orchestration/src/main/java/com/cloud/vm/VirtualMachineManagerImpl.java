@@ -4401,7 +4401,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new RuntimeException("Unhandled exception", ex);
             }
 
-            throw new RuntimeException("Unexpected job execution result");
+            throw new RuntimeException(String.format("Unexpected job execution result [%s]", result));
         }
     }
 
