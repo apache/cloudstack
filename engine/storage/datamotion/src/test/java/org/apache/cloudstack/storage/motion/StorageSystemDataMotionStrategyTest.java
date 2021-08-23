@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.HashMap;
@@ -47,17 +48,22 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.verification.VerificationMode;
 
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.host.HostVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -77,6 +83,14 @@ public class StorageSystemDataMotionStrategyTest {
     private ImageStore destinationStore;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Mock
+    StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
+
+    @Mock
+    Map<String, Storage.StoragePoolType> mapStringStoragePoolTypeMock;
+
+    List<ScopeType> scopeTypes = Arrays.asList(ScopeType.CLUSTER, ScopeType.ZONE);
 
     @Before
     public void setUp() throws Exception {
@@ -344,5 +358,73 @@ public class StorageSystemDataMotionStrategyTest {
         listTypes[2] = StoragePoolType.RBD;
 
         assertFalse(strategy.isStoragePoolTypeInList(StoragePoolType.SharedMountPoint, listTypes));
+    }
+
+    @Test
+    public void validateAddSourcePoolToPoolsMapDestinationPoolIsManaged() {
+        Mockito.doReturn(true).when(destinationStoragePoolVoMock).isManaged();
+        strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+
+        Mockito.verify(destinationStoragePoolVoMock).isManaged();
+        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+    }
+
+    @Test
+    public void validateAddSourcePoolToPoolsMapDestinationPoolIsNotNFS() {
+        List<StoragePoolType> storagePoolTypes = new LinkedList<>(Arrays.asList(StoragePoolType.values()));
+        storagePoolTypes.remove(StoragePoolType.NetworkFilesystem);
+
+        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
+        storagePoolTypes.forEach(poolType -> {
+            Mockito.doReturn(poolType).when(destinationStoragePoolVoMock).getPoolType();
+            strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+        });
+
+        VerificationMode times = Mockito.times(storagePoolTypes.size());
+        Mockito.verify(destinationStoragePoolVoMock, times).isManaged();
+        Mockito.verify(destinationStoragePoolVoMock, times).getPoolType();
+        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+    }
+
+    @Test
+    public void validateAddSourcePoolToPoolsMapMapContainsKey() {
+        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
+        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
+        Mockito.doReturn("").when(sourceStoragePoolVoMock).getUuid();
+        Mockito.doReturn(true).when(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
+        strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+
+        Mockito.verify(destinationStoragePoolVoMock, never()).getScope();
+        Mockito.verify(destinationStoragePoolVoMock).isManaged();
+        Mockito.verify(destinationStoragePoolVoMock).getPoolType();
+        Mockito.verify(sourceStoragePoolVoMock).getUuid();
+        Mockito.verify(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
+        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+    }
+
+    @Test
+    public void validateAddSourcePoolToPoolsMapMapDoesNotContainsKey() {
+        List<StoragePoolType> storagePoolTypes = new LinkedList<>(Arrays.asList(StoragePoolType.values()));
+
+        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
+        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
+        Mockito.doReturn("").when(sourceStoragePoolVoMock).getUuid();
+        Mockito.doReturn(false).when(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
+        Mockito.doReturn(null).when(mapStringStoragePoolTypeMock).put(Mockito.anyString(), Mockito.any());
+
+        storagePoolTypes.forEach(poolType -> {
+            Mockito.doReturn(poolType).when(sourceStoragePoolVoMock).getPoolType();
+            strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+        });
+
+        VerificationMode times = Mockito.times(storagePoolTypes.size());
+        Mockito.verify(destinationStoragePoolVoMock, never()).getScope();
+        Mockito.verify(destinationStoragePoolVoMock, times).isManaged();
+        Mockito.verify(destinationStoragePoolVoMock, times).getPoolType();
+        Mockito.verify(sourceStoragePoolVoMock, times).getUuid();
+        Mockito.verify(mapStringStoragePoolTypeMock, times).containsKey(Mockito.anyString());
+        Mockito.verify(sourceStoragePoolVoMock, times).getPoolType();
+        Mockito.verify(mapStringStoragePoolTypeMock, times).put(Mockito.anyString(), Mockito.any());
+        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
     }
 }
