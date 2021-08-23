@@ -27,7 +27,7 @@
         v-if="notes.length"
         :dataSource="notes"
         itemLayout="horizontal"
-        pagination="true"
+        :pagination="true"
         size="small" >
         <a-list-item slot="renderItem" slot-scope="item">
           <a-comment
