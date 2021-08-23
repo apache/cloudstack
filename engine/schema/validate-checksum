@@ -29,7 +29,5 @@ else
   new_checksum=$(md5sum ${new_checksum_path}${file_name} | awk '{print $1}')
   if [ "$old_checksum" != "$new_checksum" ]; then
     rm -rf $old_checksum_path*
-  else
-    echo "equal"
   fi
 fi

@@ -407,7 +407,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     static final ConfigKey<Long> SystemVmRootDiskSize = new ConfigKey<Long>("Advanced",
             Long.class, "systemvm.root.disk.size", "-1",
-            "root size (in GB) of systemvm and virtual routers", true);
+            "Size of root volume (in GB) of system VMs and virtual routers", true);
 
     ScheduledExecutorService _executor = null;
 

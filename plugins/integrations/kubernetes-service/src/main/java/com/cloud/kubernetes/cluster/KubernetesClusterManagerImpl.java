@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -837,10 +838,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterVersion == null) {
             throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
-
-        if (!(kubernetesCluster.getState().equals(KubernetesCluster.State.Created) ||
-                kubernetesCluster.getState().equals(KubernetesCluster.State.Running) ||
-                kubernetesCluster.getState().equals(KubernetesCluster.State.Stopped))) {
+        List<KubernetesCluster.State> validClusterStates = Arrays.asList(KubernetesCluster.State.Created, KubernetesCluster.State.Running, KubernetesCluster.State.Stopped);
+        if (!(validClusterStates.contains(kubernetesCluster.getState()))) {
             throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and can not be scaled", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
         }
 

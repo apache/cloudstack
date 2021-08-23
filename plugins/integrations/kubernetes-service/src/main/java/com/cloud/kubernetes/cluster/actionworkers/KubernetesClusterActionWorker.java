@@ -333,7 +333,6 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {
-        //final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         KubernetesSupportedVersion version = kubernetesSupportedVersion;
         if (kubernetesSupportedVersion == null) {
             version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());

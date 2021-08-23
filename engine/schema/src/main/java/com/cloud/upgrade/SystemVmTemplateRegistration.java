@@ -52,14 +52,14 @@ import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
     private static final Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
-    private static final String mountCommand = "sudo mount -t nfs %s %s";
-    private static final String umountCommand = "sudo umount %s";
-    private static final  String hashAlgorithm = "MD5";
-    private static final String relativeTemplatePath = "./engine/schema/dist/systemvm-templates/";
-    private static final String AbsolutetemplatesPath = "/usr/share/cloudstack-management/templates/";
-    private static final String templatesPath = fetchTemplatesPath();
-    private static final String metadataFileName = "metadata.ini";
-    private static final String metadataFile = templatesPath + metadataFileName;
+    private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
+    private static final String UMOUNT_COMMAND = "sudo umount %s";
+    private static final String HASH_ALGORITHM = "MD5";
+    private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";
+    private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/";
+    private static final String TEMPLATES_PATH = fetchTemplatesPath();
+    private static final String METADATA_FILE_NAME = "metadata.ini";
+    private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
     private static final String TEMPORARY_SECONDARY_STORE = "/tmp/tmpSecStorage";
     private static final String PARENT_TEMPLATE_FOLDER = TEMPORARY_SECONDARY_STORE;
     private static final String PARTIAL_TEMPLATE_FOLDER = "/template/tmpl/1/";
@@ -326,17 +326,17 @@ public class SystemVmTemplateRegistration {
     }
 
     private static String fetchTemplatesPath() {
-            String filePath = relativeTemplatePath + metadataFileName;
+            String filePath = RELATIVE_TEMPLATE_PATH + METADATA_FILE_NAME;
             LOGGER.debug(String.format("Looking for file [ %s ] in the classpath.", filePath));
             File metaFile = new File(filePath);
             String templatePath = null;
             if (metaFile.exists()) {
-                templatePath = relativeTemplatePath;
+                templatePath = RELATIVE_TEMPLATE_PATH;
             }
             if (templatePath == null) {
-                filePath = AbsolutetemplatesPath + metadataFileName;
+                filePath = ABSOLUTE_TEMPLATE_PATH + METADATA_FILE_NAME;
                 metaFile = new File(filePath);
-                templatePath = AbsolutetemplatesPath;
+                templatePath = ABSOLUTE_TEMPLATE_PATH;
                 LOGGER.debug(String.format("Looking for file [ %s ] in the classpath.", filePath));
                 if (!metaFile.exists()) {
                     String errMsg = String.format("Unable to locate metadata file in your setup at %s", filePath.toString());
@@ -414,7 +414,7 @@ public class SystemVmTemplateRegistration {
                 String host = uri.getHost();
                 String mountPath = uri.getPath();
                 Script.runSimpleBashScript("mkdir -p " + TEMPORARY_SECONDARY_STORE);
-                String mount = String.format(mountCommand, host + ":" + mountPath, TEMPORARY_SECONDARY_STORE);
+                String mount = String.format(MOUNT_COMMAND, host + ":" + mountPath, TEMPORARY_SECONDARY_STORE);
                 Script.runSimpleBashScript(mount);
             }
         } catch (Exception e) {
@@ -605,7 +605,7 @@ public class SystemVmTemplateRegistration {
     public static void unmountStore() {
         try {
             LOGGER.info("Unmounting store");
-            String umountCmd = String.format(umountCommand, TEMPORARY_SECONDARY_STORE);
+            String umountCmd = String.format(UMOUNT_COMMAND, TEMPORARY_SECONDARY_STORE);
             Script.runSimpleBashScript(umountCmd);
         } catch (Exception e) {
             String msg = String.format("Failed to unmount store mounted at %s", TEMPORARY_SECONDARY_STORE);
@@ -637,7 +637,7 @@ public class SystemVmTemplateRegistration {
             }
             Script scr = new Script(setupTmpltScript, SCRIPT_TIMEOUT, LOGGER);
             scr.add("-u", templateName);
-            scr.add("-f", templatesPath + fileNames.get(hypervisorAndTemplateName.first()));
+            scr.add("-f", TEMPLATES_PATH + fileNames.get(hypervisorAndTemplateName.first()));
             scr.add("-h", hypervisorAndTemplateName.first().name().toLowerCase(Locale.ROOT));
             scr.add("-d", destTempFolder);
             String result = scr.execute();
@@ -669,7 +669,7 @@ public class SystemVmTemplateRegistration {
     public static void parseMetadataFile() {
         try {
             Ini ini = new Ini();
-            ini.load(new FileReader(metadataFile));
+            ini.load(new FileReader(METADATA_FILE));
             for (Hypervisor.HypervisorType hypervisorType : hypervisorList) {
                 String hypervisor = hypervisorType.name().toLowerCase(Locale.ROOT);
                 Ini.Section section = ini.get(hypervisor);
@@ -679,7 +679,7 @@ public class SystemVmTemplateRegistration {
                 newTemplateUrl.put(hypervisorType, section.get("downloadurl"));
             }
         } catch (Exception e) {
-            String errMsg = String.format("Failed to parse systemVM template metadata file: %s", metadataFile);
+            String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
             LOGGER.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
@@ -713,8 +713,8 @@ public class SystemVmTemplateRegistration {
                         templatesFound = false;
                         break;
                     }
-                    MessageDigest mdigest = MessageDigest.getInstance(hashAlgorithm);
-                    File tempFile = new File(templatesPath + matchedTemplate);
+                    MessageDigest mdigest = MessageDigest.getInstance(HASH_ALGORITHM);
+                    File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
                     String templateChecksum = calculateChecksum(mdigest, tempFile);
                     if (!templateChecksum.equals(newTemplateChecksum.get(getHypervisorType(hypervisor)))) {
                         LOGGER.error(String.format("Checksum mismatch: %s != %s ", templateChecksum, newTemplateChecksum.get(getHypervisorType(hypervisor))));
