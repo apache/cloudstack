@@ -15,23 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.lib.utils import (random_gen)
 from nose.plugins.attrib import attr
 
 from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 
 import random
 import socket
-import sys
 import _thread
-import time
 
 
 class TestOutOfBandManagement(cloudstackTestCase):
@@ -42,10 +37,14 @@ class TestOutOfBandManagement(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestOutOfBandManagement, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+        cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
         cls.services = testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.host = None
         cls.cleanup = []
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if (cls.hypervisor.lower() != "simulator"):
+            cls.skipIfMSIsUnsupported(cls)
 
         # use random port for ipmisim
         s = socket.socket()
@@ -82,7 +81,6 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.fakeMsId = random.randint(10000, 99999) * random.randint(10, 20)
         self.cleanup = []
 
-
     def tearDown(self):
         try:
             self.dbclient.execute("delete from oobm where port=%d" % self.getIpmiServerPort())
@@ -94,6 +92,17 @@ class TestOutOfBandManagement(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    def skipIfMSIsUnsupported(self) :
+        os_details = SshClient(self.mgtSvrDetails["mgtSvrIp"], 22, self.mgtSvrDetails["user"], self.mgtSvrDetails["passwd"]).execute \
+            ("/usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh | cut -d '=' -f2")
+        os = os_details[0].lower()
+        if 'ubuntu' in os or 'debian' in os :
+            return
+        # RHEL < 8 works fine
+        os_ver = os_details[1].split('.')[0]
+        if float(os_ver) < 8:
+            return
+        self.skipTest(self, reason="Skipping since RHEL8 / SUSE have known IPMI issues")
 
     def getFakeMsId(self):
         return self.fakeMsId

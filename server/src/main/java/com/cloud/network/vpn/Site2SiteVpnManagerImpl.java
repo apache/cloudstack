@@ -351,7 +351,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 if (conn.isPassive()) {
                     conn.setState(State.Disconnected);
                 } else {
-                    conn.setState(State.Connected);
+                    conn.setState(State.Connecting);
                 }
                 _vpnConnectionDao.persist(conn);
                 return conn;
@@ -535,7 +535,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                     continue;
                 }
                 try {
-                    if (conn.getState() == State.Connected || conn.getState() == State.Error) {
+                    if (conn.getState() == State.Connected || conn.getState() == State.Connecting || conn.getState() == State.Error) {
                         stopVpnConnection(conn.getId());
                     }
                     startVpnConnection(conn.getId());
@@ -613,7 +613,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (conn.getState() == State.Pending) {
             conn.setState(State.Disconnected);
         }
-        if (conn.getState() == State.Connected || conn.getState() == State.Error || conn.getState() == State.Disconnected) {
+        if (conn.getState() == State.Connected || conn.getState() == State.Error
+            || conn.getState() == State.Disconnected || conn.getState() == State.Connecting) {
             stopVpnConnection(id);
         }
         startVpnConnection(id);
@@ -800,7 +801,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 throw new CloudRuntimeException("Unable to acquire lock on " + conn);
             }
             try {
-                if (conn.getState() == Site2SiteVpnConnection.State.Connected) {
+                if (conn.getState() == Site2SiteVpnConnection.State.Connected || conn.getState() == Site2SiteVpnConnection.State.Connecting) {
                     conn.setState(Site2SiteVpnConnection.State.Disconnected);
                     _vpnConnectionDao.persist(conn);
                 }
