@@ -249,16 +249,22 @@ export default {
           required: true
         },
         {
-          title: 'label.tungsten.provider.vrouter',
-          key: 'tungstenVrouter',
-          placeHolder: 'message.installwizard.tooltip.tungsten.provider.vrouter',
+          title: 'label.tungsten.provider.gateway',
+          key: 'tungstenGateway',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.gateway',
           required: true
         },
         {
           title: 'label.tungsten.provider.vrouterport',
           key: 'tungstenVrouterport',
           placeHolder: 'message.installwizard.tooltip.tungsten.provider.vrouterport',
-          required: true
+          required: false
+        },
+        {
+          title: 'label.tungsten.provider.introspectport',
+          key: 'tungstenIntrospectPort',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.introspectport',
+          required: false
         }
       ]
       return fields

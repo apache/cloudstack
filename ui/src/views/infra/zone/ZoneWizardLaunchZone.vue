@@ -955,7 +955,11 @@ export default {
           await this.stepConfigureStorageTraffic()
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else {
         if (this.physicalNetworks) {
           const storageExists = this.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
@@ -976,29 +980,38 @@ export default {
         return
       }
       try {
-        if (!this.stepData.stepMove.includes('configTungsten')) {
+        if (!this.stepData.stepMove.includes('createTungstenFabricProvider')) {
+          const providerParams = {}
+          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname?.value || null
+          providerParams.name = this.prefillContent?.tungstenName?.value || null
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort?.value || null
+          providerParams.tungstengateway = this.prefillContent?.tungstenGateway?.value || null
+          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter?.value || null
+          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort?.value || null
+          await this.createTungstenFabricProvider(providerParams)
+          this.stepData.stepMove.push('createTungstenFabricProvider')
+        }
+        if (!this.stepData.stepMove.includes('configTungstenFabricService')) {
           const configParams = {}
           configParams.zoneid = this.stepData.zoneReturned.id
           configParams.physicalnetworkid = this.stepData.tungstenPhysicalNetworkId
-          await this.configTungstenService(configParams)
-          this.stepData.stepMove.push('configTungsten')
+          await this.configTungstenFabricService(configParams)
+          this.stepData.stepMove.push('configTungstenFabricService')
         }
-        if (!this.stepData.stepMove.includes('createTungstenProvider')) {
-          const providerParams = {}
-          providerParams.zoneid = this.stepData.zoneReturned.id
-          providerParams.tungstenproviderhostname = this.prefillContent.tungstenHostname.value || null
-          providerParams.name = this.prefillContent.tungstenName.value || null
-          providerParams.tungstenproviderport = this.prefillContent.tungstenPort.value || null
-          providerParams.tungstenprovidervrouter = this.prefillContent.tungstenVrouter.value || null
-          providerParams.tungstenprovidervrouterport = this.prefillContent.tungstenVrouterport.value || null
-          await this.createTungstenProvider(providerParams)
-          this.stepData.stepMove.push('createTungstenProvider')
+        if (!this.stepData.stepMove.includes('createTungstenFabricManagementNetwork')) {
+          const networkParams = {}
+          networkParams.podId = this.stepData.podReturned.id
+          await this.createTungstenFabricManagementNetwork(networkParams)
+          this.stepData.stepMove.push('createTungstenFabricManagementNetwork')
         }
-        if (!this.stepData.stepMove.includes('createTungstenNetwork')) {
-          const params = {}
-          params.zoneid = this.stepData.zoneReturned.id
-          await this.createTungstenPublicNetwork(params)
-          this.stepData.stepMove.push('createTungstenNetwork')
+        if (!this.sgEnabled) {
+          if (!this.stepData.stepMove.includes('createTungstenFabricPublicNetwork')) {
+            const publicParams = {}
+            publicParams.zoneId = this.stepData.zoneReturned.id
+            await this.createTungstenPublicNetwork(publicParams)
+            this.stepData.stepMove.push('createTungstenFabricPublicNetwork')
+          }
         }
         this.stepData.stepMove.push('tungsten')
         await this.stepConfigureStorageTraffic()
@@ -2098,9 +2111,9 @@ export default {
         })
       })
     },
-    configTungstenService (args) {
+    createTungstenFabricProvider (args) {
       return new Promise((resolve, reject) => {
-        api('configTungstenService', {}, 'POST', args).then(json => {
+        api('createTungstenFabricProvider', {}, 'POST', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2108,9 +2121,19 @@ export default {
         })
       })
     },
-    createTungstenProvider (args) {
+    configTungstenFabricService (args) {
       return new Promise((resolve, reject) => {
-        api('createTungstenProvider', {}, 'POST', args).then(json => {
+        api('configTungstenFabricService', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenFabricManagementNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricManagementNetwork', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
