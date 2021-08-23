@@ -154,6 +154,17 @@
             @submit="handleSubmit"
             layout="vertical" >
             <a-form-item
+              v-if="'displayName' in currentAction"
+              :class="[currentAction.paramFields.length > 0 ? '' : 'custom-form-input']">
+              <span slot="label">
+                {{ $t('label.name') }}
+                <a-tooltip :title="$t('label.name')">
+                  <a-icon type="info-circle" />
+                </a-tooltip>
+              </span>
+              <a-alert type="info" :message="currentAction.displayName(resource)"></a-alert>
+            </a-form-item>
+            <a-form-item
               v-for="(field, fieldIndex) in currentAction.paramFields"
               :key="fieldIndex"
               :v-bind="field.name"
@@ -1233,5 +1244,9 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+.custom-form-input {
+  margin-top: 10px;
 }
 </style>
