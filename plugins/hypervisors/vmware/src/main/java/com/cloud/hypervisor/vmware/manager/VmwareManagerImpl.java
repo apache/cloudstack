@@ -138,6 +138,8 @@ import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplain
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -458,7 +460,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
         if (morSrcHost == null) {
             Map<String, String> clusterDetails = clusterDetailsDao.findDetails(clusterId);
-            if (clusterDetails.get("url") == null) {
+            if (MapUtils.isEmpty(clusterDetails) || StringUtils.isBlank(clusterDetails.get("url"))) {
                 return null;
             }
 
