@@ -57,18 +57,18 @@
             </a-popconfirm>
           </a-comment>
           <a-popconfirm
-              :title="$t('label.remove.annotation')"
-              v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
-              slot="actions"
-              key="visibility"
-              @confirm="deleteNote(item)"
-              :okText="$t('label.yes')"
-              :cancelText="$t('label.no')" >
-              <a-icon
-                type="delete"
-                shape="circle"
-                theme="twoTone"
-                two-tone-color="#eb2f96" />
+            :title="$t('label.remove.annotation')"
+            v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
+            slot="actions"
+            key="visibility"
+            @confirm="deleteNote(item)"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')" >
+            <a-icon
+              type="delete"
+              shape="circle"
+              theme="twoTone"
+              two-tone-color="#eb2f96" />
           </a-popconfirm>
         </a-list-item>
       </a-list>
