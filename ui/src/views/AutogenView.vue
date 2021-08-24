@@ -148,7 +148,7 @@
               <span slot="message">
                 <div v-if="currentAction.message" v-html="$t(currentAction.message)"></div>
                 <div v-if="'displayName' in currentAction">
-                  <strong>{{ $t('label.name') + ': ' + currentAction.displayName(resource) }}</strong>
+                  <strong>{{ currentAction.displayName(resource) }}</strong>
                 </div>
               </span>
             </a-alert>
