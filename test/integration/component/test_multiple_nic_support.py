@@ -225,7 +225,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                     cls.virtual_machine1.default_network_id = nic.networkid
                     break
         except Exception as e:
-            cls.fail("Exception while deploying virtual machine: %s" % e)
+            cls.fail("Exception while deploying virtual machine: %s" % {e})
 
         try:
             cls.virtual_machine2 = VirtualMachine.create(
@@ -244,7 +244,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                     cls.virtual_machine2.default_network_id = nic.networkid
                     break
         except Exception as e:
-            cls.fail("Exception while deploying virtual machine: %s" % e)
+            cls.fail("Exception while deploying virtual machine: %s" % {e})
 
         cls._cleanup.append(cls.virtual_machine1)
         cls._cleanup.append(cls.virtual_machine2)
@@ -307,7 +307,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             if len(result) > 0:
                 self.fail("The iptables/ebtables rules for nic %s on vm %s on host %s are not correct" %(nic.ipaddress, vm.instancename, host.name))
 
-    @attr(tags=["adeancedsg"], required_hardware="false")
+    @attr(tags=["advancedsg"], required_hardware="false")
     def test_01_create_vm_with_multiple_nics(self):
         """Create Vm with multiple NIC's
 

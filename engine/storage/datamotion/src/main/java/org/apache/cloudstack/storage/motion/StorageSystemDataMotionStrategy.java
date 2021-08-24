@@ -102,7 +102,6 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.MigrationOptions;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -2259,17 +2258,24 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
             }
 
-            if (!destStoragePoolVO.isManaged() && destStoragePoolVO.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                if (destStoragePoolVO.getScope() != ScopeType.CLUSTER) {
-                    throw new CloudRuntimeException("KVM live storage migrations currently support cluster-wide " +
-                            "not managed NFS destination storage");
-                }
-                if (!sourcePools.containsKey(srcStoragePoolVO.getUuid())) {
-                    sourcePools.put(srcStoragePoolVO.getUuid(), srcStoragePoolVO.getPoolType());
-                }
-            }
+            addSourcePoolToPoolsMap(sourcePools, srcStoragePoolVO, destStoragePoolVO);
         }
         verifyDestinationStorage(sourcePools, destHost);
+    }
+
+    /**
+     * Adds source storage pool to the migration map if the destination pool is not managed and it is NFS.
+     */
+    protected void addSourcePoolToPoolsMap(Map<String, Storage.StoragePoolType> sourcePools, StoragePoolVO srcStoragePoolVO, StoragePoolVO destStoragePoolVO) {
+        if (destStoragePoolVO.isManaged() || !StoragePoolType.NetworkFilesystem.equals(destStoragePoolVO.getPoolType())) {
+            LOGGER.trace(String.format("Skipping adding source pool [%s] to map due to destination pool [%s] is managed or not NFS.", srcStoragePoolVO, destStoragePoolVO));
+            return;
+        }
+
+        String sourceStoragePoolUuid = srcStoragePoolVO.getUuid();
+        if (!sourcePools.containsKey(sourceStoragePoolUuid)) {
+            sourcePools.put(sourceStoragePoolUuid, srcStoragePoolVO.getPoolType());
+        }
     }
 
     /**
