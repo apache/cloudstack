@@ -972,6 +972,9 @@ export default {
             break
           }
         }
+        if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
+          this.$router.go(-1)
+        }
         if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
           this.$store.dispatch('UpdateConfiguration')
         }
@@ -1057,12 +1060,8 @@ export default {
         api(...args).then(json => {
           this.handleResponse(json, resourceName, action).then(jobId => {
             hasJobId = jobId
-            if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
-              this.$router.go(-1)
-            } else {
-              if (!hasJobId) {
-                this.fetchData()
-              }
+            if (!hasJobId) {
+              this.fetchData()
             }
           })
           this.closeAction()
