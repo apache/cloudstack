@@ -1520,6 +1520,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         try {
+            _volsDao.detachVolume(volume.getId());
             stateTransitTo(volume, Volume.Event.RecoverRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to recover volume" + volume.getId(), e);
