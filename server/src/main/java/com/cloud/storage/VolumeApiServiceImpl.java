@@ -320,8 +320,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
             "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
 
-    public static final ConfigKey<Boolean> StoragePoolTagsDiskOfferingStrictness = new ConfigKey<Boolean>("Advanced", Boolean.class, "storage.pool.tags.disk.offering.strictness", "true",
-            "Determines whether tags on disk offering needs to be considered while migrating to another storage pool. If true, volume or new disk offering tags will be matched with destination storage pool", true, ConfigKey.Scope.Zone);
+    public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<Boolean>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
+            "If true, volume's disk offering can be changed only with the matched storage tags", true, ConfigKey.Scope.Zone);
 
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
@@ -1691,7 +1691,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
         }
 
-        if (StoragePoolTagsDiskOfferingStrictness.valueIn(volume.getDataCenterId())) {
+        if (MatchStoragePoolTagsWithDiskOffering.valueIn(volume.getDataCenterId())) {
             if (!doesNewDiskOfferingHasTagsAsOldDiskOffering(diskOffering, newDiskOffering)) {
                 throw new InvalidParameterValueException(String.format("Selected disk offering %s does not have tags as in existing disk offering of volume", diskOffering.getUuid(), volume.getUuid()));
             }
@@ -2821,12 +2821,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
-        if (newDiskOffering == null) {
-            if (!doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
-                throw new CloudRuntimeException(String.format("Migration failed: target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
-                        getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
-            }
-        }
 
         if (vm != null) {
             // serialize VM operation
@@ -2906,7 +2900,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         _accountMgr.checkAccess(caller, newDiskOffering, zone);
         DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        if (VolumeApiServiceImpl.StoragePoolTagsDiskOfferingStrictness.valueIn(zone.getId()) && !doesNewDiskOfferingHasTagsAsOldDiskOffering(currentDiskOffering, newDiskOffering)) {
+        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesNewDiskOfferingHasTagsAsOldDiskOffering(currentDiskOffering, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Existing disk offering storage tags of the volume %s does not contain in the new disk offering %s  ", volume.getUuid(), newDiskOffering.getUuid()));
         }
         return newDiskOffering;
@@ -4251,6 +4245,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, StoragePoolTagsDiskOfferingStrictness};
+        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, MatchStoragePoolTagsWithDiskOffering};
     }
 }

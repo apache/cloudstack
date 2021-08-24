@@ -3008,7 +3008,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
-        if (CollectionUtils.isNotEmpty(result.first()) && VolumeApiServiceImpl.StoragePoolTagsDiskOfferingStrictness.valueIn(zoneId)) {
+        if (CollectionUtils.isNotEmpty(result.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
             if (volumeId != null) {
                 Volume volume = volumeDao.findById(volumeId);
                 currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());

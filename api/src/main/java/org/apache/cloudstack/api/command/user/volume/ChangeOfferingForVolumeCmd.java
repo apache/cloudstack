@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.Volume;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -42,6 +43,7 @@ import org.apache.log4j.Logger;
         responseObject = VolumeResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
+        authorized = { RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.16")
 public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
