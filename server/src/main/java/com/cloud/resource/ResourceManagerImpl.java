@@ -196,6 +196,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import java.util.HashSet;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -1748,13 +1749,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
-
         final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
             }
-            _hostTagsDao.persist(hostId, hostTags);
+            _hostTagsDao.persist(hostId, new ArrayList(new HashSet<String>(hostTags)));
         }
 
         final String url = cmd.getUrl();
