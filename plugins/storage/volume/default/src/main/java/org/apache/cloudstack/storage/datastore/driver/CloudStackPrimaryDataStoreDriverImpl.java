@@ -316,14 +316,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             if (storagePoolVO != null && storagePoolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
                 return true;
             }
-        } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
+        } else if (DataObjectType.SNAPSHOT.equals(srcData.getType()) && DataObjectType.VOLUME.equals(destData.getType())) {
             DataStore srcStore = srcData.getDataStore();
-            if (srcStore.getRole() == DataStoreRole.Primary && destStore.getRole() == DataStoreRole.Primary) {
+            if (DataStoreRole.Primary.equals(srcStore.getRole()) && DataStoreRole.Primary.equals(destStore.getRole())) {
                 StoragePoolVO srcStoragePoolVO = primaryStoreDao.findById(srcStore.getId());
                 StoragePoolVO dstStoragePoolVO = primaryStoreDao.findById(destStore.getId());
-                if (srcStoragePoolVO != null && srcStoragePoolVO.getPoolType() == StoragePoolType.RBD
-                        && dstStoragePoolVO != null && (dstStoragePoolVO.getPoolType() == StoragePoolType.RBD
-                        || dstStoragePoolVO.getPoolType() == StoragePoolType.NetworkFilesystem)) {
+                if (srcStoragePoolVO != null && StoragePoolType.RBD.equals(srcStoragePoolVO.getPoolType())
+                        && dstStoragePoolVO != null && (StoragePoolType.RBD.equals(dstStoragePoolVO.getPoolType())
+                        || StoragePoolType.NetworkFilesystem.equals(dstStoragePoolVO.getPoolType()))) {
                     return true;
                 }
             }

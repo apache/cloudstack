@@ -1595,7 +1595,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             final DataStoreTO imageStore = srcData.getDataStore();
             final VolumeObjectTO volume = snapshot.getVolume();
 
-            if (!(imageStore instanceof NfsTO) && !(imageStore instanceof PrimaryDataStoreTO)) {
+            if (!(imageStore instanceof NfsTO || imageStore instanceof PrimaryDataStoreTO)) {
                 return new CopyCmdAnswer("unsupported protocol");
             }
 
@@ -1603,59 +1603,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             final int index = snapshotFullPath.lastIndexOf("/");
             final String snapshotPath = snapshotFullPath.substring(0, index);
             final String snapshotName = snapshotFullPath.substring(index + 1);
-            KVMPhysicalDisk snapshotDisk = null;
             KVMPhysicalDisk disk = null;
             if (imageStore instanceof NfsTO) {
-                final NfsTO nfsImageStore = (NfsTO)imageStore;
-                final KVMStoragePool secondaryPool = storagePoolMgr.getStoragePoolByURI(nfsImageStore.getUrl() + File.separator + snapshotPath);
-                snapshotDisk = secondaryPool.getPhysicalDisk(snapshotName);
-                if (volume.getFormat() == ImageFormat.RAW) {
-                    snapshotDisk.setFormat(PhysicalDiskFormat.RAW);
-                } else if (volume.getFormat() == ImageFormat.QCOW2) {
-                    snapshotDisk.setFormat(PhysicalDiskFormat.QCOW2);
-                }
-
-                final String primaryUuid = pool.getUuid();
-                final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getPoolType(), primaryUuid);
-                final String volUuid = UUID.randomUUID().toString();
-
-                Map<String, String> details = cmd.getOptions2();
-
-                String path = details != null ? details.get(DiskTO.IQN) : null;
-
-                storagePoolMgr.connectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path, details);
-
-                disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, path != null ? path : volUuid, primaryPool, cmd.getWaitInMillSeconds());
-
-                storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path);
+                disk = createVolumeFromSnapshotOnNFS(cmd, pool, imageStore, volume, snapshotPath, snapshotName);
             } else {
-                final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) imageStore;
-                KVMStoragePool srcPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
-                snapshotDisk = srcPool.getPhysicalDisk(volume.getPath());
-                KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
-                VolumeObjectTO newVol = (VolumeObjectTO) destData;
-                if (primaryStore.getPoolType() == StoragePoolType.RBD) {
-                    s_logger.debug(String.format("Attempting to create volume from RBD snapshot %s", snapshotName));
-                    if (pool.getPoolType() == StoragePoolType.RBD) {
-                        disk = createRBDvolumeFromRBDSnapshot(snapshotDisk, snapshotName, newVol.getUuid(),
-                                PhysicalDiskFormat.RAW, newVol.getSize(), destPool, cmd.getWaitInMillSeconds());
-                        s_logger.debug(String.format("Created RBD volume %s from snapshot %s", disk, snapshotDisk));
-                    } else {
-                        Map<String, String> details = cmd.getOptions2();
-
-                        String path = details != null ? details.get(DiskTO.IQN) : null;
-
-                        storagePoolMgr.connectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path, details);
-
-                        snapshotDisk.setPath(snapshotDisk.getPath() + "@" + snapshotName);
-                        disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, path != null ? path : newVol.getUuid(),
-                                destPool, cmd.getWaitInMillSeconds());
-
-                        storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path);
-                        s_logger.debug(String.format("Created RBD volume %s from snapshot %s", disk, snapshotDisk));
-
-                    }
-                }
+                disk = createVolumeFromRBDSnapshot(cmd, destData, pool, imageStore, volume, snapshotName, disk);
             }
 
             if (disk == null) {
@@ -1673,24 +1625,77 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    private KVMPhysicalDisk createVolumeFromRBDSnapshot(CopyCommand cmd, DataTO destData,
+            PrimaryDataStoreTO pool, DataStoreTO imageStore, VolumeObjectTO volume, String snapshotName, KVMPhysicalDisk disk) {
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) imageStore;
+        KVMStoragePool srcPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
+        KVMPhysicalDisk snapshotDisk = srcPool.getPhysicalDisk(volume.getPath());
+        KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
+        VolumeObjectTO newVol = (VolumeObjectTO) destData;
+
+        if (StoragePoolType.RBD.equals(primaryStore.getPoolType())) {
+            s_logger.debug(String.format("Attempting to create volume from RBD snapshot %s", snapshotName));
+            if (StoragePoolType.RBD.equals(pool.getPoolType())) {
+                disk = createRBDvolumeFromRBDSnapshot(snapshotDisk, snapshotName, newVol.getUuid(),
+                        PhysicalDiskFormat.RAW, newVol.getSize(), destPool, cmd.getWaitInMillSeconds());
+                s_logger.debug(String.format("Created RBD volume %s from snapshot %s", disk, snapshotDisk));
+            } else {
+                Map<String, String> details = cmd.getOptions2();
+
+                String path = details != null ? details.get(DiskTO.IQN) : null;
+
+                storagePoolMgr.connectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path, details);
+
+                snapshotDisk.setPath(snapshotDisk.getPath() + "@" + snapshotName);
+                disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, path != null ? path : newVol.getUuid(),
+                        destPool, cmd.getWaitInMillSeconds());
+
+                storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path);
+                s_logger.debug(String.format("Created RBD volume %s from snapshot %s", disk, snapshotDisk));
+
+            }
+        }
+        return disk;
+    }
+
+    private KVMPhysicalDisk createVolumeFromSnapshotOnNFS(CopyCommand cmd, PrimaryDataStoreTO pool,
+            DataStoreTO imageStore, VolumeObjectTO volume, String snapshotPath, String snapshotName) {
+        NfsTO nfsImageStore = (NfsTO)imageStore;
+        KVMStoragePool secondaryPool = storagePoolMgr.getStoragePoolByURI(nfsImageStore.getUrl() + File.separator + snapshotPath);
+        KVMPhysicalDisk snapshotDisk = secondaryPool.getPhysicalDisk(snapshotName);
+        if (volume.getFormat() == ImageFormat.RAW) {
+            snapshotDisk.setFormat(PhysicalDiskFormat.RAW);
+        } else if (volume.getFormat() == ImageFormat.QCOW2) {
+            snapshotDisk.setFormat(PhysicalDiskFormat.QCOW2);
+        }
+
+        final String primaryUuid = pool.getUuid();
+        final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getPoolType(), primaryUuid);
+        final String volUuid = UUID.randomUUID().toString();
+
+        Map<String, String> details = cmd.getOptions2();
+
+        String path = details != null ? details.get(DiskTO.IQN) : null;
+
+        storagePoolMgr.connectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path, details);
+
+        KVMPhysicalDisk disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, path != null ? path : volUuid, primaryPool, cmd.getWaitInMillSeconds());
+
+        storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path);
+        return disk;
+    }
+
     private KVMPhysicalDisk createRBDvolumeFromRBDSnapshot(KVMPhysicalDisk volume, String snapshotName, String name,
             PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
 
         KVMStoragePool srcPool = volume.getPool();
         KVMPhysicalDisk disk = null;
         String newUuid = name;
-        int rbdFeatures = 61;
 
-        format = PhysicalDiskFormat.RAW;
         disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
         disk.setFormat(format);
-        if (size > volume.getVirtualSize()) {
-            disk.setSize(size);
-            disk.setVirtualSize(size);
-        } else {
-            disk.setSize(volume.getVirtualSize());
-            disk.setVirtualSize(disk.getSize());
-        }
+        disk.setSize(size > volume.getVirtualSize() ? size : volume.getVirtualSize());
+        disk.setVirtualSize(size > volume.getVirtualSize() ? size : disk.getSize());
 
         try {
 
@@ -1714,11 +1719,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             if (!snapFound) {
+                s_logger.debug(String.format("Could not find snapshot %s on RBD", snapshotName));
                 return null;
             }
             srcImage.snapProtect(snapshotName);
 
-            rbd.clone(volume.getName(), snapshotName, io, disk.getName(), rbdFeatures, 0);
+            s_logger.debug(String.format("Try to clone snapshot %s on RBD", snapshotName));
+            rbd.clone(volume.getName(), snapshotName, io, disk.getName(), LibvirtStorageAdaptor.RBD_FEATURES, 0);
             RbdImage diskImage = rbd.open(disk.getName());
             if (disk.getVirtualSize() > volume.getVirtualSize()) {
                 diskImage.resize(disk.getVirtualSize());
@@ -1730,11 +1737,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             srcImage.snapUnprotect(snapshotName);
             rbd.close(srcImage);
             r.ioCtxDestroy(io);
-        } catch (RadosException e) {
-            s_logger.error(String.format("Failed due to %s", e.getMessage()));
-            disk = null;
-        } catch (RbdException e) {
-            s_logger.error(String.format("Failed due to: %s", e.getMessage()));
+        } catch (RadosException | RbdException e) {
+            s_logger.error(String.format("Failed due to %s", e.getMessage()), e);
             disk = null;
         }
 
