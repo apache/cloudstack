@@ -143,9 +143,14 @@
           </a>
         </span>
         <a-spin :spinning="actionLoading">
-          <span v-if="currentAction.message">
+          <span v-if="currentAction.message || 'displayName' in currentAction">
             <a-alert type="warning">
-              <span slot="message" v-html="$t(currentAction.message)" />
+              <span slot="message">
+                <div v-if="currentAction.message" v-html="$t(currentAction.message)"></div>
+                <div v-if="'displayName' in currentAction">
+                  <strong>{{ currentAction.displayName(resource) }}</strong>
+                </div>
+              </span>
             </a-alert>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
