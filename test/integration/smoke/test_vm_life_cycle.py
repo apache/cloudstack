@@ -2085,7 +2085,10 @@ class TestCloneVM(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        super(TestCloneVM, self).tearDown()
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_clone_vm_and_volumes(self):
