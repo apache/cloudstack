@@ -2093,6 +2093,8 @@ class TestCloneVM(cloudstackTestCase):
         config = Configurations.list(self.apiclient,
                               name="kvm.snapshot.enabled"
                               )
+        if config is None:
+            self.skipTest("Please enable kvm.snapshot.enable global config")
         if len(config) == 0 or config[0].value != "true":
             self.skipTest("Please enable kvm.snapshot.enable global config")
         if self.hypervisor.lower() in ["kvm", "simulator"]:
