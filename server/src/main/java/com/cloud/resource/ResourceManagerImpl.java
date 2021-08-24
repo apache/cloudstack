@@ -44,6 +44,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -687,6 +688,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+        if (!HypervisorType.VMware.toString().equalsIgnoreCase(hypervisorType) &&
+                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
+            throw new InvalidParameterValueException("Username and Password need to be provided.");
         }
 
         if (clusterId != null) {
