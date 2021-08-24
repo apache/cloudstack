@@ -663,30 +663,23 @@ export default {
     {
       name: 'tungstenfabric',
       title: 'label.tungsten.fabric',
-      icon: 'fork',
-      permission: ['listTungstenFabricProviders'],
-      columns: ['name', 'zonename'],
-      details: ['name', 'zonename'],
-      actions: []
-    },
-    {
-      name: 'tungstenfabricrouting',
-      title: 'label.tungsten.fabric.routing',
       icon: tungsten,
       permission: ['listTungstenFabricProviders'],
-      columns: ['name', 'zonename'],
+      columns: [
+        {
+          field: 'name',
+          customTitle: 'tungsten.fabric.provider'
+        },
+        'zonename'
+      ],
       tabs: [
         {
-          name: 'network.route.table',
-          component: () => import('@/views/network/tungsten/TungstenNetworkRouteTable.vue')
+          name: 'tungsten.fabric',
+          component: () => import('@/views/network/tungsten/TungstenFabric.vue')
         },
         {
-          name: 'interface.route.table',
-          component: () => import('@/views/network/tungsten/TungstenInterfaceRouteTable.vue')
-        },
-        {
-          name: 'logical.router',
-          component: () => import('@/views/network/tungsten/TungstenLogicalRoute.vue')
+          name: 'tungsten.fabric.routing',
+          component: () => import('@/views/network/tungsten/TungstenFabricRouting.vue')
         }
       ]
     }

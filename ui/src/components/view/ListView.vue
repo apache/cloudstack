@@ -78,9 +78,9 @@
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
-        <span v-else-if="$route.path.startsWith('/tungstenfabricrouting')">
-          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t('label.tungsten.fabric.provider') }}</router-link>
-          <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t('label.tungsten.fabric.provider') }}</router-link>
+        <span v-else-if="$route.path.startsWith('/tungstenfabric')">
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
         <span v-else>
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
@@ -427,7 +427,7 @@ export default {
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabricrouting'].join('|'))
+        '/tungstenfabric'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

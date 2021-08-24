@@ -23,7 +23,8 @@
       :columns="columns"
       :dataSource="dataSource"
       :pagination="false"
-      :rowKey="(record, idx) => record.id || record.name || idx + '-' + Math.random()">
+      :rowKey="(record, idx) => record.id || record.name || idx + '-' + Math.random()"
+      :scroll="{ y: 350 }">
       <template slot="name" slot-scope="text, record">
         <QuickView
           :actions="actions"
@@ -37,6 +38,23 @@
       </template>
       <template slot="network" slot-scope="text, record">
         <span>{{ record.network.map(item => item.name).join(',') }}</span>
+      </template>
+      <template slot="firewallpolicy" slot-scope="text, record">
+        <span>{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
+      </template>
+      <template slot="firewallrule" slot-scope="text, record">
+        <span>{{ record.firewallrule.map(item => item.name).join(',') }}</span>
+      </template>
+      <template slot="vm" slot-scope="text, record">
+        <span>{{ record.vm.map(item => item.name).join(',') }}</span>
+      </template>
+      <template slot="nic" slot-scope="text, record">
+        <span>{{ record.nic.map(item => item.name).join(',') }}</span>
+      </template>
+      <template slot="tag" slot-scope="text, record">
+        <div class="tags" v-for="(tag, index) in record.tag" :key="index">
+          <a-tag :key="index">{{ tag.key }} = {{ tag.value }}</a-tag>
+        </div>
       </template>
     </a-table>
     <a-pagination
