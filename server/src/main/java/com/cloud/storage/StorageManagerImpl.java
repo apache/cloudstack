@@ -2768,8 +2768,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
                                         new Pair<>(hypervisorType, templateName);
                                 long templateId = SystemVmTemplateRegistration.isTemplateAlreadyRegistered(conn, hypervisorAndTemplateName);
+                                 VMTemplateVO vmTemplateVO = _templateDao.findById(templateId);
+                                TemplateDataStoreVO templateVO = null;
                                 if (templateId != -1) {
-                                     TemplateDataStoreVO templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                    templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
                                     if (templateVO != null) {
                                         if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
                                             continue;
@@ -2777,9 +2779,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     }
                                 }
                                 SystemVmTemplateRegistration.mountStore(storeUrlAndId.first());
-                                SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
+                                if (templateVO != null && vmTemplateVO != null) {
+                                    SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO);
+                                } else {
+                                    SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
+                                }
                             } catch (CloudRuntimeException e) {
-                                s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()));
+                                s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
                             }
                         }
                     } catch (SQLException e) {

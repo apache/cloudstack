@@ -18,6 +18,7 @@ package com.cloud.upgrade;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
@@ -27,7 +28,6 @@ import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
 import org.ini4j.Ini;
 
-import javax.naming.ConfigurationException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -498,14 +498,17 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    public static void updateDb(Connection conn,  SystemVMTemplateDetails details) {
+    public static void updateDb(Connection conn,  SystemVMTemplateDetails details, boolean updateTemplateDetails) {
         try {
             int i = 1;
-            PreparedStatement pstmt = conn.prepareStatement(UPDATE_VM_TEMPLATE_ENTRY);
-            if (pstmt != null) {
-                pstmt.setLong(i++, details.getSize());
-                pstmt.setLong(i++, details.getId());
-                pstmt.executeUpdate();
+            PreparedStatement pstmt = null;
+            if (updateTemplateDetails) {
+                pstmt = conn.prepareStatement(UPDATE_VM_TEMPLATE_ENTRY);
+                if (pstmt != null) {
+                    pstmt.setLong(i++, details.getSize());
+                    pstmt.setLong(i++, details.getId());
+                    pstmt.executeUpdate();
+                }
             }
             i = 1;
             pstmt = conn.prepareStatement(UPDATE_TEMPLATE_STORE_REF_TABLE);
@@ -613,6 +616,60 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException(msg, e);
         }
     }
+
+    private static void setupTemplate(String templateName, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
+        String destTempFolder) throws CloudRuntimeException{
+        String storageScriptsDir = "scripts/storage/secondary";
+        String setupTmpltScript = Script.findScript(storageScriptsDir, "setup-sysvm-tmplt");
+        if (setupTmpltScript == null) {
+            throw new CloudRuntimeException("Unable to find the createtmplt.sh");
+        }
+        Script scr = new Script(setupTmpltScript, SCRIPT_TIMEOUT, LOGGER);
+        scr.add("-u", templateName);
+        scr.add("-f", TEMPLATES_PATH + fileNames.get(hypervisorAndTemplateName.first()));
+        scr.add("-h", hypervisorAndTemplateName.first().name().toLowerCase(Locale.ROOT));
+        scr.add("-d", destTempFolder);
+        String result = scr.execute();
+        if (result != null) {
+            String errMsg = String.format("failed to create template: %s ", result);
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+
+    }
+
+    public static void registerTemplate(Connection conn, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
+                                        Pair<String, Long> storeUrlAndId, VMTemplateVO templateVO) {
+        Long templateId = null;
+        try {
+            Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
+            final String templateName = UUID.randomUUID().toString();
+            Date created = new Date(DateUtil.currentGMTTime().getTime());
+            SystemVMTemplateDetails details = new SystemVMTemplateDetails(templateName, hypervisorAndTemplateName.second(), created,
+                    templateVO.getUrl(), templateVO.getChecksum(), templateVO.getFormat(), (int) templateVO.getGuestOSId(), templateVO.getHypervisorType(),
+                    storeUrlAndId.second());
+            templateId = templateVO.getId();
+            details.setId(templateId);
+            String destTempFolderName = String.valueOf(templateId);
+            String destTempFolder = PARENT_TEMPLATE_FOLDER + PARTIAL_TEMPLATE_FOLDER + destTempFolderName;
+            details.setInstallPath(PARTIAL_TEMPLATE_FOLDER + destTempFolderName + File.separator + templateName + "." + hypervisorImageFormat.get(hypervisor).getFileExtension());
+            createTemplateStoreRefEntry(conn, details);
+            setupTemplate(templateName, hypervisorAndTemplateName, destTempFolder);
+            details.setInstallPath(PARTIAL_TEMPLATE_FOLDER + destTempFolderName + File.separator + templateName + "." + hypervisorImageFormat.get(hypervisor).getFileExtension());
+            readTemplateProperties(destTempFolder + "/template.properties", details);
+            details.setUpdated(new Date(DateUtil.currentGMTTime().getTime()));
+            updateDb(conn, details, false);
+        } catch (Exception e) {
+            String errMsg = String.format("Failed to register template for hypervisor: %s", hypervisorAndTemplateName.first());
+            LOGGER.error(errMsg, e);
+            if (templateId != null) {
+                updateTemplateTablesOnFailure(conn, templateId);
+                cleanupStore(templateId);
+            }
+            throw new CloudRuntimeException(errMsg, e);
+        }
+
+    }
     public static void registerTemplate(Connection conn, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName, Pair<String, Long> storeUrlAndId) {
         Long templateId = null;
         try {
@@ -630,26 +687,11 @@ public class SystemVmTemplateRegistration {
             String destTempFolder = PARENT_TEMPLATE_FOLDER + PARTIAL_TEMPLATE_FOLDER + destTempFolderName;
             details.setInstallPath(PARTIAL_TEMPLATE_FOLDER + destTempFolderName + File.separator + templateName + "." + hypervisorImageFormat.get(hypervisor).getFileExtension());
             createTemplateStoreRefEntry(conn, details);
-            String storageScriptsDir = "scripts/storage/secondary";
-            String setupTmpltScript = Script.findScript(storageScriptsDir, "setup-sysvm-tmplt");
-            if (setupTmpltScript == null) {
-                throw new ConfigurationException("Unable to find the createtmplt.sh");
-            }
-            Script scr = new Script(setupTmpltScript, SCRIPT_TIMEOUT, LOGGER);
-            scr.add("-u", templateName);
-            scr.add("-f", TEMPLATES_PATH + fileNames.get(hypervisorAndTemplateName.first()));
-            scr.add("-h", hypervisorAndTemplateName.first().name().toLowerCase(Locale.ROOT));
-            scr.add("-d", destTempFolder);
-            String result = scr.execute();
-            if (result != null) {
-                String errMsg = String.format("failed to create template: %s ", result);
-                LOGGER.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
+            setupTemplate(templateName, hypervisorAndTemplateName, destTempFolder);
             details.setInstallPath(PARTIAL_TEMPLATE_FOLDER + destTempFolderName + File.separator + templateName + "." + hypervisorImageFormat.get(hypervisor).getFileExtension());
             readTemplateProperties(destTempFolder + "/template.properties", details);
             details.setUpdated(new Date(DateUtil.currentGMTTime().getTime()));
-            updateDb(conn, details);
+            updateDb(conn, details, true);
             Map<String, String> configParams = new HashMap<>();
             configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
             configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_TINY_VERSION);
