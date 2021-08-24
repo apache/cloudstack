@@ -24,6 +24,7 @@
       ref="storagePoolSelection"
       :resource="resource"
       :suitabilityEnabled="true"
+      @change="fetchDiskOfferings"
       @storagePoolsUpdated="handleStoragePoolsChange"
       @select="handleStoragePoolSelect" />
     <div class="top-spaced" v-if="storagePools.length > 0">
@@ -95,23 +96,58 @@ export default {
         this.fetchDiskOfferings()
       }
     }
+  created () {
+    this.fetchStoragePools()
   },
   methods: {
+    fetchStoragePools () {
+      if (this.resource.virtualmachineid) {
+        api('findStoragePoolsForMigration', {
+          id: this.resource.id
+        }).then(response => {
+          this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
+          if (Array.isArray(this.storagePools) && this.storagePools.length) {
+            this.selectedStoragePool = this.storagePools[0].id || ''
+            this.fetchDiskOfferings()
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+          this.closeModal()
+        })
+      } else {
+        api('listStoragePools', {
+          zoneid: this.resource.zoneid
+        }).then(response => {
+          this.storagePools = response.liststoragepoolsresponse.storagepool || []
+          this.storagePools = this.storagePools.filter(pool => { return pool.id !== this.resource.storageid })
+          if (Array.isArray(this.storagePools) && this.storagePools.length) {
+            this.selectedStoragePool = this.storagePools[0].id || ''
+            this.fetchDiskOfferings()
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+          this.closeModal()
+        })
+      }
+    },
     fetchDiskOfferings () {
       this.diskOfferingLoading = true
-      api('listDiskOfferings', {
-        listall: true
-      }).then(response => {
-        this.diskOfferings = response.listdiskofferingsresponse.diskoffering
-      }).catch(error => {
-        this.$notifyError(error)
-        this.closeModal()
-      }).finally(() => {
-        this.diskOfferingLoading = false
-        if (this.diskOfferings.length > 0) {
-          this.selectedDiskOffering = this.diskOfferings[0].id
-        }
-      })
+      if (this.resource.virtualmachineid) {
+        api('listDiskOfferings', {
+          storageid: this.selectedStoragePool,
+          listall: true
+        }).then(response => {
+          this.diskOfferings = response.listdiskofferingsresponse.diskoffering
+        }).catch(error => {
+          this.$notifyError(error)
+          this.closeModal()
+        }).finally(() => {
+          this.diskOfferingLoading = false
+          if (this.diskOfferings.length > 0) {
+            this.selectedDiskOffering = this.diskOfferings[0].id
+          }
+        })
+      }
     },
     handleStoragePoolsChange (storagePools) {
       this.storagePools = storagePools

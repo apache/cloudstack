@@ -75,6 +75,7 @@ export default {
   methods: {
     fetchDiskOfferings () {
       api('listDiskOfferings', {
+        volumeid: this.resource.id,
         listall: true
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering
