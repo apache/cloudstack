@@ -47,6 +47,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -310,5 +311,13 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public String getMountPoint(String storageUrl, String nfsVersion) {
         return _resource.getRootDir(storageUrl, nfsVersion);
+    }
+
+    @Override
+    public String createLogMessageException(Throwable e, Command command) {
+        String message = String.format("%s failed due to [%s].", command.getClass().getSimpleName(), VmwareHelper.getExceptionMessage(e));
+        s_logger.error(message, e);
+
+        return message;
     }
 }

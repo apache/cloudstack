@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -299,13 +298,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             return new PrimaryStorageDownloadAnswer(templateUuidName, 0);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to execute PrimaryStorageDownloadCommand due to exception";
-            s_logger.error(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
+            return new PrimaryStorageDownloadAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -385,23 +378,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 try {
                     if (workerVm != null) {
-                        // detach volume and destroy worker vm
-                        workerVm.detachAllDisks();
-                        workerVm.destroy();
+                        workerVm.detachAllDisksAndDestroyVm();
                     }
                 } catch (Throwable e) {
-                    s_logger.warn("Failed to destroy worker VM: " + workerVMName);
+                    s_logger.warn(String.format("Failed to destroy worker VM [%s] due to: [%s].", workerVMName, e.getMessage()), e);
                 }
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "BackupSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
-            return new BackupSnapshotAnswer(cmd, false, details, snapshotBackupUuid, true);
+            return new BackupSnapshotAnswer(cmd, false, hostService.createLogMessageException(e, cmd), snapshotBackupUuid, true);
         }
 
         return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, true);
@@ -439,14 +423,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "CreatePrivateTemplateFromVolumeCommand exception: " + StringUtils.getExceptionStackInfo(e);
-            return new CreatePrivateTemplateAnswer(cmd, false, details);
+            return new CreatePrivateTemplateAnswer(cmd, false, hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -467,14 +444,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), uniqeName, ImageFormat.OVA);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "CreatePrivateTemplateFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
-            return new CreatePrivateTemplateAnswer(cmd, false, details);
+            return new CreatePrivateTemplateAnswer(cmd, false, hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -510,13 +480,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
             return new CopyVolumeAnswer(cmd, true, null, result.first(), result.second());
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to execute CopyVolumeCommand due to exception";
-            s_logger.error(msg, e);
-            return new CopyVolumeAnswer(cmd, false, "CopyVolumeCommand failed due to exception: " + StringUtils.getExceptionStackInfo(e), null, null);
+            return new CopyVolumeAnswer(cmd, false, hostService.createLogMessageException(e, cmd), null, null);
         }
     }
 
@@ -549,12 +513,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 success = true;
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-            details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
+            details = hostService.createLogMessageException(e, cmd);
         }
 
         return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
@@ -676,8 +635,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroyVm();
             }
 
             vmMo.removeSnapshot(templateUniqueName, false);
@@ -929,8 +887,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             clonedVm.detachAllDisks();
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroyVm();
             }
         }
     }
@@ -984,18 +941,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
-
-                s_logger.debug(String.format("Exporting volume to export path [%s], with VM config [%s].", exportPath, gson.toJson(clonedVm)));
                 clonedVm.exportVm(exportPath, exportName, false, false);  //Note: volss: not to create ova.
             } else {
-                s_logger.debug(String.format("Exporting volume to export path [%s], with VM config [%s].", exportPath, gson.toJson(vmMo)));
                 vmMo.exportVm(exportPath, exportName, false, false);
             }
         } finally {
             if (clonedVm != null) {
-                s_logger.debug(String.format("Executing detach of all disks for VM [%s], and destroying it.", gson.toJson(clonedVm)));
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroyVm();
             }
         }
     }
@@ -1050,9 +1002,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
-                //detach volume and destroy worker vm
-                workerVm.detachAllDisks();
-                workerVm.destroy();
+                workerVm.detachAllDisksAndDestroyVm();
             }
         }
     }
