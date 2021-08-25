@@ -1411,7 +1411,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volOnPrimary != null) {
             s_logger.info("Expunging volume " + volume.getId() + " from primary data store");
             AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
-            future.get();
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.warn("Failed to expunge the volume " + volume + " in primary storage");
+                String details = "";
+                if (result.getResult() != null && !result.getResult().isEmpty()) {
+                    details = result.getResult();
+                }
+                throw new CloudRuntimeException(details);
+            }
         }
     }
 
@@ -1424,7 +1432,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volOnSecondary != null) {
             s_logger.info("Expunging volume " + volume.getId() + " from secondary data store");
             AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
-            future2.get();
+            VolumeApiResult result = future2.get();
+            if (result.isFailed()) {
+                s_logger.warn("Failed to expunge the volume " + volume + " in secondary storage");
+                String details = "";
+                if (result.getResult() != null && !result.getResult().isEmpty()) {
+                    details = result.getResult();
+                }
+                throw new CloudRuntimeException(details);
+            }
 
             _resourceLimitMgr.decrementResourceCount(volOnSecondary.getAccountId(), ResourceType.secondary_storage, volOnSecondary.getSize());
         }
