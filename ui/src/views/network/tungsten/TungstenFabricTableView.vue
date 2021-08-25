@@ -18,7 +18,7 @@
 <template>
   <div>
     <tungsten-network-action
-      :actions="viewAction"
+      :actions="listAction"
       :page="page"
       :pageSize="pageSize" />
     <tungsten-network-table
@@ -29,7 +29,7 @@
       :page="page"
       :page-size="pageSize"
       :item-count="itemCount"
-      :actions="tableAction"/>
+      :actions="detailAction"/>
     <a-modal
       v-if="showAddModal"
       :closable="true"
@@ -56,6 +56,7 @@
           <a-select
             v-if="field.type==='uuid'"
             :auto-focus="index === 0"
+            :mode="field.multiple ? 'multiple' : 'default'"
             v-decorator="[field.name, {
               rules: [{
                 required: field.required,
@@ -146,8 +147,8 @@ export default {
       fetchLoading: false,
       showAddModal: false,
       currentAction: {},
-      viewAction: [],
-      tableAction: []
+      listAction: [],
+      detailAction: []
     }
   },
   provide: function () {
@@ -160,8 +161,8 @@ export default {
     this.form = this.$form.createForm(this)
   },
   created () {
-    this.viewAction = this.actions.filter(action => !action.table)
-    this.tableAction = this.actions.filter(action => action.table)
+    this.listAction = this.actions.filter(action => action.listView)
+    this.detailAction = this.actions.filter(action => action.dataView)
     this.fetchData()
   },
   watch: {
@@ -288,12 +289,15 @@ export default {
           return false
         }
 
-        this.fetchLoading = true
+        // this.fetchLoading = true
         const params = {}
         params.zoneid = this.resource.zoneid
 
         for (const key in values) {
-          const inputVal = values[key]
+          let inputVal = values[key]
+          if (Array.isArray(values[key])) {
+            inputVal = values[key].join(',')
+          }
           params[key] = inputVal
         }
         if (this.currentAction.args) {

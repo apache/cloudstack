@@ -60,11 +60,10 @@ export default {
             {
               api: 'createTungstenFabricPolicy',
               icon: 'plus',
-              label: 'label.add.policy',
+              label: 'label.add.tungsten.policy',
               dataView: false,
               listView: true,
               popup: true,
-              table: false,
               fields: [
                 {
                   name: 'name',
@@ -75,10 +74,9 @@ export default {
             {
               api: 'applyTungstenFabricPolicy',
               icon: 'form',
-              label: 'label.apply.network.policy',
+              label: 'label.apply.tungsten.network.policy',
               dataView: true,
               popup: true,
-              table: true,
               fields: [
                 {
                   name: 'networkuuid',
@@ -106,10 +104,9 @@ export default {
             {
               api: 'removeTungstenFabricPolicy',
               icon: 'close',
-              label: 'label.remove.network.policy',
+              label: 'label.remove.tungsten.network.policy',
               dataView: true,
               popup: true,
-              table: true,
               fields: [
                 {
                   name: 'networkuuid',
@@ -128,11 +125,10 @@ export default {
             {
               api: 'deleteTungstenFabricPolicy',
               icon: 'delete',
-              label: 'label.delete.tungsten.fabric.policy',
+              label: 'label.delete.tungsten.policy',
               dataView: true,
               confirm: true,
-              message: 'label.confirm.delete.policy',
-              table: true,
+              message: 'label.confirm.delete.tungsten.policy',
               args: {
                 policyuuid: (record) => record.uuid
               }
@@ -157,12 +153,11 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricApplicationPolicySet',
-              label: 'label.add.policy.set',
+              label: 'label.add.tungsten.policy.set',
               icon: 'plus',
               dataView: false,
               listView: true,
               popup: true,
-              table: false,
               fields: [
                 {
                   name: 'name',
@@ -173,10 +168,9 @@ export default {
             {
               api: 'addTungstenFabricFirewallPolicy',
               icon: 'form',
-              label: 'label.apply.firewall.policy',
+              label: 'label.apply.tungsten.firewall.policy',
               dataView: true,
               popup: true,
-              table: true,
               fields: [
                 {
                   name: 'firewallpolicyuuid',
@@ -200,6 +194,7 @@ export default {
                   type: 'number'
                 }
               ],
+              show: record => record.firewallpolicy.length === 0,
               args: {
                 applicationpolicysetuuid: (record) => record.uuid
               }
@@ -207,10 +202,9 @@ export default {
             {
               api: 'removeTungstenFabricFirewallPolicy',
               icon: 'close',
-              label: 'label.remove.firewall.policy',
+              label: 'label.remove.tungsten.firewall.policy',
               dataView: true,
               popup: true,
-              table: true,
               fields: [
                 {
                   name: 'firewallpolicyuuid',
@@ -229,11 +223,10 @@ export default {
             {
               api: 'deleteTungstenFabricApplicationPolicySet',
               icon: 'delete',
-              label: 'label.delete.tungsten.fabric.policy.set',
+              label: 'label.delete.tungsten.policy.set',
               dataView: true,
               confirm: true,
-              message: 'label.confirm.delete.policy.set',
-              table: true,
+              message: 'label.confirm.delete.tungsten.policy.set',
               args: {
                 applicationpolicysetuuid: (record) => record.uuid
               }
@@ -268,7 +261,6 @@ export default {
               dataView: false,
               listView: true,
               popup: true,
-              table: false,
               fields: [
                 {
                   name: 'name',
@@ -279,10 +271,9 @@ export default {
             {
               api: 'addTungstenFabricFirewallRule',
               icon: 'form',
-              label: 'label.add.firewall.rule',
+              label: 'label.add.tungsten.firewall.rule',
               dataView: true,
               popup: true,
-              table: true,
               fields: [
                 {
                   name: 'firewallruleuuid',
@@ -298,6 +289,7 @@ export default {
                   type: 'number'
                 }
               ],
+              show: (record) => record.firewallrule.length === 0,
               args: {
                 firewallpolicyuuid: (record) => record.uuid
               }
@@ -305,10 +297,9 @@ export default {
             {
               api: 'removeTungstenFabricFirewallRule',
               icon: 'close',
-              label: 'label.remove.firewall.rule',
+              label: 'label.remove.tungsten.firewall.rule',
               dataView: true,
               popup: true,
-              table: true,
               fields: [
                 {
                   name: 'firewallruleuuid',
@@ -327,11 +318,10 @@ export default {
             {
               api: 'deleteTungstenFabricFirewallPolicy',
               icon: 'delete',
-              label: 'label.delete.tungsten.fabric.firewall.policy',
+              label: 'label.delete.tungsten.firewall.policy',
               dataView: true,
               confirm: true,
-              message: 'label.confirm.delete.firewall.policy',
-              table: true,
+              message: 'label.confirm.delete.tungsten.firewall.policy',
               args: {
                 firewallpolicyuuid: (record) => record.uuid
               }
@@ -357,11 +347,10 @@ export default {
             {
               api: 'createTungstenFabricFirewallRule',
               icon: 'plus',
-              label: 'label.add.firewall.rule',
+              label: 'label.add.tungsten.firewall.rule',
               dataView: false,
               listView: true,
               popup: true,
-              table: false,
               fields: [
                 {
                   name: 'name',
@@ -449,11 +438,10 @@ export default {
             {
               api: 'deleteTungstenFabricFirewallRule',
               icon: 'delete',
-              label: 'label.delete.tungsten.fabric.firewall.rule',
+              label: 'label.delete.tungsten.firewall.rule',
               dataView: true,
               confirm: true,
-              table: true,
-              message: 'label.confirm.delete.firewall.rule',
+              message: 'label.confirm.delete.tungsten.firewall.rule',
               args: {
                 firewallruleuuid: (record) => record.uuid
               }
@@ -474,11 +462,10 @@ export default {
             {
               api: 'createTungstenFabricTag',
               icon: 'plus',
-              label: 'label.add.tag',
+              label: 'label.add.tungsten.tag',
               dataView: false,
               listView: true,
               popup: true,
-              table: false,
               fields: [
                 {
                   name: 'tagtype',
@@ -493,6 +480,90 @@ export default {
                   required: true
                 }
               ]
+            },
+            {
+              api: 'applyTungstenFabricTag',
+              icon: 'form',
+              label: 'label.apply.tungsten.tag',
+              dataView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'networkuuid',
+                  type: 'uuid',
+                  multiple: true,
+                  loading: false,
+                  opts: [],
+                  api: 'listTungstenFabricNetwork'
+                },
+                {
+                  name: 'vmuuid',
+                  type: 'uuid',
+                  multiple: true,
+                  loading: false,
+                  opts: [],
+                  api: 'listTungstenFabricVm'
+                },
+                {
+                  name: 'nicuuid',
+                  type: 'uuid',
+                  multiple: true,
+                  loading: false,
+                  opts: [],
+                  api: 'listTungstenFabricNic'
+                }
+              ],
+              args: {
+                taguuid: (record) => record.uuid
+              }
+            },
+            {
+              api: 'removeTungstenFabricTag',
+              icon: 'close',
+              label: 'label.remove.tungsten.tag',
+              dataView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'networkuuid',
+                  type: 'uuid',
+                  multiple: true,
+                  loading: false,
+                  opts: [],
+                  optGet: record => record.network
+                },
+                {
+                  name: 'vmuuid',
+                  type: 'uuid',
+                  multiple: true,
+                  loading: false,
+                  opts: [],
+                  optGet: record => record.vm
+                },
+                {
+                  name: 'nicuuid',
+                  type: 'uuid',
+                  multiple: true,
+                  loading: false,
+                  opts: [],
+                  optGet: record => record.nic
+                }
+              ],
+              show: record => record.network.length > 0 || record.vm.length > 0 || record.nic.length > 0,
+              args: {
+                taguuid: (record) => record.uuid
+              }
+            },
+            {
+              api: 'deleteTungstenFabricTag',
+              icon: 'delete',
+              label: 'label.delete.tungsten.fabric.tag',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.delete.tungsten.tag',
+              args: {
+                taguuid: (record) => record.uuid
+              }
             }
           ],
           columns: [
@@ -519,13 +590,158 @@ export default {
           ]
         },
         {
-          name: 'tag.type'
+          name: 'tag.type',
+          api: 'listTungstenFabricTagType',
+          actions: [
+            {
+              api: 'createTungstenFabricTagType',
+              icon: 'plus',
+              label: 'label.add.tungsten.tag.type',
+              dataView: false,
+              listView: true,
+              popup: true,
+              fields: [{
+                name: 'name',
+                required: true
+              }]
+            },
+            {
+              api: 'deleteTungstenFabricTagType',
+              icon: 'delete',
+              label: 'label.delete.tungsten.fabric.tag.type',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.delete.tungsten.tag.type',
+              args: {
+                tagtypeuuid: (record) => record.uuid
+              }
+            }
+          ],
+          columns: [{
+            dataIndex: 'name',
+            title: this.$t('label.name'),
+            scopedSlots: { customRender: 'name' }
+          }]
         },
         {
-          name: 'service.group'
+          name: 'service.group',
+          api: 'listTungstenFabricServiceGroup',
+          actions: [
+            {
+              api: 'createTungstenFabricServiceGroup',
+              icon: 'plus',
+              label: 'label.add.tungsten.service.group',
+              dataView: false,
+              listView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'name',
+                  required: true
+                },
+                {
+                  name: 'protocol',
+                  required: true
+                },
+                {
+                  name: 'startport',
+                  required: true
+                },
+                {
+                  name: 'endport',
+                  required: true
+                }
+              ]
+            },
+            {
+              api: 'deleteTungstenFabricServiceGroup',
+              icon: 'delete',
+              label: 'label.delete.tungsten.service.group',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.delete.tungsten.service.group',
+              args: {
+                servicegroupuuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [
+            {
+              dataIndex: 'name',
+              title: this.$t('label.name'),
+              scopedSlots: { customRender: 'name' }
+            },
+            {
+              dataIndex: 'protocol',
+              title: this.$t('label.protocol'),
+              scopedSlots: { customRender: 'protocol' }
+            },
+            {
+              dataIndex: 'startport',
+              title: this.$t('label.startport'),
+              scopedSlots: { customRender: 'startport' }
+            },
+            {
+              dataIndex: 'endport',
+              title: this.$t('label.endport'),
+              scopedSlots: { customRender: 'endport' }
+            }
+          ]
         },
         {
-          name: 'address.group'
+          name: 'address.group',
+          api: 'listTungstenFabricAddressGroup',
+          actions: [
+            {
+              api: 'createTungstenFabricAddressGroup',
+              icon: 'plus',
+              label: 'label.add.tungsten.address.group',
+              listView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'name',
+                  required: true
+                },
+                {
+                  name: 'ipprefix',
+                  required: true
+                },
+                {
+                  name: 'ipprefixlen',
+                  required: true
+                }
+              ]
+            },
+            {
+              api: 'deleteTungstenFabricAddressGroup',
+              icon: 'delete',
+              label: 'label.delete.tungsten.address.group',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.delete.tungsten.address.group',
+              args: {
+                addressgroupuuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [
+            {
+              dataIndex: 'name',
+              title: this.$t('label.name'),
+              scopedSlots: { customRender: 'name' }
+            },
+            {
+              dataIndex: 'ipprefix',
+              title: this.$t('label.ipprefix'),
+              scopedSlots: { customRender: 'ipprefix' }
+            },
+            {
+              dataIndex: 'ipprefixlen',
+              title: this.$t('label.ipprefixlen'),
+              scopedSlots: { customRender: 'ipprefixlen' }
+            }
+          ]
         }
       ]
     }

@@ -22,15 +22,26 @@
         v-for="tab in tabs"
         :key="tab.name"
         :tab="$t('label.' + tab.name)">
-        <component :is="tab.component" :resource="resource" :loading="loading" :tab="tab.name" />
+        <tungsten-fabric-table-view
+          :apiName="tab.api"
+          :actions="tab.actions"
+          :columns="tab.columns"
+          :resource="resource"
+          :loading="loading"
+          :tab="tab.name" />
       </a-tab-pane>
     </a-tabs>
   </div>
 </template>
 
 <script>
+import TungstenFabricTableView from '@/views/network/tungsten/TungstenFabricTableView'
+
 export default {
   name: 'TungstenFabricRouting',
+  components: {
+    TungstenFabricTableView
+  },
   props: {
     resource: {
       type: Object,
@@ -46,15 +57,156 @@ export default {
       tabs: [
         {
           name: 'network.route.table',
-          component: () => import('@/views/network/tungsten/TungstenNetworkRouteTable.vue')
+          api: 'listTungstenFabricNetworkRouteTable',
+          actions: [
+            {
+              api: 'createTungstenFabricNetworkRouteTable',
+              icon: 'plus',
+              label: 'label.add.tungsten.fabric.route',
+              listView: true,
+              popup: true,
+              fields: [{
+                name: 'tungstennetworkroutetablename',
+                required: true
+              }]
+            },
+            {
+              api: 'removeTungstenFabricNetworkRouteTable',
+              icon: 'delete',
+              label: 'label.remove.network.route.table',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.remove.network.route.table',
+              args: {
+                tungstennetworkroutetableuuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [{
+            dataIndex: 'name',
+            title: this.$t('label.name'),
+            scopedSlots: { customRender: 'name' }
+          }, {
+            dataIndex: 'network',
+            title: this.$t('label.network'),
+            scopedSlots: { customRender: 'network' }
+          }
+          ]
         },
         {
           name: 'interface.route.table',
-          component: () => import('@/views/network/tungsten/TungstenInterfaceRouteTable.vue')
+          api: 'listTungstenFabricInterfaceRouteTable',
+          actions: [
+            {
+              api: 'createTungstenFabricInterfaceRouteTable',
+              icon: 'plus',
+              label: 'label.add.tungsten.interface.route',
+              listView: true,
+              popup: true,
+              fields: [{
+                name: 'tungsteninterfaceroutetablename',
+                required: true
+              }]
+            },
+            {
+              api: 'removeTungstenFabricInterfaceRouteTable',
+              icon: 'delete',
+              label: 'label.remove.interface.route.table',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.remove.route.table',
+              args: {
+                tungsteninterfaceroutetableuuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [{
+            dataIndex: 'name',
+            title: this.$t('label.name'),
+            scopedSlots: { customRender: 'name' }
+          }, {
+            dataIndex: 'tungstenvms',
+            title: this.$t('label.tungstenvms'),
+            scopedSlots: { customRender: 'tungstenvms' }
+          }]
         },
         {
           name: 'logical.router',
-          component: () => import('@/views/network/tungsten/TungstenLogicalRoute.vue')
+          api: 'listTungstenFabricLogicalRouter',
+          actions: [
+            {
+              api: 'createTungstenFabricLogicalRouter',
+              icon: 'plus',
+              label: 'label.add.tungsten.logical.route',
+              listView: true,
+              popup: true,
+              fields: [{
+                name: 'name',
+                required: true
+              }]
+            },
+            {
+              api: 'addTungstenFabricNetworkToLogicalRouter',
+              icon: 'plus',
+              label: 'label.add.logical.network',
+              dataView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'networkuuid',
+                  required: true,
+                  type: 'uuid',
+                  loading: false,
+                  opts: [],
+                  api: 'listTungstenFabricNetwork'
+                }
+              ],
+              args: {
+                logicalrouteruuid: record => record.uuid
+              }
+            },
+            {
+              api: 'removeTungstenFabricNetworkFromLogicalRouter',
+              icon: 'close',
+              label: 'label.remove.logical.network',
+              dataView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'networkuuid',
+                  required: true,
+                  type: 'uuid',
+                  loading: false,
+                  opts: [],
+                  optGet: record => record.network
+                }
+              ],
+              show: record => record.network.length > 0,
+              args: {
+                logicalrouteruuid: record => record.uuid
+              }
+            },
+            {
+              api: 'deleteTungstenFabricLogicalRouter',
+              icon: 'delete',
+              label: 'label.remove.logical.router',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.remove.logical.router',
+              args: {
+                logicalrouteruuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [{
+            dataIndex: 'name',
+            title: this.$t('label.name'),
+            scopedSlots: { customRender: 'name' }
+          }, {
+            dataIndex: 'network',
+            title: this.$t('label.network'),
+            scopedSlots: { customRender: 'network' }
+          }]
         }
       ]
     }

@@ -34,26 +34,26 @@
         {{ text }}
       </template>
       <template slot="tungstenvms" slot-scope="text, record">
-        <span>{{ record.tungstenvms.map(item => item.name).join(',') }}</span>
+        <ul><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template slot="network" slot-scope="text, record">
-        <span>{{ record.network.map(item => item.name).join(',') }}</span>
+        <ul><li v-for="item in record.network" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template slot="firewallpolicy" slot-scope="text, record">
-        <span>{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
+        <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy[0].name }}</span>
       </template>
       <template slot="firewallrule" slot-scope="text, record">
-        <span>{{ record.firewallrule.map(item => item.name).join(',') }}</span>
+        <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
       </template>
       <template slot="vm" slot-scope="text, record">
-        <span>{{ record.vm.map(item => item.name).join(',') }}</span>
+        <ul><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template slot="nic" slot-scope="text, record">
-        <span>{{ record.nic.map(item => item.name).join(',') }}</span>
+        <ul><li v-for="item in record.nic" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template slot="tag" slot-scope="text, record">
-        <div class="tags" v-for="(tag, index) in record.tag" :key="index">
-          <a-tag :key="index">{{ tag.key }} = {{ tag.value }}</a-tag>
+        <div class="tags" v-for="tag in record.tag" :key="tag.uuid">
+          <a-tag :key="tag.uuid">{{ tag.name }}</a-tag>
         </div>
       </template>
     </a-table>
@@ -148,6 +148,11 @@ export default {
   .row-element {
     margin-top: 20px;
     text-align: end;
+  }
+
+  ul {
+    padding-left: 15px;
+    margin: 0;
   }
 }
 </style>
