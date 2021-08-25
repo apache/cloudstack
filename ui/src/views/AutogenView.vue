@@ -857,6 +857,9 @@ export default {
       })
     },
     pollActionCompletion (jobId, action, resourceName, showLoading = true) {
+      if (this.shouldNavigateBack(action)) {
+        action.isFetchData = false
+      }
       return new Promise((resolve) => {
         this.$pollJob({
           jobId,
@@ -972,9 +975,6 @@ export default {
             break
           }
         }
-        if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
-          this.$router.go(-1)
-        }
         if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
           this.$store.dispatch('UpdateConfiguration')
         }
@@ -1060,8 +1060,12 @@ export default {
         api(...args).then(json => {
           this.handleResponse(json, resourceName, action).then(jobId => {
             hasJobId = jobId
-            if (!hasJobId) {
-              this.fetchData()
+            if (this.shouldNavigateBack(action)) {
+              this.$router.go(-1)
+            } else {
+              if (!hasJobId) {
+                this.fetchData()
+              }
             }
           })
           this.closeAction()
@@ -1076,6 +1080,9 @@ export default {
           this.actionLoading = false
         })
       })
+    },
+    shouldNavigateBack (action) {
+      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
