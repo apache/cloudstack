@@ -229,6 +229,20 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return listIncludingRemovedBy(sc);
     }
 
+
+    @Override
+    public VMTemplateVO findLatestTemplateByName(String name) {
+        SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
+        sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+        Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
+        List<VMTemplateVO> templates = listBy(sc, filter);
+        if ((templates != null) && !templates.isEmpty()) {
+            return templates.get(0);
+        }
+        return null;
+    }
+
     @Override
     public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path) {
         SearchCriteria<VMTemplateVO> sc = createSearchCriteria();

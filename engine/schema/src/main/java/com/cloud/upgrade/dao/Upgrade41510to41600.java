@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -37,6 +36,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41510to41600.class);
+    private SystemVmTemplateRegistration systemVmTemplateRegistration;
+
+    public Upgrade41510to41600() {
+    }
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -66,13 +69,17 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
-        updateVMwareSystemvVMTemplateField(conn, SystemVmTemplateRegistration.NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
+    }
+
+    private void initSystemVmTemplateRegistration() {
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration();
     }
 
     @Override
     @SuppressWarnings("serial")
     public void updateSystemVmTemplates(final Connection conn) {
         LOG.debug("Updating System Vm template IDs");
+        initSystemVmTemplateRegistration();
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
@@ -104,7 +111,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);
         }
 
-        for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : SystemVmTemplateRegistration.NewTemplateNameList.entrySet()) {
+        for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : systemVmTemplateRegistration.NewTemplateNameList.entrySet()) {
             LOG.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
             try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1")) {
                 // Get systemvm template id for corresponding hypervisor
@@ -129,9 +136,9 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
 
+                    updateVMwareSystemvVMTemplateField(conn, SystemVmTemplateRegistration.NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
                     // update template ID of system Vms
-                    SystemVmTemplateRegistration.updateSystemVMEntries(conn, templateId,
-                            new Pair<Hypervisor.HypervisorType, String>(hypervisorAndTemplateName.getKey(), hypervisorAndTemplateName.getValue()));
+                    systemVmTemplateRegistration.updateSystemVMEntries(templateId, hypervisorAndTemplateName.getKey());
 
                     // Change value of global configuration parameter router.template.* for the corresponding hypervisor
                     // Change value of global configuration parameter - minreq.sysvmtemplate.version for the ACS version
@@ -139,11 +146,11 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
                     configParams.put("minreq.sysvmtemplate.version", SystemVmTemplateRegistration.CS_MAJOR_VERSION + "." + SystemVmTemplateRegistration.CS_TINY_VERSION);
 
-                    SystemVmTemplateRegistration.updateConfigurationParams(conn, configParams);
+                    systemVmTemplateRegistration.updateConfigurationParams(configParams);
                 } else {
                     if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
                         try {
-                            SystemVmTemplateRegistration.registerTemplates(conn, hypervisorsListInUse);
+                            systemVmTemplateRegistration.registerTemplates(conn, hypervisorsListInUse);
                             break;
                         } catch (final Exception e) {
                             throw new CloudRuntimeException(getUpgradedVersion() + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
@@ -155,8 +162,8 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         // hypervisor
                         try (PreparedStatement update_templ_url_pstmt = conn
                                 .prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");) {
-                            update_templ_url_pstmt.setString(1, SystemVmTemplateRegistration.newTemplateUrl.get(hypervisorAndTemplateName.getKey()));
-                            update_templ_url_pstmt.setString(2, SystemVmTemplateRegistration.newTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
+                            update_templ_url_pstmt.setString(1, SystemVmTemplateRegistration.NewTemplateUrl.get(hypervisorAndTemplateName.getKey()));
+                            update_templ_url_pstmt.setString(2, SystemVmTemplateRegistration.NewTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
                             update_templ_url_pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
                             update_templ_url_pstmt.executeUpdate();
                         } catch (final SQLException e) {
@@ -165,6 +172,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
                                     + hypervisorAndTemplateName.getKey().toString(), e);
                         }
+                        updateVMwareSystemvVMTemplateField(conn, SystemVmTemplateRegistration.NewTemplateNameList.get(Hypervisor.HypervisorType.VMware));
                     }
                 }
             } catch (final SQLException e) {

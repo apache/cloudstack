@@ -272,8 +272,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
 
-        updateSystemVmTemplates(upgrades);
-
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
@@ -344,6 +342,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.close();
             }
         }
+        updateSystemVmTemplates(upgrades);
     }
 
     @Override

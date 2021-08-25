@@ -303,7 +303,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/md5sum.txt
 
-
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/

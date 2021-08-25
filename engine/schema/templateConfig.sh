@@ -63,7 +63,6 @@ function createMetadataFile() {
     echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\n" >> $METADATAFILE
   done
 
-
 }
 
 declare -A templates

@@ -22,10 +22,8 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -2750,51 +2748,62 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // populate template_store_ref table
             _imageSrv.addSystemVMTemplatesToSecondary(store);
             _imageSrv.handleTemplateSync(store);
-            if (providerName.equals(DataStoreProvider.NFS_IMAGE) && zoneId != null) {
-                List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
-                stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
-                // Check if it's the only/first store in the zone
-                if (stores.size() == 0) {
-                    List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
-                    Set<HypervisorType> hypSet = new HashSet<HypervisorType>(hypervisorTypes);
-                    TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
-                    Connection conn;
-                    try {
-                        conn = txn.getConnection();
-                        Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
-                        for (HypervisorType hypervisorType : hypSet) {
+            if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
+                String finalProviderName = providerName;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                        List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, finalProviderName, DataStoreRole.Image);
+                        stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
+                        // Check if it's the only/first store in the zone
+                        if (stores.size() == 0) {
+                            List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
+                            Set<HypervisorType> hypSet = new HashSet<HypervisorType>(hypervisorTypes);
+                            TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
+                            SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
+                            String filePath = SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE + SystemVmTemplateRegistration.generateToken(10);
                             try {
-                                String templateName = getValidTemplateName(zoneId, hypervisorType);
-                                Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
-                                        new Pair<>(hypervisorType, templateName);
-                                long templateId = SystemVmTemplateRegistration.isTemplateAlreadyRegistered(conn, hypervisorAndTemplateName);
-                                 VMTemplateVO vmTemplateVO = _templateDao.findById(templateId);
-                                TemplateDataStoreVO templateVO = null;
-                                if (templateId != -1) {
-                                    templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
-                                    if (templateVO != null) {
-                                        if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
-                                            continue;
+                                Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                                for (HypervisorType hypervisorType : hypSet) {
+                                    try {
+                                        String templateName = getValidTemplateName(zoneId, hypervisorType);
+                                        Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
+                                                new Pair<>(hypervisorType, templateName);
+                                        long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
+                                        VMTemplateVO vmTemplateVO = _templateDao.findById(templateId);
+                                        TemplateDataStoreVO templateVO = null;
+                                        if (templateId != -1) {
+                                            templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                            if (templateVO != null) {
+                                                try {
+                                                    if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                                        continue;
+                                                    }
+                                                } catch (Exception e) {
+                                                    s_logger.error("Failed to validated if template is seeded", e);
+                                                }
+                                            }
                                         }
+                                        SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
+                                        if (templateVO != null && vmTemplateVO != null) {
+                                            systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, filePath);
+                                        } else {
+                                            systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
+                                        }
+                                    } catch (CloudRuntimeException e) {
+                                        SystemVmTemplateRegistration.unmountStore(filePath);
+                                        s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
                                     }
                                 }
-                                SystemVmTemplateRegistration.mountStore(storeUrlAndId.first());
-                                if (templateVO != null && vmTemplateVO != null) {
-                                    SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO);
-                                } else {
-                                    SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
-                                }
-                            } catch (CloudRuntimeException e) {
-                                s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
+                            } catch (Exception e) {
+                                s_logger.error("Failed to register systemVM template(s)");
+                            } finally {
+                                SystemVmTemplateRegistration.unmountStore(filePath);
+                                txn.close();
                             }
                         }
-                    } catch (SQLException e) {
-                        s_logger.error("Failed to register systemVM template(s)");
-                    } finally {
-                        SystemVmTemplateRegistration.unmountStore();
-                        txn.close();
                     }
-                }
+                });
             }
         }
 
