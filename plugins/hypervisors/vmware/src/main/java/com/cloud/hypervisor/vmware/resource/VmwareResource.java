@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.File;
@@ -452,9 +451,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public Answer executeRequest(Command cmd) {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Begin executeRequest(), cmd: " + cmd.getClass().getSimpleName());
+        logInitExecuteRequest(cmd);
 
         Answer answer = null;
         NDC.push(getCommandLogTitle(cmd));
@@ -631,6 +628,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    private void logInitExecuteRequest(Command cmd) {
+        if (cmd instanceof ModifySshKeysCommand) {
+            s_logger.debug("Executing resource command ModifySshKeysCommand: For security questions, we don't will log this command details.");
+        } else {
+            s_logger.debug(String.format("Executing resource command %s: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+        }
     }
 
     private Answer execute(SetupPersistentNetworkCommand cmd) {
@@ -944,10 +949,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CheckNetworkCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CheckNetworkCommand " + _gson.toJson(cmd));
-        }
-
         // TODO setup portgroup for private network needs to be done here now
         return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
     }
@@ -956,9 +957,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (cmd.isForVpc()) {
             return VPCNetworkUsage(cmd);
         }
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource NetworkUsageCommand " + _gson.toJson(cmd));
-        }
+
         if (cmd.getOption() != null && cmd.getOption().equals("create")) {
             String result = networkUsage(cmd.getPrivateIP(), "create", null);
             NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
@@ -1201,10 +1200,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PlugNicCommand " + _gson.toJson(cmd));
-        }
-
         getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareContext context = getServiceContext();
         try {
@@ -1285,10 +1280,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private ReplugNicAnswer execute(ReplugNicCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ReplugNicCommand " + _gson.toJson(cmd));
-        }
-
         getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareContext context = getServiceContext();
         try {
@@ -1365,10 +1356,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource UnPlugNicCommand " + _gson.toJson(cmd));
-        }
-
         VmwareContext context = getServiceContext();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -1773,10 +1760,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected StartAnswer execute(StartCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource StartCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
-        }
-
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         boolean vmAlreadyExistsInVcenter = false;
 
@@ -1922,7 +1905,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             }
                         }
 
-                        boolean vmFolderExists = dsRootVolumeIsOn.folderExists(String.format("[%s]", dsRootVolumeIsOn.getName()), vmNameOnVcenter);                        String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
+                        boolean vmFolderExists = dsRootVolumeIsOn.folderExists(String.format("[%s]", dsRootVolumeIsOn.getName()), vmNameOnVcenter);
+                        String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
                         if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
                             registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
                             vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
@@ -3848,10 +3832,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(ReadyCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ReadyCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -3867,10 +3847,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetHostStatsCommand cmd) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Executing resource GetHostStatsCommand: " + _gson.toJson(cmd));
-        }
-
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
@@ -3879,7 +3855,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             HostStatsEntry entry = getHyperHostStats(hyperHost);
             if (entry != null) {
-                s_logger.debug(String.format("Host stats response from hypervisor is: [%s].", getHumanReadableBytesJson(_gson.toJson(entry))));
+                s_logger.debug(String.format("Host stats response from hypervisor is: [%s].", _gson.toJson(entry)));
                 entry.setHostId(cmd.getHostId());
                 answer = new GetHostStatsAnswer(cmd, entry);
             }
@@ -3895,10 +3871,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetVmStatsCommand cmd) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Executing resource GetVmStatsCommand: " + _gson.toJson(cmd));
-        }
-
         HashMap<String, VmStatsEntry> vmStatsMap = null;
 
         try {
@@ -3923,14 +3895,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             createLogMessageException(e, cmd);
         }
 
-        s_logger.debug(String.format("VM Stats Map is: [%s].", getHumanReadableBytesJson(_gson.toJson(vmStatsMap))));
+        s_logger.debug(String.format("VM Stats Map is: [%s].", _gson.toJson(vmStatsMap)));
         return new GetVmStatsAnswer(cmd, vmStatsMap);
     }
 
     protected Answer execute(GetVmDiskStatsCommand cmd) {
         try {
-            logInDebugCommand(cmd);
-
             final VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             final ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
             VimPortType service = getServiceContext().getService();
@@ -4039,7 +4009,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            s_logger.debug(String.format("VM Disks Maps is: [%s].", getHumanReadableBytesJson(_gson.toJson(vmStatsMap))));
+            s_logger.debug(String.format("VM Disks Maps is: [%s].", _gson.toJson(vmStatsMap)));
             if (MapUtils.isNotEmpty(vmStatsMap)) {
                 return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(), vmStatsMap);
             }
@@ -4055,8 +4025,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected GetVolumeStatsAnswer execute(GetVolumeStatsCommand cmd) {
         try {
-            logInDebugCommand(cmd);
-
             VmwareHypervisorHost srcHyperHost = getHyperHost(getServiceContext());
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, cmd.getPoolUuid());
             assert (morDs != null);
@@ -4092,20 +4060,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                 }
             }
-            s_logger.debug(String.format("Volume Stats Entry is: [%s].", getHumanReadableBytesJson(_gson.toJson(statEntry))));
+            s_logger.debug(String.format("Volume Stats Entry is: [%s].", _gson.toJson(statEntry)));
             return new GetVolumeStatsAnswer(cmd, "", statEntry);
         } catch (Exception e) {
-            s_logger.error(String.format("VOLSTAT GetVolumeStatsCommand failed due to [%s].", e.getMessage()), e);
+            s_logger.error(String.format("VOLSTAT GetVolumeStatsCommand failed due to [%s].", VmwareHelper.getExceptionMessage(e)), e);
         }
 
         return new GetVolumeStatsAnswer(cmd, "", null);
     }
 
     protected Answer execute(CheckHealthCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CheckHealthCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             if (hyperHost.isHyperHostConnected()) {
@@ -4118,10 +4082,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(StopCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource StopCommand: " + _gson.toJson(cmd));
-        }
-
         // In the stop command, we're passed in the name of the VM as seen by cloudstack,
         // i.e., i-x-y. This is the internal VM name.
         VmwareContext context = getServiceContext();
@@ -4177,10 +4137,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(RebootRouterCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource RebootRouterCommand: " + _gson.toJson(cmd));
-        }
-
         RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
 
         if (answer.getResult()) {
@@ -4196,10 +4152,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(RebootCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource RebootCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
-        }
-
         boolean toolsInstallerMounted = false;
         VirtualMachineMO vmMo = null;
         VmwareContext context = getServiceContext();
@@ -4279,10 +4231,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CheckVirtualMachineCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CheckVirtualMachineCommand: " + _gson.toJson(cmd));
-        }
-
         final String vmName = cmd.getVmName();
         PowerState powerState = PowerState.PowerUnknown;
         Integer vncPort = null;
@@ -4307,8 +4255,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(PrepareForMigrationCommand cmd) {
-        s_logger.info(String.format("Executing resource PrepareForMigrationCommand: [%s]", getHumanReadableBytesJson(_gson.toJson(cmd))));
-
         VirtualMachineTO vm = cmd.getVirtualMachine();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing host for migrating " + vm);
@@ -4511,10 +4457,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(MigrateCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MigrateCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
-        }
-
         final String vmName = cmd.getVmName();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
@@ -4546,10 +4488,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(MigrateWithStorageCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MigrateWithStorageCommand: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
-        }
-
         final VirtualMachineTO vmTo = cmd.getVirtualMachine();
         final List<Pair<VolumeTO, StorageFilerTO>> volToFiler = cmd.getVolumeToFilerAsList();
         final String targetHost = cmd.getTargetHost();
@@ -4726,10 +4664,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Answer execute(MigrateVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         StorageFilerTO poolTo = cmd.getPool();
-
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
-        }
 
         String vmName = cmd.getAttachedVmName();
 
@@ -4912,10 +4846,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ModifyStoragePoolCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             StorageFilerTO pool = cmd.getPool();
@@ -5056,10 +4986,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DeleteStoragePoolCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             if (cmd.getRemoveDatastore()) {
                 _storageProcessor.handleDatastoreAndVmdkDetach(cmd, cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME),
@@ -5100,10 +5026,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected AttachIsoAnswer execute(AttachIsoCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource AttachIsoCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
@@ -5213,10 +5135,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(ValidateSnapshotCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ValidateSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         // the command is no longer available
         String expectedSnapshotBackupUuid = null;
         String actualSnapshotBackupUuid = null;
@@ -5226,10 +5144,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(ManageSnapshotCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ManageSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         long snapshotId = cmd.getSnapshotId();
 
         /*
@@ -5258,10 +5172,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(BackupSnapshotCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource BackupSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -5308,10 +5218,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CreateVolumeFromSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         String details = null;
         boolean success = false;
         String newVolumeName = UUID.randomUUID().toString();
@@ -5328,10 +5234,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CreatePrivateTemplateFromVolumeCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -5348,10 +5250,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CreatePrivateTemplateFromSnapshotCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CreatePrivateTemplateFromSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return mgr.getStorageManager().execute(this, cmd);
@@ -5362,10 +5260,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetStorageStatsCommand cmd) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Executing resource GetStorageStatsCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -5418,10 +5312,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetVncPortCommand cmd) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Executing resource GetVncPortCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -5453,26 +5343,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(SetupCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource SetupCommand: " + _gson.toJson(cmd));
-        }
-
         return new SetupAnswer(cmd, false);
     }
 
     protected Answer execute(MaintainCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource MaintainCommand: " + _gson.toJson(cmd));
-        }
-
         return new MaintainAnswer(cmd, "Put host in maintaince");
     }
 
     protected Answer execute(PingTestCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PingTestCommand: " + _gson.toJson(cmd));
-        }
-
         String controlIp = cmd.getRouterIp();
         if (controlIp != null) {
             String args = " -c 1 -n -q " + cmd.getPrivateIp();
@@ -5513,27 +5391,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CheckOnHostCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CheckOnHostCommand: " + _gson.toJson(cmd));
-        }
-
         return new CheckOnHostAnswer(cmd, null, "Not Implmeneted");
     }
 
     protected Answer execute(ModifySshKeysCommand cmd) {
-        //do not log the command contents for this command. do NOT log the ssh keys
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ModifySshKeysCommand.");
-        }
-
         return new Answer(cmd);
     }
 
     protected Answer execute(GetVmIpAddressCommand cmd) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Executing resource command GetVmIpAddressCommand: " + _gson.toJson(cmd));
-        }
-
         String details = "Unable to find IP Address of VM. ";
         String vmName = cmd.getVmName();
         boolean result = false;
@@ -5581,10 +5446,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource PrimaryStorageDownloadCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -5603,10 +5464,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(UnregisterVMCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource UnregisterVMCommand: " + _gson.toJson(cmd));
-        }
-
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
@@ -5647,8 +5504,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * @return
      */
     protected Answer execute(UnregisterNicCommand cmd) {
-        s_logger.info("Executing resource UnregisterNicCommand: " + _gson.toJson(cmd));
-
         if (_guestTrafficInfo == null) {
             return new Answer(cmd, false, "No Guest Traffic Info found, unable to determine where to clean up");
         }
@@ -5698,10 +5553,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource CopyVolumeCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -6817,10 +6668,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public Answer execute(DestroyCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DestroyCommand to evict template from storage pool: " + getHumanReadableBytesJson(_gson.toJson(cmd)));
-        }
-
         try {
             VmwareContext context = getServiceContext(null);
             VmwareHypervisorHost hyperHost = getHyperHost(context, null);
@@ -7163,10 +7010,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(GetUnmanagedInstancesCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource GetUnmanagedInstancesCommand " + _gson.toJson(cmd));
-        }
-
         VmwareContext context = getServiceContext();
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
@@ -7500,9 +7343,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(ValidateVcenterDetailsCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource ValidateVcenterDetailsCommand " + _gson.toJson(cmd));
-        }
         String vCenterServerAddress = cmd.getvCenterServerAddress();
         VmwareContext context = getServiceContext();
 
@@ -7534,7 +7374,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private String createLogMessageException(Throwable e, Command command) {
+    @Override
+    public String createLogMessageException(Throwable e, Command command) {
         if (e instanceof RemoteException) {
             s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context.");
             invalidateServiceContext();
@@ -7544,9 +7385,5 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_logger.error(message, e);
 
         return message;
-    }
-
-    private void logInDebugCommand(Command cmd) {
-        s_logger.debug(String.format("Executing resource command %s: [%s].", cmd.getClass().getName(), getHumanReadableBytesJson(_gson.toJson(cmd))));
     }
 }

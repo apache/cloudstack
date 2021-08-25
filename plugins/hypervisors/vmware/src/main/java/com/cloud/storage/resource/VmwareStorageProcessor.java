@@ -722,15 +722,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to copy template to primary storage due to exception:" + VmwareHelper.getExceptionMessage(e);
-
-            s_logger.error(msg, e);
-
-            return new CopyCmdAnswer(msg);
+            return new CopyCmdAnswer(hostService.createLogMessageException(e, cmd));
         }
         finally {
             if (dsMo != null && managedStoragePoolName != null) {
@@ -820,9 +812,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 VirtualMachineMO existingVm = dcMo.findVm(vmName);
                 if (volume.getDeviceId().equals(0L)) {
                     if (existingVm != null) {
-                        s_logger.info("Found existing VM " + vmName + " before cloning from template, destroying it");
-                        existingVm.detachAllDisks();
-                        existingVm.destroy();
+                        s_logger.info(String.format("Found existing VM wth name [%s] before cloning from template, destroying it", vmName));
+                        existingVm.detachAllDisksAndDestroyVm();
                     }
                     s_logger.info("ROOT Volume from deploy-as-is template, cloning template");
                     cloneVMFromTemplate(hyperHost, template.getPath(), vmName, primaryStore.getUuid());
@@ -894,14 +885,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                hostService.invalidateServiceContext(null);
-            }
-
-            String msg = "clone volume from base image failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CopyCmdAnswer(e.toString());
+            return new CopyCmdAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -1082,13 +1066,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             newVolume.setPath(result.second());
             return new CopyCmdAnswer(newVolume);
         } catch (Throwable t) {
-            if (t instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to execute CopyVolumeCommand due to exception";
-            s_logger.error(msg, t);
-            return new CopyCmdAnswer("copy volume secondary to primary failed due to exception: " + VmwareHelper.getExceptionMessage(t));
+            return new CopyCmdAnswer(hostService.createLogMessageException(t, cmd));
         }
 
     }
@@ -1143,9 +1121,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
-                //detach volume and destroy worker vm
-                workerVm.detachAllDisks();
-                workerVm.destroy();
+                workerVm.detachAllDisksAndDestroyVm();
             }
         }
     }
@@ -1171,13 +1147,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             newVolume.setPath(result.first() + File.separator + result.second());
             return new CopyCmdAnswer(newVolume);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to execute CopyVolumeCommand due to exception";
-            s_logger.error(msg, e);
-            return new CopyCmdAnswer("copy volume from primary to secondary failed due to exception: " + VmwareHelper.getExceptionMessage(e));
+            return new CopyCmdAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -1295,8 +1265,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroyVm();
             }
         }
     }
@@ -1366,14 +1335,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return new CopyCmdAnswer(newTemplate);
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "create template from volume exception: " + VmwareHelper.getExceptionMessage(e);
-            return new CopyCmdAnswer(details);
+            return new CopyCmdAnswer(hostService.createLogMessageException(e, cmd));
         } finally {
             try {
                 if (volume.getVmName() == null && workerVmMo != null) {
@@ -1803,15 +1765,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpected exception ", e);
-
-            details = "create template from snapshot exception: " + VmwareHelper.getExceptionMessage(e);
-
-            return new CopyCmdAnswer(details);
+            return new CopyCmdAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -1863,15 +1817,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
                 vmMo = clonedVm;
             }
-            s_logger.debug(String.format("Exporting volume to export path [%s], with VM config [%s].", exportPath, _gson.toJson(vmMo)));
-            vmMo.exportVm(exportPath, exportName, false, false);
 
+            vmMo.exportVm(exportPath, exportName, false, false);
             return new Pair<>(diskDevice, disks);
         } finally {
             if (clonedVm != null) {
-                s_logger.debug(String.format("Detaching all VM [%s] disks and destroying it.", _gson.toJson(clonedVm)));
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroyVm();
             }
         }
     }
@@ -2042,26 +1993,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 try {
                     if (workerVm != null) {
-                        s_logger.debug(String.format("Detaching disks and destroying worker VM: [%S].", _gson.toJson(workerVm)));
-                        // detach volume and destroy worker vm
-                        workerVm.detachAllDisks();
-                        workerVm.destroy();
+                        workerVm.detachAllDisksAndDestroyVm();
                     }
                 } catch (Throwable e) {
-                    s_logger.warn("Failed to destroy worker VM: " + workerVMName);
+                    s_logger.warn(String.format("Failed to destroy worker VM [%s] due to: [%s]", workerVMName, e.getMessage()), e);
                 }
             }
 
             return answer;
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "backup snapshot exception: " + VmwareHelper.getExceptionMessage(e);
-            return new CopyCmdAnswer(details);
+            return new CopyCmdAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -2261,23 +2202,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return answer;
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-
-                hostService.invalidateServiceContext(null);
-            }
-
-            String msg = "";
-
-            if (isAttach) {
-                msg += "Failed to attach volume: ";
-            }
-            else {
-                msg += "Failed to detach volume: ";
-            }
-
-            s_logger.error(msg + e.getMessage(), e);
-
+            String msg = String.format("Failed to %s volume!", isAttach? "attach" : "detach");
+            s_logger.error(msg, e);
+            hostService.createLogMessageException(e, cmd);
             // Sending empty error message - too many duplicate errors in UI
             return new AttachAnswer("");
         }
@@ -2503,17 +2430,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 hostService.invalidateServiceContext(null);
             }
 
-            if (isAttach) {
-                String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
-                msg = msg + " Also check if your guest os is a supported version";
-                s_logger.error(msg, e);
-                return new AttachAnswer(msg);
-            } else {
-                String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
-                msg = msg + " Also check if your guest os is a supported version";
-                s_logger.warn(msg, e);
-                return new AttachAnswer(msg);
-            }
+            String message = String.format("AttachIsoCommand(%s) failed due to: [%s]. Also check if your guest os is a supported version", isAttach? "attach" : "detach", VmwareHelper.getExceptionMessage(e));
+            s_logger.error(message, e);
+            return new AttachAnswer(message);
         }
     }
 
@@ -2594,14 +2513,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             return new CreateObjectAnswer(newVol);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                hostService.invalidateServiceContext(null);
-            }
-
-            String msg = "create volume failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new CreateObjectAnswer(e.toString());
+            return new CreateObjectAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -2770,14 +2682,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return new Answer(cmd, true, "Success");
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                hostService.invalidateServiceContext(null);
-            }
-
-            String msg = "delete volume failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg, e);
-            return new Answer(cmd, false, msg);
+            return new Answer(cmd, false, hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -3799,8 +3704,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return _storage.getSize(srcOVFFileName);
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroyVm();
             }
         }
     }
@@ -3851,12 +3755,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             newVol.setPath(newVolumeName);
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-            details = "create volume from snapshot exception: " + VmwareHelper.getExceptionMessage(e);
+            hostService.createLogMessageException(e, cmd);
+            details = String.format("Failed to create volume from snapshot due to exception: [%s]", VmwareHelper.getExceptionMessage(e));
         }
         return new CopyCmdAnswer(details);
     }
@@ -3942,11 +3842,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             else
                 return new Answer(cmd, isDatastoreStoragePolicyComplaint, null);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-            String details = String.format("Exception while checking if datastore %s is storage policy %s complaince : %s", primaryStorageNameLabel, storagePolicyId,  VmwareHelper.getExceptionMessage(e));
-            s_logger.error(details, e);
+            hostService.createLogMessageException(e, cmd);
+            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] complaince due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
             return new Answer(cmd, false, details);
         }
     }
@@ -4058,13 +3955,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return answer;
         }  catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-
-                hostService.invalidateServiceContext(null);
-            }
-
-            return new SyncVolumePathAnswer("Failed to process SyncVolumePathCommand due to " + e.getMessage());
+            return new SyncVolumePathAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 }
