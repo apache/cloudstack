@@ -2117,8 +2117,7 @@ public class HypervisorHostHelper {
                 throw e;
             }
         } finally {
-            workerVmMo.detachAllDisks();
-            workerVmMo.destroy();
+            workerVmMo.detachAllDisksAndDestroy();
         }
     }
 
