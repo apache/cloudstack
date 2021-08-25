@@ -298,6 +298,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     @Override
+    public String toString() {
+        return String.format("Service offering {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", getId(), getName(), getUuid());
+    }
+
     public boolean isDynamicScalingEnabled() {
         return dynamicScalingEnabled;
     }

@@ -23,38 +23,6 @@ from .configFileOps import configFileOps
 import os
 import shutil
 
-# exit() error constants
-Unknown = 0
-CentOS6 = 1
-CentOS7 = 2
-CentOS8 = 3
-Ubuntu = 4
-RHEL6 = 5
-RHEL7 = 6
-RHEL8 = 7
-distro = None
-
-#=================== DISTRIBUTION DETECTION =================
-if os.path.exists("/etc/centos-release"):
-    version = open("/etc/centos-release").readline()
-    if version.find("CentOS release 6") != -1:
-      distro = CentOS6
-    elif version.find("CentOS Linux release 7") != -1:
-      distro = CentOS7
-    elif version.find("CentOS Linux release 8") != -1:
-      distro = CentOS8
-elif os.path.exists("/etc/redhat-release"):
-    version = open("/etc/redhat-release").readline()
-    if version.find("Red Hat Enterprise Linux Server release 6") != -1:
-      distro = RHEL6
-    elif version.find("Red Hat Enterprise Linux Server 7") != -1:
-      distro = RHEL7
-    elif version.find("Red Hat Enterprise Linux Server 8") != -1:
-      distro = RHEL8
-elif os.path.exists("/etc/lsb-release") and "Ubuntu" in open("/etc/lsb-release").read(-1): distro = Ubuntu
-else: distro = Unknown
-#=================== DISTRIBUTION DETECTION =================
-
 class serviceCfgBase(object):
     def __init__(self, syscfg):
         self.status = None
@@ -371,6 +339,94 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
             logging.debug(formatExceptionInfo())
             return False
 
+class networkConfigSUSE(serviceCfgBase, networkConfigBase):
+    def __init__(self, syscfg):
+        super(networkConfigSUSE, self).__init__(syscfg)
+        networkConfigBase.__init__(self, syscfg)
+
+    def writeToCfgFile(self, brName, dev):
+        self.devCfgFile = "/etc/sysconfig/network/ifcfg-%s" % dev.name
+        self.brCfgFile = "/etc/sysconfig/network/ifcfg-%s" % brName
+
+        isDevExist = os.path.exists(self.devCfgFile)
+        isBrExist = os.path.exists(self.brCfgFile)
+        if isDevExist and isBrExist:
+            logging.debug("%s:%s already configured"%(brName, dev.name))
+            return True
+        elif isDevExist and not isBrExist:
+            #reconfig bridge
+            self.addBridge(brName, dev)
+        elif not isDevExist and isBrExist:
+            #reconfig dev
+            raise CloudInternalException("Missing device configuration, Need to add your network configuration into /etc/sysconfig/network-scripts at first")
+        else:
+            raise CloudInternalException("Missing bridge/device network configuration, need to add your network configuration into /etc/sysconfig/network-scripts at first")
+
+
+    def addBridge(self, brName, dev):
+        bash("ifdown %s" % dev.name)
+
+        if not os.path.exists(self.brCfgFile):
+            shutil.copy(self.devCfgFile, self.brCfgFile)
+
+        cfo = configFileOps(self.devCfgFile, self)
+        cfo.addEntry("STARTMODE", "auto")
+        if self.syscfg.env.bridgeType == "openvswitch":
+            if cfo.getEntry("IPADDR"):
+                cfo.rmEntry("IPADDR", cfo.getEntry("IPADDR"))
+        else:
+            raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
+        cfo.save()
+
+        cfo = configFileOps(self.brCfgFile, self)
+        cfo.addEntry("STARTMODE", "auto")
+        if self.syscfg.env.bridgeType == "openvswitch":
+            if cfo.getEntry("LLADDR"):
+                cfo.rmEntry("LLADDR", cfo.getEntry("LLADDR"))
+            cfo.addEntry("BRIDGE_STP", "yes")
+            cfo.addEntry("OVS_BRIDGE", "yes")
+        elif self.syscfg.env.bridgeType == "native":
+            cfo.addEntry("BRIDGE", "yes")
+        else:
+            raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
+        # Bridge is linked to the dev in SUSE not the other way round
+        cfo.addEntry("BRIDGE_PORTS", dev.name)
+        cfo.save()
+
+    def config(self):
+        try:
+            if super(networkConfigSUSE, self).isPreConfiged():
+                return True
+
+            super(networkConfigSUSE, self).cfgNetwork()
+
+            self.netMgrRunning = self.syscfg.svo.isServiceRunning("NetworkManager")
+            if self.netMgrRunning:
+                self.syscfg.svo.stopService("NetworkManager")
+                self.syscfg.svo.disableService("NetworkManager")
+
+            if not bash("service network restart").isSuccess():
+                if not bash("systemctl restart NetworkManager.service").isSuccess():
+                    raise CloudInternalException("Can't restart network")
+
+            self.syscfg.env.nics.append(self.brName)
+            self.syscfg.env.nics.append(self.brName)
+            self.syscfg.env.nics.append(self.brName)
+            return True
+        except:
+            raise
+
+    def restore(self):
+        try:
+            if self.netMgrRunning:
+                self.syscfg.svo.enableService("NetworkManager")
+                self.syscfg.svo.startService("NetworkManager")
+            bash("service network restart")
+            return True
+        except:
+            logging.debug(formatExceptionInfo())
+            return False
+
 class cgroupConfig(serviceCfgBase):
     def __init__(self, syscfg):
         super(cgroupConfig, self).__init__(syscfg)
@@ -504,6 +560,9 @@ class securityPolicyConfigRedhat(serviceCfgBase):
             logging.debug(formatExceptionInfo())
             return False
 
+class securityPolicyConfigSUSE(securityPolicyConfigRedhat):
+    pass
+
 def configureLibvirtConfig(tls_enabled = True, cfg = None):
     cfo = configFileOps("/etc/libvirt/libvirtd.conf", cfg)
     if tls_enabled:
@@ -531,8 +590,6 @@ class libvirtConfigRedhat(serviceCfgBase):
             configureLibvirtConfig(self.syscfg.env.secure, self)
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
-            if distro in (CentOS6,RHEL6):
-                cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
             cfo.save()
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
@@ -552,10 +609,43 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
-            if not self.syscfg.svo.startService("libvirtd"):
-                return False
+            return self.syscfg.svo.startService("libvirtd")
+        except:
+            raise
 
-            return True
+    def restore(self):
+        pass
+
+class libvirtConfigSUSE(serviceCfgBase):
+    def __init__(self, syscfg):
+        super(libvirtConfigSUSE, self).__init__(syscfg)
+        self.serviceName = "Libvirt"
+
+    def config(self):
+        try:
+            configureLibvirtConfig(self.syscfg.env.secure, self)
+
+            if os.path.exists("/usr/lib/systemd/system/libvirtd.socket"):
+                bash("/bin/systemctl mask libvirtd.socket");
+                bash("/bin/systemctl mask libvirtd-ro.socket");
+                bash("/bin/systemctl mask libvirtd-admin.socket");
+                bash("/bin/systemctl mask libvirtd-tls.socket");
+                bash("/bin/systemctl mask libvirtd-tcp.socket");
+
+            cfo = configFileOps("/etc/sysconfig/libvirtd", self)
+            cfo.addEntry("LIBVIRTD_ARGS", "-l")
+            cfo.save()
+
+            filename = "/etc/libvirt/qemu.conf"
+            cfo = configFileOps(filename, self)
+            cfo.addEntry("security_driver", "\"none\"")
+            cfo.addEntry("user", "\"root\"")
+            cfo.addEntry("group", "\"root\"")
+            cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
+            cfo.save()
+
+            self.syscfg.svo.stopService("libvirtd")
+            return self.syscfg.svo.startService("libvirtd")
         except:
             raise
 
@@ -690,7 +780,6 @@ class firewallConfigAgent(firewallConfigBase):
             self.rules = ["-D FORWARD -j RH-Firewall-1-INPUT"]
         else:
             self.rules = ["-D FORWARD -j REJECT --reject-with icmp-host-prohibited"]
-
 
 class cloudAgentConfig(serviceCfgBase):
     def __init__(self, syscfg):

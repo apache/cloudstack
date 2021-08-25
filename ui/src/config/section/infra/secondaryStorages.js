@@ -87,7 +87,8 @@ export default {
       icon: 'delete',
       label: 'label.action.delete.secondary.storage',
       message: 'message.action.delete.secondary.storage',
-      dataView: true
+      dataView: true,
+      displayName: (record) => { return record.name || record.displayName || record.id }
     }
   ]
 }

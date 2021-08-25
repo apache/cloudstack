@@ -1976,7 +1976,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
-
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
                     getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
 
@@ -2977,6 +2976,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
         if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveMemory.key()).equalsIgnoreCase("true")) {
+            if(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION) != null){
+                float reservedMemory = (vmSpec.getMaxRam() * Float.parseFloat(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION)));
+                return (int) (reservedMemory / ResourceType.bytesToMiB);
+            }
             return (int) (vmSpec.getMinRam() / ResourceType.bytesToMiB);
         }
         return 0;
