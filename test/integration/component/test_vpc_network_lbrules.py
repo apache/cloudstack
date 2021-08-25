@@ -317,7 +317,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     def check_wget_from_vm(self, vm, public_ip, testnegative=False):
         import urllib.request, urllib.parse, urllib.error
-        self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s, expecting success = %b "  % (vm.name, public_ip.ipaddress.ipaddress, testnegative))
+        self.debug(f"Checking if we can wget from a VM={vm.name} http server on public_ip={public_ip.ipaddress.ipaddress}, expecting success = {testnegative}")
         try:
             urllib.request.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
             if not testnegative:
