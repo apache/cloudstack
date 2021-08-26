@@ -578,10 +578,9 @@ public class SystemVmTemplateRegistration {
 
     }
 
-    private Long performTemplateRegistrationOperations(Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
+    private Long performTemplateRegistrationOperations(String templateName, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
                                                        String url, String checksum, ImageFormat format, long guestOsId,
                                                        Long storeId, Long templateId, String filePath, boolean updateTmpltDetails) {
-        final String templateName = UUID.randomUUID().toString();
         Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
         Date created = new Date(DateUtil.currentGMTTime().getTime());
         SystemVMTemplateDetails details = new SystemVMTemplateDetails(templateName, hypervisorAndTemplateName.second(), created,
@@ -609,7 +608,8 @@ public class SystemVmTemplateRegistration {
         Long templateId = null;
         try {
             templateId = templateVO.getId();
-            performTemplateRegistrationOperations(hypervisorAndTemplateName, templateVO.getUrl(), templateVO.getChecksum(),
+            String templateUniqName = templateVO.getUniqueName();
+            performTemplateRegistrationOperations(templateUniqName, hypervisorAndTemplateName, templateVO.getUrl(), templateVO.getChecksum(),
                     templateVO.getFormat(), templateVO.getGuestOSId(), storeUrlAndId.second(), templateId, filePath, false);
         } catch (Exception e) {
             String errMsg = String.format("Failed to register template for hypervisor: %s", hypervisorAndTemplateName.first());
@@ -626,7 +626,8 @@ public class SystemVmTemplateRegistration {
         Long templateId = null;
         try {
             Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
-            templateId = performTemplateRegistrationOperations(hypervisorAndTemplateName, NewTemplateUrl.get(hypervisor), NewTemplateChecksum.get(hypervisor),
+            String templateUniqName = UUID.randomUUID().toString();
+            templateId = performTemplateRegistrationOperations(templateUniqName, hypervisorAndTemplateName, NewTemplateUrl.get(hypervisor), NewTemplateChecksum.get(hypervisor),
                     hypervisorImageFormat.get(hypervisor), hypervisorGuestOsMap.get(hypervisor), storeUrlAndId.second(), null, filePath, true);
             Map<String, String> configParams = new HashMap<>();
             configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
