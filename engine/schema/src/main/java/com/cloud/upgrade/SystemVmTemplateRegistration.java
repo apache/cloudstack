@@ -83,14 +83,12 @@ public class SystemVmTemplateRegistration {
     private static final Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
     private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
-    private static final String HASH_ALGORITHM = "MD5";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";
-    private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/";
+    private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm";
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
     private static final String METADATA_FILE_NAME = "metadata.ini";
     private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
     public static final String TEMPORARY_SECONDARY_STORE = "/tmp/tmpSecStorage";
-    // private static final String PARENT_TEMPLATE_FOLDER = TEMPORARY_SECONDARY_STORE;
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String FETCH_REGISTERED_TEMPLATE_INSTALL_PATH = "SELECT install_path FROM `cloud`.`template_store_ref` where template_id = ? LIMIT 1";
     private static final String storageScriptsDir = "scripts/storage/secondary";
@@ -98,8 +96,8 @@ public class SystemVmTemplateRegistration {
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
     private static final Integer TOKEN_LENGTH = 10;
 
-    public static String CS_MAJOR_VERSION = "4.16";
-    public static String CS_TINY_VERSION = "0";
+    public static String CS_MAJOR_VERSION = null;
+    public static String CS_TINY_VERSION = null;
 
     @Inject
     DataCenterDao dataCenterDao;
@@ -422,7 +420,10 @@ public class SystemVmTemplateRegistration {
                 URI uri = new URI(UriUtils.encodeURIComponent(storeUrl));
                 String host = uri.getHost();
                 String mountPath = uri.getPath();
-                Script.runSimpleBashScript("mkdir -p " + path);
+                boolean fileCreated = new File(path).mkdirs();
+                if (!fileCreated) {
+                    throw new CloudRuntimeException("Failed to created file for mounting store to copy systemVM templates");
+                }
                 String mount = String.format(MOUNT_COMMAND, host + ":" + mountPath, path);
                 Script.runSimpleBashScript(mount);
             }

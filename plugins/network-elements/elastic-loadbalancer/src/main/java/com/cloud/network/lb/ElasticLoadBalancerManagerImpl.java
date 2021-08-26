@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.network.lb;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -478,13 +476,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (defaultDns2 != null) {
             buf.append(" dns2=").append(defaultDns2);
         }
-        String MsPublicKey = _configDao.getValue("ssh.publickey");
-        String base64EncodedPublicKey = null;
-        if (MsPublicKey != null) {
-            base64EncodedPublicKey = Base64.getEncoder().encodeToString(MsPublicKey.getBytes(StandardCharsets.UTF_8));
-        }
-
-        buf.append(" authorized_key=").append(base64EncodedPublicKey);
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }

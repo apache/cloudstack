@@ -18,10 +18,8 @@ package org.apache.cloudstack.secondarystorage;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -1086,13 +1084,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
         buf.append(" workers=").append(_configDao.getValue("workers"));
-        String MsPublicKey = _configDao.getValue("ssh.publickey");
-        String base64EncodedPublicKey = null;
-        if (MsPublicKey != null) {
-            base64EncodedPublicKey = Base64.getEncoder().encodeToString(MsPublicKey.getBytes(StandardCharsets.UTF_8));
-        }
-
-        buf.append(" authorized_key=").append(base64EncodedPublicKey);
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (_configDao.isPremium()) {
             s_logger.debug("VMWare hypervisor was configured, informing secondary storage VM to load the PremiumSecondaryStorageResource.");

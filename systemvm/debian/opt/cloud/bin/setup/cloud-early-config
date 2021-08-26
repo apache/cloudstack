@@ -89,8 +89,8 @@ start() {
   echo "" > /root/.ssh/known_hosts
 
   if which growpart > /dev/null; then
-    ROOT_MOUNT_POINT=`df -h / | tail -n 1  | cut -d' ' -f1`
-    ROOT_DISK=`echo $ROOT_MOUNT_POINT | sed 's/[0-9]*$//g'`
+    ROOT_MOUNT_POINT=$(df -h / | tail -n 1  | cut -d' ' -f1)
+    ROOT_DISK=$(echo $ROOT_MOUNT_POINT | sed 's/[0-9]*$//g')
     growpart $ROOT_DISK 2
     growpart $ROOT_DISK 6
     resize2fs $ROOT_MOUNT_POINT
