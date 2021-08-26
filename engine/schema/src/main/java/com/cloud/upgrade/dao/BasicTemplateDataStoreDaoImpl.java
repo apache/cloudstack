@@ -160,7 +160,7 @@ public class BasicTemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataSt
     }
 
     @Override
-    public List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId) {
+    public List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId, Long... storeIds) {
         return null;
     }
 
