@@ -4393,15 +4393,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Object result = null;
             try {
                 result = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
-
-                if (result == null) {
-                    return (VMInstanceVO)vm;
-                }
             } catch (Exception ex) {
                 throw new RuntimeException("Unhandled exception", ex);
             }
 
-            throw new RuntimeException(String.format("Unexpected job execution result [%s]", result));
+            if (result != null) {
+                throw new RuntimeException(String.format("Unexpected job execution result [%s]", result));
+            }
+
+            return (VMInstanceVO)vm;
         }
     }
 
