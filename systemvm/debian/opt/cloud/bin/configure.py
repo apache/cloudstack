@@ -1008,7 +1008,7 @@ class CsForwardingRules(CsDataBag):
 
         # Configure the hairpin snat
         self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o %s --to-source %s" %
-                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getDeviceByIp(rule["internal_ip"]), self.getGuestIp())])
+                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getDeviceByIp(rule["internal_ip"]), self.getGuestIpByIp(rule["internal_ip"]))])
 
 
 class IpTablesExecutor:
