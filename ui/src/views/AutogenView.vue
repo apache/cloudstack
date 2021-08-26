@@ -145,8 +145,15 @@
           </a>
         </template>
         <a-spin :spinning="actionLoading">
-          <span v-if="currentAction.message">
-            <a-alert type="warning" :description="$t(currentAction.message)" />
+          <span v-if="currentAction.message || 'displayName' in currentAction">
+            <a-alert type="warning">
+              <template #message>
+                <div v-if="currentAction.message" v-html="$t(currentAction.message)"></div>
+                <div v-if="'displayName' in currentAction">
+                  <strong>{{ currentAction.displayName(resource) }}</strong>
+                </div>
+              </template>
+            </a-alert>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
