@@ -32,7 +32,7 @@ export async function api (command, args = {}, method = 'GET', data = {}) {
 
   const exemptedAPIs = ['listLdapConfigurations', 'listCapabilities', 'listIdps', 'listApis', 'listInfrastructure', 'listAndSwitchSamlAccount']
 
-  if ('page' in args || exemptedAPIs.includes(command) || !command.startsWith('list')) {
+  if ('page' in args || 'id' in args || exemptedAPIs.includes(command) || !command.startsWith('list')) {
     return axios({
       params: {
         ...args
@@ -77,13 +77,10 @@ export async function api (command, args = {}, method = 'GET', data = {}) {
       }
       if (json[responseName][objectName]) {
         items = items.concat(json[responseName][objectName])
-        console.log(command, page, responseName, objectName, items.length, json[responseName].count, 'WIP')
       }
       if (!json[responseName].count || json[responseName].count === items.length || !json[responseName][objectName]) {
-        console.log(command, page, responseName, objectName, items.length, json[responseName].count, 'DONE')
         done = true
         json[responseName][objectName] = items
-        console.log(json)
         response = new Promise((resolve) => {
           resolve(json)
         })
