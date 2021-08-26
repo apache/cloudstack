@@ -203,11 +203,11 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private void checkAnnotationPermissions(EntityType type, UserVO user) {
-        if (isCallingUserRole(RoleType.Admin) ||
-                (isCallingUserRole(RoleType.DomainAdmin) && isDomainAdminAllowedType(type))) {
+        if (isCallingUserRole(RoleType.Admin)) {
             return;
         }
-        if (!type.isUserAllowed()) {
+        List<EntityType> notAllowedTypes = EntityType.getNotAllowedTypesForNonAdmins(getCallingUserRole());
+        if (notAllowedTypes.contains(type)) {
             throw new CloudRuntimeException(String.format("User: %s is not allowed to add annotations on type: %s",
                     user.getUsername(), type.name()));
         }
@@ -405,17 +405,22 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     private boolean isEntityOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
         try {
-            EntityType type = EntityType.valueOf(entityType);
-            if (isCallingUserRole(RoleType.DomainAdmin)) {
-                if (!isDomainAdminAllowedType(type)) {
+            if (!isCallingUserRole(RoleType.Admin)) {
+                EntityType type = EntityType.valueOf(entityType);
+                List<EntityType> notAllowedTypes = EntityType.getNotAllowedTypesForNonAdmins(getCallingUserRole());
+                if (notAllowedTypes.contains(type)) {
                     return false;
                 }
-                if (type == EntityType.DOMAIN) {
-                    DomainVO domain = domainDao.findByUuid(entityUuid);
-                    AccountVO account = accountDao.findById(callingUser.getAccountId());
-                    accountService.checkAccess(account, domain);
+                if (isCallingUserRole(RoleType.DomainAdmin)) {
+                    if (type == EntityType.SERVICE_OFFERING || type == EntityType.DISK_OFFERING) {
+                        return true;
+                    } else if (type == EntityType.DOMAIN) {
+                        DomainVO domain = domainDao.findByUuid(entityUuid);
+                        AccountVO account = accountDao.findById(callingUser.getAccountId());
+                        accountService.checkAccess(account, domain);
+                        return true;
+                    }
                 }
-            } else if (!isCallingUserRole(RoleType.Admin)) {
                 ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
                 if (entity == null) {
                     String errMsg = String.format("Could not find an entity with type: %s and ID: %s", entityType, entityUuid);

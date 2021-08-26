@@ -117,29 +117,10 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         }
         if (roleType != RoleType.Admin) {
             sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
-            List<EntityType> notAllowedTypes = getNotAllowedTypesForNonAdmins(roleType);
+            List<EntityType> notAllowedTypes = EntityType.getNotAllowedTypesForNonAdmins(roleType);
             sc.setParameters("entityTypeNotIn", notAllowedTypes.toArray());
         }
         return listAnnotationsOrderedByCreatedDate(sc);
-    }
-
-    private List<EntityType> getNotAllowedTypesForNonAdmins(RoleType roleType) {
-        List<EntityType> list = new ArrayList<>();
-        list.add(EntityType.NETWORK_OFFERING);
-        list.add(EntityType.ZONE);
-        list.add(EntityType.POD);
-        list.add(EntityType.CLUSTER);
-        list.add(EntityType.HOST);
-        list.add(EntityType.PRIMARY_STORAGE);
-        list.add(EntityType.SECONDARY_STORAGE);
-        list.add(EntityType.VR);
-        list.add(EntityType.SYSTEM_VM);
-        if (roleType != RoleType.DomainAdmin) {
-            list.add(EntityType.DOMAIN);
-            list.add(EntityType.SERVICE_OFFERING);
-            list.add(EntityType.DISK_OFFERING);
-        }
-        return list;
     }
 
     @Override

@@ -16,12 +16,16 @@
 // under the License.
 package org.apache.cloudstack.annotation;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
 import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
 import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
 import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibilityCmd;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public interface AnnotationService {
     ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd);
@@ -59,6 +63,25 @@ public interface AnnotationService {
             } catch (IllegalArgumentException iae) {
                 return false;
             }
+        }
+
+        static public List<EntityType> getNotAllowedTypesForNonAdmins(RoleType roleType) {
+            List<EntityType> list = new ArrayList<>();
+            list.add(EntityType.NETWORK_OFFERING);
+            list.add(EntityType.ZONE);
+            list.add(EntityType.POD);
+            list.add(EntityType.CLUSTER);
+            list.add(EntityType.HOST);
+            list.add(EntityType.PRIMARY_STORAGE);
+            list.add(EntityType.SECONDARY_STORAGE);
+            list.add(EntityType.VR);
+            list.add(EntityType.SYSTEM_VM);
+            if (roleType != RoleType.DomainAdmin) {
+                list.add(EntityType.DOMAIN);
+                list.add(EntityType.SERVICE_OFFERING);
+                list.add(EntityType.DISK_OFFERING);
+            }
+            return list;
         }
     }
 }
