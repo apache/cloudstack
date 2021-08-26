@@ -225,7 +225,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                     cls.virtual_machine1.default_network_id = nic.networkid
                     break
         except Exception as e:
-            cls.fail(f"Exception while deploying virtual machine: {e}")
+            cls.fail("Exception while deploying virtual machine: %s" % {e})
 
         try:
             cls.virtual_machine2 = VirtualMachine.create(
@@ -244,7 +244,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                     cls.virtual_machine2.default_network_id = nic.networkid
                     break
         except Exception as e:
-            cls.fail(f"Exception while deploying virtual machine: {e}")
+            cls.fail("Exception while deploying virtual machine: %s" % {e})
 
         cls._cleanup.append(cls.virtual_machine1)
         cls._cleanup.append(cls.virtual_machine2)

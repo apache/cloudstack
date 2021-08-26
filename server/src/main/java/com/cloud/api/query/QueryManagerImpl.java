@@ -3822,6 +3822,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "lsilogic", "lsisas1068", "buslogic", "pvscsi"));
             options.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Arrays.asList("true", "false"));
             options.put(VmDetailConstants.SVGA_VRAM_SIZE, Collections.emptyList());
+            options.put(VmDetailConstants.RAM_RESERVATION, Collections.emptyList());
         }
     }
 

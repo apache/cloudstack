@@ -1371,13 +1371,13 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
         vm_id = vm_name.split("-")[-2]
 
     if brname is None:
-        brname = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f3" % (vm_name, vm_mac)).strip()
+        brname = execute("virsh domiflist %s |grep -w '%s' | awk '{print $3}'" % (vm_name, vm_mac)).strip()
     if not brname:
         print("Cannot find bridge")
         sys.exit(1)
 
     if vif is None:
-        vif = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f1" % (vm_name, vm_mac)).strip()
+        vif = execute("virsh domiflist %s |grep -w '%s' | awk '{print $1}'" % (vm_name, vm_mac)).strip()
     if not vif:
         print("Cannot find vif")
         sys.exit(1)

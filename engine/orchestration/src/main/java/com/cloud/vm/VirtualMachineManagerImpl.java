@@ -4665,6 +4665,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 } else if (jobResult instanceof InsufficientServerCapacityException) {
                     throw (InsufficientServerCapacityException)jobResult;
+                } else if (jobResult instanceof RuntimeException) {
+                    throw (RuntimeException)jobResult;
                 } else if (jobResult instanceof Throwable) {
                     s_logger.error("Unhandled exception", (Throwable)jobResult);
                     throw new RuntimeException("Unhandled exception", (Throwable)jobResult);
@@ -4677,8 +4679,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private VMInstanceVO orchestrateReConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering,
                                                   boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
-        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
+        final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         HostVO hostVo = _hostDao.findById(vm.getHostId());
 
@@ -4695,6 +4696,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), minSpeed,
                         newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
 
+        scaleVmCommand.getVirtualMachine().setId(vm.getId());
+        scaleVmCommand.getVirtualMachine().setUuid(vm.getUuid());
+        scaleVmCommand.getVirtualMachine().setType(vm.getType());
+
         Long dstHostId = vm.getHostId();
 
         if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
@@ -4710,9 +4715,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work.setResourceId(vm.getHostId());
         _workDao.persist(work);
 
-        boolean success = false;
-
         try {
+            Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), scaleVmCommand);
+
+            if (reconfigureAnswer == null || !reconfigureAnswer.getResult()) {
+                s_logger.error("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
+                throw new CloudRuntimeException("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
+            }
+
+            if (vm.getType().equals(VirtualMachine.Type.User)) {
+                _userVmMgr.generateUsageEvent(vm, vm.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
+            }
+
+            upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
+
             if (reconfiguringOnExistingHost) {
                 vm.setServiceOfferingId(oldServiceOffering.getId());
                 _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId()); //release the old capacity
@@ -4720,26 +4736,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _capacityMgr.allocateVmCapacity(vm, false); // lock the new capacity
             }
 
-            Answer scaleVmAnswer = _agentMgr.send(vm.getHostId(), scaleVmCommand);
-            if (scaleVmAnswer == null || !scaleVmAnswer.getResult()) {
-                String msg = String.format("Unable to scale %s due to [%s].", vm.toString(), (scaleVmAnswer == null ? "" : scaleVmAnswer.getDetails()));
-                s_logger.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
-            if (vm.getType().equals(VirtualMachine.Type.User)) {
-                _userVmMgr.generateUsageEvent(vm, vm.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
-            }
-            success = true;
-        } catch (OperationTimedoutException e) {
-            throw new AgentUnavailableException(String.format("Unable to scale %s due to [%s].", vm.toString(), e.getMessage()), dstHostId, e);
+        } catch (final OperationTimedoutException e) {
+            throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
         } catch (final AgentUnavailableException e) {
             throw e;
-        } finally {
-            if (!success) {
-                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId()); // release the new capacity
-                upgradeVmDb(vm.getId(), oldServiceOffering, newServiceOffering); // rollback
-                _capacityMgr.allocateVmCapacity(vm, false); // allocate the old capacity
-            }
         }
 
         return vm;
@@ -4783,8 +4783,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new ConfigKey<?>[] { ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
-                HaVmRestartHostUp, ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel,
-                VmServiceOfferingMaxCPUCores, VmServiceOfferingMaxRAMSize };
+                HaVmRestartHostUp, ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
