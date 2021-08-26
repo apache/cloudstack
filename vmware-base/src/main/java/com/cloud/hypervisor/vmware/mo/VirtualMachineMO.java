@@ -3553,4 +3553,10 @@ public class VirtualMachineMO extends BaseMO {
         VirtualMachineTicket ticket = _context.getService().acquireTicket(_mor, "webmks");
         return ticket.getTicket();
     }
+
+    public void tagAsWorkerVM() throws Exception {
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+        String workerTag = String.format("%d-%s", System.currentTimeMillis(), getContext().getStockObject("noderuninfo"));
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
+    }
 }
