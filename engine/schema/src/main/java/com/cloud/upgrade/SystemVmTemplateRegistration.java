@@ -84,7 +84,7 @@ public class SystemVmTemplateRegistration {
     private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";
-    private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm";
+    private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm/";
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
     private static final String METADATA_FILE_NAME = "metadata.ini";
     private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
