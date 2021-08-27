@@ -1021,7 +1021,9 @@ export default {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
-      eventBus.$emit('update-job-details', jobId, resource)
+      if (this.shouldNavigateBack(action)) {
+        action.isFetchData = false
+      }
       return new Promise((resolve) => {
         this.$pollJob({
           jobId,
@@ -1277,7 +1279,7 @@ export default {
           }
           response.then(jobId => {
             hasJobId = jobId
-            if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
+            if (this.shouldNavigateBack(action)) {
               this.$router.go(-1)
             } else {
               if (!hasJobId) {
@@ -1298,6 +1300,9 @@ export default {
           this.actionLoading = false
         })
       })
+    },
+    shouldNavigateBack (action) {
+      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
