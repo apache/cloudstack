@@ -3225,7 +3225,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Pair<Long, Long> clusterAndHostId =  virtualMachineManager.findClusterAndHostIdForVm(vm.getId());
         Long hostId = clusterAndHostId.second();
         Long clusterId = clusterAndHostId.first();
-        if (hostId == null && clusterId!= null &&
+        if (hostId == null && clusterId != null &&
                 State.Stopped.equals(vm.getState()) &&
                 volumeToAttachStoragePool != null &&
                 !ScopeType.HOST.equals(volumeToAttachStoragePool.getScope())) {
