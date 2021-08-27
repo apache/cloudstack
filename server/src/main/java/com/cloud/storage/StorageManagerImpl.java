@@ -222,6 +222,8 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
+import java.math.BigInteger;
+import java.util.UUID;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -1788,7 +1790,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-            StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
+            StoragePoolVO dataStoreVO = getExistingPoolByUuid(childStoragePoolInfo.getUuid());
             if (dataStoreVO == null && childDataStoreAnswer.getPoolType().equalsIgnoreCase("NFS")) {
                 List<StoragePoolVO> nfsStoragePools = _storagePoolDao.findPoolsByStorageType(StoragePoolType.NetworkFilesystem.toString());
                 for (StoragePoolVO storagePool : nfsStoragePools) {
@@ -1833,6 +1835,43 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         handleRemoveChildStoragePoolFromDatastoreCluster(childDatastoreUUIDs);
     }
+
+    /**
+     * fixed mismatching between db uuids and and custom
+     * attribute uuids
+     *
+     * To different formats of uuids exists
+     * 1. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+     * 2. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+     * @param uuid of existing pool
+     * @return existing pull or null otherwise
+     */
+    private StoragePoolVO getExistingPoolByUuid(String uuid){
+        StoragePoolVO storagePool = _storagePoolDao.findByUuid(uuid);
+        if(storagePool != null){
+            return storagePool;
+        }
+
+        //this case is unlikely (DB uuid without separators), but safety first
+        if(uuid.contains("-")){
+            uuid = uuid.replaceAll("-", "");
+            storagePool = _storagePoolDao.findByUuid(uuid);
+            if(storagePool != null){
+                storagePool.setUuid(uuid);
+                return storagePool;
+            }
+        }
+
+        //transform uuid in the valid format with separators
+        UUID poolUuid;
+        poolUuid = new UUID(
+                new BigInteger(uuid.substring(0, 16), 16).longValue(),
+                new BigInteger(uuid.substring(16), 16).longValue()
+        );
+
+        return _storagePoolDao.findByUuid(poolUuid.toString());
+    }
+
 
     private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
