@@ -49,6 +49,14 @@ export default {
           dataView: false,
           groupAction: true,
           popup: true,
+          groupShow: true,
+          show: (x, y, selectedItems) => {
+            if (['Admin'].includes(store.getters.userInfo.roletype)) {
+              return true
+            }
+            // Display only if the selected items are comments created by the user
+            return selectedItems.filter(x => { return x.username !== store.getters.userInfo.username }).length === 0
+          },
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]

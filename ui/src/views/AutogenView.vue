@@ -72,6 +72,7 @@
             :loading="loading"
             :actions="actions"
             :selectedRowKeys="selectedRowKeys"
+            :selectedItems="selectedItems"
             :dataView="dataView"
             :resource="resource"
             @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
