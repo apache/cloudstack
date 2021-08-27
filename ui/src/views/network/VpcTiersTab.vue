@@ -168,24 +168,24 @@
           :model="createNetworkForm"
           :rules="createNetworkRules">
           <a-form-item ref="name" name="name" :colon="false">
-            <span slot="label">
+            <template #label>
               {{ $t('label.name') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.name.description')">
-                <a-icon type="info-circle" />
+                <info-circle-outlined />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
               :placeholder="$t('label.create.tier.name.description')"
               v-model:value="createNetworkForm.name"
               autoFocus></a-input>
           </a-form-item>
           <a-form-item ref="networkOffering" name="networkOffering" :colon="false">
-            <span slot="label">
+            <template #label>
               {{ $t('label.networkofferingid') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.networkofferingid.description')">
-                <a-icon type="info-circle" />
+                <info-circle-outlined />
               </a-tooltip>
-            </span>
+            </template>
             <a-select v-model:value="createNetworkForm.networkOffering">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.displaytext || item.name || item.description }}
@@ -193,45 +193,45 @@
             </a-select>
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
-            <span slot="label">
+            <template #label>
               {{ $t('label.gateway') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.gateway.description')">
-                <a-icon type="info-circle" />
+                <info-circle-outlined />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
               :placeholder="$t('label.create.tier.gateway.description')"
               v-model:value="createNetworkForm.gateway"></a-input>
           </a-form-item>
           <a-form-item ref="netmask" name="netmask" :colon="false">
-            <span slot="label">
+            <template #label>
               {{ $t('label.netmask') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.netmask.description')">
-                <a-icon type="info-circle" />
+                <info-circle-outlined />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
               :placeholder="$t('label.create.tier.netmask.description')"
               v-model:value="createNetworkForm.netmask"></a-input>
           </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
-            <span slot="label">
+            <template #label>
               {{ $t('label.externalid') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.externalid.description')">
-                <a-icon type="info-circle" />
+                <info-circle-outlined />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
               :placeholder=" $t('label.create.tier.externalid.description')"
               v-model:value="createNetworkForm.externalId"/>
           </a-form-item>
           <a-form-item ref="acl" name="acl" :colon="false">
-            <span slot="label">
+            <template #label>
               {{ $t('label.aclid') }}
               <a-tooltip placement="right" :title="$t('label.create.tier.aclid.description')">
-                <a-icon type="info-circle" />
+                <info-circle-outlined />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               :placeholder="$t('label.create.tier.aclid.description')"
               v-model:value="createNetworkForm.acl"
