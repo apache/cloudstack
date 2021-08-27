@@ -1401,13 +1401,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
 
                 List<Volume> allVolumes = new ArrayList<>();
+                allVolumes.addAll(volumesOrderBySizeDesc);
                 List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = new ArrayList<>();
                 for (Volume volume: allVolumes) {
                     DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
                     DiskProfile diskProfile = new DiskProfile(volume, diskOffering, _volsDao.getHypervisorType(volume.getId()));
                     volumeDiskProfilePair.add(new Pair<>(volume, diskProfile));
                 }
-                allVolumes.addAll(volumesOrderBySizeDesc);
                 for (StoragePool storagePool : suitablePools) {
                     haveEnoughSpace = false;
                     hostCanAccessPool = false;
