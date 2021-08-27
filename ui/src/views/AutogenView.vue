@@ -1150,8 +1150,8 @@ export default {
           Object.assign(query, opts)
         }
       }
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = String(this.pageSize)
       if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
         this.fetchData(query)
         return
