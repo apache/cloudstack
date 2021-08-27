@@ -49,7 +49,7 @@ export default {
           dataView: false,
           groupAction: true,
           popup: true,
-          groupShow: (x, y, selectedItems) => {
+          groupShow: (selectedItems, storegetters) => {
             if (['Admin'].includes(store.getters.userInfo.roletype)) {
               return true
             }
