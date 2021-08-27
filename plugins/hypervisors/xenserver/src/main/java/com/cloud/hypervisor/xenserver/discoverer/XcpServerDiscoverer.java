@@ -33,6 +33,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.AgentManager;
@@ -129,7 +130,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if (StringUtils.isEmpty(hostProductVersion)) {
             return false;
         }
-        return hostProductVersion.compareTo(MIN_UEFI_SUPPORTED_VERSION) >= 0;
+        ComparableVersion version = new ComparableVersion(hostProductVersion);
+        return version.compareTo(new ComparableVersion(MIN_UEFI_SUPPORTED_VERSION)) >= 0;
     }
 
     protected XcpServerDiscoverer() {
