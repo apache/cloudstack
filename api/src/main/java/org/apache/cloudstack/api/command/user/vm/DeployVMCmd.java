@@ -27,8 +27,6 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import com.cloud.utils.StringUtils;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -70,6 +68,7 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
@@ -293,7 +292,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             }
         }
         if (ApiConstants.BootType.UEFI.equals(getBootType())) {
-            customparameterMap.put(getBootType().toString(), getBootMode().toString());
+            ApiConstants.BootMode mode = getBootMode();
+            customparameterMap.put(getBootType().toString(), mode != null ? mode.toString() : "");
         }
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
@@ -310,11 +310,11 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String errMesg = "Invalid bootMode " + bootMode + "Specified for vm " + getName()
-                        + " Valid values are:  "+ Arrays.toString(ApiConstants.BootMode.values());
-                s_logger.warn(errMesg);
-                throw new InvalidParameterValueException(errMesg);
-                }
+                String msg = String.format("Invalid bootMode %s specified for VM: %s. Valid values are: %s",
+                        bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
+                s_logger.warn(msg);
+                throw new InvalidParameterValueException(msg);
+            }
         }
         return null;
     }
