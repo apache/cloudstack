@@ -30,7 +30,7 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.certificate.dao.CrlDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public final class RootCACustomTrustManager implements X509TrustManager {
     private static final Logger LOG = Logger.getLogger(RootCACustomTrustManager.class);
@@ -43,7 +43,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
     private Map<String, X509Certificate> activeCertMap;
 
     public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final X509Certificate caCertificate, final CrlDao crlDao) {
-        if (!Strings.isNullOrEmpty(clientAddress)) {
+        if (StringUtils.isNotEmpty(clientAddress)) {
             this.clientAddress = clientAddress.replace("/", "").split(":")[0];
         }
         this.authStrictness = authStrictness;
@@ -124,7 +124,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
             LOG.error(errorMsg);
             throw new CertificateException(errorMsg);
         }
-        if (activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
+        if (activeCertMap != null && StringUtils.isNotEmpty(clientAddress)) {
             activeCertMap.put(clientAddress, primaryClientCertificate);
         }
         if (LOG.isDebugEnabled()) {

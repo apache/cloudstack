@@ -80,7 +80,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -138,7 +138,7 @@ public class VeeamClient {
             final HttpResponse response = httpClient.execute(request);
             checkAuthFailure(response);
             veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
-            if (Strings.isNullOrEmpty(veeamSessionId)) {
+            if (StringUtils.isEmpty(veeamSessionId)) {
                 throw new CloudRuntimeException("Veeam Session ID is not available to perform API requests");
             }
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {

@@ -7467,7 +7467,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public void persistDeviceBusInfo(UserVmVO vm, String rootDiskController) {
         String existingVmRootDiskController = vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER);
-        if (StringUtils.isEmpty(existingVmRootDiskController) && !StringUtils.isEmpty(rootDiskController)) {
+        if (StringUtils.isEmpty(existingVmRootDiskController) && StringUtils.isNotEmpty(rootDiskController)) {
             vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
             _vmDao.saveDetails(vm);
             if (s_logger.isDebugEnabled()) {
@@ -7543,7 +7543,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (!StringUtils.isEmpty(sb.toString())) {
+        if (StringUtils.isNotEmpty(sb.toString())) {
             throw new InvalidParameterValueException("The following supplied volumes are not attached to the VM: " + sb.toString());
         }
     }

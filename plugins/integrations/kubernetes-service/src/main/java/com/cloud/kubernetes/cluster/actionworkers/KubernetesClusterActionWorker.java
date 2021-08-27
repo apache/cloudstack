@@ -77,7 +77,6 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.common.base.Strings;
 
 public class KubernetesClusterActionWorker {
 
@@ -275,7 +274,7 @@ public class KubernetesClusterActionWorker {
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
-        if (detail != null && !Strings.isNullOrEmpty(detail.getValue())) {
+        if (detail != null && org.apache.commons.lang3.StringUtils.isNotEmpty(detail.getValue())) {
             return new Pair<>(detail.getValue(), port);
         }
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());

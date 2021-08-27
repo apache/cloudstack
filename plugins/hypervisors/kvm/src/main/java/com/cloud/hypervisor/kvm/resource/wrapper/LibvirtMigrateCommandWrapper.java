@@ -47,7 +47,7 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -77,7 +77,6 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import com.google.common.base.Strings;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -88,7 +87,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
 
     protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
-        if (Strings.isNullOrEmpty(destinationIp)) {
+        if (StringUtils.isEmpty(destinationIp)) {
             throw new CloudRuntimeException("Provided libvirt destination ip is invalid");
         }
         return String.format("%s://%s/system", libvirtComputingResource.isHostSecured() ? "qemu+tls" : "qemu+tcp", destinationIp);
@@ -547,7 +546,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     private String getPathFromSourceText(Set<String> paths, String sourceText) {
-        if (paths != null && !StringUtils.isBlank(sourceText)) {
+        if (paths != null && StringUtils.isNotBlank(sourceText)) {
             for (String path : paths) {
                 if (sourceText.contains(path)) {
                     return path;

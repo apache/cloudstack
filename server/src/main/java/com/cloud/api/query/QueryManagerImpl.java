@@ -231,7 +231,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -250,7 +249,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
@@ -738,7 +737,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean listAll = cmd.listAll();
         Long projectId = cmd.getProjectId();
 
-        if (projectId == null && ResourceObjectType.Project.name().equalsIgnoreCase(resourceType) && !Strings.isNullOrEmpty(resourceId)) {
+        if (projectId == null && ResourceObjectType.Project.name().equalsIgnoreCase(resourceType) && StringUtils.isNotEmpty(resourceId)) {
             try {
                 projectId = Long.parseLong(resourceId);
             } catch (final NumberFormatException e) {
@@ -1505,7 +1504,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     }
                     accountId = owner.getId();
                 }
-                if (!Strings.isNullOrEmpty(username)) {
+                if (StringUtils.isNotEmpty(username)) {
                     User owner = userDao.getUserByName(username, domainId);
                     if (owner == null) {
                         throw new InvalidParameterValueException("Unable to find user " + username + " in domain " + domainId);
@@ -1519,7 +1518,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (accountName != null) {
                     throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified");
                 }
-                if (!Strings.isNullOrEmpty(username)) {
+                if (StringUtils.isNotEmpty(username)) {
                     throw new InvalidParameterValueException("could not find user " + username + " because domain is not specified");
                 }
             }
@@ -1532,7 +1531,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
             }
 
-            if (!Strings.isNullOrEmpty(username) && !username.equals(user.getUsername())) {
+            if (StringUtils.isNotEmpty(username) && !username.equals(user.getUsername())) {
                 throw new PermissionDeniedException("Can't list user " + username + " projects; unauthorized");
             }
 
@@ -2897,7 +2896,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ListIterator<DiskOfferingJoinVO> it = result.first().listIterator();
             while (it.hasNext()) {
                 DiskOfferingJoinVO offering = it.next();
-                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
+                if(StringUtils.isNotEmpty(offering.getDomainId())) {
                     boolean toRemove = true;
                     String[] domainIdsArray = offering.getDomainId().split(",");
                     for (String domainIdString : domainIdsArray) {
@@ -2927,12 +2926,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (currentVmOffering == null) {
             return offerings;
         }
-        List<String> currentTagsList = StringUtils.csvTagsToList(currentVmOffering.getTags());
+        List<String> currentTagsList = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getTags());
 
         // New service offering should have all the tags of the current service offering.
         List<ServiceOfferingJoinVO> filteredOfferings = new ArrayList<>();
         for (ServiceOfferingJoinVO offering : offerings) {
-            List<String> newTagsList = StringUtils.csvTagsToList(offering.getTags());
+            List<String> newTagsList = com.cloud.utils.StringUtils.csvTagsToList(offering.getTags());
             if (newTagsList.containsAll(currentTagsList)) {
                 filteredOfferings.add(offering);
             }
@@ -3120,7 +3119,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ListIterator<ServiceOfferingJoinVO> it = filteredOfferings.listIterator();
             while (it.hasNext()) {
                 ServiceOfferingJoinVO offering = it.next();
-                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
+                if(StringUtils.isNotEmpty(offering.getDomainId())) {
                     boolean toRemove = true;
                     String[] domainIdsArray = offering.getDomainId().split(",");
                     for (String domainIdString : domainIdsArray) {
@@ -3779,10 +3778,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             case Template:
             case UserVm:
                 HypervisorType hypervisorType = HypervisorType.None;
-                if (!Strings.isNullOrEmpty(resourceUuid) && ResourceObjectType.Template.equals(type)) {
+                if (StringUtils.isNotEmpty(resourceUuid) && ResourceObjectType.Template.equals(type)) {
                     hypervisorType = _templateDao.findByUuid(resourceUuid).getHypervisorType();
                 }
-                if (!Strings.isNullOrEmpty(resourceUuid) && ResourceObjectType.UserVm.equals(type)) {
+                if (StringUtils.isNotEmpty(resourceUuid) && ResourceObjectType.UserVm.equals(type)) {
                     hypervisorType = _vmInstanceDao.findByUuid(resourceUuid).getHypervisorType();
                 }
                 fillVMOrTemplateDetailOptions(options, hypervisorType);

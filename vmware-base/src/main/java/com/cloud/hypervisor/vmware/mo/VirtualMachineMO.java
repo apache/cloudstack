@@ -42,7 +42,7 @@ import com.vmware.vim25.InvalidStateFaultMsg;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.VirtualMachineTicket;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
@@ -1266,7 +1266,7 @@ public class VirtualMachineMO extends BaseMO {
         deviceConfigSpec.setDevice(newDisk);
         deviceConfigSpec.setFileOperation(VirtualDeviceConfigSpecFileOperation.CREATE);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-        if (!StringUtils.isEmpty(vSphereStoragePolicyId)) {
+        if (StringUtils.isNotEmpty(vSphereStoragePolicyId)) {
             PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
             VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
             deviceConfigSpec.getProfile().add(diskProfileSpec);
@@ -1392,7 +1392,7 @@ public class VirtualMachineMO extends BaseMO {
 
             deviceConfigSpec.setDevice(newDisk);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-            if (!StringUtils.isEmpty(vSphereStoragePolicyId)) {
+            if (StringUtils.isNotEmpty(vSphereStoragePolicyId)) {
                 PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
                 VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
                 deviceConfigSpec.getProfile().add(diskProfileSpec);

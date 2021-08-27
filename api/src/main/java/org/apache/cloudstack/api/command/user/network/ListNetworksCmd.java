@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.Network;
 import com.cloud.utils.Pair;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -106,7 +106,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     }
 
     public String getGuestIpType() {
-        if (!Strings.isNullOrEmpty(guestIpType)) {
+        if (StringUtils.isNotEmpty(guestIpType)) {
             if (guestIpType.equalsIgnoreCase("all")) {
                 return null;
             }

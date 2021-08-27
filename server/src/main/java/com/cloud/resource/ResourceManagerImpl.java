@@ -44,7 +44,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -164,7 +164,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -690,7 +689,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
         }
         if (!HypervisorType.VMware.toString().equalsIgnoreCase(hypervisorType) &&
-                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
+                (StringUtils.isAnyEmpty(username, password))) {
             throw new InvalidParameterValueException("Username and Password need to be provided.");
         }
 
@@ -1078,7 +1077,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
 
-        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+        if (StringUtils.isNotBlank(name)) {
             if(cluster.getHypervisorType() == HypervisorType.VMware) {
                 throw new InvalidParameterValueException("Renaming VMware cluster is not supported as it could cause problems if the updated  cluster name is not mapped on VCenter.");
             }
@@ -1441,14 +1440,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     protected boolean isMaintenanceLocalStrategyMigrate() {
-        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+        if(StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
             return false;
         }
         return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Migration.toString().toLowerCase());
     }
 
     protected boolean isMaintenanceLocalStrategyForceStop() {
-        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+        if(StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
             return false;
         }
         return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.ForceStop.toString().toLowerCase());
@@ -1458,7 +1457,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Returns true if the host.maintenance.local.storage.strategy is the Default: "Error", blank, empty, or null.
      */
     protected boolean isMaintenanceLocalStrategyDefault() {
-        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
+        if (StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
                 || HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Error.toString().toLowerCase())) {
             return true;
         }
@@ -1722,7 +1721,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             resourceStateTransitTo(host, resourceEvent, _nodeId);
         }
 
-        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+        if (StringUtils.isNotBlank(name)) {
             s_logger.debug("Updating Host name to: " + name);
             host.setName(name);
             _hostDao.update(host.getId(), host);
@@ -3115,7 +3114,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (hostTags == null) {
             return null;
         } else {
-            return StringUtils.listToCsvTags(hostTags);
+            return com.cloud.utils.StringUtils.listToCsvTags(hostTags);
         }
     }
 

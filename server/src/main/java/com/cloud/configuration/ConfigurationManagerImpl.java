@@ -229,7 +229,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -255,7 +254,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Sets;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
@@ -531,7 +530,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public void onPublishMessage(String serderAddress, String subject, Object args) {
                 String globalSettingUpdated = (String) args;
-                if (Strings.isNullOrEmpty(globalSettingUpdated)) {
+                if (StringUtils.isEmpty(globalSettingUpdated)) {
                     return;
                 }
                 if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
@@ -1143,7 +1142,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
         // Check if the IP range overlaps with the public ip
-        if(!Strings.isNullOrEmpty(startIp)) {
+        if(StringUtils.isNotEmpty(startIp)) {
             checkOverlapPublicIpRange(zoneId, startIp, endIp);
         }
 
@@ -1274,7 +1273,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIp = cmd.getEndIp();
         final boolean forSystemVms = cmd.isForSystemVms();
         String vlan = cmd.getVlan();
-        if (!(Strings.isNullOrEmpty(vlan) || vlan.startsWith(BroadcastDomainType.Vlan.scheme()))) {
+        if (StringUtils.isNotEmpty(vlan) && !vlan.startsWith(BroadcastDomainType.Vlan.scheme())) {
             vlan = BroadcastDomainType.Vlan.toUri(vlan).toString();
         }
 
@@ -1531,7 +1530,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // pod has allocated private IP addresses
         if (podHasAllocatedPrivateIPs(id)) {
 
-            if (!Strings.isNullOrEmpty(netmask)) {
+            if (StringUtils.isNotEmpty(netmask)) {
                 final long newCidr = NetUtils.getCidrSize(netmask);
                 final long oldCidr = pod.getCidrSize();
 
@@ -1668,7 +1667,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // endIp is an optional parameter; if not specified - default it to the
         // end ip of the pod's cidr
-        if (!Strings.isNullOrEmpty(startIp)) {
+        if (StringUtils.isNotEmpty(startIp)) {
             if (endIp == null) {
                 endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
             }
@@ -1680,7 +1679,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Create the new pod in the database
         String ipRange;
 
-        if (!Strings.isNullOrEmpty(startIp)) {
+        if (StringUtils.isNotEmpty(startIp)) {
             ipRange = startIp + "-" + endIp + "-" + DefaultForSystemVmsForPodIpRange + "-" + DefaultVlanForPodIpRange;
         } else {
             throw new InvalidParameterValueException("Start ip is required parameter");
@@ -1701,7 +1700,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 final HostPodVO pod = _podDao.persist(podFinal);
 
-                if (!Strings.isNullOrEmpty(startIp)) {
+                if (StringUtils.isNotEmpty(startIp)) {
                     _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                 }
 
@@ -1822,24 +1821,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private void checkIpRange(final String startIp, final String endIp, final String cidrAddress, final long cidrSize) {
         //Checking not null for start IP as well. Previously we assumed to be not null always.
         //But the check is required for the change in updatePod API.
-        if (!Strings.isNullOrEmpty(startIp) && !NetUtils.isValidIp4(startIp)) {
+        if (StringUtils.isNotEmpty(startIp) && !NetUtils.isValidIp4(startIp)) {
             throw new InvalidParameterValueException("The start address of the IP range is not a valid IP address.");
         }
 
-        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
+        if (StringUtils.isNotEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
             throw new InvalidParameterValueException("The end address of the IP range is not a valid IP address.");
         }
 
         //Not null check is required for the change in updatePod API.
-        if (!Strings.isNullOrEmpty(startIp) && !NetUtils.getCidrSubNet(startIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+        if (StringUtils.isNotEmpty(startIp) && !NetUtils.getCidrSubNet(startIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
             throw new InvalidParameterValueException("The start address of the IP range is not in the CIDR subnet.");
         }
 
-        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.getCidrSubNet(endIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+        if (StringUtils.isNotEmpty(endIp) && !NetUtils.getCidrSubNet(endIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
             throw new InvalidParameterValueException("The end address of the IP range is not in the CIDR subnet.");
         }
 
-        if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
+        if (StringUtils.isNotEmpty(endIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
             throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
         }
 
@@ -2547,7 +2546,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
 
-        tags = StringUtils.cleanupTags(tags);
+        tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
@@ -2961,7 +2960,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to create disk offering by user: %s because it is not root-admin or domain-admin", user.getUuid()));
         }
 
-        tags = StringUtils.cleanupTags(tags);
+        tags = com.cloud.utils.StringUtils.cleanupTags(tags);
         final DiskOfferingVO newDiskOffering = new DiskOfferingVO(name, description, typedProvisioningType, diskSize, tags, isCustomized,
                 isCustomizedIops, minIops, maxIops);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
@@ -3351,7 +3350,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void updateOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
         if (tags == null) { return; }
         if (StringUtils.isNotBlank(tags)) {
-            tags = StringUtils.cleanupTags(tags);
+            tags = com.cloud.utils.StringUtils.cleanupTags(tags);
             List<StoragePoolVO> pools = _storagePoolDao.listStoragePoolsWithActiveVolumesByOfferingId(diskOffering.getId());
             if (CollectionUtils.isNotEmpty(pools)) {
                 List<String> listOfTags = Arrays.asList(tags.split(","));
@@ -3381,7 +3380,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return;
         }
         if (StringUtils.isNotBlank(hostTags)) {
-            hostTags = StringUtils.cleanupTags(hostTags);
+            hostTags = com.cloud.utils.StringUtils.cleanupTags(hostTags);
             List<HostVO> hosts = _hostDao.listHostsWithActiveVMs(offering.getId());
             if (CollectionUtils.isNotEmpty(hosts)) {
                 List<String> listOfHostTags = Arrays.asList(hostTags.split(","));
@@ -3403,7 +3402,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Verify if name or displayText are not blank, tags is not null, sortkey and displayDiskOffering is not null
      */
     protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode) {
-        return StringUtils.isNotBlank(name) || StringUtils.isNotBlank(displayText) || tags != null || sortKey != null || displayDiskOffering != null || StringUtils.isNotBlank(cacheMode);
+        return !StringUtils.isAllBlank(name, displayText, cacheMode) || tags != null || sortKey != null || displayDiskOffering != null;
     }
 
     protected boolean shouldUpdateBytesRateParameters(Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
@@ -5265,7 +5264,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
-        tags = StringUtils.cleanupTags(tags);
+        tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
         // specifyVlan should always be true for Shared network offerings
         if (!specifyVlan && type == GuestType.Shared) {
@@ -5711,7 +5710,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             ListIterator<NetworkOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 NetworkOfferingJoinVO offering = it.next();
-                if (!Strings.isNullOrEmpty(offering.getDomainId())) {
+                if (StringUtils.isNotEmpty(offering.getDomainId())) {
                     boolean toRemove = false;
                     String[] domainIdsArray = offering.getDomainId().split(",");
                     for (String domainIdString : domainIdsArray) {
@@ -5814,14 +5813,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             // Now apply pagination
-            final List<NetworkOfferingJoinVO> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            final List<NetworkOfferingJoinVO> wPagination = com.cloud.utils.StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
                 final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, supportedOfferings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            final List<NetworkOfferingJoinVO> wPagination = StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            final List<NetworkOfferingJoinVO> wPagination = com.cloud.utils.StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
                 final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<>(wPagination, offerings.size());
                 return listWPagination;
