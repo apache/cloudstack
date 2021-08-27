@@ -1857,7 +1857,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             uuid = uuid.replaceAll("-", "");
             storagePool = _storagePoolDao.findByUuid(uuid);
             if(storagePool != null){
-                storagePool.setUuid(uuid);
                 return storagePool;
             }
         }
