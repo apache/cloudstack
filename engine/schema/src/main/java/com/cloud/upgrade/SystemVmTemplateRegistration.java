@@ -442,9 +442,10 @@ public class SystemVmTemplateRegistration {
     }
 
     private Long createTemplateObjectInDB(SystemVMTemplateDetails details) {
+        Long templateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO template = new VMTemplateVO();
         template.setUuid(details.getUuid());
-        template.setUniqueName(details.getUuid());
+        template.setUniqueName(String.format("routing-%s" , String.valueOf(templateId)));
         template.setName(details.getName());
         template.setPublicTemplate(false);
         template.setFeatured(false);
@@ -465,11 +466,6 @@ public class SystemVmTemplateRegistration {
         template = vmTemplateDao.persist(template);
         if (template == null) {
             return null;
-        }
-        template.setUniqueName(String.format("routing-%s" , String.valueOf(template.getId())));
-        boolean updated = vmTemplateDao.update(template.getId(), template);
-        if (!updated) {
-            throw new CloudRuntimeException("Failed to add template details to database");
         }
         return template.getId();
     }

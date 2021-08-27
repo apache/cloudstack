@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.utils.script.Script;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -423,8 +425,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected static File s_systemVmKeyFile = null;
     private static final Object s_syncLockObjectFetchKeyFile = new Object();
-    private static final String homeDir = System.getProperty("user.home");
-    protected static final String s_defaultPathSystemVmKeyFile =  homeDir + "/.ssh/id_rsa";
+    protected static final String s_relativePathSystemVmKeyFileInstallDir = "scripts/vm/systemvm/id_rsa.cloud";
+    protected static final String s_defaultPathSystemVmKeyFile = "/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud";
 
     public Gson getGson() {
         return _gson;
@@ -7049,10 +7051,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private static File fetchSystemVmKeyFile() {
-        String filePath = s_defaultPathSystemVmKeyFile;
-        File keyFile = new File(filePath);
+        String filePath = s_relativePathSystemVmKeyFileInstallDir;
         s_logger.debug("Looking for file [" + filePath + "] in the classpath.");
-
+        URL url = Script.class.getClassLoader().getResource(filePath);
+        File keyFile = null;
+        if (url != null) {
+            keyFile = new File(url.getPath());
+        }
+        if (keyFile == null || !keyFile.exists()) {
+            filePath = s_defaultPathSystemVmKeyFile;
+            keyFile = new File(filePath);
+            s_logger.debug("Looking for file [" + filePath + "] in the classpath.");
+        }
         if (!keyFile.exists()) {
             s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
