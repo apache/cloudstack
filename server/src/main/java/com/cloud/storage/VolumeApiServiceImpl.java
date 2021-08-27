@@ -1407,20 +1407,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If the volume is not in the primary storage, we do nothing here.
      */
     protected void expungeVolumesInPrimaryStorageIfNeeded(VolumeVO volume) throws InterruptedException, ExecutionException {
-        VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
-        if (volOnPrimary != null) {
-            s_logger.info("Expunging volume " + volume.getId() + " from primary data store");
-            AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
-            VolumeApiResult result = future.get();
-            if (result.isFailed()) {
-                s_logger.warn("Failed to expunge the volume " + volume + " in primary storage");
-                String details = "";
-                if (result.getResult() != null && !result.getResult().isEmpty()) {
-                    details = result.getResult();
-                }
-                throw new CloudRuntimeException(details);
-            }
-        }
+        expungeVolumesInPrimaryOrSecondary(volume, DataStoreRole.Primary);
     }
 
     /**
@@ -1428,24 +1415,28 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If it is, we will execute an asynchronous call to delete it there. Then, we decrement the {@link ResourceType#secondary_storage} for the account that owns the volume.
      */
     protected void expungeVolumesInSecondaryStorageIfNeeded(VolumeVO volume) throws InterruptedException, ExecutionException {
-        VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
-        if (volOnSecondary != null) {
-            s_logger.info("Expunging volume " + volume.getId() + " from secondary data store");
-            AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
-            VolumeApiResult result = future2.get();
+        expungeVolumesInPrimaryOrSecondary(volume, DataStoreRole.Image);
+    }
+
+    private void expungeVolumesInPrimaryOrSecondary(VolumeVO volume, DataStoreRole role) throws InterruptedException, ExecutionException {
+        VolumeInfo volOnStorage = volFactory.getVolume(volume.getId(), role);
+        if (volOnStorage != null) {
+            s_logger.info("Expunging volume " + volume.getId() + " from " + role + " data store");
+            AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnStorage);
+            VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.warn("Failed to expunge the volume " + volume + " in secondary storage");
+                s_logger.warn("Failed to expunge the volume " + volume + " in " + role + " data store");
                 String details = "";
                 if (result.getResult() != null && !result.getResult().isEmpty()) {
                     details = result.getResult();
                 }
                 throw new CloudRuntimeException(details);
             }
-
-            _resourceLimitMgr.decrementResourceCount(volOnSecondary.getAccountId(), ResourceType.secondary_storage, volOnSecondary.getSize());
+            if (DataStoreRole.Image.equals(role)) {
+                _resourceLimitMgr.decrementResourceCount(volOnStorage.getAccountId(), ResourceType.secondary_storage, volOnStorage.getSize());
+            }
         }
     }
-
     /**
      * Clean volumes cache entries (if they exist).
      */
