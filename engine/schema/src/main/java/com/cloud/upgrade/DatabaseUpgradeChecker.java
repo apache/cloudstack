@@ -197,6 +197,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.14.0.0", new Upgrade41400to41500())
                 .next("4.14.1.0", new Upgrade41400to41500())
                 .next("4.15.0.0", new Upgrade41500to41510())
+                .next("4.15.1.0", new NoopDbUpgrade("4.15.1.0", "4.15.2.0"))
                 .build();
     }
 
