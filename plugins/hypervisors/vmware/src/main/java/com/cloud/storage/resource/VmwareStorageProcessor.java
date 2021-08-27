@@ -1241,6 +1241,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
             vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
             clonedVm = dcMo.findVm(templateUniqueName);
+            s_logger.debug(String.format("Cloned VM: %s as %s", vmMo.getName(), clonedVm.getName()));
 
             /* FR41 THIS IS OLD way of creating template using snapshot
             if (!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
@@ -1285,7 +1286,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
+                s_logger.debug(String.format("Destroying cloned VM: %s with its disks", clonedVm.getName()));
                 clonedVm.destroy();
             }
         }
@@ -3765,24 +3766,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
-        VirtualMachineMO clonedVm = null;
+        VirtualMachineMO workerVm = null;
         try {
             hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", null);
-            clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
-            if (clonedVm == null) {
+            workerVm = hyperHost.findVmOnHyperHost(newVolumeName);
+            if (workerVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
             }
 
             if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
                 HypervisorHostHelper.createBaseFolderInDatastore(primaryDsMo, primaryDsMo.getDataCenterMor());
-                clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
+                workerVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
             }
-            clonedVm.detachAllDisks();
+            workerVm.detachAllDisks();
             return _storage.getSize(srcOVFFileName);
         } finally {
-            if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+            if (workerVm != null) {
+                workerVm.detachAllDisks();
+                workerVm.destroy();
             }
         }
     }
