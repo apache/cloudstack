@@ -683,7 +683,12 @@ export default {
     },
     handleSubmit (e) {
       if (this.actionLoading) return
-      this.form.validateFieldsAndScroll((error, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (error, values) => {
         if (error) {
           return
         }

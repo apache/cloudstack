@@ -1436,7 +1436,7 @@ export default {
       console.log('wizard submit')
       const options = {
         scroll: {
-          offsetTop: 100
+          offsetTop: 90
         }
       }
       e.preventDefault()
