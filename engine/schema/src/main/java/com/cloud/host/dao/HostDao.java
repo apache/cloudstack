@@ -75,6 +75,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
+
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
 
     List<HostVO> findByDataCenterId(Long zoneId);

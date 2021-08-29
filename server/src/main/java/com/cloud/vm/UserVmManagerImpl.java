@@ -3059,7 +3059,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        detachVolumesFromVm(volumesToBeDeleted);
+        // Detach all data disks from VM
+        List<VolumeVO> dataVols = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
+        detachVolumesFromVm(dataVols);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
@@ -3068,7 +3070,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        deleteVolumesFromVm(volumesToBeDeleted);
+        deleteVolumesFromVm(volumesToBeDeleted, expunge);
 
         return destroyedVm;
     }
@@ -7538,13 +7540,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         StringBuilder sb = new StringBuilder();
 
         for (VolumeVO volume : volumes) {
-            if (volume.getInstanceId() == null || vmId != volume.getInstanceId()) {
+            if (volume.getInstanceId() == null || vmId != volume.getInstanceId() || volume.getVolumeType() != Volume.Type.DATADISK) {
                 sb.append(volume.toString() + "; ");
             }
         }
 
         if (!StringUtils.isEmpty(sb.toString())) {
-            throw new InvalidParameterValueException("The following supplied volumes are not attached to the VM: " + sb.toString());
+            throw new InvalidParameterValueException("The following supplied volumes are not DATADISK attached to the VM: " + sb.toString());
         }
     }
 
@@ -7569,13 +7571,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void deleteVolumesFromVm(List<VolumeVO> volumes) {
+    private void deleteVolumesFromVm(List<VolumeVO> volumes, boolean expunge) {
 
         for (VolumeVO volume : volumes) {
 
-            boolean deleteResult = _volumeService.deleteVolume(volume.getId(), CallContext.current().getCallingAccount());
+            Volume result = _volumeService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, false);
 
-            if (!deleteResult) {
+            if (result == null) {
                 s_logger.error("DestroyVM remove volume - failed to delete volume " + volume.getInstanceId() + " from instance " + volume.getId());
             }
         }
