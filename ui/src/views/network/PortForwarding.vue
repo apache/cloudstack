@@ -30,7 +30,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff; text-align:
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; text-align:
               center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.privateendport"
@@ -48,7 +49,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff;
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none;
               text-align: center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.publicendport"
@@ -87,7 +89,7 @@
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="vm" slot-scope="record">
         <div><a-icon type="desktop"/>
@@ -381,12 +383,6 @@ export default {
       this.fetchData()
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   methods: {
     fetchData () {
       this.fetchListTiers()
@@ -429,6 +425,10 @@ export default {
         this.loading = false
       })
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
@@ -461,13 +461,11 @@ export default {
           successMessage: this.$t('message.success.add.port.forward'),
           successMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           errorMessage: this.$t('message.add.port.forward.failed'),
           errorMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           loadingMessage: this.$t('message.add.port.forward.processing'),
@@ -536,13 +534,11 @@ export default {
           jobId: response.createtagsresponse.jobid,
           successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -570,13 +566,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },

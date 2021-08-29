@@ -44,7 +44,11 @@
             :dataSource="Object.keys(detailOptions)"
             :placeholder="$t('label.name')"
             @change="e => onAddInputChange(e, 'newKey')" />
-          <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+          <a-input
+            class="tag-disabled-input"
+            style=" width: 30px; border-left: 0; pointer-events: none; text-align: center"
+            placeholder="="
+            disabled />
           <a-auto-complete
             class="detail-input"
             :filterOption="filterOption"
@@ -80,11 +84,12 @@
           slot="actions"
           v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
             'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
-          <tootip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
-          <tootip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
+          <tooltip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
+          <tooltip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
           <tooltip-button
             :tooltip="$t('label.edit')"
             icon="edit"
+            :disabled="deployasistemplate === true"
             v-if="!item.edit"
             @click="showEditDetail(index)" />
         </div>
@@ -99,7 +104,7 @@
             :cancelText="$t('label.no')"
             placement="left"
           >
-            <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </a-list-item>
@@ -130,6 +135,7 @@ export default {
       newValue: '',
       loading: false,
       resourceType: 'UserVm',
+      deployasistemplate: false,
       error: false
     }
   },
@@ -163,6 +169,9 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
+      api('listTemplates', { templatefilter: 'all', id: this.resource.templateid }).then(json => {
+        this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
+      })
     },
     filterOrReadOnlyDetails () {
       for (var i = 0; i < this.details.length; i++) {

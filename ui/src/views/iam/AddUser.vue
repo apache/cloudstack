@@ -23,7 +23,7 @@
           <span slot="label">
             {{ $t('label.username') }}
             <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -39,7 +39,7 @@
               <span slot="label">
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input-password
@@ -54,7 +54,7 @@
               <span slot="label">
                 {{ $t('label.confirmpassword') }}
                 <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input-password
@@ -72,7 +72,7 @@
           <span slot="label">
             {{ $t('label.email') }}
             <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -87,7 +87,7 @@
               <span slot="label">
                 {{ $t('label.firstname') }}
                 <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -102,7 +102,7 @@
               <span slot="label">
                 {{ $t('label.lastname') }}
                 <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -117,7 +117,7 @@
           <span slot="label">
             {{ $t('label.domain') }}
             <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -133,11 +133,13 @@
           <span slot="label">
             {{ $t('label.account') }}
             <a-tooltip :title="apiParams.account.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
-            v-decorator="['account']"
+            v-decorator="['account', {
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]"
             :loading="loadingAccount"
             :placeholder="apiParams.account.description">
             <a-select-option v-for="(item, idx) in accountList" :key="idx">
@@ -149,7 +151,7 @@
           <span slot="label">
             {{ $t('label.timezone') }}
             <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -169,7 +171,7 @@
             <span slot="label">
               {{ $t('label.samlentity') }}
               <a-tooltip :title="apiParams.entityid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -220,15 +222,7 @@ export default {
   },
   created () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createUser || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
     this.fetchData()
   },
   methods: {
@@ -319,7 +313,7 @@ export default {
 
         if (this.account) {
           params.account = this.account
-        } else if (values.account) {
+        } else if (this.accountList[values.account]) {
           params.account = this.accountList[values.account].name
         }
 

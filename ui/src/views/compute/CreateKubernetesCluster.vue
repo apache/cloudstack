@@ -26,7 +26,7 @@
           <span slot="label">
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -40,7 +40,7 @@
           <span slot="label">
             {{ $t('label.description') }}
             <a-tooltip :title="apiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -53,7 +53,7 @@
           <span slot="label">
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -78,7 +78,7 @@
           <span slot="label">
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -103,7 +103,7 @@
           <span slot="label">
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -127,7 +127,7 @@
           <span slot="label">
             {{ $t('label.noderootdisksize') }}
             <a-tooltip :title="apiParams.noderootdisksize.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -147,7 +147,7 @@
           <span slot="label">
             {{ $t('label.networkid') }}
             <a-tooltip :title="apiParams.networkid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -172,7 +172,7 @@
           <span slot="label">
             {{ $t('label.masternodes') }}
             <a-tooltip :title="apiParams.masternodes.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -195,7 +195,7 @@
           <span slot="label">
             {{ $t('label.externalloadbalanceripaddress') }}
             <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -206,7 +206,7 @@
           <span slot="label">
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -229,7 +229,7 @@
           <span slot="label">
             {{ $t('label.keypair') }}
             <a-tooltip :title="apiParams.keypair.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -256,7 +256,7 @@
               <span slot="label">
                 {{ $t('label.username') }}
                 <a-tooltip :title="apiParams.dockerregistryusername.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -269,7 +269,7 @@
               <span slot="label">
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.dockerregistrypassword.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input-password
@@ -282,7 +282,7 @@
               <span slot="label">
                 {{ $t('label.url') }}
                 <a-tooltip :title="apiParams.dockerregistryurl.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -295,7 +295,7 @@
               <span slot="label">
                 {{ $t('label.email') }}
                 <a-tooltip :title="apiParams.dockerregistryemail.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -342,11 +342,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createKubernetesCluster || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createKubernetesCluster')
   },
   created () {
     this.networks = [
@@ -535,23 +531,15 @@ export default {
 
         api('createKubernetesCluster', params).then(json => {
           const jobId = json.createkubernetesclusterresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.kubernetes.cluster.create'),
-            jobid: jobId,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.kubernetes.cluster.create'),
+            description: values.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.create')} ${values.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name
           })
           this.closeAction()
-          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

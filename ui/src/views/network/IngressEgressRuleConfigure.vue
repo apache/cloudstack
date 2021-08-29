@@ -90,7 +90,7 @@
       :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '200'], showSizeChanger: true}"
       :rowKey="record => record.ruleid">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="account" slot-scope="record">
         <div v-if="record.account && record.securitygroupname">
@@ -261,7 +261,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -272,6 +271,10 @@ export default {
     fetchData () {
       this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     handleAddRule () {
       this.parentToggleLoading()
@@ -293,12 +296,10 @@ export default {
             : response.authorizesecuritygroupegressresponse.jobid,
           successMessage: this.$t('message.success.add.rule'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           errorMessage: this.$t('message.add.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           loadingMessage: this.$t('message.add.rule.processing'),
@@ -325,12 +326,10 @@ export default {
             : response.revokesecuritygroupegressresponse.jobid,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           loadingMessage: this.$t('message.remove.securitygroup.rule.processing'),
@@ -369,14 +368,12 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchTags(this.selectedRule)
             this.tagsLoading = false
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchTags(this.selectedRule)
             this.tagsLoading = false
@@ -384,7 +381,6 @@ export default {
           loadingMessage: this.$t('message.delete.tag.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchTags(this.selectedRule)
             this.tagsLoading = false
@@ -417,14 +413,12 @@ export default {
             jobId: response.createtagsresponse.jobid,
             successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.fetchTags(this.selectedRule)
               this.tagsLoading = false
             },
             errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.fetchTags(this.selectedRule)
               this.tagsLoading = false
@@ -432,7 +426,6 @@ export default {
             loadingMessage: this.$t('message.add.tag.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.fetchTags(this.selectedRule)
               this.tagsLoading = false

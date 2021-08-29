@@ -22,7 +22,7 @@
       icon="plus"
       style="width: 100%;margin-bottom: 20px;"
       :disabled="!('createNetwork' in $store.getters.apis)"
-      @click="handleOpenModal">{{ $t('label.add.network') }}</a-button>
+      @click="handleOpenModal">{{ $t('label.add.new.tier') }}</a-button>
     <a-list class="list">
       <a-list-item v-for="(network, idx) in networks" :key="idx" class="list__item">
         <div class="list__item-outer-container">
@@ -161,13 +161,25 @@
       @ok="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
-          <a-form-item :label="$t('label.name')">
+          <a-form-item :colon="false">
+            <span slot="label">
+              {{ $t('label.name') }}
+              <a-tooltip placement="right" :title="$t('label.create.tier.name.description')">
+                <a-icon type="info-circle" />
+              </a-tooltip>
+            </span>
             <a-input
-              :placeholder="$t('label.unique.name.tier')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
-              autoFocus></a-input>
+              :placeholder="$t('label.create.tier.name.description')"
+              v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              autoFocus />
           </a-form-item>
-          <a-form-item :label="$t('label.networkofferingid')">
+          <a-form-item :colon="false">
+            <span slot="label">
+              {{ $t('label.networkofferingid') }}
+              <a-tooltip placement="right" :title="$t('label.create.tier.networkofferingid.description')">
+                <a-icon type="info-circle" />
+              </a-tooltip>
+            </span>
             <a-select
               v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
@@ -175,27 +187,61 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.gateway')">
+          <a-form-item :colon="false">
+            <span slot="label">
+              {{ $t('label.gateway') }}
+              <a-tooltip placement="right" :title="$t('label.create.tier.gateway.description')">
+                <a-icon type="info-circle" />
+              </a-tooltip>
+            </span>
             <a-input
-              :placeholder="$t('label.create.network.gateway.description')"
+              :placeholder="$t('label.create.tier.gateway.description')"
               v-decorator="['gateway',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.netmask')">
+          <a-form-item :colon="false">
+            <span slot="label">
+              {{ $t('label.netmask') }}
+              <a-tooltip placement="right" :title="$t('label.create.tier.netmask.description')">
+                <a-icon type="info-circle" />
+              </a-tooltip>
+            </span>
             <a-input
-              :placeholder="$t('label.create.network.netmask.description')"
+              :placeholder="$t('label.create.tier.netmask.description')"
               v-decorator="['netmask',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.externalid')">
+          <a-form-item :colon="false">
+            <span slot="label">
+              {{ $t('label.externalid') }}
+              <a-tooltip placement="right" :title="$t('label.create.tier.externalid.description')">
+                <a-icon type="info-circle" />
+              </a-tooltip>
+            </span>
             <a-input
+              :placeholder=" $t('label.create.tier.externalid.description')"
               v-decorator="['externalId']"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.aclid')">
-            <a-select v-decorator="['acl']">
+          <a-form-item :colon="false">
+            <span slot="label">
+              {{ $t('label.aclid') }}
+              <a-tooltip placement="right" :title="$t('label.create.tier.aclid.description')">
+                <a-icon type="info-circle" />
+              </a-tooltip>
+            </span>
+            <a-select
+              :placeholder="$t('label.create.tier.aclid.description')"
+              v-decorator="['acl',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              @change="val => { this.handleNetworkAclChange(val) }">
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
-                {{ item.name }}
+                <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-alert v-if="this.selectedNetworkAcl.name==='default_allow'" type="warning" show-icon>
+            <span slot="message" v-html="$t('message.network.acl.default.allow')" />
+          </a-alert>
+          <a-alert v-else-if="this.selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
+            <span slot="message" v-html="$t('message.network.acl.default.deny')" />
+          </a-alert>
         </a-form>
       </a-spin>
     </a-modal>
@@ -279,6 +325,7 @@ export default {
       showAddInternalLB: false,
       networkOfferings: [],
       networkAclList: [],
+      selectedNetworkAcl: {},
       modalLoading: false,
       internalLB: {},
       LBPublicIPs: {},
@@ -362,7 +409,7 @@ export default {
           scopedSlots: { customRender: 'ip' }
         }
       ],
-      customStyle: 'margin-bottom: -10px; border-bottom-style: none',
+      customStyle: 'margin-bottom: 0; border: none',
       page: 1,
       pageSize: 10,
       itemCounts: {
@@ -412,11 +459,7 @@ export default {
       this.modalLoading = true
       api('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
         this.networkAclList = json.listnetworkacllistsresponse.networkacllist || []
-        this.$nextTick(function () {
-          this.form.setFieldsValue({
-            acl: this.networkAclList[0].id
-          })
-        })
+        this.handleNetworkAclChange(null)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -519,6 +562,13 @@ export default {
         this.fetchLoading = false
       })
     },
+    handleNetworkAclChange (aclId) {
+      if (aclId) {
+        this.selectedNetworkAcl = this.networkAclList.filter(acl => acl.id === aclId)[0]
+      } else {
+        this.selectedNetworkAcl = {}
+      }
+    },
     closeModal () {
       this.$emit('close-action')
     },
@@ -585,14 +635,10 @@ export default {
           sourceipaddressnetworkid: this.networkid,
           scheme: 'Internal'
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.create.internallb'),
-            jobid: response.createloadbalancerresponse.jobid,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createloadbalancerresponse.jobid,
+            title: this.$t('message.create.internallb'),
+            description: values.name,
             successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()

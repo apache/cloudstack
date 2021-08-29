@@ -26,7 +26,6 @@ import string
 from optparse import OptionParser
 import subprocess
 import shutil
-import shlex
 import socket
 
 # squelch mysqldb spurious warnings
@@ -147,7 +146,7 @@ class DBDeployer(object):
         try:
             mysqlCmds = [mysqlPath, '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
             if 'passwd' in kwargs:
-                mysqlCmds.append('--password=%s'%kwargs['passwd'])
+                mysqlCmds.append('--password=\'%s\''%kwargs['passwd'])
             open(self.tmpMysqlFile, 'w').write(text)
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
@@ -389,7 +388,7 @@ for example:
 
     def processEncryptionStuff(self):
         def encrypt(input):
-            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=\'%s\''%self.mgmtsecretkey,'verbose=false']
             return str(runCmd(cmd)).strip('\r\n')
 
         def saveMgmtServerSecretKey():
@@ -400,7 +399,7 @@ for example:
             return 'ENC(%s)'%value
 
         def encryptDBSecretKey():
-            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(shlex.quote(self.dbsecretkey))))
+            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
 
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')

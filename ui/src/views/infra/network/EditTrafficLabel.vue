@@ -23,7 +23,7 @@
           <span slot="label">
             {{ $t('label.traffictype') }}
             <a-tooltip :title="apiParams.id.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -43,7 +43,7 @@
           <span slot="label">
             {{ $t('label.kvmnetworklabel') }}
             <a-tooltip :title="apiParams.kvmnetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -56,7 +56,7 @@
           <span slot="label">
             {{ $t('label.vmwarenetworklabel') }}
             <a-tooltip :title="apiParams.vmwarenetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -69,7 +69,7 @@
           <span slot="label">
             {{ $t('label.xennetworklabel') }}
             <a-tooltip :title="apiParams.xennetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -82,7 +82,7 @@
           <span slot="label">
             {{ $t('label.hypervnetworklabel') }}
             <a-tooltip :title="apiParams.hypervnetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -95,7 +95,7 @@
           <span slot="label">
             {{ $t('label.ovm3networklabel') }}
             <a-tooltip :title="apiParams.ovm3networklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -136,13 +136,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.updateTrafficType || {}
-    this.apiParams = {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
+    this.apiParams = this.$getApiParams('updateTrafficType')
   },
   inject: ['parentFetchData'],
   created () {
@@ -190,15 +184,8 @@ export default {
         api('updateTrafficType', params).then(response => {
           this.$pollJob({
             jobId: response.updatetraffictyperesponse.jobid,
-            successMethod: result => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                description: description,
-                jobid: response.updatetraffictyperesponse.jobid,
-                status: this.$t('progress')
-              })
-              this.parentFetchData()
-            },
+            title: title,
+            description: description,
             successMessage: `${this.$t('label.update.traffic.label')} ${this.traffictype} ${this.$t('label.success')}`,
             loadingMessage: `${title} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result')

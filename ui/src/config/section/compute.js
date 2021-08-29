@@ -58,11 +58,9 @@ export default {
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
-          fields.splice(2, 0, 'displayname')
           fields.push('account')
           fields.push('zonename')
         } else {
-          fields.splice(2, 0, 'displayname')
           fields.push('zonename')
         }
         return fields
@@ -146,6 +144,17 @@ export default {
             virtualmachineid: {
               value: (record) => { return record.id }
             }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reinstall.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
           }
         },
         {
@@ -172,6 +181,10 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           popup: true,
+          show: (record) => {
+            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
+              (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
+          },
           component: () => import('@/views/compute/CreateSnapshotWizard.vue')
         },
         {
@@ -346,6 +359,17 @@ export default {
             domainid: {
               value: (record) => { return record.domainid }
             }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
           }
         },
         {
@@ -377,7 +401,7 @@ export default {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
-          message: 'message.action.expunge.instance',
+          message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
           show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }

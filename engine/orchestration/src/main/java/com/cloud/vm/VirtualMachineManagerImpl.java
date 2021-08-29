@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -1984,6 +1985,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
                     vmGuru.finalizeStop(profile, answer);
                 }
+            } else {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                    HostVO systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
+                            VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
+                    if (systemVmHost != null) {
+                        _agentMgr.agentStatusTransitTo(systemVmHost, Status.Event.ShutdownRequested, _nodeId);
+                    }
+                }
             }
         }
 
@@ -2298,6 +2307,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VolumeVO volume = _volsDao.findById(result.getId());
             volume.setPath(result.getPath());
             volume.setPoolId(destPool.getId());
+            if (result.getChainInfo() != null) {
+                volume.setChainInfo(result.getChainInfo());
+            }
             _volsDao.update(volume.getId(), volume);
         }
     }
@@ -3341,7 +3353,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
             if (rebootAnswer != null && rebootAnswer.getResult()) {
-                if (dc.isSecurityGroupEnabled() && vm.getType() == VirtualMachine.Type.User) {
+                boolean isVmSecurityGroupEnabled = _securityGroupManager.isVmSecurityGroupEnabled(vm.getId());
+                if (isVmSecurityGroupEnabled && vm.getType() == VirtualMachine.Type.User) {
                     List<Long> affectedVms = new ArrayList<Long>();
                     affectedVms.add(vm.getId());
                     _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);

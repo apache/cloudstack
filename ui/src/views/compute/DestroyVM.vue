@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <a-alert type="warning" v-html="$t('message.action.destroy.instance')" /><br/>
+    <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
         :form="form"
@@ -27,7 +27,7 @@
           <span slot="label">
             {{ $t('label.expunge') }}
             <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['expunge']" :auto-focus="true" />
@@ -37,7 +37,7 @@
           <span slot="label">
             {{ $t('label.delete.volumes') }}
             <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -82,11 +82,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.destroyVirtualMachine || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('destroyVirtualMachine')
   },
   created () {
     this.fetchData()
@@ -126,14 +122,10 @@ export default {
 
         api('destroyVirtualMachine', params).then(json => {
           const jobId = json.destroyvirtualmachineresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.destroy.instance'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.destroy.instance'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('message.deleting.vm')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`,
@@ -145,7 +137,7 @@ export default {
               }
             },
             action: {
-              api: 'destroyVirtualMachine'
+              isFetchData: false
             }
           })
           this.closeAction()

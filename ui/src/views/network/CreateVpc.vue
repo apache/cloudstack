@@ -24,7 +24,7 @@
           <span slot="label">
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -38,7 +38,7 @@
           <span slot="label">
             {{ $t('label.displaytext') }}
             <a-tooltip :title="apiParams.displaytext.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -51,7 +51,7 @@
           <span slot="label">
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -70,7 +70,7 @@
           <span slot="label">
             {{ $t('label.cidr') }}
             <a-tooltip :title="apiParams.cidr.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -83,7 +83,7 @@
           <span slot="label">
             {{ $t('label.networkdomain') }}
             <a-tooltip :title="apiParams.networkdomain.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -94,7 +94,7 @@
           <span slot="label">
             {{ $t('label.vpcofferingid') }}
             <a-tooltip :title="apiParams.vpcofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -111,7 +111,7 @@
           <span slot="label">
             {{ $t('label.start') }}
             <a-tooltip :title="apiParams.start.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['start', {initialValue: true}]" defaultChecked />
@@ -141,11 +141,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.createVPC || []
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createVPC')
   },
   created () {
     this.fetchData()
@@ -210,18 +206,11 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: description,
-                  status: this.$t('progress')
-                })
-              },
+              title: title,
+              description: description,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
-            this.$emit('refresh-data')
           }
           this.closeAction()
         }).catch(error => {

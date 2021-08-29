@@ -64,7 +64,7 @@
       :pagination="false"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="startport" slot-scope="record">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
@@ -205,12 +205,6 @@ export default {
   created () {
     this.fetchData()
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return 'All'
-      return val.toUpperCase()
-    }
-  },
   watch: {
     resource: function (newItem, oldItem) {
       if (!newItem || !newItem.id) {
@@ -236,6 +230,10 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true
@@ -327,13 +325,11 @@ export default {
           jobId: response.createtagsresponse.jobid,
           successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -362,13 +358,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },

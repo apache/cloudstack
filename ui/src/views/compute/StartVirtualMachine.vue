@@ -31,7 +31,7 @@
             <span slot="label">
               {{ $t('label.podid') }}
               <a-tooltip :title="apiParams.podid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -54,7 +54,7 @@
             <span slot="label">
               {{ $t('label.clusterid') }}
               <a-tooltip :title="apiParams.clusterid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -77,7 +77,7 @@
             <span slot="label">
               {{ $t('label.hostid') }}
               <a-tooltip :title="apiParams.hostid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -101,7 +101,7 @@
           <span slot="label">
             {{ $t('label.bootintosetup') }}
             <a-tooltip :title="apiParams.bootintosetup.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch
@@ -140,14 +140,9 @@ export default {
       loading: false
     }
   },
-  inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {
@@ -242,20 +237,13 @@ export default {
         }
         api('startVirtualMachine', params).then(json => {
           const jobId = json.startvirtualmachineresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.start.instance'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.start.instance'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
-            successMethod: () => {
-              this.parentFetchData()
-            },
             response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
           this.closeAction()

@@ -169,11 +169,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfigParams = (this.$store.getters.apis.copyTemplate && this.$store.getters.apis.copyTemplate.params) || []
-    this.apiParams = {}
-    this.apiConfigParams.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('copyTemplate')
   },
   created () {
     this.columns = [
@@ -262,15 +258,11 @@ export default {
       this.deleteLoading = true
       api('deleteTemplate', params).then(json => {
         const jobId = json.deletetemplateresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.template'),
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress'
-        })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
+          title: this.$t('label.action.delete.template'),
+          description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
               const isResourcePage = (this.$route.params && this.$route.params.id)
@@ -335,14 +327,10 @@ export default {
         this.copyLoading = true
         api('copyTemplate', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.copy.template'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.copy.template'),
+            description: this.resource.name,
             successMethod: result => {
               this.fetchData()
             },

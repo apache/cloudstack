@@ -1362,13 +1362,7 @@ export default {
             if (obj.includes('response') || obj.includes(apiName)) {
               for (const res in json[obj]) {
                 if (res === 'jobid') {
-                  this.$store.dispatch('AddAsyncJob', {
-                    title: this.$t(this.currentAction.label),
-                    jobid: json[obj][res],
-                    description: this.$t(this.nsp.name),
-                    status: 'progress'
-                  })
-                  this.parentPollActionCompletion(json[obj][res], this.currentAction)
+                  this.parentPollActionCompletion(json[obj][res], this.currentAction, this.$t(this.nsp.name))
                   hasJobId = true
                   break
                 }

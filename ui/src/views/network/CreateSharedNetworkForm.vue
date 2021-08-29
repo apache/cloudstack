@@ -27,7 +27,7 @@
             <span slot="label">
               {{ $t('label.name') }}
               <a-tooltip :title="apiParams.name.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -41,7 +41,7 @@
             <span slot="label">
               {{ $t('label.displaytext') }}
               <a-tooltip :title="apiParams.displaytext.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -54,7 +54,7 @@
             <span slot="label">
               {{ $t('label.zoneid') }}
               <a-tooltip :title="apiParams.zoneid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -83,7 +83,7 @@
             <span slot="label">
               {{ $t('label.physicalnetworkid') }}
               <a-tooltip :title="apiParams.physicalnetworkid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -93,7 +93,7 @@
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="zoneLoading"
+              :loading="formPhysicalNetworkLoading"
               :placeholder="this.$t('label.physicalnetworkid')"
               @change="val => { this.handlePhysicalNetworkChange(this.formPhysicalNetworks[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.formPhysicalNetworks" :key="optIndex">
@@ -105,7 +105,7 @@
             <span slot="label">
               {{ $t('label.vlan') }}
               <a-tooltip :title="apiParams.vlan.description" v-if="'vlan' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -118,7 +118,7 @@
             <span slot="label">
               {{ $t('label.bypassvlanoverlapcheck') }}
               <a-tooltip :title="apiParams.bypassvlanoverlapcheck.description" v-if="'bypassvlanoverlapcheck' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
@@ -127,7 +127,7 @@
             <span slot="label">
               {{ $t('label.isolatedpvlantype') }}
               <a-tooltip :title="apiParams.isolatedpvlantype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-radio-group
@@ -154,7 +154,7 @@
             <span slot="label">
               {{ $t('label.isolatedpvlanid') }}
               <a-tooltip :title="apiParams.isolatedpvlan.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -186,7 +186,7 @@
             <span slot="label">
               {{ $t('label.domain') }}
               <a-tooltip :title="apiParams.domainid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -215,7 +215,7 @@
             <span slot="label">
               {{ $t('label.subdomainaccess') }}
               <a-tooltip :title="apiParams.subdomainaccess.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-switch v-decorator="['subdomainaccess']" />
@@ -224,7 +224,7 @@
             <span slot="label">
               {{ $t('label.account') }}
               <a-tooltip :title="apiParams.account.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -235,7 +235,7 @@
             <span slot="label">
               {{ $t('label.projectid') }}
               <a-tooltip :title="apiParams.projectid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -264,7 +264,7 @@
             <span slot="label">
               {{ $t('label.networkofferingid') }}
               <a-tooltip :title="apiParams.networkofferingid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -293,7 +293,7 @@
             <span slot="label">
               {{ $t('label.ip4gateway') }}
               <a-tooltip :title="apiParams.gateway.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -304,7 +304,7 @@
             <span slot="label">
               {{ $t('label.ip4netmask') }}
               <a-tooltip :title="apiParams.netmask.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -315,7 +315,7 @@
             <span slot="label">
               {{ $t('label.startipv4') }}
               <a-tooltip :title="apiParams.startip.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -326,7 +326,7 @@
             <span slot="label">
               {{ $t('label.endipv4') }}
               <a-tooltip :title="apiParams.endip.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -337,7 +337,7 @@
             <span slot="label">
               {{ $t('label.ip6gateway') }}
               <a-tooltip :title="apiParams.ip6gateway.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -348,7 +348,7 @@
             <span slot="label">
               {{ $t('label.ip6cidr') }}
               <a-tooltip :title="apiParams.ip6cidr.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -359,7 +359,7 @@
             <span slot="label">
               {{ $t('label.startipv6') }}
               <a-tooltip :title="apiParams.startipv6.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -370,7 +370,7 @@
             <span slot="label">
               {{ $t('label.endipv6') }}
               <a-tooltip :title="apiParams.endipv6.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -381,7 +381,7 @@
             <span slot="label">
               {{ $t('label.networkdomain') }}
               <a-tooltip :title="apiParams.networkdomain.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -392,7 +392,7 @@
             <span slot="label">
               {{ $t('label.hideipaddressusage') }}
               <a-tooltip :title="apiParams.hideipaddressusage.description" v-if="'hideipaddressusage' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-switch v-decorator="['hideipaddressusage']" />
@@ -468,11 +468,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createNetwork || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
     this.fetchData()
@@ -546,57 +542,67 @@ export default {
       this.fetchPhysicalNetworkData()
     },
     fetchPhysicalNetworkData () {
+      this.formSelectedPhysicalNetwork = {}
+      this.formPhysicalNetworks = []
       if (this.physicalNetworks != null) {
         this.formPhysicalNetworks = this.physicalNetworks
-        if (this.arrayHasItems(this.formPhysicalNetworks)) {
-          this.form.setFieldsValue({
-            physicalnetworkid: 0
-          })
-          this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
-        }
+        this.selectFirstPhysicalNetwork()
       } else {
         if (this.selectedZone === null || this.selectedZone === undefined) {
           return
         }
-        const params = {}
-        params.zoneid = this.selectedZone.id
-        this.formPhysicalNetworksLoading = true
+        const promises = []
+        const params = {
+          zoneid: this.selectedZone.id
+        }
+        this.formPhysicalNetworkLoading = true
         api('listPhysicalNetworks', params).then(json => {
-          this.formPhysicalNetworks = []
           var networks = json.listphysicalnetworksresponse.physicalnetwork
           if (this.arrayHasItems(networks)) {
-            for (const i in networks) {
-              this.addPhysicalNetworkForGuestTrafficType(networks[i])
+            for (const network of networks) {
+              promises.push(this.addPhysicalNetworkForGuestTrafficType(network))
             }
           } else {
             this.formPhysicalNetworkLoading = false
           }
         }).finally(() => {
+          if (this.arrayHasItems(promises)) {
+            Promise.all(promises).catch(error => {
+              this.$notifyError(error)
+            }).finally(() => {
+              this.formPhysicalNetworkLoading = false
+              this.selectFirstPhysicalNetwork()
+            })
+          }
         })
+      }
+    },
+    selectFirstPhysicalNetwork () {
+      if (this.arrayHasItems(this.formPhysicalNetworks)) {
+        this.form.setFieldsValue({
+          physicalnetworkid: 0
+        })
+        this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
       }
     },
     addPhysicalNetworkForGuestTrafficType (physicalNetwork) {
       const params = {}
       params.physicalnetworkid = physicalNetwork.id
-      api('listTrafficTypes', params).then(json => {
-        var trafficTypes = json.listtraffictypesresponse.traffictype
-        if (this.arrayHasItems(trafficTypes)) {
-          for (const i in trafficTypes) {
-            if (trafficTypes[i].traffictype === 'Guest') {
-              this.formPhysicalNetworks.push(physicalNetwork)
-              break
+      return new Promise((resolve, reject) => {
+        api('listTrafficTypes', params).then(json => {
+          var trafficTypes = json.listtraffictypesresponse.traffictype
+          if (this.arrayHasItems(trafficTypes)) {
+            for (const type of trafficTypes) {
+              if (type.traffictype === 'Guest') {
+                this.formPhysicalNetworks.push(physicalNetwork)
+                break
+              }
             }
           }
-        } else {
-          this.formPhysicalNetworkLoading = false
-        }
-      }).finally(() => {
-        if (this.formPhysicalNetworks.length > 0 && this.isObjectEmpty(this.formSelectedPhysicalNetwork)) {
-          this.form.setFieldsValue({
-            physicalnetworkid: 0
-          })
-          this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
-        }
+          resolve()
+        }).catch(error => {
+          reject(error)
+        })
       })
     },
     handlePhysicalNetworkChange (physicalNet) {
@@ -863,7 +869,6 @@ export default {
 
 .tagsTitle {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
 }
 

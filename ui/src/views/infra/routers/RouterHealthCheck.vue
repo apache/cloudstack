@@ -58,7 +58,7 @@
               <span slot="label">
                 {{ $t('label.perform.fresh.checks') }}
                 <a-tooltip :title="apiParams.performfreshchecks.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-switch
@@ -120,11 +120,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfigParams = (this.$store.getters.apis.getRouterHealthCheckResults && this.$store.getters.apis.getRouterHealthCheckResults.params) || []
-    this.apiParams = {}
-    this.apiConfigParams.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('getRouterHealthCheckResults')
   },
   watch: {
     resource: function (newItem, oldItem) {

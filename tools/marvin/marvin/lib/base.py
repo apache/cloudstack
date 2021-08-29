@@ -867,8 +867,8 @@ class VirtualMachine:
         if hostid:
             cmd.hostid = hostid
         if migrateto:
-            migrateto = []
-            for volume, pool in migrateto.items():
+            cmd.migrateto = []
+            for volume, pool in list(migrateto.items()):
                 cmd.migrateto.append({
                     'volume': volume,
                     'pool': pool

@@ -56,11 +56,7 @@ export default {
   name: 'InvitationTokenTemplate',
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.updateProjectInvitation || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('updateProjectInvitation')
   },
   data () {
     return {
@@ -103,11 +99,11 @@ export default {
             if (res === 'jobid') {
               hasJobId = true
               const jobId = json[obj][res]
-              this.$store.dispatch('AddAsyncJob', {
+              this.$pollJob({
                 title: title,
                 jobid: jobId,
                 description: description,
-                status: 'progress'
+                showLoading: false
               })
             }
           }

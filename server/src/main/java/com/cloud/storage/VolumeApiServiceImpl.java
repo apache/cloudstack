@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -217,6 +219,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private SnapshotDao _snapshotDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject
     private UserVmDao _userVmDao;
     @Inject
@@ -920,20 +924,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if we are to use the existing disk offering
-        ImageFormat format = null;
         if (newDiskOffering == null) {
-            Long templateId = volume.getTemplateId();
-            if (templateId != null) {
-                VMTemplateVO template = _templateDao.findById(templateId);
-                format = template.getFormat();
-            }
-
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0 && format != null && format != ImageFormat.ISO) {
-                throw new InvalidParameterValueException(
-                        "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                                + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                                + "For more details please check out the Official Resizing Volumes documentation.");
-            }
             newSize = cmd.getSize();
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
@@ -942,6 +933,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (!diskOffering.isCustomized() && !volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     throw new InvalidParameterValueException("To change a volume's size without providing a new disk offering, its current disk offering must be "
                             + "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
+                }
+
+                if (isNotPossibleToResize(volume, diskOffering)) {
+                    throw new InvalidParameterValueException(
+                            "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
+                                    + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                    + "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1065,14 +1063,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * This will be checked again at the hypervisor level where we can see
              * the actual disk size.
              */
-            if (currentSize > newSize) {
-                VolumeVO vol = _volsDao.findById(cmd.getEntityId());
-                if (vol != null && ImageFormat.QCOW2.equals(vol.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
-                    String message = "Unable to shrink volumes of type QCOW2";
-                    s_logger.warn(message);
-                    throw new InvalidParameterValueException(message);
-                }
-            }
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
                         + "Need to sign off by supplying the shrinkok parameter with value of true.");
@@ -1167,9 +1157,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
+    /**
+     * A volume should not be resized if it covers ALL the following scenarios: <br>
+     * 1 - Root volume <br>
+     * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering)
+     */
+    protected boolean isNotPossibleToResize(VolumeVO volume, DiskOfferingVO diskOffering) {
+        Long templateId = volume.getTemplateId();
+        ImageFormat format = null;
+        if (templateId != null) {
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+            format = template.getFormat();
+        }
+        boolean isNotIso = format != null && format != ImageFormat.ISO;
+        boolean isRoot = Volume.Type.ROOT.equals(volume.getVolumeType());
+
+        ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
+        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView != null && serviceOfferingView.getRootDiskSize() > 0;
+
+        return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
+    }
+
     private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
         if (!volume.getSize().equals(newSize) && volume.getVolumeType().equals(Volume.Type.ROOT) && !State.Stopped.equals(vmInstanceVO.getState())) {
-            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %.", volume.getName(), vmInstanceVO
+            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %s", volume.getName(), vmInstanceVO
                     .getInstanceName(), vmInstanceVO.getState()));
         }
     }
@@ -1304,7 +1315,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
 
         } catch (Exception e) {
-            throw new CloudRuntimeException("Exception caught during resize volume operation of volume UUID: " + volume.getUuid(), e);
+            throw new CloudRuntimeException(String.format("Failed to resize volume operation of volume UUID: [%s] due to - %s", volume.getUuid(), e.getMessage()), e);
         }
     }
 

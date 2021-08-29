@@ -103,15 +103,10 @@ export default {
         api('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
+            title: this.$t('message.success.resize.volume'),
+            description: values.name,
             successMessage: this.$t('message.success.resize.volume'),
-            successMethod: () => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: this.$t('message.success.resize.volume'),
-                jobid: response.resizevolumeresponse.jobid,
-                description: values.name,
-                status: 'progress'
-              })
-            },
+            successMethod: () => {},
             errorMessage: this.$t('message.resize.volume.failed'),
             errorMethod: () => {
               this.closeModal()
