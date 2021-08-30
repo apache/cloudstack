@@ -886,6 +886,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
 
+        _vmDao.loadDetails(userVm);
         removeEncryptedPasswordFromUserVmVoDetails(userVm);
 
         return userVm;
