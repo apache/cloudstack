@@ -46,6 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.configuration.Config;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -1297,6 +1298,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String value = (String)params.get("router.aggregation.command.each.timeout");
             Long longValue = NumbersUtil.parseLong(value, 600);
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
+        }
+
+        if (params.get(Config.MigrateWait.toString()) != null) {
+            String value = (String)params.get(Config.MigrateWait.toString());
+            Integer intValue = NumbersUtil.parseInt(value, -1);
+            storage.persist("vm.migrate.wait", String.valueOf(intValue));
+            _migrateWait = intValue;
         }
 
         return true;

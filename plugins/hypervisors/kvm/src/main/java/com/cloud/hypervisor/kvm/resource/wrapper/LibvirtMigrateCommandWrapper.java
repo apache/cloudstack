@@ -234,6 +234,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             DomainJobInfo job = dm.getJobInfo();
                             s_logger.info("Aborting domain job: " + job);
                             dm.abortJob();
+                            result = "Migration was cancelled by cloudstack due to time out";
+                            s_logger.debug(result);
+                            break;
                         } catch (final LibvirtException e) {
                             s_logger.info("Failed to abort the vm migration job of vm " + vmName + " : " + e.getMessage());
                         }
