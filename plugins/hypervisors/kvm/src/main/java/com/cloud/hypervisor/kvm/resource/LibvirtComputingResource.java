@@ -356,6 +356,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _migrateSpeed;
     protected int _migrateDowntime;
     protected int _migratePauseAfter;
+    protected int _migrateWait;
     protected boolean _diskActivityCheckEnabled;
     protected RollingMaintenanceExecutor rollingMaintenanceExecutor;
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
@@ -538,6 +539,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public int getMigratePauseAfter() {
         return _migratePauseAfter;
+    }
+
+    public int getMigrateWait() {
+        return _migrateWait;
     }
 
     public int getMigrateSpeed() {
@@ -1227,6 +1232,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         value = (String) params.get("vm.migrate.pauseafter");
         _migratePauseAfter = NumbersUtil.parseInt(value, -1);
+
+        value = (String) params.get("vm.migrate.wait");
+        _migrateWait = NumbersUtil.parseInt(value, -1);
 
         configureAgentHooks(params);
 
