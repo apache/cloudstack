@@ -3569,7 +3569,7 @@ public class VirtualMachineMO extends BaseMO {
 
         int vmTasks = 0, vmPendingTasks = 0;
         for (ManagedObjectReference task : tasks) {
-            TaskInfo info = (TaskInfo)(_context.getVimClient().getDynamicProperty(task, "info"));
+            TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
             if (info.getEntityName().equals(vmName)) {
                 vmTasks++;
                 if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
@@ -3582,5 +3582,11 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         s_logger.debug(vmPendingTasks + " pending tasks for the VM: " + vmName + " found, out of " + vmTasks + " recent VM tasks");
+    }
+
+    public void tagAsWorkerVM() throws Exception {
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+        String workerTag = String.format("%d-%s", System.currentTimeMillis(), getContext().getStockObject("noderuninfo"));
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
     }
 }
