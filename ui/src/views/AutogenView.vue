@@ -17,74 +17,76 @@
 
 <template>
   <div>
-    <a-card class="breadcrumb-card">
-      <a-row>
-        <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
-          <breadcrumb :resource="resource">
-            <span slot="end">
-              <a-button
-                :loading="loading"
-                style="margin-bottom: 5px"
-                shape="round"
-                size="small"
-                icon="reload"
-                @click="fetchData({ irefresh: true })">
-                {{ $t('label.refresh') }}
-              </a-button>
-              <a-switch
-                v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
-                style="margin-left: 8px"
-                :checked-children="$t('label.metrics')"
-                :un-checked-children="$t('label.metrics')"
-                :checked="$store.getters.metrics"
-                @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
-              <a-tooltip placement="right">
-                <template slot="title">
-                  {{ $t('label.filterby') }}
-                </template>
-                <a-select
-                  v-if="!dataView && filters && filters.length > 0"
-                  :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                    ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                    ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
-                  style="min-width: 100px; margin-left: 10px"
-                  @change="changeFilter">
-                  <a-icon slot="suffixIcon" type="filter" />
-                  <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
-                    {{ $t('label.all') }}
-                  </a-select-option>
-                  <a-select-option v-for="filter in filters" :key="filter">
-                    {{ $t('label.' + filter) }}
-                  </a-select-option>
-                </a-select>
-              </a-tooltip>
-            </span>
-          </breadcrumb>
-        </a-col>
-        <a-col
-          :span="device === 'mobile' ? 24 : 12"
-          :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
-          <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
-          <action-button
-            v-else
-            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
-            :loading="loading"
-            :actions="actions"
-            :selectedRowKeys="selectedRowKeys"
-            :dataView="dataView"
-            :resource="resource"
-            @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
-          <search-view
-            v-if="!dataView"
-            :searchFilters="searchFilters"
-            :searchParams="searchParams"
-            :apiName="apiName"
-            @search="onSearch"
-            @change-filter="changeFilter"/>
-        </a-col>
-      </a-row>
-    </a-card>
+    <a-affix :offsetTop="78">
+      <a-card class="breadcrumb-card" style="z-index: 10">
+        <a-row>
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+            <breadcrumb :resource="resource">
+              <span slot="end">
+                <a-button
+                  :loading="loading"
+                  style="margin-bottom: 5px"
+                  shape="round"
+                  size="small"
+                  icon="reload"
+                  @click="fetchData({ irefresh: true })">
+                  {{ $t('label.refresh') }}
+                </a-button>
+                <a-switch
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.metrics')"
+                  :un-checked-children="$t('label.metrics')"
+                  :checked="$store.getters.metrics"
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-tooltip placement="right">
+                  <template slot="title">
+                    {{ $t('label.filterby') }}
+                  </template>
+                  <a-select
+                    v-if="!dataView && filters && filters.length > 0"
+                    :placeholder="$t('label.filterby')"
+                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                    style="min-width: 100px; margin-left: 10px"
+                    @change="changeFilter">
+                    <a-icon slot="suffixIcon" type="filter" />
+                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                      {{ $t('label.all') }}
+                    </a-select-option>
+                    <a-select-option v-for="filter in filters" :key="filter">
+                      {{ $t('label.' + filter) }}
+                    </a-select-option>
+                  </a-select>
+                </a-tooltip>
+              </span>
+            </breadcrumb>
+          </a-col>
+          <a-col
+            :span="device === 'mobile' ? 24 : 12"
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
+            <action-button
+              v-else
+              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
+              :loading="loading"
+              :actions="actions"
+              :selectedRowKeys="selectedRowKeys"
+              :dataView="dataView"
+              :resource="resource"
+              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
+            <search-view
+              v-if="!dataView"
+              :searchFilters="searchFilters"
+              :searchParams="searchParams"
+              :apiName="apiName"
+              @search="onSearch"
+              @change-filter="changeFilter"/>
+          </a-col>
+        </a-row>
+      </a-card>
+    </a-affix>
 
     <div v-show="showAction">
       <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
@@ -334,7 +336,7 @@
       </a-modal>
     </div>
 
-    <div v-if="dataView">
+    <div v-if="dataView" style="margin-top: -10px">
       <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
       <resource-view
         v-else
@@ -353,6 +355,7 @@
         @refresh="this.fetchData" />
       <a-pagination
         class="row-element"
+        style="margin-top: 10px"
         size="small"
         :current="page"
         :pageSize="pageSize"
@@ -1453,7 +1456,6 @@ export default {
 }
 
 .row-element {
-  margin-top: 10px;
   margin-bottom: 10px;
 }
 
