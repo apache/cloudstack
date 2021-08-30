@@ -171,6 +171,7 @@ describe('Views > AutogenView.vue', () => {
       wrapper.vm.searchParams = {}
       wrapper.vm.actionData = {}
       wrapper.vm.dataView = false
+      wrapper.vm.showAction = false
       wrapper.vm.selectedRowKeys = []
       wrapper.vm.selectedRowKeys = []
       wrapper.vm.items = []
@@ -214,6 +215,9 @@ describe('Views > AutogenView.vue', () => {
             break
           case 'execSubmit':
             wrapper.vm.execSubmit = originalFunc[key]
+            break
+          case 'shouldNavigateBack':
+            wrapper.vm.shouldNavigateBack = originalFunc[key]
             break
           case 'routerGo':
             wrapper.vm.$router.go = originalFunc[key]
@@ -2286,17 +2290,21 @@ describe('Views > AutogenView.vue', () => {
       it('API should be called with params has item id equal resource.id', async (done) => {
         mockAxios.mockResolvedValue({})
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
 
         const event = document.createEvent('Event')
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
             icon: 'plus-outlined',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-resource-id'
@@ -2321,19 +2329,21 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key not exist in currentAction.params', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              { name: 'id', type: 'uuid' }
-            ]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-resource-id'
@@ -2358,20 +2368,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key exist in currentAction.params, type is boolean and value is undefined', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: undefined }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              { name: 'column1', type: 'boolean' }
-            ]
+            params: [{ name: 'column1', type: 'boolean' }],
+            paramFields: [{ name: 'column1', type: 'boolean' }]
           },
           resource: {}
         })
@@ -2394,20 +2406,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key exist in currentAction.params, type is boolean and value is null', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: null }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              { name: 'column1', type: 'boolean' }
-            ]
+            params: [{ name: 'column1', type: 'boolean' }],
+            paramFields: [{ name: 'column1', type: 'boolean' }]
           },
           resource: {}
         })
@@ -2430,20 +2444,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key exist in currentAction.params, type is boolean and value is empty', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: '' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              { name: 'column1', type: 'boolean' }
-            ]
+            params: [{ name: 'column1', type: 'boolean' }],
+            paramFields: [{ name: 'column1', type: 'boolean' }]
           },
           resource: {}
         })
@@ -2465,22 +2481,23 @@ describe('Views > AutogenView.vue', () => {
       })
 
       it('API should be called when form has not input tag', async (done) => {
-        originalFunc.name = 'handleResponse'
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: '' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              { name: 'column1', type: 'string' }
-            ]
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }]
           },
           resource: {}
         })
@@ -2502,20 +2519,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key exist in currentAction.mapping', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: 1 }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              { name: 'column1', type: 'list' }
-            ],
+            params: [{ name: 'column1', type: 'list' }],
+            paramFields: [{ name: 'column1', type: 'list' }],
             mapping: {
               column1: {
                 options: ['column-value1', 'column-value2']
@@ -2543,18 +2562,32 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key not exist in currentAction.mapping, type is list and currentAction.params[input] has id', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: [1, 2] }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
             params: [
+              {
+                name: 'column1',
+                type: 'list',
+                opts: [
+                  { id: 'test-id-1', value: 'test-value-1' },
+                  { id: 'test-id-2', value: 'test-value-2' },
+                  { id: 'test-id-3', value: 'test-value-3' }
+                ]
+              }
+            ],
+            paramFields: [
               {
                 name: 'column1',
                 type: 'list',
@@ -2588,23 +2621,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key has name = account, currentAction.api = createAccount', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { account: 'test-account-value' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'createAccount',
             label: 'label.name',
-            params: [
-              {
-                name: 'account',
-                type: 'string'
-              }
-            ],
+            params: [{ name: 'account', type: 'string' }],
+            paramFields: [{ name: 'account', type: 'string' }],
             mapping: {}
           },
           resource: {}
@@ -2628,23 +2660,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key has name = keypair, currentAction.api = addAccountToProject', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { keypair: 'test-keypair-value' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'addAccountToProject',
             label: 'label.name',
-            params: [
-              {
-                name: 'keypair',
-                type: 'string'
-              }
-            ],
+            params: [{ name: 'keypair', type: 'string'}],
+            paramFields: [{ name: 'keypair', type: 'string'}],
             mapping: {}
           },
           resource: {}
@@ -2668,18 +2699,31 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key name = (account | keypair), currentAction.api != (addAccountToProject | createAccount)', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { keypair: 1 }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
             params: [
+              {
+                name: 'keypair',
+                type: 'string',
+                opts: [
+                  { id: 'test-id-1', name: 'test-name-1' },
+                  { id: 'test-id-2', name: 'test-name-2' }
+                ]
+              }
+            ],
+            paramFields: [
               {
                 name: 'keypair',
                 type: 'string',
@@ -2712,23 +2756,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when form has input key do not fall under special condition.', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: 'test-column-value' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              {
-                name: 'column1',
-                type: 'string'
-              }
-            ],
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }],
             mapping: {}
           },
           resource: {}
@@ -2752,23 +2795,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when currentAction has defaultArgs', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: 'test-column1-value' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              {
-                name: 'column1',
-                type: 'string'
-              }
-            ],
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }],
             mapping: {},
             defaultArgs: {
               column2: 'test-column2-value'
@@ -2796,23 +2838,22 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called when currentAction.mapping has value and value is function', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: 'test-column1-value' }
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [
-              {
-                name: 'column1',
-                type: 'string'
-              }
-            ],
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }],
             mapping: {
               column2: {
                 value: (record, params) => {
@@ -2846,21 +2887,23 @@ describe('Views > AutogenView.vue', () => {
 
       it('API should be called with post method', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
         originalFunc.fetchData = wrapper.vm.fetchData
         originalFunc.closeAction = wrapper.vm.closeAction
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
-        wrapper.vm.closeAction = jest.fn()
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
         wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.closeAction = jest.fn()
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
             params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }],
             post: true
           },
           resource: {
@@ -2888,11 +2931,11 @@ describe('Views > AutogenView.vue', () => {
 
       it('handleResponse() & closeAction() should be called when API response success', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
         originalFunc.closeAction = wrapper.vm.closeAction
         originalFunc.fetchData = wrapper.vm.fetchData
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
         wrapper.vm.closeAction = jest.fn()
         wrapper.vm.fetchData = jest.fn()
 
@@ -2901,10 +2944,12 @@ describe('Views > AutogenView.vue', () => {
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-id-value'
@@ -2920,21 +2965,22 @@ describe('Views > AutogenView.vue', () => {
           {
             api: 'testApiNameCase1',
             label: 'label.name',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           }
         )
         expect(closeAction).toHaveBeenCalledTimes(1)
         done()
       })
 
-      it('$router should go back when API response success with delete icon action', async (done) => {
+      it('$router should go back when API response success with shouldNavigateBack() return true', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
         originalFunc.closeAction = wrapper.vm.closeAction
         originalFunc.fetchData = wrapper.vm.fetchData
         originalFunc.routerGo = wrapper.vm.$router.go
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return true })
         wrapper.vm.$router.go = jest.fn((number) => {})
         wrapper.vm.closeAction = jest.fn()
         wrapper.vm.fetchData = jest.fn()
@@ -2943,11 +2989,13 @@ describe('Views > AutogenView.vue', () => {
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             icon: 'delete-outlined',
             label: 'label.name',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-id-value'
@@ -2964,12 +3012,12 @@ describe('Views > AutogenView.vue', () => {
 
       it('$router should go back when API response success with action.api equal `archiveEvents`', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
         originalFunc.closeAction = wrapper.vm.closeAction
         originalFunc.fetchData = wrapper.vm.fetchData
         originalFunc.routerGo = wrapper.vm.$router.go
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return true })
         wrapper.vm.$router.go = jest.fn((number) => {})
         wrapper.vm.closeAction = jest.fn()
         wrapper.vm.fetchData = jest.fn()
@@ -2978,11 +3026,13 @@ describe('Views > AutogenView.vue', () => {
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'archiveEvents',
             icon: 'plus-outlined',
             label: 'label.name',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-id-value'
@@ -2999,11 +3049,11 @@ describe('Views > AutogenView.vue', () => {
 
       it('fetchData() should be called when API response success with jobId empty', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
         originalFunc.closeAction = wrapper.vm.closeAction
         originalFunc.fetchData = wrapper.vm.fetchData
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve()
-        })
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
         wrapper.vm.closeAction = jest.fn()
         wrapper.vm.fetchData = jest.fn()
 
@@ -3011,11 +3061,13 @@ describe('Views > AutogenView.vue', () => {
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             icon: 'plus-outlined',
             label: 'label.name',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-id-value'
@@ -3031,11 +3083,11 @@ describe('Views > AutogenView.vue', () => {
 
       it('fetchData() not called when API response success with jobId not empty', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
         originalFunc.closeAction = wrapper.vm.closeAction
         originalFunc.fetchData = wrapper.vm.fetchData
-        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => {
-          return Promise.resolve('test-job-id')
-        })
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve('test-job-id') })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
         wrapper.vm.closeAction = jest.fn()
         wrapper.vm.fetchData = jest.fn()
 
@@ -3043,11 +3095,13 @@ describe('Views > AutogenView.vue', () => {
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
         await wrapper.setData({
+          showAction: true,
           currentAction: {
             api: 'testApiNameCase1',
             icon: 'plus-outlined',
             label: 'label.name',
-            params: [{ name: 'id', type: 'uuid' }]
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
           resource: {
             id: 'test-id-value'
