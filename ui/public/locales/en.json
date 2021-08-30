@@ -1445,6 +1445,7 @@
 "label.migrate.to.host": "Migrate to host",
 "label.migrate.to.storage": "Migrate to storage",
 "label.migrate.volume": "Migrate Volume",
+"message.migrate.volume.tooltip": "Volume can be migrated to any suitable storagepool. Admin has to choose the appropriate disk offering to replace, that supports the new storage pool",
 "label.migrate.volume.newdiskoffering.desc": "This option allows administrators to replace the old disk offering, using one that better suits the new placement of the volume.",
 "label.migrate.volume.to.primary.storage": "Migrate volume to another primary storage",
 "label.migrate.with.storage": "Migrate with storage",

@@ -20,13 +20,16 @@
     <a-alert class="top-spaced" type="warning">
       <span slot="message" v-html="$t('message.migrate.volume')" />
     </a-alert>
-    <storage-pool-select-view
-      ref="storagePoolSelection"
-      :resource="resource"
-      :suitabilityEnabled="true"
-      @change="fetchDiskOfferings"
-      @storagePoolsUpdated="handleStoragePoolsChange"
-      @select="handleStoragePoolSelect" />
+    <a-form-item>
+      <tooltip-label slot="label" :title="$t('label.storagepool')" :tooltip="$t('message.migrate.volume.tooltip')"/>
+      <storage-pool-select-view
+        ref="storagePoolSelection"
+        :resource="resource"
+        :suitabilityEnabled="true"
+        @change="fetchDiskOfferings"
+        @storagePoolsUpdated="handleStoragePoolsChange"
+        @select="handleStoragePoolSelect" />
+    </a-form-item>
     <div class="top-spaced" v-if="storagePools.length > 0">
       <template v-if="this.resource.virtualmachineid">
         <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
@@ -65,12 +68,14 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 
 export default {
   name: 'MigrateVolume',
   components: {
-    StoragePoolSelectView
+    StoragePoolSelectView,
+    TooltipLabel
   },
   props: {
     resource: {
