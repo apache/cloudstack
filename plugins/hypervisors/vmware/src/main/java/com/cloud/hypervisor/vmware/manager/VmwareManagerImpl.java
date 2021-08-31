@@ -269,13 +269,19 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     private boolean isSystemVmIsoCopyNeeded(File srcIso, File destIso) {
-        boolean copyNeeded = !destIso.exists();
-        if (!copyNeeded) {
-            try {
-                copyNeeded = !StringUtils.equals(DigestUtils.md5Hex(new FileInputStream(srcIso)), DigestUtils.md5Hex(new FileInputStream(destIso)));
-            } catch (IOException e) {
-                s_logger.debug(String.format("Unable to compare MD5 checksum for systemvm.iso at source: %s and destination: %s", srcIso.getAbsolutePath(), destIso.getAbsolutePath()), e);
+        if (!destIso.exists()) {
+            return true;
+        }
+        boolean copyNeeded = false;
+        try {
+            String srcIsoMd5 = DigestUtils.md5Hex(new FileInputStream(srcIso));
+            String destIsoMd5 = DigestUtils.md5Hex(new FileInputStream(destIso));
+            copyNeeded = !StringUtils.equals(srcIsoMd5, destIsoMd5);
+            if (copyNeeded) {
+                s_logger.debug(String.format("MD5 checksum: %s for source ISO: %s is different from MD5 checksum: %s from destination ISO: %s", srcIsoMd5, srcIso.getAbsolutePath(), destIsoMd5, destIso.getAbsolutePath()));
             }
+        } catch (IOException e) {
+            s_logger.debug(String.format("Unable to compare MD5 checksum for systemvm.iso at source: %s and destination: %s", srcIso.getAbsolutePath(), destIso.getAbsolutePath()), e);
         }
         return copyNeeded;
     }
