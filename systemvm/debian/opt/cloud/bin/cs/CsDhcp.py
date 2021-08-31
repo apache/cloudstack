@@ -37,12 +37,12 @@ class CsDhcp(CsDataBag):
         self.changed = []
         self.devinfo = CsHelper.get_device_info()
         self.preseed()
-        self.cloud = CsFile(DHCP_HOSTS)
+        self.dhcp_hosts = CsFile(DHCP_HOSTS)
         self.dhcp_opts = CsFile(DHCP_OPTS)
         self.conf = CsFile(CLOUD_CONF)
         self.dhcp_leases = CsFile(LEASES)
 
-        self.cloud.repopulate()
+        self.dhcp_hosts.repopulate()
         self.dhcp_opts.repopulate()
 
         for item in self.dbag:
@@ -54,21 +54,22 @@ class CsDhcp(CsDataBag):
         self.configure_server()
 
         restart_dnsmasq = False
+        need_delete_leases = False
 
         if self.conf.commit():
             restart_dnsmasq = True
+            need_delete_leases = True
 
-        if self.cloud.commit():
-            restart_dnsmasq = True
+        if self.dhcp_hosts.commit():
+            need_delete_leases = True
 
         if self.dhcp_leases.commit():
-            restart_dnsmasq = True
+            need_delete_leases = True
 
         self.dhcp_opts.commit()
 
-        if restart_dnsmasq:
+        if need_delete_leases:
             self.delete_leases()
-
         self.write_hosts()
 
         if not self.cl.is_redundant() or self.cl.is_primary():
@@ -189,20 +190,20 @@ class CsDhcp(CsDataBag):
         lease = 'infinite'
 
         if entry['default_entry']:
-            self.cloud.add("%s,%s,%s,%s" % (entry['mac_address'],
-                                            entry['ipv4_address'],
-                                            entry['host_name'],
-                                            lease))
+            self.dhcp_hosts.add("%s,%s,%s,%s" % (entry['mac_address'],
+                                                 entry['ipv4_address'],
+                                                 entry['host_name'],
+                                                 lease))
             self.dhcp_leases.search(entry['mac_address'], "0 %s %s %s *" % (entry['mac_address'],
                                                                             entry['ipv4_address'],
                                                                             entry['host_name']))
         else:
             tag = entry['ipv4_address'].replace(".", "_")
-            self.cloud.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
-                                                   tag,
-                                                   entry['ipv4_address'],
-                                                   entry['host_name'],
-                                                   lease))
+            self.dhcp_hosts.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
+                                                        tag,
+                                                        entry['ipv4_address'],
+                                                        entry['host_name'],
+                                                        lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
