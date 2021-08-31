@@ -1425,10 +1425,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnStorage);
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.warn("Failed to expunge the volume " + volume + " in " + role + " data store");
+                String msg = "Failed to expunge the volume " + volume + " in " + role + " data store";
+                s_logger.warn(msg);
                 String details = "";
                 if (result.getResult() != null && !result.getResult().isEmpty()) {
-                    details = result.getResult();
+                    details = msg + " : " + result.getResult();
                 }
                 throw new CloudRuntimeException(details);
             }
