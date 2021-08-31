@@ -1364,7 +1364,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!_snapshotMgr.canOperateOnVolume(volume)) {
             throw new InvalidParameterValueException("There are snapshot operations in progress on the volume, unable to delete it");
         }
-        if (volume.getInstanceId() != null && volume.getState() != Volume.State.Expunged) {
+        if (volume.getInstanceId() != null && _vmInstanceDao.findById(volume.getInstanceId()) != null && volume.getState() != Volume.State.Expunged) {
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
         }
         if (volume.getState() == Volume.State.UploadOp) {
@@ -1520,6 +1520,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         try {
+            _volsDao.detachVolume(volume.getId());
             stateTransitTo(volume, Volume.Event.RecoverRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to recover volume" + volume.getId(), e);

@@ -143,9 +143,14 @@
           </a>
         </span>
         <a-spin :spinning="actionLoading">
-          <span v-if="currentAction.message">
+          <span v-if="currentAction.message || 'displayName' in currentAction">
             <a-alert type="warning">
-              <span slot="message" v-html="$t(currentAction.message)" />
+              <span slot="message">
+                <div v-if="currentAction.message" v-html="$t(currentAction.message)"></div>
+                <div v-if="'displayName' in currentAction">
+                  <strong>{{ currentAction.displayName(resource) }}</strong>
+                </div>
+              </span>
             </a-alert>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
@@ -857,6 +862,9 @@ export default {
       })
     },
     pollActionCompletion (jobId, action, resourceName, showLoading = true) {
+      if (this.shouldNavigateBack(action)) {
+        action.isFetchData = false
+      }
       return new Promise((resolve) => {
         this.$pollJob({
           jobId,
@@ -1057,7 +1065,7 @@ export default {
         api(...args).then(json => {
           this.handleResponse(json, resourceName, action).then(jobId => {
             hasJobId = jobId
-            if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
+            if (this.shouldNavigateBack(action)) {
               this.$router.go(-1)
             } else {
               if (!hasJobId) {
@@ -1077,6 +1085,9 @@ export default {
           this.actionLoading = false
         })
       })
+    },
+    shouldNavigateBack (action) {
+      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
@@ -1139,8 +1150,8 @@ export default {
           Object.assign(query, opts)
         }
       }
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = String(this.pageSize)
       if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
         this.fetchData(query)
         return
