@@ -206,6 +206,8 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class})
@@ -220,6 +222,9 @@ public class LibvirtComputingResourceTest {
     LibvirtVMDef vmDef;
     @Spy
     private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(LibvirtComputingResource.class);
+
+    @Mock
+    Domain domainMock;
 
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING = 5000000;
@@ -328,6 +333,7 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
         LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -710,11 +716,15 @@ public class LibvirtComputingResourceTest {
     }
 
     private void verifyVcpu(VirtualMachineTO to, Document domainDoc) {
-        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getCpus()));
+        assertXpath(domainDoc, "/domain/cpu/numa/cell/@cpus", String.format("0-%s", to.getVcpuMaxLimit() - 1));
+        assertXpath(domainDoc, "/domain/vcpu/@current", String.valueOf(to.getCpus()));
+        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getVcpuMaxLimit()));
     }
 
     private void verifyMemory(VirtualMachineTO to, Document domainDoc, String minRam) {
-        assertXpath(domainDoc, "/domain/memory/text()", String.valueOf(to.getMaxRam() / 1024));
+        assertXpath(domainDoc, "/domain/maxMemory/text()", String.valueOf( to.getMaxRam() / 1024 ));
+        assertXpath(domainDoc, "/domain/memory/text()",minRam);
+        assertXpath(domainDoc, "/domain/cpu/numa/cell/@memory", minRam);
         assertXpath(domainDoc, "/domain/currentMemory/text()", minRam);
     }
 
@@ -5620,7 +5630,89 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(vmDef, times(1)).addComp(any());
     }
 
+    public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource._noMemBalloon = true;
+        long maxMemory = 2048;
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
+        Assert.assertEquals(maxMemory, currentMemory);
+        Mockito.verify(vmTo, Mockito.times(0)).getMinRam();
+    }
+
     @Test
+    public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource._noMemBalloon = false;
+
+        long maxMemory = 2048;
+        long minMemory = ByteScaleUtils.mibToBytes(64);
+
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
+        Assert.assertEquals(ByteScaleUtils.bytesToKib(minMemory), currentMemory);
+        Mockito.verify(vmTo).getMinRam();
+    }
+
+    @Test
+    public void validateCreateGuestResourceDefWithVcpuMaxLimit(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        int maxCpu = 16;
+
+        Mockito.when(vmTo.getVcpuMaxLimit()).thenReturn(maxCpu);
+
+        LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
+        Assert.assertEquals(maxCpu, grd.getMaxVcpu());
+    }
+
+    @Test
+    public void validateCreateGuestResourceDefWithVcpuMaxLimitAsNull(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        int min = 1;
+
+        Mockito.when(vmTo.getCpus()).thenReturn(min);
+        Mockito.when(vmTo.getVcpuMaxLimit()).thenReturn(null);
+
+        LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
+        Assert.assertEquals(min, grd.getMaxVcpu());
+    }
+
+    @Test
+    public void validateGetDomainMemory() throws LibvirtException{
+        long valueExpected = ByteScaleUtils.KiB;
+
+        Mockito.doReturn(valueExpected).when(domainMock).getMaxMemory();
+        Assert.assertEquals(valueExpected, LibvirtComputingResource.getDomainMemory(domainMock));
+    }
+
+    private VcpuInfo createVcpuInfoWithState(VcpuInfo.VcpuState state) {
+        VcpuInfo vcpu = new VcpuInfo();
+        vcpu.state = state;
+        return vcpu;
+    }
+
+    @Test
+    public void validateCountDomainRunningVcpus() throws LibvirtException{
+        VcpuInfo vcpus[] = new VcpuInfo[5];
+        long valueExpected = 3; // 3 vcpus with state VIR_VCPU_RUNNING
+
+        vcpus[0] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_BLOCKED);
+        vcpus[1] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_OFFLINE);
+        vcpus[2] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+        vcpus[3] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+        vcpus[4] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+
+        Mockito.doReturn(vcpus).when(domainMock).getVcpusInfo();
+        long result =  LibvirtComputingResource.countDomainRunningVcpus(domainMock);
+
+        Assert.assertEquals(valueExpected, result);
+    }
+
     public void setDiskIoDriverTestIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
         Assert.assertEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());

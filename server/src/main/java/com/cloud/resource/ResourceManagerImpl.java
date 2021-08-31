@@ -44,6 +44,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -196,6 +197,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import java.util.HashSet;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -686,6 +688,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+        if (!HypervisorType.VMware.toString().equalsIgnoreCase(hypervisorType) &&
+                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
+            throw new InvalidParameterValueException("Username and Password need to be provided.");
         }
 
         if (clusterId != null) {
@@ -1748,13 +1754,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
-
         final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
             }
-            _hostTagsDao.persist(hostId, hostTags);
+            _hostTagsDao.persist(hostId, new ArrayList(new HashSet<String>(hostTags)));
         }
 
         final String url = cmd.getUrl();

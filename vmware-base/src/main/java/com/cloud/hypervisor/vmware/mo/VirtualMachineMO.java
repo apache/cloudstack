@@ -130,6 +130,15 @@ public class VirtualMachineMO extends BaseMO {
     public static final String ANSWER_NO = "1";
 
     private ManagedObjectReference _vmEnvironmentBrowser = null;
+    private String internalCSName;
+
+    public String getInternalCSName() {
+        return internalCSName;
+    }
+
+    public void setInternalCSName(String internalVMName) {
+        this.internalCSName = internalVMName;
+    }
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
         super(context, morVm);
@@ -2816,6 +2825,20 @@ public class VirtualMachineMO extends BaseMO {
         return virtualDisks;
     }
 
+    public List<VirtualDisk> getVirtualDisksOrderedByKey() throws Exception {
+        List<VirtualDisk> virtualDisks = getVirtualDisks();
+        Collections.sort(virtualDisks, new Comparator<VirtualDisk>() {
+            @Override
+            public int compare(VirtualDisk disk1, VirtualDisk disk2) {
+                Integer disk1Key = disk1.getKey();
+                Integer disk2Key = disk2.getKey();
+                return disk1Key.compareTo(disk2Key);
+            }
+        });
+
+        return virtualDisks;
+    }
+
     public List<String> detachAllDisksExcept(String vmdkBaseName, String deviceBusName) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
@@ -3372,7 +3395,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports cpu hotadd
-        if (guestOsDescriptor.isSupportsCpuHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsCpuHotAdd()) {
             guestOsSupportsCpuHotAdd = true;
         }
 
@@ -3583,5 +3606,11 @@ public class VirtualMachineMO extends BaseMO {
     public String acquireVncTicket() throws InvalidStateFaultMsg, RuntimeFaultFaultMsg {
         VirtualMachineTicket ticket = _context.getService().acquireTicket(_mor, "webmks");
         return ticket.getTicket();
+    }
+
+    public void tagAsWorkerVM() throws Exception {
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+        String workerTag = String.format("%d-%s", System.currentTimeMillis(), getContext().getStockObject("noderuninfo"));
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
     }
 }

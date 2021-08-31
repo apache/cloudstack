@@ -1527,14 +1527,11 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        String recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
         String newRootDiskController = controllerInfo.first();
         String newDataDiskController = controllerInfo.second();
-        if (DiskControllerType.getType(controllerInfo.first()) == DiskControllerType.osdefault) {
-            newRootDiskController = recommendedController;
-        }
-        if (DiskControllerType.getType(controllerInfo.second()) == DiskControllerType.osdefault) {
-            newDataDiskController = recommendedController;
+        String recommendedController = null;
+        if (VmwareHelper.isControllerOsRecommended(newRootDiskController) || VmwareHelper.isControllerOsRecommended(newDataDiskController)) {
+            recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
         }
 
         Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
@@ -1730,9 +1727,7 @@ public class HypervisorHostHelper {
         }
 
         if (workingVM != null) {
-            workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
-            String workerTag = String.format("%d-%s", System.currentTimeMillis(), hyperHost.getContext().getStockObject("noderuninfo"));
-            workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
+            workingVM.tagAsWorkerVM();
         }
         return workingVM;
     }
@@ -2190,6 +2185,29 @@ public class HypervisorHostHelper {
        return paramVal;
    }
 
+    public static ManagedObjectReference getHypervisorHostMorFromGuid(String guid) {
+        if (guid == null) {
+            return null;
+        }
+
+        String[] tokens = guid.split("@");
+        if (tokens == null || tokens.length != 2) {
+            s_logger.error("Invalid content in host guid");
+            return null;
+        }
+
+        String[] hostTokens = tokens[0].split(":");
+        if (hostTokens == null || hostTokens.length != 2) {
+            s_logger.error("Invalid content in host guid");
+            return null;
+        }
+
+        ManagedObjectReference morHyperHost = new ManagedObjectReference();
+        morHyperHost.setType(hostTokens[0]);
+        morHyperHost.setValue(hostTokens[1]);
+
+        return morHyperHost;
+    }
 
     public static String getScsiController(Pair<String, String> controllerInfo, String recommendedController) {
         String rootDiskController = controllerInfo.first();

@@ -48,14 +48,6 @@ export default {
   }],
   actions: [
     {
-      api: 'migrateSecondaryStorageData',
-      icon: 'drag',
-      label: 'label.migrate.data.from.image.store',
-      listView: true,
-      popup: true,
-      component: () => import('@/views/infra/MigrateData.vue')
-    },
-    {
       api: 'addImageStore',
       icon: 'plus',
       docHelp: 'installguide/configuration.html#add-secondary-storage',
@@ -63,6 +55,14 @@ export default {
       listView: true,
       popup: true,
       component: () => import('@/views/infra/AddSecondaryStorage.vue')
+    },
+    {
+      api: 'migrateSecondaryStorageData',
+      icon: 'drag',
+      label: 'label.migrate.data.from.image.store',
+      listView: true,
+      popup: true,
+      component: () => import('@/views/infra/MigrateData.vue')
     },
     {
       api: 'updateImageStore',
@@ -87,7 +87,8 @@ export default {
       icon: 'delete',
       label: 'label.action.delete.secondary.storage',
       message: 'message.action.delete.secondary.storage',
-      dataView: true
+      dataView: true,
+      displayName: (record) => { return record.name || record.displayName || record.id }
     }
   ]
 }

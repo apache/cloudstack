@@ -66,6 +66,8 @@ import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -239,7 +241,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
             s_logger.info("Migration thread for " + vmName + " is done");
 
-            destDomain = migrateThread.get(10, TimeUnit.SECONDS);
+            destDomain = migrateThread.get(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT), TimeUnit.SECONDS);
 
             if (destDomain != null) {
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);

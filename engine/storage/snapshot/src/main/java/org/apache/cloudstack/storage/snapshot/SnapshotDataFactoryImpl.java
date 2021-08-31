@@ -100,7 +100,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
                 return null;
             }
 
-            snapshotStore = snapshotStoreDao.findByVolume(snapshot.getVolumeId(), role);
+            snapshotStore = snapshotStoreDao.findByVolume(snapshotId, snapshot.getVolumeId(), role);
             if (snapshotStore == null) {
                 return null;
             }

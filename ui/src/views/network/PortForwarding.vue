@@ -30,7 +30,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff; text-align:
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; text-align:
               center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.privateendport"
@@ -48,7 +49,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff;
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none;
               text-align: center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.publicendport"
@@ -161,7 +163,7 @@
           </a-form-item>
         </div>
 
-        <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider></a-divider>
@@ -264,7 +266,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
