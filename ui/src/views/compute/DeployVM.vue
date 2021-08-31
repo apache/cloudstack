@@ -210,10 +210,10 @@
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
-                      :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 0"
-                      :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
-                      :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
-                      :maxMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+                      :minCpu="getMinCpu()"
+                      :maxCpu="getMaxCpu()"
+                      :minMemory="getMinMemory()"
+                      :maxMemory="getMaxMemory()"
                       :isCustomized="serviceOffering.iscustomized"
                       :isCustomizedIOps="'iscustomizediops' in serviceOffering && serviceOffering.iscustomizediops"
                       @handler-error="handlerError"
@@ -2035,6 +2035,18 @@ export default {
     },
     updateIOPSValue (input, value) {
       this[input] = value
+    },
+    getMinCpu () {
+      return this.serviceOffering?.serviceofferingdetails?.mincpunumber * 1 || 0
+    },
+    getMaxCpu () {
+      return this.serviceOffering?.serviceofferingdetails?.maxcpunumber * 1 || Number.MAX_SAFE_INTEGER
+    },
+    getMinMemory () {
+      return this.serviceOffering?.serviceofferingdetails?.minmemory * 1 || 0
+    },
+    getMaxMemory () {
+      return this.serviceOffering?.serviceofferingdetails?.maxmemory * 1 || Number.MAX_SAFE_INTEGER
     }
   }
 }
