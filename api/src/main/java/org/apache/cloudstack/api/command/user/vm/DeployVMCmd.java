@@ -264,7 +264,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return domainId;
     }
 
-    public ApiConstants.BootType  getBootType() {
+    public ApiConstants.BootType getBootType() {
         if (StringUtils.isNotBlank(bootType)) {
             try {
                 String type = bootType.trim().toUpperCase();
@@ -292,8 +292,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             }
         }
         if (ApiConstants.BootType.UEFI.equals(getBootType())) {
-            ApiConstants.BootMode mode = getBootMode();
-            customparameterMap.put(getBootType().toString(), mode != null ? mode.toString() : "");
+            customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
@@ -312,9 +311,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             } catch (IllegalArgumentException e) {
                 String msg = String.format("Invalid bootMode %s specified for VM: %s. Valid values are: %s",
                         bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
-                s_logger.warn(msg);
+                s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
+        }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
+                    ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
         }
         return null;
     }
