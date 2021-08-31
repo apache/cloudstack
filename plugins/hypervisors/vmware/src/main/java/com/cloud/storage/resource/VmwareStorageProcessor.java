@@ -1241,7 +1241,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
             vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
             clonedVm = dcMo.findVm(templateUniqueName);
-            s_logger.debug(String.format("Cloned VM: %s as %s", vmMo.getName(), clonedVm.getName()));
 
             /* FR41 THIS IS OLD way of creating template using snapshot
             if (!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
@@ -1849,7 +1848,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
-                s_logger.debug(String.format("Cloned VM: %s as %s", vmMo.getName(), clonedVm.getName()));
                 vmMo = clonedVm;
             }
             vmMo.exportVm(exportPath, exportName, false, false);
