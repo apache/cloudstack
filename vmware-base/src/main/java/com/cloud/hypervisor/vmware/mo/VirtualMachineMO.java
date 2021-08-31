@@ -2785,6 +2785,20 @@ public class VirtualMachineMO extends BaseMO {
         return virtualDisks;
     }
 
+    public List<VirtualDisk> getVirtualDisksOrderedByKey() throws Exception {
+        List<VirtualDisk> virtualDisks = getVirtualDisks();
+        Collections.sort(virtualDisks, new Comparator<VirtualDisk>() {
+            @Override
+            public int compare(VirtualDisk disk1, VirtualDisk disk2) {
+                Integer disk1Key = disk1.getKey();
+                Integer disk2Key = disk2.getKey();
+                return disk1Key.compareTo(disk2Key);
+            }
+        });
+
+        return virtualDisks;
+    }
+
     public List<String> detachAllDisksExcept(String vmdkBaseName, String deviceBusName) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 

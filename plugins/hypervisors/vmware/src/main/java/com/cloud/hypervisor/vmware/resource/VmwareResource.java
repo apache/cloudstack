@@ -2603,7 +2603,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             s_logger.debug("Mapping spec disks information to cloned VM disks for VM " + vmInternalCSName);
             if (vmMo != null && ArrayUtils.isNotEmpty(specDisks)) {
-                List<VirtualDisk> vmDisks = vmMo.getVirtualDisks();
+                List<VirtualDisk> vmDisks = vmMo.getVirtualDisksOrderedByKey();
+
                 List<VirtualDisk> rootDisks = new ArrayList<>();
                 List<DiskTO> sortedRootDisksFromSpec = Arrays.asList(sortVolumesByDeviceId(specDisks))
                         .stream()
