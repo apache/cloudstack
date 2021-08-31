@@ -1672,7 +1672,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
         // We need to publish this event to usage_volume table
         if (volume.getState() == Volume.State.Allocated) {
-            s_logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
+            s_logger.debug(String.format("Volume %s is in the allocated state, but has never been created. Simply updating database with new size and IOPS.", volume.getUuid()));
 
             volume.setSize(newSize);
             volume.setMinIops(newMinIops);
@@ -1693,7 +1693,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (MatchStoragePoolTagsWithDiskOffering.valueIn(volume.getDataCenterId())) {
             if (!doesNewDiskOfferingHasTagsAsOldDiskOffering(diskOffering, newDiskOffering)) {
-                throw new InvalidParameterValueException(String.format("Selected disk offering %s does not have tags as in existing disk offering of volume", diskOffering.getUuid(), volume.getUuid()));
+                throw new InvalidParameterValueException(String.format("Selected disk offering %s does not have tags as in existing disk offering of volume %s", diskOffering.getUuid(), volume.getUuid()));
             }
         }
 
@@ -1710,7 +1710,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
             volumeMigrateRequired = true;
             if (!autoMigrateVolume) {
-                throw new InvalidParameterValueException("Failed to change offering for volume since automigrate is set to false but volume needs to migrated");
+                throw new InvalidParameterValueException(String.format("Failed to change offering for volume %s since automigrate is set to false but volume needs to migrated", volume.getUuid()));
             }
         }
 

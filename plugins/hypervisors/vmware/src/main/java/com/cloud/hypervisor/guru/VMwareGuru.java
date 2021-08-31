@@ -458,7 +458,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, name, Storage.ProvisioningType.THIN, false, null, false, false, true);
         diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
 
-
         ServiceOfferingVO vo = new ServiceOfferingVO(name, cpus, memory, maxCpuUsage, null, null, false, name, false, Type.User,
                 false);
         vo.setDiskOfferingId(diskOfferingVO.getId());

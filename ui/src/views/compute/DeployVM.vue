@@ -278,7 +278,7 @@
                       <a-switch
                         v-decorator="['this.showOverrideDiskOfferingOption']"
                         :checked="serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption"
-                        :disabled="serviceOffering && serviceOffering.diskofferingstrictness"
+                        :disabled="(serviceOffering && serviceOffering.diskofferingstrictness) || (tabKey==='isoid')"
                         @change="val => { this.showOverrideDiskOfferingOption = val }"
                         style="margin-left: 10px;"/>
                     </span>

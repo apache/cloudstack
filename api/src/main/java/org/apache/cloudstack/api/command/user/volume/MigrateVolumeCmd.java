@@ -76,7 +76,6 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     public MigrateVolumeCmd() {
-
     }
     public MigrateVolumeCmd(Long volumeId, Long storageId, Long newDiskOfferingId, Boolean liveMigrate) {
         this.volumeId = volumeId;

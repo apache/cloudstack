@@ -341,7 +341,7 @@
         </a-form-item>
         <a-form-item>
           <span slot="label">
-            {{ $t('label.iscomputeonly.offering') }}
+            {{ $t('label.computeonly.offering') }}
           </span>
           <a-switch v-decorator="['computeonly', {initialValue: computeonly}]" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>

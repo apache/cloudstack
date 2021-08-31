@@ -167,6 +167,7 @@ export default {
     value (newValue, oldValue) {
       if (newValue && newValue !== oldValue) {
         this.selectedRowKeys = [newValue]
+        this.onSelectRow(this.selectedRowKeys)
       }
     },
     items (newData, oldData) {
