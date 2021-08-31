@@ -427,7 +427,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("template_id", templateId);
         sc.setParameters("download_state", Status.BYPASSED);
         sc.setParameters("destroyed", false);
-        sc.setParameters("storeids", (Object) storeIds);
+        sc.setParameters("storeids", storeIds);
         return search(sc, null);
     }
 
