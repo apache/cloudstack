@@ -892,6 +892,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void removeEncryptedPasswordFromUserVmVoDetails(UserVmVO userVmVo) {
+        _vmDao.loadDetails(userVmVo);
         Map<String, String> details = userVmVo.getDetails();
         details.remove(VmDetailConstants.ENCRYPTED_PASSWORD);
         userVmVo.setDetails(details);
