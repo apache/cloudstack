@@ -309,8 +309,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String msg = String.format("Invalid bootMode %s specified for VM: %s. Valid values are: %s",
-                        bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
+                String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
+                        ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
