@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
@@ -71,6 +72,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType);
 
     VMTemplateVO findRoutingTemplate(HypervisorType type, String templateName);
+
+    VMTemplateVO findLatestTemplateByTypeAndHypervisor(HypervisorType hypervisorType, Storage.TemplateType type);
 
     public Long countTemplatesForAccount(long accountId);
 

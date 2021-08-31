@@ -62,19 +62,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -88,13 +86,15 @@ public class SystemVmTemplateRegistration {
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
     private static final String METADATA_FILE_NAME = "metadata.ini";
     private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
-    public static final String TEMPORARY_SECONDARY_STORE = "/tmp/tmpSecStorage";
+    public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
-    private static final String FETCH_REGISTERED_TEMPLATE_INSTALL_PATH = "SELECT install_path FROM `cloud`.`template_store_ref` where template_id = ? LIMIT 1";
     private static final String storageScriptsDir = "scripts/storage/secondary";
+    private static final Integer OTHER_LINUX_ID = 99;
+    private static final Integer LINUX_5_ID = 15;
+    private static final Integer LINUX_7_ID = 183;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
-    private static final Integer TOKEN_LENGTH = 10;
+
 
     public static String CS_MAJOR_VERSION = null;
     public static String CS_TINY_VERSION = null;
@@ -262,7 +262,7 @@ public class SystemVmTemplateRegistration {
     public static final Map<Hypervisor.HypervisorType, String> NewTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>();
     public static final Map<Hypervisor.HypervisorType, String> NewTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>();
 
-    public static final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
+    public static final Map<Hypervisor.HypervisorType, String> RouterTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
         {
             put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
             put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
@@ -275,12 +275,12 @@ public class SystemVmTemplateRegistration {
 
     public static final Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
         {
-            put(Hypervisor.HypervisorType.KVM, 15);
-            put(Hypervisor.HypervisorType.XenServer, 99);
-            put(Hypervisor.HypervisorType.VMware, 99);
-            put(Hypervisor.HypervisorType.Hyperv, 15);
-            put(Hypervisor.HypervisorType.LXC, 15);
-            put(Hypervisor.HypervisorType.Ovm3, 183);
+            put(Hypervisor.HypervisorType.KVM, LINUX_5_ID);
+            put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
+            put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
+            put(Hypervisor.HypervisorType.Hyperv, LINUX_5_ID);
+            put(Hypervisor.HypervisorType.LXC, LINUX_5_ID);
+            put(Hypervisor.HypervisorType.Ovm3, LINUX_7_ID);
         }
     };
 
@@ -295,20 +295,13 @@ public class SystemVmTemplateRegistration {
         }
     };
 
-    public static String generateToken(int length) {
-        String charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        Random rand = new Random(System.currentTimeMillis());
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < length; i++) {
-            int pos = rand.nextInt(charset.length());
-            sb.append(charset.charAt(pos));
-        }
-        return sb.toString();
-    }
-
     public static boolean validateIfSeeded(String url, String path) {
-        String filePath = TEMPORARY_SECONDARY_STORE + generateToken(TOKEN_LENGTH);
+        String filePath = null;
         try {
+            filePath = Files.createTempDirectory(TEMPORARY_SECONDARY_STORE).toString();
+            if (filePath == null) {
+                throw new CloudRuntimeException("Failed to create temporary directory to mount secondary store");
+            }
             mountStore(url, filePath);
             int lastIdx = path.lastIndexOf(File.separator);
             String partialDirPath = path.substring(0, lastIdx);
@@ -325,6 +318,11 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException("Failed to verify if the template is seeded", e);
         } finally {
             unmountStore(filePath);
+            try {
+                Files.delete(Path.of(filePath));
+            } catch (IOException e) {
+                LOGGER.error(String.format("Failed to delete temporary directory: %s", filePath));
+            }
         }
     }
 
@@ -338,9 +336,9 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    public long getRegisteredTemplateId(Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+    public Long getRegisteredTemplateId(Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         VMTemplateVO vmTemplate = vmTemplateDao.findLatestTemplateByName(hypervisorAndTemplateName.second());
-        long templateId = -1;
+        Long templateId = null;
         if (vmTemplate != null) {
             templateId = vmTemplate.getId();
         }
@@ -420,10 +418,6 @@ public class SystemVmTemplateRegistration {
                 URI uri = new URI(UriUtils.encodeURIComponent(storeUrl));
                 String host = uri.getHost();
                 String mountPath = uri.getPath();
-                boolean fileCreated = new File(path).mkdirs();
-                if (!fileCreated) {
-                    throw new CloudRuntimeException("Failed to created file for mounting store to copy systemVM templates");
-                }
                 String mount = String.format(MOUNT_COMMAND, host + ":" + mountPath, path);
                 Script.runSimpleBashScript(mount);
             }
@@ -506,7 +500,10 @@ public class SystemVmTemplateRegistration {
 
     public void updateConfigurationParams(Map<String, String> configParams) {
         for (Map.Entry<String, String> config : configParams.entrySet()) {
-            configurationDao.update(config.getKey(), config.getValue());
+            boolean updated = configurationDao.update(config.getKey(), config.getValue());
+            if (!updated) {
+                throw new CloudRuntimeException(String.format("Failed to update configuration parameter %s", config.getKey()));
+            }
         }
     }
 
@@ -630,7 +627,7 @@ public class SystemVmTemplateRegistration {
             templateId = performTemplateRegistrationOperations(hypervisorAndTemplateName, NewTemplateUrl.get(hypervisor), NewTemplateChecksum.get(hypervisor),
                     hypervisorImageFormat.get(hypervisor), hypervisorGuestOsMap.get(hypervisor), storeUrlAndId.second(), null, filePath, true);
             Map<String, String> configParams = new HashMap<>();
-            configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
+            configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
             configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_TINY_VERSION);
             updateConfigurationParams(configParams);
             updateSystemVMEntries(templateId, hypervisorAndTemplateName.first());
@@ -662,23 +659,6 @@ public class SystemVmTemplateRegistration {
             LOGGER.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
-    }
-
-    private static String getTemplateStoreDetails(Connection conn, Long templateId) {
-        String installPath = null;
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(FETCH_REGISTERED_TEMPLATE_INSTALL_PATH);
-            pstmt.setLong(1, templateId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                installPath = rs.getString(1);
-            }
-        } catch (SQLException e) {
-            String errMsg = String.format("Failed to fetch template store record for template with id: %s", templateId);
-            LOGGER.error(errMsg, e);
-            throw new CloudRuntimeException(errMsg, e);
-        }
-        return installPath;
     }
 
     private static void cleanupStore(Long templateId, String filePath) {
@@ -722,7 +702,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    public void registerTemplates(Connection conn, Set<Hypervisor.HypervisorType> hypervisorsInUse) {
+    public void registerTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
         GlobalLock lock = GlobalLock.getInternLock("UpgradeDatabase-Lock");
         try {
             LOGGER.info("Grabbing lock to register templates.");
@@ -737,8 +717,12 @@ public class SystemVmTemplateRegistration {
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
                         List<Long> zoneIds = getEligibleZoneIds();
                         for (Long zoneId : zoneIds) {
-                            String filePath = TEMPORARY_SECONDARY_STORE + generateToken(TOKEN_LENGTH);
+                            String filePath = null;
                             try {
+                                filePath = Files.createTempDirectory(TEMPORARY_SECONDARY_STORE).toString();
+                                if (filePath == null) {
+                                    throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
+                                }
                                 Pair<String, Long> storeUrlAndId = getNfsStoreInZone(zoneId);
                                 mountStore(storeUrlAndId.first(), filePath);
                                 List<String> hypervisorList = fetchAllHypervisors(zoneId);
@@ -746,11 +730,12 @@ public class SystemVmTemplateRegistration {
                                     Hypervisor.HypervisorType name = Hypervisor.HypervisorType.getType(hypervisor);
                                     String templateName = NewTemplateNameList.get(name);
                                     Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName = new Pair<Hypervisor.HypervisorType, String>(name, templateName);
-                                    long templateId = getRegisteredTemplateId(hypervisorAndTemplateName);
-                                    if (templateId != -1) {
+                                    Long templateId = getRegisteredTemplateId(hypervisorAndTemplateName);
+                                    if (templateId != null) {
                                         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
-                                        String installPath = getTemplateStoreDetails(conn, templateId);
-                                        if (SystemVmTemplateRegistration.validateIfSeeded(storeUrlAndId.first(), installPath)) {
+                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                        String installPath = templateDataStoreVO.getInstallPath();
+                                        if (validateIfSeeded(storeUrlAndId.first(), installPath)) {
                                             continue;
                                         } else if (templateVO != null) {
                                             registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, filePath);
@@ -774,5 +759,91 @@ public class SystemVmTemplateRegistration {
             lock.unlock();
             lock.releaseRef();
         }
+    }
+
+    private void updateRegisteredTemplateDetails(Long templateId, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+        VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
+        templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
+        if (Hypervisor.HypervisorType.VMware == templateVO.getHypervisorType()) {
+            templateVO.setDeployAsIs(true);
+        }
+        boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
+        if (!updated) {
+            String errMsg = String.format("updateSystemVmTemplates:Exception while updating template with id %s to be marked as 'system'", templateId);
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+
+        updateSystemVMEntries(templateId, hypervisorAndTemplateName.getKey());
+
+        // Change value of global configuration parameter router.template.* for the corresponding hypervisor and minreq.sysvmtemplate.version for the ACS version
+        Map<String, String> configParams = new HashMap<>();
+        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
+        configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_TINY_VERSION);
+        updateConfigurationParams(configParams);
+    }
+
+    private void updateTemplateUrlAndChecksum(VMTemplateVO templateVO, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+        templateVO.setUrl(NewTemplateUrl.get(hypervisorAndTemplateName.getKey()));
+        templateVO.setChecksum(NewTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
+        if (Hypervisor.HypervisorType.VMware == templateVO.getHypervisorType()) {
+            templateVO.setDeployAsIs(true);
+        }
+        boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
+        if (!updated) {
+            String errMsg = String.format("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type %s", hypervisorAndTemplateName.getKey().name());
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
+
+    public void updateSystemVmTemplates(final Connection conn) {
+        LOGGER.debug("Updating System Vm template IDs");
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
+                try {
+                    hypervisorsListInUse = clusterDao.getDistictAvailableHypervisorsAcrossClusters();
+
+                } catch (final Exception e) {
+                    LOGGER.error("updateSystemVmTemplates: Exception caught while getting hypervisor types from clusters: " + e.getMessage());
+                    throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);
+                }
+
+                for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
+                    LOGGER.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
+                    Long templateId = getRegisteredTemplateId(new Pair<>(hypervisorAndTemplateName.getKey(), hypervisorAndTemplateName.getValue()));
+                    try {
+                        // change template type to SYSTEM
+                        if (templateId != null) {
+                            updateRegisteredTemplateDetails(templateId, hypervisorAndTemplateName);
+                        } else {
+                            if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
+                                try {
+                                    registerTemplates(hypervisorsListInUse);
+                                    break;
+                                } catch (final Exception e) {
+                                    throw new CloudRuntimeException(String.format("%s.%s %s SystemVm template not found. Cannot upgrade system Vms", CS_MAJOR_VERSION, CS_TINY_VERSION, hypervisorAndTemplateName.getKey()));
+                                }
+                            } else {
+                                LOGGER.warn(String.format("%s.%s %s SystemVm template not found. Cannot upgrade system Vms hypervisor is not used, so not failing upgrade",
+                                        CS_MAJOR_VERSION, CS_TINY_VERSION, hypervisorAndTemplateName.getKey()));
+                                // Update the latest template URLs for corresponding hypervisor
+                                VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisor(hypervisorAndTemplateName.getKey(), Storage.TemplateType.SYSTEM);
+                                if (templateVO != null) {
+                                    updateTemplateUrlAndChecksum(templateVO, hypervisorAndTemplateName);
+                                }
+                            }
+                        }
+                    } catch (final Exception e) {
+                        String errMsg = "updateSystemVmTemplates:Exception while getting ids of templates";
+                        LOGGER.error(errMsg, e);
+                        throw new CloudRuntimeException(errMsg, e);
+                    }
+                }
+                LOGGER.debug("Updating System Vm Template IDs Complete");
+            }
+        });
     }
 }

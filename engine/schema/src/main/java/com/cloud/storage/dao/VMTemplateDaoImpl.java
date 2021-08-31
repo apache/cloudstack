@@ -97,6 +97,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> AllFieldsSearch;
     protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
     private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
+    private SearchBuilder<VMTemplateVO> LatestTemplateByHypervisorTypeSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -105,6 +106,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private String consoleProxyTmpltName;
 
     public VMTemplateDaoImpl() {
+        super();
+        LatestTemplateByHypervisorTypeSearch = createSearchBuilder();
+        LatestTemplateByHypervisorTypeSearch.and("hypervisorType", LatestTemplateByHypervisorTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        LatestTemplateByHypervisorTypeSearch.and("templateType", LatestTemplateByHypervisorTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        LatestTemplateByHypervisorTypeSearch.and("removed", LatestTemplateByHypervisorTypeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
     }
 
     @Override
@@ -599,6 +605,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 return null;
             }
         }
+    }
+
+    @Override
+    public VMTemplateVO findLatestTemplateByTypeAndHypervisor(HypervisorType hypervisorType, TemplateType type) {
+        SearchCriteria<VMTemplateVO> sc = LatestTemplateByHypervisorTypeSearch.create();
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("templateType", type);
+        Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
+        List<VMTemplateVO> templates = listBy(sc, filter);
+        if (templates != null && !templates.isEmpty()) {
+            return templates.get(0);
+        }
+        return null;
     }
 
     @Override

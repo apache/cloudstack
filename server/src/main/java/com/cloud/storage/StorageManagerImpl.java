@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -2775,18 +2776,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         Set<HypervisorType> hypSet = new HashSet<HypervisorType>(hypervisorTypes);
                         TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
-                        String filePath = SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE + SystemVmTemplateRegistration.generateToken(10);
+                        String filePath = null;
                         try {
+                            filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
+                            if (filePath == null) {
+                                throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
+                            }
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
                                     String templateName = getValidTemplateName(zoneId, hypervisorType);
                                     Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
                                             new Pair<>(hypervisorType, templateName);
-                                    long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
-                                    VMTemplateVO vmTemplateVO = _templateDao.findById(templateId);
+                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
+                                    VMTemplateVO vmTemplateVO = null;
                                     TemplateDataStoreVO templateVO = null;
-                                    if (templateId != -1) {
+                                    if (templateId != null) {
+                                        vmTemplateVO = _templateDao.findById(templateId);
                                         templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
                                         if (templateVO != null) {
                                             try {

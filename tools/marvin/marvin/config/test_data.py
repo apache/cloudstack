@@ -2052,7 +2052,7 @@ test_data = {
         },
         "1.16.3": {
             "semanticversion": "1.16.3",
-            "url": "http://download.cloudstack.org/cks/as-1.16.3.iso",
+            "url": "http://download.cloudstack.org/cks/setup-1.16.3.iso",
             "mincpunumber": 2,
             "minmemory": 2048
         }
