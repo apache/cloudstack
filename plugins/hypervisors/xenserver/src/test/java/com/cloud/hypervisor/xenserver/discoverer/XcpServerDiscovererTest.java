@@ -17,6 +17,7 @@
 
 package com.cloud.hypervisor.xenserver.discoverer;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
@@ -69,5 +70,26 @@ public class XcpServerDiscovererTest {
         inOrder.verify(vmTemplateVOMock).setUrl(null);
         inOrder.verify(vmTemplateVOMock).setDisplayText("XenServer Tools Installer ISO (xen-pv-drv-iso)");
         inOrder.verify(vmTemplateDao).update(1L, vmTemplateVOMock);
+    }
+
+    @Test
+    public void uefiSupportedVersionTest() {
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("8.2"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("8.2.0"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("8.2.1"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("9"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("9.1"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("9.1.0"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("10"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("10.1"));
+        Assert.assertTrue(XcpServerDiscoverer.isUefiSupported("10.1.0"));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported(null));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported(""));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported("abc"));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported("0"));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported("7.4"));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported("8"));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported("8.1"));
+        Assert.assertFalse(XcpServerDiscoverer.isUefiSupported("8.1.0"));
     }
 }
