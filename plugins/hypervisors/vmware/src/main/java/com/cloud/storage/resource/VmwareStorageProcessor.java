@@ -188,6 +188,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public ResignatureAnswer resignature(ResignatureCommand cmd) {
+        s_logger.debug(String.format("Executing resource command %s: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
         final Map<String, String> details = cmd.getDetails();
 
         String scsiNaaDeviceId = details.get(DiskTO.SCSI_NAA_DEVICE_ID);
@@ -303,7 +304,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return answer;
         }
         catch (Exception ex) {
-            s_logger.debug(ex.getMessage());
+            s_logger.error(String.format("Command %s failed due to: [%s].", cmd.getClass().getSimpleName(), ex.getMessage()), ex);
 
             throw new CloudRuntimeException(ex.getMessage());
         }
@@ -314,8 +315,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         if (extents != null) {
             for (HostUnresolvedVmfsExtent extent : extents) {
-                s_logger.debug("extent devicePath=" + extent.getDevicePath() + ", ordinal=" + extent.getOrdinal()
-                        + ", reason=" + extent.getReason() + ", isHeadExtent=" + extent.isIsHeadExtent());
+                s_logger.debug(String.format("HostUnresolvedVmfsExtent details: [devicePath: %s, ordinal: %s, reason: %s, isHeadExtent: %s].", extent.getDevicePath(),
+                        extent.getOrdinal(), extent.getReason(), extent.isIsHeadExtent()));
 
                 String extentDevicePath = extent.getDevicePath();
 
@@ -381,6 +382,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
      * Returns the (potentially new) name of the VMDK file.
      */
     private String cleanUpDatastore(Command cmd, HostDatastoreSystemMO hostDatastoreSystem, DatastoreMO dsMo, Map<String, String> details) throws Exception {
+        s_logger.debug(String.format("Executing clean up in DataStore: [%s].", dsMo.getName()));
         boolean expandDatastore = Boolean.parseBoolean(details.get(DiskTO.EXPAND_DATASTORE));
 
         // A volume on the storage system holding a template uses a minimum hypervisor snapshot reserve value.
@@ -490,11 +492,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private Pair<VirtualMachineMO, Long> copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
                                                                             String templatePathAtSecondaryStorage, String templateName, String templateUuid,
                                                                             boolean createSnapshot, String nfsVersion, String configuration) throws Exception {
-        s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
-                templatePathAtSecondaryStorage + ", templateName: " + templateName + ", configuration: " + configuration);
-
         String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, nfsVersion);
-        s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
+
+        s_logger.info(String.format("Init copy of template [name: %s, path in secondary storage: %s, configuration: %s] in secondary storage [url: %s, mount point: %s] to primary storage.",
+                templateName, templatePathAtSecondaryStorage, configuration, secondaryStorageUrl, secondaryMountPoint));
 
         String srcOVAFileName =
                 VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templatePathAtSecondaryStorage, templateName,
@@ -527,9 +528,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         VmConfigInfo vAppConfig;
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Deploying OVF template %s with configuration %s", templateName, configuration));
-        }
+        s_logger.debug(String.format("Deploying OVF template %s with configuration %s.", templateName, configuration));
         hyperHost.importVmFromOVF(srcFileName, templateUuid, datastoreMo, "thin", configuration);
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(templateUuid);
         if (vmMo == null) {
@@ -575,6 +574,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
+        s_logger.debug(String.format("Executing command %s to Copy Template From Primary Storage: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+
         DataTO srcData = cmd.getSrcTO();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
@@ -785,6 +786,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
+        s_logger.debug(String.format("Executing command %s to Clone Volume From Base Template: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+
         DataTO srcData = cmd.getSrcTO();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
@@ -813,7 +816,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (volume.getDeviceId().equals(0L)) {
                     if (existingVm != null) {
                         s_logger.info(String.format("Found existing VM wth name [%s] before cloning from template, destroying it", vmName));
-                        existingVm.detachAllDisksAndDestroyVm();
+                        existingVm.detachAllDisksAndDestroy();
                     }
                     s_logger.info("ROOT Volume from deploy-as-is template, cloning template");
                     cloneVMFromTemplate(hyperHost, template.getPath(), vmName, primaryStore.getUuid());
@@ -845,8 +848,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         s_logger.info("Destroy dummy VM after volume creation");
                         if (vmMo != null) {
                             s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
-                            vmMo.detachAllDisks();
-                            vmMo.destroy();
+                            vmMo.detachAllDisksAndDestroy();
                         }
                     }
                 } else {
@@ -1038,6 +1040,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
+        s_logger.debug(String.format("Executing command %s to Copy Volume From Image Cache to Primary: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+
         VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
         VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -1121,13 +1125,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
-                workerVm.detachAllDisksAndDestroyVm();
+                workerVm.detachAllDisksAndDestroy();
             }
         }
     }
 
     @Override
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
+        s_logger.debug(String.format("Executing command %s to Copy Volume From Primary To Secondary: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+
         VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
         VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
         String vmName = srcVolume.getVmName();
@@ -1252,13 +1258,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisksAndDestroyVm();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
 
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
+        s_logger.debug(String.format("Executing command %s to Create Template From Volume: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getSrcTO();
         TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
         DataStoreTO imageStore = template.getDataStore();
@@ -1810,7 +1818,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return new Pair<>(diskDevice, disks);
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisksAndDestroyVm();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
@@ -1827,7 +1835,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer backupSnapshot(CopyCommand cmd) {
-        s_logger.debug(String.format("Receive CopyCommand: [%s].", _gson.toJson(cmd)));
+        s_logger.debug(String.format("Executing command %s to Backup Snapshot: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
 
         SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
         DataStoreTO primaryStore = srcSnapshot.getDataStore();
@@ -1981,7 +1989,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 try {
                     if (workerVm != null) {
-                        workerVm.detachAllDisksAndDestroyVm();
+                        workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
                     s_logger.warn(String.format("Failed to destroy worker VM [%s] due to: [%s]", workerVMName, e.getMessage()), e);
@@ -3693,13 +3701,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return _storage.getSize(srcOVFFileName);
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisksAndDestroyVm();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
 
     @Override
     public Answer createVolumeFromSnapshot(CopyCommand cmd) {
+        s_logger.debug(String.format("Executing command %s to Create Volume From Snapshot: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
+
         DataTO srcData = cmd.getSrcTO();
         SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
