@@ -49,6 +49,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -100,6 +101,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -136,6 +138,8 @@ import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplain
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -145,6 +149,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.rmi.RemoteException;
 import java.time.Duration;
 import java.time.Instant;
@@ -270,7 +275,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -446,6 +451,29 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
+    private HostMO getOldestExistentHostInCluster(Long clusterId, VmwareContext serviceContext) throws Exception {
+        HostVO host = hostDao.findOldestExistentHypervisorHostInCluster(clusterId);
+        if (host == null) {
+            return null;
+        }
+
+        ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
+        if (morSrcHost == null) {
+            Map<String, String> clusterDetails = clusterDetailsDao.findDetails(clusterId);
+            if (MapUtils.isEmpty(clusterDetails) || StringUtils.isBlank(clusterDetails.get("url"))) {
+                return null;
+            }
+
+            URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            if (morSrcHost == null) {
+                return null;
+            }
+        }
+
+        return new HostMO(serviceContext, morSrcHost);
+    }
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
@@ -498,6 +526,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
+                HostMO olderHostMo = getOldestExistentHostInCluster(clusterId, serviceContext);
+                if (olderHostMo != null) {
+                    hostMo.copyPortGroupsFromHost(olderHostMo);
+                }
+
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
