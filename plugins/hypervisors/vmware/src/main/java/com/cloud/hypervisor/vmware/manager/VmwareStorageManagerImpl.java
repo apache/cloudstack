@@ -378,7 +378,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 try {
                     if (workerVm != null) {
-                        workerVm.detachAllDisksAndDestroyVm();
+                        workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
                     s_logger.warn(String.format("Failed to destroy worker VM [%s] due to: [%s].", workerVMName, e.getMessage()), e);
@@ -635,7 +635,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisksAndDestroyVm();
+                clonedVm.detachAllDisksAndDestroy();
             }
 
             vmMo.removeSnapshot(templateUniqueName, false);
@@ -887,7 +887,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             clonedVm.detachAllDisks();
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisksAndDestroyVm();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
@@ -947,7 +947,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisksAndDestroyVm();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
@@ -1002,7 +1002,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
-                workerVm.detachAllDisksAndDestroyVm();
+                workerVm.detachAllDisksAndDestroy();
             }
         }
     }

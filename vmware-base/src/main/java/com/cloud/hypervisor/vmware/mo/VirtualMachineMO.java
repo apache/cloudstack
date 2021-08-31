@@ -1507,7 +1507,7 @@ public class VirtualMachineMO extends BaseMO {
         return chain;
     }
 
-    public void detachAllDisksAndDestroyVm() throws Exception {
+    public void detachAllDisksAndDestroy() throws Exception {
         s_logger.debug(String.format("Detaching all VM [%s] disks and destroying it.", GSON.toJson(this)));
         detachAllDisks();
         destroy();
