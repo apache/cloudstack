@@ -1222,20 +1222,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
             clonedVm = dcMo.findVm(templateUniqueName);
 
-            /* FR41 THIS IS OLD way of creating template using snapshot
-            if (!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
-                String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            String hardwareVersion = String.valueOf(vmMo.getVirtualHardwareVersion());
-
-            // 4 MB is the minimum requirement for VM memory in VMware
-            Pair<VirtualMachineMO, String[]> cloneResult =
-                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), hardwareVersion);
-            clonedVm = cloneResult.first();
-            * */
+            clonedVm.tagAsWorkerVM();
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
             // Get VMDK filename
@@ -1815,6 +1802,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
+                clonedVm.tagAsWorkerVM();
                 vmMo = clonedVm;
             }
 
@@ -2571,6 +2559,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dcMo = new DatacenterMO(context, morDc);
+
             ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
             ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
@@ -2581,7 +2571,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
                     if (vmMo == null) {
                         // Volume might be on a zone-wide storage pool, look for VM in datacenter
-                        DatacenterMO dcMo = new DatacenterMO(context, morDc);
                         vmMo = dcMo.findVm(vmName);
                     }
 
@@ -2636,7 +2625,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
                                 if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
-                                    resource.cleanupNetwork(hostMo, netDetails);
+                                    resource.cleanupNetwork(dcMo, netDetails);
                                 }
                             }
                         }
