@@ -2075,6 +2075,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (poolId != null) {
             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, poolId);
         }
+        sc.addAnd("parent", SearchCriteria.Op.EQ, 0);
         if (poolId != null) {
             pools.add(_storagePoolDao.findById(poolId));
         } else {
