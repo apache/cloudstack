@@ -192,7 +192,6 @@ export default {
     }
   },
   mounted () {
-    console.log(this.isCustomizedIOps)
     if (this.isCustomized) {
       this.fillValue()
     }
