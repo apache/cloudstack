@@ -32,16 +32,16 @@
       @handle-search-filter="($event) => fetchData($event)" />
 
     <compute-selection
-      v-if="selectedOffering && selectedOffering.iscustomized"
+      v-if="selectedOffering && (selectedOffering.iscustomized || selectedOffering.iscustomizediops)"
       :cpunumber-input-decorator="cpuNumberKey"
       :cpuspeed-input-decorator="cpuSpeedKey"
       :memory-input-decorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
       :minCpu="getMinCpu()"
-      :maxCpu="getMaxCpu()"
+      :maxCpu="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
       :minMemory="getMinMemory()"
-      :maxMemory="getMaxMemory()"
+      :maxMemory="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
       :isCustomized="selectedOffering.iscustomized"
       :isCustomizedIOps="'iscustomizediops' in selectedOffering && selectedOffering.iscustomizediops"
       @update-compute-cpunumber="updateFieldValue"
@@ -122,22 +122,14 @@ export default {
       if (this.resource.state === 'Running') {
         return this.resource.cpunumber
       }
-
       return this.selectedOffering?.serviceofferingdetails?.mincpunumber * 1 || 1
-    },
-    getMaxCpu () {
-      return this.selectedOffering?.serviceofferingdetails?.maxcpunumber * 1 || Number.MAX_SAFE_INTEGER
     },
     getMinMemory () {
       // We can only scale up while a VM is running
       if (this.resource.state === 'Running') {
         return this.resource.memory
       }
-
       return this.selectedOffering?.serviceofferingdetails?.minmemory * 1 || 32
-    },
-    getMaxMemory () {
-      return this.selectedOffering?.serviceofferingdetails?.maxmemory * 1 || Number.MAX_SAFE_INTEGER
     },
     getMessage () {
       if (this.resource.hypervisor === 'VMware') {
