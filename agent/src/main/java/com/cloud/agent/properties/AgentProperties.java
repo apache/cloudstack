@@ -29,8 +29,23 @@ public class AgentProperties{
      * Heartbeat update timeout. <br>
      * Data type: int. <br>
      * Default value: 60000 (ms).
-    */
+     */
     public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<Integer>("heartbeat.update.timeout", 60000);
+
+    /**
+     * The timeout in seconds to retrieve the target's domain id when migrating a VM with KVM. <br>
+     * Data type: int. <br>
+     * Default value: 10 (sec).
+     */
+    public static final Property<Integer> VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT = new Property<Integer>("vm.migrate.domain.retrieve.timeout", 10);
+
+    /**
+     * Reboot host and alert management on heartbeat timeout. <br>
+     * Data type: boolean.<br>
+     * Default value: true.
+     */
+    public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
+        = new Property<Boolean>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
 
     /**
      * Enable manually setting CPU's topology on KVM's VM. <br>

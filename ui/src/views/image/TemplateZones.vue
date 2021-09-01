@@ -38,6 +38,17 @@
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
       </div>
+      <template slot="expandedRowRender" slot-scope="record">
+        <a-table
+          style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
+          slot="expandedRowRender"
+          :columns="innerColumns"
+          :data-source="record.downloaddetails"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.zoneid">
+        </a-table>
+      </template>
       <template slot="action" slot-scope="text, record">
         <tooltip-button
           style="margin-right: 5px"
@@ -247,11 +258,24 @@ export default {
         scopedSlots: { customRender: 'isready' }
       }
     ]
+    this.innerColumns = [
+      {
+        title: this.$t('label.secondary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
     if (this.isActionPermitted()) {
       this.columns.push({
         title: '',
         dataIndex: 'action',
-        fixed: 'right',
         width: 100,
         scopedSlots: { customRender: 'action' }
       })
