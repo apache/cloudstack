@@ -6350,7 +6350,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                     for (final Long value : values) {
                                         sum += value;
                                     }
-                                    double avg = sum / values.size();
+                                    double avg = sum / (values.size() * 1f);
                                     if (series.getId().getCounterId() == rxPerfCounterInfo.getKey()) {
                                         networkReadKBs = avg;
                                     }
