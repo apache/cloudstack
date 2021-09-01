@@ -7203,8 +7203,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
                     VolumeVO resizedVolume = (VolumeVO) newVol;
-                    resizedVolume.setSize(template.getSize());
-                    _volsDao.update(resizedVolume.getId(), resizedVolume);
+                    if (template.getSize() != null) {
+                        resizedVolume.setSize(template.getSize());
+                        _volsDao.update(resizedVolume.getId(), resizedVolume);
+                    }
                 }
 
                 // 1. Save usage event and update resource count for user vm volumes
