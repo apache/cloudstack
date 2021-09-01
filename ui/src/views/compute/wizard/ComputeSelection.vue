@@ -175,10 +175,8 @@ export default {
   },
   computed: {
     colContraned () {
-      if (this.isConstrained) {
-        if (this.maxCpu && isNaN(this.maxCpu)) {
-          return 12
-        }
+      if (this.isConstrained && this.maxCpu && !isNaN(this.maxCpu)) {
+        return 12
       }
 
       return 8
