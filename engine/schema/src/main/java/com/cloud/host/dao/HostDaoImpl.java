@@ -1169,6 +1169,23 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public HostVO findOldestExistentHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+        Filter orderByFilter = new Filter(HostVO.class, "created", true, null, null);
+
+        List<HostVO> hosts = search(sc, orderByFilter, null, false);
+        if (hosts != null && hosts.size() > 0) {
+            return hosts.get(0);
+        }
+
+        return null;
+    }
+
+    @Override
     public List<Long> listAllHosts(long zoneId) {
         SearchCriteria<Long> sc = HostIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
