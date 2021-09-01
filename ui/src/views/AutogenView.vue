@@ -56,6 +56,7 @@
                   </a-select-option>
                   <a-select-option v-for="filter in filters" :key="filter">
                     {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
+                    <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
                   </a-select-option>
                 </a-select>
               </a-tooltip>
