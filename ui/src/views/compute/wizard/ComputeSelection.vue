@@ -25,7 +25,7 @@
             :validate-status="errors.cpu.status"
             :help="errors.cpu.message">
             <a-row :gutter="12">
-              <a-col :md="10" :lg="10" v-show="isConstrained">
+              <a-col :md="10" :lg="10" v-show="isConstrained && maxCpu && !isNaN(maxCpu)">
                 <a-slider
                   :min="minCpu"
                   :max="maxCpu"
@@ -61,7 +61,7 @@
             :validate-status="errors.memory.status"
             :help="errors.memory.message">
             <a-row :gutter="12">
-              <a-col :md="10" :lg="10" v-show="isConstrained">
+              <a-col :md="10" :lg="10" v-show="isConstrained && maxMemory && !isNaN(maxMemory)">
                 <a-slider
                   :min="minMemory"
                   :max="maxMemory"
@@ -175,7 +175,11 @@ export default {
   },
   computed: {
     colContraned () {
-      return this.isConstrained ? 12 : 8
+      if (this.isConstrained && this.maxCpu && !isNaN(this.maxCpu)) {
+        return 12
+      }
+
+      return 8
     }
   },
   watch: {

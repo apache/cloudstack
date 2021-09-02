@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.BufferedReader;
@@ -51,6 +52,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
@@ -1438,6 +1440,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
+        try {
+            setVmBootDetails(vm, conn, vmSpec.getBootType(), vmSpec.getBootMode());
+        } catch (final XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+        }
         return vm;
     }
 
@@ -1784,6 +1791,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.getProductVersion());
+            if (isUefiSupported(_host.getProductVersion())) {
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));
@@ -1940,6 +1950,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.info("Appending user extra configuration settings to VM");
             ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
+    }
+
+    protected void setVmBootDetails(final VM vm, final Connection conn, String bootType, String bootMode) throws XenAPIException, XmlRpcException {
+        if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
+            bootType = ApiConstants.BootType.BIOS.toString();
+        }
+        Boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
+                ApiConstants.BootMode.SECURE.toString().equals(bootMode);
+        final Map<String, String> bootParams = vm.getHVMBootParams(conn);
+        bootParams.replace("firmware", bootType.toLowerCase());
+        vm.setHVMBootParams(conn, bootParams);
+        final Map<String, String> platform = vm.getPlatform(conn);
+        platform.put("secureboot", isSecure.toString());
+        vm.setPlatform(conn, platform);
     }
 
     /**
