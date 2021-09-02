@@ -477,10 +477,9 @@
                   </span>
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
+                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
                           v-decorator="['boottype']"
                           @change="fetchBootModes"
                         >
@@ -1652,6 +1651,7 @@ export default {
                     duration: 0
                   })
                 }
+                eventBus.$emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),

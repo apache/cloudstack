@@ -505,14 +505,15 @@ class TestDeployVM(cloudstackTestCase):
         )
         return
 
-    @attr(
-        tags=[
-              "advanced",
-              "eip",
-              "advancedns",
-              "basic",
-              "sg"],
-        required_hardware="false")
+    # @attr(
+    #     tags=[
+    #         "advanced",
+    #         "eip",
+    #         "advancedns",
+    #         "basic",
+    #         "sg"],
+    #     required_hardware="false")
+    @attr(tags=["TODO"], required_hardware="false")
     def test_08_deploy_attached_volume(self):
         """Test Deploy Virtual Machine with startVM=false and attach volume
            already attached to different machine
@@ -1166,28 +1167,24 @@ class TestDeployVMBasicZone(cloudstackTestCase):
             cls.testdata["ostype"]
         )
 
+        cls._cleanup = []
         # Create service offerings, disk offerings etc
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.testdata["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
             cls.testdata["disk_offering"]
         )
         # Cleanup
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering,
-        ]
+        cls._cleanup.append(cls.disk_offering)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVMBasicZone, cls).tearDownClass()
 
     def setUp(self):
 
@@ -1208,13 +1205,11 @@ class TestDeployVMBasicZone(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+        super(TestDeployVMBasicZone, self).tearDown()
 
+    @attr(tags=["TODO"], required_hardware="false")
+    def test_01(self):
+        pass
 
 class TestDeployVMFromTemplate(cloudstackTestCase):
 
