@@ -142,6 +142,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         volumeSearch = createSearchBuilder();
         volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeSearch.and("store_role", volumeSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        volumeSearch.and("snapshot_id", volumeSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         volumeSearch.done();
 
         stateSearch = createSearchBuilder();
@@ -360,6 +361,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
+        sc.setParameters("volume_id", volumeId);
+        sc.setParameters("store_role", role);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("store_role", role);
         return findOneBy(sc);

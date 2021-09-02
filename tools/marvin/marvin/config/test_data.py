@@ -234,6 +234,16 @@ test_data = {
             "PortForwarding": 'VirtualRouter',
         },
     },
+    "nw_off_no_services": {
+        "name": 'Test Network offering without services',
+        "displaytext": 'Test Network offering without services',
+        "guestiptype": 'Isolated',
+        "supportedservices": '',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+        },
+    },
     "nw_off_isolated_netscaler": {
         "name": 'Netscaler',
         "displaytext": 'Netscaler',
