@@ -232,9 +232,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
                             DomainJobInfo job = dm.getJobInfo();
-                            s_logger.info("Aborting domain job: " + job);
+                            s_logger.info("Aborting " + vmName + " domain job: " + job);
                             dm.abortJob();
-                            result = "Migration was cancelled by cloudstack due to time out";
+                            result = String.format("Migration of VM %s was cancelled by cloudstack due to time out after %d seconds", vmName, migrateWait);
                             s_logger.debug(result);
                             break;
                         } catch (final LibvirtException e) {
