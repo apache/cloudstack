@@ -32,13 +32,13 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41510to41600.class);
+    final static Logger LOG = Logger.getLogger(Upgrade41520to41600.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.15.1.0", "4.16.0.0"};
+        return new String[] {"4.15.2.0", "4.16.0.0"};
     }
 
     @Override
@@ -53,7 +53,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41510to41600.sql";
+        final String scriptFile = "META-INF/db/schema-41520to41600.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -237,7 +237,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41510to41600-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41520to41600-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
