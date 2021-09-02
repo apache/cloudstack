@@ -26,7 +26,7 @@
               @click="$message.success(`${$t('label.copied.clipboard')} : ${name}`)"
               v-clipboard:copy="name" >
               <slot name="avatar">
-                <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
+                <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => resource.ostypename = name"/>
                 <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon" />
                 <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
               </slot>

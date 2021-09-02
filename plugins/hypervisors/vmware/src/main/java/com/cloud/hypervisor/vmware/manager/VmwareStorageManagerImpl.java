@@ -378,6 +378,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 try {
                     if (workerVm != null) {
+                        // detach volume and destroy worker vm
                         workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
@@ -1002,6 +1003,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
+                //detach volume and destroy worker vm
                 workerVm.detachAllDisksAndDestroy();
             }
         }

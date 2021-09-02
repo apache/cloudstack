@@ -432,8 +432,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 virtualDeviceBackingInfo = backingInfo.getParent();
             }
 
-            vmMo.detachAllDisks();
-            vmMo.destroy();
+            vmMo.detachAllDisksAndDestroy();
 
             VmwareStorageLayoutHelper.moveVolumeToRootFolder(dcMo, backingFiles);
 
@@ -916,8 +915,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
         if (volume.getVolumeType() == Volume.Type.DATADISK) {
             s_logger.info("detach disks from volume-wrapper VM " + vmName);
-            vmMo.detachAllDisks();
-            vmMo.destroy();
+            vmMo.detachAllDisksAndDestroy();
         }
         return vmdkFileBaseName;
     }
@@ -954,11 +952,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
             }
 
-            s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
-            vmMo.detachAllDisks();
-
-            s_logger.info("destroy volume-wrapper VM " + vmdkName);
-            vmMo.destroy();
+            s_logger.info("detach disks from volume-wrapper VM and destroy" + vmdkName);
+            vmMo.detachAllDisksAndDestroy();
 
             String srcFile = dsMo.getDatastorePath(vmdkName, true);
 
@@ -1125,6 +1120,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
+                //detach volume and destroy worker vm
                 workerVm.detachAllDisksAndDestroy();
             }
         }
@@ -1334,8 +1330,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } finally {
             try {
                 if (volume.getVmName() == null && workerVmMo != null) {
-                    workerVmMo.detachAllDisks();
-                    workerVmMo.destroy();
+                    workerVmMo.detachAllDisksAndDestroy();
                 }
             } catch (Throwable e) {
                 s_logger.error("Failed to destroy worker VM created for detached volume");
@@ -1645,8 +1640,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         workerVM.exportVm(installFullPath, exportName, false, false);
 
-        workerVM.detachAllDisks();
-        workerVM.destroy();
+        workerVM.detachAllDisksAndDestroy();
     }
 
     private String getTemplateVmdkName(String installFullPath, String exportName) {
@@ -1989,6 +1983,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 try {
                     if (workerVm != null) {
+                        // detach volume and destroy worker vm
                         workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
@@ -2502,8 +2497,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 } finally {
                     s_logger.info("Destroy dummy VM after volume creation");
                     if (vmMo != null) {
-                        vmMo.detachAllDisks();
-                        vmMo.destroy();
+                        vmMo.detachAllDisksAndDestroy();
                     }
                 }
             }
