@@ -3747,6 +3747,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (workerVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
             }
+            workerVm.tagAsWorkerVM();
 
             if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
                 HypervisorHostHelper.createBaseFolderInDatastore(primaryDsMo, primaryDsMo.getDataCenterMor());
