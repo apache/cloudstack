@@ -2831,37 +2831,36 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             Domain callerDomain = _domainDao.findById(caller.getDomainId());
-            List<Long> domainIds = _domainDao.getDomainParentIds(callerDomain.getId())
-                .stream().collect(Collectors.toList());
-            if (isRecursive) {
-                List<Long> childrenIds = _domainDao.getDomainChildrenIds(callerDomain.getPath());
-                if (childrenIds != null && !childrenIds.isEmpty())
-                domainIds.addAll(childrenIds);
-            }
+            List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
-
-            if (ids == null || ids.isEmpty()) {
-                SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
-                sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
-                sb.done();
-
-                SearchCriteria<DiskOfferingJoinVO> scc = sb.create();
-                sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
-            } else {
-                SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+            SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+            if (ids != null && !ids.isEmpty()) {
                 sb.and("id", sb.entity().getId(), Op.IN);
-                sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
-                sb.done();
-
-                SearchCriteria<DiskOfferingJoinVO> scc = sb.create();
-                scc.setParameters("id", ids.toArray());
-                sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
             }
+            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
+            sb.done();
+
+            SearchCriteria<DiskOfferingJoinVO> scc = sb.create();
+            if (ids != null && !ids.isEmpty()) {
+                scc.setParameters("id", ids.toArray());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
         return new Pair<>(result.first(), result.second());
+    }
+
+    private List<Long> findRelatedDomainIds(Domain domain, boolean isRecursive) {
+        List<Long> domainIds = _domainDao.getDomainParentIds(domain.getId())
+            .stream().collect(Collectors.toList());
+        if (isRecursive) {
+            List<Long> childrenIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            if (childrenIds != null && !childrenIds.isEmpty())
+            domainIds.addAll(childrenIds);
+        }
+        return domainIds;
     }
 
     @Override
@@ -3037,33 +3036,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             Domain callerDomain = _domainDao.findById(caller.getDomainId());
-            List<Long> domainIds = _domainDao.getDomainParentIds(callerDomain.getId())
-                .stream().collect(Collectors.toList());
-            if (isRecursive) {
-                List<Long> childrenIds = _domainDao.getDomainChildrenIds(callerDomain.getPath());
-                if (childrenIds != null && !childrenIds.isEmpty())
-                domainIds.addAll(childrenIds);
-            }
+            List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
-
-            if (ids == null || ids.isEmpty()) {
-                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
-                sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
-                sb.done();
-
-                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
-                sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
-            } else {
-                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+            SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+            if (ids != null && !ids.isEmpty()) {
                 sb.and("id", sb.entity().getId(), Op.IN);
-                sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
-                sb.done();
-
-                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
-                scc.setParameters("id", ids.toArray());
-                sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
             }
+            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
+            sb.done();
+
+            SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+            if (ids != null && !ids.isEmpty()) {
+                scc.setParameters("id", ids.toArray());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
         if (currentVmOffering != null) {

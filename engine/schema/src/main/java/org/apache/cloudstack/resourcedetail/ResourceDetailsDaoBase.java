@@ -23,9 +23,11 @@ import java.util.Map;
 import org.apache.cloudstack.api.ResourceDetail;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
     private SearchBuilder<R> AllFieldsSearch;
@@ -181,5 +183,22 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
 
         List<R> results = search(sc, null);
         return results;
+    }
+
+    @Override
+    public List<Long> findResouceIdsByNameAndValueIn(String name, Object[] values) {
+        GenericSearchBuilder<R, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getResourceId());
+        sb.and("name", sb.entity().getName(), Op.EQ);
+        sb.and().op("value", sb.entity().getValue(), Op.IN);
+        sb.or("valueNull", sb.entity().getValue(), Op.NULL);
+        sb.cp();
+        sb.done();
+
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("name", name);
+        sc.setParameters("value", values);
+
+        return customSearch(sc, null);
     }
 }

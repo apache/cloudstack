@@ -26,9 +26,6 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
 import com.cloud.service.ServiceOfferingDetailsVO;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<ServiceOfferingDetailsVO> implements ServiceOfferingDetailsDao {
@@ -75,19 +72,6 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
     @Override
     public List<Long> findOfferingIdsByDomainIds(List<Long> domainIds) {
         Object[] dIds = domainIds.stream().map(s -> String.valueOf(s)).collect(Collectors.toList()).toArray();
-
-        GenericSearchBuilder<ServiceOfferingDetailsVO, Long> sb = createSearchBuilder(Long.class);
-        sb.selectFields(sb.entity().getResourceId());
-        sb.and("name", sb.entity().getName(), Op.EQ);
-        sb.and().op("value", sb.entity().getValue(), Op.IN);
-        sb.or("valueNull", sb.entity().getValue(), Op.NULL);
-        sb.cp();
-        sb.done();
-
-        SearchCriteria<Long> sc = sb.create();
-        sc.setParameters("name", "domainid");
-        sc.setParameters("value", dIds);
-
-        return customSearch(sc, null);
+        return findResouceIdsByNameAndValueIn("domainid", dIds);
     }
 }
