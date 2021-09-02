@@ -19,4 +19,3 @@
 -- Schema upgrade cleanup from 4.15.1.0 to 4.15.2.0
 --;
 
-ALTER TABLE `cloud`.`ssh_keypairs` MODIFY COLUMN `uuid` varchar(40) NOT NULL UNIQUE;
