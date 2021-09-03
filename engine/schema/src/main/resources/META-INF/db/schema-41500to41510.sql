@@ -132,5 +132,3 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 
 -- Add support for windows2019srvNext_64Guest from VMware 7.0.1.0
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '7.0.1.0', 'windows2019srvNext_64Guest', 276, now(), 0);
-
-UPDATE `cloud`.`configuration` SET `value` = 20, `default_value` = 20 WHERE `name` = 'default.ui.page.size';
