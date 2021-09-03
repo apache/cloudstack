@@ -18,36 +18,18 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form :form="form" layout="vertical">
-      <a-form-item :label="$t('label.diskoffering')" v-if="resource.type !== 'ROOT'">
-        <a-select
-          v-decorator="['diskofferingid', {
-            initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]}]"
-          :loading="loading"
-          :placeholder="$t('label.diskoffering')"
-          @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
-          :autoFocus="resource.type !== 'ROOT'"
+      <a-form-item :label="$t('label.sizegb')">
+        <a-input
+          v-decorator="['size', {
+            rules: [{ required: true, message: $t('message.error.size') }]}]"
+          :placeholder="$t('label.disksize')"
+          :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
           showSearch
           optionFilterProp="children"
           :filterOption="(input, option) => {
             return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option
-            v-for="(offering, index) in offerings"
-            :value="offering.id"
-            :key="index"
-          >{{ offering.displaytext || offering.name }}</a-select-option>
-        </a-select>
       </a-form-item>
-      <div v-if="customDiskOffering || resource.type === 'ROOT'">
-        <a-form-item :label="$t('label.sizegb')">
-          <a-input
-            v-decorator="['size', {
-              rules: [{ required: true, message: $t('message.error.size') }]}]"
-            :placeholder="$t('label.disksize')"
-            :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
-        </a-form-item>
-      </div>
       <a-form-item :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
         <a-checkbox v-decorator="['shrinkok']" />
       </a-form-item>
