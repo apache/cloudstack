@@ -145,5 +145,4 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         assert offerings != null && offerings.size() == 1 : "No service offering found for offering id " + offering.getId();
         return offerings.get(0);
     }
-
 }
