@@ -22,10 +22,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -689,7 +691,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
         }
-        if (!HypervisorType.VMware.toString().equalsIgnoreCase(hypervisorType) &&
+        List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
+        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT)) &&
                 (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
             throw new InvalidParameterValueException("Username and Password need to be provided.");
         }

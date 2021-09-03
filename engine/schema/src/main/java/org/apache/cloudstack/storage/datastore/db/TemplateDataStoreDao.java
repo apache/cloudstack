@@ -66,7 +66,7 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);
 
-    List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId);
+    List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId, Long... storeIds);
 
     TemplateDataStoreVO findByTemplateZoneReady(long templateId, Long zoneId);
 

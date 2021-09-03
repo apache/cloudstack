@@ -139,7 +139,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         EndPoint ep = epSelector.select(volume);
         Answer answer = null;
         if (ep == null) {
-            String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+            String errMsg = "No remote endpoint to send CreateObjectCommand, check if host or ssvm is down?";
             s_logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
@@ -281,7 +281,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 EndPoint ep = epSelector.select(srcData, destData);
                 Answer answer = null;
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    String errMsg = "No remote endpoint to send CopyCommand, check if host or ssvm is down?";
                     s_logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
