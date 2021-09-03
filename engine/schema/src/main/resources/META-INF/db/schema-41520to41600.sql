@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.15.1.0 to 4.16.0.0
+-- Schema upgrade from 4.15.2.0 to 4.16.0.0
 --;
 
 -- Adding dynamic scalable flag for service offering table
