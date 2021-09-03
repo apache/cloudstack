@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -121,7 +120,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -207,6 +205,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
@@ -350,13 +349,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DiskOfferingJoinDao _diskOfferingJoinDao;
 
     @Inject
-    private DiskOfferingDetailsDao diskOfferingDetailsDao;
+    private DiskOfferingDetailsDao _diskOfferingDetailsDao;
 
     @Inject
     private ServiceOfferingJoinDao _srvOfferingJoinDao;
 
     @Inject
     private ServiceOfferingDao _srvOfferingDao;
+
+    @Inject
+    private ServiceOfferingDetailsDao _srvOfferingDetailsDao;
 
     @Inject
     private DataCenterJoinDao _dcJoinDao;
@@ -2869,75 +2871,41 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
         }
 
-        // FIXME: disk offerings should search back up the hierarchy for
-        // available disk offerings...
-        /*
-         * sb.addAnd("domainId", sb.entity().getDomainId(),
-         * SearchCriteria.Op.EQ); if (domainId != null) {
-         * SearchBuilder<DomainVO> domainSearch =
-         * _domainDao.createSearchBuilder(); domainSearch.addAnd("path",
-         * domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-         * sb.join("domainSearch", domainSearch, sb.entity().getDomainId(),
-         * domainSearch.entity().getId()); }
-         */
+        // Filter offerings that are not associated with caller's domain
+        // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
+        Account caller = CallContext.current().getCallingAccount();
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+            List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-        // FIXME: disk offerings should search back up the hierarchy for
-        // available disk offerings...
-        /*
-         * if (domainId != null) { sc.setParameters("domainId", domainId); //
-         * //DomainVO domain = _domainDao.findById((Long)domainId); // // I want
-         * to join on user_vm.domain_id = domain.id where domain.path like
-         * 'foo%' //sc.setJoinParameters("domainSearch", "path",
-         * domain.getPath() + "%"); // }
-         */
+            List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
+            SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+            if (ids != null && !ids.isEmpty()) {
+                sb.and("id", sb.entity().getId(), Op.IN);
+            }
+            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
+            sb.done();
+
+            SearchCriteria<DiskOfferingJoinVO> scc = sb.create();
+            if (ids != null && !ids.isEmpty()) {
+                scc.setParameters("id", ids.toArray());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+        }
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
-        // Remove offerings that are not associated with caller's domain
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(result.first())) {
-            ListIterator<DiskOfferingJoinVO> it = result.first().listIterator();
-            while (it.hasNext()) {
-                DiskOfferingJoinVO offering = it.next();
-                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
-                    boolean toRemove = true;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (isRecursive) {
-                            if (_domainDao.isChildDomain(account.getDomainId(), dId)) {
-                                toRemove = false;
-                                break;
-                            }
-                        } else {
-                            if (_domainDao.isChildDomain(dId, account.getDomainId())) {
-                                toRemove = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (toRemove) {
-                        it.remove();
-                    }
-                }
-            }
-        }
         return new Pair<>(result.first(), result.second());
     }
 
-    private List<ServiceOfferingJoinVO> filterOfferingsOnCurrentTags(List<ServiceOfferingJoinVO> offerings, ServiceOfferingVO currentVmOffering) {
-        if (currentVmOffering == null) {
-            return offerings;
+    private List<Long> findRelatedDomainIds(Domain domain, boolean isRecursive) {
+        List<Long> domainIds = _domainDao.getDomainParentIds(domain.getId())
+            .stream().collect(Collectors.toList());
+        if (isRecursive) {
+            List<Long> childrenIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            if (childrenIds != null && !childrenIds.isEmpty())
+            domainIds.addAll(childrenIds);
         }
-        List<String> currentTagsList = StringUtils.csvTagsToList(currentVmOffering.getTags());
-
-        // New service offering should have all the tags of the current service offering.
-        List<ServiceOfferingJoinVO> filteredOfferings = new ArrayList<>();
-        for (ServiceOfferingJoinVO offering : offerings) {
-            List<String> newTagsList = StringUtils.csvTagsToList(offering.getTags());
-            if (newTagsList.containsAll(currentTagsList)) {
-                filteredOfferings.add(offering);
-            }
-        }
-        return filteredOfferings;
+        return domainIds;
     }
 
     @Override
@@ -3111,39 +3079,60 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("cpuspeedconstraints", SearchCriteria.Op.SC, cpuSpeedSearchCriteria);
         }
 
-        Pair<List<ServiceOfferingJoinVO>, Integer> result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+        // Filter offerings that are not associated with caller's domain
+        // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+            List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-        //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
-        List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
-        // Remove offerings that are not associated with caller's domain
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(filteredOfferings)) {
-            ListIterator<ServiceOfferingJoinVO> it = filteredOfferings.listIterator();
-            while (it.hasNext()) {
-                ServiceOfferingJoinVO offering = it.next();
-                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
-                    boolean toRemove = true;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (isRecursive) {
-                            if (_domainDao.isChildDomain(caller.getDomainId(), dId)) {
-                                toRemove = false;
-                                break;
-                            }
-                        } else {
-                            if (_domainDao.isChildDomain(dId, caller.getDomainId())) {
-                                toRemove = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (toRemove) {
-                        it.remove();
-                    }
+            List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
+            SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+            if (ids != null && !ids.isEmpty()) {
+                sb.and("id", sb.entity().getId(), Op.IN);
+            }
+            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
+            sb.done();
+
+            SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+            if (ids != null && !ids.isEmpty()) {
+                scc.setParameters("id", ids.toArray());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+        }
+
+        if (currentVmOffering != null) {
+            List<String> storageTags = StringUtils.csvTagsToList(currentVmOffering.getTags());
+            if (!storageTags.isEmpty()) {
+                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                for(String tag : storageTags) {
+                    sb.and(tag, sb.entity().getTags(), Op.FIND_IN_SET);
                 }
+                sb.done();
+
+                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                for(String tag : storageTags) {
+                    scc.setParameters(tag, tag);
+                }
+                sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
+            }
+
+            List<String> hostTags = StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            if (!hostTags.isEmpty()) {
+                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                for(String tag : hostTags) {
+                    sb.and(tag, sb.entity().getHostTag(), Op.FIND_IN_SET);
+                }
+                sb.done();
+
+                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                for(String tag : hostTags) {
+                    scc.setParameters(tag, tag);
+                }
+                sc.addAnd("hostTags", SearchCriteria.Op.SC, scc);
             }
         }
-        return new Pair<>(filteredOfferings, result.second());
+
+        return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
