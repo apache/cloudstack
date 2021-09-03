@@ -18,7 +18,7 @@
 const path = require('path')
 const AntDesignThemePlugin = require('antd-theme-webpack-plugin')
 
-function resolve (dir) {
+function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
@@ -48,6 +48,7 @@ const options = {
     '@border-radius-base',
     '@box-shadow-base'
   ],
+  lessUrl: 'js/less.min.js',
   indexFileName: 'index.html',
   publicPath: '.',
   generateOnce: false
