@@ -19,3 +19,4 @@
 -- Schema upgrade from 4.15.1.0 to 4.15.2.0
 --;
 
+UPDATE `cloud`.`configuration` SET `value` = 20, `default_value` = 20 WHERE `name` = 'default.ui.page.size';
