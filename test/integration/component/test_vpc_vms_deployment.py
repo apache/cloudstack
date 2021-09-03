@@ -182,30 +182,24 @@ class TestVMDeployVPC(cloudstackTestCase):
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls._cleanup = []
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
                                      cls.api_client,
                                      cls.services["vpc_offering"]
                                      )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.vpc_off
-                        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVMDeployVPC, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -220,12 +214,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVMDeployVPC, self).tearDown()
 
     def validate_vpc_offering(self, vpc_offering):
         """Validates the VPC offering"""
@@ -286,43 +275,9 @@ class TestVMDeployVPC(cloudstackTestCase):
                                            networkid=network.id,
                                            vpcid=self.vpc.id
         )
+        self.cleanup.append(public_ip)
         self.debug("Associated {} with network {}".format(public_ip.ipaddress.ipaddress, network.id))
         return public_ip
-
-    def create_natrule(self, vm, public_ip, network, services=None):
-        self.debug("Creating NAT rule in network for vm with public IP")
-        if not services:
-            services = self.services["natrule"]
-        nat_rule = NATRule.create(self.apiclient,
-                                  vm,
-                                  services,
-                                  ipaddressid=public_ip.ipaddress.id,
-                                  openfirewall=False,
-                                  networkid=network.id,
-                                  vpcid=self.vpc.id
-        )
-        self.debug("Adding NetworkACL rules to make NAT rule accessible")
-        nwacl_nat = NetworkACL.create(self.apiclient,
-                                      networkid=network.id,
-                                      services=services,
-                                      traffictype='Ingress'
-        )
-        self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
-        return nat_rule
-
-    def check_ssh_into_vm(self, vm, public_ip, testnegative=False):
-        self.debug("Checking if we can SSH into VM={} on public_ip={}".format(vm.name, public_ip.ipaddress.ipaddress))
-        try:
-            vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-            if not testnegative:
-                self.debug("SSH into VM={} on public_ip={} is successful".format(vm.name, public_ip.ipaddress.ipaddress))
-            else:
-                self.fail("SSH into VM={} on public_ip={} is successful".format(vm.name, public_ip.ipaddress.ipaddress))
-        except:
-            if not testnegative:
-                self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
-            else:
-                self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
     def deployVM_and_verify_ssh_access(self, network, ip):
         # Spawn an instance in that network
@@ -335,6 +290,7 @@ class TestVMDeployVPC(cloudstackTestCase):
             networkids=[str(network.id)],
             ipaddress=ip,
             )
+        self.cleanup.append(vm)
         self.assertIsNotNone(
             vm,
             "Failed to deploy vm with ip address {} and hostname {}".format(ip, self.services["virtual_machine"]["name"])
@@ -351,10 +307,11 @@ class TestVMDeployVPC(cloudstackTestCase):
         )
         public_ip_1 = self.acquire_publicip(network)
         #ensure vm is accessible over public ip
-        nat_rule = self.create_natrule(vm, public_ip_1, network)
+        nat_rule = self.create_natrule_for_services(vm, public_ip_1, network)
         self.check_ssh_into_vm(vm, public_ip_1, testnegative=False)
         #remove the nat rule
         nat_rule.delete(self.apiclient)
+        self.cleanup.remove(nat_rule)
         return vm
 
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
@@ -1799,7 +1756,8 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # was tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_07_delete_network_with_rules(self):
         """ Test delete network that has PF/staticNat/LB rules/Network Acl
         """
@@ -2381,15 +2339,15 @@ class TestVMDeployVPC(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(self.vpc)
         self.validate_vpc_network(self.vpc)
         self.nw_off = NetworkOffering.create(
             self.apiclient,
             self.services["network_offering"],
             conservemode=False
         )
-        # Enable Network offering
-        self.nw_off.update(self.apiclient, state='Enabled')
         self._cleanup.append(self.nw_off)
+        self.nw_off.update(self.apiclient, state='Enabled')
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" % self.nw_off.id)
         network_1 = Network.create(
@@ -2402,6 +2360,7 @@ class TestVMDeployVPC(cloudstackTestCase):
             gateway='10.1.1.1',
             vpcid=self.vpc.id
         )
+        self.cleanup.append(network_1)
         self.debug("Created network with ID: %s" % network_1.id)
         # Spawn vm1 in that network
         vm1_ip = "10.1.1.10"
@@ -2416,7 +2375,9 @@ class TestVMDeployVPC(cloudstackTestCase):
         #Destroy both the vms
         try:
             vm1.delete(self.apiclient, expunge=True)
+            self.cleanup.remove(vm1)
             vm2.delete(self.apiclient, expunge=True)
+            self.cleanup.remove(vm2)
         except Exception as e:
             raise Exception("Warning: Exception in expunging vms: %s" % e)
         """
@@ -2437,10 +2398,9 @@ class TestVMDeployVPC(cloudstackTestCase):
         vm4 = self.deployVM_and_verify_ssh_access(network_1, vm2_ip)
         try:
             vm3.delete(self.apiclient, expunge=True)
+            self.cleanup.remove(vm3)
             vm4.delete(self.apiclient, expunge=True)
+            self.cleanup.remove(vm4)
         except Exception as e:
             raise Exception("Warning: Excepting in expunging vms vm3 and vm4:  %s" % e)
         return
-
-
-

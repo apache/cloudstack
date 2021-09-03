@@ -128,9 +128,10 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
- 
+
+    # tags = ["advanced"]
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags = ["advanced"], required_hardware="true")
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_01_register_template(self, value):
         """Test register template
         # Validate the following:
@@ -195,8 +196,9 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
         return
 
+    # tags = ["advanced"]
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_02_create_template_snapshot(self, value):
         """Test create snapshot and templates from volume
 
@@ -262,8 +264,9 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
         return
 
+    # tags = ["advanced"]
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags = ["advanced"], required_hardware="true")
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_03_register_iso(self, value):
         """Test register iso
         Steps and validations:

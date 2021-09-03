@@ -302,9 +302,10 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         # Step2: It should return a commit hash
         return
 
-    @attr(tags=["advanced", "basic"])
-    @attr(required_hardware="false")
-    @attr(storage="s3")
+    # @attr(tags=["advanced", "basic"])
+    # @attr(required_hardware="false")
+    # @attr(storage="s3")
+    @attr(tags=["TODO"], required_hardware="false")
     def test_es_1863_register_template_s3_domain_admin_user(self):
         """
         @Desc: Test whether cloudstack allows Domain admin or user
