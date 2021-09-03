@@ -511,7 +511,7 @@ class hostConfig(serviceCfgBase):
             if not bash('uname -a | grep x86_64').isSuccess() :
                 raise CloudRuntimeException("Unsupported CPU Architecture. CloudStack requires x86_64 CPU Architecture")
 
-            if int(bash('ifconfig | grep "^\\w" | grep -iv "^lo" | wc -l').getStdout()) < 1 :
+            if int(bash('ip a | grep "^\\w" | grep -iv "^lo" | wc -l').getStdout()) < 1 :
                 raise CloudRuntimeException("CloudStack requires at least a single NIC")
 
             return True
