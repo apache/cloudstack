@@ -987,14 +987,19 @@
 
                         tabFilter: function(args) {
                             var project = selectedProjectObj;
-                            var projectOwner = project.account;
+                            var projectOwners = project.owner;
+                            var projectOwner = []
+                            for (var i in projectOwners) {
+                                projectOwner.push(projectOwners[i].account)
+                            }
+
                             var currentAccount = args.context.users[0].account;
                             var hiddenTabs = [];
 
                             if (!isAdmin() && !isDomainAdmin()) {
                                 hiddenTabs.push('resources');
 
-                                if (currentAccount != projectOwner) {
+                                if (!projectOwner.includes(currentAccount)) {
                                     hiddenTabs.push('accounts');
                                     hiddenTabs.push('invitations');
                                 }
