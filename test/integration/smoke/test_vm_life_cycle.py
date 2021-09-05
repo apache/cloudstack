@@ -2085,7 +2085,10 @@ class TestCloneVM(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        super(TestCloneVM, self).tearDown()
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_clone_vm_and_volumes(self):
@@ -2093,6 +2096,8 @@ class TestCloneVM(cloudstackTestCase):
         config = Configurations.list(self.apiclient,
                               name="kvm.snapshot.enabled"
                               )
+        if config is None:
+            self.skipTest("Please enable kvm.snapshot.enable global config")
         if len(config) == 0 or config[0].value != "true":
             self.skipTest("Please enable kvm.snapshot.enable global config")
         if self.hypervisor.lower() in ["kvm", "simulator"]:

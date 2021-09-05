@@ -311,7 +311,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
-        String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        String accountStoragePoolUuid = null;
+        if (vm != null) {
+            accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        }
         Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
 
         if (storagePool.isPresent()) {
@@ -349,9 +352,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
             if (poolList != null && !poolList.isEmpty()) {
-                if (vm == null) {
-                    return (StoragePool) dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
-                }
                 // Check if the preferred storage pool can be used. If yes, use it.
                 Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
 
