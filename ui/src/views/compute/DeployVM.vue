@@ -2019,7 +2019,7 @@ export default {
     },
     onBootTypeChange (value) {
       this.fetchBootModes(value)
-      this.updateFieldValue('bootmode', this.options.bootModes[0].id)
+      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
     }
   }
 }
