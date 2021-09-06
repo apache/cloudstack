@@ -1370,9 +1370,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return false;
             }
             s_logger.info("Found hosts in the zone for vm migration: " + hosts);
+            if (HypervisorType.VMware.equals(host.getHypervisorType())) {
+                s_logger.debug("Skipping pool check of volumes on VMware environment because across-cluster vm migration is supported by vMotion");
+                return true;
+            }
             // Don't migrate vm if it has volumes on cluster-wide pool
             for (final VMInstanceVO vm : vms) {
-                if (! HypervisorType.VMware.equals(host.getHypervisorType()) && _vmMgr.checkIfVmHasClusterWideVolumes(vm.getId())) {
+                if (_vmMgr.checkIfVmHasClusterWideVolumes(vm.getId())) {
                     s_logger.warn(String.format("VM %s cannot be migrated across cluster as it has volumes on cluster-wide pool", vm));
                     return false;
                 }
