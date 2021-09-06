@@ -441,21 +441,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         return podIdsByCapacity;
     }
 
-    private List<Long> listDisabledClusters(long zoneId, Long podId) {
-        List<Long> disabledClusters = clusterDao.listDisabledClusters(zoneId, podId);
-        if (podId == null) {
-            //list all disabled clusters under this zone + clusters under any disabled pod of this zone
-            List<Long> clustersWithDisabledPods = clusterDao.listClustersWithDisabledPods(zoneId);
-            disabledClusters.addAll(clustersWithDisabledPods);
-        }
-        return disabledClusters;
-    }
-
-    private List<Long> listDisabledPods(long zoneId) {
-        List<Long> disabledPods = podDao.listDisabledPods(zoneId);
-        return disabledPods;
-    }
-
     protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, long vmId, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {
         //look at the aggregate available cpu and ram per cluster
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
