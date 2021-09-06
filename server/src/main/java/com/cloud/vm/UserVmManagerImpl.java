@@ -6015,7 +6015,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final Host host = _hostDao.findById(srcHostId);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
-        final DataCenterDeployment plan = _itMgr.getMigrationDeployment(vm.getId(), host, null, excludes);
+        final DataCenterDeployment plan = _itMgr.getMigrationDeployment(vm, host, null, excludes);
         try {
             return _planningMgr.planDeployment(profile, plan, excludes, null);
         } catch (final AffinityConflictException e2) {

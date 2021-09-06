@@ -1347,7 +1347,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private boolean isClusterWideMigrationPossible(Host host, List<VMInstanceVO> vms, List<HostVO> hosts) {
         if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId())) {
             s_logger.info("Looking for hosts across different clusters in zone: " + host.getDataCenterId());
-            hosts.addAll(listAllUpAndEnabledHosts(Host.Type.Routing, null, null, host.getDataCenterId()));
+            Long podId = null;
+            for (final VMInstanceVO vm : vms) {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                    // SystemVMs can only be migrated to same pod
+                    podId = host.getPodId();
+                    break;
+                }
+            }
+            hosts.addAll(listAllUpAndEnabledHosts(Host.Type.Routing, null, podId, host.getDataCenterId()));
             if (CollectionUtils.isEmpty(hosts)) {
                 s_logger.warn("Unable to find a host for vm migration in zone: " + host.getDataCenterId());
                 return false;

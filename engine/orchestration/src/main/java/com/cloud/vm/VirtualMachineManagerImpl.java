@@ -3373,7 +3373,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(hostId);
-        DataCenterDeployment plan = getMigrationDeployment(vm.getId(), host, poolId, excludes);
+        DataCenterDeployment plan = getMigrationDeployment(vm, host, poolId, excludes);
 
         DeployDestination dest = null;
         while (true) {
@@ -3434,9 +3434,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public DataCenterDeployment getMigrationDeployment(final Long vmId, final Host host, final Long poolId, final ExcludeList excludes) {
+    public DataCenterDeployment getMigrationDeployment(final VirtualMachine vm, final Host host, final Long poolId, final ExcludeList excludes) {
         if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId()) &&
-                (HypervisorType.VMware.equals(host.getHypervisorType()) || !checkIfVmHasClusterWideVolumes(vmId))) {
+                (HypervisorType.VMware.equals(host.getHypervisorType()) || !checkIfVmHasClusterWideVolumes(vm.getId()))) {
             s_logger.info("Searching for hosts in the zone for vm migration");
             List<Long> clustersToExclude = _clusterDao.listAllClusters(host.getDataCenterId());
             List<ClusterVO> clusterList = _clusterDao.listByDcHyType(host.getDataCenterId(), host.getHypervisorType().toString());
@@ -3445,6 +3445,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             for (Long clusterId : clustersToExclude) {
                 excludes.addCluster(clusterId);
+            }
+            if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                return new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), null, null, poolId, null);
             }
             return new DataCenterDeployment(host.getDataCenterId(), null, null, null, poolId, null);
         }

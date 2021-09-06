@@ -251,7 +251,7 @@ public interface VirtualMachineManager extends Manager {
 
     boolean checkIfVmHasClusterWideVolumes(Long vmId);
 
-    DataCenterDeployment getMigrationDeployment(Long vmId, Host host, Long poolId, ExcludeList excludes);
+    DataCenterDeployment getMigrationDeployment(VirtualMachine vm, Host host, Long poolId, ExcludeList excludes);
 
     /**
      * Returns true if the VM's Root volume is allocated at a local storage pool
