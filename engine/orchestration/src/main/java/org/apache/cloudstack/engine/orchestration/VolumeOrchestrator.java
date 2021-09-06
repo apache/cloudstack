@@ -114,6 +114,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -124,6 +125,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -454,18 +456,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (snapInfo == null) {
                 throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId());
             }
-            // We need to copy the snapshot onto secondary.
-            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
-            snapshotStrategy.backupSnapshot(snapInfo);
 
-            // Attempt to grab it again.
-            snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
-            if (snapInfo == null) {
-                throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId() + " on secondary and could not create backup");
-            }
+            snapInfo = backupSnapshotIfNeeded(snapshot, dataStoreRole, snapInfo);
         }
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
-        if (!DataStoreRole.Primary.equals(dataStoreRole)) {
+        if (!DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
             try {
                 // sync snapshot to region store if necessary
                 DataStore snapStore = snapInfo.getDataStore();
@@ -495,6 +490,25 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException("Failed to create volume from snapshot", e);
         }
 
+    }
+
+    private SnapshotInfo backupSnapshotIfNeeded(Snapshot snapshot, DataStoreRole dataStoreRole, SnapshotInfo snapInfo) {
+        boolean backupSnapToSecondary = SnapshotManager.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotManager.BackupSnapshotAfterTakingSnapshot.value();
+
+        StoragePoolVO srcPool = _storagePoolDao.findById(snapInfo.getBaseVolume().getPoolId());
+        // We need to copy the snapshot onto secondary.
+        //Skipping the backup to secondary storage with NFS/FS could be supported when CLOUDSTACK-5297 is accepted with small enhancement in:
+        //KVMStorageProcessor::createVolumeFromSnapshot and CloudStackPrimaryDataStoreDriverImpl::copyAsync/createAsync
+        if ((!backupSnapToSecondary && (StoragePoolType.NetworkFilesystem.equals(srcPool.getPoolType()) || StoragePoolType.Filesystem.equals(srcPool.getPoolType())))) {
+            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+            snapshotStrategy.backupSnapshot(snapInfo);
+            // Attempt to grab it again.
+            snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
+            if (snapInfo == null) {
+                throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId() + " on secondary and could not create backup");
+            }
+        }
+        return snapInfo;
     }
 
     public DataStoreRole getDataStoreRole(Snapshot snapshot) {
