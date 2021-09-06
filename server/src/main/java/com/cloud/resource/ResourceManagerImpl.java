@@ -1308,9 +1308,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
-            if (hosts == null || hosts.isEmpty()) {
+            if (CollectionUtils.isEmpty(hosts)) {
                 s_logger.warn("Unable to find a host for vm migration in cluster: " + host.getClusterId());
-                if (! isClusterWideMigrationSupported(host, vms, hosts)) {
+                if (! isClusterWideMigrationPossible(host.getDataCenterId(), vms, hosts)) {
                     return false;
                 }
             }
@@ -1344,23 +1344,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return true;
     }
 
-    private boolean isClusterWideMigrationSupported(Host host, List<VMInstanceVO> vms, List<HostVO> hosts) {
-        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId())) {
-            s_logger.info("Looking for hosts across different clusters in zone: " + host.getDataCenterId());
-            hosts = listAllUpAndEnabledHosts(Host.Type.Routing, null, null, host.getDataCenterId());
-            if (hosts == null || hosts.isEmpty()) {
-                s_logger.warn("Unable to find a host for vm migration in zone: " + host.getDataCenterId());
+    private boolean isClusterWideMigrationPossible(long zoneId, List<VMInstanceVO> vms, List<HostVO> hosts) {
+        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(zoneId)) {
+            s_logger.info("Looking for hosts across different clusters in zone: " + zoneId);
+            hosts.addAll(listAllUpAndEnabledHosts(Host.Type.Routing, null, null, zoneId));
+            if (CollectionUtils.isEmpty(hosts)) {
+                s_logger.warn("Unable to find a host for vm migration in zone: " + zoneId);
                 return false;
             }
-            // Dont migrate vm if it has volumes on cluster-wide pool
+            s_logger.info("Found hosts in the zone for vm migration: " + hosts);
+            // Don't migrate vm if it has volumes on cluster-wide pool
             for (final VMInstanceVO vm : vms) {
                 if (_vmMgr.checkIfVmHasClusterWideVolumes(vm.getId())) {
-                    s_logger.warn("Unable to migrate vm " + vm.getInstanceName() + " as it has volumes on cluster-wide pool");
+                    s_logger.warn(String.format("VM %s cannot be migrated across cluster as it has volumes on cluster-wide pool", vm));
                     return false;
                 }
             }
         } else {
-            s_logger.warn("Not migrating VM across cluster since " + MIGRATE_VM_ACROSS_CLUSTERS.key() + " is false");
+            s_logger.warn(String.format("VMs cannot be migrated across cluster since %s is false for zone ID: %d", MIGRATE_VM_ACROSS_CLUSTERS.key(), zoneId));
             return false;
         }
         return true;
