@@ -14,21 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.network.TungstenGuestNetworkIpAddressVO;
-import com.cloud.utils.db.GenericDao;
+public class AddTungstenNetworkGatewayToLogicalRouterCommand extends TungstenCommand {
+    private final String networkUuid;
+    private final String logicalRouterUuid;
+    private final String ipAddress;
 
-import java.util.List;
+    public AddTungstenNetworkGatewayToLogicalRouterCommand(String networkUuid, String logicalRouterUuid, String ipAddress) {
+        this.networkUuid = networkUuid;
+        this.logicalRouterUuid = logicalRouterUuid;
+        this.ipAddress = ipAddress;
+    }
 
-public interface TungstenGuestNetworkIpAddressDao extends GenericDao<TungstenGuestNetworkIpAddressVO, Long> {
-    List<String> listGuestIpAddressByNetworkId(long networkId);
+    public String getNetworkUuid() {
+        return networkUuid;
+    }
 
-    List<TungstenGuestNetworkIpAddressVO> listByNetworkId(long networkId);
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
+    }
 
-    TungstenGuestNetworkIpAddressVO findByNetworkIdAndPublicIp(long networkId, String publicIp);
-
-    TungstenGuestNetworkIpAddressVO findByNetworkAndGuestIpAddress(long networkId, String guestIp);
-
-    TungstenGuestNetworkIpAddressVO findByNetworkAndLogicalRouter(long networkId, String logicalRouterUuid);
+    public String getIpAddress() {
+        return ipAddress;
+    }
 }

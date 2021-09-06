@@ -6882,6 +6882,338 @@
                                         }
                                     }
                                 }
+                            },
+                            logicalrouter: {
+                                type: 'select',
+                                id: 'logicalrouter',
+                                title: 'label.tungsten.logicalrouter',
+                                listView: {
+                                    id: 'logicalrouter',
+                                    type: 'select',
+                                    label: 'label.tungsten.logicalrouter',
+                                    actions: {
+                                        add: {
+                                            label: 'label.tungsten.add.logicalrouter',
+                                            messages: {
+                                                notification: function(args) {
+                                                    return 'label.tungsten.add.logicalrouter';
+                                                }
+                                            },
+                                            createForm: {
+                                                title: 'label.tungsten.add.logicalrouter',
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'label.tungsten.add.logicalrouter';
+                                                    }
+                                                },
+                                                fields: {
+                                                    name: {
+                                                        label: 'label.name',
+                                                        validation: {
+                                                            required: true
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            action: function(args) {
+                                                var dataObj = {
+                                                    zoneid: args.context.tungsten[0].zoneid,
+                                                    name: args.data.name
+                                                };
+                                                $.ajax({
+                                                    url: createURL("createTungstenFabricLogicalRouter"),
+                                                    dataType: "json",
+                                                    data: dataObj,
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var jid = json.createtungstenfabriclogicalrouterresponse.jobid;
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jid,
+                                                                getUpdatedItem: function(json) {
+                                                                    return json.queryasyncjobresultresponse.jobresult.logicalrouter;
+                                                                }
+                                                            }
+                                                        });
+                                                    },
+                                                    error: function(data) {
+                                                        args.response.error(parseXMLHttpResponse(data));
+                                                    }
+                                                });
+                                            },
+                                            notification: {
+                                                poll: pollAsyncJobResult
+                                            }
+                                        }
+                                    },
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        network: {
+                                            label: 'label.tungsten.network',
+                                            converter: function(text, item) {
+                                                if (typeof item.network != 'undefined' && item.network.length > 0) {
+                                                    var networks = [];
+                                                    item.network.forEach(function(network) {
+                                                        networks.push(network.name)
+                                                    });
+                                                    return networks.join(',');
+                                                } else {
+                                                    return '';
+                                                }
+                                            }
+                                        }
+                                    },
+                                    dataProvider: function(args) {
+                                        var data = {
+                                            zoneid: args.context.tungsten[0].zoneid
+                                        };
+                                        listViewDataProvider(args, data);
+                                        $.ajax({
+                                            url: createURL("listTungstenFabricLogicalRouter"),
+                                            dataType: "json",
+                                            async: true,
+                                            data: data,
+                                            success: function(json) {
+                                                var items = json.listtungstenfabriclogicalrouterresponse.logicalrouter ? json.listtungstenfabriclogicalrouterresponse.logicalrouter : [];
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                    detailView: {
+                                        name: 'label.details',
+                                        actions: {
+                                            remove: {
+                                                label: 'label.tungsten.delete.logicalrouter',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.tungsten.logicalrouter.delete';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.tungsten.delete.logicalrouter';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    $.ajax({
+                                                        url: createURL("deleteTungstenFabricLogicalRouter"),
+                                                        data: {
+                                                            zoneid: args.context.tungsten[0].zoneid,
+                                                            logicalrouteruuid: args.context.logicalrouter[0].uuid
+                                                        },
+                                                        success: function(json) {
+                                                            var jid = json.deletetungstenfabriclogicalrouterresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function(data) {
+                                                            args.response.error(parseXMLHttpResponse(data));
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+                                            apply: {
+                                                label: 'label.tungsten.add.network.logicalrouter',
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'label.tungsten.add.network.logicalrouter';
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.tungsten.add.network.logicalrouter',
+                                                    messages: {
+                                                        notification: function(args) {
+                                                            return 'label.tungsten.add.network.logicalrouter';
+                                                        }
+                                                    },
+                                                    fields: {
+                                                        networkuuid: {
+                                                            label: 'label.tungsten.network',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function(args) {
+                                                                var items = [];
+                                                                var data = {
+                                                                    zoneid: args.context.tungsten[0].zoneid
+                                                                };
+                                                                $.ajax({
+                                                                    url: createURL("listTungstenFabricNetwork"),
+                                                                    dataType: "json",
+                                                                    data: data,
+                                                                    async: true,
+                                                                    success: function(json) {
+                                                                        var networks = json.listtungstenfabricnetworkresponse.network ? json.listtungstenfabricnetworkresponse.network : [];
+                                                                        networks.forEach(function(network){
+                                                                            items.push({
+                                                                                id: network.uuid,
+                                                                                description: network.name
+                                                                            })
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var dataObj = {
+                                                        zoneid: args.context.tungsten[0].zoneid,
+                                                        networkuuid: args.data.networkuuid,
+                                                        logicalrouteruuid: args.context.logicalrouter[0].uuid
+                                                    };
+                                                    $.ajax({
+                                                        url: createURL("addTungstenFabricNetworkGatewayToLogicalRouter"),
+                                                        dataType: "json",
+                                                        data: dataObj,
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.addtungstenfabricnetworkgatewaytologicalrouterresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function(json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.logicalrouter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function(data) {
+                                                            args.response.error(parseXMLHttpResponse(data));
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+                                            delete: {
+                                                label: 'label.tungsten.remove.network.logicalrouter',
+                                                preFilter: function(args) {
+                                                    if (typeof args.context.logicalrouter[0].network != 'undefined' && args.context.logicalrouter[0].network.length > 0) {
+                                                        return true;
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.tungsten.remove.network.logicalrouter',
+                                                    messages: {
+                                                        notification: function (args) {
+                                                            return 'label.tungsten.remove.network.logicalrouter';
+                                                        }
+                                                    },
+                                                    fields: {
+                                                        networkuuid: {
+                                                            label: 'label.tungsten.network',
+                                                            validation: {
+                                                                required: false
+                                                            },
+                                                            select: function (args) {
+                                                                var items = [{
+                                                                    id: '',
+                                                                    description: ''
+                                                                }];
+                                                                var data = {
+                                                                    zoneid: args.context.tungsten[0].zoneid,
+                                                                    logicalrouteruuid: args.context.logicalrouter[0].uuid
+                                                                };
+                                                                $.ajax({
+                                                                    url: createURL("listTungstenFabricLogicalRouter"),
+                                                                    dataType: "json",
+                                                                    data: data,
+                                                                    async: true,
+                                                                    success: function (json) {
+                                                                        var networks = json.listtungstenfabriclogicalrouterresponse.logicalrouter[0].network;
+                                                                        networks.forEach(function (network) {
+                                                                            items.push({
+                                                                                id: network.uuid,
+                                                                                description: network.name
+                                                                            })
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'label.tungsten.remove.network.logicalrouter';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var dataObj = {
+                                                        zoneid: args.context.tungsten[0].zoneid,
+                                                        networkuuid: args.data.networkuuid,
+                                                        logicalrouteruuid: args.context.logicalrouter[0].uuid
+                                                    };
+                                                    $.ajax({
+                                                        url: createURL("removeTungstenFabricNetworkGatewayFromLogicalRouter"),
+                                                        data: dataObj,
+                                                        success: function(json) {
+                                                            var jid = json.removetungstenfabricnetworkgatewayfromlogicalrouterresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function(json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.logicalrouter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function(data) {
+                                                            args.response.error(parseXMLHttpResponse(data));
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            }
+                                        },
+                                        tabs: {
+                                            details: {
+                                                title: 'label.details',
+                                                fields: [{
+                                                    name: {
+                                                        label: 'label.name'
+                                                    }
+                                                }],
+                                                dataProvider: function(args) {
+                                                    var data = {
+                                                        zoneid: args.context.tungsten[0].zoneid,
+                                                        logicalrouteruuid: args.context.logicalrouter[0].uuid
+                                                    };
+                                                    $.ajax({
+                                                        url: createURL("listTungstenFabricLogicalRouter"),
+                                                        dataType: "json",
+                                                        data: data,
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var item = json.listtungstenfabriclogicalrouterresponse.logicalrouter[0];
+                                                            args.response.success({
+                                                                data: item
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

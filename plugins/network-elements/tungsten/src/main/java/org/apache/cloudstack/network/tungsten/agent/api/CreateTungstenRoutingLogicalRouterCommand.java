@@ -16,39 +16,28 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class SetTungstenNetworkGatewayCommand extends TungstenCommand {
+import java.util.UUID;
+
+public class CreateTungstenRoutingLogicalRouterCommand extends TungstenCommand {
     private final String projectFqn;
-    private final String routerName;
-    private final long vnId;
-    private final String vnUuid;
-    private final String vnGatewayIp;
+    private final String uuid;
+    private final String name;
 
-    public SetTungstenNetworkGatewayCommand(final String projectFqn, final String routerName, final long vnId,
-        final String vnUuid, final String vnGatewayIp) {
+    public CreateTungstenRoutingLogicalRouterCommand(final String projectFqn, final String name) {
+        this.uuid = UUID.randomUUID().toString();
         this.projectFqn = projectFqn;
-        this.routerName = routerName;
-        this.vnId = vnId;
-        this.vnUuid = vnUuid;
-        this.vnGatewayIp = vnGatewayIp;
+        this.name = name;
     }
 
-    public String getRouterName() {
-        return routerName;
-    }
-
-    public long getVnId() {
-        return vnId;
-    }
-
-    public String getVnUuid() {
-        return vnUuid;
-    }
-
-    public String getVnGatewayIp() {
-        return vnGatewayIp;
+    public String getUuid() {
+        return uuid;
     }
 
     public String getProjectFqn() {
         return projectFqn;
+    }
+
+    public String getName() {
+        return name;
     }
 }

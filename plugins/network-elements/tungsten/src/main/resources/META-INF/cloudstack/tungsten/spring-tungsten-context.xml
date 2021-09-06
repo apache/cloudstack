@@ -28,7 +28,7 @@
     <bean id="tungstenProviderService"
           class="org.apache.cloudstack.network.tungsten.service.TungstenProviderServiceImpl"/>
 
-    <bean id="tungstenGuestNetworkGuru" class="org.apache.cloudstack.network.tungsten.service.TungstenGuestNetworkGuru">
+    <bean id="tungstenGuestNetworkGuru" class="com.cloud.network.guru.TungstenGuestNetworkGuru">
         <property name="name" value="TungstenGuestNetworkGuru" />
     </bean>
 

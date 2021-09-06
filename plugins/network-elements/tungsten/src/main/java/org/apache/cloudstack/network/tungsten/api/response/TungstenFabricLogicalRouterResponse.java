@@ -21,26 +21,33 @@ import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.network.tungsten.model.TungstenLogicalRouter;
 
-public class TungstenFabricNetworkResponse extends BaseResponse {
+import java.util.ArrayList;
+import java.util.List;
+
+public class TungstenFabricLogicalRouterResponse extends BaseResponse {
     @SerializedName(ApiConstants.UUID)
-    @Param(description = "Tungsten-Fabric network uuid")
+    @Param(description = "Tungsten-Fabric logical router uuid")
     private String uuid;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "Tungsten-Fabric network name")
+    @Param(description = "Tungsten-Fabric logical router name")
     private String name;
 
-    public TungstenFabricNetworkResponse(String uuid, String name) {
-        this.uuid = uuid;
-        this.name = name;
-        this.setObjectName("network");
-    }
+    @SerializedName(ApiConstants.NETWORK)
+    @Param(description = "list Tungsten-Fabric policy network name")
+    private List<TungstenFabricNetworkResponse> networks;
 
-    public TungstenFabricNetworkResponse(VirtualNetwork virtualNetwork) {
-        this.uuid = virtualNetwork.getUuid();
-        this.name = virtualNetwork.getDisplayName();
-        this.setObjectName("network");
+    public TungstenFabricLogicalRouterResponse(TungstenLogicalRouter tungstenLogicalRouter) {
+        this.uuid = tungstenLogicalRouter.getLogicalRouter().getUuid();
+        this.name = tungstenLogicalRouter.getLogicalRouter().getDisplayName();
+        List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
+        for (VirtualNetwork virtualNetwork : tungstenLogicalRouter.getVirtualNetworkList()) {
+            networks.add(new TungstenFabricNetworkResponse(virtualNetwork));
+        }
+        this.networks = networks;
+        this.setObjectName("logicalrouter");
     }
 
     public String getUuid() {
@@ -57,5 +64,13 @@ public class TungstenFabricNetworkResponse extends BaseResponse {
 
     public void setName(final String name) {
         this.name = name;
+    }
+
+    public List<TungstenFabricNetworkResponse> getNetworks() {
+        return networks;
+    }
+
+    public void setNetworks(final List<TungstenFabricNetworkResponse> networks) {
+        this.networks = networks;
     }
 }

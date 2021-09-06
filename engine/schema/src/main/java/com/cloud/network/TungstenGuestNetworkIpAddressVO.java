@@ -48,6 +48,9 @@ public class TungstenGuestNetworkIpAddressVO implements InternalIdentity {
     @Enumerated(value = EnumType.STRING)
     private Ip guestIpAddress = null;
 
+    @Column(name = "logical_router_uuid")
+    private String logicalRouterUuid;
+
     public TungstenGuestNetworkIpAddressVO() {
     }
 
@@ -56,11 +59,10 @@ public class TungstenGuestNetworkIpAddressVO implements InternalIdentity {
         this.guestIpAddress = guestIpAddress;
     }
 
-
-    public TungstenGuestNetworkIpAddressVO(long networkId, Ip publicIpAddress, Ip guestIpAddress) {
+    public TungstenGuestNetworkIpAddressVO(long networkId, Ip guestIpAddress, String logicalRouterUuid) {
         this.networkId = networkId;
-        this.publicIpAddress = publicIpAddress;
         this.guestIpAddress = guestIpAddress;
+        this.logicalRouterUuid = logicalRouterUuid;
     }
 
     @Override
@@ -90,5 +92,13 @@ public class TungstenGuestNetworkIpAddressVO implements InternalIdentity {
 
     public void setGuestIpAddress(final Ip guestIpAddress) {
         this.guestIpAddress = guestIpAddress;
+    }
+
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
+    }
+
+    public void setLogicalRouterUuid(final String logicalRouterUuid) {
+        this.logicalRouterUuid = logicalRouterUuid;
     }
 }

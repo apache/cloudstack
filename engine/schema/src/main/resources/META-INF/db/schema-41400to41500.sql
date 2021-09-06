@@ -108,6 +108,7 @@ CREATE TABLE `cloud`.`tungsten_guest_network_ip_address` (
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
   `public_ip_address` varchar(15) COMMENT 'ip public_ip_address',
   `guest_ip_address` varchar(15) NOT NULL COMMENT 'ip guest_ip_address',
+  `logical_router_uuid` varchar(40) COMMENT 'logical router uuid',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_tungsten_guest_network_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

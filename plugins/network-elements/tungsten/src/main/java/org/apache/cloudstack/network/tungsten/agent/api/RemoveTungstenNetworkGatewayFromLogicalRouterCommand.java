@@ -14,21 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.network.TungstenGuestNetworkIpAddressVO;
-import com.cloud.utils.db.GenericDao;
+public class RemoveTungstenNetworkGatewayFromLogicalRouterCommand extends TungstenCommand {
+    private final String networkUuid;
+    private final String logicalRouterUuid;
 
-import java.util.List;
+    public RemoveTungstenNetworkGatewayFromLogicalRouterCommand(String networkUuid, String logicalRouterUuid) {
+        this.networkUuid = networkUuid;
+        this.logicalRouterUuid = logicalRouterUuid;
+    }
 
-public interface TungstenGuestNetworkIpAddressDao extends GenericDao<TungstenGuestNetworkIpAddressVO, Long> {
-    List<String> listGuestIpAddressByNetworkId(long networkId);
+    public String getNetworkUuid() {
+        return networkUuid;
+    }
 
-    List<TungstenGuestNetworkIpAddressVO> listByNetworkId(long networkId);
-
-    TungstenGuestNetworkIpAddressVO findByNetworkIdAndPublicIp(long networkId, String publicIp);
-
-    TungstenGuestNetworkIpAddressVO findByNetworkAndGuestIpAddress(long networkId, String guestIp);
-
-    TungstenGuestNetworkIpAddressVO findByNetworkAndLogicalRouter(long networkId, String logicalRouterUuid);
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
+    }
 }

@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteTungstenFabricServiceGroup", description = "delete Tungsten-Fabric service group",
+@APICommand(name = DeleteTungstenFabricServiceGroupCmd.APINAME, description = "delete Tungsten-Fabric service group",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTungstenFabricServiceGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTungstenFabricServiceGroupCmd.class.getName());

@@ -33,7 +33,6 @@ public class TungstenUtils {
     private static final String guestType = "Guest";
     private static final String publicType = "Public";
     private static final String managementType = "Management";
-    private static final String sharedNetwork = "sharedNetwork";
     private static final String securityGroup = "securityGroup";
 
     public static final String INGRESS_RULE = "ingress";
@@ -63,6 +62,11 @@ public class TungstenUtils {
     public static final String FABRIC_NETWORK_FQN = "default-domain:default-project:ip-fabric";
     public static final String DEFAULT_FABRIC_NAME = "ip-fabric";
     public static final String DEFAULT_PROJECT_FQN = "default-domain:default-project";
+    public static final String ROUTINGLR_NAME = "routingLR";
+    public static final String GUEST_NETWORK_NAME = "guestNetwork";
+    public static final String PUBLIC_NETWORK_NAME = "publicNetwork";
+    public static final String MANAGEMENT_NETWORK_NAME = "managementNetwork";
+    public static final String SHARED_NETWORK_NAME = "sharedNetwork";
 
     public static String getTapName(final String macAddress) {
         return "tap" + macAddress.replace(":", "");
@@ -109,28 +113,32 @@ public class TungstenUtils {
         return "internalGatewayVmi" + vnId;
     }
 
+    public static String getRoutingGatewayVmiName(String routerName, String networkName) {
+        return "routingGatewayVmi" + routerName + networkName;
+    }
+
     public static String getNetworkGatewayIiName(long pvnId) {
         return "internalGatewayIi" + pvnId;
     }
 
+    public static String getRoutingGatewayIiName(String routerName, String networkName) {
+        return "routingGatewayIi" + routerName + networkName;
+    }
+
     public static String getPublicNetworkName(long zoneId) {
-        return "publicNetwork" + zoneId;
+        return PUBLIC_NETWORK_NAME + zoneId;
     }
 
     public static String getGuestNetworkName(String networkName) {
-        return networkName + "-" + RandomStringUtils.random(6, true, true);
+        return GUEST_NETWORK_NAME + networkName + "-" + RandomStringUtils.random(6, true, true);
     }
 
     public static String getSharedNetworkName(long networkId) {
-        return sharedNetwork + networkId;
+        return SHARED_NETWORK_NAME + networkId;
     }
 
     public static String getManagementNetworkName(long mvnId) {
-        return "managementNetwork" + mvnId;
-    }
-
-    public static String getControlNetworkName(long cvnId) {
-        return "controlNetwork" + cvnId;
+        return MANAGEMENT_NETWORK_NAME + mvnId;
     }
 
     public static String getProxyVm() {

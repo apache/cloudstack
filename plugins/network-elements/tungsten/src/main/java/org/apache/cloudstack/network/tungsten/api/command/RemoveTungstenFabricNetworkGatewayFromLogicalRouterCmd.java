@@ -16,36 +16,32 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogicalRouterResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
-import java.util.List;
-
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricPolicyRuleCmd.APINAME, description = "list Tungsten-Fabric policy",
-    responseObject = TungstenFabricRuleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
-    false)
-public class ListTungstenFabricPolicyRuleCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricPolicyRuleCmd.class.getName());
-    public static final String APINAME = "listTungstenFabricPolicyRule";
+@APICommand(name = RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd.APINAME, description = "remove Tungsten-Fabric network gateway from logical router",
+    responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd.class.getName());
+    public static final String APINAME = "removeTungstenFabricNetworkGatewayFromLogicalRouter";
 
     @Inject
     TungstenService tungstenService;
@@ -53,26 +49,37 @@ public class ListTungstenFabricPolicyRuleCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric policy")
-    private String policyUuid;
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, required = true, description = "Tungsten-Fabric network uuid")
+    private String networkUuid;
 
-    @Parameter(name = ApiConstants.RULE_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric rule")
-    private String ruleUuid;
+    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, required = true, description = "Tungsten-Fabric logical router uuid")
+    private String logicalRouterUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<BaseResponse> baseResponseList = tungstenService.listTungstenPolicyRule(zoneId, policyUuid, ruleUuid);
-        List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
-        ListResponse<BaseResponse> listResponse = new ListResponse<>();
-        listResponse.setResponses(pagingList);
-        listResponse.setResponseName(getCommandName());
-        setResponseObject(listResponse);
+        BaseResponse response = tungstenService.removeNetworkGatewayFromLogicalRouter(zoneId, networkUuid, logicalRouterUuid);
+        if (response == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Tungsten-Fabric network gateway from routing logical router");
+        } else {
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TUNGSTEN_REMOVE_NETWORK_GATEWAY_FROM_LOGICAL_ROUTER;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "remove Tungsten-Fabric network gateway from logical router";
     }
 
     @Override
     public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

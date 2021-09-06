@@ -23,22 +23,20 @@ import com.cloud.dc.VlanVO;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.vm.VMInstanceVO;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddressGroupResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricApplicationPolicySetResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallPolicyResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallRuleResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfaceRouteTableResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfaceStaticRouteResponse;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkRouteTableResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkStaticRouteResponse;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNicResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricServiceGroupResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagTypeResponse;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricVmResponse;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 
 import java.util.List;
@@ -100,39 +98,38 @@ public interface TungstenService {
     TungstenFabricFirewallPolicyResponse addTungstenFirewallRule(long zoneId, String firewallPolicyUuid,
         String firewallRuleUuid, int sequence);
 
-    List<TungstenFabricPolicyResponse> listTungstenPolicy(long zoneId, final Long networkId, final Long addressId,
+    List<BaseResponse> listTungstenPolicy(long zoneId, final Long networkId, final Long addressId,
         final String policyUuid);
 
-    List<TungstenFabricNetworkResponse> listTungstenNetwork(long zoneId, final String networkUuid);
+    List<BaseResponse> listTungstenNetwork(long zoneId, final String networkUuid);
 
-    List<TungstenFabricNicResponse> listTungstenNic(long zoneId, final String nicUuid);
+    List<BaseResponse> listTungstenNic(long zoneId, final String nicUuid);
 
-    List<TungstenFabricVmResponse> listTungstenVm(long zoneId, final String vmUuid);
+    List<BaseResponse> listTungstenVm(long zoneId, final String vmUuid);
 
-    List<TungstenFabricRuleResponse> listTungstenPolicyRule(final long zoneId, final String policyUuid,
-        final String ruleUuid);
+    List<BaseResponse> listTungstenPolicyRule(final long zoneId, final String policyUuid, final String ruleUuid);
 
-    List<TungstenFabricTagResponse> listTungstenTags(final long zoneId, final String networkUuid, final String vmUuid,
+    List<BaseResponse> listTungstenTags(final long zoneId, final String networkUuid, final String vmUuid,
         final String nicUuid, final String policyUuid, final String tagUuid);
 
-    List<TungstenFabricTagTypeResponse> listTungstenTagTypes(final long zoneId, final String tagTypeUuid);
+    List<BaseResponse> listTungstenTagTypes(final long zoneId, final String tagTypeUuid);
 
-    List<TungstenFabricApplicationPolicySetResponse> listTungstenApplicationPolicySet(final long zoneId,
-        String applicationPolicySetUuid);
+    List<BaseResponse> listTungstenApplicationPolicySet(final long zoneId, String applicationPolicySetUuid);
 
-    List<TungstenFabricFirewallPolicyResponse> listTungstenFirewallPolicy(final long zoneId,
-        final String applicationPolicySetUuid, final String firewallPolicyUuid);
+    List<BaseResponse> listTungstenFirewallPolicy(final long zoneId, final String applicationPolicySetUuid,
+        final String firewallPolicyUuid);
 
-    List<TungstenFabricFirewallRuleResponse> listTungstenFirewallRule(final long zoneId,
-        final String firewallPolicyUuid, final String firewallRuleUuid);
+    List<BaseResponse> listTungstenFirewallRule(final long zoneId, final String firewallPolicyUuid,
+        final String firewallRuleUuid);
 
-    List<TungstenFabricServiceGroupResponse> listTungstenServiceGroup(final long zoneId, final String serviceGroupUuid);
+    List<BaseResponse> listTungstenServiceGroup(final long zoneId, final String serviceGroupUuid);
 
-    List<TungstenFabricAddressGroupResponse> listTungstenAddressGroup(final long zoneId, final String addressGroupUuid);
+    List<BaseResponse> listTungstenAddressGroup(final long zoneId, final String addressGroupUuid);
 
     boolean deleteTungstenPolicy(final long zoneId, final String policyUuid);
 
-    TungstenFabricPolicyResponse removeTungstenPolicyRule(final long zoneId, final String policyUuid, final String ruleUuid);
+    TungstenFabricPolicyResponse removeTungstenPolicyRule(final long zoneId, final String policyUuid,
+        final String ruleUuid);
 
     boolean deleteTungstenTag(final long zoneId, final String tagUuid);
 
@@ -224,6 +221,18 @@ public interface TungstenService {
     void allocateDnsIpAddress(Network network, Pod pod, String subnetName);
 
     void deallocateDnsIpAddress(Network network, Pod pod, String subnetName);
+
+    BaseResponse createRoutingLogicalRouter(final long zoneId, final String projectFqn, final String name);
+
+    BaseResponse addNetworkGatewayToLogicalRouter(final long zoneId, final String networkUuid,
+        final String logicalRouterUuid);
+
+    List<BaseResponse> listRoutingLogicalRouter(final long zoneId, final String logicalRouterUuid);
+
+    BaseResponse removeNetworkGatewayFromLogicalRouter(final long zoneId, final String networkUuid,
+        final String logicalRouterUuid);
+
+    boolean deleteLogicalRouter(final long zoneId, final String logicalRouterUuid);
 
     String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
     String MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT =

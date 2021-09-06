@@ -75,7 +75,7 @@ under the License.
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
-            <adapter name="TungstenGuestNetworkGuru" class="org.apache.cloudstack.network.tungsten.service.TungstenGuestNetworkGuru"/>
+            <adapter name="TungstenGuestNetworkGuru" class="com.cloud.network.guru.TungstenGuestNetworkGuru"/>
             <adapter name="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru"/>
             <adapter name="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru"/>
         </adapters>

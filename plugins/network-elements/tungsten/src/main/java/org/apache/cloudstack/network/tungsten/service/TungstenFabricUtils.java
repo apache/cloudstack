@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
@@ -44,13 +45,13 @@ public class TungstenFabricUtils {
             throw new IllegalArgumentException("Failed to find a Tungsten-Fabric provider");
         }
 
-        TungstenAnswer answer = (TungstenAnswer) agentMgr.easySend(tungstenProviderVO.getHostId(), cmd);
+        Answer answer = agentMgr.easySend(tungstenProviderVO.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("Tungsten-Fabric API Command failed");
             throw new IllegalArgumentException("Failed API call to Tungsten-Fabric Network plugin");
         }
 
-        return answer;
+        return (TungstenAnswer) answer;
     }
 }

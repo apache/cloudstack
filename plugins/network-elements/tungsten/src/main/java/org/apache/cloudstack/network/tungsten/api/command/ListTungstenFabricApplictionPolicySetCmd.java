@@ -22,10 +22,12 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -57,11 +59,10 @@ public class ListTungstenFabricApplictionPolicySetCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<TungstenFabricApplicationPolicySetResponse> tungstenFabricApplicationPolicySetResponseList =
-            tungstenService
-            .listTungstenApplicationPolicySet(zoneId, applicationPolicySetUuid);
-        ListResponse<TungstenFabricApplicationPolicySetResponse> listResponse = new ListResponse<>();
-        listResponse.setResponses(tungstenFabricApplicationPolicySetResponseList);
+        List<BaseResponse> baseResponseList = tungstenService.listTungstenApplicationPolicySet(zoneId, applicationPolicySetUuid);
+        List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
+        ListResponse<BaseResponse> listResponse = new ListResponse<>();
+        listResponse.setResponses(pagingList);
         listResponse.setResponseName(getCommandName());
         setResponseObject(listResponse);
     }

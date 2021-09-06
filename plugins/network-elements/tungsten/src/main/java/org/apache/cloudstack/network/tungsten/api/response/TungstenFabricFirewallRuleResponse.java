@@ -41,7 +41,7 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric firewall rule action")
     private String action;
 
-    @SerializedName(ApiConstants.SERVVICE_GROUP)
+    @SerializedName(ApiConstants.SERVICE_GROUP)
     @Param(description = "Tungsten-Fabric firewall rule service group")
     private String serviceGroup;
 

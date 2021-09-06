@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.network.TungstenProvider;
 import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
 
@@ -28,5 +29,5 @@ public interface TungstenProviderService extends PluggableService {
 
     TungstenFabricProviderResponse createTungstenProviderResponse(TungstenProvider tungstenProvider);
 
-    List<TungstenFabricProviderResponse> listTungstenProvider(Long zoneId);
+    List<BaseResponse> listTungstenProvider(Long zoneId);
 }

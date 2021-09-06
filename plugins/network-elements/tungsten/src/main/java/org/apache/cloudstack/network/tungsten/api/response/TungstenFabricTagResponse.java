@@ -20,9 +20,14 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.ObjectReference;
+import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.Tag;
+import net.juniper.tungsten.api.types.VirtualMachine;
+import net.juniper.tungsten.api.types.VirtualMachineInterface;
+import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.network.tungsten.model.TungstenTag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,6 +108,35 @@ public class TungstenFabricTagResponse extends BaseResponse {
                     policy.getUuid(), policy.getReferredName().get(policy.getReferredName().size() - 1));
                 policys.add(tungstenFabricPolicyResponse);
             }
+        }
+        this.policys = policys;
+    }
+
+    public TungstenFabricTagResponse(TungstenTag tungstenTag) {
+        this.uuid = tungstenTag.getTag().getUuid();
+        this.name = tungstenTag.getTag().getName();
+        this.setObjectName("tag");
+        List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
+        for (VirtualNetwork virtualNetwork : tungstenTag.getVirtualNetworkList()) {
+            networks.add(new TungstenFabricNetworkResponse(virtualNetwork));
+        }
+        this.networks = networks;
+
+        List<TungstenFabricVmResponse> vms = new ArrayList<>();
+        for (VirtualMachine virtualMachine : tungstenTag.getVirtualMachineList()) {
+            vms.add(new TungstenFabricVmResponse(virtualMachine));
+        }
+        this.vms = vms;
+
+        List<TungstenFabricNicResponse> nics = new ArrayList<>();
+        for (VirtualMachineInterface virtualMachineInterface : tungstenTag.getVirtualMachineInterfaceList()) {
+            nics.add(new TungstenFabricNicResponse(virtualMachineInterface));
+        }
+        this.nics = nics;
+
+        List<TungstenFabricPolicyResponse> policys = new ArrayList<>();
+        for (NetworkPolicy networkPolicy : tungstenTag.getNetworkPolicyList()) {
+            policys.add(new TungstenFabricPolicyResponse(networkPolicy));
         }
         this.policys = policys;
     }

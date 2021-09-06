@@ -20,6 +20,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.ApiPropertyBase;
+import org.apache.cloudstack.network.tungsten.model.TungstenModel;
 
 import java.util.List;
 
@@ -29,6 +30,8 @@ public class TungstenAnswer extends Answer {
     List<? extends ApiObjectBase> apiObjectBaseList;
     ApiPropertyBase apiPropertyBase;
     List<? extends ApiPropertyBase> apiPropertyBaseList;
+    TungstenModel tungstenModel;
+    List<TungstenModel> tungstenModelList;
 
     public TungstenAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -55,6 +58,18 @@ public class TungstenAnswer extends Answer {
     public TungstenAnswer(final Command command, final boolean success, String details, List<? extends ApiPropertyBase> apiPropertyBaseList) {
         super(command, success, details);
         setApiPropertyBaseList(apiPropertyBaseList);
+    }
+
+    public TungstenAnswer(final Command command, final TungstenModel tungstenModel, final boolean success,
+        final String details) {
+        super(command, success, details);
+        setTungstenModel(tungstenModel);
+    }
+
+    public TungstenAnswer(final Command command, final boolean success, final List<TungstenModel> tungstenModelList,
+        final String details) {
+        super(command, success, details);
+        setTungstenModelList(tungstenModelList);
     }
 
     public TungstenAnswer(final Command command, final Exception e) {
@@ -91,5 +106,21 @@ public class TungstenAnswer extends Answer {
 
     public void setApiPropertyBaseList(List<? extends ApiPropertyBase> apiPropertyBaseList) {
         this.apiPropertyBaseList = apiPropertyBaseList;
+    }
+
+    public TungstenModel getTungstenModel() {
+        return tungstenModel;
+    }
+
+    public void setTungstenModel(final TungstenModel tungstenModel) {
+        this.tungstenModel = tungstenModel;
+    }
+
+    public List<TungstenModel> getTungstenModelList() {
+        return tungstenModelList;
+    }
+
+    public void setTungstenModelList(final List<TungstenModel> tungstenModelList) {
+        this.tungstenModelList = tungstenModelList;
     }
 }

@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogicalRouterResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
@@ -40,12 +40,12 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricPolicyRuleCmd.APINAME, description = "list Tungsten-Fabric policy",
-    responseObject = TungstenFabricRuleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
-    false)
-public class ListTungstenFabricPolicyRuleCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricPolicyRuleCmd.class.getName());
-    public static final String APINAME = "listTungstenFabricPolicyRule";
+@APICommand(name = ListTungstenFabricLogicalRouterCmd.APINAME, description = "list Tungsten-Fabric logical router",
+    responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false,
+    responseHasSensitiveInfo = false)
+public class ListTungstenFabricLogicalRouterCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricLogicalRouterCmd.class.getName());
+    public static final String APINAME = "listTungstenFabricLogicalRouter";
 
     @Inject
     TungstenService tungstenService;
@@ -53,16 +53,13 @@ public class ListTungstenFabricPolicyRuleCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric policy")
-    private String policyUuid;
-
-    @Parameter(name = ApiConstants.RULE_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric rule")
-    private String ruleUuid;
+    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric logical router")
+    private String logicalRouterUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<BaseResponse> baseResponseList = tungstenService.listTungstenPolicyRule(zoneId, policyUuid, ruleUuid);
+        List<BaseResponse> baseResponseList = tungstenService.listRoutingLogicalRouter(zoneId, logicalRouterUuid);
         List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<BaseResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(pagingList);

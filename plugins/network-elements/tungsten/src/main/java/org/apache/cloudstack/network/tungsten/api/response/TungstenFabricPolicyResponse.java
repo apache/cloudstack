@@ -20,9 +20,11 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.types.NetworkPolicy;
+import net.juniper.tungsten.api.types.VirtualNetwork;
 import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.network.tungsten.model.TungstenNetworkPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,18 @@ public class TungstenFabricPolicyResponse extends BaseResponse {
                     objectReference.getReferredName().get(objectReference.getReferredName().size() - 1));
                 networks.add(tungstenFabricNetworkResponse);
             }
+        }
+        this.networks = networks;
+        this.setObjectName("policy");
+    }
+
+    public TungstenFabricPolicyResponse(TungstenNetworkPolicy tungstenNetworkPolicy) {
+        this.uuid = tungstenNetworkPolicy.getNetworkPolicy().getUuid();
+        this.name = tungstenNetworkPolicy.getNetworkPolicy().getName();
+        List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
+        List<VirtualNetwork> virtualNetworkList = tungstenNetworkPolicy.getVirtualNetworkList();
+        for(VirtualNetwork virtualNetwork : virtualNetworkList) {
+            networks.add(new TungstenFabricNetworkResponse(virtualNetwork));
         }
         this.networks = networks;
         this.setObjectName("policy");

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.service;
+package com.cloud.network.guru;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -45,9 +45,7 @@ import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
 import com.cloud.network.dao.TungstenProviderDao;
-import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.offering.NetworkOffering;
@@ -81,15 +79,15 @@ import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterComm
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
+import org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils;
+import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-@Component
 public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
 
     private static final Logger s_logger = Logger.getLogger(TungstenGuestNetworkGuru.class);
@@ -120,12 +118,11 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
     AgentManager agentMgr;
     @Inject
     TungstenProviderDao tungstenProviderDao;
-    @Inject
-    TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
 
     private static final Networks.TrafficType[] TrafficTypes = {Networks.TrafficType.Guest};
 
     public TungstenGuestNetworkGuru() {
+        super();
         _isolationMethods = new PhysicalNetwork.IsolationMethod[] {new PhysicalNetwork.IsolationMethod("TF")};
     }
 
@@ -197,7 +194,8 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
             DeleteTungstenVmCommand cmd = new DeleteTungstenVmCommand(vm.getUuid());
             tungstenFabricUtils.sendTungstenCommand(cmd, config.getDataCenterId());
         } catch (IllegalArgumentException e) {
-            throw new CloudRuntimeException("Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
+            throw new CloudRuntimeException(
+                "Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
         }
     }
 
@@ -207,13 +205,12 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
 
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
 
-        // get physical network id
-        Long physicalNetworkId = network.getPhysicalNetworkId();
+        // get zone id
         Long zoneId = network.getDataCenterId();
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(),
             network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Implemented,
-            network.getDataCenterId(), physicalNetworkId, offering.isRedundantRouter());
+            network.getDataCenterId(), network.getPhysicalNetworkId(), offering.isRedundantRouter());
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

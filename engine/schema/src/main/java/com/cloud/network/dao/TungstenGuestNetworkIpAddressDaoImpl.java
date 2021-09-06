@@ -41,6 +41,7 @@ public class TungstenGuestNetworkIpAddressDaoImpl extends GenericDaoBase<Tungste
         AllFieldsSearch.and("network_id", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("guest_ip_address", AllFieldsSearch.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("public_ip_address", AllFieldsSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("logical_router_uuid", AllFieldsSearch.entity().getLogicalRouterUuid(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
         NetworkSearch = createSearchBuilder(String.class);
         NetworkSearch.select(null, SearchCriteria.Func.DISTINCT, NetworkSearch.entity().getGuestIpAddress());
@@ -75,6 +76,15 @@ public class TungstenGuestNetworkIpAddressDaoImpl extends GenericDaoBase<Tungste
         SearchCriteria<TungstenGuestNetworkIpAddressVO> searchCriteria = AllFieldsSearch.create();
         searchCriteria.setParameters("network_id", networkId);
         searchCriteria.setParameters("guest_ip_address", guestIp);
+        return findOneBy(searchCriteria);
+    }
+
+    @Override
+    public TungstenGuestNetworkIpAddressVO findByNetworkAndLogicalRouter(final long networkId,
+        final String logicalRouterUuid) {
+        SearchCriteria<TungstenGuestNetworkIpAddressVO> searchCriteria = AllFieldsSearch.create();
+        searchCriteria.setParameters("network_id", networkId);
+        searchCriteria.setParameters("logical_router_uuid", logicalRouterUuid);
         return findOneBy(searchCriteria);
     }
 }
