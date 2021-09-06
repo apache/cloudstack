@@ -39,12 +39,16 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.host.Host;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeDetailVO;
@@ -85,6 +89,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Inject private VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject private SnapshotDao _snapshotDao;
     @Inject private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject private StorageManager _storageMgr;
 
     public LinstorPrimaryDataStoreDriverImpl()
     {
@@ -602,6 +607,37 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         s_logger.debug("Linstor: copyAsync with srcdata: " + srcData.getUuid());
     }
 
+    private CreateCmdResult notifyResize(
+        DataObject data,
+        long oldSize,
+        ResizeVolumePayload resizeParameter)
+    {
+        VolumeObject vol = (VolumeObject) data;
+        StoragePool pool = (StoragePool) data.getDataStore();
+
+        ResizeVolumeCommand resizeCmd =
+            new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), oldSize, resizeParameter.newSize, resizeParameter.shrinkOk,
+                resizeParameter.instanceName);
+        CreateCmdResult result = new CreateCmdResult(null, null);
+        try {
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) _storageMgr.sendToPool(pool, resizeParameter.hosts, resizeCmd);
+            if (answer != null && answer.getResult()) {
+                s_logger.debug("Resize: notified hosts");
+            } else if (answer != null) {
+                result.setResult(answer.getDetails());
+            } else {
+                s_logger.debug("return a null answer, mark it as failed for unknown reason");
+                result.setResult("return a null answer, mark it as failed for unknown reason");
+            }
+
+        } catch (Exception e) {
+            s_logger.debug("sending resize command failed", e);
+            result.setResult(e.toString());
+        }
+
+        return result;
+    }
+
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback)
     {
@@ -611,6 +647,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         final ResizeVolumePayload resizeParameter = (ResizeVolumePayload) vol.getpayload();
 
         final String rscName = LinstorUtil.RSC_PREFIX + vol.getPath();
+        final long oldSize = vol.getSize();
 
         String errMsg = null;
         VolumeDefinitionModify dfm = new VolumeDefinitionModify();
@@ -628,13 +665,24 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 vol.setSize(resizeParameter.newSize);
                 vol.update();
             }
+
         } catch (ApiException apiExc)
         {
             s_logger.error(apiExc);
             errMsg = apiExc.getBestMessage();
         }
-        CreateCmdResult result = new CreateCmdResult(null, new Answer(null, errMsg == null, errMsg));
-        result.setResult(errMsg);
+
+        CreateCmdResult result;
+        if (errMsg != null)
+        {
+            result = new CreateCmdResult(null, new Answer(null, false, errMsg));
+            result.setResult(errMsg);
+        } else
+        {
+            // notify guests
+            result = notifyResize(data, oldSize, resizeParameter);
+        }
+
         callback.complete(result);
     }
 
