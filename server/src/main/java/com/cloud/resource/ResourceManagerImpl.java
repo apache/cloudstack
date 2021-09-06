@@ -23,10 +23,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -45,6 +47,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -197,6 +200,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import java.util.HashSet;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -687,6 +691,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+        List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
+        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT)) &&
+                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
+            throw new InvalidParameterValueException("Username and Password need to be provided.");
         }
 
         if (clusterId != null) {
@@ -1787,13 +1796,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
-
         final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
             }
-            _hostTagsDao.persist(hostId, hostTags);
+            _hostTagsDao.persist(hostId, new ArrayList(new HashSet<String>(hostTags)));
         }
 
         final String url = cmd.getUrl();

@@ -81,7 +81,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private static final int RBD_FEATURE_OBJECT_MAP = 8;
     private static final int RBD_FEATURE_FAST_DIFF = 16;
     private static final int RBD_FEATURE_DEEP_FLATTEN = 32;
-    private int rbdFeatures = RBD_FEATURE_LAYERING + RBD_FEATURE_EXCLUSIVE_LOCK + RBD_FEATURE_OBJECT_MAP + RBD_FEATURE_FAST_DIFF + RBD_FEATURE_DEEP_FLATTEN;
+    public static final int RBD_FEATURES = RBD_FEATURE_LAYERING + RBD_FEATURE_EXCLUSIVE_LOCK + RBD_FEATURE_OBJECT_MAP + RBD_FEATURE_FAST_DIFF + RBD_FEATURE_DEEP_FLATTEN;
     private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
 
     private static final Set<StoragePoolType> poolTypesThatEnableCreateDiskFromTemplateBacking = new HashSet<>(Arrays.asList(StoragePoolType.NetworkFilesystem,
@@ -1116,7 +1116,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
                                 " is RBD format 1. We have to perform a regular copy (" + toHumanReadableSize(disk.getVirtualSize()) + " bytes)");
 
-                        rbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
+                        rbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
                         RbdImage destImage = rbd.open(disk.getName());
 
                         s_logger.debug("Starting to copy " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
@@ -1153,7 +1153,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             srcImage.snapProtect(rbdTemplateSnapName);
                         }
 
-                        rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), rbdFeatures, rbdOrder);
+                        rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), RBD_FEATURES, rbdOrder);
                         s_logger.debug("Succesfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
                         /* We also need to resize the image if the VM was deployed with a larger root disk size */
                         if (disk.getVirtualSize() > template.getVirtualSize()) {
@@ -1193,7 +1193,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                     s_logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
                             destPool.getSourceDir());
-                    dRbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
+                    dRbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
 
                     RbdImage srcImage = sRbd.open(template.getName());
                     RbdImage destImage = dRbd.open(disk.getName());
