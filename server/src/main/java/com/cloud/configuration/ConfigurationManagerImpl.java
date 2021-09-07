@@ -41,6 +41,7 @@ import java.util.Vector;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -180,6 +181,8 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.UserIpv6Address;
+import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -189,6 +192,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -403,7 +407,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     HostTagsDao hostTagDao;
     @Inject
     StoragePoolTagsDao storagePoolTagDao;
-
+    @Inject
+    UserIpv6AddressDao _ipv6Dao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -4232,8 +4237,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
             ResourceUnavailableException,ResourceAllocationException {
 
-        return  updateVlanAndPublicIpRange(cmd.getId(), cmd.getStartIp(),cmd.getEndIp(),
-                cmd.getGateway(),cmd.getNetmask());
+        return  updateVlanAndPublicIpRange(cmd.getId(), cmd.getStartIp(),cmd.getEndIp(), cmd.getGateway(),cmd.getNetmask(),
+                cmd.getStartIpv6(), cmd.getEndIpv6(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.isForSystemVms());
     }
 
     @DB
@@ -4242,93 +4247,172 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Vlan updateVlanAndPublicIpRange(final long id, String startIp,
                                            String endIp,
                                            String gateway,
-                                           String netmask) throws ConcurrentOperationException {
+                                           String netmask,
+                                           String startIpv6,
+                                           String endIpv6,
+                                           String ip6Gateway,
+                                           String ip6Cidr,
+                                           Boolean forSystemVms) throws ConcurrentOperationException {
 
         VlanVO vlanRange = _vlanDao.findById(id);
         if (vlanRange == null) {
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        if (gateway == null) {
-            gateway = vlanRange.getVlanGateway();
+        final boolean ipv4 = vlanRange.getVlanGateway() != null;
+        final boolean ipv6 = vlanRange.getIp6Gateway() != null;
+        if (!ipv4) {
+            if (startIp != null || endIp != null || gateway != null || netmask != null) {
+                throw new InvalidParameterValueException("IPv4 is not support in this IP range.");
+            }
+        }
+        if (!ipv6) {
+            if (startIpv6 != null || endIpv6 != null || ip6Gateway != null || ip6Cidr != null) {
+                throw new InvalidParameterValueException("IPv6 is not support in this IP range.");
+            }
         }
 
-        if (netmask == null) {
-            netmask = vlanRange.getVlanNetmask();
+        if (forSystemVms != null && VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
+            throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
         }
-
-        final String[] existingVlanIPRangeArray = vlanRange.getIpRange().split("-");
-        final String currentStartIP = existingVlanIPRangeArray[0];
-        final String currentEndIP = existingVlanIPRangeArray [1];
-
-        if(startIp == null) {
-            startIp = currentStartIP;
-        }
-
-        if(endIp == null) {
-            endIp = currentEndIP;
-        }
-
-        final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(id);
-        checkAllocatedIpsAreWithinVlanRange(ips,startIp,endIp);
-
-        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-        final String cidrAddress = getCidrAddress(cidr);
-        final long cidrSize = getCidrSize(cidr);
-
-        checkIpRange(currentStartIP,currentEndIP,cidrAddress,cidrSize);
-
-        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
-
-        checkGatewayOverlap(startIp,endIp,gateway);
-
-        VlanVO range;
-        try {
-            final String newStartIP = startIp;
-            final String newEndIP = endIp;
-
-            range = _vlanDao.acquireInLockTable(id, 30);
-            if (range == null) {
-                throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
+        if (ipv4) {
+            if (gateway != null && !gateway.equals(vlanRange.getVlanGateway())) {
+                throw new InvalidParameterValueException("The input gateway " + gateway + " is not same as IP range gateway " + vlanRange.getVlanGateway());
+            }
+            if (netmask != null && !netmask.equals(vlanRange.getVlanNetmask())) {
+                throw new InvalidParameterValueException("The input netmask " + netmask + " is not same as IP range netmask " + vlanRange.getVlanNetmask());
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("lock vlan " + id + " is acquired");
+            if (gateway == null) {
+                gateway = vlanRange.getVlanGateway();
             }
 
-            commitUpdateVlanAndIpRange(id, newStartIP, newEndIP, currentStartIP, currentEndIP,true);
+            if (netmask == null) {
+                netmask = vlanRange.getVlanNetmask();
+            }
 
-        } catch (final Exception e) {
-            s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
-        } finally {
-            _vlanDao.releaseFromLockTable(id);
+            final String[] existingVlanIPRangeArray = vlanRange.getIpRange().split("-");
+            final String currentStartIP = existingVlanIPRangeArray[0];
+            final String currentEndIP = existingVlanIPRangeArray[1];
+
+            if (startIp == null) {
+                startIp = currentStartIP;
+            }
+
+            if (endIp == null) {
+                endIp = currentEndIP;
+            }
+
+            final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+            if (Strings.isNullOrEmpty(cidr)) {
+                throw new InvalidParameterValueException(String.format("Invalid gateway (%s) or netmask (%s)", gateway, netmask));
+            }
+            final String cidrAddress = getCidrAddress(cidr);
+            final long cidrSize = getCidrSize(cidr);
+
+            checkIpRange(currentStartIP, currentEndIP, cidrAddress, cidrSize);
+            if (startIp != currentStartIP || endIp != currentEndIP) {
+                checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+            }
+
+            checkGatewayOverlap(startIp, endIp, gateway);
+
+            final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(id);
+            checkAllocatedIpsAreWithinVlanRange(ips, startIp, endIp, forSystemVms);
+
+            try {
+                final String newStartIP = startIp;
+                final String newEndIP = endIp;
+
+                VlanVO range = _vlanDao.acquireInLockTable(id, 30);
+                if (range == null) {
+                    throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
+                }
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("lock vlan " + id + " is acquired");
+                }
+
+                commitUpdateVlanAndIpRange(id, newStartIP, newEndIP, currentStartIP, currentEndIP, true, forSystemVms);
+
+            } catch (final Exception e) {
+                s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
+                throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
+            } finally {
+                _vlanDao.releaseFromLockTable(id);
+            }
         }
 
-        return vlanRange;
+        if (ipv6) {
+            if (ip6Gateway != null && !ip6Gateway.equals(vlanRange.getIp6Gateway())) {
+                throw new InvalidParameterValueException("The input gateway " + ip6Gateway + " is not same as IP range gateway " + vlanRange.getIp6Gateway());
+            }
+            if (ip6Cidr != null && !ip6Cidr.equals(vlanRange.getIp6Cidr())) {
+                throw new InvalidParameterValueException("The input cidr " + ip6Cidr + " is not same as IP range cidr " + vlanRange.getIp6Cidr());
+            }
+            ip6Gateway = MoreObjects.firstNonNull(ip6Gateway, vlanRange.getIp6Gateway());
+            ip6Cidr = MoreObjects.firstNonNull(ip6Cidr, vlanRange.getIp6Cidr());
+
+            final String[] existingVlanIPRangeArray = vlanRange.getIp6Range().split("-");
+            final String currentStartIPv6 = existingVlanIPRangeArray[0];
+            final String currentEndIPv6 = existingVlanIPRangeArray[1];
+
+            if (startIpv6 == null) {
+                startIpv6 = currentStartIPv6;
+            }
+            if (endIpv6 == null) {
+                endIpv6 = currentEndIPv6;
+            }
+            if (startIpv6 != currentStartIPv6 || endIpv6 != currentEndIPv6) {
+                _networkModel.checkIp6Parameters(startIpv6, endIpv6, ip6Gateway, ip6Cidr);
+                final List<UserIpv6AddressVO> ips = _ipv6Dao.listByVlanId(id);
+                checkAllocatedIpv6sAreWithinVlanRange(ips, startIp, endIp);
+
+                try {
+                    VlanVO range = _vlanDao.acquireInLockTable(id, 30);
+                    if (range == null) {
+                        throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
+                    }
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("lock vlan " + id + " is acquired");
+                    }
+
+                    commitUpdateVlanAndIpRange(id, startIpv6, endIpv6, currentStartIPv6, currentEndIPv6, false, null);
+
+                } catch (final Exception e) {
+                    s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
+                    throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
+                } finally {
+                    _vlanDao.releaseFromLockTable(id);
+                }
+            }
+        }
+
+        return _vlanDao.findById(id);
     }
 
-    private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP,final String currentStartIP, final String currentEndIP, final boolean ipv4) {
+    private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP, final String currentStartIP, final String currentEndIP, final boolean ipv4, final Boolean forSystemvms) {
 
         return Transaction.execute(new TransactionCallback<VlanVO>() {
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
                 VlanVO vlanRange = _vlanDao.findById(id);
                 s_logger.debug("Updating vlan range " + vlanRange.getId());
-                vlanRange.setIpRange(vlanRange.getIpRange().replace(currentStartIP + "-" , newStartIP + "-" ).replace(currentEndIP,
-                        newEndIP));
-                _vlanDao.update(vlanRange.getId(), vlanRange);
-
-                final boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
                 if (ipv4) {
-                    if (!updatePublicIPRange(newStartIP,currentStartIP,newEndIP,currentEndIP,vlanRange.getDataCenterId(),vlanRange.getId(), vlanRange.getNetworkId(), vlanRange.getPhysicalNetworkId(), isRangeForSystemVM)) {
+                    vlanRange.setIpRange(newStartIP + "-" + newEndIP);
+                    _vlanDao.update(vlanRange.getId(), vlanRange);
+                    final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
+                    if (!updatePublicIPRange(newStartIP, currentStartIP, newEndIP, currentEndIP, vlanRange.getDataCenterId(), vlanRange.getId(), vlanRange.getNetworkId(), vlanRange.getPhysicalNetworkId(), isRangeForSystemVM, forSystemvms)) {
                         throw new CloudRuntimeException("Failed to update IPv4 range. Please contact Cloud Support.");
                     }
+                } else {
+                    vlanRange.setIp6Range(newStartIP + "-" + newEndIP);
+                    _vlanDao.update(vlanRange.getId(), vlanRange);
                 }
                 return vlanRange;
             }
         });
-
     }
 
     private boolean checkIfVlanRangeIsForSystemVM(final long vlanId) {
@@ -4336,13 +4420,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean initialIsSystemVmValue = existingPublicIPs.get(0).isForSystemVms();
         for (IPAddressVO existingIPs : existingPublicIPs) {
             if (initialIsSystemVmValue != existingIPs.isForSystemVms()) {
-                throw new CloudRuntimeException("Your \"For System VM\" value seems to be inconsistent with the rest of the recods. Please contact Cloud Support");
+                throw new CloudRuntimeException("Your \"For System VM\" value seems to be inconsistent with the rest of the records. Please contact Cloud Support");
             }
         }
         return initialIsSystemVmValue;
     }
 
-    private void checkAllocatedIpsAreWithinVlanRange(List<IPAddressVO> ips, String startIp, String endIp) {
+    private void checkAllocatedIpsAreWithinVlanRange(List<IPAddressVO> ips, String startIp, String endIp, Boolean forSystemVms) {
 
         List<IPAddressVO> listAllocatedIPs = new ArrayList<>();
         for (final IPAddressVO ip : ips) {
@@ -4359,6 +4443,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         + "already allocated in this range: " + listAllocatedIPs.size());
             }
             if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(allocatedIP.getAddress().addr())) {
+                throw new InvalidParameterValueException("The start IP address must have a lower IP address value "
+                        + "than " + listAllocatedIPs.get(0).getAddress() + " which is already in use. The end IP must have a "
+                        + "higher IP address than " +  allocatedIP.getAddress() + " .IPs "
+                        + "already allocated in this range: " + listAllocatedIPs.size());
+            }
+            if (forSystemVms != null && allocatedIP.isForSystemVms() != forSystemVms) {
+                throw new InvalidParameterValueException(String.format("IP %s is in use, cannot change forSystemVms of the IP range", allocatedIP.getAddress().addr()));
+            }
+        }
+    }
+
+    private void checkAllocatedIpv6sAreWithinVlanRange(List<UserIpv6AddressVO> ips, String startIpv6, String endIpv6) {
+
+        List<UserIpv6AddressVO> listAllocatedIPs = new ArrayList<>();
+        for (final UserIpv6AddressVO ip : ips) {
+            if (ip.getState() == UserIpv6Address.State.Allocated) {
+                listAllocatedIPs.add(ip);
+            }
+        }
+        Collections.sort(listAllocatedIPs, Comparator.comparing(UserIpv6AddressVO::getAddress));
+        for (UserIpv6AddressVO allocatedIP : listAllocatedIPs) {
+            if (!Strings.isNullOrEmpty(startIpv6)
+                    && IPv6Address.fromString(startIpv6).toBigInteger().compareTo(IPv6Address.fromString(allocatedIP.getAddress()).toBigInteger()) > 0) {
+                throw new InvalidParameterValueException("The start IP address must have a lower IP address value "
+                        + "than " + allocatedIP.getAddress() + " which is already in use. The end IP must have a "
+                        + "higher IP address than " + listAllocatedIPs.get(listAllocatedIPs.size() - 1).getAddress() + " .IPs "
+                        + "already allocated in this range: " + listAllocatedIPs.size());
+            }
+            if (!Strings.isNullOrEmpty(endIpv6)
+                    && IPv6Address.fromString(endIpv6).toBigInteger().compareTo(IPv6Address.fromString(allocatedIP.getAddress()).toBigInteger()) < 0) {
                 throw new InvalidParameterValueException("The start IP address must have a lower IP address value "
                         + "than " + listAllocatedIPs.get(0).getAddress() + " which is already in use. The end IP must have a "
                         + "higher IP address than " +  allocatedIP.getAddress() + " .IPs "
@@ -4708,7 +4822,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @DB
-    protected boolean updatePublicIPRange(final String newStartIP, final String currentStartIP,final String newEndIP,final String currentEndIP, final long zoneId, final long vlanDbId, final long sourceNetworkid, final long physicalNetworkId, final boolean forSystemVms) {
+    protected boolean updatePublicIPRange(final String newStartIP, final String currentStartIP, final String newEndIP, final String currentEndIP, final long zoneId, final long vlanDbId, final long sourceNetworkid, final long physicalNetworkId, final boolean isRangeForSystemVM, final Boolean forSystemVms) {
         long newStartIPLong = NetUtils.ip2Long(newStartIP);
         long newEndIPLong = NetUtils.ip2Long(newEndIP);
         long currentStartIPLong = NetUtils.ip2Long(currentStartIP);
@@ -4716,35 +4830,43 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         List<Long> currentIPRange = new ArrayList<>();
         List<Long> newIPRange = new ArrayList<>();
-        while (newStartIPLong<=newEndIPLong){
+        while (newStartIPLong <= newEndIPLong) {
             newIPRange.add(newStartIPLong);
             newStartIPLong++;
         }
-        while (currentStartIPLong<=currentEndIPLong){
+        while (currentStartIPLong <= currentEndIPLong) {
             currentIPRange.add(currentStartIPLong);
             currentStartIPLong++;
         }
 
-        final List<String> problemIps= Transaction.execute(new TransactionCallback<List<String>>() {
+        final List<String> problemIps = Transaction.execute(new TransactionCallback<List<String>>() {
 
             @Override
             public List<String> doInTransaction(final TransactionStatus status) {
                 final IPRangeConfig config = new IPRangeConfig();
                 Vector<String> configResult = new Vector<>();
-                List<Long> iPAddressesToAdd = new ArrayList(newIPRange);
-                iPAddressesToAdd.removeAll(currentIPRange);
-                if (iPAddressesToAdd.size()>0){
-                    for(Long startIP : iPAddressesToAdd){
-                        configResult= config.savePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId, forSystemVms);
+                List<Long> ipAddressesToAdd = new ArrayList(newIPRange);
+                ipAddressesToAdd.removeAll(currentIPRange);
+                if (ipAddressesToAdd.size() > 0) {
+                    for (Long startIP : ipAddressesToAdd) {
+                        configResult.addAll(config.savePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId, forSystemVms != null ? forSystemVms : isRangeForSystemVM));
                     }
-                }else {
-                    currentIPRange.removeAll(newIPRange);
-                    if(currentIPRange.size()>0){
-                        for (Long startIP: currentIPRange){
-                            configResult= config.deletePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, vlanDbId);
+                }
+                List<Long> ipAddressesToDelete = new ArrayList(currentIPRange);
+                ipAddressesToDelete.removeAll(newIPRange);
+                if (ipAddressesToDelete.size() > 0) {
+                    for (Long startIP : ipAddressesToDelete) {
+                        configResult.addAll(config.deletePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, vlanDbId));
+                    }
+                }
+                if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+                    List<Long> ipAddressesToUpdate = new ArrayList(currentIPRange);
+                    ipAddressesToUpdate.removeAll(ipAddressesToDelete);
+                    if (ipAddressesToUpdate.size() > 0) {
+                        for (Long startIP : ipAddressesToUpdate) {
+                            configResult.addAll(config.updatePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, vlanDbId, forSystemVms));
                         }
                     }
-
                 }
                 return configResult;
             }

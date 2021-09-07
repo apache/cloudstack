@@ -313,6 +313,35 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
+    public Vector<String> updatePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long vlanDbId, boolean forSystemvms) {
+        String updateSql = "UPDATE `cloud`.`user_ip_address` SET forsystemvms = ? WHERE public_ip_address = ? AND vlan_db_id = ?";
+
+        Vector<String> problemIPs = new Vector<String>();
+        Connection conn = null;
+        try {
+            conn = txn.getConnection();
+        }
+        catch (SQLException e) {
+            System.out.println("updatePublicIPRange. Exception: " + e.getMessage());
+            return null;
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(updateSql);) {
+            while (startIP <= endIP) {
+                stmt.clearParameters();
+                stmt.setBoolean(1, forSystemvms);
+                stmt.setString(2, NetUtils.long2Ip(startIP));
+                stmt.setLong(3, vlanDbId);
+                stmt.executeUpdate();
+                startIP += 1;
+            }
+        } catch (Exception ex) {
+            System.out.println("updatePublicIPRange. Exception: " + ex.getMessage());
+            return null;
+        }
+
+        return problemIPs;
+    }
+
     public Vector<String> deletePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long vlanDbId) {
         String deleteSql = "DELETE FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_db_id = ?";
         String isPublicIPAllocatedSelectSql = "SELECT * FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_db_id = ?";

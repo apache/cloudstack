@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,8 +36,9 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = UpdateVlanIpRangeCmd.APINAME, description = "Updates a VLAN IP range.", responseObject =
-        VlanIpRangeResponse.class, since = "4.15.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        VlanIpRangeResponse.class, since = "4.16.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin})
 public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
 
     public static final String APINAME = "updateVlanIpRange";
@@ -51,10 +53,6 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
             description = "the UUID of the VLAN IP range")
     private Long id;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING,
-            description = "the ending IP address in the VLAN IP range")
-    private String endIp;
-
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway of the VLAN IP range")
     private String gateway;
 
@@ -64,14 +62,24 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the VLAN IP range")
     private String startIp;
 
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING,
+            description = "the ending IP address in the VLAN IP range")
+    private String endIp;
+
     @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
 
     @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.INTEGER, description = "Optional. the vlan the ip range sits on")
-    private Integer vlan;
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network")
+    private String ip6Gateway;
+
+    @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
+    private String ip6Cidr;
+
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
+    private Boolean forSystemVms;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -110,8 +118,22 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
         return NetUtils.standardizeIp6Address(endIpv6);
     }
 
-    public Integer getVlan() {
-        return vlan;
+    public String getIp6Gateway() {
+        if (ip6Gateway == null) {
+            return null;
+        }
+        return NetUtils.standardizeIp6Address(ip6Gateway);
+    }
+
+    public String getIp6Cidr() {
+        if (ip6Cidr == null) {
+            return null;
+        }
+        return NetUtils.standardizeIp6Cidr(ip6Cidr);
+    }
+
+    public Boolean isForSystemVms() {
+        return forSystemVms;
     }
 
     /////////////////////////////////////////////////////
@@ -125,7 +147,8 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Update vlan ip range " + getId() + " [StartIp=" + getStartIp() + ", EndIp=" + getEndIp() + ", vlan=" + getVlan() + ", netmask=" + getNetmask() + ']';
+        return "Update vlan ip range " + getId() + " [StartIp=" + getStartIp() + ", EndIp=" + getEndIp() + ", gateway=" + getGateway() + ", netmask=" + getNetmask()
+                + ", StartIpv6=" + getStartIpv6() + ", EndIpv6=" + getEndIpv6() + ", ip6gateway=" + getIp6Gateway() + ", ip6cidr=" + getIp6Cidr() + ']';
     }
 
 
