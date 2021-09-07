@@ -40,6 +40,7 @@ export const pollJobPlugin = {
        * @param {Function} [catchMethod=() => {}]
        * @param {Object} [action=null]
        * @param {Object} [bulkAction=false]
+       * @param {String} resourceId
        */
       const {
         jobId,
@@ -55,7 +56,8 @@ export const pollJobPlugin = {
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
         action = null,
-        bulkAction = false
+        bulkAction = false,
+        resourceId = null
       } = options
 
       store.dispatch('AddHeaderNotice', {
@@ -65,9 +67,26 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
+      eventBus.$on('update-job-details', (jobId, resourceId) => {
+        const fullPath = this.$route.fullPath
+        const path = this.$route.path
+        var jobs = this.$store.getters.headerNotices.map(job => {
+          if (job.key === jobId) {
+            if (resourceId && !path.includes(resourceId)) {
+              job.path = path + '/' + resourceId
+            } else {
+              job.path = fullPath
+            }
+          }
+          return job
+        })
+        this.$store.commit('SET_HEADER_NOTICES', jobs)
+      })
+
       options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
+        eventBus.$emit('update-job-details', jobId, resourceId)
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {
@@ -88,7 +107,7 @@ export const pollJobPlugin = {
             status: 'done',
             duration: 2
           })
-
+          eventBus.$emit('update-job-details', jobId, resourceId)
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
@@ -123,11 +142,11 @@ export const pollJobPlugin = {
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title: title,
-            description: description,
+            description: desc,
             status: 'failed',
             duration: 2
           })
-
+          eventBus.$emit('update-job-details', jobId, resourceId)
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')

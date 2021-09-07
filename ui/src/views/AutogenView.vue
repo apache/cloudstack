@@ -500,21 +500,6 @@ export default {
         })
       }
     })
-    eventBus.$on('update-job-details', (jobId, resourceId) => {
-      const fullPath = this.$route.fullPath
-      const path = this.$route.path
-      var jobs = this.$store.getters.headerNotices.map(job => {
-        if (job.jobid === jobId) {
-          if (resourceId && !path.includes(resourceId)) {
-            job.path = path + '/' + resourceId
-          } else {
-            job.path = fullPath
-          }
-        }
-        return job
-      })
-      this.$store.commit('SET_HEADER_NOTICES', jobs)
-    })
 
     eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
       if (selectedItems.length === 0) {
@@ -1064,7 +1049,8 @@ export default {
           showLoading: showLoading,
           catchMessage: this.$t('error.fetching.async.job.result'),
           action,
-          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal,
+          resourceId: resource
         })
       })
     },
