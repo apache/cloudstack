@@ -58,6 +58,9 @@ export default {
         name: 'guest.ip.range',
         component: () => import('@/views/network/GuestIpRanges.vue'),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
+      }, {
+        name: 'tungsten.router.table',
+        component: () => import('@/views/network/tungsten/TungstenNetworkRouterTable.vue')
       }],
       actions: [
         {
@@ -680,6 +683,76 @@ export default {
         {
           name: 'tungsten.fabric.routing',
           component: () => import('@/views/network/tungsten/TungstenFabricRouting.vue')
+        }
+      ]
+    },
+    {
+      name: 'tungstennetworkroutertable',
+      title: 'label.tungsten.network.router.table',
+      icon: tungsten,
+      hidden: true,
+      permission: ['listTungstenFabricNetworkRouteTable'],
+      details: ['uuid', 'name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'tungsten.static.routes',
+          component: () => import('@/views/network/tungsten/TungstenNetworkStaticRoute.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'addTungstenFabricNetworkStaticRoute',
+          icon: 'plus',
+          label: 'label.add.tungsten.network.static.route',
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/network/tungsten/AddTungstenNetworkStaticRoute.vue')
+        },
+        {
+          api: 'removeTungstenFabricNetworkRouteTable',
+          icon: 'delete',
+          label: 'label.remove.network.route.table',
+          message: 'label.confirm.remove.network.route.table',
+          dataView: true
+        }
+      ]
+    },
+    {
+      name: 'tungsteninterfaceroutertable',
+      title: 'label.tungsten.interface.router.table',
+      icon: tungsten,
+      hidden: true,
+      permission: ['listTungstenFabricInterfaceRouteTable'],
+      details: ['uuid', 'name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'tungsten.static.routes',
+          component: () => import('@/views/network/tungsten/TungstenInterfaceStaticRoute.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'addTungstenFabricInterfaceStaticRoute',
+          icon: 'plus',
+          label: 'label.add.tungsten.interface.static.route',
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/network/tungsten/AddTungstenInterfaceStaticRoute.vue')
+        },
+        {
+          api: 'removeTungstenFabricInterfaceRouteTable',
+          icon: 'delete',
+          label: 'label.remove.interface.route.table',
+          message: 'label.confirm.remove.interface.route.table',
+          dataView: true
         }
       ]
     }

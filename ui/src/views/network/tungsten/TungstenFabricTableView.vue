@@ -22,7 +22,9 @@
       :page="page"
       :pageSize="pageSize" />
     <tungsten-network-table
+      :apiName="apiName"
       :loading="loading || fetchLoading"
+      :resource="resource"
       :columns="columns"
       :dataSource="dataSource"
       :searchQuery="searchQuery"
@@ -140,7 +142,7 @@ export default {
   data () {
     return {
       page: 1,
-      pageSize: 20,
+      pageSize: this.$store.getters.defaultListViewPageSize,
       itemCount: 0,
       searchQuery: '',
       dataSource: [],

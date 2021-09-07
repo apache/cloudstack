@@ -146,7 +146,7 @@ export default {
               }]
             },
             {
-              api: 'addTungstenFabricNetworkToLogicalRouter',
+              api: 'addTungstenFabricNetworkGatewayToLogicalRouter',
               icon: 'plus',
               label: 'label.add.logical.network',
               dataView: true,
@@ -166,7 +166,7 @@ export default {
               }
             },
             {
-              api: 'removeTungstenFabricNetworkFromLogicalRouter',
+              api: 'removeTungstenFabricNetworkGatewayFromLogicalRouter',
               icon: 'close',
               label: 'label.remove.logical.network',
               dataView: true,

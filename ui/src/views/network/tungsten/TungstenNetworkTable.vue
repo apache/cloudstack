@@ -31,7 +31,9 @@
           :enabled="true"
           :resource="record"
           @exec-action="(action) => execAction(action, record)"/>
-        {{ text }}
+        <router-link v-if="apiName === 'listTungstenFabricNetworkRouteTable'" :to="{ path: '/tungstennetworkroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
+        <router-link v-else-if="apiName === 'listTungstenFabricInterfaceRouteTable'" :to="{ path: '/tungsteninterfaceroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
       </template>
       <template slot="tungstenvms" slot-scope="text, record">
         <ul><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
@@ -64,7 +66,7 @@
       :pageSize="pageSize"
       :total="itemCount"
       :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-      :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '200'] : ['10', '20', '50', '100', '200']"
+      :pageSizeOptions="pageSizeOptions"
       @change="changePage"
       @showSizeChange="changePageSize"
       showSizeChanger
@@ -78,12 +80,17 @@
 
 <script>
 import { mixinDevice } from '@/utils/mixin.js'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import QuickView from '@/components/view/QuickView'
+
 export default {
   name: 'TungstenNetworkTable',
   components: { QuickView, TooltipButton },
   props: {
+    apiName: {
+      type: String,
+      default: ''
+    },
     dataSource: {
       type: Array,
       default: () => []
@@ -91,6 +98,10 @@ export default {
     columns: {
       type: Array,
       default: () => []
+    },
+    resource: {
+      type: Object,
+      default: () => {}
     },
     page: {
       type: Number,
@@ -119,6 +130,17 @@ export default {
   },
   mixins: [mixinDevice],
   inject: ['onFetchData', 'onExecAction'],
+  computed: {
+    pageSizeOptions () {
+      const sizes = [20, 50, 100, 200, this.$store.getters.defaultListViewPageSize]
+      if (this.device !== 'desktop') {
+        sizes.unshift(10)
+      }
+      return [...new Set(sizes)].sort(function (a, b) {
+        return a - b
+      }).map(String)
+    }
+  },
   methods: {
     changePage (page, pageSize) {
       const query = {}
