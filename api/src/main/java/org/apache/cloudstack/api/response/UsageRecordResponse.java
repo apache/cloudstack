@@ -16,15 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
-import org.apache.cloudstack.api.ApiConstants;
-
-import com.cloud.serializer.Param;
-import org.apache.cloudstack.api.BaseResponseWithTagInformation;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class UsageRecordResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
@@ -88,6 +87,22 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     @Param(description = "template ID")
     private String templateId;
 
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "virtual machine os type ID")
+    private String osTypeId;
+
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "virtual machine os display name")
+    private String osDisplayName;
+
+    @SerializedName(ApiConstants.OS_CATEGORY_ID)
+    @Param(description = "virtual machine guest os category ID")
+    private String osCategoryId;
+
+    @SerializedName(ApiConstants.OS_CATEGORY_NAME)
+    @Param(description = "virtual machine os category name")
+    private String osCategoryName;
+
     @SerializedName("usageid")
     @Param(description = "id of the resource")
     private String usageId;
@@ -139,6 +154,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     @SerializedName("isdefault")
     @Param(description = "True if the resource is default")
     private Boolean isDefault;
+
+    @SerializedName("vpcid")
+    @Param(description = "id of the vpc")
+    private String vpcId;
 
     public UsageRecordResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -196,6 +215,22 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public void setOsTypeId(String osTypeId) {
+        this.osTypeId = osTypeId;
+    }
+
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
+    }
+
+    public void setOsCategoryId(String osCategoryId) {
+        this.osCategoryId = osCategoryId;
+    }
+
+    public void setOsCategoryName(String osCategoryName) {
+        this.osCategoryName = osCategoryName;
     }
 
     public void setUsageId(String usageId) {
@@ -267,5 +302,9 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
 
     public String getDomainName(){
         return domainName;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 }

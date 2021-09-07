@@ -98,8 +98,11 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     }
 
     @Override
-    public boolean compareManagementServerList(final Long hostId, final Long dcId, final List<String> receivedMSHosts) {
+    public boolean compareManagementServerList(final Long hostId, final Long dcId, final List<String> receivedMSHosts, final String lbAlgorithm) {
         if (receivedMSHosts == null || receivedMSHosts.size() < 1) {
+            return false;
+        }
+        if (getLBAlgorithmName() != lbAlgorithm) {
             return false;
         }
         final List<String> expectedMSList = getManagementServerList(hostId, dcId, null);
@@ -218,7 +221,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
             final Answer answer = agentManager.easySend(host.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                LOG.warn("Failed to setup management servers list to the agent of host id=" + host.getId());
+                LOG.warn(String.format("Failed to setup management servers list to the agent of %s", host));
             }
         }
     }

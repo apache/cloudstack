@@ -23,4 +23,4 @@ JAVA_CLASS=com.cloud.agent.AgentShell
 
 #You can uncomment this if you want to enable Java remote debugging.
 #Feel free to change the parameters at your will. The 'address' field defines the port to be used.
-#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n"
+#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=*:8000,server=y,suspend=n"

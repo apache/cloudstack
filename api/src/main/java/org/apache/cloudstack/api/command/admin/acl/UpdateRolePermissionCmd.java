@@ -17,10 +17,12 @@
 
 package org.apache.cloudstack.api.command.admin.acl;
 
-import com.cloud.user.Account;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
@@ -34,8 +36,7 @@ import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.user.Account;
 
 @APICommand(name = UpdateRolePermissionCmd.APINAME, description = "Updates a role permission order", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,

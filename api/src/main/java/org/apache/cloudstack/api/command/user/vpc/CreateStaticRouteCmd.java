@@ -109,7 +109,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
             routeResponse.setResponseName(getCommandName());
         } finally {
             if (!success || route == null) {
-                _vpcService.revokeStaticRoute(getEntityId());
+                _entityMgr.remove(StaticRoute.class, getEntityId());
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create static route");
             }
         }

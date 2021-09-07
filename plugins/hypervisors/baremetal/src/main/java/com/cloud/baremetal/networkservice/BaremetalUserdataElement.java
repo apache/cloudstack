@@ -89,6 +89,11 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
+    public boolean saveHypervisorHostname(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }

@@ -19,61 +19,23 @@ package org.apache.cloudstack.acl;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.UUID;
 
 @Entity
 @Table(name = "role_permissions")
-public class RolePermissionVO implements RolePermission {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private long id;
-
-    @Column(name = "uuid")
-    private String uuid;
+public class RolePermissionVO extends RolePermissionBaseVO implements RolePermission {
 
     @Column(name = "role_id")
     private long roleId;
 
-    @Column(name = "rule")
-    private String rule;
-
-    @Column(name = "permission", nullable = false)
-    @Enumerated(value = EnumType.STRING)
-    private Permission permission = RolePermission.Permission.DENY;
-
-    @Column(name = "description")
-    private String description;
-
     @Column(name = "sort_order")
     private long sortOrder = 0;
 
-    public RolePermissionVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
+    public RolePermissionVO() { super(); }
 
-    public RolePermissionVO(final long roleId, final String rule, final Permission permission, final String description) {
-        this();
+    public RolePermissionVO(final Long roleId, final String rule, final Permission permission, final String description) {
+        super(rule, permission, description);
         this.roleId = roleId;
-        this.rule = rule;
-        this.permission = permission;
-        this.description = description;
-    }
-
-    @Override
-    public long getId() {
-        return id;
-    }
-
-    @Override
-    public String getUuid() {
-        return uuid;
     }
 
     public long getRoleId() {
@@ -84,32 +46,6 @@ public class RolePermissionVO implements RolePermission {
         this.roleId = roleId;
     }
 
-    @Override
-    public Rule getRule() {
-        return new Rule(rule);
-    }
-
-    public void setRule(String rule) {
-        this.rule = rule;
-    }
-
-    @Override
-    public Permission getPermission() {
-        return permission;
-    }
-
-    public void setPermission(Permission permission) {
-        this.permission = permission;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public long getSortOrder() {
         return sortOrder;
     }
@@ -117,4 +53,5 @@ public class RolePermissionVO implements RolePermission {
     public void setSortOrder(long sortOrder) {
         this.sortOrder = sortOrder;
     }
+
 }

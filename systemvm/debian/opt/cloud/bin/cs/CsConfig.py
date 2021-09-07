@@ -78,6 +78,9 @@ class CsConfig(object):
     def use_extdns(self):
         return self.cmdline().idata().get('useextdns', 'false') == 'true'
 
+    def expose_dns(self):
+        return self.cmdline().idata().get('exposedns', 'false') == 'true'
+
     def get_dns(self):
         conf = self.cmdline().idata()
         dns = []

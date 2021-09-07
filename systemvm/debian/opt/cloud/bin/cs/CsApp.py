@@ -17,7 +17,6 @@
 # under the License.
 import os
 from CsFile import CsFile
-from CsProcess import CsProcess
 import CsHelper
 
 
@@ -59,16 +58,6 @@ class CsApache(CsApp):
         if file.is_changed():
             file.commit()
             CsHelper.execute2("systemctl restart apache2", False)
-
-        self.fw.append([
-            "", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
-        ])
-
-        self.fw.append([
-            "", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 443 -j ACCEPT" % (self.dev, self.ip)
-        ])
 
 
 class CsPasswdSvc():

@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -38,6 +40,10 @@ public interface VirtualMachineProfile {
 
     void setVmData(List<String[]> vmData);
 
+    void setDisks(List<DiskTO> disks);
+
+    void setNics(List<NicProfile> nics);
+
     String getConfigDriveLabel();
 
     void setConfigDriveLabel(String configDriveLabel);
@@ -49,6 +55,10 @@ public interface VirtualMachineProfile {
     String getConfigDriveIsoFile();
 
     void setConfigDriveIsoFile(String isoFile);
+
+    NetworkElement.Location getConfigDriveLocation();
+
+    void setConfigDriveLocation(NetworkElement.Location location);
 
     public static class Param {
 
@@ -63,6 +73,8 @@ public interface VirtualMachineProfile {
         public static final Param UefiFlag = new Param("UefiFlag");
         public static final Param BootMode = new Param("BootMode");
         public static final Param BootType = new Param("BootType");
+        public static final Param BootIntoSetup = new Param("enterHardwareSetup");
+        public static final Param PreserveNics = new Param("PreserveNics");
 
         private String name;
 
@@ -93,6 +105,10 @@ public interface VirtualMachineProfile {
             return (other.getName().equals(this.getName()));
         }
     }
+
+    Long getHostId();
+
+    void setHost(Host host);
 
     String getHostName();
 

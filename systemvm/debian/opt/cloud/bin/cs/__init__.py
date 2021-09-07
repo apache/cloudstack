@@ -14,3 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+import logging
+from cs.CsConfig import CsConfig
+
+config = CsConfig()
+
+logging.basicConfig(filename=config.get_logger(),
+                    level=config.get_level(),
+                    format=config.get_format())

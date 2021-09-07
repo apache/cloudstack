@@ -19,69 +19,68 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.cloudstack.backup.Backup;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.exception.CloudException;
 import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.vm.VirtualMachine;
 
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
     public static final Logger LOGGER = Logger.getLogger(UsageBackupDaoImpl.class);
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, backup_offering_id, size, protected_size, created, removed FROM cloud_usage.usage_backup WHERE " +
+    protected static final String UPDATE_DELETED = "UPDATE usage_backup SET removed = ? WHERE account_id = ? AND vm_id = ? and removed IS NULL";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, backup_offering_id, size, protected_size, created, removed FROM usage_backup WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
-    public void updateMetrics(final VirtualMachine vm, Backup.Metric metric) {
-        boolean result = Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(final TransactionStatus status) {
-                final QueryBuilder<UsageBackupVO> qb = QueryBuilder.create(UsageBackupVO.class);
-                qb.and(qb.entity().getVmId(), SearchCriteria.Op.EQ, vm.getId());
-                final UsageBackupVO entry = findOneBy(qb.create());
-                if (entry == null) {
-                    return false;
-                }
-                entry.setSize(metric.getBackupSize());
-                entry.setProtectedSize(metric.getDataSize());
-                return update(entry.getId(), entry);
+    public void updateMetrics(final Long vmId, final Long size, final Long virtualSize) {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
+            SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
+            sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+            UsageBackupVO vo = findOneBy(sc);
+            if (vo != null) {
+                vo.setSize(size);
+                vo.setProtectedSize(virtualSize);
+                update(vo.getId(), vo);
             }
-        });
-        if (!result) {
-            LOGGER.trace("Failed to update backup metrics for VM ID: " + vm.getId());
+        } catch (final Exception e) {
+            LOGGER.error("Error updating backup metrics: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public void removeUsage(Long accountId, Long zoneId, Long vmId) {
-        boolean result = Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(final TransactionStatus status) {
-                final QueryBuilder<UsageBackupVO> qb = QueryBuilder.create(UsageBackupVO.class);
-                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
-                qb.and(qb.entity().getZoneId(), SearchCriteria.Op.EQ, zoneId);
-                qb.and(qb.entity().getVmId(), SearchCriteria.Op.EQ, vmId);
-                final UsageBackupVO entry = findOneBy(qb.create());
-                return remove(qb.create()) > 0;
+    public void removeUsage(Long accountId, Long vmId, Date eventDate) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            txn.start();
+            try (PreparedStatement pstmt = txn.prepareStatement(UPDATE_DELETED);) {
+                if (pstmt != null) {
+                    pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), eventDate));
+                    pstmt.setLong(2, accountId);
+                    pstmt.setLong(3, vmId);
+                    pstmt.executeUpdate();
+                }
+            } catch (SQLException e) {
+                LOGGER.error("Error removing UsageBackupVO: " + e.getMessage(), e);
+                throw new CloudException("Remove backup usage exception: " + e.getMessage(), e);
             }
-        });
-        if (!result) {
-            LOGGER.warn("Failed to remove usage entry for backup of VM ID: " + vmId);
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            LOGGER.error("Exception caught while removing UsageBackupVO: " + e.getMessage(), e);
+        } finally {
+            txn.close();
         }
     }
 

@@ -29,7 +29,7 @@ import javax.persistence.Table;
 import com.cloud.network.rules.HealthCheckPolicy;
 
 @Entity
-@Table(name = ("load_balancer_healthcheck_policies"))
+@Table(name = "load_balancer_healthcheck_policies")
 @PrimaryKeyJoinColumn(name = "load_balancer_id", referencedColumnName = "id")
 public class LBHealthCheckPolicyVO implements HealthCheckPolicy {
     @Id

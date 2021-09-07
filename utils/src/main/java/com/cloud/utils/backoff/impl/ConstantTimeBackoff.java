@@ -23,13 +23,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.component.AdapterBase;
+import org.apache.log4j.Logger;
 
 /**
  * An implementation of BackoffAlgorithm that waits for some seconds.
@@ -44,7 +41,7 @@ import com.cloud.utils.component.AdapterBase;
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     long _time;
     private final Map<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
-    private final static Log LOG = LogFactory.getLog(ConstantTimeBackoff.class);
+    private static final Logger LOG = Logger.getLogger(ConstantTimeBackoff.class.getName());
 
     @Override
     public void waitBeforeRetry() {

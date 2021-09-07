@@ -24,7 +24,7 @@ public abstract class StorageCommand extends StorageNfsVersionCommand {
         super();
     }
 
-    protected StorageCommand(Integer nfsVersion){
+    protected StorageCommand(String nfsVersion){
         super(nfsVersion);
     }
 

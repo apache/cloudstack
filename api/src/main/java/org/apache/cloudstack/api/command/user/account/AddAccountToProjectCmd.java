@@ -16,6 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
+import java.util.List;
+
+import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.response.ProjectRoleResponse;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -31,6 +37,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.google.common.base.Strings;
 
 @APICommand(name = "addAccountToProject", description = "Adds account to a project", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -56,6 +64,14 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email to which invitation to the project is going to be sent")
     private String email;
 
+    @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = CommandType.UUID, entityType = ProjectRoleResponse.class,
+            description = "ID of the project role", validations = {ApiArgValidator.PositiveNumber})
+    private Long projectRoleId;
+
+    @Parameter(name = ApiConstants.ROLE_TYPE, type = BaseCmd.CommandType.STRING,
+            description = "Project role type to be assigned to the user - Admin/Regular; default: Regular")
+    private String roleType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,6 +86,21 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
 
     public String getEmail() {
         return email;
+    }
+
+    public Long getProjectRoleId() {
+        return projectRoleId;
+    }
+
+    public ProjectAccount.Role getRoleType() {
+        if (!Strings.isNullOrEmpty(roleType)) {
+            String role = roleType.substring(0, 1).toUpperCase() + roleType.substring(1).toLowerCase();
+            if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, role)) {
+                throw new InvalidParameterValueException("Only Admin or Regular project role types are valid");
+            }
+            return Enum.valueOf(ProjectAccount.Role.class, role);
+        }
+        return null;
     }
 
     @Override
@@ -88,7 +119,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         }
 
         CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
-        boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
+        boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -108,6 +139,11 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         }
 
         return _projectService.getProjectOwner(getProjectId()).getId();
+    }
+
+    @Override
+    public List<Long> getEntityOwnerIds() {
+        return _projectService.getProjectOwners(projectId);
     }
 
     @Override

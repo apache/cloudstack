@@ -21,13 +21,12 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
-import com.cloud.projects.Project;
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
-
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
@@ -61,6 +60,7 @@ public class CallContext {
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
     private Project project;
+    private String apiName;
 
     static EntityManager s_entityMgr;
 
@@ -333,6 +333,14 @@ public class CallContext {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public String getApiName() {
+        return apiName;
+    }
+
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
     }
 
     /**

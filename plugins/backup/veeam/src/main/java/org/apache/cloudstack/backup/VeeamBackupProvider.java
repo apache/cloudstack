@@ -216,9 +216,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(final Long zoneId, final List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
+        if (vms == null || vms.isEmpty()) {
+            return metrics;
+        }
         final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
         for (final VirtualMachine vm : vms) {
-            if (!backendMetrics.containsKey(vm.getUuid())) {
+            if (vm == null || !backendMetrics.containsKey(vm.getUuid())) {
                 continue;
             }
             metrics.put(vm, backendMetrics.get(vm.getUuid()));

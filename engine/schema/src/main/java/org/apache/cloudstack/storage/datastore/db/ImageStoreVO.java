@@ -74,6 +74,9 @@ public class ImageStoreVO implements ImageStore {
     @Enumerated(value = EnumType.STRING)
     private DataStoreRole role;
 
+    @Column(name = "readonly")
+    private boolean readonly = false;
+
     @Column(name = "parent")
     private String parent;
 
@@ -163,6 +166,14 @@ public class ImageStoreVO implements ImageStore {
 
     public Date getCreated() {
         return created;
+    }
+
+    public void setReadonly(boolean readonly) {
+        this.readonly = readonly;
+    }
+
+    public boolean isReadonly() {
+        return readonly;
     }
 
     public void setCreated(Date created) {

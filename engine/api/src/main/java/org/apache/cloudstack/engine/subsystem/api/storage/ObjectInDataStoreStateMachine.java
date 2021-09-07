@@ -29,6 +29,7 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         Ready("Template downloading is accomplished"),
         Copying("The object is being coping"),
         Migrating("The object is being migrated"),
+        Migrated("The object has been migrated"),
         Destroying("Template is destroying"),
         Destroyed("Template is destroyed"),
         Failed("Failed to download template");
@@ -49,12 +50,16 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         DestroyRequested,
         OperationSuccessed,
         OperationFailed,
+        CopyRequested,
         CopyingRequested,
         MigrationRequested,
+        MigrationSucceeded,
+        MigrationFailed,
         MigrationCopyRequested,
         MigrationCopySucceeded,
         MigrationCopyFailed,
         ResizeRequested,
-        ExpungeRequested
+        ExpungeRequested,
+        MigrateDataRequested
     }
 }

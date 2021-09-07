@@ -34,4 +34,15 @@ public interface UserDataServiceProvider extends NetworkElement {
     boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException;
 
     boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException;
+
+    /**
+     * Saves the hypervisor hostname in configdrive ISO or in the virtual router
+     * @param profile
+     * @param network
+     * @param vm
+     * @param dest
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean saveHypervisorHostname(NicProfile profile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException;
 }

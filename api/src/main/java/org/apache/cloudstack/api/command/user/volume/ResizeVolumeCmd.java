@@ -87,6 +87,13 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         this.maxIops = maxIops;
     }
 
+    public ResizeVolumeCmd(Long id, Long minIops, Long maxIops, long diskOfferingId) {
+        this.id = id;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        this.newDiskOfferingId = diskOfferingId;
+    }
+
     //TODO use the method getId() instead of this one.
     public Long getEntityId() {
         return id;
@@ -164,14 +171,23 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + "G";
+        if (getSize() != null) {
+            return "Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + " GB";
+        } else {
+            return "Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId());
+        }
     }
 
     @Override
     public void execute() throws ResourceAllocationException {
         Volume volume = null;
         try {
-            CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + "G");
+            if (size != null) {
+                CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + " GB");
+            } else {
+                CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()));
+            }
+
             volume = _volumeService.resizeVolume(this);
         } catch (InvalidParameterValueException ex) {
             s_logger.info(ex.getMessage());

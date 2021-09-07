@@ -17,7 +17,7 @@
 package com.cloud.secstorage;
 
 import java.util.Date;
-
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
@@ -30,11 +30,16 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long> implements CommandExecLogDao {
 
     protected final SearchBuilder<CommandExecLogVO> ExpungeSearch;
+    protected final SearchBuilder<CommandExecLogVO> CommandSearch;
 
     public CommandExecLogDaoImpl() {
         ExpungeSearch = createSearchBuilder();
         ExpungeSearch.and("created", ExpungeSearch.entity().getCreated(), Op.LT);
         ExpungeSearch.done();
+
+        CommandSearch = createSearchBuilder();
+        CommandSearch.and("host_id", CommandSearch.entity().getHostId(), Op.EQ);
+        CommandSearch.and("command_name", CommandSearch.entity().getCommandName(), Op.EQ);
     }
 
     @Override
@@ -42,5 +47,14 @@ public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long
         SearchCriteria<CommandExecLogVO> sc = ExpungeSearch.create();
         sc.setParameters("created", cutTime);
         expunge(sc);
+    }
+
+    @Override
+    public Integer getCopyCmdCountForSSVM(Long id) {
+        SearchCriteria<CommandExecLogVO> sc = CommandSearch.create();
+        sc.setParameters("host_id", id);
+        sc.setParameters("command_name", "CopyCommand");
+        List<CommandExecLogVO> copyCmds = customSearch(sc, null);
+        return copyCmds.size();
     }
 }

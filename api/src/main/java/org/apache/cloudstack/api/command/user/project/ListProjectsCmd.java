@@ -63,6 +63,9 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
     private Map tags;
 
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "List projects by username")
+    private String username;
+
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
@@ -87,6 +90,10 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     public String getState() {
         return state;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     @Override

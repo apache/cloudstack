@@ -16,13 +16,17 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.serializer.Param;
-import com.cloud.user.User;
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.utils.component.PluggableService;
-import com.google.gson.annotations.SerializedName;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -39,14 +43,13 @@ import org.apache.log4j.Logger;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.component.PluggableService;
+import com.google.gson.annotations.SerializedName;
 
 @Component
 public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements ApiDiscoveryService {
@@ -65,7 +68,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
-            Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
+            Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
             for (PluggableService service : _services) {
                 s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());

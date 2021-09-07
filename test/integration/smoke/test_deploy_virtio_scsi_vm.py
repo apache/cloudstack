@@ -33,9 +33,6 @@ from marvin.lib.base import (Account,
                              Host,
                              GuestOs)
 
-# utils - utility classes for common cleanup, external library wrappers etc
-from marvin.lib.utils import cleanup_resources, get_hypervisor_type, validateList
-
 # common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_zone, get_domain, get_pod
 
@@ -96,7 +93,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
-        cls.cleanup = []
+        cls._cleanup = []
         if cls.hypervisor.lower() not in ['kvm']:
             cls.hypervisorNotSupported = True
             return
@@ -108,6 +105,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             hypervisor=cls.hypervisor.lower(),
             domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
+        cls._cleanup.append(cls.template)
 
         if cls.template == FAILED:
             assert False, "get_template() failed to return template"
@@ -120,16 +118,19 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.sparse_disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.services["sparse_disk_offering"]
         )
+        cls._cleanup.append(cls.sparse_disk_offering)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -158,29 +159,20 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
         # Start VM after password reset
         cls.virtual_machine.start(cls.apiclient)
+        cls._cleanup.append(cls.virtual_machine)
 
-        cls.cleanup = [
-            cls.template,
-            cls.service_offering,
-            cls.sparse_disk_offering,
-            cls.account
-        ]
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestDeployVirtioSCSIVM,
-                cls
-            ).getClsTestClient().getApiClient()
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVirtioSCSIVM, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestDeployVirtioSCSIVM, self).tearDown()
 
     def verifyVirshState(self, diskcount):
         host = self.vmhost.ipaddress
@@ -205,7 +197,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             for child in disk:
                 if child.tag.lower() == "target":
                     dev = child.get("dev")
-                    self.assert_(dev is not None and dev.startswith("sd"), "disk dev is invalid")
+                    self.assertTrue(dev is not None and dev.startswith("sd"), "disk dev is invalid")
                 elif child.tag.lower() == "address":
                     con = child.get("controller")
                     self.assertEqual(con, scsiindex, "disk controller not equal to SCSI " \
@@ -252,14 +244,14 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             b = chan.recv(10000)
             if len(b) == 0:
                 break
-            stdout += b
+            stdout += b.decode()
 
         stderr = ""
         while True:
             b = chan.recv_stderr(10000)
             if len(b) == 0:
                 break
-            stderr += b
+            stderr += b.decode()
 
         xstatus = chan.recv_exit_status()
         chan.close()

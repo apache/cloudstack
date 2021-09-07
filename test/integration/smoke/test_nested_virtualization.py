@@ -97,55 +97,65 @@ class TestNestedVirtualization(cloudstackTestCase):
                 config_update = Configurations.update(self.apiclient, "vmware.nested.virtualization.perVM", "true")
                 self.logger.debug("Updated global setting vmware.nested.virtualization.perVM to true")
                 rollback_nv_per_vm = True
-                
-        # 2) Deploy a vm
-        virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.services["small"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            mode=self.services['mode']
-        )
-        self.assert_(virtual_machine is not None, "VM failed to deploy")
-        self.assert_(virtual_machine.state == 'Running', "VM is not running")
-        self.logger.debug("Deployed vm: %s" % virtual_machine.id)
-        
-        isolated_network = Network.create(
-            self.apiclient,
-            self.services["isolated_network"],
-            self.account.name,
-            self.account.domainid,
-            networkofferingid=self.isolated_network_offering.id)
 
-        virtual_machine.add_nic(self.apiclient, isolated_network.id)
-        
-        # 3) SSH into vm
-        ssh_client = virtual_machine.get_ssh_client()
+        try:
+            # 2) Deploy a vm
+            virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.services["small"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                mode=self.services['mode']
+            )
+            self.assertTrue(virtual_machine is not None, "VM failed to deploy")
+            self.assertTrue(virtual_machine.state == 'Running', "VM is not running")
+            self.logger.debug("Deployed vm: %s" % virtual_machine.id)
 
-        if ssh_client:
-            # run ping test
-            result = ssh_client.execute("cat /proc/cpuinfo | grep flags")
-            self.logger.debug(result)
-        else:
-            self.fail("Failed to setup ssh connection to %s" % virtual_machine.public_ip)
-            
-        # 4) Revert configurations, if needed
+            isolated_network = Network.create(
+                self.apiclient,
+                self.services["isolated_network"],
+                self.account.name,
+                self.account.domainid,
+                networkofferingid=self.isolated_network_offering.id)
+
+            virtual_machine.stop(self.apiclient)
+            virtual_machine.add_nic(self.apiclient, isolated_network.id)
+            virtual_machine.start(self.apiclient)
+
+            # 3) SSH into vm
+            ssh_client = virtual_machine.get_ssh_client()
+
+            if ssh_client:
+                # run ping test
+                result = ssh_client.execute("cat /proc/cpuinfo | grep flags")
+                self.logger.debug(result)
+            else:
+                self.fail("Failed to setup ssh connection to %s" % virtual_machine.public_ip)
+
+            # 4) Revert configurations, if needed
+            self.rollback_nested_configurations(rollback_nv, rollback_nv_per_vm)
+
+            #5) Check for CPU flags: vmx for Intel and svm for AMD indicates nested virtualization is enabled
+            self.assertTrue(result is not None, "Empty result for CPU flags")
+            res = str(result)
+            self.assertTrue('vmx' in res or 'svm' in res)
+        except Exception as e:
+            self.debug('Error=%s' % e)
+            self.rollback_nested_configurations(rollback_nv, rollback_nv_per_vm)
+            raise e
+
+    def rollback_nested_configurations(self, rollback_nv, rollback_nv_per_vm):
         if rollback_nv:
             config_update = Configurations.update(self.apiclient, "vmware.nested.virtualization", "false")
             self.logger.debug("Reverted global setting vmware.nested.virtualization back to false")
         if rollback_nv_per_vm:
-            config_update = Configurations.update(self.apiclient, "vmware.nested.virtualization", "false")
+            config_update = Configurations.update(self.apiclient, "vmware.nested.virtualization.perVM", "false")
             self.logger.debug("Reverted global setting vmware.nested.virtualization.perVM back to false")
-            
-        #5) Check for CPU flags: vmx for Intel and svm for AMD indicates nested virtualization is enabled
-        self.assert_(result is not None, "Empty result for CPU flags")
-        res = str(result)
-        self.assertTrue('vmx' in res or 'svm' in res)
 
     @classmethod
     def tearDownClass(cls):
         try:
             cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Cleanup failed with %s" % e)

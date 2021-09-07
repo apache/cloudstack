@@ -75,6 +75,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -213,7 +214,9 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
             if (offering.isSpecifyVlan()) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
-                network.setState(State.Setup);
+                if (!offering.isPersistent()) {
+                    network.setState(State.Setup);
+                }
                 if (userSpecified.getPvlanType() != null) {
                     network.setBroadcastDomainType(BroadcastDomainType.Pvlan);
                     network.setPvlanType(userSpecified.getPvlanType());
@@ -372,15 +375,25 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
                 if (isGateway) {
                     guestIp = network.getGateway();
-                } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
-                    guestIp = _ipAddrMgr.acquireGuestIpAddressByPlacement(network, nic.getRequestedIPv4());
                 } else {
-                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
-                }
-
-                if (!isGateway && guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
-                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
-                            dc.getId());
+                    if (network.getGuestType() != GuestType.L2 && vm.getType() == VirtualMachine.Type.DomainRouter) {
+                        Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
+                        if (placeholderNic != null) {
+                            s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
+                            guestIp = placeholderNic.getIPv4Address();
+                        }
+                    }
+                    if (guestIp == null) {
+                        if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
+                            guestIp = _ipAddrMgr.acquireGuestIpAddressByPlacement(network, nic.getRequestedIPv4());
+                        } else {
+                            guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
+                        }
+                    }
+                    if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
+                                dc.getId());
+                    }
                 }
 
                 nic.setIPv4Address(guestIp);

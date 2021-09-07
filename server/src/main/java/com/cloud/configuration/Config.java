@@ -1525,7 +1525,7 @@ public enum Config {
     AllowUserToCreateProject(
             "Project Defaults",
             ManagementServer.class,
-            Long.class,
+            Boolean.class,
             "allow.user.create.projects",
             "true",
             "If regular user can create a project; true by default",

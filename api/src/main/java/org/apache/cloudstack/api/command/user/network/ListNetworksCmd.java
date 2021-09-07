@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.Network;
 import com.cloud.utils.Pair;
+import com.google.common.base.Strings;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -52,7 +54,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID of the network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: isolated and shared")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: isolated, l2, shared and all")
     private String guestIpType;
 
     @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "true if network is system, false otherwise")
@@ -88,6 +90,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list networks by network offering ID")
+    private Long networkOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -101,7 +106,13 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     }
 
     public String getGuestIpType() {
-        return guestIpType;
+        if (!Strings.isNullOrEmpty(guestIpType)) {
+            if (guestIpType.equalsIgnoreCase("all")) {
+                return null;
+            }
+            return Network.GuestType.fromValue(guestIpType).toString();
+        }
+        return null;
     }
 
     public Boolean getIsSystem() {
@@ -142,6 +153,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public Long getNetworkOfferingId() {
+        return networkOfferingId;
     }
 
     @Override

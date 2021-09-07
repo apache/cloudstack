@@ -21,10 +21,12 @@ import com.cloud.agent.api.to.DataTO;
 
 public final class GetDatadisksCommand extends Command {
     private DataTO data;
+    private String configurationId;
 
-    public GetDatadisksCommand(DataTO data) {
+    public GetDatadisksCommand(DataTO data, String configurationId) {
         super();
         this.data = data;
+        this.configurationId = configurationId;
     }
 
     protected GetDatadisksCommand() {
@@ -40,4 +42,7 @@ public final class GetDatadisksCommand extends Command {
         return data;
     }
 
+    public String getConfigurationId() {
+        return configurationId;
+    }
 }

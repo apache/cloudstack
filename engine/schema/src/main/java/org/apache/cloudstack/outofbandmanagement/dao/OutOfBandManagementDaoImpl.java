@@ -87,6 +87,12 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
     }
 
     @Override
+    public OutOfBandManagementVO findByHostAddress(String address) {
+        SearchCriteria<OutOfBandManagementVO> sc = HostSearch.create("address", address);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<OutOfBandManagementVO> findAllByManagementServer(long serverId) {
         SearchCriteria<OutOfBandManagementVO> sc = OutOfBandManagementOwnerSearch.create();
         sc.setParameters("server", serverId);

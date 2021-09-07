@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.utils.Pair;
 
 public class UploadStatusAnswer extends Answer {
     public static enum UploadStatus {
@@ -31,6 +32,8 @@ public class UploadStatusAnswer extends Answer {
     private long physicalSize = 0;
     private String installPath = null;
     private int downloadPercent = 0;
+    private Pair<String, String> guestOsInfo;
+    private String minimumHardwareVersion;
 
     protected UploadStatusAnswer() {
     }
@@ -84,5 +87,21 @@ public class UploadStatusAnswer extends Answer {
 
     public void setDownloadPercent(int downloadPercent) {
         this.downloadPercent = downloadPercent;
+    }
+
+    public Pair<String, String> getGuestOsInfo() {
+        return guestOsInfo;
+    }
+
+    public void setGuestOsInfo(Pair<String, String> guestOsInfo) {
+        this.guestOsInfo = guestOsInfo;
+    }
+
+    public void setMinimumHardwareVersion(String minimumHardwareVersion) {
+        this.minimumHardwareVersion = minimumHardwareVersion;
+    }
+
+    public String getMinimumHardwareVersion() {
+        return minimumHardwareVersion;
     }
 }

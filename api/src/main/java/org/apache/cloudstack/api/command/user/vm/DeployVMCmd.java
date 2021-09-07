@@ -27,8 +27,6 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import com.cloud.utils.StringUtils;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -52,6 +50,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
@@ -69,9 +68,12 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
+import com.google.common.base.Strings;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -113,11 +115,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
-    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]")
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware, as we honour what is defined in the template.", since = "4.14.0.0")
     private String bootType;
 
-    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy By default for BIOS")
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMware, as we honour what is defined in the template.", since = "4.14.0.0")
     private String bootMode;
+
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
 
     //DataDisk information
     @ACL
@@ -144,7 +149,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length = 32768)
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
+            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
+            length = 1048576)
     private String userData;
 
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
@@ -218,10 +225,20 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "if true the image tags (if any) will be copied to the VM, default value is false")
     private Boolean copyImageTags;
 
-    @Parameter(name = ApiConstants.OVF_PROPERTIES, type = CommandType.MAP, since = "4.13",
-            description = "used to specify the OVF properties.")
+    @Parameter(name = ApiConstants.PROPERTIES, type = CommandType.MAP, since = "4.15",
+            description = "used to specify the vApp properties.")
     @LogLevel(LogLevel.Log4jLevel.Off)
-    private Map vmOvfProperties;
+    private Map vAppProperties;
+
+    @Parameter(name = ApiConstants.NIC_NETWORK_LIST, type = CommandType.MAP, since = "4.15",
+            description = "VMware only: used to specify network mapping of a vApp VMware template registered \"as-is\"." +
+                    " Example nicnetworklist[0].ip=Nic-101&nicnetworklist[0].network=uuid")
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private Map vAppNetworks;
+
+    @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
+            description = "true if virtual machine needs to be dynamically scalable")
+    protected Boolean dynamicScalingEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -253,8 +270,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return domainId;
     }
 
-    private ApiConstants.BootType  getBootType() {
-
+    public ApiConstants.BootType getBootType() {
         if (StringUtils.isNotBlank(bootType)) {
             try {
                 String type = bootType.trim().toUpperCase();
@@ -281,15 +297,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
-        if(getBootType() != null){ // export to get
-            if(getBootType() == ApiConstants.BootType.UEFI) {
-                customparameterMap.put(getBootType().toString(), getBootMode().toString());
-            }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
         }
+
         return customparameterMap;
     }
 
@@ -300,24 +315,55 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String errMesg = "Invalid bootMode " + bootMode + "Specified for vm " + getName()
-                        + " Valid values are:  "+ Arrays.toString(ApiConstants.BootMode.values());
-                s_logger.warn(errMesg);
-                throw new InvalidParameterValueException(errMesg);
-                }
+                String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
+                        ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
+                    ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
         }
         return null;
     }
 
-
-    public Map<String, String> getVmOVFProperties() {
+    public Map<String, String> getVmProperties() {
         Map<String, String> map = new HashMap<>();
-        if (MapUtils.isNotEmpty(vmOvfProperties)) {
-            Collection parameterCollection = vmOvfProperties.values();
+        if (MapUtils.isNotEmpty(vAppProperties)) {
+            Collection parameterCollection = vAppProperties.values();
             Iterator iterator = parameterCollection.iterator();
             while (iterator.hasNext()) {
                 HashMap<String, String> entry = (HashMap<String, String>)iterator.next();
                 map.put(entry.get("key"), entry.get("value"));
+            }
+        }
+        return map;
+    }
+
+    public Map<Integer, Long> getVmNetworkMap() {
+        Map<Integer, Long> map = new HashMap<>();
+        if (MapUtils.isNotEmpty(vAppNetworks)) {
+            Collection parameterCollection = vAppNetworks.values();
+            Iterator iterator = parameterCollection.iterator();
+            while (iterator.hasNext()) {
+                HashMap<String, String> entry = (HashMap<String, String>) iterator.next();
+                Integer nic;
+                try {
+                    nic = Integer.valueOf(entry.get(VmDetailConstants.NIC));
+                } catch (NumberFormatException nfe) {
+                    nic = null;
+                }
+                String networkUuid = entry.get(VmDetailConstants.NETWORK);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                }
+                if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
+                    throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
+                }
+                map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
             }
         }
         return map;
@@ -372,6 +418,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public List<Long> getNetworkIds() {
+        if (MapUtils.isNotEmpty(vAppNetworks)) {
+            if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null || MapUtils.isNotEmpty(ipToNetworkList)) {
+                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s", ApiConstants.NIC_NETWORK_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST));
+            } else {
+                return new ArrayList<>();
+            }
+        }
        if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
            if ((networkIds != null && !networkIds.isEmpty()) || ipAddress != null || getIp6Address() != null) {
                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
@@ -575,6 +628,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public boolean getCopyImageTags() {
         return copyImageTags == null ? false : copyImageTags;
+    }
+
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
+    }
+
+    public boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled == null ? true : dynamicScalingEnabled;
     }
 
     /////////////////////////////////////////////////////

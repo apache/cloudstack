@@ -25,9 +25,15 @@ import com.cloud.utils.db.GenericDao;
 public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
     ProjectAccountVO getProjectOwner(long projectId);
 
+    List<ProjectAccountVO> getProjectOwners(long projectId);
+
     List<ProjectAccountVO> listByProjectId(long projectId);
 
     ProjectAccountVO findByProjectIdAccountId(long projectId, long accountId);
+
+    ProjectAccountVO findByProjectIdUserId(long projectId, long accountId, long userId);
+
+    boolean canUserAccessProjectAccount(long accountId, long userId, long projectAccountId);
 
     boolean canAccessProjectAccount(long accountId, long projectAccountId);
 
@@ -40,4 +46,8 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
     Long countByAccountIdAndRole(long accountId, ProjectAccount.Role role);
 
     void removeAccountFromProjects(long accountId);
+
+    boolean canUserModifyProject(long projectId, long accountId, long userId);
+
+    List<ProjectAccountVO> listUsersOrAccountsByRole(long id);
 }

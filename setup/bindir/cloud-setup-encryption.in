@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -26,7 +26,7 @@ import glob
 from random import choice
 import string
 from optparse import OptionParser
-import commands
+import subprocess
 import shutil
 
 # squelch mysqldb spurious warnings
@@ -49,7 +49,7 @@ def runCmd(cmds):
     stdout, stderr = process.communicate()
     if process.returncode != 0:
         raise Exception(stderr)
-    return stdout
+    return stdout.decode('utf-8')
 
 class DBDeployer(object):
     parser = None
@@ -107,7 +107,7 @@ class DBDeployer(object):
         sys.stdout.flush()
 
     def putDbProperty(self, key, value):
-        if self.dbDotProperties.has_key(key):
+        if key in self.dbDotProperties:
             (oldValue, index) = self.dbDotProperties[key]
             self.dbDotProperties[key] = (value, index)
         else:
@@ -115,7 +115,7 @@ class DBDeployer(object):
             self.dbDotPropertiesIndex += 1
     
     def getDbProperty(self, key):
-        if not self.dbDotProperties.has_key(key):
+        if key not in self.dbDotProperties:
             return None
         (value, index) = self.dbDotProperties[key]
         return value
@@ -151,7 +151,7 @@ for full help
                 try:
                     if not passed:
                         (key, value) = line.split('=', 1)
-                except Exception, e:
+                except Exception as e:
                     err = '''Wrong format in %s (%s):
 Besides comments beginning "#" and empty line, all key-value pairs must be in formula of
                     key=value
@@ -167,7 +167,7 @@ for example:
     def finalize(self):
         def finalizeDbProperties():
             entries = []
-            for key in self.dbDotProperties.keys():
+            for key in list(self.dbDotProperties.keys()):
                 (value, index) = self.dbDotProperties[key]
                 if key.startswith("#"):
                     entries.insert(index, key)
@@ -257,9 +257,9 @@ for example:
         finally:
             self.postRun()
         
-        print ''
-        print "CloudStack has successfully setup Encryption"
-        print ''
+        print('')
+        print("CloudStack has successfully setup Encryption")
+        print('')
 
 if __name__ == "__main__":
    o = DBDeployer()

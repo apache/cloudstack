@@ -3,6 +3,7 @@
     missingok
     rotate 5
     notifempty
+    compress
     delaycompress
     sharedscripts
     postrotate

@@ -316,7 +316,7 @@ public class SnapshotManagerTest {
         when(snapshotStoreDao.findParent(any(DataStoreRole.class), nullable(Long.class), nullable(Long.class))).thenReturn(null);
         when(snapshotFactory.getSnapshot(nullable(Long.class), nullable(DataStore.class))).thenReturn(snapshotInfoMock);
         when(storeMock.create(snapshotInfoMock)).thenReturn(snapshotInfoMock);
-        when(snapshotStoreDao.findBySnapshot(nullable(Long.class), nullable(DataStoreRole.class))).thenReturn(snapshotStoreMock);
+        when(snapshotStoreDao.findByStoreSnapshot(nullable(DataStoreRole.class), nullable(Long.class), nullable(Long.class))).thenReturn(snapshotStoreMock);
         when(snapshotStoreDao.update(nullable(Long.class), nullable(SnapshotDataStoreVO.class))).thenReturn(true);
         when(_snapshotDao.update(nullable(Long.class), nullable(SnapshotVO.class))).thenReturn(true);
         when(vmMock.getAccountId()).thenReturn(2L);
@@ -333,7 +333,7 @@ public class SnapshotManagerTest {
         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(_vmSnapshotDao.findById(nullable(Long.class))).thenReturn(vmSnapshotMock);
         when(snapshotStoreDao.findParent(any(DataStoreRole.class), nullable(Long.class), nullable(Long.class))).thenReturn(snapshotStoreMock);
-        when(snapshotStoreDao.findBySnapshot(nullable(Long.class), nullable(DataStoreRole.class))).thenReturn(snapshotStoreMock);
+        when(snapshotStoreDao.findByStoreSnapshot(nullable(DataStoreRole.class), nullable(Long.class), nullable(Long.class))).thenReturn(snapshotStoreMock);
         when(snapshotStoreMock.getInstallPath()).thenReturn("VM_SNAPSHOT_NAME");
         when(vmSnapshotMock.getName()).thenReturn("VM_SNAPSHOT_NAME");
         Snapshot snapshot = _snapshotMgr.backupSnapshotFromVmSnapshot(TEST_SNAPSHOT_ID, TEST_VM_ID, TEST_VOLUME_ID, TEST_VM_SNAPSHOT_ID);

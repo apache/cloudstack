@@ -157,8 +157,8 @@ public class VmwareResourceTest {
     CopyCommand storageCmd;
     EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields,Object>(VmwareStorageProcessorConfigurableFields.class);
 
-    private static final Integer NFS_VERSION = Integer.valueOf(3);
-    private static final Integer NFS_VERSION_NOT_PRESENT = null;
+    private static final String NFS_VERSION = "3";
+    private static final String NFS_VERSION_NOT_PRESENT = null;
     private static final long VRAM_MEMORY_SIZE = 131072l;
     private static final long VIDEO_CARD_MEMORY_SIZE = 65536l;
     private static final Boolean FULL_CLONE_FLAG = true;
@@ -363,7 +363,7 @@ public class VmwareResourceTest {
         EnumMap<VmwareStorageProcessorConfigurableFields, Object> params2 = _resource.examineStorageSubSystemCommandFullCloneFlagForVmware(storageCmd, params);
         verify(destDataTO).getDataStore();
         verify(destDataStoreTO, times(2)).isFullCloneFlag();
-        assertEquals(1, params2.size());
+        assertEquals(2, params2.size());
         assertEquals(FULL_CLONE_FLAG, params2.get(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG));
     }
 

@@ -43,6 +43,8 @@ public class NumbersUtil {
         return NumberUtils.toFloat(s, defaultValue);
     }
 
+    public static Boolean enableHumanReadableSizes = true;
+
     /**
      * Converts bytes to long on input.
      */
@@ -74,7 +76,12 @@ public class NumbersUtil {
     protected static final long GB = 1024 * MB;
     protected static final long TB = 1024 * GB;
 
-    public static String toReadableSize(long bytes) {
+    public static String toReadableSize(Long bytes) {
+
+        if (bytes == null){
+            return "null";
+        }
+
         if (bytes < KB && bytes >= 0) {
             return Long.toString(bytes) + " bytes";
         }
@@ -91,6 +98,13 @@ public class NumbersUtil {
         }
         format.close();
         return builder.toString();
+    }
+
+    public static String toHumanReadableSize(long size) {
+        if (enableHumanReadableSizes){
+            return "(" + toReadableSize(size) + ") " + ((Long)size).toString();
+        }
+        return ((Long)size).toString();
     }
 
     /**

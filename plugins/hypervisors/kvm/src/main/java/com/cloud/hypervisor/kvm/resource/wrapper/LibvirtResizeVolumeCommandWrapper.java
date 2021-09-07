@@ -39,6 +39,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 /*
  * Uses a local script now, eventually support for virStorageVolResize() will maybe work on qcow2 and lvm and we can do this in libvirt calls
  */
@@ -59,7 +61,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
         if ( currentSize == newSize) {
             // nothing to do
-            s_logger.info("No need to resize volume: current size " + currentSize + " is same as new size " + newSize);
+            s_logger.info("No need to resize volume: current size " + toHumanReadableSize(currentSize) + " is same as new size " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", currentSize);
         }
 
@@ -80,7 +82,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                 s_logger.debug("Volume " + path + " is on a RBD storage pool. No need to query for additional information.");
             }
 
-            s_logger.debug("Resizing volume: " + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
+            s_logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
 
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via Bash script */
             if (pool.getType() != StoragePoolType.CLVM && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
@@ -127,7 +129,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
             pool.refresh();
             final long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
-            s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
+            s_logger.debug("after resize, size reports as: " + toHumanReadableSize(finalSize) + ", requested: " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", finalSize);
         } catch (final CloudRuntimeException e) {
             final String error = "Failed to resize volume: " + e.getMessage();

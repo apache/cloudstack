@@ -227,7 +227,7 @@ function stage_vmx() {
 displayname = "${1}"
 annotation = "${1}"
 guestos = "otherlinux-64"
-virtualHW.version = "8"
+virtualHW.version = "11"
 config.version = "8"
 numvcpus = "1"
 cpuid.coresPerSocket = "1"

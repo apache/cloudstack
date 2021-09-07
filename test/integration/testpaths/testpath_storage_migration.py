@@ -17,7 +17,8 @@
 """ Test cases for Test Paths Storage Migration
 """
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -324,7 +325,7 @@ class TestStorageMigration(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.apiclient, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -335,13 +336,9 @@ class TestStorageMigration(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            for storagePool in self.pools:
-                StoragePool.update(self.apiclient, id=storagePool.id, tags="")
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        for storagePool in self.pools:
+            StoragePool.update(self.apiclient, id=storagePool.id, tags="")
+        super(TestStorageMigration,self).tearDown()
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_migrate_root_and_data_disk_nonlive(self):
@@ -3543,7 +3540,7 @@ def check_files(self, vm, destinationHost):
         self.apiclient,
         virtualmachineid=vm.id,
         listall=True)
-    print vm_volumes
+    print(vm_volumes)
     for vol in vm_volumes:
         spool = list_storage_pools(self.apiclient, id=vol.storageid)
         split_path = spool[0].path.split("/")

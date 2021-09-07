@@ -58,4 +58,6 @@ public interface VirtualMachineGuru {
      * @return
      */
     void prepareStop(VirtualMachineProfile profile);
+
+    void finalizeUnmanage(VirtualMachine vm);
 }

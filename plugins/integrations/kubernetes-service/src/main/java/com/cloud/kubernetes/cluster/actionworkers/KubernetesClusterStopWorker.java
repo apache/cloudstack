@@ -36,24 +36,26 @@ public class KubernetesClusterStopWorker extends KubernetesClusterActionWorker {
     public boolean stop() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Stopping Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Stopping Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested);
         List<UserVm> clusterVMs = getKubernetesClusterVMs();
         for (UserVm vm : clusterVMs) {
             if (vm == null) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Failed to find all VMs in Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to find all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             try {
                 userVmService.stopVirtualMachine(vm.getId(), false);
             } catch (ConcurrentOperationException ex) {
-                LOGGER.warn(String.format("Failed to stop VM ID: %s in Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()), ex);
+                LOGGER.warn(String.format("Failed to stop VM : %s in Kubernetes cluster : %s",
+                    vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }
         }
         for (final UserVm userVm : clusterVMs) {
             UserVm vm = userVmDao.findById(userVm.getId());
             if (vm == null || !vm.getState().equals(VirtualMachine.State.Stopped)) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Failed to stop all VMs in Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to stop all VMs in Kubernetes cluster : %s",
+                    kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);

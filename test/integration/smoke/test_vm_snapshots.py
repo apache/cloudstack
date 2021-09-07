@@ -26,7 +26,7 @@ from marvin.lib.base import (Account,
                              VmSnapshot)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template,
+                               get_suitable_test_template,
                                list_snapshots,
                                list_virtual_machines)
 import time
@@ -50,13 +50,14 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
-        template = get_template(
+        template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.services["ostype"],
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template\
+            assert False, "get_suitable_test_template() failed to return template\
                     with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
@@ -87,7 +88,7 @@ class TestVmSnapshot(cloudstackTestCase):
             mode=cls.zone.networktype
         )
         cls.random_data_0 = random_gen(size=100)
-        cls.test_dir = "/tmp"
+        cls.test_dir = "$HOME"
         cls.random_data = "random.data"
         return
 
@@ -288,15 +289,15 @@ class TestVmSnapshot(cloudstackTestCase):
         )
 
 class Utils:
-    
+
     def __init__(self):
         self.added_service_offerings = {
-            'testOffering1' : {'displaytext': 'Test Offering 1', 'cpuspeed': 600, 'cpunumber': 1, 'name': 'Test Offering 1', 'memory': 256}, 
-            'testOffering2' : {'displaytext': 'Test Offering 2', 'cpuspeed': 600, 'cpunumber': 2, 'name': 'Test Offering 2', 'memory': 512}                            
+            'testOffering1' : {'displaytext': 'Test Offering 1', 'cpuspeed': 600, 'cpunumber': 1, 'name': 'Test Offering 1', 'memory': 256},
+            'testOffering2' : {'displaytext': 'Test Offering 2', 'cpuspeed': 600, 'cpunumber': 2, 'name': 'Test Offering 2', 'memory': 512}
         }
-    
+
 class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
-        
+
     @classmethod
     def setUpClass(cls):
         try:
@@ -309,46 +310,48 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
                 cls.unsupportedHypervisor = True
                 return
-            
+
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(
                 cls.api_client,
                 cls.testClient.getZoneForTests()
             )
             cls.services["small"]["zoneid"] = cls.zone.id
-            cls.template = get_template(
+
+            cls.template = get_suitable_test_template(
                 cls.api_client,
                 cls.zone.id,
-                cls.services["ostype"]
+                cls.services["ostype"],
+                cls.hypervisor
             )
             if cls.template == FAILED:
-                assert False, "get_template() failed to return template\
+                assert False, "get_suitable_test_template() failed to return template\
                     with description %s" % cls.services["ostype"]
-            
+
             test_offerings = Utils().added_service_offerings
             for offering in test_offerings:
                 cls.services["service_offerings"][offering] = test_offerings[offering]
-                
+
             # Create 2 different service offerings
             cls.service_offering_1 = ServiceOffering.create(
                 cls.api_client,
                 cls.services["service_offerings"]["testOffering1"]
             )
             cls._cleanup.append(cls.service_offering_1)
-            
+
             cls.service_offering_2 = ServiceOffering.create(
                 cls.api_client,
                 cls.services["service_offerings"]["testOffering2"]
             )
             cls._cleanup.append(cls.service_offering_2)
-            
+
             cls.account = Account.create(
                 cls.api_client,
                 cls.services["account"],
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)
-            
+
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
@@ -358,11 +361,11 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        
+
         if self.unsupportedHypervisor:
             self.skipTest("Skipping test because unsupported hypervisor\
                     %s" % self.hypervisor)
-        
+
     def tearDown(self):
         # Clean up, terminate the created resources
         cleanup_resources(self.apiclient, self.cleanup)
@@ -376,7 +379,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
-    
+
     def wait_vm_start(self, apiclient, vmid, timeout, sleep):
         while timeout:
             vms = VirtualMachine.list(apiclient, id=vmid)
@@ -387,7 +390,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             timeout = timeout - 1
 
         return timeout
-    
+
     def checkCPUAndMemory(self, ssh, service_offering):
         cpuinfo = ssh.execute("cat /proc/cpuinfo")
         cpu_cnt = len([i for i in cpuinfo if "processor" in i])
@@ -421,7 +424,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
     def test_change_service_offering_for_vm_with_snapshots(self):
         """Test to change service offering for instances with vm snapshots
         """
-        
+
         # 1) Create Virtual Machine using service offering 1
         self.debug("Creating VM using Service Offering 1")
         virtual_machine = VirtualMachine.create(
@@ -435,46 +438,69 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             mode=self.zone.networktype,
             serviceofferingid=self.service_offering_1.id
         )
-        
+
         # Verify Service OFfering 1 CPU cores and memory
         try:
             ssh_client = virtual_machine.get_ssh_client(reconnect=True)
             self.checkCPUAndMemory(ssh_client, self.service_offering_1)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" % (virtual_machine.ipaddress, e))
-        
+
         # 2) Take VM Snapshot
         self.debug("Taking VM Snapshot for VM - ID: %s" % virtual_machine.id)
         vm_snapshot = VmSnapshot.create(
             self.apiclient,
             virtual_machine.id,
         )
-        
+
         # 3) Stop Virtual Machine
         self.debug("Stopping VM - ID: %s" % virtual_machine.id)
         try:
             virtual_machine.stop(self.apiclient)
+
+            timeout = self.services["timeout"]
+
+            while True:
+                time.sleep(self.services["sleep"])
+
+                # Ensure that VM is in stopped state
+                list_vm_response = list_virtual_machines(
+                    self.apiclient,
+                    id=virtual_machine.id
+                )
+
+                if isinstance(list_vm_response, list):
+                    vm = list_vm_response[0]
+                    if vm.state == 'Stopped':
+                        self.debug("VM state: %s" % vm.state)
+                        break
+
+                if timeout == 0:
+                    raise Exception(
+                        "Failed to stop VM (ID: %s) in change service offering" % vm.id)
+
+                timeout = timeout - 1
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
-        
+
         # 4) Change service offering for VM with snapshots from Service Offering 1 to Service Offering 2
         self.debug("Changing service offering from Service Offering 1 to Service Offering 2 for VM - ID: %s" % virtual_machine.id)
         virtual_machine.change_service_offering(self.apiclient, self.service_offering_2.id)
-        
+
         # 5) Start VM
         self.debug("Starting VM - ID: %s" % virtual_machine.id)
         try:
             virtual_machine.start(self.apiclient)
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" % (virtual_machine.name, e))
-        
+
         # Wait for vm to start
         timeout = self.wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
         if timeout == 0:
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (virtual_machine.name, self.services["timeout"]))
-        
+
         list_vm_response = list_virtual_machines(
             self.apiclient,
             id=virtual_machine.id
@@ -499,14 +525,14 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             virtual_machine.id,
             "Check virtual machine id"
         )
-        
+
         # 6) Verify service offering has changed
         try:
             ssh_client_2 = virtual_machine.get_ssh_client(reconnect=True)
             self.checkCPUAndMemory(ssh_client_2, self.service_offering_2)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" % (virtual_machine.ipaddress, e))
-        
+
         # 7) Stop Virtual Machine
         self.debug("Stopping VM - ID: %s" % virtual_machine.id)
         try:
@@ -524,19 +550,19 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("Failed to revert to VM Snapshot: %s - %s" % (vm_snapshot.id, e))
-        
+
         # 9) Start VM
         self.debug("Starting VM - ID: %s" % virtual_machine.id)
         try:
             virtual_machine.start(self.apiclient)
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" % (virtual_machine.name, e))
-            
+
         # 10) Verify service offering has changed to Service Offering 1 (from VM Snapshot)
         try:
             ssh_client_3 = virtual_machine.get_ssh_client(reconnect=True)
             self.checkCPUAndMemory(ssh_client_3, self.service_offering_1)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" % (virtual_machine.ipaddress, e))
-        
+
         return

@@ -54,7 +54,7 @@ public class NetworkACLItemResponse extends BaseResponse {
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "the cidr list to forward traffic from")
+    @Param(description = "the cidr list to forward traffic from. Multiple entries are separated by a single comma character (,).")
     private String cidrList;
 
     @SerializedName(ApiConstants.ICMP_TYPE)
@@ -72,6 +72,10 @@ public class NetworkACLItemResponse extends BaseResponse {
     @SerializedName(ApiConstants.ACL_ID)
     @Param(description = "the ID of the ACL this item belongs to")
     private String aclId;
+
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "the name of the ACL this item belongs to")
+    private String aclName;
 
     @SerializedName(ApiConstants.NUMBER)
     @Param(description = "Number of the ACL Item")
@@ -131,6 +135,10 @@ public class NetworkACLItemResponse extends BaseResponse {
 
     public void setAclId(String aclId) {
         this.aclId = aclId;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
     }
 
     public void setNumber(Integer number) {

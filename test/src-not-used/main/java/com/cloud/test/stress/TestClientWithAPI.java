@@ -1504,11 +1504,11 @@ public class TestClientWithAPI {
                 int bytesReceived = Integer.parseInt(requestKeyValues.get("receivedbytes"));
                 int bytesSent = Integer.parseInt(requestKeyValues.get("sentbytes"));
                 if ((bytesReceived > 100000000) && (bytesSent > 0)) {
-                    s_logger.info("Network stat is correct for account" + s_account.get() + "; bytest received is " + bytesReceived + " and bytes sent is " + bytesSent);
+                    s_logger.info("Network stat is correct for account" + s_account.get() + "; bytest received is " + toHumanReadableSize(bytesReceived) + " and bytes sent is " + toHumanReadableSize(bytesSent));
                     return true;
                 } else {
-                    s_logger.error("Incorrect value for bytes received/sent for the account " + s_account.get() + ". We got " + bytesReceived + " bytes received; " +
-                        " and " + bytesSent + " bytes sent");
+                    s_logger.error("Incorrect value for bytes received/sent for the account " + s_account.get() + ". We got " + toHumanReadableSize(bytesReceived) + " bytes received; " +
+                        " and " + toHumanReadableSize(bytesSent) + " bytes sent");
                     return false;
                 }
 

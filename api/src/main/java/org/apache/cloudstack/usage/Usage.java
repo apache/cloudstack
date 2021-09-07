@@ -63,4 +63,6 @@ public interface Usage {
     public Date getEndDate();
 
     public Long getVirtualSize();
+
+    public boolean isHidden();
 }

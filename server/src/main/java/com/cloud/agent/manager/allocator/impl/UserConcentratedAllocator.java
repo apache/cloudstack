@@ -57,6 +57,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class UserConcentratedAllocator extends AdapterBase implements PodAllocator {
     private final static Logger s_logger = Logger.getLogger(UserConcentratedAllocator.class);
 
@@ -262,7 +264,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
-                                usedCapacity + " Bytes");
+                                toHumanReadableSize(usedCapacity) + " Bytes");
                     }
                 } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
                     usedCapacity += so.getCpu() * so.getSpeed();
@@ -280,17 +282,6 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
     private boolean templateAvailableInPod(long templateId, long dcId, long podId) {
         return true;
-        /*
-         * List<VMTemplateHostVO> thvoList = _templateHostDao.listByTemplateStatus(templateId, dcId, podId, Status.DOWNLOADED);
-         * List<VMTemplateStoragePoolVO> tpvoList = _templatePoolDao.listByTemplateStatus(templateId, dcId, podId,
-         * Status.DOWNLOADED);
-         *
-         * if (thvoList != null && thvoList.size() > 0) { if (s_logger.isDebugEnabled()) { s_logger.debug("Found " +
-         * thvoList.size() + " storage hosts in pod " + podId + " with template " + templateId); } return true; } else if
-         * (tpvoList != null && tpvoList.size() > 0) { if (s_logger.isDebugEnabled()) { s_logger.debug("Found " +
-         * tpvoList.size() + " storage pools in pod " + podId + " with template " + templateId); } return true; }else { return
-         * false; }
-         */
     }
 
     @Override

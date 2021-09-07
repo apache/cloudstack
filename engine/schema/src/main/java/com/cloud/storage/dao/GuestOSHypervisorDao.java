@@ -20,6 +20,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Long> {
 
     HypervisorType findHypervisorTypeByGuestOsId(long guestOsId);
@@ -31,4 +33,9 @@ public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Lo
     GuestOSHypervisorVO findByOsIdAndHypervisorAndUserDefined(long guestOsId, String hypervisorType, String hypervisorVersion, boolean isUserDefined);
 
     GuestOSHypervisorVO findByOsNameAndHypervisor(String guestOsName, String hypervisorType, String hypervisorVersion);
+
+    List<GuestOSHypervisorVO> listByOsNameAndHypervisorMinimumVersion(String guestOsName, String hypervisorType,
+                                                                      String minHypervisorVersion);
+
+    List<String> listHypervisorSupportedVersionsFromMinimumVersion(String hypervisorType, String hypervisorVersion);
 }

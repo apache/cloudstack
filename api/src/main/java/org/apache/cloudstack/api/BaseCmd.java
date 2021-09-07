@@ -17,6 +17,33 @@
 
 package org.apache.cloudstack.api;
 
+import java.lang.reflect.Field;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.ProjectRoleService;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
+import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.storage.ImageStoreService;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.log4j.Logger;
+
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -58,29 +85,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.snapshot.VMSnapshotService;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.alert.AlertService;
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
-import org.apache.cloudstack.query.QueryService;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -112,6 +116,8 @@ public abstract class BaseCmd {
     @Inject
     public RoleService roleService;
     @Inject
+    public ProjectRoleService projRoleService;
+    @Inject
     public UserVmService _userVmService;
     @Inject
     public ManagementService _mgr;
@@ -125,6 +131,8 @@ public abstract class BaseCmd {
     public NetworkService _networkService;
     @Inject
     public TemplateApiService _templateService;
+    @Inject
+    public ImageStoreService _imageStoreService;
     @Inject
     public SecurityGroupService _securityGroupService;
     @Inject
@@ -263,6 +271,10 @@ public abstract class BaseCmd {
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
+
+    public List<Long> getEntityOwnerIds() {
+        return null;
+    }
 
     public Object getResponseObject() {
         return _responseObject;

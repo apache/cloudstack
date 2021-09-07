@@ -101,9 +101,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "keypair details")
     private String keypair;
 
+    @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.MASTER_NODES)
-    @Param(description = "the master nodes count for the Kubernetes cluster")
+    @Param(description = "the master nodes count for the Kubernetes cluster. This parameter is deprecated, please use 'controlnodes' parameter.")
     private Long masterNodes;
+
+    @SerializedName(ApiConstants.CONTROL_NODES)
+    @Param(description = "the control nodes count for the Kubernetes cluster")
+    private Long controlNodes;
 
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "the size (worker nodes count) of the Kubernetes cluster")
@@ -129,9 +134,17 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "URL end point for the Kubernetes cluster dashboard UI")
     private String consoleEndpoint;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
-    @Param(description = "the list of virtualmachine IDs associated with this Kubernetes cluster")
-    private List<String> virtualMachineIds;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINES)
+    @Param(description = "the list of virtualmachine associated with this Kubernetes cluster")
+    private List<UserVmResponse> virtualMachines;
+
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "Public IP Address of the cluster")
+    private String ipAddress;
+
+    @SerializedName(ApiConstants.IP_ADDRESS_ID)
+    @Param(description = "Public IP Address ID of the cluster")
+    private String ipAddressId;
 
     public KubernetesClusterResponse() {
     }
@@ -261,6 +274,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.masterNodes = masterNodes;
     }
 
+    public Long getControlNodes() {
+        return controlNodes;
+    }
+
+    public void setControlNodes(Long controlNodes) {
+        this.controlNodes = controlNodes;
+    }
+
     public Long getClusterSize() {
         return clusterSize;
     }
@@ -317,13 +338,19 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
         this.serviceOfferingName = serviceOfferingName;
     }
 
-    public void setVirtualMachineIds(List<String> virtualMachineIds) {
-        this.virtualMachineIds = virtualMachineIds;
+    public void setVirtualMachines(List<UserVmResponse> virtualMachines) {
+        this.virtualMachines = virtualMachines;
     }
 
-    ;
+    public List<UserVmResponse> getVirtualMachines() {
+        return virtualMachines;
+    }
 
-    public List<String> getVirtualMachineIds() {
-        return virtualMachineIds;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setIpAddressId(String ipAddressId) {
+        this.ipAddressId = ipAddressId;
     }
 }

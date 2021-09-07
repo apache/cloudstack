@@ -60,7 +60,7 @@ public class NfsMountManagerImpl implements NfsMountManager {
         this.timeout = timeout;
     }
 
-    public String getMountPoint(String storageUrl, Integer nfsVersion) {
+    public String getMountPoint(String storageUrl, String nfsVersion) {
         String mountPoint = storageMounts.get(storageUrl);
         if (mountPoint != null) {
             return mountPoint;
@@ -84,7 +84,7 @@ public class NfsMountManagerImpl implements NfsMountManager {
         return mountPoint;
     }
 
-    private String mount(String path, String parent, Integer nfsVersion) {
+    private String mount(String path, String parent, String nfsVersion) {
         String mountPoint = setupMountPoint(parent);
         if (mountPoint == null) {
             s_logger.warn("Unable to create a mount point");

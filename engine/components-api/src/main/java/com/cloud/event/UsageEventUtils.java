@@ -116,8 +116,8 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType,
-        boolean isSystem, String entityType, String entityUUID) {
-        saveUsageEvent(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem);
+        boolean isSystem, boolean usageHidden, String entityType, String entityUUID) {
+        saveUsageEvent(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem, usageHidden);
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
@@ -182,8 +182,12 @@ public class UsageEventUtils {
     }
 
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType,
-        boolean isSystem) {
-        s_usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem));
+        boolean isSystem, boolean usageHidden) {
+        final UsageEventVO usageEventVO = new UsageEventVO(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem);
+        s_usageEventDao.persist(usageEventVO);
+        if (usageHidden) {
+            s_usageEventDao.saveDetails(usageEventVO.getId(), Map.of("hidden", "true"));
+        }
     }
 
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,

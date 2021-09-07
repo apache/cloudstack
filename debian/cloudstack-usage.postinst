@@ -24,6 +24,7 @@ case "$1" in
      
         # Linking usage server db.properties to management server db.properties
         if [ -f "/etc/cloudstack/management/db.properties" ]; then
+            echo "Replacing usage server's db.properties with a link to the management server's db.properties"
             rm -f /etc/cloudstack/usage/db.properties
             ln -s /etc/cloudstack/management/db.properties /etc/cloudstack/usage/db.properties
         fi
@@ -35,6 +36,7 @@ case "$1" in
 
         # Replacing key with management server key
         if [ -f "/etc/cloudstack/management/key" ]; then
+            echo "Replacing usage server's key with a link to the management server's key"
             rm -f /etc/cloudstack/usage/key
             ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
         fi

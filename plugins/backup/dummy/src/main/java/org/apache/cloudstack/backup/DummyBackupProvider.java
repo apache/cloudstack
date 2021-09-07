@@ -87,8 +87,13 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         final Backup.Metric metric = new Backup.Metric(1000L, 100L);
+        if (vms == null || vms.isEmpty()) {
+            return metrics;
+        }
         for (VirtualMachine vm : vms) {
-            metrics.put(vm, metric);
+            if (vm != null) {
+                metrics.put(vm, metric);
+            }
         }
         return metrics;
     }

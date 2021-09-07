@@ -242,7 +242,9 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         SearchCriteria<Long> sc = asyncJobTypeSearch.create();
         sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
         sc.setParameters("job_cmd", (Object[])cmds);
-        sc.setParameters("job_info", "%" + havingInfo + "%");
+        if (havingInfo != null) {
+            sc.setParameters("job_info", "%" + havingInfo + "%");
+        }
         List<Long> results = customSearch(sc, null);
         return results.get(0);
     }

@@ -94,7 +94,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
             type = CommandType.LIST,
-            required = true,
             collectionType = CommandType.STRING,
             description = "services supported by the network offering")
     private List<String> supportedServices;
@@ -158,6 +157,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.13")
     private List<Long> zoneIds;
 
+    @Parameter(name = ApiConstants.ENABLE,
+            type = CommandType.BOOLEAN,
+            description = "set to true if the offering is to be enabled during creation. Default is false",
+            since = "4.16")
+    private Boolean enable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -199,7 +204,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<String> getSupportedServices() {
-        return supportedServices;
+        return supportedServices == null ? new ArrayList<String>() : supportedServices;
     }
 
     public String getGuestIpType() {
@@ -335,6 +340,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             zoneIds.addAll(set);
         }
         return zoneIds;
+    }
+
+    public Boolean getEnable() {
+        if (enable != null) {
+            return enable;
+        }
+        return false;
     }
 
     /////////////////////////////////////////////////////

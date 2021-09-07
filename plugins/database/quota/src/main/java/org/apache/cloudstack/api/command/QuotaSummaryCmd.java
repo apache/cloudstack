@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -58,17 +59,17 @@ public class QuotaSummaryCmd extends BaseListCmd {
     @Override
     public void execute() {
         Account caller = CallContext.current().getCallingAccount();
-        List<QuotaSummaryResponse> responses;
+        Pair<List<QuotaSummaryResponse>, Integer> responses;
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) { //admin account
             if (getAccountName() != null && getDomainId() != null)
-                responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
+                responses = _responseBuilder.createQuotaSummaryResponse(getAccountName(), getDomainId());
             else
-                responses = _responseBuilder.createQuotaSummaryResponse(isListAll());
+                responses = _responseBuilder.createQuotaSummaryResponse(isListAll(), getKeyword(), getStartIndex(), getPageSizeVal());
         } else {
             responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
         }
         final ListResponse<QuotaSummaryResponse> response = new ListResponse<QuotaSummaryResponse>();
-        response.setResponses(responses);
+        response.setResponses(responses.first(), responses.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

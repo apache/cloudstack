@@ -70,4 +70,5 @@ public interface SerialVersionUID {
     public static final long SnapshotBackupException = Base | 0x2e;
     public static final long UnavailableCommandException = Base | 0x2f;
     public static final long OriginDeniedException = Base | 0x30;
+    public static final long StorageAccessException = Base | 0x31;
 }

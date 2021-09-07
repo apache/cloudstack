@@ -87,7 +87,7 @@ public class IPAddressUsageParser {
             String key = "" + IpId;
 
             // store the info in the IP map
-            IPMap.put(key, new IpInfo(usageIp.getZoneId(), IpId, usageIp.getAddress(), usageIp.isSourceNat(), usageIp.isSystem()));
+            IPMap.put(key, new IpInfo(usageIp.getZoneId(), IpId, usageIp.getAddress(), usageIp.isSourceNat(), usageIp.isSystem(), usageIp.isHidden()));
 
             Date IpAssignDate = usageIp.getAssigned();
             Date IpReleaseDeleteDate = usageIp.getReleased();
@@ -118,7 +118,7 @@ public class IPAddressUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 IpInfo info = IPMap.get(ipIdKey);
-                createUsageRecord(info.getZoneId(), useTime, startDate, endDate, account, info.getIpId(), info.getIPAddress(), info.isSourceNat(), info.isSystem);
+                createUsageRecord(info.getZoneId(), useTime, startDate, endDate, account, info.getIpId(), info.getIPAddress(), info.isSourceNat(), info.isSystem, info.isHidden());
             }
         }
 
@@ -138,7 +138,7 @@ public class IPAddressUsageParser {
     }
 
     private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long ipId, String ipAddress,
-        boolean isSourceNat, boolean isSystem) {
+        boolean isSourceNat, boolean isSystem, boolean isHidden) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total usage time " + runningTime + "ms");
         }
@@ -159,7 +159,7 @@ public class IPAddressUsageParser {
 
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", UsageTypes.IP_ADDRESS, new Double(usage), ipId,
-                (isSystem ? 1 : 0), (isSourceNat ? "SourceNat" : ""), startDate, endDate);
+                (isSystem ? 1 : 0), (isSourceNat ? "SourceNat" : ""), startDate, endDate, isHidden);
         s_usageDao.persist(usageRecord);
     }
 
@@ -169,13 +169,15 @@ public class IPAddressUsageParser {
         private String ipAddress;
         private boolean isSourceNat;
         private boolean isSystem;
+        private boolean isHidden;
 
-        public IpInfo(long zoneId, long ipId, String ipAddress, boolean isSourceNat, boolean isSystem) {
+        public IpInfo(long zoneId, long ipId, String ipAddress, boolean isSourceNat, boolean isSystem, boolean isHidden) {
             this.zoneId = zoneId;
             this.ipId = ipId;
             this.ipAddress = ipAddress;
             this.isSourceNat = isSourceNat;
             this.isSystem = isSystem;
+            this.isHidden = isHidden;
         }
 
         public long getZoneId() {
@@ -192,6 +194,10 @@ public class IPAddressUsageParser {
 
         public boolean isSourceNat() {
             return isSourceNat;
+        }
+
+        public boolean isHidden() {
+            return isHidden;
         }
     }
 }

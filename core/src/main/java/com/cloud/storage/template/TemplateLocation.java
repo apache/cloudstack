@@ -37,6 +37,8 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.utils.NumbersUtil;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class TemplateLocation {
     private static final Logger s_logger = Logger.getLogger(TemplateLocation.class);
     public final static String Filename = "template.properties";
@@ -199,7 +201,7 @@ public class TemplateLocation {
 
         if (!checkFormatValidity(newInfo)) {
             s_logger.warn("Format is invalid");
-            s_logger.debug("Format: " + newInfo.format + " size: " + newInfo.size + " virtualsize: " + newInfo.virtualSize + " filename: " + newInfo.filename);
+            s_logger.debug("Format: " + newInfo.format + " size: " + toHumanReadableSize(newInfo.size) + " virtualsize: " + toHumanReadableSize(newInfo.virtualSize) + " filename: " + newInfo.filename);
             s_logger.debug("format, filename cannot be null and size, virtual size should be  > 0 ");
             return false;
         }

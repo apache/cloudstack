@@ -52,7 +52,7 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+               description = "Name of the account to be created. The user will be added to this newly created account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,

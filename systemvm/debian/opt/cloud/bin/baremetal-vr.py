@@ -16,12 +16,13 @@
 #under the License.
 
 import subprocess
-import urllib
 import hmac
 import hashlib
 import base64
 import traceback
 import logging
+import re
+import urllib.request, urllib.parse, urllib.error
 
 from flask import Flask
 
@@ -130,10 +131,10 @@ class Server(object):
             "mac": mac
         }
 
-        request = zip(reqs.keys(), reqs.values())
+        request = list(zip(list(reqs.keys()), list(reqs.values())))
         request.sort(key=lambda x: str.lower(x[0]))
-        hashStr = "&".join(["=".join([str.lower(r[0]), str.lower(urllib.quote_plus(str(r[1]))).replace("+", "%20").replace('=', '%3d')]) for r in request])
-        sig = urllib.quote_plus(base64.encodestring(hmac.new(secretkey, hashStr, hashlib.sha1).digest()).strip())
+        hashStr = "&".join(["=".join([str.lower(r[0]), str.lower(urllib.parse.quote_plus(str(r[1]))).replace("+", "%20").replace('=', '%3d')]) for r in request])
+        sig = urllib.parse.quote_plus(base64.encodestring(hmac.new(secretkey, hashStr, hashlib.sha1).digest()).strip())
         return sig
 
     def notify_provisioning_done(self, mac):
@@ -147,11 +148,18 @@ server = None
 @app.route('/baremetal/provisiondone/<mac>', methods=['GET'])
 def notify_provisioning_done(mac):
     try:
+        if not is_a_mac(mac):
+            raise "there is an issue with that '%s'. Not a mac?" % mac
         return server.notify_provisioning_done(mac)
     except:
         logger.warn(traceback.format_exc())
         return ''
 
+def is_a_mac(mac):
+    if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()):
+        return True
+    else:
+        return False
 
 if __name__ == '__main__':
     server = Server()

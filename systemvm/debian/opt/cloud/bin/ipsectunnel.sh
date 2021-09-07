@@ -23,7 +23,7 @@ vpnoutmark="0x525"
 vpninmark="0x524"
 
 usage() {
-    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side next hop> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> -c <check if up on creation> -S <disable vpn ports iptables> ]\n" $(basename $0) >&2
+    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side next hop> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> -c <check if up on creation> -S <disable vpn ports iptables> -C <ike split connections or not, default not> -v <ike version, default:'ike'> ]\n" $(basename $0) >&2
 }
 
 #set -x
@@ -139,14 +139,21 @@ ipsec_tunnel_add() {
 
   check_and_enable_iptables
 
+  rsubnets="  rightsubnets={$rightnets}"
+  if [ $splitconnections -eq 1 ]
+  then
+      rsubnetarr=(${rightnets})
+      rsubnets="  rightsubnet=${rsubnetarr[0]}"
+  fi
+
   sudo echo "conn vpn-$rightpeer" > $vpnconffile &&
   sudo echo "  left=$leftpeer" >> $vpnconffile &&
   sudo echo "  leftsubnet=$leftnet" >> $vpnconffile &&
   sudo echo "  right=$rightpeer" >> $vpnconffile &&
-  sudo echo "  rightsubnets={$rightnets}" >> $vpnconffile &&
+  sudo echo $rsubnets >> $vpnconffile &&
   sudo echo "  type=tunnel" >> $vpnconffile &&
   sudo echo "  authby=secret" >> $vpnconffile &&
-  sudo echo "  keyexchange=ike" >> $vpnconffile &&
+  sudo echo "  keyexchange=${ikeversion:-ike}" >> $vpnconffile &&
   sudo echo "  ike=$ikepolicy" >> $vpnconffile &&
   sudo echo "  ikelifetime=${ikelifetime}s" >> $vpnconffile &&
   sudo echo "  esp=$esppolicy" >> $vpnconffile &&
@@ -161,6 +168,20 @@ ipsec_tunnel_add() {
       sudo echo "  dpddelay=30" >> $vpnconffile &&
       sudo echo "  dpdtimeout=120" >> $vpnconffile &&
       sudo echo "  dpdaction=restart" >> $vpnconffile
+  fi
+
+  if [ $splitconnections -eq 1 ]
+  then
+      # Split out all but the first right subnet into their own statements
+      subnetidx=2
+      for rsubnet in ${rsubnetarr[@]:1}; do
+          sudo echo "" >> $vpnconffile &&
+          sudo echo "conn vpn-$rightpeer-$subnetidx" >> $vpnconffile &&
+          sudo echo "  also=vpn-$rightpeer" >> $vpnconffile &&
+          sudo echo "  auto=route" >> $vpnconffile &&
+          sudo echo "  rightsubnet=$rsubnet" >> $vpnconffile
+          ((++subnetidx))
+      done
   fi
 
   enable_iptables_subnets
@@ -215,8 +236,10 @@ passive=0
 op=""
 checkup=0
 secure=1
+ikeversion="ike"
+splitconnections=0
 
-while getopts 'ADSpcl:n:g:r:N:e:i:t:T:s:d:' OPTION
+while getopts 'ACDSpcl:n:g:r:N:e:i:t:T:s:d:v:' OPTION
 do
   case $OPTION in
   A)    opflag=1
@@ -243,6 +266,8 @@ do
   e)    eflag=1
         esppolicy="$OPTARG"
         ;;
+  v)    ikeversion="$OPTARG"
+        ;;
   i)    iflag=1
         ikepolicy="$OPTARG"
         ;;
@@ -263,6 +288,8 @@ do
   c)    checkup=1
         ;;
   S)    secure=0
+        ;;
+  C)    splitconnections=1
         ;;
   ?)    usage
         exit 2

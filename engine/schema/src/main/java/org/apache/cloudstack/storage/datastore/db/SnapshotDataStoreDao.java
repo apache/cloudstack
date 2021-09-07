@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -42,6 +43,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
 
+    SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);
+
     List<SnapshotDataStoreVO> listDestroyed(long storeId);
 
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
@@ -65,10 +68,16 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role);
 
+    SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role);
+
     /**
      * List all snapshots in 'snapshot_store_ref' by volume and data store role. Therefore, it is possible to list all snapshots that are in the primary storage or in the secondary storage.
      */
     List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states);
+
+    List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end);
+
+    SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role);
 }

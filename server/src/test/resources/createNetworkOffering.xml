@@ -60,4 +60,5 @@
     <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
     <bean id="vMTemplateZoneDaoImpl" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl" />
     <bean id="indirectAgentLBImpl" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
+    <bean id="VsphereStoragePolicyDaoImpl" class="com.cloud.dc.dao.VsphereStoragePolicyDaoImpl" />
 </beans>

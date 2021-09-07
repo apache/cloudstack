@@ -37,7 +37,6 @@
         class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDaoImpl" />
     <bean id="LegacyZoneDaoImpl" class="com.cloud.hypervisor.vmware.dao.LegacyZoneDaoImpl" />
 
-
     <bean id="ciscoNexusVSMDeviceDaoImpl" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" />
 
 </beans>

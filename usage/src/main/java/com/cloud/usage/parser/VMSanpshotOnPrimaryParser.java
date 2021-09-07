@@ -36,6 +36,8 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.user.AccountVO;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class VMSanpshotOnPrimaryParser {
     public static final Logger s_logger = Logger.getLogger(VMSanpshotOnPrimaryParser.class.getName());
@@ -119,7 +121,7 @@ public class VMSanpshotOnPrimaryParser {
 
         // Create the usage record
         String usageDesc = "VMSnapshot Id: " + vmSnapshotId + " On Primary Usage: VM Id: " + vmId;
-        usageDesc += " Size: " + virtualSize;
+        usageDesc += " Size: " + toHumanReadableSize(virtualSize);
 
         UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usageType, new Double(usage), vmId, name, null, null,
                 vmSnapshotId, physicalSize, virtualSize, startDate, endDate);

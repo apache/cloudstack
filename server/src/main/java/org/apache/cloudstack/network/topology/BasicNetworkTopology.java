@@ -349,7 +349,6 @@ public class BasicNetworkTopology implements NetworkTopology {
         final Long podId = null;
 
         final UserdataToRouterRules userdataToRouterRules = new UserdataToRouterRules(network, nic, profile);
-
         return applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(userdataToRouterRules));
     }
 

@@ -37,7 +37,19 @@ under the License.
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%n"/>
       </layout>
    </appender>
-   
+
+   <appender name="INFO-FILE" class="org.apache.log4j.rolling.RollingFileAppender">
+      <param name="Append" value="false"/>
+      <param name="Threshold" value="INFO"/>
+      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+        <param name="FileNamePattern" value="/var/log/cloudstack/management/management-server-info.log.%d{yyyy-MM-dd}.gz"/>
+        <param name="ActiveFileName" value="/var/log/cloudstack/management/management-server-info.log"/>
+      </rollingPolicy>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+      </layout>
+   </appender>
+
    <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
@@ -119,6 +131,19 @@ under the License.
       <priority value="INFO"/>
    </category>
 
+   <!-- ============================== -->
+   <!-- Add or remove these logger for SNMP, this logger is for SNMP alerts plugin -->
+   <!-- ============================== -->
+
+   <logger name="org.apache.cloudstack.alerts" additivity="false">
+      <level value="WARN"/>
+      <appender-ref ref="SYSLOG"/>
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE"/>
+      <appender-ref ref="SNMP"/>
+      <appender-ref ref="ALERTSYSLOG"/>
+   </logger>
+
    <!-- ======================= -->
    <!-- Setup the Root category -->
    <!-- ======================= -->
@@ -128,6 +153,7 @@ under the License.
       <appender-ref ref="SYSLOG"/>
       <appender-ref ref="CONSOLE"/>
       <appender-ref ref="FILE"/>
+      <appender-ref ref="INFO-FILE"/>
    </root>
 
 </log4j:configuration>

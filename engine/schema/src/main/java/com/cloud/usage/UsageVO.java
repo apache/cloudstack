@@ -106,6 +106,9 @@ public class UsageVO implements Usage, InternalIdentity {
     @Column(name = "quota_calculated")
     private Integer quotaCalculated = 0;
 
+    @Column(name = "is_hidden")
+    private boolean isHidden = false;
+
     public Integer getQuotaCalculated() {
         return quotaCalculated;
     }
@@ -215,7 +218,7 @@ public class UsageVO implements Usage, InternalIdentity {
 
     //IPAddress Usage
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, long size,
-            String type, Date startDate, Date endDate) {
+            String type, Date startDate, Date endDate, boolean isHidden) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -228,6 +231,7 @@ public class UsageVO implements Usage, InternalIdentity {
         this.type = type;
         this.startDate = startDate  == null ? null : new Date(startDate.getTime());
         this.endDate = endDate  == null ? null : new Date(endDate.getTime());
+        this.isHidden = isHidden;
     }
 
     @Override
@@ -340,6 +344,11 @@ public class UsageVO implements Usage, InternalIdentity {
         return endDate  == null ? null : new Date(endDate.getTime());
     }
 
+    @Override
+    public boolean isHidden() {
+        return isHidden;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -382,5 +391,9 @@ public class UsageVO implements Usage, InternalIdentity {
 
     public void setVirtualSize(Long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.isHidden = hidden;
     }
 }

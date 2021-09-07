@@ -41,6 +41,7 @@ import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
@@ -66,7 +67,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
      * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
      */
 
-    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource, Integer nfsVersion) {
+    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource, String nfsVersion) {
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this, nfsVersion);
         _gson = GsonHelper.getGsonLogger();
@@ -297,7 +298,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
+    public String getWorkerName(VmwareContext context, Command cmd, int workerSequence, DatastoreMO dsMo) {
         assert (cmd.getContextParam("worker") != null);
         assert (workerSequence < 2);
 
@@ -307,7 +308,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getMountPoint(String storageUrl, Integer nfsVersion) {
+    public String getMountPoint(String storageUrl, String nfsVersion) {
         return _resource.getRootDir(storageUrl, nfsVersion);
     }
 }

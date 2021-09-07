@@ -26,6 +26,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -42,6 +44,8 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
+
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
 public class VirtualNetworkApplianceFactory {
 
@@ -83,6 +87,8 @@ public class VirtualNetworkApplianceFactory {
     private IpAddressManager _ipAddrMgr;
     @Inject
     private NetworkACLManager _networkACLMgr;
+    @Inject
+    private FirewallRulesDao _rulesDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -90,6 +96,11 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     private NicProfileHelper _nicProfileHelper;
+
+    @Inject
+    private NetworkTopologyContext _networkTopologyContext;
+    @Inject
+    private VpcVirtualNetworkApplianceService _routerService;
 
     public NetworkModel getNetworkModel() {
         return _networkModel;
@@ -173,5 +184,17 @@ public class VirtualNetworkApplianceFactory {
 
     public NicProfileHelper getNicProfileHelper() {
         return _nicProfileHelper;
+    }
+
+    public NetworkTopologyContext getNetworkTopologyContext() {
+        return _networkTopologyContext;
+    }
+
+    public FirewallRulesDao getFirewallRulesDao() {
+        return _rulesDao;
+    }
+
+    public VpcVirtualNetworkApplianceService getRouterService() {
+        return _routerService;
     }
 }

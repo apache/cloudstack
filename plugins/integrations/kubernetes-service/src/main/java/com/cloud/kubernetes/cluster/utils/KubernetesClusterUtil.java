@@ -17,19 +17,27 @@
 
 package com.cloud.kubernetes.cluster.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.security.SecureRandom;
+import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
+import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.utils.ssh.SshHelper;
 import com.google.common.base.Strings;
 
@@ -47,7 +55,7 @@ public class KubernetesClusterUtil {
             return true;
         }
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Failed to retrieve status for node: %s in Kubernetes cluster ID: %s. Output: %s", nodeName, kubernetesCluster.getUuid(), result.second()));
+            LOGGER.debug(String.format("Failed to retrieve status for node: %s in Kubernetes cluster : %s. Output: %s", nodeName, kubernetesCluster.getName(), result.second()));
         }
         return false;
     }
@@ -60,7 +68,7 @@ public class KubernetesClusterUtil {
             try {
                 ready = isKubernetesClusterNodeReady(kubernetesCluster, ipAddress, port, user, sshKeyFile, nodeName);
             } catch (Exception e) {
-                LOGGER.warn(String.format("Failed to retrieve state of node: %s in Kubernetes cluster ID: %s", nodeName, kubernetesCluster.getUuid()), e);
+                LOGGER.warn(String.format("Failed to retrieve state of node: %s in Kubernetes cluster : %s", nodeName, kubernetesCluster.getName()), e);
             }
             if (ready) {
                 return true;
@@ -68,7 +76,7 @@ public class KubernetesClusterUtil {
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
-                LOGGER.error(String.format("Error while waiting for Kubernetes cluster ID: %s node: %s to become ready", kubernetesCluster.getUuid(), nodeName), ie);
+                LOGGER.error(String.format("Error while waiting for Kubernetes cluster : %s node: %s to become ready", kubernetesCluster.getName(), nodeName), ie);
             }
         }
         return false;
@@ -108,12 +116,14 @@ public class KubernetesClusterUtil {
                     return true;
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("Failed to uncordon node: %s on VM ID: %s in Kubernetes cluster ID: %s", hostName, userVm.getUuid(), kubernetesCluster.getUuid()), e);
+                LOGGER.warn(String.format("Failed to uncordon node: %s on VM ID : %s in Kubernetes cluster : %s",
+                    hostName, userVm.getUuid(), kubernetesCluster.getName()), e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
-                LOGGER.warn(String.format("Error while waiting for uncordon Kubernetes cluster ID: %s node: %s on VM ID: %s", kubernetesCluster.getUuid(), hostName, userVm.getUuid()), ie);
+                LOGGER.warn(String.format("Error while waiting for uncordon Kubernetes cluster : %s node: %s on VM : %s",
+                    kubernetesCluster.getName(), hostName, userVm.getUuid()), ie);
             }
         }
         return false;
@@ -136,14 +146,14 @@ public class KubernetesClusterUtil {
                         lines) {
                     if (line.contains(serviceName) && line.contains("Running")) {
                         if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug(String.format("Service : %s in namespace: %s for the Kubernetes cluster ID: %s is running", serviceName, namespace, kubernetesCluster.getUuid()));
+                            LOGGER.debug(String.format("Service : %s in namespace: %s for the Kubernetes cluster : %s is running", serviceName, namespace, kubernetesCluster.getName()));
                         }
                         return true;
                     }
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn(String.format("Unable to retrieve service: %s running status in namespace %s for Kubernetes cluster ID: %s", serviceName, namespace, kubernetesCluster.getUuid()), e);
+            LOGGER.warn(String.format("Unable to retrieve service: %s running status in namespace %s for Kubernetes cluster : %s", serviceName, namespace, kubernetesCluster.getName()), e);
         }
         return false;
     }
@@ -155,11 +165,11 @@ public class KubernetesClusterUtil {
         // Check if dashboard service is up running.
         while (System.currentTimeMillis() < timeoutTime) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Checking dashboard service for the Kubernetes cluster ID: %s to come up", kubernetesCluster.getUuid()));
+                LOGGER.debug(String.format("Checking dashboard service for the Kubernetes cluster : %s to come up", kubernetesCluster.getName()));
             }
             if (isKubernetesClusterAddOnServiceRunning(kubernetesCluster, ipAddress, port, user, sshKeyFile, "kubernetes-dashboard", "kubernetes-dashboard")) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Dashboard service for the Kubernetes cluster ID: %s is in running state", kubernetesCluster.getUuid()));
+                    LOGGER.info(String.format("Dashboard service for the Kubernetes cluster : %s is in running state", kubernetesCluster.getName()));
                 }
                 running = true;
                 break;
@@ -167,7 +177,7 @@ public class KubernetesClusterUtil {
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ex) {
-                LOGGER.error(String.format("Error while waiting for Kubernetes cluster: %s API dashboard service to be available", kubernetesCluster.getUuid()), ex);
+                LOGGER.error(String.format("Error while waiting for Kubernetes cluster: %s API dashboard service to be available", kubernetesCluster.getName()), ex);
             }
         }
         return running;
@@ -187,11 +197,11 @@ public class KubernetesClusterUtil {
                     break;
                 } else  {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Failed to retrieve kube-config file for Kubernetes cluster ID: %s. Output: %s", kubernetesCluster.getUuid(), result.second()));
+                        LOGGER.info(String.format("Failed to retrieve kube-config file for Kubernetes cluster : %s. Output: %s", kubernetesCluster.getName(), result.second()));
                     }
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("Failed to retrieve kube-config file for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
+                LOGGER.warn(String.format("Failed to retrieve kube-config file for Kubernetes cluster : %s", kubernetesCluster.getName()), e);
             }
         }
         return kubeConfig;
@@ -207,7 +217,7 @@ public class KubernetesClusterUtil {
             return Integer.parseInt(result.second().trim().replace("\"", ""));
         } else {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Failed to retrieve ready nodes for Kubernetes cluster ID: %s. Output: %s", kubernetesCluster.getUuid(), result.second()));
+                LOGGER.debug(String.format("Failed to retrieve ready nodes for Kubernetes cluster : %s. Output: %s", kubernetesCluster.getName(), result.second()));
             }
         }
         return 0;
@@ -218,45 +228,51 @@ public class KubernetesClusterUtil {
         boolean k8sApiServerSetup = false;
         while (System.currentTimeMillis() < timeoutTime) {
             try {
-                String versionOutput = IOUtils.toString(new URL(String.format("https://%s:%d/version", ipAddress, port)), StringUtils.getPreferredCharset());
+                final SSLContext sslContext = SSLUtils.getSSLContext();
+                sslContext.init(null, new TrustManager[]{new TrustAllManager()}, new SecureRandom());
+                URL url = new URL(String.format("https://%s:%d/version", ipAddress, port));
+                HttpsURLConnection con = (HttpsURLConnection)url.openConnection();
+                con.setSSLSocketFactory(sslContext.getSocketFactory());
+                BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                String versionOutput = br.lines().collect(Collectors.joining());
                 if (!Strings.isNullOrEmpty(versionOutput)) {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Kubernetes cluster ID: %s API has been successfully provisioned, %s", kubernetesCluster.getUuid(), versionOutput));
+                        LOGGER.info(String.format("Kubernetes cluster : %s API has been successfully provisioned, %s", kubernetesCluster.getName(), versionOutput));
                     }
                     k8sApiServerSetup = true;
                     break;
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("API endpoint for Kubernetes cluster ID: %s not available", kubernetesCluster.getUuid()), e);
+                LOGGER.warn(String.format("API endpoint for Kubernetes cluster : %s not available", kubernetesCluster.getName()), e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
-                LOGGER.error(String.format("Error while waiting for Kubernetes cluster ID: %s API endpoint to be available", kubernetesCluster.getUuid()), ie);
+                LOGGER.error(String.format("Error while waiting for Kubernetes cluster : %s API endpoint to be available", kubernetesCluster.getName()), ie);
             }
         }
         return k8sApiServerSetup;
     }
 
-    public static boolean isKubernetesClusterMasterVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
-                                                             final int port, final long timeoutTime) {
-        boolean masterVmRunning = false;
-        while (!masterVmRunning && System.currentTimeMillis() < timeoutTime) {
+    public static boolean isKubernetesClusterControlVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
+                                                              final int port, final long timeoutTime) {
+        boolean controlVmRunning = false;
+        while (!controlVmRunning && System.currentTimeMillis() < timeoutTime) {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress(ipAddress, port), 10000);
-                masterVmRunning = true;
+                controlVmRunning = true;
             } catch (IOException e) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Waiting for Kubernetes cluster ID: %s master node VMs to be accessible", kubernetesCluster.getUuid()));
+                    LOGGER.info(String.format("Waiting for Kubernetes cluster : %s control node VMs to be accessible", kubernetesCluster.getName()));
                 }
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException ex) {
-                    LOGGER.warn(String.format("Error while waiting for Kubernetes cluster ID: %s master node VMs to be accessible", kubernetesCluster.getUuid()), ex);
+                    LOGGER.warn(String.format("Error while waiting for Kubernetes cluster : %s control node VMs to be accessible", kubernetesCluster.getName()), ex);
                 }
             }
         }
-        return masterVmRunning;
+        return controlVmRunning;
     }
 
     public static boolean validateKubernetesClusterReadyNodesCount(final KubernetesCluster kubernetesCluster,
@@ -265,28 +281,28 @@ public class KubernetesClusterUtil {
                                                                    final long timeoutTime, final long waitDuration) {
         while (System.currentTimeMillis() < timeoutTime) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Checking ready nodes for the Kubernetes cluster ID: %s with total %d provisioned nodes", kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount()));
+                LOGGER.debug(String.format("Checking ready nodes for the Kubernetes cluster : %s with total %d provisioned nodes", kubernetesCluster.getName(), kubernetesCluster.getTotalNodeCount()));
             }
             try {
                 int nodesCount = KubernetesClusterUtil.getKubernetesClusterReadyNodesCount(kubernetesCluster, ipAddress, port,
                         user, sshKeyFile);
                 if (nodesCount == kubernetesCluster.getTotalNodeCount()) {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Kubernetes cluster ID: %s has %d ready nodes now", kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount()));
+                        LOGGER.info(String.format("Kubernetes cluster : %s has %d ready nodes now", kubernetesCluster.getName(), kubernetesCluster.getTotalNodeCount()));
                     }
                     return true;
                 } else {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(String.format("Kubernetes cluster ID: %s has total %d provisioned nodes while %d ready now", kubernetesCluster.getUuid(), kubernetesCluster.getTotalNodeCount(), nodesCount));
+                        LOGGER.debug(String.format("Kubernetes cluster : %s has total %d provisioned nodes while %d ready now", kubernetesCluster.getName(), kubernetesCluster.getTotalNodeCount(), nodesCount));
                     }
                 }
             } catch (Exception e) {
-                LOGGER.warn(String.format("Failed to retrieve ready node count for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
+                LOGGER.warn(String.format("Failed to retrieve ready node count for Kubernetes cluster : %s", kubernetesCluster.getName()), e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ex) {
-                LOGGER.warn(String.format("Error while waiting during Kubernetes cluster ID: %s ready node check", kubernetesCluster.getUuid()), ex);
+                LOGGER.warn(String.format("Error while waiting during Kubernetes cluster : %s ready node check", kubernetesCluster.getName()), ex);
             }
         }
         return false;

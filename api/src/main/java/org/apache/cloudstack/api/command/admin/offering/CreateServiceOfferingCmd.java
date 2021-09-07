@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -126,6 +127,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
     private Map details;
 
+    @Parameter(name = ApiConstants.ROOT_DISK_SIZE, type = CommandType.LONG, since = "4.15", description = "the Root disk size in GB.")
+    private Long rootDiskSize;
+
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
@@ -215,6 +219,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             description = "The minimum memroy size of the custom service offering in MB",
             since = "4.13")
     private Integer minMemory;
+
+    @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
+    private Long storagePolicy;
+
+    @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
+            description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
+    protected Boolean isDynamicScalingEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -314,10 +325,22 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             Collection<?> props = details.values();
             for (Object prop : props) {
                 HashMap<String, String> detail = (HashMap<String, String>) prop;
-                detailsMap.put(detail.get("key"), detail.get("value"));
+                // Compatibility with key and value pairs input from API cmd for details map parameter
+                if (!Strings.isNullOrEmpty(detail.get("key")) && !Strings.isNullOrEmpty(detail.get("value"))) {
+                    detailsMap.put(detail.get("key"), detail.get("value"));
+                    continue;
+                }
+
+                for (Map.Entry<String, String> entry: detail.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
             }
         }
         return detailsMap;
+    }
+
+    public Long getRootDiskSize() {
+        return rootDiskSize;
     }
 
     public Long getBytesReadRate() {
@@ -416,6 +439,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getMinMemory() {
         return minMemory;
+    }
+
+    public Long getStoragePolicy() {
+        return storagePolicy;
+    }
+
+    public boolean getDynamicScalingEnabled() {
+        return isDynamicScalingEnabled == null ? true : isDynamicScalingEnabled;
     }
 
     /////////////////////////////////////////////////////

@@ -78,6 +78,10 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "the Pod ID for the system VM")
     private String podId;
 
+    @SerializedName("podname")
+    @Param(description = "the Pod name for the system VM", since = "4.13.2")
+    private String podName;
+
     @SerializedName("hostid")
     @Param(description = "the host ID for the system VM")
     private String hostId;
@@ -130,6 +134,10 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "the template ID for the system VM")
     private String templateId;
 
+    @SerializedName("templatename")
+    @Param(description = "the template name for the system VM", since = "4.13.2")
+    private String templateName;
+
     @SerializedName("created")
     @Param(description = "the date and time the system VM was created")
     private Date created;
@@ -161,6 +169,10 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("version")
     @Param(description = "the systemvm agent version", since = "4.13.1")
     private String version;
+
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
+    @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    private Boolean isDynamicallyScalable;
 
     @Override
     public String getObjectId() {
@@ -243,8 +255,16 @@ public class SystemVmResponse extends BaseResponse {
         return podId;
     }
 
+    public String getPodName() {
+        return podName;
+    }
+
     public void setPodId(String podId) {
         this.podId = podId;
+    }
+
+    public void setPodName(String podName) {
+        this.podName = podName;
     }
 
     public String getHostId() {
@@ -323,8 +343,16 @@ public class SystemVmResponse extends BaseResponse {
         return templateId;
     }
 
+    public String getTemplateName() {
+        return templateName;
+    }
+
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 
     public Date getCreated() {
@@ -417,5 +445,13 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Boolean getDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(Boolean dynamicallyScalable) {
+        isDynamicallyScalable = dynamicallyScalable;
     }
 }

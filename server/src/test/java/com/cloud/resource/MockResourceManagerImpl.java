@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
@@ -32,6 +33,9 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.StartupCommand;
@@ -109,7 +113,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#updateCluster(com.cloud.org.Cluster, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public Cluster updateCluster(final Cluster cluster, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
+    public Cluster updateCluster(UpdateClusterCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -138,6 +142,16 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     @Override
     public Host maintain(final PrepareForMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Host declareHostAsDegraded(DeclareHostAsDegradedCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Host cancelHostAsDegraded(final CancelHostAsDegradedCmd cmd) {
         return null;
     }
 
@@ -616,7 +630,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type, Long dcId) {
         // TODO Auto-generated method stub
         return null;
     }

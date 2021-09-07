@@ -23,6 +23,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 
 public interface SecondaryStorageVmManager extends Manager {
@@ -31,6 +32,7 @@ public interface SecondaryStorageVmManager extends Manager {
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz
     public static final int DEFAULT_SS_VM_MTUSIZE = 1500;
     public static final int DEFAULT_SS_VM_CAPACITY = 50;            // max command execution session per SSVM
+    public static final int DEFAULT_MIGRATE_SS_VM_CAPACITY = 2;     // number of concurrent migrate operations to happen per SSVM
     public static final int DEFAULT_STANDBY_CAPACITY = 10;          // standy capacity to reserve per zone
 
     public static final String ALERT_SUBJECT = "secondarystoragevm-alert";
@@ -56,4 +58,6 @@ public interface SecondaryStorageVmManager extends Manager {
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId);
 
     public HostVO pickSsvmHost(HostVO ssHost);
+
+    void allocCapacity(long dataCenterId, SecondaryStorageVm.Role role);
 }

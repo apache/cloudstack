@@ -93,13 +93,13 @@ fi
 
 if [ -z "$UUIDList" ]
 then
-  echo "=====> DEAD <======"
+  echo "=====> Considering host as DEAD due to empty UUIDList <======"
   exit 0
 fi
 
 # Second check: disk activity check
 cd $MountPoint
-latestUpdateTime=$(stat -c %Y $(echo $UUIDList | sed 's/,/ /g') | sort -nr | head -1)
+latestUpdateTime=$(stat -c %Y $(echo $UUIDList | sed 's/,/ /g') 2> /dev/null | sort -nr | head -1)
 
 if [ ! -f $acFile ]; then
     echo "$SuspectTime:$latestUpdateTime:$MSTime" > $acFile
@@ -107,7 +107,7 @@ if [ ! -f $acFile ]; then
     if [[ $latestUpdateTime -gt $SuspectTime ]]; then
         echo "=====> ALIVE <====="
     else
-        echo "=====> DEAD <======"
+        echo "=====> Considering host as DEAD due to file [$acFile] does not exists and condition [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
     fi
 else
     acTime=$(cat $acFile)
@@ -121,13 +121,13 @@ else
         if [[ $latestUpdateTime -gt $SuspectTime ]]; then
             echo "=====> ALIVE <====="
         else
-            echo "=====> DEAD <======"
+            echo "=====> Considering host as DEAD due to file [$acFile] exist, condition [suspectTimeDiff -lt 0] was satisfied and [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
         fi
     else
         if [[ $latestUpdateTime -gt $lastUpdateTime ]]; then
             echo "=====> ALIVE <====="
         else
-            echo "=====> DEAD <======"
+            echo "=====> Considering host as DEAD due to file [$acFile] exist and conditions [suspectTimeDiff -lt 0] and [latestUpdateTime -gt SuspectTime] have not been satisfied. <======"
         fi
     fi
 fi

@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -152,6 +153,11 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "vm and its volumes are allowed to migrate to different host/pool when offerings passed are incompatible with current host/pool")
     private Boolean migrateAllowed;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            description = "VM is imported despite some of its NIC's MAC addresses are already present")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -198,6 +204,9 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                }
                 if (Strings.isNullOrEmpty(nic) || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
@@ -213,11 +222,14 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = Strings.emptyToNull(entry.get(VmDetailConstants.IP4_ADDRESS));
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
+                }
                 if (Strings.isNullOrEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }
                 if (Strings.isNullOrEmpty(ipAddress)) {
-                    throw new InvalidParameterValueException(String.format("IP address '%s' for NIC ID: %s is invalid", ipAddress, nic));
+                    throw new InvalidParameterValueException(String.format("Empty address for NIC ID: %s is invalid", nic));
                 }
                 if (!Strings.isNullOrEmpty(ipAddress) && !ipAddress.equals("auto") && !NetUtils.isValidIp4(ipAddress)) {
                     throw new InvalidParameterValueException(String.format("IP address '%s' for NIC ID: %s is invalid", ipAddress, nic));
@@ -233,12 +245,15 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         Map<String, Long> dataDiskToDiskOfferingMap = new HashMap<>();
         if (MapUtils.isNotEmpty(dataDiskToDiskOfferingList)) {
             for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
-                String nic = entry.get(VmDetailConstants.DISK);
+                String disk = entry.get(VmDetailConstants.DISK);
                 String offeringUuid = entry.get(VmDetailConstants.DISK_OFFERING);
-                if (Strings.isNullOrEmpty(nic) || Strings.isNullOrEmpty(offeringUuid) || _entityMgr.findByUuid(DiskOffering.class, offeringUuid) == null) {
-                    throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, nic));
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("disk, '%s', gets offering, '%s'", disk, offeringUuid));
                 }
-                dataDiskToDiskOfferingMap.put(nic, _entityMgr.findByUuid(DiskOffering.class, offeringUuid).getId());
+                if (Strings.isNullOrEmpty(disk) || Strings.isNullOrEmpty(offeringUuid) || _entityMgr.findByUuid(DiskOffering.class, offeringUuid) == null) {
+                    throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
+                }
+                dataDiskToDiskOfferingMap.put(disk, _entityMgr.findByUuid(DiskOffering.class, offeringUuid).getId());
             }
         }
         return dataDiskToDiskOfferingMap;
@@ -266,6 +281,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Importing unmanaged VM";
+    }
+
+    public boolean isForced() {
+        return BooleanUtils.isTrue(forced);
     }
 
     /////////////////////////////////////////////////////

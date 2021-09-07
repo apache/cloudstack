@@ -35,6 +35,7 @@ import java.util.List;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -89,6 +90,11 @@ public class NetworkModelTest {
     private static final long ZONE_2_ID = 2L;
     private static final long PHYSICAL_NETWORK_1_ID = 1L;
     private static final long PHYSICAL_NETWORK_2_ID = 2L;
+
+    private static final String IPV6_CIDR = "fd59:16ba:559b:243d::/64";
+    private static final String IPV6_GATEWAY = "fd59:16ba:559b:243d::1";
+    private static final String START_IPV6 = "fd59:16ba:559b:243d:0:0:0:2";
+    private static final String END_IPV6 = "fd59:16ba:559b:243d:ffff:ffff:ffff:ffff";
 
     @Before
     public void setUp() {
@@ -192,6 +198,69 @@ public class NetworkModelTest {
         networkModel.addDisabledConfigDriveEntriesOnZone(zone1);
         verify(networkService).
                 addProviderToPhysicalNetwork(anyLong(), eq(Provider.ConfigDrive.getName()), isNull(Long.class), isNull(List.class));
+    }
+
+    @Test
+    public void checkIp6ParametersTestAllGood() {
+        networkModel.checkIp6Parameters(START_IPV6, END_IPV6, IPV6_GATEWAY,IPV6_CIDR);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestCidr32() {
+        String ipv6cidr = "fd59:16ba:559b:243d::/32";
+        String endipv6 = "fd59:16ba:ffff:ffff:ffff:ffff:ffff:ffff";
+        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestCidr63() {
+        String ipv6cidr = "fd59:16ba:559b:243d::/63";
+        String endipv6 = "fd59:16ba:559b:243d:ffff:ffff:ffff:ffff";
+        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestCidr65() {
+        String ipv6cidr = "fd59:16ba:559b:243d::/65";
+        String endipv6 = "fd59:16ba:559b:243d:7fff:ffff:ffff:ffff";
+        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestCidr120() {
+        String ipv6cidr = "fd59:16ba:559b:243d::/120";
+        String endipv6 = "fd59:16ba:559b:243d:0:0:0:ff";
+        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestNullGateway() {
+        networkModel.checkIp6Parameters(START_IPV6, END_IPV6, null,IPV6_CIDR);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestNullCidr() {
+        networkModel.checkIp6Parameters(START_IPV6, END_IPV6, IPV6_GATEWAY,null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIp6ParametersTestNullCidrAndNulGateway() {
+        networkModel.checkIp6Parameters(START_IPV6, END_IPV6, null,null);
+    }
+
+    @Test
+    public void checkIp6ParametersTestNullStartIpv6() {
+        networkModel.checkIp6Parameters(null, END_IPV6, IPV6_GATEWAY,IPV6_CIDR);
+    }
+
+    @Test
+    public void checkIp6ParametersTestNullEndIpv6() {
+        networkModel.checkIp6Parameters(START_IPV6, null, IPV6_GATEWAY,IPV6_CIDR);
+    }
+
+    @Test
+    public void checkIp6ParametersTestNullStartAndEndIpv6() {
+        networkModel.checkIp6Parameters(null, null, IPV6_GATEWAY,IPV6_CIDR);
     }
 
 }

@@ -63,6 +63,7 @@ public class TemplateObject implements TemplateInfo {
     private DataStore dataStore;
     private String url;
     private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
+    private String deployAsIsConfiguration; // Temporarily set
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -80,8 +81,9 @@ public class TemplateObject implements TemplateInfo {
         this.dataStore = dataStore;
     }
 
-    public static TemplateObject getTemplate(VMTemplateVO vo, DataStore store) {
+    public static TemplateObject getTemplate(VMTemplateVO vo, DataStore store, String configuration) {
         TemplateObject to = ComponentContext.inject(TemplateObject.class);
+        to.deployAsIsConfiguration = configuration;
         to.configure(vo, store);
         return to;
     }
@@ -135,24 +137,6 @@ public class TemplateObject implements TemplateInfo {
         if (dataStore == null) {
             return imageVO.getSize();
         }
-
-        /*
-         *
-         * // If the template that was passed into this allocator is not
-         * installed in the storage pool, // add 3 * (template size on secondary
-         * storage) to the running total VMTemplateHostVO templateHostVO =
-         * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-         *
-         * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
-         * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
-         * (templateSwiftVO != null) { long templateSize =
-         * templateSwiftVO.getPhysicalSize(); if (templateSize == 0) {
-         * templateSize = templateSwiftVO.getSize(); } totalAllocatedSize +=
-         * (templateSize + _extraBytesPerVolume); } } else { long templateSize =
-         * templateHostVO.getPhysicalSize(); if ( templateSize == 0 ){
-         * templateSize = templateHostVO.getSize(); } totalAllocatedSize +=
-         * (templateSize + _extraBytesPerVolume); }
-         */
         VMTemplateVO image = imageDao.findById(imageVO.getId());
         return image.getSize();
     }
@@ -190,7 +174,9 @@ public class TemplateObject implements TemplateInfo {
                 if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
                     TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
-                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore().getId(), getId());
+
+                    String deployAsIsConfiguration = newTemplate.getDeployAsIsConfiguration();
+                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore().getId(), getId(), deployAsIsConfiguration);
                     templatePoolRef.setDownloadPercent(100);
 
                     setTemplateSizeIfNeeded(newTemplate, templatePoolRef);
@@ -208,7 +194,9 @@ public class TemplateObject implements TemplateInfo {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
                     TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
                     TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(getDataStore().getId(), getId());
-                    templateStoreRef.setInstallPath(newTemplate.getPath());
+                    if (newTemplate.getPath() != null) {
+                        templateStoreRef.setInstallPath(newTemplate.getPath());
+                    }
                     templateStoreRef.setDownloadPercent(100);
                     templateStoreRef.setDownloadState(Status.DOWNLOADED);
                     templateStoreRef.setSize(newTemplate.getSize());
@@ -326,6 +314,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public String getDeployAsIsConfiguration() {
+        return deployAsIsConfiguration;
+    }
+
+    @Override
     public DataTO getTO() {
         DataTO to = null;
         if (dataStore == null) {
@@ -361,6 +354,43 @@ public class TemplateObject implements TemplateInfo {
             return false;
         }
         return this.imageVO.isDirectDownload();
+    }
+
+    @Override
+    public boolean canBeDeletedFromDataStore() {
+        Status downloadStatus = Status.UNKNOWN;
+        int downloadPercent = -1;
+        if (getDataStore().getRole() == DataStoreRole.Primary) {
+            VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore().getId(), getId(), null);
+            if (templatePoolRef != null) {
+                downloadStatus = templatePoolRef.getDownloadState();
+                downloadPercent = templatePoolRef.getDownloadPercent();
+            }
+        } else if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(dataStore.getId(), getId());
+            if (templateStoreRef != null) {
+                downloadStatus = templateStoreRef.getDownloadState();
+                downloadPercent = templateStoreRef.getDownloadPercent();
+                templateStoreRef.getState();
+            }
+        }
+
+        // Marking downloaded templates for deletion, but might skip any deletion handled for failed templates.
+        // Only templates not downloaded and in error state (with no install path) cannot be deleted from the datastore, so doesn't impact last behavior for templates with other states
+        if (downloadStatus == null  || downloadStatus == Status.NOT_DOWNLOADED || (downloadStatus == Status.DOWNLOAD_ERROR && downloadPercent == 0)) {
+            s_logger.debug("Template: " + getId() + " cannot be deleted from the store: " + getDataStore().getId());
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean isDeployAsIs() {
+        if (this.imageVO == null) {
+            return false;
+        }
+        return this.imageVO.isDeployAsIs();
     }
 
     public void setInstallPath(String installPath) {

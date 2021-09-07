@@ -175,6 +175,27 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "cache_mode")
     String cacheMode;
 
+    @Column(name = "min_cpu")
+    Integer minCpu;
+
+    @Column(name = "max_cpu")
+    Integer maxCpu;
+
+    @Column(name = "min_memory")
+    Integer minMemory;
+
+    @Column(name = "max_memory")
+    Integer maxMemory;
+
+    @Column(name = "vsphere_storage_policy")
+    String vsphereStoragePolicy;
+
+    @Column(name = "root_disk_size")
+    private Long rootDiskSize;
+
+    @Column(name = "dynamic_scaling_enabled")
+    private boolean dynamicScalingEnabled;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -348,12 +369,43 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public Long getIopsWriteRateMaxLength() { return iopsWriteRateMaxLength; }
 
-
     public boolean isDynamic() {
         return cpu == null || speed == null || ramSize == null;
     }
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public Integer getMinCpu() {
+        return minCpu;
+    }
+
+    public Integer getMaxCpu() {
+        return maxCpu;
+    }
+
+    public Integer getMinMemory() {
+        return minMemory;
+    }
+
+    public Integer getMaxMemory() {
+        return maxMemory;
+    }
+
+    public String getVsphereStoragePolicy() {
+        return vsphereStoragePolicy;
+    }
+
+    public Long getRootDiskSize() {
+        return rootDiskSize ;
+    }
+
+    public boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled;
+    }
+
+    public void setDynamicScalingEnabled(boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

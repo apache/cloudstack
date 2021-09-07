@@ -291,4 +291,8 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public void setVolumeId(Long volumeId) {
         this.volumeId = volumeId;
     }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 }

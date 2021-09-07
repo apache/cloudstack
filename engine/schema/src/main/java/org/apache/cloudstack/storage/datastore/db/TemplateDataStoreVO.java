@@ -402,4 +402,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         this.extractUrlCreated = extractUrlCreated;
     }
 
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 }

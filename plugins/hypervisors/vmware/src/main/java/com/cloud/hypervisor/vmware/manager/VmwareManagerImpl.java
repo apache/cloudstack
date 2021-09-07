@@ -17,14 +17,17 @@
 package com.cloud.hypervisor.vmware.manager;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.rmi.RemoteException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +37,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -49,8 +56,13 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.util.CollectionUtils;
@@ -62,6 +74,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -70,21 +83,28 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VsphereStoragePolicy;
+import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
@@ -102,6 +122,7 @@ import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
@@ -122,11 +143,14 @@ import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -142,6 +166,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
+import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -208,6 +233,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private UserVmCloneSettingDao cloneSettingDao;
     @Inject
     private TemplateManager templateManager;
+    @Inject
+    private VsphereStoragePolicyDao vsphereStoragePolicyDao;
+    @Inject
+    private StorageManager storageManager;
+    @Inject
+    private HypervisorGuruManager hypervisorGuruManager;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -241,6 +272,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         _storageMgr = new VmwareStorageManagerImpl(this);
     }
 
+    private boolean isSystemVmIsoCopyNeeded(File srcIso, File destIso) {
+        if (!destIso.exists()) {
+            return true;
+        }
+        boolean copyNeeded = false;
+        try {
+            String srcIsoMd5 = DigestUtils.md5Hex(new FileInputStream(srcIso));
+            String destIsoMd5 = DigestUtils.md5Hex(new FileInputStream(destIso));
+            copyNeeded = !StringUtils.equals(srcIsoMd5, destIsoMd5);
+            if (copyNeeded) {
+                s_logger.debug(String.format("MD5 checksum: %s for source ISO: %s is different from MD5 checksum: %s from destination ISO: %s", srcIsoMd5, srcIso.getAbsolutePath(), destIsoMd5, destIso.getAbsolutePath()));
+            }
+        } catch (IOException e) {
+            s_logger.debug(String.format("Unable to compare MD5 checksum for systemvm.iso at source: %s and destination: %s", srcIso.getAbsolutePath(), destIso.getAbsolutePath()), e);
+        }
+        return copyNeeded;
+    }
+
     @Override
     public String getConfigComponentName() {
         return VmwareManagerImpl.class.getSimpleName();
@@ -248,7 +297,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -424,6 +473,29 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
+    private HostMO getOldestExistentHostInCluster(Long clusterId, VmwareContext serviceContext) throws Exception {
+        HostVO host = hostDao.findOldestExistentHypervisorHostInCluster(clusterId);
+        if (host == null) {
+            return null;
+        }
+
+        ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
+        if (morSrcHost == null) {
+            Map<String, String> clusterDetails = clusterDetailsDao.findDetails(clusterId);
+            if (MapUtils.isEmpty(clusterDetails) || StringUtils.isBlank(clusterDetails.get("url"))) {
+                return null;
+            }
+
+            URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            if (morSrcHost == null) {
+                return null;
+            }
+        }
+
+        return new HostMO(serviceContext, morSrcHost);
+    }
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
@@ -476,6 +548,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
+                HostMO olderHostMo = getOldestExistentHostInCluster(clusterId, serviceContext);
+                if (olderHostMo != null) {
+                    hostMo.copyPortGroupsFromHost(olderHostMo);
+                }
+
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
@@ -633,7 +710,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
-        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(storeId);
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(storeId);
         String mountPoint = getMountPoint(storageUrl, nfsVersion);
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
@@ -651,7 +728,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
                     File srcIso = getSystemVMPatchIsoFile();
                     File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
-                    if (!destIso.exists()) {
+                    if (isSystemVmIsoCopyNeeded(srcIso, destIso)) {
                         s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
                         _configServer.updateKeyPairs();
 
@@ -729,7 +806,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public String getMountPoint(String storageUrl, Integer nfsVersion) {
+    public String getMountPoint(String storageUrl, String nfsVersion) {
         String mountPoint = null;
         synchronized (_storageMounts) {
             mountPoint = _storageMounts.get(storageUrl);
@@ -820,7 +897,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    protected String mount(String path, String parent, Integer nfsVersion) {
+    protected String mount(String path, String parent, String nfsVersion) {
         String mountPoint = setupMountPoint(parent);
         if (mountPoint == null) {
             s_logger.warn("Unable to create a mount point");
@@ -1046,6 +1123,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(UpdateVmwareDcCmd.class);
         cmdList.add(RemoveVmwareDcCmd.class);
         cmdList.add(ListVmwareDcsCmd.class);
+        cmdList.add(ImportVsphereStoragePoliciesCmd.class);
+        cmdList.add(ListVsphereStoragePoliciesCmd.class);
+        cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
         return cmdList;
     }
 
@@ -1173,6 +1253,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
             context = null;
         }
+        importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
         return vmwareDc;
     }
 
@@ -1233,6 +1314,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             hostDetailsDao.persist(host.getId(), hostDetails);
                         }
                     }
+                    importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
                     return vmwareDc;
                 }
                 return null;
@@ -1381,6 +1463,112 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Zone with id:[" + zoneId + "] exists.");
         }
+    }
+
+    @Override
+    public List<? extends VsphereStoragePolicy> importVsphereStoragePolicies(ImportVsphereStoragePoliciesCmd cmd) {
+        Long zoneId = cmd.getZoneId();
+        // Validate Id of zone
+        doesZoneExist(zoneId);
+
+        final VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
+        // Check if zone is associated with VMware DC
+        if (vmwareDcZoneMap == null) {
+            throw new CloudRuntimeException("Zone " + zoneId + " is not associated with any VMware datacenter.");
+        }
+
+        final long vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+        return importVsphereStoragePoliciesInternal(zoneId, vmwareDcId);
+    }
+
+    public List<? extends VsphereStoragePolicy> importVsphereStoragePoliciesInternal(Long zoneId, Long vmwareDcId) {
+
+        // Get DC associated with this zone
+        VmwareDatacenterVO vmwareDatacenter = vmwareDcDao.findById(vmwareDcId);
+        String vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
+        String vCenterHost = vmwareDatacenter.getVcenterHost();
+        String userName = vmwareDatacenter.getUser();
+        String password = vmwareDatacenter.getPassword();
+        List<PbmProfile> storageProfiles = null;
+        try {
+            s_logger.debug(String.format("Importing vSphere Storage Policies for the vmware DC %d in zone %d", vmwareDcId, zoneId));
+            VmwareContext context = VmwareContextFactory.getContext(vCenterHost, userName, password);
+            PbmProfileManagerMO profileManagerMO = new PbmProfileManagerMO(context);
+            storageProfiles = profileManagerMO.getStorageProfiles();
+            s_logger.debug(String.format("Import vSphere Storage Policies for the vmware DC %d in zone %d is successful", vmwareDcId, zoneId));
+        } catch (Exception e) {
+            String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e));
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        for (PbmProfile storageProfile : storageProfiles) {
+            VsphereStoragePolicyVO storagePolicyVO = vsphereStoragePolicyDao.findByPolicyId(zoneId, storageProfile.getProfileId().getUniqueId());
+            if (storagePolicyVO == null) {
+                storagePolicyVO = new VsphereStoragePolicyVO(zoneId, storageProfile.getProfileId().getUniqueId(), storageProfile.getName(), storageProfile.getDescription());
+                vsphereStoragePolicyDao.persist(storagePolicyVO);
+            } else {
+                storagePolicyVO.setDescription(storageProfile.getDescription());
+                storagePolicyVO.setName(storageProfile.getName());
+                vsphereStoragePolicyDao.update(storagePolicyVO.getId(), storagePolicyVO);
+            }
+        }
+
+        List<VsphereStoragePolicyVO> allStoragePolicies = vsphereStoragePolicyDao.listAll();
+        List<PbmProfile> finalStorageProfiles = storageProfiles;
+        List<VsphereStoragePolicyVO> needToMarkRemoved = allStoragePolicies.stream()
+                .filter(existingPolicy -> !finalStorageProfiles.stream()
+                    .anyMatch(storageProfile -> storageProfile.getProfileId().getUniqueId().equals(existingPolicy.getPolicyId())))
+                .collect(Collectors.toList());
+
+        for (VsphereStoragePolicyVO storagePolicy : needToMarkRemoved) {
+            vsphereStoragePolicyDao.remove(storagePolicy.getId());
+        }
+
+        List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
+        return storagePolicies;
+    }
+
+    @Override
+    public List<? extends VsphereStoragePolicy> listVsphereStoragePolicies(ListVsphereStoragePoliciesCmd cmd) {
+        List<? extends VsphereStoragePolicy> storagePolicies = vsphereStoragePolicyDao.findByZoneId(cmd.getZoneId());
+        if (storagePolicies != null) {
+            return new ArrayList<>(storagePolicies);
+        }
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<StoragePool> listVsphereStoragePolicyCompatibleStoragePools(ListVsphereStoragePolicyCompatiblePoolsCmd cmd) {
+        Long policyId = cmd.getPolicyId();
+        VsphereStoragePolicyVO storagePolicy = vsphereStoragePolicyDao.findById(policyId);
+        if (storagePolicy == null) {
+            throw new CloudRuntimeException("Storage policy with ID = " + policyId + " was not found");
+        }
+        long zoneId = storagePolicy.getZoneId();
+        List<StoragePoolVO> poolsInZone = primaryStorageDao.listByStatusInZone(zoneId, StoragePoolStatus.Up);
+        List<StoragePool> compatiblePools = new ArrayList<>();
+        for (StoragePoolVO pool : poolsInZone) {
+            StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
+            List<Long> hostIds = storageManager.getUpHostsInPool(pool.getId());
+            if (CollectionUtils.isNullOrEmpty(hostIds)) {
+                s_logger.debug("Did not find a suitable host to verify compatibility of the pool " + pool.getName());
+                continue;
+            }
+            Collections.shuffle(hostIds);
+            CheckDataStoreStoragePolicyComplainceCommand command = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicy.getPolicyId(), storageFilerTO);
+            long targetHostId = hypervisorGuruManager.getGuruProcessedCommandTargetHost(hostIds.get(0), command);
+            try {
+                Answer answer = _agentMgr.send(targetHostId, command);
+                boolean result = answer != null && answer.getResult();
+                if (result) {
+                    compatiblePools.add(pool);
+                }
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                s_logger.error("Could not verify if storage policy " + storagePolicy.getName() + " is compatible with storage pool " + pool.getName());
+            }
+        }
+        return compatiblePools;
     }
 
     @Override

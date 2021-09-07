@@ -84,8 +84,14 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
+        String description = "Upgrading Kubernetes cluster";
         KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
-        return String.format("Upgrading Kubernetes cluster ID: %s", cluster.getUuid());
+        if (cluster != null) {
+            description += String.format(" ID: %s", cluster.getUuid());
+        } else {
+            description += String.format(" ID: %d", getId());
+        }
+        return description;
     }
 
     @Override

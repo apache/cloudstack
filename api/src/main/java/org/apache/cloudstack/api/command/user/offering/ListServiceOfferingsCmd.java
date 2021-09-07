@@ -65,6 +65,24 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.13")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.CPU_NUMBER,
+            type = CommandType.INTEGER,
+            description = "the CPU number that listed offerings must support",
+            since = "4.15")
+    private Integer cpuNumber;
+
+    @Parameter(name = ApiConstants.MEMORY,
+            type = CommandType.INTEGER,
+            description = "the RAM memory that listed offering must support",
+            since = "4.15")
+    private Integer memory;
+
+    @Parameter(name = ApiConstants.CPU_SPEED,
+            type = CommandType.INTEGER,
+            description = "the CPU speed that listed offerings must support",
+            since = "4.15")
+    private Integer cpuSpeed;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +109,18 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Integer getCpuNumber() {
+        return cpuNumber;
+    }
+
+    public Integer getMemory() {
+        return memory;
+    }
+
+    public Integer getCpuSpeed() {
+        return cpuSpeed;
     }
 
     /////////////////////////////////////////////////////

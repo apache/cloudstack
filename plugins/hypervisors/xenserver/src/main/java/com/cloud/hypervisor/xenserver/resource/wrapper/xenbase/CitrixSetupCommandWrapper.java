@@ -77,7 +77,6 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
 
             }
 
-
             final boolean r = citrixResourceBase.launchHeartBeat(conn);
             if (!r) {
                 return null;

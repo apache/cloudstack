@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.utils.StringUtils.join;
 import static java.util.Arrays.asList;
 
@@ -168,7 +169,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             return 0;
         }
 
-        LOGGER.info("Starting download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " and size " + remoteSize + " bytes");
+        LOGGER.info("Starting download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " and size " + toHumanReadableSize(remoteSize) + " bytes");
 
         // Time the upload starts.
         final Date start = new Date();
@@ -197,7 +198,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
                 // Record the amount of bytes transferred.
                 totalBytes += progressEvent.getBytesTransferred();
 
-                LOGGER.trace("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + totalBytes + " in " + ((new Date().getTime() - start.getTime()) / 1000) + " seconds");
+                LOGGER.trace("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + ((new Date().getTime() - start.getTime()) / 1000) + " seconds");
 
                 if (progressEvent.getEventType() == ProgressEventType.TRANSFER_STARTED_EVENT) {
                     status = Status.IN_PROGRESS;
@@ -222,9 +223,9 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         downloadTime = new Date().getTime() - start.getTime();
 
         if (status == Status.DOWNLOAD_FINISHED) {
-            LOGGER.info("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + totalBytes + " in " + (downloadTime / 1000) + " seconds, completed successfully!");
+             LOGGER.info("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + (downloadTime / 1000) + " seconds, completed successfully!");
         } else {
-            LOGGER.warn("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + totalBytes + " in " + (downloadTime / 1000) + " seconds, completed with status " + status.toString());
+             LOGGER.warn("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + (downloadTime / 1000) + " seconds, completed with status " + status.toString());
         }
 
         // Close input stream

@@ -140,7 +140,72 @@ public class CertServiceTest {
         chainField.setAccessible(true);
         chainField.set(uploadCmd, chain);
 
+        final Field enabledRevocationCheckField = klazz.getDeclaredField("enabledRevocationCheck");
+        enabledRevocationCheckField.setAccessible(true);
+        enabledRevocationCheckField.set(uploadCmd, Boolean.FALSE);
+
         certService.uploadSslCert(uploadCmd);
+    }
+
+    @Test
+    /**
+     * Given a certificate signed by a CA and a valid CA chain, but without any info for revocation checking, upload should fail.
+     */
+    public void runUploadSslCertWithNoRevocationInfo() throws Exception {
+        Assume.assumeTrue(isOpenJdk() || isJCEInstalled());
+
+        TransactionLegacy.open("runUploadSslCertWithCAChain");
+
+        final String certFile = URLDecoder.decode(getClass().getResource("/certs/rsa_ca_signed.crt").getFile(),Charset.defaultCharset().name());
+        final String keyFile = URLDecoder.decode(getClass().getResource("/certs/rsa_ca_signed.key").getFile(),Charset.defaultCharset().name());
+        final String chainFile = URLDecoder.decode(getClass().getResource("/certs/root_chain.crt").getFile(),Charset.defaultCharset().name());
+
+        final String cert = readFileToString(new File(certFile));
+        final String key = readFileToString(new File(keyFile));
+        final String chain = readFileToString(new File(chainFile));
+
+        final CertServiceImpl certService = new CertServiceImpl();
+
+        //setting mock objects
+        certService._accountMgr = Mockito.mock(AccountManager.class);
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
+
+        certService._domainDao = Mockito.mock(DomainDao.class);
+        final DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
+        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
+
+        certService._sslCertDao = Mockito.mock(SslCertDao.class);
+        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+
+        certService._accountDao = Mockito.mock(AccountDao.class);
+        when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
+
+        //creating the command
+        final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
+
+        final Field certField = klazz.getDeclaredField("cert");
+        certField.setAccessible(true);
+        certField.set(uploadCmd, cert);
+
+        final Field keyField = klazz.getDeclaredField("key");
+        keyField.setAccessible(true);
+        keyField.set(uploadCmd, key);
+
+        final Field chainField = klazz.getDeclaredField("chain");
+        chainField.setAccessible(true);
+        chainField.set(uploadCmd, chain);
+
+        try {
+            certService.uploadSslCert(uploadCmd);
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid certificate chain"));
+            Throwable cause = e.getCause();
+            Assert.assertTrue(cause.getMessage().contains("Certification path could not be validated"));
+            cause = cause.getCause();
+            Assert.assertTrue(cause.getMessage().contains("No CRLs found"));
+        }
     }
 
     //    @Test

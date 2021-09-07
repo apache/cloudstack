@@ -20,7 +20,8 @@
 from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
 from marvin.codes import FAILED
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import listZones
 from marvin.lib.utils import random_gen, cleanup_resources
 from marvin.lib.base import (Account,
@@ -34,7 +35,7 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
 from nose.plugins.attrib import attr
-import urllib
+import urllib.request, urllib.parse, urllib.error
 #Import System modules
 import time
 from marvin.cloudstackAPI import (createTemplate, listOsTypes)
@@ -77,7 +78,7 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
         if "vmware" in self.hypervisor.lower():
             self.test_template = registerTemplate.registerTemplateCmd()
             self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template.checksum = "{SHA-1}" + "178639bd5ec089a27f6d39025be28c3de5d9393b"
+            self.test_template.checksum = "{SHA-1}" + "3c00872599c6e1e46a358aac51080db88266cf5c"
             self.test_template.hypervisor = self.hypervisor
             self.test_template.zoneid = self.zone.id
             self.test_template.name = 'test sha-2333'
@@ -85,8 +86,8 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
             self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova"
             self.test_template.format = "OVA"
             self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
-            self.md5 = "3c23ac66bac7888dc7c972783646c644"
-            self.sha256 = "97aaa096d419522158c54f83eb61d9242d9f6bca9166fd4030d73683d647c7e7"
+            self.md5 = "27f3c56a8c7ec7b2f3ff2199f7078006"
+            self.sha256 = "a7b04c1eb507f3f5de844bda352df1ea5e20335b465409493ca6ae07dfd0a158"
 
         if "xen" in self.hypervisor.lower():
             self.test_template = registerTemplate.registerTemplateCmd()
@@ -144,8 +145,8 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
         try:
             self.download(self.apiclient, template.id)
         except Exception as e:
-            print "Negative Test Passed - Exception Occurred Under template download " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("Negative Test Passed - Exception Occurred Under template download " \
+                  "%s" % GetDetailExceptionInfo(e))
         else:
             self.fail("Negative Test Failed - Exception DID NOT Occurred Under template download ")
 
@@ -157,8 +158,8 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
         try:
             self.download(self.apiclient, template.id)
         except Exception as e:
-            print "Negative Test Passed - Exception Occurred Under template download " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("Negative Test Passed - Exception Occurred Under template download " \
+                  "%s" % GetDetailExceptionInfo(e))
         else:
             self.fail("Negative Test Failed - Exception DID NOT Occurred Under template download ")
 
@@ -170,8 +171,8 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
         try:
             self.download(self.apiclient, template.id)
         except Exception as e:
-            print "Negative Test Passed - Exception Occurred Under template download " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("Negative Test Passed - Exception Occurred Under template download " \
+                  "%s" % GetDetailExceptionInfo(e))
         else:
             self.fail("Negative Test Failed - Exception DID NOT Occurred Under template download ")
 
@@ -728,8 +729,8 @@ class TestTemplates(cloudstackTestCase):
 
         try:
             # Format URL to ASCII to retrieve response code
-            formatted_url = urllib.unquote_plus(list_extract_response.url)
-            url_response = urllib.urlopen(formatted_url)
+            formatted_url = urllib.parse.unquote_plus(list_extract_response.url)
+            url_response = urllib.request.urlopen(formatted_url)
             response_code = url_response.getcode()
 
         except Exception:
@@ -820,7 +821,7 @@ class TestTemplates(cloudstackTestCase):
         if len(self.zones) <= 1:
             self.skipTest("Not enough zones available to perform copy template")
 
-        self.services["destzoneid"] = filter(lambda z: z.id != self.services["sourcezoneid"], self.zones)[0].id
+        self.services["destzoneid"] = [z for z in self.zones if z.id != self.services["sourcezoneid"]][0].id
 
         self.debug("Copy template from Zone: %s to %s" % (
                                             self.services["sourcezoneid"],
@@ -959,6 +960,40 @@ class TestTemplates(cloudstackTestCase):
                         'SYSTEM',
                         "ListTemplates should not list any system templates"
                         )
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_09_list_templates_download_details(self):
+        """Test if list templates returns download details"""
+
+        # Validate the following
+        # 1. ListTemplates API has been extended to support viewing the download details - progress, download states and datastore
+
+        list_template_response = Template.list(
+                                    self.apiclient,
+                                    templatefilter='all',
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
+                                    )
+        self.assertEqual(
+                            isinstance(list_template_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
+
+        for template in list_template_response:
+            self.assertNotEqual(
+                        len(template.downloaddetails),
+                        0,
+                        "Not all templates have download details"
+                        )
+
         return
 
 class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
@@ -1289,6 +1324,7 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
         """
         self.template["checksum"]="{MD5}XXXXXXX"
         tmpl = Template.register(self.apiclient, self.template, zoneid=self.zone.id, hypervisor=self.hypervisor, randomize_name=False)
+        self.cleanup.append(tmpl)
 
         try:
             virtual_machine = VirtualMachine.create(
@@ -1299,11 +1335,9 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id
             )
-            self.cleanup.append(tmpl)
+            self.cleanup.append(virtual_machine)
             self.fail("Expected to fail deployment")
         except Exception as e:
             self.debug("Expected exception")
 
-        self.cleanup.append(virtual_machine)
-        self.cleanup.append(tmpl)
         return

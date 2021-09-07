@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;

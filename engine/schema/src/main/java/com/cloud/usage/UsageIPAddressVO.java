@@ -58,10 +58,13 @@ public class UsageIPAddressVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date released = null;
 
+    @Column(name = "is_hidden")
+    private boolean isHidden = false;
+
     protected UsageIPAddressVO() {
     }
 
-    public UsageIPAddressVO(long id, long accountId, long domainId, long zoneId, String address, boolean isSourceNat, boolean isSystem, Date assigned, Date released) {
+    public UsageIPAddressVO(long id, long accountId, long domainId, long zoneId, String address, boolean isSourceNat, boolean isSystem, Date assigned, Date released, boolean isHidden) {
         this.id = id;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -71,6 +74,7 @@ public class UsageIPAddressVO implements InternalIdentity {
         this.isSystem = isSystem;
         this.assigned = assigned;
         this.released = released;
+        this.isHidden = isHidden;
     }
 
     public UsageIPAddressVO(long accountId, String address, Date assigned, Date released) {
@@ -119,5 +123,9 @@ public class UsageIPAddressVO implements InternalIdentity {
 
     public void setReleased(Date released) {
         this.released = released;
+    }
+
+    public boolean isHidden() {
+        return isHidden;
     }
 }

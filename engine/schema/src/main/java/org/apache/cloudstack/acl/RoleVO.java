@@ -51,6 +51,9 @@ public class RoleVO implements Role {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "is_default")
+    private boolean isDefault = false;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -73,6 +76,10 @@ public class RoleVO implements Role {
     @Override
     public String getUuid() {
         return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override
@@ -102,5 +109,9 @@ public class RoleVO implements Role {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
     }
 }

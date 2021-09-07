@@ -18,11 +18,11 @@
  */
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -40,6 +40,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -127,6 +128,27 @@ public class SnapshotObject implements SnapshotInfo {
             return null;
         }
         return snapshotFactory.getSnapshot(vo.getId(), store);
+    }
+
+    @Override
+    public List<SnapshotInfo> getChildren() {
+        QueryBuilder<SnapshotDataStoreVO> sc = QueryBuilder.create(SnapshotDataStoreVO.class);
+        sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        sc.and(sc.entity().getRole(), Op.EQ, store.getRole());
+        sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
+        sc.and(sc.entity().getParentSnapshotId(), Op.EQ, getId());
+        List<SnapshotDataStoreVO> vos = sc.list();
+
+        List<SnapshotInfo> children = new ArrayList<>();
+        if (vos != null) {
+            for (SnapshotDataStoreVO vo : vos) {
+                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image);
+                if (info != null) {
+                    children.add(info);
+                }
+            }
+        }
+        return children;
     }
 
     @Override

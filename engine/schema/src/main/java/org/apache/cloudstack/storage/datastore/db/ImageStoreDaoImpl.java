@@ -77,9 +77,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     }
 
     @Override
-    public List<ImageStoreVO> findByScope(ZoneScope scope) {
+    public List<ImageStoreVO> findByZone(ZoneScope scope, Boolean readonly) {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
+        if (readonly != null) {
+            sc.addAnd("readonly", SearchCriteria.Op.EQ, readonly);
+        }
         if (scope.getScopeId() != null) {
             SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
             scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
@@ -114,7 +117,6 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     public Integer countAllImageStores() {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
-        sc.addAnd("removed", SearchCriteria.Op.NULL);
         return getCount(sc);
     }
 
@@ -132,4 +134,10 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         return listBy(sc);
     }
 
+    @Override
+    public List<ImageStoreVO> listStoresByZoneId(long zoneId) {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addAnd("dcId", SearchCriteria.Op.EQ, zoneId);
+        return listBy(sc);
+    }
 }

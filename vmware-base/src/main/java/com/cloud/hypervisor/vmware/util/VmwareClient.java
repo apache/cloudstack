@@ -17,8 +17,11 @@
 package com.cloud.hypervisor.vmware.util;
 
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -29,9 +32,18 @@ import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.Handler;
+import javax.xml.ws.handler.HandlerResolver;
+import javax.xml.ws.handler.PortInfo;
+
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmService;
+import com.vmware.pbm.PbmServiceInstanceContent;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
@@ -101,6 +113,7 @@ public class VmwareClient {
             HttpsURLConnection.setDefaultHostnameVerifier(hv);
 
             vimService = new VimService();
+            pbmService = new PbmService();
         } catch (Exception e) {
             s_logger.info("[ignored]"
                     + "failed to trust all certificates blindly: ", e);
@@ -120,8 +133,16 @@ public class VmwareClient {
     }
 
     private final ManagedObjectReference svcInstRef = new ManagedObjectReference();
+    private final ManagedObjectReference pbmSvcInstRef = new ManagedObjectReference();
+
     private static VimService vimService;
+    private static PbmService pbmService;
+    private PbmServiceInstanceContent pbmServiceContent;
     private VimPortType vimPort;
+    private PbmPortType pbmPort;
+    private static final String PBM_SERVICE_INSTANCE_TYPE = "PbmServiceInstance";
+    private static final String PBM_SERVICE_INSTANCE_VALUE = "ServiceInstance";
+
     private String serviceCookie;
     private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
@@ -176,8 +197,36 @@ public class VmwareClient {
         cookieValue = tokenizer.nextToken();
         String pathData = "$" + tokenizer.nextToken();
         serviceCookie = "$Version=\"1\"; " + cookieValue + "; " + pathData;
-
+        Map<String, List<String>> map = new HashMap<String, List<String>>();
+        map.put("Cookie", Collections.singletonList(serviceCookie));
+        ((BindingProvider)vimPort).getRequestContext().put(MessageContext.HTTP_REQUEST_HEADERS, map);
+        pbmConnect(url, cookieValue);
         isConnected = true;
+    }
+
+    private void pbmConnect(String url, String cookieValue) throws Exception {
+        URI uri = new URI(url);
+        String pbmurl = "https://" + uri.getHost() + "/pbm";
+        String[] tokens = cookieValue.split("=");
+        String extractedCookie = tokens[1];
+
+        HandlerResolver soapHandlerResolver = new HandlerResolver() {
+            @Override
+            public List<Handler> getHandlerChain(PortInfo portInfo) {
+                VcenterSessionHandler VcSessionHandler = new VcenterSessionHandler(extractedCookie);
+                List<Handler> handlerChain = new ArrayList<Handler>();
+                handlerChain.add((Handler)VcSessionHandler);
+                return handlerChain;
+            }
+        };
+        pbmService.setHandlerResolver(soapHandlerResolver);
+
+        pbmSvcInstRef.setType(PBM_SERVICE_INSTANCE_TYPE);
+        pbmSvcInstRef.setValue(PBM_SERVICE_INSTANCE_VALUE);
+        pbmPort = pbmService.getPbmPort();
+        Map<String, Object> pbmCtxt = ((BindingProvider)pbmPort).getRequestContext();
+        pbmCtxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
+        pbmCtxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, pbmurl);
     }
 
     /**
@@ -207,6 +256,24 @@ public class VmwareClient {
         try {
             return vimPort.retrieveServiceContent(svcInstRef);
         } catch (RuntimeFaultFaultMsg e) {
+        }
+        return null;
+    }
+
+    /**
+     * @return PBM service instance
+     */
+    public PbmPortType getPbmService() {
+        return pbmPort;
+    }
+
+    /**
+     * @return Service instance content
+     */
+    public PbmServiceInstanceContent getPbmServiceContent() {
+        try {
+            return pbmPort.pbmRetrieveServiceContent(pbmSvcInstRef);
+        } catch (com.vmware.pbm.RuntimeFaultFaultMsg e) {
         }
         return null;
     }
@@ -714,4 +781,54 @@ public class VmwareClient {
         return vCenterSessionTimeout;
     }
 
+    public void cancelTask(ManagedObjectReference task) throws Exception {
+        TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
+        if (info == null) {
+            s_logger.warn("Unable to get the task info, so couldn't cancel the task");
+            return;
+        }
+
+        String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
+        taskName += "(" + info.getKey() + ")";
+
+        String entityName = StringUtils.isNotBlank(info.getEntityName()) ? info.getEntityName() : "";
+
+        if (info.getState().equals(TaskInfoState.SUCCESS)) {
+            s_logger.debug(taskName + " task successfully completed for the entity " + entityName + ", can't cancel it");
+            return;
+        }
+
+        if (info.getState().equals(TaskInfoState.ERROR)) {
+            s_logger.debug(taskName + " task execution failed for the entity " + entityName + ", can't cancel it");
+            return;
+        }
+
+        s_logger.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
+        if (!info.isCancelable()) {
+            s_logger.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
+            return;
+        }
+
+        s_logger.debug("Cancelling task " + taskName + " of the entity " + entityName);
+        getService().cancelTask(task);
+
+        // Since task cancellation is asynchronous, wait for the task to be cancelled
+        Object[] result = waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"},
+                new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}});
+
+        if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
+            if (result[0].equals(TaskInfoState.SUCCESS)) {
+                s_logger.warn("Failed to cancel" + taskName + " task of the entity " + entityName + ", the task successfully completed");
+            }
+
+            if (result[1] instanceof LocalizedMethodFault) {
+                MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
+                if (fault instanceof RequestCanceled) {
+                    s_logger.debug(taskName + " task of the entity " + entityName + " was successfully cancelled");
+                }
+            } else {
+                s_logger.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
+            }
+        }
+    }
 }

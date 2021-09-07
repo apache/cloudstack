@@ -39,6 +39,8 @@
 
     <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl" />
 
+    <bean id="projRoleManagerImpl" class="org.apache.cloudstack.acl.ProjectRoleManagerImpl" />
+
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
@@ -49,7 +51,7 @@
     </bean>
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
-        <property name="lockMasterListener" ref="lockMasterListener" />
+        <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
@@ -259,6 +261,8 @@
     <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
 
     <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
+
+    <bean id="imageStoreServiceImpl" class="com.cloud.storage.ImageStoreServiceImpl" />
 
     <bean id="AffinityGroupServiceImpl"
         class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl">

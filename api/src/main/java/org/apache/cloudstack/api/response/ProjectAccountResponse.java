@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ProjectAccount.class)
 @SuppressWarnings("unused")
@@ -46,9 +45,21 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     @Param(description = "the name of the account")
     private String accountName;
 
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "Name of the user")
+    private String username;
+
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "account type (admin, domain-admin, user)")
     private Short accountType;
+
+    @SerializedName(ApiConstants.USER_ID)
+    @Param(description = "Id of the user")
+    private String userId;
+
+    @SerializedName(ApiConstants.PROJECT_ROLE_ID)
+    @Param(description = "Id of the project role associated with the account/user")
+    private String projectRoleId;
 
     @SerializedName(ApiConstants.ROLE)
     @Param(description = "account role in the project (regular,owner)")
@@ -99,11 +110,21 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
         this.domainName = domainName;
     }
 
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public void setProjectRoleId(String projectRoleId) {
+        this.projectRoleId = projectRoleId;
+    }
+
     public void setUsers(List<UserResponse> users) {
         this.users = users;
     }
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

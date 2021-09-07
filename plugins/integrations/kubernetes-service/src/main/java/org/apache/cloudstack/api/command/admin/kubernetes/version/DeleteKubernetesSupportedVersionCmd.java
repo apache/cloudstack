@@ -83,7 +83,14 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
 
     @Override
     public String getEventDescription() {
-        return "Deleting Kubernetes supported version " + getId();
+        String description = "Deleting Kubernetes supported version";
+        KubernetesSupportedVersion version = _entityMgr.findById(KubernetesSupportedVersion.class, getId());
+        if (version != null) {
+            description += String.format(" ID: %s", version.getUuid());
+        } else {
+            description += String.format(" ID: %d", getId());
+        }
+        return description;
     }
 
     /////////////////////////////////////////////////////

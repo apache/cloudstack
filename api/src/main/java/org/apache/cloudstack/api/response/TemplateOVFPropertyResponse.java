@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.agent.api.storage.OVFProperty;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
-@EntityReference(value = OVFProperty.class)
+/**
+ * the placeholder of parameters to fill for deployment
+ */
 public class TemplateOVFPropertyResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.KEY)
@@ -57,6 +57,27 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "the ovf property label")
     private String description;
+
+    @SerializedName(ApiConstants.INDEX)
+    @Param(description = "the ovf property index")
+    private Integer index;
+
+    @SerializedName(ApiConstants.CATEGORY)
+    @Param(description = "the ovf property category")
+    private String category;
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof TemplateOVFPropertyResponse)) {
+            return false;
+        }
+        return key != null && key.equals(((TemplateOVFPropertyResponse)other).key);
+    }
+
+    @Override
+    public int hashCode() {
+        return key.hashCode();
+    }
 
     public String getKey() {
         return key;
@@ -120,5 +141,21 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
 
     public void setPassword(Boolean password) {
         this.password = password;
+    }
+
+    public Integer getIndex() {
+        return index;
+    }
+
+    public void setIndex(Integer index) {
+        this.index = index;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

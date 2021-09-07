@@ -22,6 +22,8 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -34,10 +36,16 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
 
     @Override
     public List<QuotaAccountVO> listAllQuotaAccount() {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaAccountVO>>() {
+        return listAllQuotaAccount(null, null).first();
+    }
+
+    @Override
+    public Pair<List<QuotaAccountVO>,Integer> listAllQuotaAccount(final Long startIndex, final Long pageSize) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<QuotaAccountVO>,Integer>>() {
             @Override
-            public List<QuotaAccountVO> doInTransaction(final TransactionStatus status) {
-                return listAll();
+            public Pair<List<QuotaAccountVO>,Integer> doInTransaction(final TransactionStatus status) {
+                Filter filter = new Filter(QuotaAccountVO.class, "accountId", true, startIndex, pageSize);
+                return searchAndCount(null, filter);
             }
         });
     }

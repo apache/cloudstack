@@ -23,9 +23,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-import com.cloud.utils.component.PluggableService;
-
-public interface VmImportService extends PluggableService {
+public interface VmImportService {
     ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
     UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
 }

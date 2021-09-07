@@ -100,6 +100,10 @@ public class DiskProfile {
         return name;
     }
 
+    public void setTags(String[] tags) {
+        this.tags = tags;
+    }
+
     /**
      * @return tags for the disk. This can be used to match it to different storage pools.
      */

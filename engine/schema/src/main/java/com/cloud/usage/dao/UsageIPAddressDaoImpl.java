@@ -40,16 +40,20 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
 
     protected static final String UPDATE_RELEASED = "UPDATE usage_ip_address SET released = ? WHERE account_id = ? AND public_ip_address = ? and released IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
-        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " + "FROM usage_ip_address "
+        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released, is_hidden "
+            + "FROM usage_ip_address "
             + "WHERE account_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
             + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN =
-        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " + "FROM usage_ip_address "
+        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released, is_hidden "
+            + "FROM usage_ip_address "
             + "WHERE domain_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
             + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
-        + "FROM usage_ip_address " + "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
-        + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
+    protected static final String GET_ALL_USAGE_RECORDS =
+        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released, is_hidden "
+            + "FROM usage_ip_address "
+            + "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+            + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
 
     public UsageIPAddressDaoImpl() {
     }
@@ -128,6 +132,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
                 Date releasedDate = null;
                 String assignedTS = rs.getString(8);
                 String releasedTS = rs.getString(9);
+                Boolean isHidden = Boolean.valueOf(rs.getBoolean(10));
 
                 if (assignedTS != null) {
                     assignedDate = DateUtil.parseDateString(s_gmtTimeZone, assignedTS);
@@ -136,7 +141,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
                     releasedDate = DateUtil.parseDateString(s_gmtTimeZone, releasedTS);
                 }
 
-                usageRecords.add(new UsageIPAddressVO(id, acctId, dId, zId, addr, isSourceNat, isSystem, assignedDate, releasedDate));
+                usageRecords.add(new UsageIPAddressVO(id, acctId, dId, zId, addr, isSourceNat, isSystem, assignedDate, releasedDate, isHidden));
             }
         } catch (Exception e) {
             txn.rollback();

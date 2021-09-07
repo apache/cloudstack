@@ -31,6 +31,8 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
 
     List<AccountVO> findAccountsLike(String accountName);
 
+    Pair<List<AccountVO>, Integer> findAccountsLike(String accountName, Filter filter);
+
     List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter);
 
     List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter);

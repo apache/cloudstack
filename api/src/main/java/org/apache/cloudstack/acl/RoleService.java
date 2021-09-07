@@ -18,8 +18,11 @@
 package org.apache.cloudstack.acl;
 
 import java.util.List;
+import java.util.Map;
 
-import org.apache.cloudstack.acl.RolePermission.Permission;
+import com.cloud.utils.Pair;
+
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface RoleService {
@@ -39,13 +42,17 @@ public interface RoleService {
 
     Role createRole(String name, RoleType roleType, String description);
 
+    Role createRole(String name, Role role, String description);
+
+    Role importRole(String name, RoleType roleType, String description, List<Map<String, Object>> rules, boolean forced);
+
     Role updateRole(Role role, String name, RoleType roleType, String description);
 
     boolean deleteRole(Role role);
 
     RolePermission findRolePermission(Long id);
 
-    RolePermission findRolePermissionByUuid(String uuid);
+    RolePermission findRolePermissionByRoleIdAndRule(Long roleId, String rule);
 
     RolePermission createRolePermission(Role role, Rule rule, Permission permission, String description);
 
@@ -65,16 +72,24 @@ public interface RoleService {
      */
     List<Role> listRoles();
 
+    Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit);
+
     /**
      *  Find all roles that have the giving {@link String} as part of their name.
      *  If the user calling the method is not a 'root admin', roles of type {@link RoleType#Admin} wil lbe removed of the returned list.
      */
     List<Role> findRolesByName(String name);
 
+    Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit);
+
     /**
      *  Find all roles by {@link RoleType}. If the role type is {@link RoleType#Admin}, the calling account must be a root admin, otherwise we return an empty list.
      */
     List<Role> findRolesByType(RoleType roleType);
 
+    Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit);
+
     List<RolePermission> findAllPermissionsBy(Long roleId);
+
+    Permission getRolePermission(String permission);
 }

@@ -37,7 +37,7 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader;
@@ -62,7 +62,6 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -73,7 +72,6 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
@@ -87,12 +85,14 @@ import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
     private long _processTimeout;
-    private Integer _nfsVersion;
+    private String _nfsVersion;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
@@ -125,7 +125,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private long templatePhysicalSize;
         private final long id;
         private final ResourceType resourceType;
-        private List<OVFPropertyTO> ovfProperties;
+        private OVFInformationTO ovfInformationTO;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
                 String installPathPrefix, ResourceType resourceType) {
@@ -221,12 +221,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.checksum = checksum;
         }
 
-        public List<OVFPropertyTO> getOvfProperties() {
-            return ovfProperties;
+        public OVFInformationTO getOvfInformationTO() {
+            return ovfInformationTO;
         }
 
-        public void setOvfProperties(List<OVFPropertyTO> ovfProperties) {
-            this.ovfProperties = ovfProperties;
+        public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
+            this.ovfInformationTO = ovfInformationTO;
         }
     }
 
@@ -268,7 +268,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         TemplateDownloader td = dj.getTemplateDownloader();
         LOGGER.info("Download Completion for jobId: " + jobId + ", status=" + status);
-        LOGGER.info("local: " + td.getDownloadLocalPath() + ", bytes=" + td.getDownloadedBytes() + ", error=" + td.getDownloadError() + ", pct=" +
+        LOGGER.info("local: " + td.getDownloadLocalPath() + ", bytes=" + toHumanReadableSize(td.getDownloadedBytes()) + ", error=" + td.getDownloadError() + ", pct=" +
                 td.getDownloadPercent());
 
         switch (status) {
@@ -507,7 +507,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         while (en.hasNext()) {
             Processor processor = en.next();
 
-            FormatInfo info = null;
+            FormatInfo info;
             try {
                 info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
@@ -521,8 +521,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 }
                 dnld.setTemplatesize(info.virtualSize);
                 dnld.setTemplatePhysicalSize(info.size);
-                if (CollectionUtils.isNotEmpty(info.ovfProperties)) {
-                    dnld.setOvfProperties(info.ovfProperties);
+                if (info.ovfInformationTO != null) {
+                    dnld.setOvfInformationTO(info.ovfInformationTO);
                 }
                 break;
             }
@@ -700,31 +700,31 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return 0;
     }
 
-    public static VMTemplateHostVO.Status convertStatus(Status tds) {
+    public static VMTemplateStorageResourceAssoc.Status convertStatus(Status tds) {
         switch (tds) {
         case ABORTED:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED;
         case DOWNLOAD_FINISHED:
-            return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS;
         case IN_PROGRESS:
-            return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS;
         case NOT_STARTED:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED;
         case RECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED;
         case UNKNOWN:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            return VMTemplateStorageResourceAssoc.Status.UNKNOWN;
         case UNRECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.DOWNLOAD_ERROR;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR;
         case POST_DOWNLOAD_FINISHED:
-            return VMTemplateHostVO.Status.DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOADED;
         default:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            return VMTemplateStorageResourceAssoc.Status.UNKNOWN;
         }
     }
 
     @Override
-    public com.cloud.storage.VMTemplateHostVO.Status getDownloadStatus2(String jobId) {
+    public com.cloud.storage.VMTemplateStorageResourceAssoc.Status getDownloadStatus2(String jobId) {
         return convertStatus(getDownloadStatus(jobId));
     }
 
@@ -824,8 +824,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             answer =
                     new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
                             getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
-            if (CollectionUtils.isNotEmpty(dj.getOvfProperties())) {
-                answer.setOvfProperties(dj.getOvfProperties());
+            if (dj.getOvfInformationTO() != null) {
+                answer.setOvfInformationTO(dj.getOvfInformationTO());
             }
             jobs.remove(jobId);
             return answer;

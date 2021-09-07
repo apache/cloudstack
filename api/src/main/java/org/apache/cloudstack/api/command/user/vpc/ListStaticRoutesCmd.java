@@ -48,6 +48,9 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "list static routes by gateway id")
     private Long gatewayId;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list static routes by state")
+    private String state;
+
     public Long getId() {
         return id;
     }
@@ -58,6 +61,10 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getGatewayId() {
         return gatewayId;
+    }
+
+    public String getState() {
+        return state;
     }
 
     /////////////////////////////////////////////////////

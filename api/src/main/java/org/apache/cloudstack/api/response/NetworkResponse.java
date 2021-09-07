@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -190,6 +191,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "VPC the network belongs to")
     private String vpcId;
 
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
+    private String vpcName;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -222,6 +227,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "ACL Id associated with the VPC network")
     private String aclId;
 
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "ACL name associated with the VPC network")
+    private String aclName;
+
     @SerializedName(ApiConstants.STRECHED_L2_SUBNET)
     @Param(description = "true if network can span multiple zones", since = "4.4")
     private Boolean strechedL2Subnet;
@@ -237,6 +246,18 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.REDUNDANT_ROUTER)
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this network was created", since = "4.16.0")
+    private Date created;
+
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -439,6 +460,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.aclId = aclId;
     }
 
+    public String getAclName() {
+        return aclName;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
+    }
+
     public void setStrechedL2Subnet(Boolean strechedL2Subnet) {
         this.strechedL2Subnet = strechedL2Subnet;
     }
@@ -457,5 +486,29 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setRedundantRouter(Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(final Long bytesSent) {
+        this.bytesSent = bytesSent;
     }
 }

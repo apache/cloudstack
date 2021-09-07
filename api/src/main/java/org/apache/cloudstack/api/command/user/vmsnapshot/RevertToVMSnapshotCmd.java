@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;

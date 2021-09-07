@@ -35,6 +35,8 @@
         <property name="name" value="VMwareGuru" />
     </bean>
 
+    <bean id="VmwareVmImplementer" class="com.cloud.hypervisor.guru.VmwareVmImplementer"/>
+
     <bean id="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator">
         <property name="name" value="VMwareInvestigator" />
     </bean>

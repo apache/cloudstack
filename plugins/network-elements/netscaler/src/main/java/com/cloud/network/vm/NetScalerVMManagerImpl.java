@@ -190,6 +190,10 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
     }
 
     @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _itMgr.registerGuru(VirtualMachine.Type.NetScalerVm, this);
         if (s_logger.isInfoEnabled()) {

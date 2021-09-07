@@ -104,6 +104,9 @@ config_guest() {
           for i in {1..60}; do
             if [ -s $CMDLINE ]; then
               log_it "Received a new non-empty cmdline file from qemu-guest-agent"
+              # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+              rm -rf /etc/cloudstack/*.json
+              log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
               break
             fi
             sleep 1

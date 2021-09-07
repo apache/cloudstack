@@ -31,7 +31,9 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.AgentManager;
@@ -84,6 +86,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.QueryBuilder;
@@ -118,8 +121,18 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject
     private HostPodDao _podDao;
 
-    private String xenServerIsoName = "xs-tools.iso";
+    private String xenServerIsoName = TemplateManager.XS_TOOLS_ISO;
     private String xenServerIsoDisplayText = "XenServer Tools Installer ISO (xen-pv-drv-iso)";
+
+    public final static String MIN_UEFI_SUPPORTED_VERSION = "8.2";
+
+    public static boolean isUefiSupported(String hostProductVersion) {
+        if (StringUtils.isEmpty(hostProductVersion)) {
+            return false;
+        }
+        ComparableVersion version = new ComparableVersion(hostProductVersion);
+        return version.compareTo(new ComparableVersion(MIN_UEFI_SUPPORTED_VERSION)) >= 0;
+    }
 
     protected XcpServerDiscoverer() {
     }
@@ -308,6 +321,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put("username", username);
                 params.put("username", username);
                 details.put("password", password);
+                if (isUefiSupported(prodVersion)) {
+                    details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+                }
                 params.put("password", password);
                 params.put("zone", Long.toString(dcId));
                 params.put("guid", record.uuid);
@@ -369,7 +385,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn("Unable to resolve the host name", e);
             return null;
         } catch (Exception e) {
-            s_logger.debug("other exceptions: " + e.toString(), e);
+            s_logger.warn("other exceptions: " + e.toString(), e);
             return null;
         }
         return resources;
@@ -423,7 +439,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         } else if (prodBrand.equals("XCP_Kronos")) {
             return new XcpOssResource();
-        } else if (prodBrand.equals("XenServer") || prodBrand.equals("XCP-ng")) {
+        } else if (prodBrand.equals("XenServer") || prodBrand.equals("XCP-ng") || prodBrand.equals("Citrix Hypervisor")) {
             final String[] items = prodVersion.split("\\.");
             if ((Integer.parseInt(items[0]) > 6) ||
                     (Integer.parseInt(items[0]) == 6 && Integer.parseInt(items[1]) >= 4)) {
@@ -434,7 +450,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         }
         String msg =
-                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0, >6.4.0 but this one is " +
+                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0, >6.4.0, Citrix Hypervisor > 8.0.0 but this one is " +
                         prodBrand + " " + prodVersion;
         s_logger.warn(msg);
         throw new RuntimeException(msg);

@@ -19,6 +19,7 @@ package com.cloud.service.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
@@ -58,4 +59,19 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
         return zoneIds;
     }
 
+    @Override
+    public String getDetail(Long serviceOfferingId, String key) {
+        String detailValue = null;
+        ServiceOfferingDetailsVO serviceOfferingDetail = findDetail(serviceOfferingId, key);
+        if (serviceOfferingDetail != null) {
+            detailValue = serviceOfferingDetail.getValue();
+        }
+        return detailValue;
+    }
+
+    @Override
+    public List<Long> findOfferingIdsByDomainIds(List<Long> domainIds) {
+        Object[] dIds = domainIds.stream().map(s -> String.valueOf(s)).collect(Collectors.toList()).toArray();
+        return findResouceIdsByNameAndValueIn("domainid", dIds);
+    }
 }

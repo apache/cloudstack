@@ -37,7 +37,7 @@ public interface ImageStoreDriver extends DataStoreDriver {
 
     void deleteEntityExtractUrl(DataStore store, String installPath, String url, Upload.Type entityType);
 
-    List<DatadiskTO> getDataDiskTemplates(DataObject obj);
+    List<DatadiskTO> getDataDiskTemplates(DataObject obj, String configurationId);
 
     Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, String diskId, boolean bootable, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback);
 }

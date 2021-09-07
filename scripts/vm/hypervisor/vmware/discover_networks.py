@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from __future__ import print_function
 from pyVim.connect import SmartConnect, SmartConnectNoSSL, Disconnect
 from pyVmomi import vim
 import atexit

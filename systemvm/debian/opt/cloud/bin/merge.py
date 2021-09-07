@@ -153,13 +153,10 @@ class updateDataBag:
         dp['gateway'] = d['router_guest_gateway']
         dp['nic_dev_id'] = d['device'][3:]
         dp['nw_type'] = 'guest'
-        dp = PrivateGatewayHack.update_network_type_for_privategateway(dbag, dp)
         qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
-
-        d = PrivateGatewayHack.update_network_type_for_privategateway(dbag, d)
         return cs_guestnetwork.merge(dbag, d)
 
     def process_dhcp_entry(self, dbag):
@@ -329,42 +326,3 @@ class QueueFile:
         os.remove(origPath)
 
         logging.debug("Processed file written to %s", zipped_file_name)
-
-
-class PrivateGatewayHack:
-
-    @classmethod
-    def update_network_type_for_privategateway(cls, dbag, data):
-        ip = data['router_guest_ip'] if 'router_guest_ip' in data.keys() else data['public_ip']
-
-        initial_data = cls.load_inital_data()
-        has_private_gw_ip = cls.if_config_has_privategateway(initial_data)
-        private_gw_matches = 'privategateway' in initial_data['config'] and cls.ip_matches_private_gateway_ip(ip, initial_data['config']['privategateway'])
-
-        if has_private_gw_ip and private_gw_matches:
-            data['nw_type'] = "public"
-            logging.debug("Updating nw_type for ip %s" % ip)
-        else:
-            logging.debug("Not updating nw_type for ip %s because has_private_gw_ip = %s and private_gw_matches = %s " % (ip, has_private_gw_ip, private_gw_matches))
-        return data
-
-    @classmethod
-    def if_config_has_privategateway(cls, dbag):
-        return 'privategateway' in dbag['config'].keys() and dbag['config']['privategateway'] != "None"
-
-    @classmethod
-    def ip_matches_private_gateway_ip(cls, ip, private_gateway_ip):
-        new_ip_matches_private_gateway_ip = False
-        if ip == private_gateway_ip:
-            new_ip_matches_private_gateway_ip = True
-        return new_ip_matches_private_gateway_ip
-
-    @classmethod
-    def load_inital_data(cls):
-        initial_data_bag = DataBag()
-        initial_data_bag.setKey('cmdline')
-        initial_data_bag.load()
-        initial_data = initial_data_bag.getDataBag()
-        logging.debug("Initial data = %s" % initial_data)
-
-        return initial_data

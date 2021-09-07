@@ -17,7 +17,7 @@
 
 # cloudstack_pluginlib for openvswitch on KVM hypervisor
 
-import ConfigParser
+import configparser
 import logging
 import os
 import subprocess
@@ -49,7 +49,7 @@ def setup_logging(log_file=None):
     log_date_format = DEFAULT_LOG_DATE_FORMAT
     # try to read plugin configuration file
     if os.path.exists(PLUGIN_CONFIG_PATH):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(PLUGIN_CONFIG_PATH)
         try:
             options = config.options('LOGGING')
@@ -67,7 +67,7 @@ def setup_logging(log_file=None):
             # configuration file contained invalid attributes
             # ignore them
             pass
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             # Missing 'Logging' section in configuration file
             pass
 
@@ -114,7 +114,7 @@ def _is_process_run(pidFile, name):
         fpid = open(pidFile, "r")
         pid = fpid.readline()
         fpid.close()
-    except IOError, e:
+    except IOError as e:
         return -1
 
     pid = pid[:-1]
@@ -304,11 +304,11 @@ class jsonLoader(object):
 
   def __repr__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 
   def __str__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 
 def configure_bridge_for_network_topology(bridge, this_host_id, json_config):
     vpconfig = jsonLoader(json.loads(json_config)).vpc

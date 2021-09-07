@@ -73,6 +73,11 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
+    public List<DataStore> getImageStoresByScopeExcludingReadOnly(ZoneScope scope) {
+        return imageDataStoreMgr.listImageStoresByScopeExcludingReadOnly(scope);
+    }
+
+    @Override
     public DataStore getRandomImageStore(long zoneId) {
         List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
@@ -82,8 +87,17 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
+    public DataStore getRandomUsableImageStore(long zoneId) {
+        List<DataStore> stores = getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        return imageDataStoreMgr.getRandomImageStore(stores);
+    }
+
+    @Override
     public DataStore getImageStoreWithFreeCapacity(long zoneId) {
-        List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> stores = getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }
@@ -91,8 +105,16 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
+    public DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores) {
+        if (imageStores.isEmpty()) {
+            return null;
+        }
+        return imageDataStoreMgr.getImageStoreWithFreeCapacity(imageStores);
+    }
+
+    @Override
     public List<DataStore> listImageStoresWithFreeCapacity(long zoneId) {
-        List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> stores = getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (stores == null || stores.size() == 0) {
             return null;
         }

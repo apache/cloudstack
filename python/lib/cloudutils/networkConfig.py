@@ -14,8 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from utilities import bash
-from cloudException import CloudRuntimeException, CloudInternalException
+from .utilities import bash
+from .cloudException import CloudRuntimeException, CloudInternalException
 import logging
 import os
 import re
@@ -37,7 +37,7 @@ class networkConfig:
     @staticmethod
     def listNetworks():
         devs = os.listdir("/sys/class/net/") 
-        devs = filter(networkConfig.isBridge, devs) 
+        devs = list(filter(networkConfig.isBridge, devs)) 
         return devs
     @staticmethod
     def getDefaultNetwork():
@@ -66,10 +66,10 @@ class networkConfig:
 
         cmds = ""
         if not networkConfig.isBridge(brName):
-            cmds = "brctl addbr %s ;"%brName
+            cmds = "ip link add name %s type bridge ;"%brName
     
         cmds += "ifconfig %s up;"%brName
-        cmds += "brctl addif %s %s"%(brName, dev)
+        cmds += "ip link set dev %s master %s"%(dev, brName)
         return bash(cmds).isSuccess()
 
     @staticmethod
@@ -87,7 +87,7 @@ class networkConfig:
         if os.path.exists("/proc/sys/net/bridge"):
             return True
 
-        return bash("modprobe -b bridge").isSucess()
+        return bash("modprobe -b bridge").isSuccess()
 
     @staticmethod
     def isNetworkDev(devName):
@@ -125,7 +125,7 @@ class networkConfig:
             return None
 
         for dev in os.listdir("/sys/class/net/%s/brif"%br):
-            br_port = int(file("/sys/class/net/%s/brif/%s/port_no"%(br,dev)).readline().strip("\n"), 16)
+            br_port = int(open("/sys/class/net/%s/brif/%s/port_no"%(br,dev)).readline().strip("\n"), 16)
             if br_port == brPort:
                 return dev
 
@@ -163,5 +163,4 @@ class networkConfig:
             type = "dev"
 
         return networkConfig.devInfo(macAddr, ipAddr, netmask, None, type, dev)
-
 

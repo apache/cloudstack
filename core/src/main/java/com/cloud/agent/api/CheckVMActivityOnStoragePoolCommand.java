@@ -41,7 +41,7 @@ public final class CheckVMActivityOnStoragePoolCommand extends Command {
         this.suspectTimeSeconds = suspectTime.getMillis()/1000L;
         final StringBuilder stringBuilder = new StringBuilder();
         for (final Volume v : volumeList) {
-            stringBuilder.append(v.getUuid()).append(",");
+            stringBuilder.append(v.getPath()).append(",");
         }
 
         this.volumeList = stringBuilder.deleteCharAt(stringBuilder.length() - 1).toString();

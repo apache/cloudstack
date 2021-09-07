@@ -29,8 +29,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
@@ -40,7 +39,7 @@ import com.cloud.utils.mgmt.ManagementBean;
 
 public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
-    private static final Logger log = LoggerFactory.getLogger(CloudStackExtendedLifeCycle.class);
+    private static final Logger log = Logger.getLogger(CloudStackExtendedLifeCycle.class);
 
     Map<Integer, Set<ComponentLifecycle>> sorted = new TreeMap<Integer, Set<ComponentLifecycle>>();
 
@@ -60,7 +59,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
     protected void checkIntegrity() {
         for (SystemIntegrityChecker checker : getBeans(SystemIntegrityChecker.class)) {
-            log.info("Running system integrity checker {}", checker);
+            log.info("Running system integrity checker " + checker);
 
             checker.check();
         }
@@ -114,7 +113,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 try {
                     lifecycle.configure(lifecycle.getName(), lifecycle.getConfigParams());
                 } catch (ConfigurationException e) {
-                    log.error("Failed to configure {}", lifecycle.getName(), e);
+                    log.error("Failed to configure " +  lifecycle.getName(), e);
                     throw new CloudRuntimeException(e);
                 }
             }

@@ -38,6 +38,8 @@ import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class StorageUsageParser {
     public static final Logger s_logger = Logger.getLogger(StorageUsageParser.class.getName());
@@ -186,9 +188,9 @@ public class StorageUsageParser {
                 break;
         }
         //Create the usage record
-        usageDesc += "Id:" + storageId + " Size:" + size;
+        usageDesc += "Id:" + storageId + " Size:" + toHumanReadableSize(size);
         if (type != StorageTypes.SNAPSHOT) {
-            usageDesc += " VirtualSize:" + virtualSize;
+            usageDesc += " VirtualSize: " + toHumanReadableSize(virtualSize);
         }
 
         //ToDo: get zone id

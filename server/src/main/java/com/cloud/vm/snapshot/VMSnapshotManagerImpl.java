@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
@@ -48,6 +50,8 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -67,12 +71,14 @@ import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
@@ -80,6 +86,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -93,6 +101,7 @@ import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -103,12 +112,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkJobHandler;
@@ -147,6 +156,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     EntityManager _entityMgr;
     @Inject
     AsyncJobManager _jobMgr;
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
     @Inject
     VmWorkJobDao _workJobDao;
@@ -158,6 +169,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     protected UserVmDetailsDao _userVmDetailsDao;
     @Inject
     protected VMSnapshotDetailsDao _vmSnapshotDetailsDao;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -206,6 +219,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         String keyword = cmd.getKeyword();
         String name = cmd.getVmSnapshotName();
         String accountName = cmd.getAccountName();
+        Map<String, String> tags = cmd.getTags();
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
@@ -229,10 +243,31 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("display_name", sb.entity().getDisplayName(), SearchCriteria.Op.EQ);
         sb.and("account_id", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.done();
+
+        if (MapUtils.isNotEmpty(tags)) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count = 0; count < tags.size(); count++) {
+                tagSearch.or().op(ApiConstants.KEY + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and(ApiConstants.VALUE + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and(ApiConstants.RESOURCE_TYPE, tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<VMSnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (MapUtils.isNotEmpty(tags)) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", ApiConstants.RESOURCE_TYPE, ResourceTag.ResourceObjectType.VMSnapshot.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", ApiConstants.KEY + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", ApiConstants.VALUE + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
 
         if (accountName != null && cmd.getDomainId() != null) {
             Account account = _accountMgr.getActiveAccountByName(accountName, cmd.getDomainId());
@@ -328,9 +363,33 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Can not snapshot memory when VM is not in Running state");
         }
 
+        List<VolumeVO> rootVolumes = _volumeDao.findReadyRootVolumesByInstance(userVmVo.getId());
+        if (rootVolumes == null || rootVolumes.isEmpty()) {
+            throw new CloudRuntimeException("Unable to find root volume for the user vm:" + userVmVo.getUuid());
+        }
+
+        VolumeVO rootVolume = rootVolumes.get(0);
+        StoragePoolVO rootVolumePool = _storagePoolDao.findById(rootVolume.getPoolId());
+        if (rootVolumePool == null) {
+            throw new CloudRuntimeException("Unable to find root volume storage pool for the user vm:" + userVmVo.getUuid());
+        }
+
         // for KVM, only allow snapshot with memory when VM is in running state
-        if (userVmVo.getHypervisorType() == HypervisorType.KVM && userVmVo.getState() == State.Running && !snapshotMemory) {
-            throw new InvalidParameterValueException("KVM VM does not allow to take a disk-only snapshot when VM is in running state");
+        if (userVmVo.getHypervisorType() == HypervisorType.KVM) {
+            if (rootVolumePool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
+                if (userVmVo.getState() == State.Running && !snapshotMemory) {
+                    throw new InvalidParameterValueException("KVM VM does not allow to take a disk-only snapshot when VM is in running state");
+                }
+            } else {
+                if (snapshotMemory) {
+                    throw new InvalidParameterValueException("Can not snapshot memory for PowerFlex storage pool");
+                }
+
+                // All volumes should be on the same PowerFlex storage pool for VM Snapshot
+                if (!isVolumesOfUserVmOnSameStoragePool(userVmVo.getId(), rootVolumePool.getId())) {
+                    throw new InvalidParameterValueException("All volumes of the VM: " + userVmVo.getUuid() + " should be on the same PowerFlex storage pool");
+                }
+            }
         }
 
         // check access
@@ -349,8 +408,14 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (activeSnapshots.size() > 0) {
                 throw new CloudRuntimeException("There is other active volume snapshot tasks on the instance to which the volume is attached, please try again later.");
             }
-            if (userVmVo.getHypervisorType() == HypervisorType.KVM && volume.getFormat() != ImageFormat.QCOW2) {
-                throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
+            if (userVmVo.getHypervisorType() == HypervisorType.KVM) {
+                if (volume.getPoolType() != Storage.StoragePoolType.PowerFlex) {
+                    if (volume.getFormat() != ImageFormat.QCOW2) {
+                        throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
+                    }
+                } else if (volume.getFormat() != ImageFormat.RAW) {
+                    throw new CloudRuntimeException("Only support create vm snapshots for volumes on PowerFlex with RAW image");
+                }
             }
         }
 
@@ -363,6 +428,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (snapshotMemory && userVmVo.getState() == VirtualMachine.State.Running)
             vmSnapshotType = VMSnapshot.Type.DiskAndMemory;
 
+        if (rootVolumePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+            vmSnapshotType = VMSnapshot.Type.Disk;
+        }
+
         try {
             return createAndPersistVMSnapshot(userVmVo, vsDescription, vmSnapshotName, vsDisplayName, vmSnapshotType);
         } catch (Exception e) {
@@ -370,6 +439,21 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             s_logger.error("Create vm snapshot record failed for vm: " + vmId + " due to: " + msg);
         }
         return null;
+    }
+
+    private boolean isVolumesOfUserVmOnSameStoragePool(Long userVmId, Long poolId) {
+        List<VolumeVO> volumesOfVm = _volumeDao.findCreatedByInstance(userVmId);
+        if (volumesOfVm == null || volumesOfVm.isEmpty()) {
+            throw new CloudRuntimeException("Unable to find volumes for the user vm:" + userVmId);
+        }
+
+        for (VolumeVO volume : volumesOfVm) {
+            if (volume == null || volume.getPoolId() != poolId) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -1282,7 +1366,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
-    public boolean deleteVMSnapshotsFromDB(Long vmId) {
+    public boolean deleteVMSnapshotsFromDB(Long vmId, boolean unmanage) {
         List<VMSnapshotVO> listVmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (listVmSnapshots == null || listVmSnapshots.isEmpty()) {
             return true;
@@ -1290,7 +1374,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         for (VMSnapshotVO snapshot : listVmSnapshots) {
             try {
                 VMSnapshotStrategy strategy = findVMSnapshotStrategy(snapshot);
-                if (! strategy.deleteVMSnapshotFromDB(snapshot)) {
+                if (! strategy.deleteVMSnapshotFromDB(snapshot, unmanage)) {
                     s_logger.error("Couldn't delete vm snapshot with id " + snapshot.getId());
                     return false;
                 }

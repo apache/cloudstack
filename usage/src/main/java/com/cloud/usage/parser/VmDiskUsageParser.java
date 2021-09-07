@@ -37,6 +37,8 @@ import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.SearchCriteria;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class VmDiskUsageParser {
     public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.getName());
@@ -106,8 +108,8 @@ public class VmDiskUsageParser {
 
             if ((ioRead > 0L) || (ioWrite > 0L) || (bytesRead > 0L) || (bytesWrite > 0L)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating vm disk usage record, io read:" + ioRead + ", io write: " + ioWrite + "bytes read:" + bytesRead + ", bytes write: " +
-                        bytesWrite + "for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
+                    s_logger.debug("Creating vm disk usage record, io read:" + toHumanReadableSize(ioRead) + ", io write: " + toHumanReadableSize(ioWrite) + ", bytes read:" + toHumanReadableSize(bytesRead) + ", bytes write: " +
+                            toHumanReadableSize(bytesWrite) + " for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
                         endDate);
                 }
 

@@ -48,6 +48,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -66,7 +68,8 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 || kubernetesCluster.getState().equals(KubernetesCluster.State.Alert)
                 || kubernetesCluster.getState().equals(KubernetesCluster.State.Error)
                 || kubernetesCluster.getState().equals(KubernetesCluster.State.Destroying))) {
-            String msg = String.format("Cannot perform delete operation on cluster ID: %s in state: %s",kubernetesCluster.getUuid(), kubernetesCluster.getState());
+            String msg = String.format("Cannot perform delete operation on cluster : %s in state: %s",
+                kubernetesCluster.getName(), kubernetesCluster.getState());
             LOGGER.warn(msg);
             throw new PermissionDeniedException(msg);
         }
@@ -86,16 +89,15 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 try {
                     UserVm vm = userVmService.destroyVm(vmID, true);
                     if (!userVmManager.expunge(userVM, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
-                        LOGGER.warn(String.format("Unable to expunge VM '%s' ID: %s, destroying Kubernetes cluster will probably fail"
-                                , vm.getInstanceName()
-                                , vm.getUuid()));
+                        LOGGER.warn(String.format("Unable to expunge VM %s : %s, destroying Kubernetes cluster will probably fail",
+                            vm.getInstanceName() , vm.getUuid()));
                     }
                     kubernetesClusterVmMapDao.expunge(clusterVM.getId());
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Destroyed VM ID: %s as part of Kubernetes cluster ID: %s cleanup", vm.getUuid(), kubernetesCluster.getUuid()));
+                        LOGGER.info(String.format("Destroyed VM : %s as part of Kubernetes cluster : %s cleanup", vm.getDisplayName(), kubernetesCluster.getName()));
                     }
                 } catch (ResourceUnavailableException | ConcurrentOperationException e) {
-                    LOGGER.warn(String.format("Failed to destroy VM ID: %s part of the Kubernetes cluster ID: %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getUuid(), kubernetesCluster.getUuid()), e);
+                    LOGGER.warn(String.format("Failed to destroy VM : %s part of the Kubernetes cluster : %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getDisplayName(), kubernetesCluster.getName()), e);
                     return false;
                 }
             }
@@ -117,19 +119,20 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
             boolean networkDestroyed = networkMgr.destroyNetwork(kubernetesCluster.getNetworkId(), context, true);
             if (!networkDestroyed) {
-                String msg = String.format("Failed to destroy network ID: %s as part of Kubernetes cluster ID: %s cleanup", network.getUuid(), kubernetesCluster.getUuid());
+                String msg = String.format("Failed to destroy network : %s as part of Kubernetes cluster : %s cleanup", network.getName(), kubernetesCluster.getName());
                 LOGGER.warn(msg);
                 throw new ManagementServerException(msg);
             }
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Destroyed network: %s as part of Kubernetes cluster ID: %s cleanup", network.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Destroyed network : %s as part of Kubernetes cluster : %s cleanup",
+                    network.getName(), kubernetesCluster.getName()));
             }
         }
     }
 
     private void deleteKubernetesClusterNetworkRules() throws ManagementServerException {
         NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (network == null || !Network.GuestType.Isolated.equals(network.getGuestType())) {
+        if (network == null) {
             return;
         }
         List<Long> removedVmIds = new ArrayList<>();
@@ -140,12 +143,12 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
         IpAddress publicIp = getSourceNatIp(network);
         if (publicIp == null) {
-            throw new ManagementServerException(String.format("No source NAT IP addresses found for network ID: %s", network.getUuid()));
+            throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s", network.getName()));
         }
         try {
             removeLoadBalancingRule(publicIp, network, owner, CLUSTER_API_PORT);
         } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to KubernetesCluster load balancing rule for network ID: %s", network.getUuid()));
+            throw new ManagementServerException(String.format("Failed to KubernetesCluster load balancing rule for network : %s", network.getName()));
         }
         FirewallRule firewallRule = removeApiFirewallRule(publicIp);
         if (firewallRule == null) {
@@ -158,7 +161,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         try {
             removePortForwardingRules(publicIp, network, owner, removedVmIds);
         } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to KubernetesCluster port forwarding rules for network ID: %s", network.getUuid()));
+            throw new ManagementServerException(String.format("Failed to KubernetesCluster port forwarding rules for network : %s", network.getName()));
         }
     }
 
@@ -186,20 +189,50 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
+    private void checkForRulesToDelete() throws ManagementServerException {
+        NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
+        if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
+            deleteKubernetesClusterNetworkRules();
+        }
+    }
+
     public boolean destroy() throws CloudRuntimeException {
         init();
         validateClusterSate();
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Destroying Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
-        }
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
         this.clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        boolean vmsDestroyed = destroyClusterVMs();
         boolean cleanupNetwork = true;
         final KubernetesClusterDetailsVO clusterDetails = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "networkCleanup");
         if (clusterDetails != null) {
             cleanupNetwork = Boolean.parseBoolean(clusterDetails.getValue());
         }
+        if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
+            NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+            if (network != null) {
+                List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
+                if (networkVMs.size() > clusterVMs.size()) {
+                    logAndThrow(Level.ERROR, String.format("Network : %s for Kubernetes cluster : %s has instances using it which are not part of the Kubernetes cluster", network.getName(), kubernetesCluster.getName()));
+                }
+                for (VMInstanceVO vm : networkVMs) {
+                    boolean vmFoundInKubernetesCluster = false;
+                    for (KubernetesClusterVmMap clusterVM : clusterVMs) {
+                        if (vm.getId() == clusterVM.getVmId()) {
+                            vmFoundInKubernetesCluster = true;
+                            break;
+                        }
+                    }
+                    if (!vmFoundInKubernetesCluster) {
+                        logAndThrow(Level.ERROR, String.format("VM : %s which is not a part of Kubernetes cluster : %s is using Kubernetes cluster network : %s", vm.getUuid(), kubernetesCluster.getName(), network.getName()));
+                    }
+                }
+            } else {
+                LOGGER.error(String.format("Failed to find network for Kubernetes cluster : %s", kubernetesCluster.getName()));
+            }
+        }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(String.format("Destroying Kubernetes cluster : %s", kubernetesCluster.getName()));
+        }
+        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
+        boolean vmsDestroyed = destroyClusterVMs();
         // if there are VM's that were not expunged, we can not delete the network
         if (vmsDestroyed) {
             if (cleanupNetwork) {
@@ -207,23 +240,23 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 try {
                     destroyKubernetesClusterNetwork();
                 } catch (ManagementServerException e) {
-                    String msg = String.format("Failed to destroy network of Kubernetes cluster ID: %s cleanup", kubernetesCluster.getUuid());
+                    String msg = String.format("Failed to destroy network of Kubernetes cluster : %s cleanup", kubernetesCluster.getName());
                     LOGGER.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }
             } else {
                 try {
-                    deleteKubernetesClusterNetworkRules();
+                    checkForRulesToDelete();
                 } catch (ManagementServerException e) {
-                    String msg = String.format("Failed to remove network rules of Kubernetes cluster ID: %s", kubernetesCluster.getUuid());
+                    String msg = String.format("Failed to remove network rules of Kubernetes cluster : %s", kubernetesCluster.getName());
                     LOGGER.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }
             }
         } else {
-            String msg = String.format("Failed to destroy one or more VMs as part of Kubernetes cluster ID: %s cleanup", kubernetesCluster.getUuid());
+            String msg = String.format("Failed to destroy one or more VMs as part of Kubernetes cluster : %s cleanup", kubernetesCluster.getName());
             LOGGER.warn(msg);
             updateKubernetesClusterEntryForGC();
             throw new CloudRuntimeException(msg);
@@ -231,12 +264,12 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         boolean deleted = kubernetesClusterDao.remove(kubernetesCluster.getId());
         if (!deleted) {
-            logMessage(Level.WARN, String.format("Failed to delete Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), null);
+            logMessage(Level.WARN, String.format("Failed to delete Kubernetes cluster : %s", kubernetesCluster.getName()), null);
             updateKubernetesClusterEntryForGC();
             return false;
         }
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Kubernetes cluster ID: %s is successfully deleted", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Kubernetes cluster : %s is successfully deleted", kubernetesCluster.getName()));
         }
         return true;
     }

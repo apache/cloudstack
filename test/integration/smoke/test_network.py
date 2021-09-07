@@ -23,7 +23,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import rebootRouter
 from marvin.sshClient import SshClient
-from marvin.lib.utils import cleanup_resources, get_process_status
+from marvin.lib.utils import cleanup_resources, get_process_status, get_host_credentials
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -38,7 +38,9 @@ from marvin.lib.base import (Account,
                              NIC,
                              Cluster)
 from marvin.lib.common import (get_domain,
+                               get_free_vlan,
                                get_zone,
+                               get_template,
                                get_test_template,
                                list_hosts,
                                list_publicIP,
@@ -54,6 +56,7 @@ from ddt import ddt, data
 # Import System modules
 import time
 import logging
+import random
 
 _multiprocess_shared_ = True
 
@@ -224,7 +227,8 @@ class TestPublicIP(cloudstackTestCase):
         # 1.listPublicIpAddresses should no more return the released address
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
         if list_pub_ip_addr_resp is None:
             return
@@ -276,7 +280,8 @@ class TestPublicIP(cloudstackTestCase):
 
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
 
         self.assertEqual(
@@ -880,7 +885,8 @@ class TestReleaseIP(cloudstackTestCase):
         while retriesCount > 0:
             listResponse = list_publicIP(
                 self.apiclient,
-                id=self.ip_addr.id
+                id=self.ip_addr.id,
+                state="Allocated"
             )
             if listResponse is None:
                 isIpAddressDisassociated = True
@@ -1571,8 +1577,22 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                     isDvSwitch = True
                     break
 
-        supported = isVmware and isDvSwitch
-        cls.vmwareHypervisorDvSwitchesForGuestTrafficNotPresent = not supported
+        # Supported hypervisor = KVM using OVS
+        isKVM = cls.hypervisor.lower() in ["kvm"]
+        isOVSEnabled = False
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        if isKVM :
+            # Test only if all the hosts use OVS
+            grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
+            hosts = list_hosts(cls.apiclient, type='Routing', hypervisor='kvm')
+            if len(hosts) > 0 :
+                isOVSEnabled = True
+            for host in hosts :
+                isOVSEnabled = isOVSEnabled and len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
+                    passwd=hostConfig["password"]).execute(grepCmd)) != 0
+
+        supported = isVmware and isDvSwitch or isKVM and isOVSEnabled
+        cls.unsupportedHardware = not supported
 
         cls._cleanup = []
 
@@ -1721,7 +1741,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return len(response) == 3
 
     def enable_l2_nic(self, vm):
-        vm_ip = list(filter(lambda x: x['networkid'] == self.isolated_network.id, vm.nic))[0]['ipaddress']
+        vm_ip = list([x for x in vm.nic if x['networkid'] == self.isolated_network.id])[0]['ipaddress']
         ssh_client = vm.get_ssh_client()
         eth_device = "eth0"
         if len(ssh_client.execute("/sbin/ifconfig %s | grep %s" % (eth_device, vm_ip))) > 0:
@@ -1730,7 +1750,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return vm_ip, eth_device
 
     @attr(tags=["advanced", "advancedns", "smoke", "pvlan"], required_hardware="true")
-    @skipTestIf("vmwareHypervisorDvSwitchesForGuestTrafficNotPresent")
+    @skipTestIf("unsupportedHardware")
     def test_l2_network_pvlan_connectivity(self):
         try:
             vm_community1_one = self.deploy_vm_multiple_nics("vmcommunity1one", self.l2_pvlan_community1)
@@ -1788,6 +1808,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             # Isolated PVLAN checks
             same_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_isolated2_ip)
             isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_community1_one_ip)
+            isolated_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_promiscuous1_ip)
 
             self.assertTrue(
                 same_isolated,
@@ -1796,6 +1817,10 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             self.assertTrue(
                 isolated_to_community_isolated,
                 "VMs on isolated PVLANs must be isolated on layer 2 to Vms on community PVLAN"
+            )
+            self.assertFalse(
+                isolated_to_promiscuous_isolated,
+                "VMs on isolated PVLANs must not be isolated on layer 2 to Vms on promiscuous PVLAN",
             )
 
             # Promiscuous PVLAN checks
@@ -1819,3 +1844,203 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             self.fail("Failing test. Error: %s" % e)
 
         return
+
+
+class TestSharedNetwork(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestSharedNetwork, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.template = get_template(cls.apiclient, cls.zone.id,
+                                    cls.services["ostype"])
+
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+        # Create Network Offering
+        cls.services["shared_network_offering"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.hv = cls.testClient.getHypervisorInfo()
+        cls.shared_network_offering = NetworkOffering.create(cls.apiclient, cls.services["shared_network_offering"],
+                                                             conservemode=False)
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(cls.shared_network_offering, cls.apiclient, state="enabled")
+
+        cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offering"])
+        physical_network, vlan = get_free_vlan(cls.apiclient, cls.zone.id)
+        # create network using the shared network offering created
+
+        cls.services["shared_network"]["acltype"] = "domain"
+        cls.services["shared_network"]["vlan"] = vlan
+        cls.services["shared_network"]["networkofferingid"] = cls.shared_network_offering.id
+        cls.services["shared_network"]["physicalnetworkid"] = physical_network.id
+
+        cls.setSharedNetworkParams("shared_network")
+        cls.shared_network = Network.create(cls.apiclient,
+                                            cls.services["shared_network"],
+                                            networkofferingid=cls.shared_network_offering.id,
+                                            zoneid=cls.zone.id)
+        cls._cleanup = [
+            cls.service_offering,
+            cls.shared_network,
+            cls.shared_network_offering
+        ]
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Cleanup resources used
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def tearDown(self):
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    @classmethod
+    def setSharedNetworkParams(cls, network, range=20):
+
+        # @range: range decides the endip. Pass the range as "x" if you want the difference between the startip
+        # and endip as "x"
+        # Set the subnet number of shared networks randomly prior to execution
+        # of each test case to avoid overlapping of ip addresses
+        shared_network_subnet_number = random.randrange(1, 254)
+        cls.services[network]["routerip"] = "172.16." + str(shared_network_subnet_number) + "." + str(15)
+        cls.services[network]["gateway"] = "172.16." + str(shared_network_subnet_number) + ".1"
+        cls.services[network]["startip"] = "172.16." + str(shared_network_subnet_number) + ".2"
+        cls.services[network]["endip"] = "172.16." + str(shared_network_subnet_number) + "." + str(range + 1)
+        cls.services[network]["netmask"] = "255.255.255.0"
+        logger.debug("Executing command '%s'" % cls.services[network])
+
+    def get_router_host(self, router):
+        self.assertEqual(
+            router.state,
+            'Running',
+            "Check list router response for router state"
+        )
+        hosts = list_hosts(
+            self.apiclient,
+            id=router.hostid)
+        self.assertEqual(
+            isinstance(hosts, list),
+            True,
+            "Check for list hosts response return valid data")
+        host = hosts[0]
+        if host.hypervisor.lower() in ("vmware", "hyperv"):
+            host.ipaddress = self.apiclient.connection.mgtSvr
+            host.user = self.apiclient.connection.user
+            host.password = self.apiclient.connection.passwd
+            host.port = 22
+        else:
+            host.user, host.password = get_host_credentials(self.config, host.ipaddress)
+            host.port = 22
+        return host
+
+    def verify_ip_address_in_router(self, router, host, ipaddress, device, isExist=True):
+        command = 'ip addr show %s |grep "inet "|cut -d " " -f6 |cut -d "/" -f1 |grep -w %s' % (device, ipaddress)
+        logger.debug("Executing command '%s'" % command)
+        result = get_process_status(
+            host.ipaddress,
+            host.port,
+            host.user,
+            host.password,
+            router.linklocalip,
+            command,
+            host.hypervisor.lower())
+        self.assertEqual(len(result) > 0 and result[0] == ipaddress, isExist, "ip %s verification failed" % ipaddress)
+
+    @attr(tags=["advanced", "shared"])
+    def test_01_deployVMInSharedNetwork(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
+        try:
+            self.virtual_machine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
+                                                         networkids=[self.shared_network.id],
+                                                         serviceofferingid=self.service_offering.id
+                                                         )
+        except Exception as e:
+            self.fail("Exception while deploying virtual machine: %s" % e)
+
+        routerIp = self.services["shared_network"]["routerip"]
+        nic_ip_address = self.dbclient.execute(
+            "select ip4_address from nics where strategy='Placeholder' and ip4_address = '%s';" % routerIp);
+
+        self.assertNotEqual(
+            len(nic_ip_address),
+            0,
+            "Placeholder ip for the VR in shared network isn't the same as what was passed"
+        )
+
+        routers = Router.list(
+            self.apiclient,
+            networkid=self.shared_network.id,
+            listall=True
+        )
+
+        for router in routers:
+            host = self.get_router_host(router)
+            self.verify_ip_address_in_router(router, host, routerIp, "eth0", True)
+
+        # expunge VM
+        VirtualMachine.delete(self.virtual_machine, self.apiclient, expunge=True)
+
+    @attr(tags=["advanced", "shared"])
+    def test_02_verifyRouterIpAfterNetworkRestart(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
+        routerIp = self.services["shared_network"]["routerip"]
+        self.debug("restarting network with cleanup")
+        try:
+            self.shared_network.restart(self.apiclient, cleanup=True)
+        except Exception as e:
+            self.fail("Failed to cleanup network - %s" % e)
+
+        self.debug("Listing routers for network: %s" % self.shared_network.name)
+        routers = Router.list(
+            self.apiclient,
+            networkid=self.shared_network.id,
+            listall=True
+        )
+        self.assertEqual(
+            len(routers),
+            1,
+            "Router for the shared network wasn't found)"
+        )
+
+        for router in routers:
+            host = self.get_router_host(router)
+            self.verify_ip_address_in_router(router, host, routerIp, "eth0", True)
+
+    @attr(tags=["advanced", "shared"])
+    def test_03_destroySharedNetwork(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
+        routerIp = self.services["shared_network"]["routerip"]
+        try:
+            self.shared_network.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the shared network")
+        self._cleanup.remove(self.shared_network)
+        self.debug("Fetch the placeholder record for the router")
+        nic_ip_address = self.dbclient.execute(
+            "select ip4_address from nics where strategy='Placeholder' and ip4_address = '%s' and removed is NOT NULL;" % routerIp);
+
+        self.assertNotEqual(
+            len(nic_ip_address),
+            0,
+            "Failed to find the placeholder IP"
+        )

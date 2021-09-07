@@ -340,8 +340,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             File dataDirectory = new File(dataDirectoryInSecondaryStore);
             boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
             if (existsInSecondaryStore) {
-                // scp from system VM to mounted sec storage directory
-                File permKey = new File("/var/cloudstack/management/.ssh/id_rsa");
+                String homeDir = System.getProperty("user.home");
+                File permKey = new File(homeDir + "/.ssh/id_rsa");
                 SshHelper.scpFrom(vmSshIp, 3922, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsFile);
             }
 
@@ -372,7 +372,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
      * @return a valid secondary storage with less than DiskQuotaPercentageThreshold set by global config
      */
     private DataStore getImageStore(Long zoneId) {
-        List<DataStore> stores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> stores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (CollectionUtils.isEmpty(stores)) {
             throw new CloudRuntimeException("No Secondary storage found in Zone with Id: " + zoneId);
         }

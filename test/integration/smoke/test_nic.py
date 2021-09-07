@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """ NIC tests for VM """
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -22,7 +23,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine,
                              NetworkOffering)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                get_domain)
 from marvin.lib.utils import validateList
 from marvin.codes import PASS
@@ -33,7 +34,7 @@ import sys
 import logging
 import time
 import threading
-import Queue
+from queue import Queue
 
 
 class TestNic(cloudstackTestCase):
@@ -75,12 +76,14 @@ class TestNic(cloudstackTestCase):
             if self.zone.localstorageenabled:
                 self.services["service_offerings"][
                     "tiny"]["storagetype"] = 'local'
-
-            template = get_template(
+            template = get_suitable_test_template(
                 self.apiclient,
                 self.zone.id,
-                self.services["ostype"]
+                self.services["ostype"],
+                self.hypervisor
             )
+            if template == FAILED:
+                assert False, "get_suitable_test_template() failed to return template with description %s" % self.services["ostype"]
             # Set Zones and disk offerings
             self.services["small"]["zoneid"] = self.zone.id
             self.services["small"]["template"] = template.id
@@ -371,7 +374,7 @@ class TestNic(cloudstackTestCase):
 
         # Start multiple networks
         tsize = 8
-        queue = Queue.Queue()
+        queue = Queue()
         for _ in range(tsize):
             worker = NetworkMaker(queue, createNetwork)
             worker.setDaemon(True)

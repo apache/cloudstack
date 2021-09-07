@@ -25,10 +25,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -64,6 +70,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     private HostDao hostDao;
+    @Inject
+    private DedicatedResourceDao dedicatedResourceDao;
     private final String findOneHostOnPrimaryStorage = "select t.id from "
                             + "(select h.id, cd.value "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
@@ -115,6 +123,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         StringBuilder sbuilder = new StringBuilder();
         sbuilder.append(sqlBase);
 
+        List<Long> dedicatedHosts = new ArrayList<Long>();
+
         if (scope != null) {
             if (scope.getScopeType() == ScopeType.HOST) {
                 sbuilder.append(" and h.id = ");
@@ -122,15 +132,23 @@ public class DefaultEndPointSelector implements EndPointSelector {
             } else if (scope.getScopeType() == ScopeType.CLUSTER) {
                 sbuilder.append(" and h.cluster_id = ");
                 sbuilder.append(scope.getScopeId());
+                dedicatedHosts = dedicatedResourceDao.findHostsByCluster(scope.getScopeId());
             } else if (scope.getScopeType() == ScopeType.ZONE) {
                 sbuilder.append(" and h.data_center_id = ");
                 sbuilder.append(scope.getScopeId());
+                dedicatedHosts = dedicatedResourceDao.findHostsByZone(scope.getScopeId());
             }
+        } else {
+            dedicatedHosts = dedicatedResourceDao.listAllHosts();
         }
 
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
-        sbuilder.append(" ORDER by rand() limit 1");
+        sbuilder.append(" ORDER by ");
+        if (dedicatedHosts.size() > 0) {
+            moveDedicatedHostsToLowerPriority(sbuilder, dedicatedHosts);
+        }
+        sbuilder.append(" rand() limit 1");
         String sql = sbuilder.toString();
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -152,6 +170,42 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
 
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+    }
+
+    private void moveDedicatedHostsToLowerPriority(StringBuilder sbuilder, List<Long> dedicatedHosts) {
+
+        // Check if we have a call context
+        final CallContext context = CallContext.current();
+        if (context != null) {
+            Account account = context.getCallingAccount();
+            if (account != null) {
+                // Remove hosts for this account. Only leave hosts dedicated to other accounts in the lower priority list.
+                Pair<List<DedicatedResourceVO>, Integer> hostIds = dedicatedResourceDao.searchDedicatedHosts(null, null, account.getId(), null, null);
+                List<DedicatedResourceVO> accountDedicatedHosts = hostIds.first();
+                for (DedicatedResourceVO accountDedicatedResource: accountDedicatedHosts){
+                    Iterator<Long> dedicatedHostsIterator = dedicatedHosts.iterator();
+                    while (dedicatedHostsIterator.hasNext()) {
+                        if (dedicatedHostsIterator.next() == accountDedicatedResource.getHostId()) {
+                            dedicatedHostsIterator.remove();
+                        }
+                    }
+                }
+            }
+        }
+
+        if (dedicatedHosts.size() > 0) {
+            Collections.shuffle(dedicatedHosts); // Randomize dedicated hosts as well.
+            sbuilder.append("field(t.id, ");
+            int hostIndex = 0;
+            for (Long hostId: dedicatedHosts) { // put dedicated hosts at the end of the result set
+                sbuilder.append("'" + hostId + "'");
+                hostIndex++;
+                if (hostIndex < dedicatedHosts.size()){
+                    sbuilder.append(",");
+                }
+            }
+            sbuilder.append(")," );
+        }
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
@@ -264,6 +318,27 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
+    @Override
+    public List<EndPoint> findAllEndpointsForScope(DataStore store) {
+        Long dcId = null;
+        Scope storeScope = store.getScope();
+        if (storeScope.getScopeType() == ScopeType.ZONE) {
+            dcId = storeScope.getScopeId();
+        }
+        // find ssvm that can be used to download data to store. For zone-wide
+        // image store, use SSVM for that zone. For region-wide store,
+        // we can arbitrarily pick one ssvm to do that task
+        List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
+        if (ssAHosts == null || ssAHosts.isEmpty()) {
+            return null;
+        }
+        List<EndPoint> endPoints = new ArrayList<EndPoint>();
+        for (HostVO host: ssAHosts) {
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
+        }
+        return endPoints;
+    }
+
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
@@ -333,7 +408,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
-    private EndPoint getEndPointFromHostId(Long hostId) {
+    public EndPoint getEndPointFromHostId(Long hostId) {
         HostVO host = hostDao.findById(hostId);
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }

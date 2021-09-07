@@ -62,6 +62,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         RoutesByGatewayCount = createSearchBuilder(Long.class);
         RoutesByGatewayCount.select(null, Func.COUNT, RoutesByGatewayCount.entity().getId());
         RoutesByGatewayCount.and("gatewayId", RoutesByGatewayCount.entity().getVpcGatewayId(), Op.EQ);
+        RoutesByGatewayCount.and("state", RoutesByGatewayCount.entity().getState(), Op.EQ);
         RoutesByGatewayCount.done();
     }
 
@@ -92,9 +93,17 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
     }
 
     @Override
+    public List<StaticRouteVO> listByGatewayId(long gatewayId) {
+        SearchCriteria<StaticRouteVO> sc = AllFieldsSearch.create();
+        sc.setParameters("gatewayId", gatewayId);
+        return listBy(sc);
+    }
+
+    @Override
     public long countRoutesByGateway(long gatewayId) {
         SearchCriteria<Long> sc = RoutesByGatewayCount.create();
         sc.setParameters("gatewayId", gatewayId);
+        sc.setParameters("state", "Active");
         return customSearch(sc, null).get(0);
     }
 

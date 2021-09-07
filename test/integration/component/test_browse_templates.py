@@ -20,7 +20,8 @@
 
 import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
@@ -46,7 +47,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.apiclient = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls._cleanup = []
-        cls.cleanup = []
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.unsupportedHypervisor = False
@@ -69,6 +69,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.testdata["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.template = get_template(
             cls.apiclient,
@@ -82,23 +83,20 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.apiclient, 
             cls.testdata["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.testdata["resized_disk_offering"],
             custom=True
         )
+        cls._cleanup.append(cls.disk_offering)
         cls.project = Project.create(
                                  cls.apiclient,
                                  cls.testdata["project"],
                                  account=cls.account.name,
                                  domainid=cls.account.domainid
                                  )
-        cls._cleanup = [
-            cls.project,
-            cls.account,
-            cls.service_offering,
-            cls.disk_offering
-        ]
+        cls._cleanup.append(cls.project)
 
     def setUp(self):
 
@@ -148,6 +146,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.skipTest("Skipping test because unsupported hypervisor\
                             %s" % self.hypervisor)
 
+        self.cleanup = []
+
     def getOsType(self, param):
         cmd = listOsTypes.listOsTypesCmd()
         cmd.description = param
@@ -160,7 +160,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -284,7 +284,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -377,7 +377,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -427,7 +427,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -477,7 +477,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
         time.sleep(60)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -545,7 +545,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     self.apiclient,
                     id=volid
                 )
-        print list_volume_response[0]
+        print(list_volume_response[0])
         vmlist.attach_volume(
                     self.apiclient,
                     list_volume_response[0]
@@ -612,7 +612,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     self.apiclient,
                     id=volid
                 )
-        print list_volume_response[0]
+        print(list_volume_response[0])
         vmdetails.detach_volume(self.apiclient,list_volume_response[0])
 
         # Sleep to ensure the current state will reflected in other calls
@@ -1443,7 +1443,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_01_Browser_template_Life_cycle_tpath(self):
         """
         Test Browser_template_Life_cycle
@@ -1505,7 +1506,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 #            self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
         """
         Test SSVM_Life_Cycle_With_Browser_template_TPath 
@@ -1571,7 +1573,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_04_Browser_template_ResetVM_With_Deleted_Template(self):
         """
         Test Browser_template_upload_ResetVM_With_Deleted_Template
@@ -1592,7 +1595,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_05_Browser_Upload_Template_with_all_API_parameters(self):
         """
         Test Browser_Upload_Template with all API parameters
@@ -1618,9 +1622,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-
-
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_06_Browser_Upload_template_resource_limits(self):
         """
         Test Browser Upload Template Resource limits
@@ -1643,7 +1646,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_07_Browser_Upload_template_secondary_storage_resource_limits(self):
         """
         Test Browser_Upload_Template Secondary Storage Resource limits
@@ -1673,7 +1677,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_08_Browser_Upload_template_resource_limits_after_deletion(self):
         """
         Test Browser_Upload_Template Resource limits after template deletion
@@ -1693,7 +1698,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exceptione occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_09_Browser_Upload_Volume_secondary_storage_resource_limits_after_deletion(self):
         """
         Test Browser_Upload_Template Secondary Storage Resource limits after template deletion
@@ -1721,8 +1727,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    # @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["TODO"], required_hardware="false")
     def test_browser_upload_template_incomplete(self):
         """
         Test browser based incomplete template upload, followed by SSVM destroy. Template should go to UploadAbandoned state and get cleaned up.
@@ -1767,9 +1773,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(self):
-        try:
-            self.apiclient = super(TestBrowseUploadVolume,self).getClsTestClient().getApiClient()
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestBrowseUploadVolume, self).tearDownClass()
+
+    def tearDown(self):
+        super(TestBrowseUploadVolume, self).tearDown()

@@ -276,6 +276,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
         params.put("path", uri.getPath());
         params.put("protocol", StoragePoolType.NetworkFilesystem);
         params.put("dcId", dcId.toString());
+        params.put("hypervisorType", HypervisorType.None);
         params.put("clusterId", clusterId.toString());
         params.put("name", this.primaryName);
         params.put("port", "1");
@@ -318,6 +319,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
             params.put("path", uri.getPath());
             params.put("protocol", Storage.StoragePoolType.NetworkFilesystem);
             params.put("dcId", dcId.toString());
+            params.put("hypervisorType", HypervisorType.None);
             params.put("clusterId", clusterId.toString());
             params.put("name", this.primaryName);
             params.put("port", "1");

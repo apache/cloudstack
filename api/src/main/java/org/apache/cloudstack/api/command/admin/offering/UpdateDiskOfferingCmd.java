@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -76,6 +77,52 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
             description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13")
     private String zoneIds;
+
+    @Parameter(name = ApiConstants.TAGS,
+            type = CommandType.STRING,
+            description = "comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
+            authorized = {RoleType.Admin},
+            since = "4.15")
+    private String tags;
+
+    @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, description = "bytes read rate of the disk offering", since = "4.15")
+    private Long bytesReadRate;
+
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, description = "burst bytes read rate of the disk offering", since = "4.15")
+    private Long bytesReadRateMax;
+
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    private Long bytesReadRateMaxLength;
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, description = "bytes write rate of the disk offering", since = "4.15")
+    private Long bytesWriteRate;
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, description = "burst bytes write rate of the disk offering", since = "4.15")
+    private Long bytesWriteRateMax;
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH,  type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    private Long bytesWriteRateMaxLength;
+
+    @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, description = "io requests read rate of the disk offering", since = "4.15")
+    private Long iopsReadRate;
+
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, description = "burst requests read rate of the disk offering", since = "4.15")
+    private Long iopsReadRateMax;
+
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    private Long iopsReadRateMaxLength;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, description = "io requests write rate of the disk offering", since = "4.15")
+    private Long iopsWriteRate;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, description = "burst io requests write rate of the disk offering", since = "4.15")
+    private Long iopsWriteRateMax;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, description = "length (in seconds) of the burst", since = "4.15")
+    private Long iopsWriteRateMaxLength;
+
+    @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "the cache mode to use for this disk offering", since = "4.15")
+    private String cacheMode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -161,7 +208,63 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
         return validZoneIds;
     }
 
-/////////////////////////////////////////////////////
+    public String getTags() {
+        return tags;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public Long getBytesReadRateMax() {
+        return bytesReadRateMax;
+    }
+
+    public Long getBytesReadRateMaxLength() {
+        return bytesReadRateMaxLength;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public Long getBytesWriteRateMax() {
+        return bytesWriteRateMax;
+    }
+
+    public Long getBytesWriteRateMaxLength() {
+        return bytesWriteRateMaxLength;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public Long getIopsReadRateMax() {
+        return iopsReadRateMax;
+    }
+
+    public Long getIopsReadRateMaxLength() {
+        return iopsReadRateMaxLength;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
+
+    public Long getIopsWriteRateMax() {
+        return iopsWriteRateMax;
+    }
+
+    public Long getIopsWriteRateMaxLength() {
+        return iopsWriteRateMaxLength;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 

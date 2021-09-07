@@ -17,7 +17,9 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +30,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -50,6 +53,7 @@ import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -70,6 +74,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.common.base.Strings;
@@ -122,9 +127,19 @@ public class KubernetesClusterActionWorker {
 
     protected KubernetesCluster kubernetesCluster;
     protected Account owner;
+    protected VirtualMachineTemplate clusterTemplate;
     protected File sshKeyFile;
     protected String publicIpAddress;
     protected int sshPort;
+
+
+    protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
+    protected final String deployProviderScriptFilename = "deploy-provider";
+    protected final String scriptPath = "/opt/bin/";
+    protected File deploySecretsScriptFile;
+    protected File deployProviderScriptFile;
+    protected KubernetesClusterManagerImpl manager;
+    protected String[] keys;
 
     protected KubernetesClusterActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         this.kubernetesCluster = kubernetesCluster;
@@ -132,10 +147,12 @@ public class KubernetesClusterActionWorker {
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
+        this.manager = clusterManager;
     }
 
     protected void init() {
         this.owner = accountDao.findById(kubernetesCluster.getAccountId());
+        this.clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
     }
 
@@ -229,13 +246,13 @@ public class KubernetesClusterActionWorker {
         });
     }
 
-    private UserVm fetchMasterVmIfMissing(final UserVm masterVm) {
-        if (masterVm != null) {
-            return masterVm;
+    private UserVm fetchControlVmIfMissing(final UserVm controlVm) {
+        if (controlVm != null) {
+            return controlVm;
         }
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (CollectionUtils.isEmpty(clusterVMs)) {
-            LOGGER.warn(String.format("Unable to retrieve VMs for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("Unable to retrieve VMs for Kubernetes cluster : %s", kubernetesCluster.getName()));
             return null;
         }
         List<Long> vmIds = new ArrayList<>();
@@ -246,16 +263,16 @@ public class KubernetesClusterActionWorker {
         return userVmDao.findById(vmIds.get(0));
     }
 
-    protected String getMasterVmPrivateIp() {
+    protected String getControlVmPrivateIp() {
         String ip = null;
-        UserVm vm = fetchMasterVmIfMissing(null);
+        UserVm vm = fetchControlVmIfMissing(null);
         if (vm != null) {
             ip = vm.getPrivateIpAddress();
         }
         return ip;
     }
 
-    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm masterVm) {
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
         if (detail != null && !Strings.isNullOrEmpty(detail.getValue())) {
@@ -263,13 +280,13 @@ public class KubernetesClusterActionWorker {
         }
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         if (network == null) {
-            LOGGER.warn(String.format("Network for Kubernetes cluster ID: %s cannot be found", kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
             List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), true);
             if (CollectionUtils.isEmpty(addresses)) {
-                LOGGER.warn(String.format("No public IP addresses found for network ID: %s, Kubernetes cluster ID: %s", network.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
             for (IpAddress address : addresses) {
@@ -277,18 +294,18 @@ public class KubernetesClusterActionWorker {
                     return new Pair<>(address.getAddress().addr(), port);
                 }
             }
-            LOGGER.warn(String.format("No source NAT IP addresses found for network ID: %s, Kubernetes cluster ID: %s", network.getUuid(), kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             return new Pair<>(null, port);
         } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
             port = 22;
-            masterVm = fetchMasterVmIfMissing(masterVm);
-            if (masterVm == null) {
-                LOGGER.warn(String.format("Unable to retrieve master VM for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            controlVm = fetchControlVmIfMissing(controlVm);
+            if (controlVm == null) {
+                LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
-            return new Pair<>(masterVm.getPrivateIpAddress(), port);
+            return new Pair<>(controlVm.getPrivateIpAddress(), port);
         }
-        LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+        LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
     }
 
@@ -303,26 +320,26 @@ public class KubernetesClusterActionWorker {
             failedEvent = KubernetesCluster.Event.CreateFailed;
         }
         if (version == null) {
-            logTransitStateAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         VMTemplateVO iso = templateDao.findById(version.getIsoId());
         if (iso == null) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not found.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not found.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         if (!iso.getFormat().equals(Storage.ImageFormat.ISO)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Invalid Binaries ISO.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Invalid Binaries ISO.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not active.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not active.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         for (UserVm vm : clusterVMs) {
             try {
-                templateService.attachIso(iso.getId(), vm.getId());
+                templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Attached binaries ISO for VM: %s in cluster: %s", vm.getUuid(), kubernetesCluster.getName()));
+                    LOGGER.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
             } catch (CloudRuntimeException ex) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM: %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM : %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
             }
         }
     }
@@ -335,17 +352,17 @@ public class KubernetesClusterActionWorker {
         for (UserVm vm : clusterVMs) {
             boolean result = false;
             try {
-                result = templateService.detachIso(vm.getId());
+                result = templateService.detachIso(vm.getId(), true);
             } catch (CloudRuntimeException ex) {
-                LOGGER.warn(String.format("Failed to detach binaries ISO from VM ID: %s in the Kubernetes cluster ID: %s ", vm.getUuid(), kubernetesCluster.getUuid()), ex);
+                LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }
             if (result) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Detached Kubernetes binaries from VM ID: %s in the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
+                    LOGGER.info(String.format("Detached Kubernetes binaries from VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
                 continue;
             }
-            LOGGER.warn(String.format("Failed to detach binaries ISO from VM ID: %s in the Kubernetes cluster ID: %s ", vm.getUuid(), kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()));
         }
     }
 
@@ -373,8 +390,113 @@ public class KubernetesClusterActionWorker {
         try {
             return _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
         } catch (NoTransitionException nte) {
-            LOGGER.warn(String.format("Failed to transition state of the Kubernetes cluster ID: %s in state %s on event %s", kubernetesCluster.getUuid(), kubernetesCluster.getState().toString(), e.toString()), nte);
+            LOGGER.warn(String.format("Failed to transition state of the Kubernetes cluster : %s in state %s on event %s",
+                kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
+    }
+
+    protected boolean createCloudStackSecret(String[] keys) {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            final String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
+                scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, command, 10000, 10000, 60000);
+            return result.first();
+        } catch (Exception e) {
+            String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return false;
+    }
+
+    protected File retrieveScriptFile(String filename) {
+        File file = null;
+        try {
+            String data = readResourceFile("/script/" + filename);
+            file = File.createTempFile(filename, ".sh");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(data);
+            writer.close();
+        } catch (IOException e) {
+            logAndThrow(Level.ERROR, String.format("Kubernetes Cluster %s : Failed to to fetch script %s",
+                kubernetesCluster.getName(), filename), e);
+        }
+        return file;
+    }
+
+    protected void retrieveScriptFiles() {
+        deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
+        deployProviderScriptFile = retrieveScriptFile(deployProviderScriptFilename);
+    }
+
+    protected void copyScripts(String nodeAddress, final int sshPort) {
+        try {
+            SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                    "~/", deploySecretsScriptFile.getAbsolutePath(), "0755");
+            SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                    "~/", deployProviderScriptFile.getAbsolutePath(), "0755");
+            String cmdStr = String.format("sudo mv ~/%s %s/%s", deploySecretsScriptFile.getName(), scriptPath, deploySecretsScriptFilename);
+            SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                cmdStr, 10000, 10000, 10 * 60 * 1000);
+            cmdStr = String.format("sudo mv ~/%s %s/%s", deployProviderScriptFile.getName(), scriptPath, deployProviderScriptFilename);
+            SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                cmdStr, 10000, 10000, 10 * 60 * 1000);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    protected boolean deployProvider() {
+        Network network = networkDao.findById(kubernetesCluster.getNetworkId());
+        // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
+        if (network.getGuestType() != GuestType.Isolated) {
+            logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isolated network",
+                kubernetesCluster.getName()), null);
+            return true;
+        }
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            String command = String.format("sudo %s/%s", scriptPath, deployProviderScriptFilename);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, command, 10000, 10000, 60000);
+
+            // Maybe the file isn't present. Try and copy it
+            if (!result.first()) {
+                logMessage(Level.INFO, "Provider files missing. Adding them now", null);
+                retrieveScriptFiles();
+                copyScripts(publicIpAddress, sshPort);
+
+                if (!createCloudStackSecret(keys)) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                        kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                }
+
+                // If at first you don't succeed ...
+                result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    pkFile, null, command, 10000, 10000, 60000);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(result.second());
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to deploy kubernetes provider: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        }
+    }
+
+    public void setKeys(String[] keys) {
+        this.keys = keys;
     }
 }

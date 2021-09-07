@@ -53,6 +53,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     public class Completion implements UploadCompleteCallback {
@@ -307,12 +309,15 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
         //We just need to remove the UUID.vhd
         String extractUrl = cmd.getExtractUrl();
-        command.add("unlink /var/www/html/userdata/" + extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
-        String result = command.execute();
-        if (result != null) {
-            // FIXME - Ideally should bail out if you cant delete symlink. Not doing it right now.
-            // This is because the ssvm might already be destroyed and the symlinks do not exist.
-            s_logger.warn("Error in deleting symlink :" + result);
+        String result;
+        if (extractUrl != null) {
+            command.add("unlink /var/www/html/userdata/" + extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
+            result = command.execute();
+            if (result != null) {
+                // FIXME - Ideally should bail out if you cant delete symlink. Not doing it right now.
+                // This is because the ssvm might already be destroyed and the symlinks do not exist.
+                s_logger.warn("Error in deleting symlink :" + result);
+            }
         }
 
         // If its a volume also delete the Hard link since it was created only for the purpose of download.
@@ -439,7 +444,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         TemplateUploader tu = uj.getTemplateUploader();
         s_logger.warn("Upload Completion for jobId: " + jobId + ", status=" + status);
-        s_logger.warn("UploadedBytes=" + tu.getUploadedBytes() + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
+        s_logger.warn("UploadedBytes=" + toHumanReadableSize(tu.getUploadedBytes()) + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
 
         switch (status) {
         case ABORTED:

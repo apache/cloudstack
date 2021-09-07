@@ -51,6 +51,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @ResourceWrapper(handles =  BackupSnapshotCommand.class)
 public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<BackupSnapshotCommand, Answer, LibvirtComputingResource> {
 
@@ -121,7 +123,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                             bos.write(buf, 0, bytes);
                             offset += bytes;
                         }
-                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + offset);
+                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset));
                     }catch(final IOException ex)
                     {
                         s_logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());

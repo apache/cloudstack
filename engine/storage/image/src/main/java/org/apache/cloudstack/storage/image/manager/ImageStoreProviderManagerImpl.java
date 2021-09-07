@@ -33,6 +33,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
@@ -47,7 +50,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
-public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager {
+public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
     @Inject
     ImageStoreDao dataStoreDao;
@@ -57,7 +60,13 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     DataStoreProviderManager providerManager;
     @Inject
     StatsCollector _statsCollector;
+    @Inject
+    ConfigurationDao configDao;
+
     Map<String, ImageStoreDriver> driverMaps;
+
+    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey<String>("Advanced", String.class, "image.store.allocation.algorithm", "firstfitleastconsumed",
+            "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation", true, ConfigKey.Scope.Global );
 
     @PostConstruct
     public void config() {
@@ -110,12 +119,30 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
     @Override
     public List<DataStore> listImageStoresByScope(ZoneScope scope) {
-        List<ImageStoreVO> stores = dataStoreDao.findByScope(scope);
+        List<ImageStoreVO> stores = dataStoreDao.findByZone(scope, null);
         List<DataStore> imageStores = new ArrayList<DataStore>();
         for (ImageStoreVO store : stores) {
             imageStores.add(getImageStore(store.getId()));
         }
         return imageStores;
+    }
+
+    @Override
+    public List<DataStore> listImageStoresByScopeExcludingReadOnly(ZoneScope scope) {
+        String allocationAlgorithm = ImageStoreAllocationAlgorithm.value();
+
+        List<ImageStoreVO> stores = dataStoreDao.findByZone(scope, Boolean.FALSE);
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        if (allocationAlgorithm.equals("random")) {
+            Collections.shuffle(imageStores);
+            return imageStores;
+        } else if (allocationAlgorithm.equals("firstfitleastconsumed")) {
+            return orderImageStoresOnFreeCapacity(imageStores);
+        }
+        return null;
     }
 
     @Override
@@ -179,6 +206,31 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     }
 
     @Override
+    public List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores) {
+        List<DataStore> stores = new ArrayList<>();
+        if (imageStores.size() > 1) {
+            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
+                @Override
+                public int compare(DataStore store1, DataStore store2) {
+                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
+                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
+                }
+            });
+            for (DataStore imageStore : imageStores) {
+                // Return image store if used percentage is less then threshold value i.e. 90%.
+                if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                    stores.add(imageStore);
+                }
+            }
+        } else if (imageStores.size() == 1) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
+                stores.add(imageStores.get(0));
+            }
+        }
+        return stores;
+    }
+
+    @Override
     public List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores) {
         List<DataStore> stores = new ArrayList<>();
         for (DataStore imageStore : imageStores) {
@@ -194,5 +246,15 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
                     Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         }
         return stores;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ImageStoreProviderManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { ImageStoreAllocationAlgorithm };
     }
 }

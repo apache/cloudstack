@@ -21,9 +21,15 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ProjectRole;
+import org.apache.cloudstack.acl.ProjectRolePermission;
+import org.apache.cloudstack.acl.ProjectRoleService;
+import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -32,6 +38,7 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.UnavailableCommandException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.vpc.VpcOffering;
@@ -40,8 +47,11 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
@@ -51,6 +61,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DomainChecker extends AdapterBase implements SecurityChecker {
@@ -64,7 +75,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     ProjectManager _projectMgr;
     @Inject
-    ProjectAccountDao _projecAccountDao;
+    ProjectAccountDao _projectAccountDao;
     @Inject
     NetworkModel _networkMgr;
     @Inject
@@ -79,7 +90,14 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     VpcOfferingDetailsDao vpcOfferingDetailsDao;
+    @Inject
+    private ProjectRoleService projectRoleService;
+    @Inject
+    private ProjectDao projectDao;
+    @Inject
+    private AccountService accountService;
 
+    public static final Logger s_logger = Logger.getLogger(DomainChecker.class.getName());
     protected DomainChecker() {
         super();
     }
@@ -87,16 +105,21 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         if (caller.getState() != Account.State.enabled) {
-            throw new PermissionDeniedException(caller + " is disabled.");
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " is disabled.");
         }
+
+        if (domain == null) {
+            throw new PermissionDeniedException(String.format("Provided domain is NULL, cannot check access for account [uuid=%s, name=%s]", caller.getUuid(), caller.getAccountName()));
+        }
+
         long domainId = domain.getId();
 
         if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+                throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
         }
 
         return true;
@@ -107,6 +130,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (user.getRemoved() != null) {
             throw new PermissionDeniedException(user + " is no longer active.");
         }
+
         Account account = _accountDao.findById(user.getAccountId());
         return checkAccess(account, domain);
     }
@@ -115,7 +139,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
         if (entity instanceof VirtualMachineTemplate) {
-
             VirtualMachineTemplate template = (VirtualMachineTemplate)entity;
             Account owner = _accountDao.findById(template.getAccountId());
             // validate that the template is usable by the account
@@ -132,7 +155,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 // account can launch a VM from this template
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
-                    throw new PermissionDeniedException(caller + " does not have permission to launch instances from " + template);
+                    throw new PermissionDeniedException("Account " + caller.getAccountName() +
+                            " does not have permission to launch instances from template " + template.getName());
                 }
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
@@ -154,7 +178,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         } else {
             if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
-
                 if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
@@ -164,6 +187,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     } else if (!_projectMgr.canAccessProjectAccount(caller, account.getId())) {
                         throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
                     }
+                    checkOperationPermitted(caller, entity);
                 } else {
                     if (caller.getId() != entity.getAccountId()) {
                         throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
@@ -171,10 +195,62 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 }
             }
         }
-
         return true;
     }
 
+    private boolean checkOperationPermitted(Account caller, ControlledEntity entity) {
+        User user = CallContext.current().getCallingUser();
+        Project project = projectDao.findByProjectAccountId(entity.getAccountId());
+        if (project == null) {
+            throw new CloudRuntimeException("Unable to find project to which the entity belongs to");
+        }
+        ProjectAccount projectUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
+        String apiCommandName = CallContext.current().getApiName();
+
+        if (accountService.isRootAdmin(caller.getId()) || accountService.isDomainAdmin(caller.getAccountId())) {
+            return true;
+        }
+
+        if (projectUser != null) {
+            if (projectUser.getAccountRole() == ProjectAccount.Role.Admin) {
+                return true;
+            } else {
+                return isPermitted(project, projectUser, apiCommandName);
+            }
+        }
+
+        ProjectAccount projectAccount = _projectAccountDao.findByProjectIdAccountId(project.getId(), caller.getAccountId());
+        if (projectAccount != null) {
+            if (projectAccount.getAccountRole() == ProjectAccount.Role.Admin) {
+                return true;
+            } else {
+                return isPermitted(project, projectAccount, apiCommandName);
+            }
+        }
+        throw new UnavailableCommandException("The given command '" + apiCommandName + "' either does not exist or is not available for the user");
+    }
+
+    private boolean isPermitted(Project project, ProjectAccount projectUser, String apiCommandName) {
+        ProjectRole projectRole = null;
+        if(projectUser.getProjectRoleId() != null) {
+            projectRole = projectRoleService.findProjectRole(projectUser.getProjectRoleId(), project.getId());
+        }
+
+        if (projectRole == null) {
+            return true;
+        }
+
+        for (ProjectRolePermission permission : projectRoleService.findAllProjectRolePermissions(project.getId(), projectRole.getId())) {
+            if (permission.getRule().matches(apiCommandName)) {
+                if (RolePermissionEntity.Permission.ALLOW.equals(permission.getPermission())) {
+                    return true;
+                } else {
+                    throw new PermissionDeniedException("The given command '" + apiCommandName + "' either does not exist or is not available for the user");
+                }
+            }
+        }
+        return true;
+    }
     @Override
     public boolean checkAccess(User user, ControlledEntity entity) throws PermissionDeniedException {
         Account account = _accountDao.findById(user.getAccountId());

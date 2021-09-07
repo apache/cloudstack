@@ -81,4 +81,25 @@ public class LibvirtStoragePoolDefTest extends TestCase {
 
         assertEquals(expectedXml, pool.toString());
     }
+
+    public void testRbdStoragePoolWithoutPort() {
+        PoolType type = PoolType.RBD;
+        String name = "myRBDPool";
+        String uuid = "30a5fb6f-7277-44ce-9065-67e2bfdb0ebb";
+        String host = "::1";
+        String dir  = "rbd";
+        String authUsername = "admin";
+        String secretUuid = "d0d616dd-3446-409e-84d7-44465e325b35";
+        AuthenticationType auth = AuthenticationType.CEPH;
+        int port = 0;
+
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, port, dir, authUsername, auth, secretUuid);
+
+        String expectedXml = "<pool type='" + type.toString() + "'>\n<name>" + name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
+                             "<source>\n<host name='" + host + "'/>\n<name>" + dir + "</name>\n" +
+                             "<auth username='" + authUsername + "' type='" + auth.toString() + "'>\n<secret uuid='" + secretUuid + "'/>\n" +
+                             "</auth>\n</source>\n</pool>\n";
+
+        assertEquals(expectedXml, pool.toString());
+    }
 }

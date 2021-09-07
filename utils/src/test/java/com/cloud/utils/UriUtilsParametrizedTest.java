@@ -102,7 +102,10 @@ public class UriUtilsParametrizedTest {
             final String realFormat = format;
 
             for (String extension : FORMATS) {
-                final boolean expectSuccess = format.equals(extension.replace("img", "raw"));
+                boolean expectSuccess = format.equals(extension.replace("img", "raw"));
+                if (format.equals("qcow2") && extension.equals("img")) {
+                    expectSuccess = true;
+                }
 
                 for (String commpressionFormat : COMMPRESSION_FORMATS) {
                     final String url = validBaseUri + extension + commpressionFormat;

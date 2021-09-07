@@ -19,13 +19,16 @@ package org.apache.cloudstack.outofbandmanagement.dao;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
 
 import java.util.List;
 
-public interface OutOfBandManagementDao extends GenericDao<OutOfBandManagementVO, Long>, StateDao<OutOfBandManagement.PowerState, OutOfBandManagement.PowerState.Event, OutOfBandManagement> {
+public interface OutOfBandManagementDao extends GenericDao<OutOfBandManagementVO, Long>,
+        StateDao<OutOfBandManagement.PowerState, OutOfBandManagement.PowerState.Event, OutOfBandManagement> {
     OutOfBandManagement findByHost(long hostId);
+    OutOfBandManagementVO findByHostAddress(String address);
     List<OutOfBandManagementVO> findAllByManagementServer(long serverId);
     void expireServerOwnership(long serverId);
 }

@@ -27,8 +27,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -61,6 +63,8 @@ import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.StorageOperations;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -325,7 +329,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                     destSr = hypervisorResource.prepareManagedSr(conn, details);
                 } else {
-                    final String srName = destStore.getUuid();
+                    final String srName = CitrixHelper.getSRNameLabel(destStore.getUuid(), destStore.getPoolType(), destStore.getPath());
                     final Set<SR> srs = SR.getByNameLabel(conn, srName);
 
                     if (srs.size() != 1) {
@@ -491,7 +495,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         final DataTO destData = cmd.getDestTO();
         final int wait = cmd.getWait();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
-        final String primaryStorageNameLabel = primaryStore.getUuid();
+        final String primaryStorageNameLabel = CitrixHelper.getSRNameLabel(primaryStore.getUuid(),
+                primaryStore.getPoolType(), primaryStore.getPath());
         String secondaryStorageUrl = null;
         NfsTO cacheStore = null;
         String destPath = null;
@@ -665,7 +670,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 newSnapshot.setParentSnapshotPath(prevBackupUuid);
             }
             s_logger.info("New snapshot details: " + newSnapshot.toString());
-            s_logger.info("New snapshot physical utilization: " + physicalSize);
+            s_logger.info("New snapshot physical utilization: " + toHumanReadableSize(physicalSize));
 
             return new CopyCmdAnswer(newSnapshot);
         } catch (final Exception e) {
@@ -911,6 +916,18 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     }
 
     @Override
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+        s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+        return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
+    }
+
+    @Override
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
+        s_logger.info("SyncVolumePathCommand not currently applicable for XenServerStorageProcessor");
+        return new Answer(cmd, false, "Not currently applicable for XenServerStorageProcessor");
+    }
+
+    @Override
     public Answer copyVolumeFromPrimaryToSecondary(final CopyCommand cmd) {
         final Connection conn = hypervisorResource.getConnection();
         final VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
@@ -992,7 +1009,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final SR srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory);
             Task task = null;
             try {
-                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
+                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn,
+                        CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
                 final VDI srcVdi = VDI.getByUuid(conn, volumeUuid);
                 task = srcVdi.copyAsync(conn, primaryStoragePool, null, null);
                 // poll every 1 seconds ,

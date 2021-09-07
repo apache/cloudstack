@@ -231,6 +231,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "direct_download")
     private boolean directDownload;
 
+    @Column(name = "deploy_as_is")
+    private boolean deployAsIs;
+
     public TemplateJoinVO() {
     }
 
@@ -488,6 +491,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public boolean isDirectDownload() {
         return directDownload;
+    }
+
+    public boolean isDeployAsIs() {
+        return deployAsIs;
     }
 
     public Object getParentTemplateId() {

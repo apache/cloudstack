@@ -109,8 +109,13 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     private String sshKeyPairName;
 
     @Parameter(name=ApiConstants.MASTER_NODES, type = CommandType.LONG,
-            description = "number of Kubernetes cluster master nodes, default is 1")
+            description = "number of Kubernetes cluster master nodes, default is 1. This option is deprecated, please use 'controlnodes' parameter.")
+    @Deprecated
     private Long masterNodes;
+
+    @Parameter(name=ApiConstants.CONTROL_NODES, type = CommandType.LONG,
+            description = "number of Kubernetes cluster control nodes, default is 1")
+    private Long controlNodes;
 
     @Parameter(name=ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, type = CommandType.STRING,
             description = "external load balancer IP address while using shared network with Kubernetes HA cluster")
@@ -191,6 +196,13 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return masterNodes;
     }
 
+    public Long getControlNodes() {
+        if (controlNodes == null) {
+            return 1L;
+        }
+        return controlNodes;
+    }
+
     public String getExternalLoadBalancerIpAddress() {
         return externalLoadBalancerIpAddress;
     }
@@ -259,7 +271,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating Kubernetes cluster. Cluster Id: " + getEntityId();
+        return "Creating Kubernetes cluster. Cluster Id: " + getEntityId();
     }
 
     @Override

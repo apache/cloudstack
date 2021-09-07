@@ -18,10 +18,40 @@
 package org.apache.cloudstack.api.command.admin.acl;
 
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.RoleResponse;
 
+import com.google.common.base.Strings;
+
 public abstract class RoleCmd extends BaseCmd {
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of the role, valid options are: Admin, ResourceAdmin, DomainAdmin, User")
+    private String roleType;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the role")
+    private String roleDescription;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public RoleType getRoleType() {
+        if (!Strings.isNullOrEmpty(roleType)) {
+            return RoleType.fromString(roleType);
+        }
+        return null;
+    }
+
+    public String getRoleDescription() {
+        return roleDescription;
+    }
 
     protected void setupResponse(final Role role) {
         final RoleResponse response = new RoleResponse();

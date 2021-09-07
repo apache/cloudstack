@@ -25,6 +25,8 @@ import com.cloud.utils.db.GenericDao;
 public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Long> {
     ProjectInvitationVO findByAccountIdProjectId(long accountId, long projectId, State... inviteState);
 
+    ProjectInvitationVO findByUserIdProjectId(long userId, long accountId, long projectId, State... inviteState);
+
     List<ProjectInvitationVO> listExpiredInvitations();
 
     boolean expirePendingInvitations(long timeOut);

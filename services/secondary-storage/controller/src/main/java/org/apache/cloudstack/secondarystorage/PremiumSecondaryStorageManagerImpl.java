@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.secondarystorage;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,16 +29,19 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.configuration.Config;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -51,8 +56,13 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageManagerImpl.class);
 
     private int _capacityPerSSVM = SecondaryStorageVmManager.DEFAULT_SS_VM_CAPACITY;
+    private int migrateCapPerSSVM = DEFAULT_MIGRATE_SS_VM_CAPACITY;
     private int _standbyCapacity = SecondaryStorageVmManager.DEFAULT_STANDBY_CAPACITY;
     private int _maxExecutionTimeMs = 1800000;
+    private int maxDataMigrationWaitTime = 900000;
+    long currentTime = DateUtil.currentGMTTime().getTime();
+    long nextSpawnTime = currentTime + maxDataMigrationWaitTime;
+    private List<SecondaryStorageVmVO> migrationSSVMS = new ArrayList<>();
 
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
@@ -63,6 +73,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     @Inject
     ResourceManager _resourceMgr;
     protected SearchBuilder<CommandExecLogVO> activeCommandSearch;
+    protected SearchBuilder<CommandExecLogVO> activeCopyCommandSearch;
     protected SearchBuilder<HostVO> hostSearch;
 
     @Override
@@ -75,16 +86,27 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
 
+        migrateCapPerSSVM = StorageManager.SecStorageMaxMigrateSessions.value();
+        int nMaxDataMigrationWaitTime = StorageManager.MaxDataMigrationWaitTime.value();
+        maxDataMigrationWaitTime = nMaxDataMigrationWaitTime * 60 * 1000;
+        nextSpawnTime = currentTime + maxDataMigrationWaitTime;
+
         hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("dc", hostSearch.entity().getDataCenterId(), Op.EQ);
         hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
 
         activeCommandSearch = _cmdExecLogDao.createSearchBuilder();
         activeCommandSearch.and("created", activeCommandSearch.entity().getCreated(), Op.GTEQ);
-        activeCommandSearch.join("hostSearch", hostSearch, activeCommandSearch.entity().getInstanceId(), hostSearch.entity().getId(), JoinType.INNER);
+        activeCommandSearch.join("hostSearch", hostSearch, activeCommandSearch.entity().getHostId(), hostSearch.entity().getId(), JoinType.INNER);
+
+        activeCopyCommandSearch = _cmdExecLogDao.createSearchBuilder();
+        activeCopyCommandSearch.and("created", activeCopyCommandSearch.entity().getCreated(), Op.GTEQ);
+        activeCopyCommandSearch.and("command_name", activeCopyCommandSearch.entity().getCommandName(), Op.EQ);
+        activeCopyCommandSearch.join("hostSearch", hostSearch, activeCopyCommandSearch.entity().getHostId(), hostSearch.entity().getId(), JoinType.INNER);
 
         hostSearch.done();
         activeCommandSearch.done();
+        activeCopyCommandSearch.done();
         return true;
     }
 
@@ -96,7 +118,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         }
 
         Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - _maxExecutionTimeMs);
-
         _cmdExecLogDao.expungeExpiredRecords(cutTime);
 
         boolean suspendAutoLoading = !reserveStandbyCapacity();
@@ -134,17 +155,52 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
                 return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
             }
 
-            alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
 
+            alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
             List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime);
-            if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
-                s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
-                        "), starting a new one");
-                return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
+            List<CommandExecLogVO> copyCmdsInPipeline = findAllActiveCopyCommands(dataCenterId, cutTime);
+            return scaleSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline, dataCenterId);
+
+        }
+        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+    }
+
+    private Pair<AfterScanAction, Object> scaleSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
+                                                    List<CommandExecLogVO> copyCmdsInPipeline, long dataCenterId) {
+        Integer hostsCount = _hostDao.countAllByTypeInZone(dataCenterId, Host.Type.Routing);
+        Integer maxSsvms = (hostsCount < MaxNumberOfSsvmsForMigration.value()) ? hostsCount : MaxNumberOfSsvmsForMigration.value();
+        int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
+        currentTime = DateUtil.currentGMTTime().getTime();
+        if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
+            s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
+                    "), starting a new one");
+            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
+        }
+        else if (!copyCmdsInPipeline.isEmpty()  && copyCmdsInPipeline.size() >= halfLimit &&
+                ((Math.abs(currentTime - copyCmdsInPipeline.get(halfLimit - 1).getCreated().getTime()) > maxDataMigrationWaitTime )) &&
+                (currentTime > nextSpawnTime) &&  alreadyRunning.size() <=  maxSsvms) {
+            nextSpawnTime = currentTime + maxDataMigrationWaitTime;
+            s_logger.debug("scaling SSVM to handle migration tasks");
+            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
+
+        }
+        scaleDownSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline);
+        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
+    }
+
+    private void scaleDownSSVMOnLoad(List<SecondaryStorageVmVO> alreadyRunning, List<CommandExecLogVO> activeCmds,
+                               List<CommandExecLogVO> copyCmdsInPipeline)  {
+        int halfLimit = Math.round((float) (alreadyRunning.size() * migrateCapPerSSVM) / 2);
+        if (alreadyRunning.size() > 1 && ( copyCmdsInPipeline.size() < halfLimit && (activeCmds.size() < (((alreadyRunning.size() -1) * _capacityPerSSVM)/2)) )) {
+            Collections.reverse(alreadyRunning);
+            for(SecondaryStorageVmVO vm : alreadyRunning) {
+                long count = activeCmds.stream().filter(cmd -> cmd.getInstanceId() == vm.getId()).count();
+                if (count == 0 && copyCmdsInPipeline.size() == 0 && vm.getRole() != SecondaryStorageVm.Role.templateProcessor) {
+                    destroySecStorageVm(vm.getId());
+                    break;
+                }
             }
         }
-
-        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
     }
 
     @Override
@@ -159,18 +215,26 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             if (host != null && host.getStatus() == Status.Up)
                 return new Pair<HostVO, SecondaryStorageVmVO>(host, secStorageVm);
         }
-
         return null;
     }
 
     private List<CommandExecLogVO> findActiveCommands(long dcId, Date cutTime) {
         SearchCriteria<CommandExecLogVO> sc = activeCommandSearch.create();
-
         sc.setParameters("created", cutTime);
         sc.setJoinParameters("hostSearch", "dc", dcId);
         sc.setJoinParameters("hostSearch", "status", Status.Up);
-
+        List<CommandExecLogVO> result = _cmdExecLogDao.search(sc, null);
         return _cmdExecLogDao.search(sc, null);
+    }
+
+    private List<CommandExecLogVO> findAllActiveCopyCommands(long dcId, Date cutTime) {
+        SearchCriteria<CommandExecLogVO> sc = activeCopyCommandSearch.create();
+        sc.setParameters("created", cutTime);
+        sc.setParameters("command_name", "DataMigrationCommand");
+        sc.setJoinParameters("hostSearch", "dc", dcId);
+        sc.setJoinParameters("hostSearch", "status", Status.Up);
+        Filter filter = new Filter(CommandExecLogVO.class, "created", true, null, null);
+        return _cmdExecLogDao.search(sc, filter);
     }
 
     private boolean reserveStandbyCapacity() {
@@ -178,7 +242,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         if (value != null && value.equalsIgnoreCase("true")) {
             return true;
         }
-
         return false;
     }
 }

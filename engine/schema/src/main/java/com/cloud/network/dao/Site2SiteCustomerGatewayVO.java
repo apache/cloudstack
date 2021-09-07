@@ -32,7 +32,7 @@ import com.cloud.utils.db.GenericDao;
 
 
 @Entity
-@Table(name = ("s2s_customer_gateway"))
+@Table(name = "s2s_customer_gateway")
 public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,6 +79,12 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Column(name = "account_id")
     private Long accountId;
 
+    @Column(name = "split_connections")
+    private boolean splitConnections;
+
+    @Column(name = "ike_version")
+    private String ikeVersion;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -86,7 +92,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     }
 
     public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy,
-            String espPolicy, long ikeLifetime, long espLifetime, boolean dpd, boolean encap) {
+            String espPolicy, long ikeLifetime, long espLifetime, boolean dpd, boolean encap, boolean splitConnections, String ikeVersion) {
         this.name = name;
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
@@ -100,6 +106,8 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
+        this.splitConnections = splitConnections;
+        this.ikeVersion = ikeVersion;
     }
 
     @Override
@@ -219,6 +227,24 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public Boolean getSplitConnections() {
+        return splitConnections;
+    }
+
+    public void setSplitConnections(Boolean splitConnections) {
+        this.splitConnections = splitConnections;
+    }
+
+    @Override
+    public String getIkeVersion() {
+        return ikeVersion;
+    }
+
+    public void setIkeVersion(String ikeVersion) {
+        this.ikeVersion = ikeVersion;
     }
 
     @Override

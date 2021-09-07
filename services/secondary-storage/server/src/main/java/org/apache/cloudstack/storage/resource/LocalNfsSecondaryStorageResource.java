@@ -53,7 +53,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
+    synchronized public String getRootDir(String secUrl, String nfsVersion) {
         try {
             URI uri = new URI(secUrl);
             String dir = mountUri(uri, nfsVersion);
@@ -66,7 +66,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+    protected void mount(String localRootPath, String remoteDevice, URI uri, String nfsVersion) {
         ensureLocalRootPathExists(localRootPath, uri);
 
         if (mountExists(localRootPath, uri)) {

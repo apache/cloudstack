@@ -21,4 +21,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface GuestOSCategoryDao extends GenericDao<GuestOSCategoryVO, Long> {
 
+    GuestOSCategoryVO findByCategoryName(String categoryName);
 }

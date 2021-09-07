@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -43,7 +44,21 @@ import com.cloud.utils.fsm.StateObject;
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     enum GuestType {
-        Shared, Isolated, L2
+        Shared, Isolated, L2;
+
+        public static GuestType fromValue(String type) {
+            if (StringUtils.isBlank(type)) {
+                return null;
+            } else if (type.equalsIgnoreCase("Shared")) {
+                return Shared;
+            } else if (type.equalsIgnoreCase("Isolated")) {
+                return Isolated;
+            } else if (type.equalsIgnoreCase("L2")) {
+                return L2;
+            } else {
+                throw new InvalidParameterValueException("Unexpected Guest type : " + type);
+            }
+        }
     }
 
     enum PVlanType {
@@ -438,4 +453,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getExternalId();
 
     PVlanType getPvlanType();
+
+    String getRouterIp();
+
+    String getRouterIpv6();
+
+    Date getCreated();
 }

@@ -118,15 +118,19 @@ fi
 # check for connectivity to the management server
 echo ================================================
 echo Management server is $MGMTSERVER.  Checking connectivity.
-socatout=$(echo | socat - TCP:$MGMTSERVER:8250,connect-timeout=3 2>&1)
-if [ $? -eq 0 ]
-then
-    echo "Good: Can connect to management server port 8250"
-else
-    echo "ERROR: Cannot connect to $MGMTSERVER port 8250"
-    echo $socatout
-    exit 4
-fi
+IFS=',' read -r -a hosts <<< "$MGMTSERVER"
+for host in "${hosts[@]}"
+do
+    socatout=$(echo | socat - TCP:$host:8250,connect-timeout=3 | tr -d '\0' 2>&1)
+    if [ $? -eq 0 ]
+    then
+        echo "Good: Can connect to management server $host port 8250"
+    else
+        echo "ERROR: Cannot connect to $host port 8250"
+        echo $socatout
+        exit 4
+    fi
+done
 
 
 # check for the java process running
@@ -141,6 +145,6 @@ else
 fi
 
 echo ================================================
-echo Tests Complete.  Look for ERROR or WARNING above.
+echo Tests Complete. Look for ERROR or WARNING above.
 
 exit 0

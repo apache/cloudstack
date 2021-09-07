@@ -36,7 +36,7 @@ import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.google.common.base.Strings;
 
 @APICommand(name = ListKubernetesSupportedVersionsCmd.APINAME,
-        description = "Lists container clusters",
+        description = "Lists supported Kubernetes version",
         responseObject = KubernetesSupportedVersionResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})

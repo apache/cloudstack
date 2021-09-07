@@ -18,7 +18,6 @@
 package org.apache.cloudstack.api.command.admin.acl;
 
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -49,9 +48,6 @@ public class UpdateRoleCmd extends RoleCmd {
     @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "creates a role with this unique name")
     private String roleName;
 
-    @Parameter(name = ApiConstants.TYPE, type = BaseCmd.CommandType.STRING, description = "The type of the role, valid options are: Admin, ResourceAdmin, DomainAdmin, User")
-    private String roleType;
-
     @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "The description of the role")
     private String roleDescription;
 
@@ -65,17 +61,6 @@ public class UpdateRoleCmd extends RoleCmd {
 
     public String getRoleName() {
         return roleName;
-    }
-
-    public RoleType getRoleType() {
-        if (!Strings.isNullOrEmpty(roleType)) {
-            return RoleType.fromString(roleType);
-        }
-        return null;
-    }
-
-    public String getRoleDescription() {
-        return roleDescription;
     }
 
     /////////////////////////////////////////////////////

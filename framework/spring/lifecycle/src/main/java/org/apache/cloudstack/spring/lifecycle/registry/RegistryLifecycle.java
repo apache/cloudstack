@@ -23,8 +23,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
@@ -36,7 +35,7 @@ import com.cloud.utils.component.Registry;
 
 public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, ApplicationContextAware {
 
-    private static final Logger log = LoggerFactory.getLogger(RegistryLifecycle.class);
+    private static final Logger log = Logger.getLogger(RegistryLifecycle.class);
 
     public static final String EXTENSION_EXCLUDE = "extensions.exclude";
     public static final String EXTENSION_INCLUDE_PREFIX = "extensions.include.";
@@ -71,7 +70,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
 
         boolean result = excludes.contains(name);
         if (result) {
-            log.info("Excluding extension [{}] based on configuration", name);
+            log.info("Excluding extension [" + name + "] based on configuration");
         }
 
         return result;
@@ -110,7 +109,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
         while (iter.hasNext()) {
             Object next = iter.next();
             if (registry.register(next)) {
-                log.debug("Registered {}", next);
+                log.debug("Registered " + next);
             } else {
                 iter.remove();
             }

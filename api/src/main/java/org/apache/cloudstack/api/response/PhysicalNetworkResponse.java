@@ -47,6 +47,10 @@ public class PhysicalNetworkResponse extends BaseResponse {
     @Param(description = "zone id of the physical network")
     private String zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "zone name of the physical network")
+    private String zoneName;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "state of the physical network")
     private String state;
@@ -83,6 +87,10 @@ public class PhysicalNetworkResponse extends BaseResponse {
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 
     public void setState(String state) {

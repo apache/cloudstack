@@ -23,6 +23,6 @@ import com.cloud.resource.ServerResource;
  */
 public interface SecondaryStorageResource extends ServerResource {
 
-    String getRootDir(String cmd, Integer nfsVersion);
+    String getRootDir(String cmd, String nfsVersion);
 
 }

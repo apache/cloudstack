@@ -76,6 +76,9 @@ public class UploadSslCertCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME , type = CommandType.STRING, required = true, description = "Name for the uploaded certificate")
     private String name;
 
+    @Parameter(name = ApiConstants.ENABLED_REVOCATION_CHECK, type = CommandType.BOOLEAN, description = "Enables revocation checking for certificates", since = "4.15")
+    private Boolean enabledRevocationCheck = Boolean.TRUE;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -110,6 +113,10 @@ public class UploadSslCertCmd extends BaseCmd {
 
     public String getName() {
         return name;
+    }
+
+    public Boolean getEnabledRevocationCheck() {
+        return enabledRevocationCheck;
     }
 
     /////////////////////////////////////////////////////

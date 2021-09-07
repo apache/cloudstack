@@ -54,6 +54,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.ServiceOffering;
@@ -389,8 +390,34 @@ public class RouterDeploymentDefinition {
         serviceOfferingId = serviceOffering.getId();
     }
 
+    protected void findAccountServiceOfferingId(long accountId) {
+        String accountRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.valueIn(accountId);
+        String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
+        if (accountRouterOffering != null) {
+            verifyServiceOfferingByUuid(accountRouterOffering);
+        }
+        if (serviceOfferingId == null && globalRouterOffering != accountRouterOffering) {
+            verifyServiceOfferingByUuid(globalRouterOffering);
+        }
+    }
+
+    private void verifyServiceOfferingByUuid(String offeringUuid) {
+        logger.debug("Verifying router service offering with uuid : " + offeringUuid);
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(offeringUuid);
+        if (serviceOffering != null && serviceOffering.isSystemUse()) {
+            boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+            if (isLocalStorage == serviceOffering.isUseLocalStorage()) {
+                logger.debug(String.format("Service offering %s (uuid: %s) will be used on virtual router", serviceOffering.getName(), serviceOffering.getUuid()));
+                serviceOfferingId = serviceOffering.getId();
+            }
+        }
+    }
+
     protected void findServiceOfferingId() {
         serviceOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        if (serviceOfferingId == null) {
+            findAccountServiceOfferingId(guestNetwork.getAccountId());
+        }
         if (serviceOfferingId == null) {
             findDefaultServiceOfferingId();
         }

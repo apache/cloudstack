@@ -105,6 +105,7 @@ public class VmwareManagerImplTest {
         Mockito.lenient().doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
         Mockito.doReturn("some-old-guid").when(hostDetails).get("guid");
         Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
+        Mockito.doReturn(null).when(vmwareManager).importVsphereStoragePoliciesInternal(Mockito.anyLong(), Mockito.anyLong());
 
         final VmwareDatacenter vmwareDatacenter = vmwareManager.updateVmwareDatacenter(updateVmwareDcCmd);
 

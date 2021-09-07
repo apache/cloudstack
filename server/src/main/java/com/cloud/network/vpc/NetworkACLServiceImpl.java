@@ -204,7 +204,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setJoinParameters("networkJoin", "networkId", networkId);
         }
 
-        final Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
+        final Filter filter = new Filter(NetworkACLVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         final Pair<List<NetworkACLVO>, Integer> acls = _networkACLDao.searchAndCount(sc, filter);
         return new Pair<List<? extends NetworkACL>, Integer>(acls.first(), acls.second());
     }

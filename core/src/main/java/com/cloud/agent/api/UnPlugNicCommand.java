@@ -19,11 +19,14 @@
 
 package com.cloud.agent.api;
 
+import java.util.Map;
+
 import com.cloud.agent.api.to.NicTO;
 
 public class UnPlugNicCommand extends Command {
     NicTO nic;
     String instanceName;
+    Map<String, Boolean> vlanToPersistenceMap;
 
     public NicTO getNic() {
         return nic;
@@ -44,5 +47,13 @@ public class UnPlugNicCommand extends Command {
 
     public String getVmName() {
         return instanceName;
+    }
+
+    public Map<String, Boolean> getVlanToPersistenceMap() {
+        return vlanToPersistenceMap;
+    }
+
+    public void setVlanToPersistenceMap(Map<String, Boolean> vlanToPersistenceMap) {
+        this.vlanToPersistenceMap = vlanToPersistenceMap;
     }
 }

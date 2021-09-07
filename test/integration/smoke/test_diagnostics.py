@@ -16,7 +16,7 @@
 # under the License.
 """ BVT tests for remote diagnostics of system VMs
 """
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from marvin.cloudstackAPI import (runDiagnostics, getDiagnosticsData)
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -30,7 +30,6 @@ from marvin.lib.common import (get_domain,
                                get_test_template,
                                list_ssvms,
                                list_routers)
-from marvin.lib.utils import (cleanup_resources)
 from nose.plugins.attrib import attr
 
 
@@ -61,16 +60,20 @@ class TestRemoteDiagnostics(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.vm_1 = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
@@ -79,27 +82,19 @@ class TestRemoteDiagnostics(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls.cleanup = [
-            cls.account,
-            cls.service_offering
-        ]
+        cls._cleanup.append(cls.vm_1)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestRemoteDiagnostics,
-                cls
-            ).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestRemoteDiagnostics,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestRemoteDiagnostics,self).tearDown()
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
     def test_01_ping_in_vr_success(self):
@@ -434,11 +429,11 @@ class TestRemoteDiagnostics(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
     def test_10_traceroute_in_vr(self):
         '''
-        Test Arping command execution in VR
+        Test traceroute command execution in VR
         '''
 
         # Validate the following:
-        # 1. Arping command is executed remotely on VR
+        # 1. Traceroute command is executed remotely on VR
 
         list_router_response = list_routers(
             self.apiclient,
@@ -457,13 +452,13 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         cmd.targetid = router.id
         cmd.ipaddress = '8.8.4.4'
         cmd.type = 'traceroute'
-        cmd.params = "-m 10"
+        cmd.params = "-m 5"
         cmd_response = self.apiclient.runDiagnostics(cmd)
 
         self.assertEqual(
             '0',
             cmd_response.exitcode,
-            'Failed to run remote Arping in VR')
+            'Failed to run remote Traceroute in VR')
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
     def test_11_traceroute_in_ssvm(self):
@@ -493,7 +488,7 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         cmd.targetid = ssvm.id
         cmd.ipaddress = '8.8.4.4'
         cmd.type = 'traceroute'
-        cmd.params = '-m 10'
+        cmd.params = '-m 5'
         cmd_response = self.apiclient.runDiagnostics(cmd)
 
         self.assertEqual(
@@ -530,7 +525,7 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         cmd.targetid = cpvm.id
         cmd.ipaddress = '8.8.4.4'
         cmd.type = 'traceroute'
-        cmd.params = '-m 10'
+        cmd.params = '-m 5'
         cmd_response = self.apiclient.runDiagnostics(cmd)
 
         self.assertEqual(
@@ -571,14 +566,14 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         )
 
     def check_url(self, url):
-        import urllib2
+        import urllib.request, urllib.error, urllib.parse
         try:
-            r = urllib.urlopen(url)
+            r = urllib.request.urlopen(url)
             if r.code == 200:
                 return True
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             return False
-        except urllib2.URLError:
+        except urllib.error.URLError:
             return False
         return True
 

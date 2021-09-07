@@ -17,6 +17,7 @@
 package org.apache.cloudstack.quota.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -77,20 +79,41 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     }
 
     @Override
-    public List<QuotaTariffVO> listAllTariffPlans() {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
+    public Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans() {
+        return listAllTariffPlans(null, null);
+    }
+
+    @Override
+    public Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans(final Long startIndex, final Long pageSize) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<QuotaTariffVO>, Integer>>() {
             @Override
-            public List<QuotaTariffVO> doInTransaction(final TransactionStatus status) {
-                return listAll();
+            public Pair<List<QuotaTariffVO>, Integer> doInTransaction(final TransactionStatus status) {
+                return searchAndCount(null, new Filter(QuotaTariffVO.class, "updatedOn", false, startIndex, pageSize));
             }
         });
     }
 
+
+    private <T> List<T> paginateList(final List<T> list, final Long startIndex, final Long pageSize) {
+        if (startIndex == null || pageSize == null) {
+            return list;
+        }
+        if (list.size() < startIndex){
+            return Collections.emptyList();
+        }
+        return list.subList(startIndex.intValue(), (int) Math.min(startIndex + pageSize, list.size()));
+    }
+
     @Override
-    public List<QuotaTariffVO> listAllTariffPlans(final Date effectiveDate) {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
+    public Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans(final Date effectiveDate) {
+        return listAllTariffPlans(effectiveDate, null, null);
+    }
+
+    @Override
+    public Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans(final Date effectiveDate, final Long startIndex, final Long pageSize) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<QuotaTariffVO>, Integer>>() {
             @Override
-            public List<QuotaTariffVO> doInTransaction(final TransactionStatus status) {
+            public Pair<List<QuotaTariffVO>, Integer> doInTransaction(final TransactionStatus status) {
                 List<QuotaTariffVO> tariffs = new ArrayList<QuotaTariffVO>();
                 final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
                 final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
@@ -106,7 +129,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                         }
                     }
                 }
-                return tariffs;
+                return new Pair<>(paginateList(tariffs, startIndex, pageSize), tariffs.size());
             }
         });
     }

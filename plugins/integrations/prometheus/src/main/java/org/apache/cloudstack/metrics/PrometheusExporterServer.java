@@ -23,7 +23,7 @@ import com.cloud.utils.component.Manager;
 public interface PrometheusExporterServer extends Manager {
 
     ConfigKey<Boolean> EnablePrometheusExporter = new ConfigKey<>("Advanced", Boolean.class, "prometheus.exporter.enable", "false",
-            "Enable the prometheus exporter plugin, management server restart needed.", true);
+            "Enable the prometheus exporter plugin, management server restart needed.", false);
 
     ConfigKey<Integer> PrometheusExporterServerPort = new ConfigKey<>("Advanced", Integer.class, "prometheus.exporter.port", "9595",
             "The prometheus exporter server port", true);

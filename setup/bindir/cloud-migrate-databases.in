@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -244,7 +244,7 @@ def main(*args):
 	
 	try:
 		props = cloud_utils.read_properties(os.path.join(configdir,'db.properties'))
-	except (IOError,OSError),e:
+	except (IOError,OSError) as e:
 		logging.error("Cannot read from config file: %s",e)
 		logging.error("You may want to point to a specific config directory with the --config= option")
 		return 2
@@ -261,13 +261,13 @@ def main(*args):
 	database = props["db.cloud.name"]
 	
 	# tell the migrator to load its steps from the globals list
-	migrator = cloud_utils.Migrator(globals().values())
+	migrator = cloud_utils.Migrator(list(globals().values()))
 	
 	if opts.dumpevolvers:
-		print "Evolution steps:"
-		print "	%s	%s	%s"%("From","To","Evolver in charge")
+		print("Evolution steps:")
+		print("	%s	%s	%s"%("From","To","Evolver in charge"))
 		for f,t,e in migrator.get_evolver_chain():
-			print "	%s	%s	%s"%(f,t,e)
+			print("	%s	%s	%s"%(f,t,e))
 		return
 	
 	#initialize a context with the read configuration
@@ -277,7 +277,7 @@ def main(*args):
 		migrator.run(context,dryrun=opts.dryrun,starting_level=opts.fromlevel,ending_level=opts.tolevel)
 	    finally:
 		context.close()
-	except (cloud_utils.NoMigrationPath,cloud_utils.NoMigrator),e:
+	except (cloud_utils.NoMigrationPath,cloud_utils.NoMigrator) as e:
 		logging.error("%s",e)
 		return 4
 

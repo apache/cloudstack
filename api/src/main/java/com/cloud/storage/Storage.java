@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.storage;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.lang.NotImplementedException;
 
 public class Storage {
     public static enum ImageFormat {
@@ -74,6 +74,16 @@ public class Storage {
             return fileExtension;
         }
 
+    }
+
+    public static enum Capability {
+        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION");
+
+        private final String capability;
+
+        private Capability(String capability) {
+            this.capability = capability;
+        }
     }
 
     public static enum ProvisioningType {
@@ -135,7 +145,9 @@ public class Storage {
         OCFS2(true, false),
         SMB(true, false),
         Gluster(true, false),
-        ManagedNFS(true, false);
+        PowerFlex(true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
+        ManagedNFS(true, false),
+        DatastoreCluster(true, true); // for VMware, to abstract pool of clusters
 
         private final boolean shared;
         private final boolean overprovisioning;

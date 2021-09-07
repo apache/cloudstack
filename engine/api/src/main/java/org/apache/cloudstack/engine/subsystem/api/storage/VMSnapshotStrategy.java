@@ -35,5 +35,5 @@ public interface VMSnapshotStrategy {
      * @param vmSnapshot vm snapshot to be marked as deleted.
      * @return true if vm snapshot removed from DB, false if not.
      */
-    boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot);
+    boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot, boolean unmanage);
 }

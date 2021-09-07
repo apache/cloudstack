@@ -29,6 +29,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -209,6 +211,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject
     NetworkDao _networkDao;
     @Inject
+    NetworkOfferingServiceMapDao _networkOfferingServiceDao;
+    @Inject
     FirewallRulesDao _firewallDao;
     @Inject
     DomainService _domainMgr;
@@ -260,6 +264,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
 
+    private static final int DNS_PORT = 53;
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
     @Override
@@ -658,6 +663,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (loadBalancer == null) {
             throw new InvalidParameterException("Invalid Load balancer Id:" + cmd.getLbRuleId());
         }
+
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
+
         List<LBStickinessPolicyVO> stickinessPolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(cmd.getLbRuleId(), false);
         for (LBStickinessPolicyVO stickinessPolicy : stickinessPolicies) {
             if (stickinessPolicy.getId() == cmd.getEntityId()) {
@@ -712,6 +720,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (loadBalancer == null) {
             throw new InvalidParameterException("Invalid Load balancer Id:" + cmd.getLbRuleId());
         }
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
         FirewallRule.State backupState = loadBalancer.getState();
         loadBalancer.setState(FirewallRule.State.Add);
         _lbDao.persist(loadBalancer);
@@ -1598,65 +1607,73 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb,
         // lbOwner, lb.getNetworkId());
         LoadBalancer result = null;
-        if (result == null) {
-            IpAddress systemIp = null;
-            NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-            if (off.isElasticLb() && ipVO == null && network.getVpcId() == null) {
-                systemIp = _ipAddrMgr.assignSystemIp(networkId, lbOwner, true, false);
-                if (systemIp != null) {
-                    ipVO = _ipAddressDao.findById(systemIp.getId());
+        IpAddress systemIp = null;
+        NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+
+        if (srcPortStart == DNS_PORT && ipVO.isSourceNat()) {
+            List<NetworkOfferingServiceMapVO> offeringServices = _networkOfferingServiceDao.listByNetworkOfferingId(network.getNetworkOfferingId());
+            for (NetworkOfferingServiceMapVO serviceMapVo: offeringServices) {
+                if (serviceMapVo.getService().equals(Service.Dns.getName())) {
+                    throw new InvalidParameterValueException("Error adding load balancer rule, cannot add port 53 with network service offering having DNS service and Source NAT.");
                 }
             }
+        }
 
-            // Validate ip address
-            if (ipVO == null) {
-                throw new InvalidParameterValueException("Unable to create load balance rule; can't find/allocate source IP");
-            } else if (ipVO.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
+        if (off.isElasticLb() && ipVO == null && network.getVpcId() == null) {
+            systemIp = _ipAddrMgr.assignSystemIp(networkId, lbOwner, true, false);
+            if (systemIp != null) {
+                ipVO = _ipAddressDao.findById(systemIp.getId());
+            }
+        }
+
+        // Validate ip address
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to create load balance rule; can't find/allocate source IP");
+        } else if (ipVO.isOneToOneNat()) {
+            throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
+        }
+
+        boolean performedIpAssoc = false;
+        try {
+            if (ipVO.getAssociatedWithNetworkId() == null) {
+                boolean assignToVpcNtwk = network.getVpcId() != null && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                if (assignToVpcNtwk) {
+                    // set networkId just for verification purposes
+                    _networkModel.checkIpForService(ipVO, Service.Lb, networkId);
+
+                    s_logger.debug("The ip is not associated with the VPC network id=" + networkId + " so assigning");
+                    ipVO = _ipAddrMgr.associateIPToGuestNetwork(ipAddrId, networkId, false);
+                    performedIpAssoc = true;
+                }
+            } else {
+                _networkModel.checkIpForService(ipVO, Service.Lb, null);
             }
 
-            boolean performedIpAssoc = false;
-            try {
-                if (ipVO.getAssociatedWithNetworkId() == null) {
-                    boolean assignToVpcNtwk = network.getVpcId() != null && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
-                    if (assignToVpcNtwk) {
-                        // set networkId just for verification purposes
-                        _networkModel.checkIpForService(ipVO, Service.Lb, networkId);
+            if (ipVO.getAssociatedWithNetworkId() == null) {
+                throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network);
+            }
 
-                        s_logger.debug("The ip is not associated with the VPC network id=" + networkId + " so assigning");
-                        ipVO = _ipAddrMgr.associateIPToGuestNetwork(ipAddrId, networkId, false);
-                        performedIpAssoc = true;
-                    }
-                } else {
-                    _networkModel.checkIpForService(ipVO, Service.Lb, null);
-                }
+            result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
+                    lbProtocol, forDisplay);
+        } catch (Exception ex) {
+            s_logger.warn("Failed to create load balancer due to ", ex);
+            if (ex instanceof NetworkRuleConflictException) {
+                throw (NetworkRuleConflictException)ex;
+            }
 
-                if (ipVO.getAssociatedWithNetworkId() == null) {
-                    throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network);
-                }
+            if (ex instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException)ex;
+            }
 
-                result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
-                        lbProtocol, forDisplay);
-            } catch (Exception ex) {
-                s_logger.warn("Failed to create load balancer due to ", ex);
-                if (ex instanceof NetworkRuleConflictException) {
-                    throw (NetworkRuleConflictException)ex;
-                }
-
-                if (ex instanceof InvalidParameterValueException) {
-                    throw (InvalidParameterValueException)ex;
-                }
-
-            } finally {
-                if (result == null && systemIp != null) {
-                    s_logger.debug("Releasing system IP address " + systemIp + " as corresponding lb rule failed to create");
-                    _ipAddrMgr.handleSystemIpRelease(systemIp);
-                }
-                // release ip address if ipassoc was perfored
-                if (performedIpAssoc) {
-                    ipVO = _ipAddressDao.findById(ipVO.getId());
-                    _vpcMgr.unassignIPFromVpcNetwork(ipVO.getId(), networkId);
-                }
+        } finally {
+            if (result == null && systemIp != null) {
+                s_logger.debug("Releasing system IP address " + systemIp + " as corresponding lb rule failed to create");
+                _ipAddrMgr.handleSystemIpRelease(systemIp);
+            }
+            // release ip address if ipassoc was perfored
+            if (performedIpAssoc) {
+                ipVO = _ipAddressDao.findById(ipVO.getId());
+                _vpcMgr.unassignIPFromVpcNetwork(ipVO.getId(), networkId);
             }
         }
 

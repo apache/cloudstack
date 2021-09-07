@@ -14,11 +14,11 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from db import Database
-from configFileOps import configFileOps
-from serviceConfig import serviceCfgBase
-from cloudException import CloudRuntimeException, CloudInternalException
-from utilities import bash
+from .db import Database
+from .configFileOps import configFileOps
+from .serviceConfig import serviceCfgBase
+from .cloudException import CloudRuntimeException, CloudInternalException
+from .utilities import bash
 import os
 
 class cloudManagementConfig(serviceCfgBase):
@@ -49,7 +49,7 @@ class cloudManagementConfig(serviceCfgBase):
 
             try:
                 db.testConnection()
-            except CloudRuntimeException, e:
+            except CloudRuntimeException as e:
                 raise e
             except:
                 raise CloudInternalException("Failed to connect to Mysql server")
@@ -93,5 +93,5 @@ class cloudManagementConfig(serviceCfgBase):
             else:
                 raise CloudRuntimeException("Failed to configure %s, please see the /var/log/cloudstack/management/setupManagement.log for detail"%self.serviceName)
         else:
-            print "Configured successfully, but not starting management server."
+            print("Configured successfully, but not starting management server.")
             return True

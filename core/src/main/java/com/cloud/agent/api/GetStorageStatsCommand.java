@@ -55,7 +55,7 @@ public class GetStorageStatsCommand extends StorageNfsVersionCommand {
         this.store = store;
     }
 
-    public GetStorageStatsCommand(DataStoreTO store, Integer nfsVersion) {
+    public GetStorageStatsCommand(DataStoreTO store, String nfsVersion) {
         super(nfsVersion);
         this.store = store;
     }

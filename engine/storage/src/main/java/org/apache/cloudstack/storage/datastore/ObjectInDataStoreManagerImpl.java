@@ -104,13 +104,21 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         // TODO: further investigate why an extra event is sent when it is
         // alreay Ready for DownloadListener
         stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
+        // State transitions for data object migration
+        stateMachines.addTransition(State.Ready, Event.MigrateDataRequested, State.Migrating);
+        stateMachines.addTransition(State.Ready, Event.CopyRequested, State.Copying);
+        stateMachines.addTransition(State.Allocated, Event.MigrateDataRequested, State.Migrating);
+        stateMachines.addTransition(State.Migrating, Event.MigrationFailed, State.Failed);
+        stateMachines.addTransition(State.Migrating, Event.MigrationSucceeded, State.Destroyed);
+        stateMachines.addTransition(State.Migrating, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Migrating, Event.OperationFailed, State.Ready);
     }
 
     @Override
     public DataObject create(DataObject obj, DataStore dataStore) {
         if (dataStore.getRole() == DataStoreRole.Primary) {
             if (obj.getType() == DataObjectType.TEMPLATE) {
-                VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId());
+                VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId(), null);
                 vo = templatePoolDao.persist(vo);
             } else if (obj.getType() == DataObjectType.SNAPSHOT) {
                 SnapshotInfo snapshotInfo = (SnapshotInfo)obj;
@@ -189,7 +197,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             }
         }
 
-        return this.get(obj, dataStore);
+        return this.get(obj, dataStore, null);
     }
 
     @Override
@@ -198,7 +206,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         DataStore dataStore = dataObj.getDataStore();
         if (dataStore.getRole() == DataStoreRole.Primary) {
             if (dataObj.getType() == DataObjectType.TEMPLATE) {
-                VMTemplateStoragePoolVO destTmpltPool = templatePoolDao.findByPoolTemplate(dataStore.getId(), objId);
+                VMTemplateStoragePoolVO destTmpltPool = templatePoolDao.findByPoolTemplate(dataStore.getId(), objId, null);
                 if (destTmpltPool != null) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
@@ -246,7 +254,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         DataStore dataStore = dataObj.getDataStore();
         if (dataStore.getRole() == DataStoreRole.Primary) {
             if (dataObj.getType() == DataObjectType.TEMPLATE) {
-                VMTemplateStoragePoolVO destTmpltPool = templatePoolDao.findByPoolTemplate(dataStore.getId(), objId);
+                VMTemplateStoragePoolVO destTmpltPool = templatePoolDao.findByPoolTemplate(dataStore.getId(), objId, null);
                 if (destTmpltPool != null && destTmpltPool.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                     return templatePoolDao.remove(destTmpltPool.getId());
                 } else {
@@ -325,9 +333,9 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public DataObject get(DataObject dataObj, DataStore store) {
+    public DataObject get(DataObject dataObj, DataStore store, String configuration) {
         if (dataObj.getType() == DataObjectType.TEMPLATE) {
-            return imageFactory.getTemplate(dataObj, store);
+            return imageFactory.getTemplate(dataObj, store, configuration);
         } else if (dataObj.getType() == DataObjectType.VOLUME) {
             return volumeFactory.getVolume(dataObj, store);
         } else if (dataObj.getType() == DataObjectType.SNAPSHOT) {
@@ -339,11 +347,15 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
 
     @Override
     public DataObjectInStore findObject(DataObject obj, DataStore store) {
-        return findObject(obj.getId(), obj.getType(), store.getId(), store.getRole());
+        String deployAsIsConfiguration = null;
+        if (obj.getType() == DataObjectType.TEMPLATE) {
+            deployAsIsConfiguration = ((TemplateInfo) obj).getDeployAsIsConfiguration();
+        }
+        return findObject(obj.getId(), obj.getType(), store.getId(), store.getRole(), deployAsIsConfiguration);
     }
 
     @Override
-    public DataObjectInStore findObject(long objId, DataObjectType type, long dataStoreId, DataStoreRole role) {
+    public DataObjectInStore findObject(long objId, DataObjectType type, long dataStoreId, DataStoreRole role, String deployAsIsConfiguration) {
         DataObjectInStore vo = null;
         if (role == DataStoreRole.Image || role == DataStoreRole.ImageCache) {
             switch (type) {
@@ -358,7 +370,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     break;
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
-            vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
+            vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId, deployAsIsConfiguration);
         } else if (type == DataObjectType.SNAPSHOT && role == DataStoreRole.Primary) {
             vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
         } else {

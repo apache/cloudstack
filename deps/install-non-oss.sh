@@ -39,3 +39,9 @@ mvn install:install-file -Dfile=vim25_65.jar        -DgroupId=com.cloud.com.vmwa
 
 # From https://my.vmware.com/group/vmware/details?downloadGroup=WEBCLIENTSDK67U2&productId=742
 mvn install:install-file -Dfile=vim25_67.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=6.7   -Dpackaging=jar
+
+# From https://my.vmware.com/group/vmware/get-download?downloadGroup=VS-MGMT-SDK65
+mvn install:install-file -Dfile=pbm_65.jar -DgroupId=com.cloud.com.vmware -DartifactId=vmware-pbm -Dversion=6.5 -Dpackaging=jar
+
+# From https://my.vmware.com/group/vmware/downloads/get-download?downloadGroup=VS-MGMT-SDK67
+mvn install:install-file -Dfile=pbm_67.jar -DgroupId=com.cloud.com.vmware -DartifactId=vmware-pbm -Dversion=6.7 -Dpackaging=jar

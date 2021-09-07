@@ -41,4 +41,10 @@ public interface ProjectInvitation extends ControlledEntity, Identity, InternalI
 
     Long getInDomainId();
 
+    ProjectAccount.Role getAccountRole();
+
+    Long getForUserId();
+
+    Long getProjectRoleId();
+
 }

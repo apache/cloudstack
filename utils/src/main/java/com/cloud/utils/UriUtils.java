@@ -512,7 +512,7 @@ public class UriUtils {
             ImmutableMap.<String, Set<String>>builder()
                         .put("vhd", buildExtensionSet(false, "vhd"))
                         .put("vhdx", buildExtensionSet(false, "vhdx"))
-                        .put("qcow2", buildExtensionSet(true, "qcow2"))
+                        .put("qcow2", buildExtensionSet(true, "qcow2", "img"))
                         .put("ova", buildExtensionSet(true, "ova"))
                         .put("tar", buildExtensionSet(false, "tar"))
                         .put("raw", buildExtensionSet(false, "img", "raw"))
@@ -630,7 +630,7 @@ public class UriUtils {
         if (Strings.isNullOrEmpty(pvlanRange)) {
             return expandedVlans;
         }
-        String[] parts = pvlanRange.split("-i");
+        String[] parts = pvlanRange.split("-\\w");
         expandedVlans.add(Integer.parseInt(parts[0]));
         expandedVlans.add(Integer.parseInt(parts[1]));
         return expandedVlans;

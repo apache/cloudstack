@@ -27,6 +27,8 @@ import com.cloud.utils.db.GenericDao;
 public interface UserDao extends GenericDao<UserVO, Long> {
     UserVO getUser(String username, String password);
 
+    UserVO getUserByName(String username, Long domainId);
+
     UserVO getUser(String username);
 
     UserVO getUser(long userId);

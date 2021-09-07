@@ -42,6 +42,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccountVO;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.user.Account.State;
@@ -81,6 +83,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     private Account accountMock;
+
+    @Mock
+    private ProjectAccountVO projectAccountVO;
+    @Mock
+    private Project project;
+
 
     @Before
     public void beforeTest() {
@@ -360,7 +368,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(Account.ACCOUNT_ID_SYSTEM).when(userVoMock).getAccountId();
         Mockito.doReturn(Account.ACCOUNT_ID_SYSTEM).when(accountMock).getId();
         Mockito.doReturn(callingAccount).when(_accountDao).findById(Account.ACCOUNT_ID_SYSTEM);
-
         accountManagerImpl.retrieveAndValidateAccount(userVoMock);
     }
 

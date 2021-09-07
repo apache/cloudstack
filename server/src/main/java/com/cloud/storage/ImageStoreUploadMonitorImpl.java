@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -44,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -115,6 +118,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private TemplateService templateService;
     @Inject
     private TemplateJoinDao templateJoinDao;
+    @Inject
+    private DeployAsIsHelper deployAsIsHelper;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -407,12 +412,26 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
 
                             VMTemplateVO templateUpdate = _templateDao.createForUpdate();
                             templateUpdate.setSize(answer.getVirtualSize());
+                            if (template.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                                Pair<String, String> guestOsInfo = answer.getGuestOsInfo();
+                                String minimumHardwareVersion = answer.getMinimumHardwareVersion();
+                                String osType = guestOsInfo.first();
+                                String osDescription = guestOsInfo.second();
+                                s_logger.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
+                                try {
+                                    Long guestOsId = deployAsIsHelper.retrieveTemplateGuestOsIdFromGuestOsInfo(template.getId(),
+                                            osType, osDescription, minimumHardwareVersion);
+                                    templateUpdate.setGuestOSId(guestOsId);
+                                } catch (CloudRuntimeException e) {
+                                    s_logger.error("Could not map the guest OS to a CloudStack guest OS", e);
+                                }
+                            }
                             _templateDao.update(tmpTemplate.getId(), templateUpdate);
-                            // For multi-disk OVA, check and create data disk templates
+                            // For multi-disk OVA, check and create data disk templates or root disks as details
                             if (tmpTemplate.getFormat().equals(Storage.ImageFormat.OVA)) {
                                 final DataStore store = dataStoreManager.getDataStore(templateDataStore.getDataStoreId(), templateDataStore.getDataStoreRole());
                                 final TemplateInfo templateInfo = templateFactory.getTemplate(tmpTemplate.getId(), store);
-                                if (!templateService.createOvaDataDiskTemplates(templateInfo)) {
+                                if (!templateService.createOvaDataDiskTemplates(templateInfo, template.isDeployAsIs())) {
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
                                     tmpTemplateDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);

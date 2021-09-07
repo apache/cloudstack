@@ -323,6 +323,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         if (result.isFailed()) {
             try {
                 if (createSnapshotPayload.getAsyncBackup()) {
+                    _snapshotDao.remove(srcSnapshot.getId());
                     destSnapshot.processEvent(Event.OperationFailed);
                     throw new SnapshotBackupException("Failed in creating backup of snapshot with ID "+srcSnapshot.getId());
                 } else {

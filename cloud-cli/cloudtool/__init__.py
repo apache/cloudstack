@@ -55,7 +55,7 @@ def main(argv=None):
     
     try:
         api = apis(**api_optionsdict)
-    except utils.OptParseError,e:
+    except utils.OptParseError as e:
         parser.error(str(e))
     
     command = utils.lookup_command_in_api(api,args[0])
@@ -64,7 +64,7 @@ def main(argv=None):
     args = args[2:]
 
     try: return command(*args,**cmd_optionsdict)
-    except TypeError,e: parser.error(str(e))
+    except TypeError as e: parser.error(str(e))
 
 
 if __name__ == '__main__':

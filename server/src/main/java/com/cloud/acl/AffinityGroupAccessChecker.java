@@ -23,15 +23,18 @@ import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.context.CallContext;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -75,12 +78,22 @@ public class AffinityGroupAccessChecker extends DomainChecker {
                 //acl_type account
                 if (caller.getId() != group.getAccountId()) {
                   //check if the group belongs to a project
+                    User user = CallContext.current().getCallingUser();
                     ProjectVO project = _projectDao.findByProjectAccountId(group.getAccountId());
                     if (project != null) {
-                        if (AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canModifyProjectAccount(caller.getId(), group.getAccountId())) {
-                            return true;
-                        } else if (!AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canAccessProjectAccount(caller.getId(), group.getAccountId())) {
-                            return true;
+                        ProjectAccount userProjectAccount = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
+                        if (userProjectAccount != null) {
+                            if (AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canUserModifyProject(project.getId(), user.getAccountId(), user.getId())) {
+                                return true;
+                            } else if (!AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), group.getAccountId())) {
+                                return true;
+                            }
+                        } else {
+                            if (AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canModifyProjectAccount(caller.getId(), group.getAccountId())) {
+                                return true;
+                            } else if (!AccessType.ModifyProject.equals(accessType) && _projectAccountDao.canAccessProjectAccount(caller.getId(), group.getAccountId())) {
+                                return true;
+                            }
                         }
                     }
                     throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);

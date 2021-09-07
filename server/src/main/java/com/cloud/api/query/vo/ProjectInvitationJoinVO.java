@@ -83,6 +83,9 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     @Column(name = "project_name")
     private String projectName;
 
+    @Column(name = "user_id")
+    private String userId;
+
     public ProjectInvitationJoinVO() {
     }
 
@@ -161,6 +164,8 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     public String getDomainPath() {
         return domainPath;
     }
+
+    public String getUserId() { return userId; }
 
     @Override
     public Class<?> getEntityType() {

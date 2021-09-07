@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldStringValue;
+import com.vmware.vim25.DatacenterConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
@@ -171,7 +173,34 @@ public class DatacenterMO extends BaseMO {
         return vms;
     }
 
+    public List<HostMO> getAllHostsOnDatacenter() throws Exception {
+        List<HostMO> hosts = new ArrayList<>();
+
+        List<ObjectContent> ocs = getHostPropertiesOnDatacenterHostFolder(new String[] {"name"});
+        if (CollectionUtils.isNotEmpty(ocs)) {
+            for (ObjectContent oc : ocs) {
+                hosts.add(new HostMO(getContext(), oc.getObj()));
+            }
+        }
+
+        return hosts;
+    }
+
     public ManagedObjectReference findDatastore(String name) throws Exception {
+        assert (name != null);
+
+        List<ObjectContent> ocs = getDatastorePropertiesOnDatacenter(new String[] {"name"});
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                if (oc.getPropSet().get(0).getVal().toString().equals(name)) {
+                    return oc.getObj();
+                }
+            }
+        }
+        return null;
+    }
+
+    public ManagedObjectReference listDatastore(String name) throws Exception {
         assert (name != null);
 
         List<ObjectContent> ocs = getDatastorePropertiesOnDatacenter(new String[] {"name"});
@@ -507,5 +536,10 @@ public class DatacenterMO extends BaseMO {
     public boolean ensureCustomFieldDef(String fieldName) throws Exception {
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
         return cfmMo.ensureCustomFieldDef("Datacenter", fieldName) > 0;
+    }
+
+    public DatacenterConfigInfo getDatacenterConfigInfo() throws Exception {
+        DatacenterConfigInfo configInfo = (DatacenterConfigInfo)_context.getVimClient().getDynamicProperty(_mor, "configuration");
+        return configInfo;
     }
 }

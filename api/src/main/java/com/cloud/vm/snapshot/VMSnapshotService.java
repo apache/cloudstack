@@ -52,5 +52,5 @@ public interface VMSnapshotService {
      * the vm gets deleted on hypervisor (no need to delete each vm snapshot before deleting vm, just mark them as deleted on DB)
      * @param id vm id
      */
-    boolean deleteVMSnapshotsFromDB(Long vmId);
+    boolean deleteVMSnapshotsFromDB(Long vmId, boolean unmanage);
 }

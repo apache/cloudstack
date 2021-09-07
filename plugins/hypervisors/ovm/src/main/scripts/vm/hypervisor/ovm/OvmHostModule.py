@@ -95,9 +95,9 @@ class OvmHost(OvmObject):
         raise NoVmFoundException("No domain id for %s found"%vmName)
 
     @staticmethod
-    def registerAsMaster(hostname, username="oracle", password="password", port=8899, isSsl=False):
+    def registerAsPrimary(hostname, username="oracle", password="password", port=8899, isSsl=False):
         try:
-            logger.debug(OvmHost.registerAsMaster, "ip=%s, username=%s, password=%s, port=%s, isSsl=%s"%(hostname, username, password, port, isSsl))
+            logger.debug(OvmHost.registerAsPrimary, "ip=%s, username=%s, password=%s, port=%s, isSsl=%s"%(hostname, username, password, port, isSsl))
             exceptionIfNoSuccess(register_server(hostname, 'site', False, username, password, port, isSsl),
                              "Register %s as site failed"%hostname)
             exceptionIfNoSuccess(register_server(hostname, 'utility', False, username, password, port, isSsl),
@@ -106,8 +106,8 @@ class OvmHost(OvmObject):
             return rs
         except Exception, e:
             errmsg = fmt_err_msg(e)
-            logger.error(OvmHost.registerAsMaster, errmsg)
-            raise XmlRpcFault(toErrCode(OvmHost, OvmHost.registerAsMaster), errmsg)
+            logger.error(OvmHost.registerAsPrimary, errmsg)
+            raise XmlRpcFault(toErrCode(OvmHost, OvmHost.registerAsPrimary), errmsg)
     
     @staticmethod
     def registerAsVmServer(hostname, username="oracle", password="password", port=8899, isSsl=False):

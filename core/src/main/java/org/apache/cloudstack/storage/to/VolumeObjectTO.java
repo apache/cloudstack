@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.storage.to;
 
-import com.cloud.storage.MigrationOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -27,6 +26,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 
@@ -43,6 +43,7 @@ public class VolumeObjectTO implements DataTO {
     private String chainInfo;
     private Storage.ImageFormat format;
     private Storage.ProvisioningType provisioningType;
+    private Long poolId;
     private long id;
 
     private Long deviceId;
@@ -62,6 +63,10 @@ public class VolumeObjectTO implements DataTO {
     private Hypervisor.HypervisorType hypervisorType;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
+    private String dataStoreUuid;
+    private boolean deployAsIs;
+    private String updatedDataStoreUUID;
+    private String vSphereStoragePolicyId;
 
     public VolumeObjectTO() {
 
@@ -85,6 +90,7 @@ public class VolumeObjectTO implements DataTO {
         setId(volume.getId());
         format = volume.getFormat();
         provisioningType = volume.getProvisioningType();
+        poolId = volume.getPoolId();
         bytesReadRate = volume.getBytesReadRate();
         bytesReadRateMax = volume.getBytesReadRateMax();
         bytesReadRateMaxLength = volume.getBytesReadRateMaxLength();
@@ -102,6 +108,8 @@ public class VolumeObjectTO implements DataTO {
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
+        this.deployAsIs = volume.isDeployAsIs();
+        this.vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
     }
 
     public String getUuid() {
@@ -221,6 +229,14 @@ public class VolumeObjectTO implements DataTO {
         this.provisioningType = provisioningType;
     }
 
+    public Long getPoolId(){
+        return poolId;
+    }
+
+    public void setPoolId(Long poolId){
+        this.poolId = poolId;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path).append("|datastore=").append(dataStore).append("]").toString();
@@ -312,5 +328,33 @@ public class VolumeObjectTO implements DataTO {
 
     public boolean isDirectDownload() {
         return directDownload;
+    }
+
+    public String getDataStoreUuid() {
+        return dataStoreUuid;
+    }
+
+    public void setDataStoreUuid(String dataStoreUuid) {
+        this.dataStoreUuid = dataStoreUuid;
+    }
+
+    public boolean isDeployAsIs() {
+        return deployAsIs;
+    }
+
+    public String getUpdatedDataStoreUUID() {
+        return updatedDataStoreUUID;
+    }
+
+    public void setUpdatedDataStoreUUID(String updatedDataStoreUUID) {
+        this.updatedDataStoreUUID = updatedDataStoreUUID;
+    }
+
+    public String getvSphereStoragePolicyId() {
+        return vSphereStoragePolicyId;
+    }
+
+    public void setvSphereStoragePolicyId(String vSphereStoragePolicyId) {
+        this.vSphereStoragePolicyId = vSphereStoragePolicyId;
     }
 }

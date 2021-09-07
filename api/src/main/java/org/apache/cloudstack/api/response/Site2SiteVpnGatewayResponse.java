@@ -42,6 +42,10 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     @Param(description = "the vpc id of this gateway")
     private String vpcId;
 
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "the vpc name of this gateway", since = "4.13.2")
+    private String vpcName;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the owner")
     private String accountName;
@@ -80,6 +84,10 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
 
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 
     public void setRemoved(Date removed) {

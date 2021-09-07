@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.14.0
+CLOUDSTACK_RELEASE=4.16.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 9.12 \n \l
+ (___(_)   Debian GNU/Linux 10 \n \l
 
 EOF
 }
@@ -65,7 +65,7 @@ function install_cloud_scripts() {
     /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly/*
 
   chmod +x /root/health_checks/*
-  chmod -x /etc/systemd/system/*
+  chmod -x /etc/systemd/system/* || true
 
   systemctl daemon-reload
   systemctl enable cloud-early-config
@@ -108,7 +108,7 @@ function configure_services() {
   systemctl disable haproxy
   systemctl disable keepalived
   systemctl disable radvd
-  systemctl disable strongswan
+  systemctl disable strongswan-starter
   systemctl disable x11-common
   systemctl disable xl2tpd
   systemctl disable vgauth

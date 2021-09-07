@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -53,6 +54,9 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, description = "list invitations by id")
     private Long id;
 
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "list invitation by user ID")
+    private Long userId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -70,6 +74,10 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     @Override

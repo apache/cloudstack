@@ -34,6 +34,10 @@
     <bean id="templateDataFactoryImpl"
         class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
 
+    <bean id="secondaryStorageServiceImpl"
+          class="org.apache.cloudstack.storage.image.SecondaryStorageServiceImpl"
+          depends-on="dataMotionServiceImpl, objectInDataStoreManagerImpl" />
+
     <bean id="imageStoreHelper"
         class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
     <bean id="imageFormatHelper"
@@ -41,5 +45,5 @@
 
     <bean id="imageStoreProviderMgr"
         class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />
-    
+
 </beans>

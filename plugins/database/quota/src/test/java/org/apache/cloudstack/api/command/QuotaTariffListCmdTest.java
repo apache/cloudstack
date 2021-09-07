@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.utils.Pair;
+
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaTariffListCmdTest extends TestCase {
     @Mock
@@ -53,7 +55,7 @@ public class QuotaTariffListCmdTest extends TestCase {
         tariff.setUsageType(QuotaTypes.MEMORY);
 
         quotaTariffVOList.add(new QuotaTariffVO());
-        Mockito.when(responseBuilder.listQuotaTariffPlans(Mockito.eq(cmd))).thenReturn(quotaTariffVOList);
+        Mockito.when(responseBuilder.listQuotaTariffPlans(Mockito.eq(cmd))).thenReturn(new Pair<>(quotaTariffVOList, quotaTariffVOList.size()));
         Mockito.when(responseBuilder.createQuotaTariffResponse(Mockito.any(QuotaTariffVO.class))).thenReturn(new QuotaTariffResponse());
 
         cmd.execute();

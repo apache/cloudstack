@@ -107,7 +107,7 @@ class OvmSecurityGroup(OvmObject):
                 execute("iptables -I FORWARD -o " + bridge_name + " -j DROP")
                 execute("iptables -I FORWARD -i " + bridge_name + " -m physdev --physdev-is-bridged -j " + brfw)
                 execute("iptables -I FORWARD -o " + bridge_name + " -m physdev --physdev-is-bridged -j " + brfw)
-                phydev = execute("brctl show |grep " + bridge_name + " | awk '{print $4}'").strip()
+                phydev = execute("ip link show type bridge |grep " + bridge_name + " | awk '{print $4}'").strip()
                 execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + phydev + " -j ACCEPT")
                 execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
                 execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)

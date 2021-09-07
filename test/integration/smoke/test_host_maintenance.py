@@ -21,7 +21,7 @@
 from marvin.cloudstackTestCase import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
-from marvin.lib.common import (get_zone, get_pod, get_template, list_ssvms)
+from marvin.lib.common import (get_zone, get_pod, get_suitable_test_template, list_ssvms)
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 from distutils.util import strtobool
@@ -115,20 +115,19 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
-    
+
     def createVMs(self, hostId, number, offering_key="tiny"):
-        
-        self.template = get_template(
+        self.template = get_suitable_test_template(
             self.apiclient,
             self.zone.id,
+            None,
             self.hypervisor
         )
-            
         if self.template == FAILED:
-            assert False, "get_template() failed to return template"
-            
+            assert False, "get_suitable_test_template() failed to return template"
+
         self.logger.debug("Using template %s " % self.template.id)
-                
+
         self.service_offering = ServiceOffering.create(
             self.apiclient,
             self.services["service_offerings"][offering_key]
@@ -196,7 +195,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
     def checkVmMigratingOnHost(self, hostId):
         vm_migrating=False
         listVms1 = VirtualMachine.list(
-                                   self.apiclient, 
+                                   self.apiclient,
                                    hostid=hostId
                                    )
 
@@ -209,11 +208,11 @@ class TestHostMaintenance(TestHostMaintenanceBase):
                     break
 
         return (vm_migrating, None)
-    
+
     def migrationsFinished(self, hostId):
         migrations_finished=True
         listVms1 = VirtualMachine.list(
-                                   self.apiclient, 
+                                   self.apiclient,
                                    hostid=hostId
                                    )
 
@@ -225,7 +224,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
 
     def noOfVMsOnHost(self, hostId):
         listVms = VirtualMachine.list(
-                                       self.apiclient, 
+                                       self.apiclient,
                                        hostid=hostId
                                        )
         no_of_vms=0
@@ -459,11 +458,16 @@ class TestHostMaintenanceAgents(TestHostMaintenanceBase):
 
         if not cls.hypervisorNotSupported:
             cls.initialsshvalue = cls.is_ssh_enabled()
-            cls.template = get_template(
+
+            cls.template = get_suitable_test_template(
                 cls.apiclient,
                 cls.zone.id,
+                None,
                 cls.hypervisor
             )
+            if cls.template == FAILED:
+                assert False, "get_suitable_test_template() failed to return template"
+
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor

@@ -54,6 +54,9 @@ public class AccountVO implements Account {
     @Enumerated(value = EnumType.STRING)
     private State state;
 
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -169,6 +172,11 @@ public class AccountVO implements Account {
     }
 
     @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    @Override
     public Date getRemoved() {
         return removed;
     }
@@ -180,7 +188,7 @@ public class AccountVO implements Account {
 
     @Override
     public String toString() {
-        return new StringBuilder("Acct[").append(uuid).append("-").append(accountName).append("]").toString();
+        return String.format("Acct[%s-%s] -- Account {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", uuid, accountName, id, accountName, uuid);
     }
 
     @Override

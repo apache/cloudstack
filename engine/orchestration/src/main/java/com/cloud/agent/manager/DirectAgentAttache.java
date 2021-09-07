@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.slf4j.MDC;
+import org.apache.log4j.MDC;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;

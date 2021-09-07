@@ -19,5 +19,5 @@ package org.apache.cloudstack.storage;
 
 public interface NfsMountManager {
 
-    String getMountPoint(String storageUrl, Integer nfsVersion);
+    String getMountPoint(String storageUrl, String nfsVersion);
 }

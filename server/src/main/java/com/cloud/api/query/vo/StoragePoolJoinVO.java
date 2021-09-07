@@ -139,6 +139,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "storage_provider_name")
     private String storageProviderName;
 
+    @Column(name = "parent")
+    private Long parent;
+
     /**
      * @return the scope
      */
@@ -262,5 +265,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public String getStorageProviderName() {
         return storageProviderName;
+    }
+
+    public Long getParent() {
+        return parent;
     }
 }
