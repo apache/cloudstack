@@ -1184,17 +1184,18 @@ public class VirtualMachineMO extends BaseMO {
         VirtualMachineConfigInfo configInfo = getConfigInfo();
         List<OptionValue> values = configInfo.getExtraConfig();
 
+        String hostKey = StringUtils.isBlank(summary.getHostIp()) ? hostMo.getHostName() : summary.getHostIp();
         if (values != null) {
             for (OptionValue option : values) {
                 if (option.getKey().equals("RemoteDisplay.vnc.port")) {
                     String value = (String)option.getValue();
                     if (value != null) {
-                        return new Pair<String, Integer>(summary.getHostIp(), Integer.parseInt(value));
+                        return new Pair<String, Integer>(hostKey, Integer.parseInt(value));
                     }
                 }
             }
         }
-        return new Pair<String, Integer>(summary.getHostIp(), 0);
+        return new Pair<String, Integer>(hostKey, 0);
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
