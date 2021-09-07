@@ -3264,7 +3264,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (currentVmOffering != null) {
-            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getTags());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentVmOffering.getDiskOfferingId());
+            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
             if (!storageTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : storageTags) {
