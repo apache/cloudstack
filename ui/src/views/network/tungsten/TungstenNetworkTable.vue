@@ -33,6 +33,7 @@
           @exec-action="(action) => execAction(action, record)"/>
         <router-link v-if="apiName === 'listTungstenFabricNetworkRouteTable'" :to="{ path: '/tungstennetworkroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricInterfaceRouteTable'" :to="{ path: '/tungsteninterfaceroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
+        <router-link v-else-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template slot="tungstenvms" slot-scope="text, record">

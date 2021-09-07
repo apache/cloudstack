@@ -755,6 +755,54 @@ export default {
           dataView: true
         }
       ]
+    },
+    {
+      name: 'tungstenpolicy',
+      title: 'label.network.policy',
+      icon: tungsten,
+      hidden: true,
+      permission: ['listTungstenFabricPolicy'],
+      details: ['name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'rule',
+          component: () => import('@/views/network/tungsten/TungstenFabricPolicyRule.vue')
+        },
+        {
+          name: 'tag',
+          component: () => import('@/views/network/tungsten/TungstenFabricPolicyTag.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'applyTungstenFabricPolicy',
+          icon: 'form',
+          label: 'label.apply.tungsten.network.policy',
+          dataView: true,
+          args: ['networkuuid', 'majorsequence', 'minorsequence']
+        },
+        {
+          api: 'removeTungstenFabricPolicy',
+          icon: 'close',
+          label: 'label.remove.tungsten.network.policy',
+          dataView: true,
+          args: ['networkuuid']
+        },
+        {
+          api: 'deleteTungstenFabricPolicy',
+          icon: 'delete',
+          label: 'label.delete.tungsten.policy',
+          message: 'label.confirm.delete.tungsten.policy',
+          dataView: true,
+          mapping: {
+            policyuuid: (record) => record.uuid
+          }
+        }
+      ]
     }
   ]
 }
