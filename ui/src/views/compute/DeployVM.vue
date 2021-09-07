@@ -1188,10 +1188,16 @@ export default {
       }
 
       this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
-      if (iso && this.serviceOffering.diskofferingid) {
-        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+      if (this.serviceOffering && this.serviceOffering.diskofferingid) {
+        if (iso) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+        } else {
+          instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
+        }
       } else {
-        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+        if (!iso) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+        }
       }
       if (instanceConfig.overridediskofferingid) {
         this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
