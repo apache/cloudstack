@@ -148,8 +148,9 @@
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
-                            :default-checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
-                            :disabled="rootDiskSizeFixed > 0 || template.deployasis"
+                            :default-checked="this.showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            :checked="this.showRootDiskSizeChanger"
+                            :disabled="rootDiskSizeFixed > 0 || template.deployasis || this.showOverrideDiskOfferingOption"
                             @change="val => { this.showRootDiskSizeChanger = val }"
                             style="margin-left: 10px;"/>
                           <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
@@ -273,16 +274,16 @@
                         <a-input v-decorator="['memory']"/>
                       </a-form-item>
                     </span>
-                    <span>
+                    <span v-if="tabKey!=='isoid'">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-decorator="['this.showOverrideDiskOfferingOption']"
                         :checked="serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption"
-                        :disabled="(serviceOffering && serviceOffering.diskofferingstrictness) || (tabKey==='isoid')"
-                        @change="val => { this.showOverrideDiskOfferingOption = val }"
+                        :disabled="(serviceOffering && serviceOffering.diskofferingstrictness)"
+                        @change="val => { updateOverrideRootDiskShowParam(val) }"
                         style="margin-left: 10px;"/>
                     </span>
-                    <span v-if="serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption">
+                    <span v-if="tabKey!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption">
                       <a-step
                         :status="zoneSelected ? 'process' : 'wait'"
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
@@ -1437,6 +1438,12 @@ export default {
     },
     getImg (image) {
       return 'data:image/png;charset=utf-8;base64, ' + image
+    },
+    updateOverrideRootDiskShowParam (val) {
+      if (val) {
+        this.showRootDiskSizeChanger = false
+      }
+      this.showOverrideDiskOfferingOption = val
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
