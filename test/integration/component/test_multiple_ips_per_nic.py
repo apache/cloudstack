@@ -65,6 +65,7 @@ def createNetwork(self, networkType):
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 zoneid=self.zone.id)
+            self.cleanup.append(network)
         except Exception as e:
             self.fail("Isolated network creation failed because: %s" % e)
 
@@ -103,6 +104,7 @@ def createNetwork(self, networkType):
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(vpc)
         vpcs = VPC.list(self.apiclient, id=vpc.id)
         self.assertEqual(
             validateList(vpcs)[0],
@@ -120,6 +122,7 @@ def createNetwork(self, networkType):
             vpcid=vpc.id,
             gateway="10.1.1.1",
             netmask="255.255.255.0")
+        self.cleanup.append(network)
     return network
 
 
@@ -150,9 +153,10 @@ def createNetworkRules(
             domainid=self.account.domainid,
             networkid=network.id,
             vpcid=network.vpcid if networktype == VPC_NETWORK else None)
+        self.cleanup.append(public_ip)
 
         if networktype != VPC_NETWORK:
-            FireWallRule.create(
+            fwr = FireWallRule.create(
                 self.apiclient,
                 ipaddressid=public_ip.ipaddress.id,
                 protocol='TCP',
@@ -160,15 +164,17 @@ def createNetworkRules(
                     self.services["fwrule"]["cidr"]],
                 startport=self.services["fwrule"]["startport"],
                 endport=self.services["fwrule"]["endport"])
+            self.cleanup.append(fwr)
 
         if ruletype == "nat":
-            NATRule.create(
+            nat_rule = NATRule.create(
                 self.api_client,
                 virtual_machine,
                 self.services["natrule"],
                 ipaddressid=public_ip.ipaddress.id,
                 networkid=network.id,
                 vmguestip=vmguestip)
+            self.cleanup.append(nat_rule)
         elif ruletype == "staticnat":
             StaticNATRule.enable(
                 self.apiclient,
@@ -243,12 +249,7 @@ class TestBasicOperations(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestBasicOperations, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -257,13 +258,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the resources created
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.cleanup[:] = []
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestBasicOperations, self).tearDown()
 
     def VerifyStaticNatForPublicIp(self, ipaddressid, natrulestatus):
         """ List public IP and verify that NAT rule status for the IP is as desired """
@@ -321,6 +316,7 @@ class TestBasicOperations(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(virtual_machine)
 
         ipaddress_1 = NIC.addIp(
             self.apiclient,
@@ -396,6 +392,7 @@ class TestBasicOperations(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(virtual_machine)
 
         ipaddress_1 = NIC.addIp(
             self.apiclient,
@@ -506,6 +503,7 @@ class TestBasicOperations(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(virtual_machine)
 
         NIC.addIp(self.apiclient, id=virtual_machine.nic[0].id)
 
@@ -600,13 +598,13 @@ class TestBasicOperations(cloudstackTestCase):
             self.apiclient,
             services=self.services["domain"],
             parentdomainid=self.domain.id)
+        self.cleanup.append(child_domain)
 
         self.account = Account.create(
             self.apiclient,
             self.services["account"],
             domainid=child_domain.id)
         self.cleanup.append(self.account)
-        self.cleanup.append(child_domain)
 
         apiclient = self.testClient.getUserApiClient(
             UserName=self.account.name,
@@ -622,6 +620,7 @@ class TestBasicOperations(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(virtual_machine)
 
         ipaddress_1 = NIC.addIp(apiclient, id=virtual_machine.nic[0].id)
 
@@ -707,18 +706,13 @@ class TestNetworkRules(cloudstackTestCase):
         cls.vpc_off = VpcOffering.create(
             cls.api_client,
             cls.services["vpc_offering"])
-        cls.vpc_off.update(cls.api_client, state='Enabled')
         cls._cleanup.append(cls.vpc_off)
+        cls.vpc_off.update(cls.api_client, state='Enabled')
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNetworkRules, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -727,13 +721,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the resources created
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.cleanup[:] = []
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNetworkRules, self).tearDown()
 
     def VerifyStaticNatForPublicIp(self, ipaddressid, natrulestatus):
         """ List public IP and verify that NAT rule status for the IP is as desired """
@@ -795,6 +783,7 @@ class TestNetworkRules(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(virtual_machine)
 
         ipaddress_1 = NIC.addIp(
             self.apiclient,
@@ -884,6 +873,7 @@ class TestNetworkRules(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid)
+        self.cleanup.append(virtual_machine)
 
         ipaddress_1 = NIC.addIp(
             self.apiclient,
@@ -896,6 +886,7 @@ class TestNetworkRules(cloudstackTestCase):
             domainid=self.account.domainid,
             networkid=network.id,
             vpcid=network.vpcid if value == VPC_NETWORK else None)
+        self.cleanup.append(public_ip)
 
         if value != VPC_NETWORK:
             firewallrule = FireWallRule.create(
@@ -906,6 +897,7 @@ class TestNetworkRules(cloudstackTestCase):
                     self.services["fwrule"]["cidr"]],
                 startport=self.services["fwrule"]["startport"],
                 endport=self.services["fwrule"]["endport"])
+            self.cleanup.append(firewallrule)
 
         # Create NAT rule
         natrule = NATRule.create(
@@ -915,6 +907,7 @@ class TestNetworkRules(cloudstackTestCase):
             ipaddressid=public_ip.ipaddress.id,
             networkid=network.id,
             vmguestip=ipaddress_1.ipaddress)
+        self.cleanup.append(natrule)
         try:
             NIC.removeIp(self.apiclient, ipaddressid=ipaddress_1.id)
             self.fail(
@@ -926,12 +919,14 @@ class TestNetworkRules(cloudstackTestCase):
         if firewallrule:
             try:
                 firewallrule.delete(self.apiclient)
+                self.cleanup.remove(firewallrule)
             except Exception as e:
                 self.fail(
                     "Exception while deleting firewall rule %s: %s" %
                     (firewallrule.id, e))
 
         natrule.delete(self.apiclient)
+        self.cleanup.remove(natrule)
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)

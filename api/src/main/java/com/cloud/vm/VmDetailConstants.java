@@ -29,6 +29,7 @@ public interface VmDetailConstants {
     String DATA_DISK_CONTROLLER = "dataDiskController";
     String SVGA_VRAM_SIZE = "svga.vramSize";
     String NESTED_VIRTUALIZATION_FLAG = "nestedVirtualizationFlag";
+    String RAM_RESERVATION = "ramReservation";
 
     // XenServer specific (internal)
     String HYPERVISOR_TOOLS_VERSION = "hypervisortoolsversion";

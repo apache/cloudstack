@@ -93,7 +93,7 @@ export const pollJobPlugin = {
           const currentPage = this.$router.currentRoute.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
-            eventBus.$emit('async-job-complete')
+            eventBus.$emit('async-job-complete', action)
           }
           successMethod(result)
         } else if (result.jobstatus === 2) {
@@ -127,7 +127,11 @@ export const pollJobPlugin = {
             status: 'failed',
             duration: 2
           })
-          if (!action || !('isFetchData' in action) || (action.isFetchData)) {
+
+          // Ensure we refresh on the same / parent page
+          const currentPage = this.$router.currentRoute.path
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
+          if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
             eventBus.$emit('async-job-complete', action)
           }
           errorMethod(result)

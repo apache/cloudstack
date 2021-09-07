@@ -373,7 +373,8 @@ class TestOrganizationStates(cloudstackTestCase):
 
     ## Test cases relating to disabling and enabling cluster
 
-    @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
+    # was tags=["advanced"]
+    @attr("disruptive", "simulator_only", tags=["TODO"], required_hardware="false")
     def test_31_disableCluster(self):
         """
         Disable Cluster
@@ -393,7 +394,8 @@ class TestOrganizationStates(cloudstackTestCase):
                          "Disabled",
                          "Disabling Cluster did not set the alloctionstate to Disabled")
 
-    @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
+    # was tags=["advanced"]
+    @attr("disruptive", "simulator_only", tags=["TODO"], required_hardware="false")
     def test_32_disableCluster_admin_deployVM(self):
         """
             Validate that admin is allowed to deploy VM in a disabled cluster
@@ -507,7 +509,8 @@ class TestOrganizationStates(cloudstackTestCase):
                          "Disabled",
                          "Disabling Host did not set the alloctionstate to Disabled")
 
-    @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
+    # was tags=["advanced"]
+    @attr("disruptive", "simulator_only", tags=["TODO"], required_hardware="false")
     def test_42_disableHost_admin_deployVM(self):
         """
             Validate that admin is allowed to deploy VM in a disabled host by passing hostId parameter
@@ -583,7 +586,8 @@ class TestOrganizationStates(cloudstackTestCase):
         except Exception as e:
             self.debug("Exception thrown when deploying Virtual Machine on a disabled host -  %s" % e)
 
-    @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
+    # was tags=["advanced"]
+    @attr("disruptive", "simulator_only", tags=["TODO"], required_hardware="false")
     def test_46_disableHost_user_stop_startVM(self):
         """
             Validate that regular user is allowed to stop and start existing VMs running in a disabled host

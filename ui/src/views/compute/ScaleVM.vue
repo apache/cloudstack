@@ -32,16 +32,18 @@
       @handle-search-filter="($event) => fetchData($event)" />
 
     <compute-selection
-      v-if="selectedOffering && selectedOffering.iscustomized"
-      :cpuNumberInputDecorator="cpuNumberKey"
-      :cpuSpeedInputDecorator="cpuSpeedKey"
-      :memoryInputDecorator="memoryKey"
+      v-if="selectedOffering && (selectedOffering.iscustomized || selectedOffering.iscustomizediops)"
+      :cpunumber-input-decorator="cpuNumberKey"
+      :cpuspeed-input-decorator="cpuSpeedKey"
+      :memory-input-decorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
       :minCpu="getMinCpu()"
       :maxCpu="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
       :minMemory="getMinMemory()"
       :maxMemory="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+      :isCustomized="selectedOffering.iscustomized"
+      :isCustomizedIOps="'iscustomizediops' in selectedOffering && selectedOffering.iscustomizediops"
       @update-compute-cpunumber="updateFieldValue"
       @update-compute-cpuspeed="updateFieldValue"
       @update-compute-memory="updateFieldValue" />
@@ -120,14 +122,14 @@ export default {
       if (this.resource.state === 'Running') {
         return this.resource.cpunumber
       }
-      return 'serviceofferingdetails' in this.selectedOffering ? this.selectedOffering.serviceofferingdetails.mincpunumber * 1 : 1
+      return this.selectedOffering?.serviceofferingdetails?.mincpunumber * 1 || 1
     },
     getMinMemory () {
       // We can only scale up while a VM is running
       if (this.resource.state === 'Running') {
         return this.resource.memory
       }
-      return 'serviceofferingdetails' in this.selectedOffering ? this.selectedOffering.serviceofferingdetails.minmemory * 1 : 32
+      return this.selectedOffering?.serviceofferingdetails?.minmemory * 1 || 32
     },
     getMessage () {
       if (this.resource.hypervisor === 'VMware') {

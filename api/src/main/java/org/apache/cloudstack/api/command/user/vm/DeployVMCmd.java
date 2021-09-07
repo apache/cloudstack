@@ -27,8 +27,6 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import com.cloud.utils.StringUtils;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -70,6 +68,7 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
@@ -271,7 +270,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return domainId;
     }
 
-    public ApiConstants.BootType  getBootType() {
+    public ApiConstants.BootType getBootType() {
         if (StringUtils.isNotBlank(bootType)) {
             try {
                 String type = bootType.trim().toUpperCase();
@@ -316,11 +315,17 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String errMesg = "Invalid bootMode " + bootMode + "Specified for vm " + getName()
-                        + " Valid values are:  "+ Arrays.toString(ApiConstants.BootMode.values());
-                s_logger.warn(errMesg);
-                throw new InvalidParameterValueException(errMesg);
-                }
+                String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
+                        ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
+                    ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
         }
         return null;
     }
