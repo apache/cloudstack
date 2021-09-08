@@ -568,7 +568,8 @@ class TestResizeVolume(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_03_vmsnapshot__on_resized_rootvolume_vm(self):
         """Test vmsnapshot on resized root volume
 
@@ -936,7 +937,8 @@ class TestResizeVolume(cloudstackTestCase):
             if rootvol is not None and 'kvm' or 'xenserver' in vm.hypervisor.lower():
                 rootvol.resize(self.apiclient, size=newsize)
 
-    @attr(tags=["advanced"], required_hrdware="true")
+    # @attr(tags=["advanced"], required_hrdware="true")
+    @attr(tags=["TODO"], required_hrdware="true")
     def test_7_usage_events_after_rootvolume_resized_(self):
         """Test check usage events after root volume resize
 

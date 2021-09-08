@@ -668,7 +668,8 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    # @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["TODO"], required_hardware="false")
     def test_restart_network_with_destroyed_primaryVR(self):
         """Test restarting RvR network without cleanup after destroying primary VR
         """

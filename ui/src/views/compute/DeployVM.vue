@@ -476,15 +476,14 @@
                 <template slot="description" v-if="zoneSelected">
                   <span>
                     {{ $t('label.isadvanced') }}
-                    <a-switch @change="val => { this.showDetails = val }" :checked="this.showDetails" style="margin-left: 10px"/>
+                    <a-switch @change="val => { showDetails = val }" :checked="showDetails" style="margin-left: 10px"/>
                   </span>
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
+                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
-                          v-decorator="['boottype']"
+                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
                           @change="fetchBootModes"
                           showSearch
                           optionFilterProp="children"
@@ -496,7 +495,7 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode']"
+                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
                           showSearch
                           optionFilterProp="children"
                           :filterOption="filterOption" >
@@ -1262,39 +1261,21 @@ export default {
       await this.fetchAllTemplates()
     },
     fetchBootTypes () {
-      const bootTypes = []
-
-      bootTypes.push({
-        id: 'BIOS',
-        description: 'BIOS'
-      })
-      bootTypes.push({
-        id: 'UEFI',
-        description: 'UEFI'
-      })
-
-      this.options.bootTypes = bootTypes
+      this.options.bootTypes = [
+        { id: 'BIOS', description: 'BIOS' },
+        { id: 'UEFI', description: 'UEFI' }
+      ]
       this.$forceUpdate()
     },
     fetchBootModes (bootType) {
-      const bootModes = []
-
+      const bootModes = [
+        { id: 'LEGACY', description: 'LEGACY' }
+      ]
       if (bootType === 'UEFI') {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
-        bootModes.push({
-          id: 'SECURE',
-          description: 'SECURE'
-        })
-      } else {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
+        bootModes.unshift(
+          { id: 'SECURE', description: 'SECURE' }
+        )
       }
-
       this.options.bootModes = bootModes
       this.$forceUpdate()
     },
@@ -1663,6 +1644,7 @@ export default {
                     duration: 0
                   })
                 }
+                eventBus.$emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
@@ -2074,6 +2056,10 @@ export default {
     },
     updateIOPSValue (input, value) {
       this[input] = value
+    },
+    onBootTypeChange (value) {
+      this.fetchBootModes(value)
+      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
     }
   }
 }

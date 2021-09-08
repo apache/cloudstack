@@ -607,7 +607,8 @@ class TestRVRInternals(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    # @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["TODO"])
     def test_redundantVR_internals(self):
         """Test redundant router internals
         """

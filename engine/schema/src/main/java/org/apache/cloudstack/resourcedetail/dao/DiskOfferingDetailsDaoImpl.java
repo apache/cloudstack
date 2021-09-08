@@ -19,6 +19,7 @@ package org.apache.cloudstack.resourcedetail.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
@@ -66,4 +67,11 @@ public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOffer
         }
         return detailValue;
     }
+
+    @Override
+    public List<Long> findOfferingIdsByDomainIds(List<Long> domainIds) {
+        Object[] dIds = domainIds.stream().map(s -> String.valueOf(s)).collect(Collectors.toList()).toArray();
+        return findResouceIdsByNameAndValueIn("domainid", dIds);
+    }
 }
+

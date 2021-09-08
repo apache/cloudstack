@@ -3557,7 +3557,8 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced", "advancedns", "dvs"], required_hardware="false")
+    # @attr(tags=["advanced", "advancedns", "dvs"], required_hardware="false")
+    @attr(tags=["TODO"], required_hardware="false")
     def test_acquire_ip(self):
         """Test acquire IP in shared network
 
