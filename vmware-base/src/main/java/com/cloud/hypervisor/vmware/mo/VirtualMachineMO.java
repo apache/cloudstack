@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.vim25.HostDnsConfig;
 import com.vmware.vim25.InvalidStateFaultMsg;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.TaskInfo;
@@ -1177,14 +1178,23 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
+    private String getHostFqdn(HostMO hostMO, String hostName) {
+        try {
+            HostDnsConfig hostDnsConfig = hostMO.getHostNetworkInfo().getDnsConfig();
+            return String.format("%s.%s", hostDnsConfig.getHostName(), hostDnsConfig.getDomainName());
+        } catch (Exception e) {
+            s_logger.error("Could not get host FQDN for host: " + hostName);
+        }
+        return null;
+    }
+
     public Pair<String, Integer> getVncPort(String hostNetworkName) throws Exception {
         HostMO hostMo = getRunningHost();
         VmwareHypervisorHostNetworkSummary summary = hostMo.getHyperHostNetworkSummary(hostNetworkName);
 
         VirtualMachineConfigInfo configInfo = getConfigInfo();
         List<OptionValue> values = configInfo.getExtraConfig();
-
-        String hostKey = StringUtils.isBlank(summary.getHostIp()) ? hostMo.getHostName() : summary.getHostIp();
+        String hostKey = StringUtils.isNotBlank(summary.getHostIp()) ? summary.getHostIp() : getHostFqdn(hostMo, hostMo.getHostName());
         if (values != null) {
             for (OptionValue option : values) {
                 if (option.getKey().equals("RemoteDisplay.vnc.port")) {
