@@ -6860,12 +6860,32 @@
                                                 description: _l('label.none')
                                             });
                                             items.push({
-                                                id: 'modp1024',
-                                                description: 'Group 2(modp1024)'
-                                            });
-                                            items.push({
                                                 id: 'modp1536',
                                                 description: 'Group 5(modp1536)'
+                                            });
+                                            items.push({
+                                                id: 'modp2048',
+                                                description: 'Group 14(modp2048)'
+                                            });
+                                            items.push({
+                                                id: 'modp3072',
+                                                description: 'Group 15(modp3072)'
+                                            });
+                                            items.push({
+                                                id: 'modp4096',
+                                                description: 'Group 16(modp4096)'
+                                            });
+                                            items.push({
+                                                id: 'modp6144',
+                                                description: 'Group 17(modp6144)'
+                                            });
+                                            items.push({
+                                                id: 'modp8192',
+                                                description: 'Group 18(modp8192)'
+                                            });
+                                            items.push({
+                                                id: 'modp1024',
+                                                description: 'Group 2(modp1024)'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6928,12 +6948,32 @@
                                                 description: _l('label.none')
                                             });
                                             items.push({
-                                                id: 'modp1024',
-                                                description: 'Group 2(modp1024)'
-                                            });
-                                            items.push({
                                                 id: 'modp1536',
                                                 description: 'Group 5(modp1536)'
+                                            });
+                                            items.push({
+                                                id: 'modp2048',
+                                                description: 'Group 14(modp2048)'
+                                            });
+                                            items.push({
+                                                id: 'modp3072',
+                                                description: 'Group 15(modp3072)'
+                                            });
+                                            items.push({
+                                                id: 'modp4096',
+                                                description: 'Group 16(modp4096)'
+                                            });
+                                            items.push({
+                                                id: 'modp6144',
+                                                description: 'Group 17(modp6144)'
+                                            });
+                                            items.push({
+                                                id: 'modp8192',
+                                                description: 'Group 18(modp8192)'
+                                            });
+                                            items.push({
+                                                id: 'modp1024',
+                                                description: 'Group 2(modp1024)'
                                             });
                                             args.response.success({
                                                 data: items
