@@ -256,6 +256,11 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
+    public String getName() {
+        return _addr.getName();
+    }
+
+    @Override
     public State getRuleState() {
         return _addr.getRuleState();
     }

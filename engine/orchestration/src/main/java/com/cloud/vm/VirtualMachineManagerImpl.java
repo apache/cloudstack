@@ -45,6 +45,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
@@ -368,6 +370,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private NetworkOfferingDao networkOfferingDao;
     @Inject
     private DomainRouterJoinDao domainRouterJoinDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -626,6 +630,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Remove deploy as-is (if any)
         userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
+
+        // Remove comments (if any)
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VM.name(), vm.getUuid());
 
         // send hypervisor-dependent commands before removing
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);

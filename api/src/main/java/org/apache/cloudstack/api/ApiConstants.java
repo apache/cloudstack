@@ -742,6 +742,7 @@ public class ApiConstants {
     public static final String IAM_GROUPS = "groups";
     public static final String ENTITY_TYPE = "entitytype";
     public static final String ENTITY_ID = "entityid";
+    public static final String ENTITY_NAME = "entityname";
     public static final String EXTERNAL_ID = "externalid";
     public static final String ACCESS_TYPE = "accesstype";
 
@@ -793,7 +794,7 @@ public class ApiConstants {
             + " \"{<algorithm>}\", not including the double quotes. In this <algorithm> is the exact string\n"
             + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n" + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
 
-    public static final String HAS_ANNOTATION = "hasannotation";
+    public static final String HAS_ANNOTATIONS = "hasannotations";
     public static final String LAST_ANNOTATED = "lastannotated";
     public static final String LDAP_DOMAIN = "ldapdomain";
 
@@ -844,7 +845,10 @@ public class ApiConstants {
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
-    public static final String POOL_TYPE ="pooltype";
+    public static final String POOL_TYPE = "pooltype";
+
+    public static final String ADMINS_ONLY = "adminsonly";
+    public static final String ANNOTATION_FILTER = "annotationfilter";
 
     public enum BootType {
         UEFI, BIOS;

@@ -19,11 +19,15 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 
-public class SSHKeyPairResponse extends BaseResponse {
+public class SSHKeyPairResponse extends BaseResponseWithAnnotations {
+
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "ID of the ssh keypair")
+    private String id;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "Name of the keypair")
@@ -45,7 +49,8 @@ public class SSHKeyPairResponse extends BaseResponse {
     public SSHKeyPairResponse() {
     }
 
-    public SSHKeyPairResponse(String name, String fingerprint) {
+    public SSHKeyPairResponse(String uuid, String name, String fingerprint) {
+        this.id = uuid;
         this.name = name;
         this.fingerprint = fingerprint;
     }
@@ -88,5 +93,13 @@ public class SSHKeyPairResponse extends BaseResponse {
 
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

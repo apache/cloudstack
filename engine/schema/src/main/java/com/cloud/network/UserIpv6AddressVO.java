@@ -189,4 +189,9 @@ public class UserIpv6AddressVO implements UserIpv6Address {
     public Class<?> getEntityType() {
         return UserIpv6Address.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

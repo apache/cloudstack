@@ -38,6 +38,9 @@ export default {
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   related: [{
     name: 'vm',
