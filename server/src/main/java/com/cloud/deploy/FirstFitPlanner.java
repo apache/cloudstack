@@ -383,7 +383,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
 
         //list clusters under this zone by cpu and ram capacity
-        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, requiredCpu, requiredRam, avoid, isZone);
+        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, vmProfile.getId(), requiredCpu, requiredRam, avoid, isZone);
         List<Long> prioritizedClusterIds = clusterCapacityInfo.first();
         if (!prioritizedClusterIds.isEmpty()) {
             if (avoid.getClustersToAvoid() != null) {
@@ -441,7 +441,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         return podIdsByCapacity;
     }
 
-    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {
+    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, long vmId, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {
         //look at the aggregate available cpu and ram per cluster
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 
@@ -456,11 +456,11 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             capacityType = Capacity.CAPACITY_TYPE_MEMORY;
         }
 
-        List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone);
+        List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, vmId, requiredCpu, requiredRam, capacityType, isZone);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
         }
-        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(id, capacityType, isZone);
+        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
         List<Long> clusterIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
         if (s_logger.isTraceEnabled()) {

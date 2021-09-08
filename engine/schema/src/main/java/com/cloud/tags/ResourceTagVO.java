@@ -171,4 +171,9 @@ public class ResourceTagVO implements ResourceTag {
     public Class<?> getEntityType() {
         return ResourceTag.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

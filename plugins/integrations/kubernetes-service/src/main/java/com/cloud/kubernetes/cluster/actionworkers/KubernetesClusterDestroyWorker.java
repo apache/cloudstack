@@ -22,6 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -55,6 +57,8 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     @Inject
     protected AccountManager accountManager;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private List<KubernetesClusterVmMapVO> clusterVMs;
 
@@ -262,6 +266,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             throw new CloudRuntimeException(msg);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        annotationDao.removeByEntityType(AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), kubernetesCluster.getUuid());
         boolean deleted = kubernetesClusterDao.remove(kubernetesCluster.getId());
         if (!deleted) {
             logMessage(Level.WARN, String.format("Failed to delete Kubernetes cluster : %s", kubernetesCluster.getName()), null);

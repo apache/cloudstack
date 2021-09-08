@@ -107,7 +107,7 @@ public class KVMStoragePoolManager {
             StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
             if (info != null && info.storagePoolType() != null) {
                 if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
-                    s_logger.error("Duplicate StorageAdaptor type " + info.storagePoolType().toString() + ", not loading " + storageAdaptor.getName());
+                    s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
                 } else {
                     try {
                         this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.newInstance());

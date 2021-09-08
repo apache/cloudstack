@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.Vpc;
@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Vpc.class)
 @SuppressWarnings("unused")
-public class VpcResponse extends BaseResponse implements ControlledEntityResponse {
+public class VpcResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName("id")
     @Param(description = "the id of the VPC")
     private String id;
