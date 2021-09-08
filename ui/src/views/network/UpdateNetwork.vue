@@ -212,7 +212,6 @@ export default {
             params[field] = fieldValue
           }
         }
-        console.log(values.networkofferingid, this.networkOfferings, this.networkOfferings[values.networkofferingid].id, this.resource.networkofferingid)
         if (values.networkofferingid !== undefined &&
           values.networkofferingid != null &&
           this.networkOfferings &&
