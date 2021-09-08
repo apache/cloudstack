@@ -2041,7 +2041,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (scope != null && !scope.isEmpty()) {
             // getting the list of parameters at requested scope
-            if (ConfigurationManagerImpl.EnableAccountSettingsForDomain.value()
+            if (ConfigurationManagerImpl.ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value()
                 && scope.equals(ConfigKey.Scope.Domain.toString())) {
                 sc.addAnd("scope", SearchCriteria.Op.IN, ConfigKey.Scope.Domain.toString(), ConfigKey.Scope.Account.toString());
             } else {
