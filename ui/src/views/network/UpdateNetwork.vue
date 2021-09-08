@@ -212,9 +212,11 @@ export default {
             params[field] = fieldValue
           }
         }
-        if (values.networkofferingid &&
+        console.log(values.networkofferingid, this.networkOfferings, this.networkOfferings[values.networkofferingid].id, this.resource.networkofferingid)
+        if (values.networkofferingid !== undefined &&
+          values.networkofferingid != null &&
           this.networkOfferings &&
-          this.networkOfferings[values.networkofferingid]?.id !== this.resource.networkofferingid) {
+          this.networkOfferings[values.networkofferingid].id !== this.resource.networkofferingid) {
           params.networkofferingid = this.networkOfferings[values.networkofferingid].id
         }
         api('updateNetwork', params).then(json => {
