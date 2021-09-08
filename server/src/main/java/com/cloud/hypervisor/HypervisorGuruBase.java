@@ -99,19 +99,20 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             "If we set this to 'true', a minimum CPU speed (cpu speed/ cpu.overprovisioning.factor) will be set on the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
     private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
-        Map<NetworkOffering.Detail, String> details = null;
-        if (network != null) {
-            details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
-            if (details != null) {
-                details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
-                details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
-                details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
-                details.putIfAbsent(NetworkOffering.Detail.MacLearning, NetworkOrchestrationService.MacLearning.value().toString());
-            }
-            NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
-            if (pvlantypeDetail != null) {
-                details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
-            }
+        if (network == null) {
+            s_logger.debug("Unable to get NIC details as the network is null");
+            return null;
+        }
+        Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+        if (details != null) {
+            details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacLearning, NetworkOrchestrationService.MacLearning.value().toString());
+        }
+        NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+        if (pvlantypeDetail != null) {
+            details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
         }
         return details;
     }
