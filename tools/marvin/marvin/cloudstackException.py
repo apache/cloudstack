@@ -58,7 +58,12 @@ class internalError(Exception):
 
 def GetDetailExceptionInfo(e):
     if e is not None:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
+        if type(e) is str:
+            return e
+        elif type(e) is tuple:
+            (exc_type, exc_value, exc_traceback) = e
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
         return str(repr(traceback.format_exception(
             exc_type, exc_value, exc_traceback)))
     else:
