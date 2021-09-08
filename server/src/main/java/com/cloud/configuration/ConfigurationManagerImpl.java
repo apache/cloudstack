@@ -4285,8 +4285,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if (forSystemVms != null && VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
-            throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
+        final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
+        if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+            if (VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
+                throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
+            }
+            // Check if range has already been dedicated
+            final List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(id);
+            if (maps != null && !maps.isEmpty()) {
+                throw new InvalidParameterValueException("Specified Public IP range has already been dedicated to an account");
+            }
+
+            List<DomainVlanMapVO> domainmaps = _domainVlanMapDao.listDomainVlanMapsByVlan(id);
+            if (domainmaps != null && !domainmaps.isEmpty()) {
+                throw new InvalidParameterValueException("Specified Public IP range has already been dedicated to a domain");
+            }
         }
         if (ipv4) {
             if (gateway != null && !gateway.equals(vlanRange.getVlanGateway())) {
@@ -4346,7 +4359,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     s_logger.debug("lock vlan " + id + " is acquired");
                 }
 
-                commitUpdateVlanAndIpRange(id, newStartIP, newEndIP, currentStartIP, currentEndIP, true, forSystemVms);
+                commitUpdateVlanAndIpRange(id, newStartIP, newEndIP, currentStartIP, currentEndIP, true, isRangeForSystemVM, forSystemVms);
 
             } catch (final Exception e) {
                 s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
@@ -4391,7 +4404,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         s_logger.debug("lock vlan " + id + " is acquired");
                     }
 
-                    commitUpdateVlanAndIpRange(id, startIpv6, endIpv6, currentStartIPv6, currentEndIPv6, false, null);
+                    commitUpdateVlanAndIpRange(id, startIpv6, endIpv6, currentStartIPv6, currentEndIPv6, false, isRangeForSystemVM,forSystemVms);
 
                 } catch (final Exception e) {
                     s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
@@ -4405,7 +4418,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return _vlanDao.findById(id);
     }
 
-    private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP, final String currentStartIP, final String currentEndIP, final boolean ipv4, final Boolean forSystemvms) {
+    private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP, final String currentStartIP, final String currentEndIP,
+                                              final boolean ipv4, final Boolean isRangeForSystemVM, final Boolean forSystemvms) {
 
         return Transaction.execute(new TransactionCallback<VlanVO>() {
             @Override
@@ -4415,7 +4429,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (ipv4) {
                     vlanRange.setIpRange(newStartIP + "-" + newEndIP);
                     _vlanDao.update(vlanRange.getId(), vlanRange);
-                    final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
                     if (!updatePublicIPRange(newStartIP, currentStartIP, newEndIP, currentEndIP, vlanRange.getDataCenterId(), vlanRange.getId(), vlanRange.getNetworkId(), vlanRange.getPhysicalNetworkId(), isRangeForSystemVM, forSystemvms)) {
                         throw new CloudRuntimeException("Failed to update IPv4 range. Please contact Cloud Support.");
                     }
