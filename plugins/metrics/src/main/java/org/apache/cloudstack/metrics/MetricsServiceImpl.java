@@ -171,6 +171,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate volume metrics response");
             }
 
+            metricsResponse.setHasAnnotation(volumeResponse.hasAnnotation());
             metricsResponse.setDiskSizeGB(volumeResponse.getSize());
             metricsResponse.setDiskIopsTotal(volumeResponse.getDiskIORead(), volumeResponse.getDiskIOWrite());
             Account account = CallContext.current().getCallingAccount();
@@ -194,6 +195,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate vm metrics response");
             }
 
+            metricsResponse.setHasAnnotation(vmResponse.hasAnnotation());
             metricsResponse.setIpAddress(vmResponse.getNics());
             metricsResponse.setCpuTotal(vmResponse.getCpuNumber(), vmResponse.getCpuSpeed());
             metricsResponse.setMemTotal(vmResponse.getMemory());
@@ -228,6 +230,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
             final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolClusterId);
 
+            metricsResponse.setHasAnnotation(poolResponse.hasAnnotation());
             metricsResponse.setDiskSizeUsedGB(poolResponse.getDiskSizeUsed());
             metricsResponse.setDiskSizeTotalGB(poolResponse.getDiskSizeTotal(), poolResponse.getOverProvisionFactor());
             metricsResponse.setDiskSizeAllocatedGB(poolResponse.getDiskSizeAllocated());
@@ -301,6 +304,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setMemoryAllocatedThreshold(hostResponse.getMemoryAllocated(), hostResponse.getMemoryTotal(), memoryThreshold);
             metricsResponse.setMemoryAllocatedDisableThreshold(hostResponse.getMemoryAllocated(), hostResponse.getMemoryTotal(), memoryDisableThreshold);
             metricsResponses.add(metricsResponse);
+            metricsResponse.setHasAnnotation(hostResponse.hasAnnotation());
         }
         return metricsResponses;
     }
@@ -380,6 +384,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryThreshold);
             metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryDisableThreshold);
 
+            metricsResponse.setHasAnnotation(clusterResponse.hasAnnotation());
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;
@@ -432,6 +437,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                 }
             }
 
+            metricsResponse.setHasAnnotation(zoneResponse.hasAnnotation());
             metricsResponse.setState(zoneResponse.getAllocationState());
             metricsResponse.setResource(metrics.getUpResources(), metrics.getTotalResources());
             // CPU

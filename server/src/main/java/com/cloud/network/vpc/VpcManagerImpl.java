@@ -40,6 +40,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
@@ -222,6 +224,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DomainRouterDao _routerDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -1695,6 +1699,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 _networkAclMgr.deleteNetworkACL(networkAcl);
             }
         }
+
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VPC.name(), vpc.getUuid());
         return success;
     }
 

@@ -781,6 +781,7 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (result) {
             _context.waitForTaskProgressDone(morTask);
+            s_logger.debug(String.format("Cloned VM: %s as %s", getName(), cloneName));
             return true;
         } else {
             s_logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
 import java.net.URI;
@@ -46,6 +47,8 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -289,6 +292,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ClusterVSMMapDao _clusterVSMMapDao;
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -975,6 +980,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (dr != null) {
                     _dedicatedDao.remove(dr.getId());
                 }
+
+                // Remove comments (if any)
+                annotationDao.removeByEntityType(AnnotationService.EntityType.HOST.name(), host.getUuid());
             }
         });
 
@@ -1055,6 +1063,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         if (dr != null) {
                             _dedicatedDao.remove(dr.getId());
                         }
+                        // Remove comments (if any)
+                        annotationDao.removeByEntityType(AnnotationService.EntityType.CLUSTER.name(), cluster.getUuid());
                     }
 
                 }
@@ -1315,7 +1325,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return true;
             }
 
-            final List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            if (CollectionUtils.isEmpty(hosts)) {
+                s_logger.warn("Unable to find a host for vm migration in cluster: " + host.getClusterId());
+                if (! isClusterWideMigrationPossible(host, vms, hosts)) {
+                    return false;
+                }
+            }
+
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
@@ -1344,6 +1361,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         return true;
     }
+
+    private boolean isClusterWideMigrationPossible(Host host, List<VMInstanceVO> vms, List<HostVO> hosts) {
+        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId())) {
+            s_logger.info("Looking for hosts across different clusters in zone: " + host.getDataCenterId());
+            Long podId = null;
+            for (final VMInstanceVO vm : vms) {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                    // SystemVMs can only be migrated to same pod
+                    podId = host.getPodId();
+                    break;
+                }
+            }
+            hosts.addAll(listAllUpAndEnabledHosts(Host.Type.Routing, null, podId, host.getDataCenterId()));
+            if (CollectionUtils.isEmpty(hosts)) {
+                s_logger.warn("Unable to find a host for vm migration in zone: " + host.getDataCenterId());
+                return false;
+            }
+            s_logger.info("Found hosts in the zone for vm migration: " + hosts);
+            if (HypervisorType.VMware.equals(host.getHypervisorType())) {
+                s_logger.debug("Skipping pool check of volumes on VMware environment because across-cluster vm migration is supported by vMotion");
+                return true;
+            }
+            // Don't migrate vm if it has volumes on cluster-wide pool
+            for (final VMInstanceVO vm : vms) {
+                if (_vmMgr.checkIfVmHasClusterWideVolumes(vm.getId())) {
+                    s_logger.warn(String.format("VM %s cannot be migrated across cluster as it has volumes on cluster-wide pool", vm));
+                    return false;
+                }
+            }
+        } else {
+            s_logger.warn(String.format("VMs cannot be migrated across cluster since %s is false for zone ID: %d", MIGRATE_VM_ACROSS_CLUSTERS.key(), host.getDataCenterId()));
+            return false;
+        }
+        return true;
+   }
 
     /**
      * Looks for Hosts able to allocate the VM and migrates the VM with its volume.

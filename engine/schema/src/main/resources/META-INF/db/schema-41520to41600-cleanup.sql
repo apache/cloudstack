@@ -16,6 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade cleanup from 4.15.1.0 to 4.16.0.0
+-- Schema upgrade cleanup from 4.15.2.0 to 4.16.0.0
 --;
 
+ALTER TABLE `cloud`.`ssh_keypairs` MODIFY COLUMN `uuid` varchar(40) NOT NULL UNIQUE;

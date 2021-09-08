@@ -40,6 +40,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -234,6 +236,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected ResourceManager resourceManager;
     @Inject
     protected FirewallRulesDao firewallRulesDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -582,6 +586,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             }
         }
+        response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
+                AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
         response.setVirtualMachines(vmResponses);
         response.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
         response.setMinSize(kubernetesCluster.getMinSize());

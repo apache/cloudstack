@@ -45,6 +45,8 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -399,6 +401,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     HostTagsDao hostTagDao;
     @Inject
     StoragePoolTagsDao storagePoolTagDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -439,6 +443,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     public static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<Integer>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
             "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
+    public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
+            "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -1232,6 +1238,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (dr != null) {
                     _dedicatedDao.remove(dr.getId());
                 }
+
+                // Remove comments (if any)
+                annotationDao.removeByEntityType(AnnotationService.EntityType.POD.name(), pod.getUuid());
             }
         });
 
@@ -1886,6 +1895,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteZone(final DeleteZoneCmd cmd) {
 
         final Long zoneId = cmd.getId();
+        DataCenterVO zone = _zoneDao.findById(zoneId);
 
         // Make sure the zone exists
         if (!validZone(zoneId)) {
@@ -1922,6 +1932,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null, null);
                         }
                     }
+                    annotationDao.removeByEntityType(AnnotationService.EntityType.ZONE.name(), zone.getUuid());
                 }
 
                 return success;
@@ -3449,6 +3460,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete disk offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_diskOfferingDao.update(offering.getId(), offering)) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
@@ -3516,6 +3528,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete service offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.SERVICE_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_serviceOfferingDao.update(offeringId, offering)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
@@ -5864,6 +5877,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + "To make the network offering unavaiable, disable it");
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());
         if (_networkOfferingDao.remove(offeringId)) {
             return true;
         } else {
@@ -6535,6 +6549,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
-                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH};
+                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS};
     }
 }

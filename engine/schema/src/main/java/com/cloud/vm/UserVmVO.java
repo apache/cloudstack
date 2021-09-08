@@ -136,4 +136,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public void setUserVmType(String userVmType) {
         this.userVmType = userVmType;
     }
+
+    @Override
+    public String getName() {
+        return instanceName;
+    }
 }

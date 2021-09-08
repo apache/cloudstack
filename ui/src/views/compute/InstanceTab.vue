@@ -138,6 +138,12 @@
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="vm"
+          :items="annotations">
+        </AnnotationsTab>
+      </a-tab-pane>
     </a-tabs>
 
     <a-modal
@@ -283,6 +289,7 @@ import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'InstanceTab',
@@ -293,7 +300,8 @@ export default {
     NicsTable,
     Status,
     ListResourceTable,
-    TooltipButton
+    TooltipButton,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
   props: {
@@ -353,7 +361,8 @@ export default {
       listIps: {
         loading: false,
         opts: []
-      }
+      },
+      annotations: []
     }
   },
   created () {
@@ -392,6 +401,7 @@ export default {
     },
     fetchData () {
       this.volumes = []
+      this.annotations = []
       if (!this.vm || !this.vm.id) {
         return
       }
@@ -401,6 +411,11 @@ export default {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
         }
         this.$set(this.resource, 'volumes', this.volumes)
+      })
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
       })
     },
     listNetworks () {

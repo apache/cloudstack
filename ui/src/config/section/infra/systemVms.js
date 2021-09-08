@@ -23,6 +23,17 @@ export default {
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
   details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable'],
+  resourceType: 'SystemVm',
+  tabs: [
+    {
+      name: 'details',
+      component: () => import('@/components/view/DetailsTab.vue')
+    },
+    {
+      name: 'comments',
+      component: () => import('@/components/view/AnnotationsTab.vue')
+    }
+  ],
   actions: [
     {
       api: 'startSystemVm',

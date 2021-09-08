@@ -14,33 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package com.cloud.upgrade.dao;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.io.InputStream;
 import java.sql.Connection;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-
-public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
-
-    final static Logger LOG = Logger.getLogger(Upgrade41510to41600.class);
-    private SystemVmTemplateRegistration systemVmTemplateRegistration;
-
-    public Upgrade41510to41600() {
-    }
+public class Upgrade41510to41520 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.15.1.0", "4.16.0.0"};
+        return new String[]{"4.15.1.0", "4.15.2.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.16.0.0";
+        return "4.15.2.0";
     }
 
     @Override
@@ -50,7 +40,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41510to41600.sql";
+        final String scriptFile = "META-INF/db/schema-41510to41520.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -63,25 +53,9 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
     }
 
-    private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration();
-    }
-
-    @Override
-    @SuppressWarnings("serial")
-    public void updateSystemVmTemplates(final Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
-        initSystemVmTemplateRegistration();
-        try {
-            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
-        }
-    }
-
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41510to41600-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41510to41520-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);

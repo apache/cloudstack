@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -28,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {KubernetesCluster.class})
-public class KubernetesClusterResponse extends BaseResponse implements ControlledEntityResponse {
+public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the Kubernetes cluster")
     private String id;
