@@ -37,6 +37,8 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -328,6 +330,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -335,6 +339,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.Ip;
@@ -401,6 +406,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     private GuestOSCategoryDao _guestOsCategoryDao;
     @Inject
     private GuestOSDao _guestOsDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    private UserStatisticsDao userStatsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -587,6 +596,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         snapshotResponse.setTags(new HashSet<>(tagResponses));
+        snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.SNAPSHOT.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
@@ -669,6 +680,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         vmSnapshotResponse.setTags(new HashSet<>(tagResponses));
+        vmSnapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(vmSnapshot.getUuid(), AnnotationService.EntityType.VM_SNAPSHOT.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
@@ -953,6 +966,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         ipResponse.setTags(tagResponses);
+        ipResponse.setHasAnnotation(annotationDao.hasAnnotations(ipAddr.getUuid(), AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
@@ -1129,6 +1144,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
             podResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
+        podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         podResponse.setObjectName("pod");
         return podResponse;
     }
@@ -1285,6 +1302,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
             clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
+        clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         clusterResponse.setObjectName("cluster");
         return clusterResponse;
     }
@@ -1488,6 +1507,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setDns2(zone.getDns2());
             }
 
+            vmResponse.setHasAnnotation(annotationDao.hasAnnotations(vm.getUuid(), AnnotationService.EntityType.SYSTEM_VM.name(),
+                    _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(vm);
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
@@ -2120,6 +2141,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (details != null && !details.isEmpty()) {
             response.setDetails(details);
         }
+        response.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.NETWORK_OFFERING.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         return response;
     }
 
@@ -2331,6 +2354,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         response.setTags(tagResponses);
+        response.setHasAnnotation(annotationDao.hasAnnotations(network.getUuid(), AnnotationService.EntityType.NETWORK.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         if (network.getNetworkACLId() != null) {
             NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
@@ -2355,6 +2380,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
         response.setCreated(network.getCreated());
+
+        Long bytesReceived = 0L;
+        Long bytesSent = 0L;
+        SearchBuilder<UserStatisticsVO> sb = userStatsDao.createSearchBuilder();
+        sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
+        SearchCriteria<UserStatisticsVO> sc = sb.create();
+        sc.setParameters("networkId", network.getId());
+        for (UserStatisticsVO stat: userStatsDao.search(sc, null)) {
+            bytesReceived += stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
+            bytesSent += stat.getNetBytesSent() + stat.getCurrentBytesSent();
+        }
+        response.setBytesReceived(bytesReceived);
+        response.setBytesSent(bytesSent);
+
         response.setObjectName("network");
         return response;
     }
@@ -3028,6 +3067,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         response.setTags(tagResponses);
+        response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         response.setObjectName("vpc");
         return response;
     }
@@ -3263,6 +3304,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
         response.setObjectName("vpncustomergateway");
+        response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
@@ -4333,15 +4376,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey) {
-        SSHKeyPairResponse response = new SSHKeyPairResponse(sshkeyPair.getName(), sshkeyPair.getFingerprint());
+        SSHKeyPairResponse response = new SSHKeyPairResponse(sshkeyPair.getUuid(), sshkeyPair.getName(), sshkeyPair.getFingerprint());
         if (privatekey) {
-            response = new CreateSSHKeyPairResponse(sshkeyPair.getName(), sshkeyPair.getFingerprint(), sshkeyPair.getPrivateKey());
+            response = new CreateSSHKeyPairResponse(sshkeyPair.getUuid(), sshkeyPair.getName(),
+                    sshkeyPair.getFingerprint(), sshkeyPair.getPrivateKey());
         }
         Account account = ApiDBUtils.findAccountById(sshkeyPair.getAccountId());
         response.setAccountName(account.getAccountName());
         Domain domain = ApiDBUtils.findDomainById(sshkeyPair.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setHasAnnotation(annotationDao.hasAnnotations(sshkeyPair.getUuid(), AnnotationService.EntityType.SSH_KEYPAIR.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         return response;
     }
 

@@ -156,4 +156,9 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         return AutoScalePolicy.class;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
 }

@@ -63,7 +63,7 @@ class TestNetworks_1(cloudstackTestCase):
                 cls.api_client,
                 cls.test_data["network_offering_vlan"],
             )
-            # Enable Network offering
+            cls._cleanup.append(cls.network_offering)
             cls.network_offering.update(cls.api_client, state='Enabled')
             cls.test_data["network_without_acl"][
                 "networkoffering"] = cls.network_offering.id
@@ -71,12 +71,14 @@ class TestNetworks_1(cloudstackTestCase):
                 cls.api_client,
                 cls.test_data["service_offerings"]["tiny"]
             )
-            # Creating Disk offering, Service Offering and Account
+            cls._cleanup.append(cls.service_offering)
+
             cls.account = Account.create(
                 cls.api_client,
                 cls.test_data["account"],
                 domainid=cls.domain.id
             )
+            cls._cleanup.append(cls.account)
             # Getting authentication for user in newly created Account
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(
@@ -89,9 +91,6 @@ class TestNetworks_1(cloudstackTestCase):
                 cls.account.domainid
             )
             cls._cleanup.append(cls.account_network)
-            cls._cleanup.append(cls.account)
-            cls._cleanup.append(cls.service_offering)
-            cls._cleanup.append(cls.network_offering)
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
@@ -103,16 +102,11 @@ class TestNetworks_1(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        # Clean up, terminate the created volumes
-        cleanup_resources(self.apiClient, self.cleanup)
-        return
+        super(TestNetworks_1, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestNetworks_1, cls).tearDownClass()
 
     def __verify_values(self, expected_vals, actual_vals):
         """
@@ -289,9 +283,9 @@ class TestNetworks_1(cloudstackTestCase):
             self.apiClient,
             self.test_data["network_offering_without_sourcenat"],
         )
+        self.cleanup.append(network_offering_without_sourcenat)
         if network_offering_without_sourcenat is None:
             self.fail("Creation of network offering without sourcenat failed")
-        self.cleanup.append(network_offering_without_sourcenat)
         # Enable network offering
         network_offering_without_sourcenat.update(
             self.apiClient,
@@ -480,7 +474,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_05_list_network_offerings_with_and_without_vpc(self):
         """
         @Desc: Test list network offerings for vpc true and false parameters
@@ -539,12 +534,12 @@ class TestNetworks_1(cloudstackTestCase):
             self.apiClient,
             self.test_data["network_offering_vlan"],
         )
+        self.cleanup.append(network_offering)
         self.assertIsNotNone(
             network_offering,
             "Network offering is not created")
         # Enable Network offering
         network_offering.update(self.apiClient, state='Enabled')
-        self.cleanup.append(network_offering)
         # List network offering
         network_offering_after_count = NetworkOffering.list(self.userapiclient)
         status = validateList(network_offering_after_count)
@@ -602,7 +597,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_06_create_network_in_vpc(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -641,6 +637,7 @@ class TestNetworks_1(cloudstackTestCase):
             zoneid=self.zone.id,
         )
         self.assertIsNotNone(vpc_1, "VPC is not created")
+        self.cleanup.append(vpc_1)
         # List VPCs
         vpc_list = VPC.list(
             self.userapiclient,
@@ -702,7 +699,6 @@ class TestNetworks_1(cloudstackTestCase):
                 "Network is not created"
             )
             self.cleanup.append(network_created)
-            self.cleanup.append(vpc_1)
             # Creating expected and actual values dictionaries
             expected_dict = {
                 "id": self.test_data["network_without_acl"]["zoneid"],
@@ -769,7 +765,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_07_create_delete_network(self):
         """
         @Desc: Test delete network
@@ -875,7 +872,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_08_update_network(self):
         """
         @Desc: Test update network
@@ -1126,7 +1124,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_10_list_networks_in_vpc(self):
         """
         @Desc: Test list networks in vpc and verify VPC name
@@ -1164,6 +1163,7 @@ class TestNetworks_1(cloudstackTestCase):
             zoneid=self.zone.id,
         )
         self.assertIsNotNone(vpc_1, "VPC is not created")
+        self.cleanup.append(vpc_1)
         # List VPCs
         vpc_list = VPC.list(
             self.userapiclient,
@@ -1215,7 +1215,6 @@ class TestNetworks_1(cloudstackTestCase):
                 "Network is not created"
             )
             self.cleanup.append(network_created)
-            self.cleanup.append(vpc_1)
             # Creating expected and actual values dictionaries
             expected_dict = {
                 "id": self.test_data["network_without_acl"]["zoneid"],
@@ -1271,7 +1270,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_11_update_vpc(self):
         """
         @Desc: Test create vpc with network domain as parameter
@@ -1370,7 +1370,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_12_list_create_delete_networkACL(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -1411,6 +1412,7 @@ class TestNetworks_1(cloudstackTestCase):
             vpcofferingid=vpc_offs.id,
             zoneid=self.zone.id,
         )
+        self.cleanup.append(vpc_1)
         self.assertIsNotNone(vpc_1, "VPC is not created")
         # List VPCs
         vpc_list = VPC.list(
@@ -1470,7 +1472,6 @@ class TestNetworks_1(cloudstackTestCase):
                 accountid=self.account.name,
             )
             self.cleanup.append(network_created)
-            self.cleanup.append(vpc_1)
             self.assertIsNotNone(
                 network_created,
                 "Network is not created"
@@ -1603,12 +1604,13 @@ class TestNetworks_2(cloudstackTestCase):
                 cls.test_data["account"],
                 domainid=cls.domain.id
             )
+            cls._cleanup.append(cls.account)
+
             # Getting authentication for user in newly created Account
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(
                 cls.user.username,
                 cls.domain.name)
-            cls._cleanup.append(cls.account)
 
             cls.vpc_offering = VpcOffering.create(cls.api_client,
                                                   cls.test_data["vpc_offering"]
@@ -1626,16 +1628,11 @@ class TestNetworks_2(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        # Clean up, terminate the created volumes
-        cleanup_resources(self.apiClient, self.cleanup)
-        return
+        super(TestNetworks_2, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestNetworks_2, cls).tearDownClass()
 
     def __verify_values(self, expected_vals, actual_vals):
         """
@@ -2212,6 +2209,7 @@ class TestNetworks_2(cloudstackTestCase):
             self.zone.id
         )
         self.assertIsNotNone(vpc_created, "VPC Creation Failed")
+        self.cleanup.append(vpc_created)
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
@@ -2226,7 +2224,6 @@ class TestNetworks_2(cloudstackTestCase):
             len(list_vpc_after),
             "list VPC not equal as expected"
         )
-        self.cleanup.append(vpc_created)
         # Restarting VPC
         vpc_restarted = VPC.restart(vpc_created, self.userapiclient)
         # Verifying restart function resturns true
@@ -2367,7 +2364,8 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_19_create_list_reset_delete_vpnconnections(self):
         """
         @Desc: Test to List Create Reset and Delete VPN Customer

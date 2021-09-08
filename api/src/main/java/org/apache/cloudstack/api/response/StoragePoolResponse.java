@@ -21,14 +21,14 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import java.util.Date;
 import java.util.Map;
 
 @EntityReference(value = StoragePool.class)
-public class StoragePoolResponse extends BaseResponse {
+public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the ID of the storage pool")
     private String id;

@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -53,25 +53,25 @@ class bash:
         except:
             raise  CloudRuntimeException(formatExceptionInfo())
 
-        if not self.success: 
+        if not self.success:
             logging.debug("Failed to execute:" + self.getErrMsg())
 
     def isSuccess(self):
         return self.success
-    
+
     def getStdout(self):
         return self.stdout.decode('utf-8').strip('\n')
-    
+
     def getLines(self):
         return self.stdout.decode('utf-8').strip('\n')
 
     def getStderr(self):
         return self.stderr.decode('utf-8').strip('\n')
-    
+
     def getErrMsg(self):
         if self.isSuccess():
             return ""
-        
+
         if self.getStderr() is None or self.getStderr() == "":
             return self.getStdout()
         else:
@@ -80,11 +80,11 @@ class bash:
 def initLoging(logFile=None):
     try:
         if logFile is None:
-            logging.basicConfig(level=logging.DEBUG) 
-        else: 
-            logging.basicConfig(filename=logFile, level=logging.DEBUG) 
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(filename=logFile, level=logging.DEBUG)
     except:
-        logging.basicConfig(level=logging.DEBUG) 
+        logging.basicConfig(level=logging.DEBUG)
 
 def writeProgressBar(msg, result):
     output = "[%-6s]\n"%"Failed"
@@ -100,7 +100,7 @@ def writeProgressBar(msg, result):
 class UnknownSystemException(Exception):
     "This Excption is raised if the current operating enviornment is unknown"
     pass
- 
+
 class Distribution:
     def __init__(self):
         self.distro = "Unknown"
@@ -110,11 +110,15 @@ class Distribution:
             self.distro = "Fedora"
         elif os.path.exists("/etc/redhat-release"):
             version = open("/etc/redhat-release").readline()
-            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.") != -1:
+            if (version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or
+                version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.") != -1):
                 self.distro = "RHEL6"
-            elif version.find("Red Hat Enterprise Linux Server release 7") != -1 or version.find("Scientific Linux release 7") != -1 or version.find("CentOS Linux release 7") != -1 or version.find("CentOS release 7.") != -1:
+            elif (version.find("Red Hat Enterprise Linux Server release 7") != -1 or version.find("Scientific Linux release 7") != -1 or
+                version.find("CentOS Linux release 7") != -1 or version.find("CentOS release 7.") != -1):
                 self.distro = "RHEL7"
-            elif version.find("Red Hat Enterprise Linux Server release 8") != -1 or version.find("Scientific Linux release 8") != -1 or version.find("CentOS Linux release 8") != -1 or version.find("CentOS release 8.") != -1:
+            elif (version.find("Red Hat Enterprise Linux Server release 8") != -1 or version.find("Scientific Linux release 8") != -1 or
+                version.find("CentOS Linux release 8") != -1 or version.find("CentOS release 8.") != -1 or
+                version.find("Linux release 8") != -1):
                 self.distro = "RHEL8"
             elif version.find("CentOS") != -1:
                 self.distro = "CentOS"
@@ -134,17 +138,24 @@ class Distribution:
                 self.distro = "Ubuntu"
             else:
                 raise UnknownSystemException(distributor)
-        else: 
+        elif os.path.exists("/etc/os-release"):
+            version = open("/etc/os-release").readline()
+            distributor = version.split("=")[1].replace('"', '').strip()
+            if "SUSE" in distributor or "SLES" in distributor:
+                self.distro = "SUSE"
+            else:
+                raise UnknownSystemException(distributor)
+        else:
             raise UnknownSystemException
 
     def getVersion(self):
-        return self.distro 
+        return self.distro
     def getRelease(self):
         return self.release
     def getArch(self):
         return self.arch
-        
- 
+
+
 class serviceOps:
     pass
 class serviceOpsRedhat(serviceOps):
@@ -161,7 +172,7 @@ class serviceOpsRedhat(serviceOps):
     def stopService(self, servicename,force=False):
         if self.isServiceRunning(servicename) or force:
             return bash("service " + servicename +" stop").isSuccess()
-        
+
         return True
     def disableService(self, servicename):
         result = self.stopService(servicename)
@@ -176,13 +187,13 @@ class serviceOpsRedhat(serviceOps):
     def enableService(self, servicename,forcestart=False):
         bash("chkconfig --level 2345 " + servicename + " on")
         return self.startService(servicename,force=forcestart)
-        
+
     def isKVMEnabled(self):
         if os.path.exists("/dev/kvm"):
             return True
         else:
             return False
-        
+
 class serviceOpsUbuntu(serviceOps):
     def isServiceRunning(self, servicename):
         try:
@@ -202,7 +213,7 @@ class serviceOpsUbuntu(serviceOps):
         result = self.stopService(servicename)
         bash("sudo update-rc.d -f " + servicename + " remove")
         return result
-    
+
     def startService(self, servicename,force=True):
         if not self.isServiceRunning(servicename) or force:
             return bash("sudo /usr/sbin/service " + servicename + " start").isSuccess()
@@ -248,3 +259,6 @@ class serviceOpsRedhat7Later(serviceOps):
             return True
         else:
             return False
+
+class serviceOpsSUSE(serviceOpsRedhat7Later):
+    pass

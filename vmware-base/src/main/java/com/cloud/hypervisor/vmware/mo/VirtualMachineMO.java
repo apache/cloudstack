@@ -40,6 +40,8 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.vim25.InvalidStateFaultMsg;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.VirtualMachineTicket;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -130,6 +132,15 @@ public class VirtualMachineMO extends BaseMO {
     public static final String ANSWER_NO = "1";
 
     private ManagedObjectReference _vmEnvironmentBrowser = null;
+    private String internalCSName;
+
+    public String getInternalCSName() {
+        return internalCSName;
+    }
+
+    public void setInternalCSName(String internalVMName) {
+        this.internalCSName = internalVMName;
+    }
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
         super(context, morVm);
@@ -770,6 +781,7 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (result) {
             _context.waitForTaskProgressDone(morTask);
+            s_logger.debug(String.format("Cloned VM: %s as %s", getName(), cloneName));
             return true;
         } else {
             s_logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
@@ -1497,6 +1509,11 @@ public class VirtualMachineMO extends BaseMO {
         return chain;
     }
 
+    public void detachAllDisksAndDestroy() throws Exception {
+        detachAllDisks();
+        destroy();
+    }
+
     public void detachAllDisks() throws Exception {
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - detachAllDisk(). target MOR: " + _mor.getValue());
@@ -2047,8 +2064,7 @@ public class VirtualMachineMO extends BaseMO {
             return clonedVmMo;
         } finally {
             if (!bSuccess) {
-                clonedVmMo.detachAllDisks();
-                clonedVmMo.destroy();
+                clonedVmMo.detachAllDisksAndDestroy();
             }
         }
     }
@@ -2816,6 +2832,20 @@ public class VirtualMachineMO extends BaseMO {
         return virtualDisks;
     }
 
+    public List<VirtualDisk> getVirtualDisksOrderedByKey() throws Exception {
+        List<VirtualDisk> virtualDisks = getVirtualDisks();
+        Collections.sort(virtualDisks, new Comparator<VirtualDisk>() {
+            @Override
+            public int compare(VirtualDisk disk1, VirtualDisk disk2) {
+                Integer disk1Key = disk1.getKey();
+                Integer disk2Key = disk2.getKey();
+                return disk1Key.compareTo(disk2Key);
+            }
+        });
+
+        return virtualDisks;
+    }
+
     public List<String> detachAllDisksExcept(String vmdkBaseName, String deviceBusName) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
@@ -3372,7 +3402,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports cpu hotadd
-        if (guestOsDescriptor.isSupportsCpuHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsCpuHotAdd()) {
             guestOsSupportsCpuHotAdd = true;
         }
 
@@ -3583,5 +3613,35 @@ public class VirtualMachineMO extends BaseMO {
     public String acquireVncTicket() throws InvalidStateFaultMsg, RuntimeFaultFaultMsg {
         VirtualMachineTicket ticket = _context.getService().acquireTicket(_mor, "webmks");
         return ticket.getTicket();
+    }
+
+    public void cancelPendingTasks() throws Exception {
+        String vmName = getVmName();
+        s_logger.debug("Checking for pending tasks of the VM: " + vmName);
+
+        ManagedObjectReference taskmgr = _context.getServiceContent().getTaskManager();
+        List<ManagedObjectReference> tasks = _context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+
+        int vmTasks = 0, vmPendingTasks = 0;
+        for (ManagedObjectReference task : tasks) {
+            TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
+            if (info.getEntityName().equals(vmName)) {
+                vmTasks++;
+                if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
+                    String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
+                    s_logger.debug(taskName + " task pending for the VM: " + vmName + ", cancelling it");
+                    vmPendingTasks++;
+                    _context.getVimClient().cancelTask(task);
+                }
+            }
+        }
+
+        s_logger.debug(vmPendingTasks + " pending tasks for the VM: " + vmName + " found, out of " + vmTasks + " recent VM tasks");
+    }
+
+    public void tagAsWorkerVM() throws Exception {
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+        String workerTag = String.format("%d-%s", System.currentTimeMillis(), getContext().getStockObject("noderuninfo"));
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
     }
 }

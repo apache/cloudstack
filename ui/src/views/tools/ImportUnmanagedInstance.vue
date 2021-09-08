@@ -315,7 +315,7 @@ export default {
             details: 'min'
           }
         },
-        pods: {
+        projects: {
           list: 'listProjects',
           isLoad: true,
           field: 'projectid',

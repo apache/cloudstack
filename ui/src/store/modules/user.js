@@ -33,7 +33,9 @@ import {
   TIMEZONE_OFFSET,
   USE_BROWSER_TIMEZONE,
   HEADER_NOTICES,
-  DOMAIN_STORE
+  DOMAIN_STORE,
+  DARK_MODE,
+  THEME_SETTING
 } from '@/store/mutation-types'
 
 const user = {
@@ -51,7 +53,10 @@ const user = {
     zones: {},
     timezoneoffset: 0.0,
     usebrowsertimezone: false,
-    domainStore: {}
+    domainStore: {},
+    darkMode: false,
+    themeSetting: {},
+    defaultListViewPageSize: 20
   },
 
   mutations: {
@@ -106,6 +111,17 @@ const user = {
     SET_DOMAIN_STORE (state, domainStore) {
       state.domainStore = domainStore
       Vue.ls.set(DOMAIN_STORE, domainStore)
+    },
+    SET_DARK_MODE (state, darkMode) {
+      state.darkMode = darkMode
+      Vue.ls.set(DARK_MODE, darkMode)
+    },
+    SET_THEME_SETTING (state, setting) {
+      state.themeSetting = setting
+      Vue.ls.set(THEME_SETTING, setting)
+    },
+    SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
+      state.defaultListViewPageSize = defaultListViewPageSize
     }
   },
 
@@ -131,6 +147,10 @@ const user = {
 
           const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          const darkMode = Vue.ls.get(DARK_MODE, false)
+          commit('SET_DARK_MODE', darkMode)
+          const themeSetting = Vue.ls.get(THEME_SETTING, {})
+          commit('SET_THEME_SETTING', themeSetting)
 
           commit('SET_APIS', {})
           commit('SET_NAME', '')
@@ -159,9 +179,13 @@ const user = {
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
         const domainStore = Vue.ls.get(DOMAIN_STORE, {})
+        const darkMode = Vue.ls.get(DARK_MODE, false)
+        const themeSetting = Vue.ls.get(THEME_SETTING, {})
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
+        commit('SET_DARK_MODE', darkMode)
+        commit('SET_THEME_SETTING', themeSetting)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -230,6 +254,13 @@ const user = {
         api('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           commit('SET_FEATURES', result)
+        }).catch(error => {
+          reject(error)
+        })
+
+        api('listConfigurations', { name: 'default.ui.page.size' }).then(response => {
+          const defaultListViewPageSize = parseInt(response.listconfigurationsresponse.configuration[0].value)
+          commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', defaultListViewPageSize)
         }).catch(error => {
           reject(error)
         })
@@ -346,6 +377,12 @@ const user = {
     },
     SetDomainStore ({ commit }, domainStore) {
       commit('SET_DOMAIN_STORE', domainStore)
+    },
+    SetDarkMode ({ commit }, darkMode) {
+      commit('SET_DARK_MODE', darkMode)
+    },
+    SetThemeSetting ({ commit }, setting) {
+      commit('SET_THEME_SETTING', setting)
     }
   }
 }

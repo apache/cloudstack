@@ -62,9 +62,6 @@ class Services:
             }
 
 
-
-
-
 class TestDeployVmWithUserData(cloudstackTestCase):
     """Tests for UserData
     """
@@ -75,6 +72,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         cls.apiClient = cls.testClient.getApiClient()
         cls.services = Services().services
         cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
+        cls._cleanup = []
         if cls.zone.localstorageenabled:
             #For devcloud since localstroage is enabled
             cls.services["service_offering"]["storagetype"] = "local"
@@ -82,8 +80,9 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             cls.apiClient,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.account = Account.create(cls.apiClient, services=cls.services["account"])
-        cls.cleanup = [cls.account]
+        cls._cleanup.append(cls.account)
         cls.template = get_template(
             cls.apiClient,
             cls.zone.id,
@@ -96,6 +95,11 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
 
         cls.userdata = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2500))
+        # py3 base64 encode adheres to the standard of 76 character lines terminated with '\n'
+        # py2 didn't insert any new-lines
+        # so we now do the encoding in the stored userdata string and remove the '\n's
+        # to get a good easy string compare in the assert later on.
+        cls.userdata = base64.encodestring(cls.userdata.encode()).decode().replace('\n', '')
         cls.user_data_2k= ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2000))
         cls.user_data_2kl = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(1900))
 
@@ -103,6 +107,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
 
 
     @attr(tags=["simulator", "devcloud", "basic", "advanced"], required_hardware="true")
@@ -110,7 +115,6 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         """Test userdata as POST, size > 2k
         """
 
-        self.userdata = base64.encodestring(self.userdata.encode()).decode()
         self.services["virtual_machine"]["userdata"] = self.userdata
 
         deployVmResponse = VirtualMachine.create(
@@ -122,8 +126,8 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             templateid=self.template.id,
             zoneid=self.zone.id,
             method="POST"
-
         )
+        self.cleanup.append(deployVmResponse)
 
         vms = list_virtual_machines(
             self.apiClient,
@@ -190,11 +194,8 @@ class TestDeployVmWithUserData(cloudstackTestCase):
                 )
                 res = str(result)
                 self.assertEqual(res.__contains__(self.userdata),True,"Userdata Not applied Check the failures")
-
-
             except KeyError:
                 self.skipTest("Marvin configuration has no host credentials to check USERDATA")
-
         else:
             try:
                 host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
@@ -211,13 +212,9 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             except KeyError:
                 self.skipTest("Marvin configuration has no host credentials to check router user data")
 
-
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.apiClient, cls.cleanup)
+        super(TestDeployVmWithUserData, cls).tearDownClass()
 
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+    def tearDown(self):
+        super(TestDeployVmWithUserData, self).tearDown()

@@ -46,7 +46,7 @@
           v-else />
       </div>
       <div slot="memused" slot-scope="record">
-        <span v-if="record.memoryused | byteToGigabyte">
+        <span v-if="record.memoryused">
           {{ record.memoryused | byteToGigabyte }} GB
         </span>
       </div>
@@ -197,7 +197,9 @@ export default {
       var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
       api(migrateApi, migrateParams).then(response => {
-        const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
+        const jobid = isUserVm
+          ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
+          : response.migratesystemvmresponse.jobid
         this.$pollJob({
           jobId: jobid,
           title: `${this.$t('label.migrating')} ${this.resource.name}`,

@@ -297,6 +297,12 @@
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="resource"
+          :items="annotations">
+        </AnnotationsTab>
+      </a-tab-pane>
     </a-tabs>
   </a-spin>
 </template>
@@ -309,6 +315,7 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'VpcTab',
@@ -317,7 +324,8 @@ export default {
     Status,
     IpAddressesTab,
     RoutersTab,
-    VpcTiersTab
+    VpcTiersTab,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
   props: {
@@ -414,7 +422,8 @@ export default {
       },
       page: 1,
       pageSize: 10,
-      currentTab: 'details'
+      currentTab: 'details',
+      annotations: []
     }
   },
   beforeCreate () {
@@ -471,7 +480,22 @@ export default {
         case 'acl':
           this.fetchAclList()
           break
+        case 'comments':
+          this.fetchComments()
+          break
       }
+    },
+    fetchComments () {
+      this.fetchLoading = true
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+      })
     },
     fetchPrivateGateways () {
       this.fetchLoading = true

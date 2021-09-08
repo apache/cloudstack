@@ -42,15 +42,16 @@ function install_packages() {
 
   debconf_packages
 
-  local apt_get="apt-get --no-install-recommends -q -y -t buster-backports"
+  local apt_get="apt-get --no-install-recommends -q -y"
 
   ${apt_get} install grub-legacy \
     rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
     openssh-server e2fsprogs tcpdump iftop socat wget coreutils systemd \
-    python python3 bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
+    python python3 python3-flask ieee-data \
+    bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping curl \
     dnsutils zip unzip ethtool uuid file iproute2 acpid sudo \
-    sysstat python-netaddr \
+    sysstat \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
     nfs-common \
@@ -59,18 +60,20 @@ function install_packages() {
     xenstore-utils libxenstore3.0 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
-    ipcalc \
     openjdk-11-jre-headless \
-    ipset \
+    ipcalc ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
-    python-flask \
     haproxy \
     haveged \
     radvd \
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
+
+  # python2-netaddr workaround
+  wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
+  dpkg -i python-netaddr_0.7.19-1_all.deb
 
   apt-get -y autoremove --purge
   apt-get clean

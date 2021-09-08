@@ -96,12 +96,7 @@ class TestVolumeLimits(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVolumeLimits, cls).tearDownClass()
 
     def setUp(self):
         if self.unsupportedStorageType:
@@ -113,22 +108,16 @@ class TestVolumeLimits(cloudstackTestCase):
         try:
             self.services["disk_offering"]["disksize"] = 2
             self.disk_offering = DiskOffering.create(self.apiclient, self.services["disk_offering"])
+            self.cleanup.append(self.disk_offering)
             self.assertNotEqual(self.disk_offering, None, \
                                 "Disk offering is None")
-            self.cleanup.append(self.disk_offering)
         except Exception as e:
             self.tearDown()
             self.skipTest("Failure in setup: %s" % e)
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-            pass
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVolumeLimits, self).tearDown()
 
     def setupAccount(self, accountType):
         """Setup the account required for the test"""
@@ -138,17 +127,18 @@ class TestVolumeLimits(cloudstackTestCase):
                 self.domain = Domain.create(self.apiclient,
                                             services=self.services["domain"],
                                             parentdomainid=self.domain.id)
+                self.cleanup.append(self.domain)
 
             self.account = Account.create(self.apiclient, self.services["account"],
                                           domainid=self.domain.id, admin=True)
             self.cleanup.append(self.account)
-            if accountType == CHILD_DOMAIN_ADMIN:
-                self.cleanup.append(self.domain)
 
             self.virtualMachine = VirtualMachine.create(self.api_client, self.services["virtual_machine"],
                                                         accountid=self.account.name, domainid=self.account.domainid,
                                                         diskofferingid=self.disk_offering.id,
-                                                        serviceofferingid=self.service_offering.id)
+                                                        serviceofferingid=self.service_offering.id,
+                                                        startvm=False)
+            self.cleanup.append(self.virtualMachine)
 
             accounts = Account.list(self.apiclient, id=self.account.id)
 
@@ -216,6 +206,7 @@ class TestVolumeLimits(cloudstackTestCase):
         # Stopping instance
         try:
             self.virtualMachine.delete(self.apiclient, expunge=False)
+            self.cleanup.remove(self.virtualMachine)
         except Exception as e:
             self.fail("Failed to destroy instance: %s" % e)
         response = matchResourceCount(
@@ -227,6 +218,7 @@ class TestVolumeLimits(cloudstackTestCase):
         # Recovering instance
         try:
             self.virtualMachine.recover(self.apiclient)
+            self.cleanup.append(self.virtualMachine)
         except Exception as e:
             self.fail("Failed to start instance: %s" % e)
 
@@ -267,13 +259,13 @@ class TestVolumeLimits(cloudstackTestCase):
             expectedCount = self.initialResourceCount + int(self.services["disk_offering"]["disksize"])
             disk_offering = DiskOffering.create(self.apiclient,
                                                 services=self.services["disk_offering"])
-
             self.cleanup.append(disk_offering)
 
             volume = Volume.create(
                 apiclient, self.services["volume"], zoneid=self.zone.id,
                 account=self.account.name, domainid=self.account.domainid,
                 diskofferingid=disk_offering.id)
+            self.cleanup.append(volume)
         except Exception as e:
             self.fail("Failure: %s" % e)
 
@@ -285,6 +277,7 @@ class TestVolumeLimits(cloudstackTestCase):
 
         try:
             self.virtualMachine.attach_volume(apiclient, volume=volume)
+            self.cleanup.remove(volume)
         except Exception as e:
             self.fail("Failed while attaching volume to VM: %s" % e)
 
@@ -296,6 +289,7 @@ class TestVolumeLimits(cloudstackTestCase):
 
         try:
             self.virtualMachine.detach_volume(apiclient, volume=volume)
+            self.cleanup.append(volume)
         except Exception as e:
             self.fail("Failure while detaching volume: %s" % e)
 
@@ -343,22 +337,19 @@ class TestVolumeLimits(cloudstackTestCase):
             self.services["disk_offering"]["disksize"] = 10
             disk_offering_10_GB = DiskOffering.create(self.apiclient,
                                                       services=self.services["disk_offering"])
-
             self.cleanup.append(disk_offering_10_GB)
 
             volume_1 = Volume.create(
                 apiclient, self.services["volume"], zoneid=self.zone.id,
                 account=self.account.name, domainid=self.account.domainid,
                 diskofferingid=disk_offering_5_GB.id)
+            self.debug("Attaching volume %s to vm %s" % (volume_1.name, self.virtualMachine.name))
+            self.virtualMachine.attach_volume(apiclient, volume=volume_1)
 
             volume_2 = Volume.create(
                 apiclient, self.services["volume"], zoneid=self.zone.id,
                 account=self.account.name, domainid=self.account.domainid,
                 diskofferingid=disk_offering_10_GB.id)
-
-            self.debug("Attaching volume %s to vm %s" % (volume_1.name, self.virtualMachine.name))
-            self.virtualMachine.attach_volume(apiclient, volume=volume_1)
-
             self.debug("Attaching volume %s to vm %s" % (volume_2.name, self.virtualMachine.name))
             self.virtualMachine.attach_volume(apiclient, volume=volume_2)
         except Exception as e:
@@ -419,6 +410,7 @@ class TestVolumeLimits(cloudstackTestCase):
                                                       accountid=self.account.name, domainid=self.account.domainid,
                                                       diskofferingid=self.disk_offering.id,
                                                       serviceofferingid=self.service_offering.id)
+        self.cleanup.append(self.virtualMachine_2)
 
         expectedCount = (self.initialResourceCount * 2)  # Total 2 vms
         response = matchResourceCount(
@@ -431,6 +423,7 @@ class TestVolumeLimits(cloudstackTestCase):
                                                       accountid=self.account.name, domainid=self.account.domainid,
                                                       diskofferingid=self.disk_offering.id,
                                                       serviceofferingid=self.service_offering.id)
+        self.cleanup.append(self.virtualMachine_3)
 
         expectedCount = (self.initialResourceCount * 3)  # Total 3 vms
         response = matchResourceCount(
@@ -442,6 +435,7 @@ class TestVolumeLimits(cloudstackTestCase):
         self.debug("Destroying instance: %s" % self.virtualMachine_2.name)
         try:
             self.virtualMachine_2.delete(self.apiclient)
+            self.cleanup.remove(self.virtualMachine_2)
         except Exception as e:
             self.fail("Failed to delete instance: %s" % e)
 
@@ -450,7 +444,7 @@ class TestVolumeLimits(cloudstackTestCase):
 
         expectedCount -= (self.template.size / (1024 ** 3))
         response = matchResourceCount(
-            self.apiclient, expectedCount,
+            self.apiclient, int(expectedCount),
             RESOURCE_PRIMARY_STORAGE,
             accountid=self.account.id)
         self.assertEqual(response[0], PASS, response[1])
@@ -474,7 +468,7 @@ class TestVolumeLimits(cloudstackTestCase):
         try:
             account_2 = Account.create(self.apiclient, self.services["account"],
                                        domainid=self.domain.id, admin=True)
-            self.cleanup.insert(0, account_2)
+            self.cleanup.append(account_2)
         except Exception as e:
             self.fail("Failed to create account: %s" % e)
 
@@ -489,6 +483,8 @@ class TestVolumeLimits(cloudstackTestCase):
             self.virtualMachine.stop(self.apiclient)
             self.virtualMachine.assign_virtual_machine(self.apiclient,
                                                        account_2.name, account_2.domainid)
+            self.cleanup.remove(self.virtualMachine)  # should now be cleaned with account_2
+            self.cleanup.append(self.virtualMachine)  # or before to be neat
         except Exception as e:
             self.fail("Failed to assign virtual machine to account %s: %s" %
                       (account_2.name, e))
@@ -510,7 +506,8 @@ class TestVolumeLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    # @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_create_template_snapshot(self, value):
         """Test create snapshot and templates from volume
 
@@ -527,8 +524,12 @@ class TestVolumeLimits(cloudstackTestCase):
         self.debug(response[0])
         self.debug(response[1])
         self.assertEqual(response[0], PASS, response[1])
-
         apiclient = self.apiclient
+        try:
+            self.virtualMachine.start(apiclient)
+        except Exception as e:
+            self.fail("Failed to start instance: %s" % e)
+
         if value == CHILD_DOMAIN_ADMIN:
             apiclient = self.testClient.getUserApiClient(
                 UserName=self.account.name,
@@ -566,7 +567,6 @@ class TestVolumeLimits(cloudstackTestCase):
                                                  services=self.services["volume"],
                                                  account=self.account.name,
                                                  domainid=self.account.domainid)
-
             self.debug("Attaching the volume to vm: %s" % self.virtualMachine.name)
             self.virtualMachine.attach_volume(apiclient, volume)
         except Exception as e:
@@ -581,12 +581,14 @@ class TestVolumeLimits(cloudstackTestCase):
 
         try:
             self.virtualMachine.detach_volume(apiclient, volume)
+            self.cleanup.append(volume)
         except Exception as e:
             self.fail("Failure in detach volume operation: %s" % e)
 
         try:
             self.debug("deleting the volume: %s" % volume.name)
             volume.delete(apiclient)
+            self.cleanup.remove(volume)
         except Exception as e:
             self.fail("Failure while deleting volume: %s" % e)
 

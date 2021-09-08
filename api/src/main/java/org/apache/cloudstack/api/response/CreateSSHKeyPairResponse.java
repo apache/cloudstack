@@ -28,8 +28,8 @@ public class CreateSSHKeyPairResponse extends SSHKeyPairResponse {
     public CreateSSHKeyPairResponse() {
     }
 
-    public CreateSSHKeyPairResponse(String name, String fingerprint, String privateKey) {
-        super(name, fingerprint);
+    public CreateSSHKeyPairResponse(String uuid, String name, String fingerprint, String privateKey) {
+        super(uuid, name, fingerprint);
         this.privateKey = privateKey;
     }
 

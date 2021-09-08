@@ -30,6 +30,8 @@ import javax.inject.Inject;
 
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -189,6 +191,8 @@ public class VolumeServiceImpl implements VolumeService {
     private VolumeOrchestrationService _volumeMgr;
     @Inject
     private StorageManager _storageMgr;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -1540,6 +1544,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeInfo vol = volFactory.getVolume(volumeId);
         vol.stateTransit(Volume.Event.DestroyRequested);
         snapshotMgr.deletePoliciesForVolume(volumeId);
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VOLUME.name(), vol.getUuid());
 
         vol.stateTransit(Volume.Event.OperationSucceeded);
 
