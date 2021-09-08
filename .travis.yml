@@ -64,7 +64,7 @@ env:
              smoke/test_dynamicroles
              smoke/test_global_settings
              smoke/test_guest_vlan_range
-             smoke/test_host_annotations
+             smoke/test_annotations
              smoke/test_host_maintenance
              smoke/test_hostha_simulator"
 
