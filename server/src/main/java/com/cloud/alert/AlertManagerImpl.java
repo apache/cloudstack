@@ -240,7 +240,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
         try {
             if (mailSender != null) {
-                sendAlert(alertType, dataCenterId, podId, null, subject, body);
+                /* retirei o parametro 'clusterid=null' que estava gerando NPE, pois o mesmo não é recebido por
+                parametro no método, muito menos utilizado no alerta */
+                sendAlert(alertType, dataCenterId, podId, subject, body);
             } else {
                 s_logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
                         " | message:: " + subject + " | body:: " + body);
