@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.DataCenter;
@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = DataCenter.class)
-public class ZoneResponse extends BaseResponse implements SetResourceIconResponse {
+public class ZoneResponse extends BaseResponseWithAnnotations implements SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "Zone id")
     private String id;

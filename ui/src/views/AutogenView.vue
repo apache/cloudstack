@@ -17,74 +17,78 @@
 
 <template>
   <div>
-    <a-card class="breadcrumb-card">
-      <a-row>
-        <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
-          <breadcrumb :resource="resource">
-            <span slot="end">
-              <a-button
-                :loading="loading"
-                style="margin-bottom: 5px"
-                shape="round"
-                size="small"
-                icon="reload"
-                @click="fetchData({ irefresh: true })">
-                {{ $t('label.refresh') }}
-              </a-button>
-              <a-switch
-                v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
-                style="margin-left: 8px"
-                :checked-children="$t('label.metrics')"
-                :un-checked-children="$t('label.metrics')"
-                :checked="$store.getters.metrics"
-                @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
-              <a-tooltip placement="right">
-                <template slot="title">
-                  {{ $t('label.filterby') }}
-                </template>
-                <a-select
-                  v-if="!dataView && filters && filters.length > 0"
-                  :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                    ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                    ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
-                  style="min-width: 100px; margin-left: 10px"
-                  @change="changeFilter">
-                  <a-icon slot="suffixIcon" type="filter" />
-                  <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
-                    {{ $t('label.all') }}
-                  </a-select-option>
-                  <a-select-option v-for="filter in filters" :key="filter">
-                    {{ $t('label.' + filter) }}
-                  </a-select-option>
-                </a-select>
-              </a-tooltip>
-            </span>
-          </breadcrumb>
-        </a-col>
-        <a-col
-          :span="device === 'mobile' ? 24 : 12"
-          :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
-          <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
-          <action-button
-            v-else
-            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
-            :loading="loading"
-            :actions="actions"
-            :selectedRowKeys="selectedRowKeys"
-            :dataView="dataView"
-            :resource="resource"
-            @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
-          <search-view
-            v-if="!dataView"
-            :searchFilters="searchFilters"
-            :searchParams="searchParams"
-            :apiName="apiName"
-            @search="onSearch"
-            @change-filter="changeFilter"/>
-        </a-col>
-      </a-row>
-    </a-card>
+    <a-affix :offsetTop="78">
+      <a-card class="breadcrumb-card" style="z-index: 10">
+        <a-row>
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+            <breadcrumb :resource="resource">
+              <span slot="end">
+                <a-button
+                  :loading="loading"
+                  style="margin-bottom: 5px"
+                  shape="round"
+                  size="small"
+                  icon="reload"
+                  @click="fetchData({ irefresh: true })">
+                  {{ $t('label.refresh') }}
+                </a-button>
+                <a-switch
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.metrics')"
+                  :un-checked-children="$t('label.metrics')"
+                  :checked="$store.getters.metrics"
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-tooltip placement="right">
+                  <template slot="title">
+                    {{ $t('label.filterby') }}
+                  </template>
+                  <a-select
+                    v-if="!dataView && filters && filters.length > 0"
+                    :placeholder="$t('label.filterby')"
+                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                    style="min-width: 100px; margin-left: 10px"
+                    @change="changeFilter">
+                    <a-icon slot="suffixIcon" type="filter" />
+                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                      {{ $t('label.all') }}
+                    </a-select-option>
+                    <a-select-option v-for="filter in filters" :key="filter">
+                      {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
+                      <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
+                    </a-select-option>
+                  </a-select>
+                </a-tooltip>
+              </span>
+            </breadcrumb>
+          </a-col>
+          <a-col
+            :span="device === 'mobile' ? 24 : 12"
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
+            <action-button
+              v-else
+              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
+              :loading="loading"
+              :actions="actions"
+              :selectedRowKeys="selectedRowKeys"
+              :selectedItems="selectedItems"
+              :dataView="dataView"
+              :resource="resource"
+              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
+            <search-view
+              v-if="!dataView"
+              :searchFilters="searchFilters"
+              :searchParams="searchParams"
+              :apiName="apiName"
+              @search="onSearch"
+              @change-filter="changeFilter"/>
+          </a-col>
+        </a-row>
+      </a-card>
+    </a-affix>
 
     <div v-show="showAction">
       <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
@@ -372,7 +376,7 @@
       </a-modal>
     </div>
 
-    <div v-if="dataView">
+    <div v-if="dataView" style="margin-top: -10px">
       <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
       <resource-view
         v-else
@@ -391,12 +395,13 @@
         @refresh="this.fetchData" />
       <a-pagination
         class="row-element"
+        style="margin-top: 10px"
         size="small"
         :current="page"
         :pageSize="pageSize"
         :total="itemCount"
         :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '200'] : ['10', '20', '50', '100', '200']"
+        :pageSizeOptions="pageSizeOptions"
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
@@ -477,7 +482,7 @@ export default {
       modalInfo: {},
       itemCount: 0,
       page: 1,
-      pageSize: 10,
+      pageSize: this.$store.getters.defaultListViewPageSize,
       resource: {},
       selectedRowKeys: [],
       currentAction: {},
@@ -544,21 +549,6 @@ export default {
         })
       }
     })
-    eventBus.$on('update-job-details', (jobId, resourceId) => {
-      const fullPath = this.$route.fullPath
-      const path = this.$route.path
-      var jobs = this.$store.getters.headerNotices.map(job => {
-        if (job.jobid === jobId) {
-          if (resourceId && !path.includes(resourceId)) {
-            job.path = path + '/' + resourceId
-          } else {
-            job.path = fullPath
-          }
-        }
-        return job
-      })
-      this.$store.commit('SET_HEADER_NOTICES', jobs)
-    })
 
     eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
       if (selectedItems.length === 0) {
@@ -589,9 +579,6 @@ export default {
       }
     })
 
-    if (this.device === 'desktop') {
-      this.pageSize = 20
-    }
     this.currentPath = this.$route.fullPath
     this.fetchData()
     if ('projectid' in this.$route.query) {
@@ -614,7 +601,6 @@ export default {
           this.pageSize = Number(to.query.pagesize)
         } else {
           this.page = 1
-          this.pageSize = (this.device === 'desktop' ? 20 : 10)
         }
         this.itemCount = 0
         this.fetchData()
@@ -635,6 +621,15 @@ export default {
   computed: {
     hasSelected () {
       return this.selectedRowKeys.length > 0
+    },
+    pageSizeOptions () {
+      var sizes = [20, 50, 100, 200, this.$store.getters.defaultListViewPageSize]
+      if (this.device !== 'desktop') {
+        sizes.unshift(10)
+      }
+      return [...new Set(sizes)].sort(function (a, b) {
+        return a - b
+      }).map(String)
     }
   },
   methods: {
@@ -692,7 +687,12 @@ export default {
 
       params.listall = true
       if (this.$route.meta.params) {
-        Object.assign(params, this.$route.meta.params)
+        const metaParams = this.$route.meta.params
+        if (typeof metaParams === 'function') {
+          Object.assign(params, metaParams())
+        } else {
+          Object.assign(params, metaParams)
+        }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'templatefilter' in params && this.routeName === 'template') {
@@ -806,9 +806,7 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
-        if (this.$route.path.startsWith('/ssh/')) {
-          params.name = this.$route.params.id
-        } else if (this.$route.path.startsWith('/vmsnapshot/')) {
+        if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
@@ -857,6 +855,18 @@ export default {
           })
         }
 
+        if (this.apiName === 'listAnnotations') {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -865,9 +875,7 @@ export default {
               this.items[idx][key] = func(this.items[idx])
             }
           }
-          if (this.$route.path.startsWith('/ssh')) {
-            this.items[idx].id = this.items[idx].name
-          } else if (this.$route.path.startsWith('/ldapsetting')) {
+          if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
         }
@@ -1079,7 +1087,9 @@ export default {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
-      eventBus.$emit('update-job-details', jobId, resource)
+      if (this.shouldNavigateBack(action)) {
+        action.isFetchData = false
+      }
       return new Promise((resolve) => {
         this.$pollJob({
           jobId,
@@ -1112,7 +1122,8 @@ export default {
           showLoading: showLoading,
           catchMessage: this.$t('error.fetching.async.job.result'),
           action,
-          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal,
+          resourceId: resource
         })
       })
     },
@@ -1335,7 +1346,7 @@ export default {
           }
           response.then(jobId => {
             hasJobId = jobId
-            if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
+            if (this.shouldNavigateBack(action)) {
               this.$router.go(-1)
             } else {
               if (!hasJobId) {
@@ -1357,6 +1368,9 @@ export default {
         })
       })
     },
+    shouldNavigateBack (action) {
+      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
+    },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
       delete query.templatefilter
@@ -1364,6 +1378,7 @@ export default {
       delete query.account
       delete query.domainid
       delete query.state
+      delete query.annotationfilter
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1381,6 +1396,8 @@ export default {
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
         }
+      } else if (this.$route.name === 'comment') {
+        query.annotationfilter = filter
       }
       query.filter = filter
       query.page = 1
@@ -1418,8 +1435,8 @@ export default {
           Object.assign(query, opts)
         }
       }
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = String(this.pageSize)
       if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
         this.fetchData(query)
         return
@@ -1506,7 +1523,6 @@ export default {
 }
 
 .row-element {
-  margin-top: 10px;
   margin-bottom: 10px;
 }
 

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.cloud.domain.dao.DomainDetailsDao;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -95,6 +96,8 @@ public class DomainManagerImplTest {
     ConfigurationManager _configMgr;
     @Mock
     DomainDetailsDao _domainDetailsDao;
+    @Mock
+    AnnotationDao annotationDao;
 
     @Spy
     @InjectMocks

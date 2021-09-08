@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldStringValue;
@@ -170,6 +171,19 @@ public class DatacenterMO extends BaseMO {
         }
 
         return vms;
+    }
+
+    public List<HostMO> getAllHostsOnDatacenter() throws Exception {
+        List<HostMO> hosts = new ArrayList<>();
+
+        List<ObjectContent> ocs = getHostPropertiesOnDatacenterHostFolder(new String[] {"name"});
+        if (CollectionUtils.isNotEmpty(ocs)) {
+            for (ObjectContent oc : ocs) {
+                hosts.add(new HostMO(getContext(), oc.getObj()));
+            }
+        }
+
+        return hosts;
     }
 
     public ManagedObjectReference findDatastore(String name) throws Exception {

@@ -23,6 +23,10 @@ import javax.inject.Inject;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.storage.StorageStats;
+import com.cloud.user.AccountManager;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +46,10 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     private final SearchBuilder<ImageStoreJoinVO> dsSearch;
 
@@ -83,6 +91,8 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
             osResponse.setDiskSizeTotal(secStorageStats.getCapacityBytes());
             osResponse.setDiskSizeUsed(secStorageStats.getByteUsed());
         }
+        osResponse.setHasAnnotation(annotationDao.hasAnnotations(ids.getUuid(), AnnotationService.EntityType.SECONDARY_STORAGE.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         osResponse.setObjectName("imagestore");
         return osResponse;
@@ -90,6 +100,10 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
 
     @Override
     public ImageStoreResponse setImageStoreResponse(ImageStoreResponse response, ImageStoreJoinVO ids) {
+        if (response.hasAnnotation() == null) {
+            response.setHasAnnotation(annotationDao.hasAnnotations(ids.getUuid(), AnnotationService.EntityType.SECONDARY_STORAGE.name(),
+                    accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        }
         return response;
     }
 

@@ -39,12 +39,16 @@ export default {
     }
     return fields
   },
+  resourceType: 'SecondaryStorage',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   actions: [
     {
@@ -87,7 +91,8 @@ export default {
       icon: 'delete',
       label: 'label.action.delete.secondary.storage',
       message: 'message.action.delete.secondary.storage',
-      dataView: true
+      dataView: true,
+      displayName: (record) => { return record.name || record.displayName || record.id }
     }
   ]
 }

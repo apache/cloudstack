@@ -25,6 +25,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.domain.dao.DomainDetailsDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
@@ -127,6 +129,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ConfigurationManager _configMgr;
     @Inject
     private DomainDetailsDao _domainDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Inject
     MessageBus _messageBus;
@@ -338,6 +342,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
                 cleanupDomainDetails(domain.getId());
                 cleanupDomainOfferings(domain.getId());
+                annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
                 return true;
             } catch (Exception ex) {

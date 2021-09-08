@@ -96,4 +96,5 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
 
     public void addDetail(long resourceId, String key, String value, boolean display);
 
+    public List<Long> findResouceIdsByNameAndValueIn(String name, Object[] values);
 }

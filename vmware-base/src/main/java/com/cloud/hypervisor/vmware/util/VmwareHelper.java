@@ -548,12 +548,6 @@ public class VmwareHelper {
 
         cpuInfo.setReservation((long)cpuReservedMhz);
         vmConfig.setCpuAllocation(cpuInfo);
-        if (cpuSpeedMHz != cpuReservedMhz) {
-            vmConfig.setCpuHotAddEnabled(true);
-        }
-        if (memoryMB != memoryReserveMB) {
-            vmConfig.setMemoryHotAddEnabled(true);
-        }
         ResourceAllocationInfo memInfo = new ResourceAllocationInfo();
         memInfo.setLimit((long)memoryMB);
         memInfo.setReservation((long)memoryReserveMB);

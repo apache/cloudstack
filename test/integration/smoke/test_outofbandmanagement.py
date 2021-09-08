@@ -15,23 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.lib.utils import (random_gen)
 from nose.plugins.attrib import attr
 
 from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 
 import random
 import socket
-import sys
 import _thread
-import time
 
 
 class TestOutOfBandManagement(cloudstackTestCase):
@@ -47,7 +42,9 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.host = None
         cls.cleanup = []
-        cls.skipIfMSIsUnsupported(cls)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if (cls.hypervisor.lower() != "simulator"):
+            cls.skipIfMSIsUnsupported(cls)
 
         # use random port for ipmisim
         s = socket.socket()

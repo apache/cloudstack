@@ -115,4 +115,9 @@ public class PrivateGatewayProfile implements PrivateGateway {
     public Class<?> getEntityType() {
         return VpcGateway.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

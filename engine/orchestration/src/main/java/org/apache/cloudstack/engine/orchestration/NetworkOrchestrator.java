@@ -48,6 +48,8 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.context.CallContext;
@@ -317,6 +319,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     ResourceManager resourceManager;
+    @Inject
+    private AnnotationDao annotationDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -3672,6 +3676,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } catch (final ResourceUnavailableException e) {
             throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
         }
+
+        annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK.name(), network.getUuid());
 
         return success;
     }
