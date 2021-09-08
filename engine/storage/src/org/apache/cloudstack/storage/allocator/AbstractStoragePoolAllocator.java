@@ -106,6 +106,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
         List<StoragePool> pools) {
+        Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
         short capacityType;
         if(pools != null && pools.size() != 0){
@@ -115,7 +116,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return null;
         }
 
-        List<Long> poolIdsByCapacity = _capacityDao.orderHostsByFreeCapacity(clusterId, capacityType);
+        List<Long> poolIdsByCapacity = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("List of pools in descending order of free capacity: "+ poolIdsByCapacity);
         }

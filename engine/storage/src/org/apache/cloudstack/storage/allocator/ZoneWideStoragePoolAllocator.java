@@ -23,6 +23,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,8 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     DataStoreManager dataStoreMgr;
+    @Inject
+    private CapacityDao capacityDao;
 
 
     @Override
@@ -104,6 +108,39 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
         }
         return suitablePools;
+    }
+
+    @Override
+    protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
+                                                       List<StoragePool> pools) {
+        Long zoneId = plan.getDataCenterId();
+        short capacityType;
+        if(pools != null && pools.size() != 0){
+            capacityType = pools.get(0).getPoolType().isShared() ? Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED : Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
+        } else{
+            return null;
+        }
+
+        List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, null, capacityType);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("List of zone-wide storage pools in descending order of free capacity: "+ poolIdsByCapacity);
+        }
+
+        //now filter the given list of Pools by this ordered list
+        Map<Long, StoragePool> poolMap = new HashMap<>();
+        for (StoragePool pool : pools) {
+            poolMap.put(pool.getId(), pool);
+        }
+        List<Long> matchingPoolIds = new ArrayList<>(poolMap.keySet());
+
+        poolIdsByCapacity.retainAll(matchingPoolIds);
+
+        List<StoragePool> reorderedPools = new ArrayList<>();
+        for(Long id: poolIdsByCapacity){
+            reorderedPools.add(poolMap.get(id));
+        }
+
+        return reorderedPools;
     }
 
     @Override
