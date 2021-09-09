@@ -36,6 +36,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "volumes")
@@ -642,5 +643,9 @@ public class VolumeVO implements Volume {
     @Override
     public Class<?> getEntityType() {
         return Volume.class;
+    }
+
+    public String getVolumeDescription(){
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
     }
 }

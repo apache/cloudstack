@@ -42,4 +42,12 @@ public interface TaggedResourceService {
     boolean deleteTags(List<String> resourceIds, ResourceObjectType resourceType, Map<String, String> tags);
 
     List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId);
+
+    /**
+     * Retrieves tags from resource.
+     * @param type
+     * @param resourceId
+     * @return If the list of tags is not null, returns a map with the tags, otherwise, returns null.
+     */
+    public Map<String, String> getTagsFromResource(ResourceObjectType type, long resourceId);
 }
