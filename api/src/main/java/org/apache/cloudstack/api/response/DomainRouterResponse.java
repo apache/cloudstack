@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
 @SuppressWarnings("unused")
-public class DomainRouterResponse extends BaseResponse implements ControlledViewEntityResponse {
+public class DomainRouterResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the router")
     private String id;

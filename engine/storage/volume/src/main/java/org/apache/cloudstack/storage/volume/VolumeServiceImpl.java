@@ -30,6 +30,8 @@ import javax.inject.Inject;
 
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -133,6 +135,7 @@ import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
 
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
+import java.util.concurrent.ExecutionException;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -189,6 +192,8 @@ public class VolumeServiceImpl implements VolumeService {
     private VolumeOrchestrationService _volumeMgr;
     @Inject
     private StorageManager _storageMgr;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -1540,6 +1545,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeInfo vol = volFactory.getVolume(volumeId);
         vol.stateTransit(Volume.Event.DestroyRequested);
         snapshotMgr.deletePoliciesForVolume(volumeId);
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VOLUME.name(), vol.getUuid());
 
         vol.stateTransit(Volume.Event.OperationSucceeded);
 
@@ -1833,30 +1839,8 @@ public class VolumeServiceImpl implements VolumeService {
                 destroyFuture.get();
                 future.complete(res);
             } else {
-                srcVolume.processEvent(Event.OperationSuccessed);
-                destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
-                volDao.updateUuid(srcVolume.getId(), destVolume.getId());
-                try {
-                    destroyVolume(srcVolume.getId());
-                    if (srcVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
-                        s_logger.info("Src volume " + srcVolume.getId() + " can be removed");
-                        srcVolume.processEvent(Event.ExpungeRequested);
-                        srcVolume.processEvent(Event.OperationSuccessed);
-                        volDao.remove(srcVolume.getId());
-                        future.complete(res);
-                        return null;
-                    }
-                    srcVolume = volFactory.getVolume(srcVolume.getId());
-                    AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
-                    // If volume destroy fails, this could be because of vdi is still in use state, so wait and retry.
-                    if (destroyFuture.get().isFailed()) {
-                        Thread.sleep(5 * 1000);
-                        destroyFuture = expungeVolumeAsync(srcVolume);
-                        destroyFuture.get();
-                    }
+                if (copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.MigrationCopySucceeded, result.getAnswer(), srcVolume, destVolume, true)) {
                     future.complete(res);
-                } catch (Exception e) {
-                    s_logger.debug("failed to clean up volume on storage", e);
                 }
             }
         } catch (Exception e) {
@@ -1866,6 +1850,70 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return null;
+    }
+
+    @Override
+    public boolean copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event destinationEvent, Answer destinationEventAnswer, VolumeInfo sourceVolume,
+      VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync) {
+        VolumeVO sourceVolumeVo = ((VolumeObject) sourceVolume).getVolume();
+        snapshotMgr.copySnapshotPoliciesBetweenVolumes(sourceVolumeVo, ((VolumeObject) destinationVolume).getVolume());
+        return destroySourceVolumeAfterMigration(destinationEvent, destinationEventAnswer, sourceVolume, destinationVolume, retryExpungeVolumeAsync);
+    }
+
+    protected boolean destroySourceVolumeAfterMigration(Event destinationEvent, Answer destinationEventAnswer, VolumeInfo sourceVolume,
+      VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync) {
+        sourceVolume.processEvent(Event.OperationSuccessed);
+        destinationVolume.processEvent(destinationEvent, destinationEventAnswer);
+
+        VolumeVO sourceVolumeVo = ((VolumeObject) sourceVolume).getVolume();
+
+        long sourceVolumeId = sourceVolume.getId();
+        volDao.updateUuid(sourceVolumeId, destinationVolume.getId());
+
+        s_logger.info(String.format("Cleaning up %s on storage [%s].", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId()));
+        destroyVolume(sourceVolumeId);
+
+        try {
+            if (sourceVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
+                s_logger.info(String.format("Source volume %s can be removed.", sourceVolumeVo.getVolumeDescription()));
+                sourceVolume.processEvent(Event.ExpungeRequested);
+                sourceVolume.processEvent(Event.OperationSuccessed);
+                volDao.remove(sourceVolume.getId());
+                return true;
+            }
+            expungeSourceVolumeAfterMigration(sourceVolumeVo, retryExpungeVolumeAsync);
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            s_logger.error(String.format("Failed to clean up %s on storage [%s].", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId()), e);
+            return false;
+        }
+    }
+
+    protected void expungeSourceVolumeAfterMigration(VolumeVO sourceVolumeVo, boolean retryExpungeVolumeAsync) throws
+      ExecutionException, InterruptedException {
+        VolumeInfo sourceVolume = volFactory.getVolume(sourceVolumeVo.getId());
+
+        AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(sourceVolume);
+        VolumeApiResult volumeApiResult = destroyFuture.get();
+
+        if (volumeApiResult.isSuccess()) {
+            s_logger.debug(String.format("%s on storage [%s] was cleaned up successfully.", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId()));
+            return;
+        }
+
+        String message = String.format("Failed to clean up %s on storage [%s] due to [%s].", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId(),
+          volumeApiResult.getResult());
+
+        if (!retryExpungeVolumeAsync) {
+            s_logger.warn(message);
+        } else {
+            int intervalBetweenExpungeVolumeAsyncTriesInSeconds = 5;
+            s_logger.info(String.format("%s Trying again in [%s] seconds.", message, intervalBetweenExpungeVolumeAsyncTriesInSeconds));
+
+            Thread.sleep(intervalBetweenExpungeVolumeAsyncTriesInSeconds * 1000);
+            destroyFuture = expungeVolumeAsync(sourceVolume);
+            destroyFuture.get();
+        }
     }
 
     private class CopyManagedVolumeContext<T> extends AsyncRpcContext<T> {

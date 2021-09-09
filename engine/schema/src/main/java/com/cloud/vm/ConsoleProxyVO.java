@@ -153,4 +153,9 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     public String toString() {
         return String.format("Console %s", super.toString());
     }
+
+    @Override
+    public String getName() {
+        return instanceName;
+    }
 }

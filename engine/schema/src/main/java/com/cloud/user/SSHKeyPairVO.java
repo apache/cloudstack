@@ -23,15 +23,23 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ssh_keypairs")
 public class SSHKeyPairVO implements SSHKeyPair {
 
+    public SSHKeyPairVO() {
+        uuid = UUID.randomUUID().toString();
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id = null;
+
+    @Column(name = "uuid")
+    private String uuid;
 
     @Column(name = "account_id")
     private long accountId;
@@ -112,6 +120,14 @@ public class SSHKeyPairVO implements SSHKeyPair {
 
     public void setPrivateKey(String privateKey) {
         this.privateKey = privateKey;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override

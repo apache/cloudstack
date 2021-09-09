@@ -1727,9 +1727,7 @@ public class HypervisorHostHelper {
         }
 
         if (workingVM != null) {
-            workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
-            String workerTag = String.format("%d-%s", System.currentTimeMillis(), hyperHost.getContext().getStockObject("noderuninfo"));
-            workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
+            workingVM.tagAsWorkerVM();
         }
         return workingVM;
     }
@@ -2117,8 +2115,7 @@ public class HypervisorHostHelper {
                 throw e;
             }
         } finally {
-            workerVmMo.detachAllDisks();
-            workerVmMo.destroy();
+            workerVmMo.detachAllDisksAndDestroy();
         }
     }
 

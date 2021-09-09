@@ -18,7 +18,6 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 import unittest
-from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              Host,
                              VPC,
@@ -58,6 +57,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             cls.api_client,
             cls.services["vpc_offering"]
         )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
         cls.hosts = Host.list(
             cls.api_client,
@@ -93,15 +93,11 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                             "Failed to enable maintenance mode on %s" %
                             host.name)
                     timeout = timeout - 1
-
-        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
             for host in cls.hosts:
                 Host.cancelMaintenance(
                     cls.api_client,
@@ -117,7 +113,9 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                         "Failed to cancel maintenance mode on %s" %
                         (host.name))
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+            raise Exception("Warning: Exception during resetting hosts maintenance : %s" % e)
+        finally:
+            super(TestVPCHostMaintenance, cls).tearDownClass()
         return
 
     def setUp(self):
@@ -138,12 +136,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVPCHostMaintenance, self).tearDown()
 
     def validate_vpc_offering(self, vpc_offering):
         """Validates the VPC offering"""
@@ -217,5 +210,6 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             domainid=self.account.domainid,
             start=False
         )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc, state='enabled')
         return

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
@@ -34,7 +34,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Host.class)
-public class HostResponse extends BaseResponse {
+public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the host")
     private String id;

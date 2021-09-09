@@ -88,13 +88,8 @@ class TestlistTemplates(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls.cleanup)
+        super(TestlistTemplates, cls).tearDownClass()
 
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
     def RestartServers(self):
         """ Restart management server and usage server """
 
