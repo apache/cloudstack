@@ -25,13 +25,17 @@
           :rules="rules"
           layout="vertical">
           <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0" name="podid" ref="podid">
-            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            </template>
             <a-select autoFocus v-model:value="form.podid">
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item name="gateway" ref="gateway">
-            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+            </template>
             <a-input
               autoFocus
               v-model:value="form.gateway"
@@ -39,17 +43,17 @@
           </a-form-item>
           <a-form-item name="netmask" ref="netmask">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             </template>
             <a-input
               v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
           <a-row :gutter="12">
-            <a-col :md="12" lg="12">
+            <a-col :md="12" :lg="12">
               <a-form-item name="startip" ref="startip">
                 <template #label>
-                  <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+                  <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
                 </template>
                 <a-input
                   v-model:value="form.startip"
@@ -59,7 +63,7 @@
             <a-col :md="12" :lg="12">
               <a-form-item name="endip" ref="endip">
                 <template #label>
-                  <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+                  <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
                 </template>
                 <a-input
                   v-model:value="form.endip"
@@ -69,7 +73,7 @@
           </a-row>
           <a-form-item name="ip6cidr" ref="ip6cidr">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+              <tooltip-label :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
             </template>
             <a-input
               v-model:value="form.ip6cidr"
@@ -77,7 +81,7 @@
           </a-form-item>
           <a-form-item name="ip6gateway" ref="ip6gateway">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+              <tooltip-label :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
             </template>
             <a-input
               v-model:value="form.ip6gateway"
@@ -87,7 +91,7 @@
             <a-col :md="12" :lg="12">
               <a-form-item name="startipv6" ref="startipv6">
                 <template #label>
-                  <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+                  <tooltip-label :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
                 </template>
                 <a-input
                   v-model:value="form.startipv6"
@@ -97,7 +101,7 @@
             <a-col :md="12" :lg="12">
               <a-form-item name="endipv6" ref="endipv6">
                 <template #label>
-                  <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+                  <tooltip-label :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
                 </template>
                 <a-input
                   v-model:value="form.endipv6"

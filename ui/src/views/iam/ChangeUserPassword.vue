@@ -24,21 +24,27 @@
         :rules="rules"
         layout="vertical"
         @finish="handleSubmit">
-        <a-form-item name="currentpassword" ref="currentpassword" v-if="!this.isAdminOrDomainAdmin()">
-          <tooltip-label slot="label" :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>
+        <a-form-item name="currentpassword" ref="currentpassword" v-if="!isAdminOrDomainAdmin()">
+          <template #label>
+            <tooltip-label :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>
+          </template>
           <a-input-password
             v-model:value="form.currentpassword"
             :placeholder="$t('message.error.current.password')"
             autoFocus />
         </a-form-item>
         <a-form-item name="password" ref="password">
-          <tooltip-label slot="label" :title="$t('label.new.password')" :tooltip="apiParams.password.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.new.password')" :tooltip="apiParams.password.description"/>
+          </template>
           <a-input-password
             v-model:value="form.password"
             :placeholder="$t('label.new.password')"/>
         </a-form-item>
         <a-form-item name="confirmpassword" ref="confirmpassword">
-          <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+          </template>
           <a-input-password
             v-model:value="form.confirmpassword"
             :placeholder="$t('label.confirmpassword.description')"/>

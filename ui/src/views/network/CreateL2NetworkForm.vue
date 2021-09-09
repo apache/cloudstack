@@ -26,20 +26,26 @@
           layout="vertical"
           @finish="handleSubmit">
           <a-form-item name="name" ref="name">
-            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            </template>
             <a-input
               v-model:value="form.name"
-              :placeholder="$t('label.name')"
+              :placeholder="apiParams.name.description"
               autoFocus/>
           </a-form-item>
           <a-form-item name="displaytext" ref="displaytext">
-            <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+            </template>
             <a-input
               v-model:value="form.displaytext"
-              :placeholder="$t('label.displaytext')"/>
+              :placeholder="apiParams.displaytext.description"/>
           </a-form-item>
           <a-form-item name="zoneid" ref="zoneid">
-            <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            </template>
             <a-select
               v-model:value="form.zoneid"
               showSearch
@@ -48,7 +54,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              :placeholder="$t('label.zoneid')"
+              :placeholder="apiParams.zoneid.description"
               @change="val => { handleZoneChange(zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
                 {{ opt.name || opt.description }}
@@ -56,7 +62,9 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="isAdminOrDomainAdmin()" name="domainid" ref="domainid">
-            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            </template>
             <a-select
               v-model:value="form.domainid"
               showSearch
@@ -65,7 +73,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="domainLoading"
-              :placeholder="$t('label.domainid')"
+              :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
                 {{ opt.path || opt.name || opt.description }}
@@ -73,7 +81,9 @@
             </a-select>
           </a-form-item>
           <a-form-item name="networkofferingid" ref="networkofferingid">
-            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            </template>
             <a-select
               v-model:value="form.networkofferingid"
               showSearch
@@ -82,7 +92,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
-              :placeholder="$t('label.networkofferingid')"
+              :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
               <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
                 {{ opt.displaytext || opt.name || opt.description }}
@@ -93,23 +103,29 @@
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan"
             name="vlanid"
             ref="vlanid">
-            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan ? apiParams.vlan.description : null"/>
+            <template #label>
+              <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan ? apiParams.vlan.description : $t('label.vlanid')"/>
+            </template>
             <a-input
               v-model:value="form.vlanid"
-              :placeholder="$t('label.vlanid')"/>
+              :placeholder="apiParams.vlan ? apiParams.vlan.description : $t('label.vlanid')"/>
           </a-form-item>
           <a-form-item
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan"
             name="bypassvlanoverlapcheck"
             ref="bypassvlanoverlapcheck">
-            <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck ? apiParams.bypassvlanoverlapcheck.description : null"/>
+            <template #label>
+              <tooltip-label :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck ? apiParams.bypassvlanoverlapcheck.description : null"/>
+            </template>
             <a-switch v-model:checked="form.bypassvlanoverlapcheck" />
           </a-form-item>
           <a-form-item
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan"
             name="isolatedpvlantype"
             ref="isolatedpvlantype">
-            <tooltip-label slot="label" :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
+            </template>
             <a-radio-group
               v-model:value="form.isolatedpvlantype"
               buttonStyle="solid"
@@ -129,19 +145,23 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item
-            v-if="form.isolatedpvlantype=='community' || form.isolatedpvlantype=='isolated'"
+            v-if="['community', 'isolated'].includes(form.isolatedpvlantype)"
              name="isolatedpvlanid"
              ref="isolatedpvlanid">
-            <tooltip-label slot="label" :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
+            </template>
             <a-input
               v-model:value="form.isolatedpvlan"
-              :placeholder="$t('label.isolatedpvlanid')"/>
+              :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
           <a-form-item v-if="accountVisible" name="account" ref="name">
-            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
             <a-input
               v-model:value="form.account"
-              :placeholder="$t('label.account')"/>
+              :placeholder="apiParams.account.description"/>
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button

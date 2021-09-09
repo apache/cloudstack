@@ -17,72 +17,84 @@
 
 <template>
   <div>
-    <a-spin :spinning="loading">
+    <a-spin :spinning="loading" v-ctrl-enter="handleSubmit">
       <a-row :gutter="12">
         <a-col :md="24" :lg="7">
           <info-card
             class="vm-info-card"
             :isStatic="true"
             :resource="resource"
-            :title="this.$t('label.unmanaged.instance')" />
+            :title="$t('label.unmanaged.instance')" />
         </a-col>
         <a-col :md="24" :lg="17">
           <a-card :bordered="true">
             <a-form
-              :form="form"
-              @submit="handleSubmit"
+              :ref="formRef"
+              :model="form"
+              :rules="rules"
+              @finish="handleSubmit"
               layout="vertical">
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
+              <a-form-item name="displayname" ref="displayname">
+                <template #label>
+                  <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
+                </template>
                 <a-input
-                  v-decorator="['displayname', {
-                    rules: [{ required: true, message: $t('message.error.input.value') }]
-                  }]"
+                  v-model:value="form.displayname"
                   :placeholder="apiParams.displayname.description"
                   ref="displayname"
                   autoFocus />
               </a-form-item>
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.hostnamelabel')" :tooltip="apiParams.hostname.description"/>
+              <a-form-item name="hostname" ref="hostname">
+                <template #label>
+                  <tooltip-label :title="$t('label.hostnamelabel')" :tooltip="apiParams.hostname.description"/>
+                </template>
                 <a-input
-                  v-decorator="['hostname', {}]"
+                  v-model:value="form.hostname"
                   :placeholder="apiParams.hostname.description" />
               </a-form-item>
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+              <a-form-item name="domainid" ref="domainid">
+                <template #label>
+                  <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+                </template>
                 <a-select
-                  v-decorator="['domainid', {}]"
+                  v-model:value="form.domainid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :options="domainSelectOptions"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"
-                  @change="val => { this.selectedDomainId = val }" />
+                  @change="val => { selectedDomainId = val }" />
               </a-form-item>
-              <a-form-item v-if="selectedDomainId">
-                <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+              <a-form-item name="account" ref="account" v-if="selectedDomainId">
+                <template #label>
+                  <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+                </template>
                 <a-input
-                  v-decorator="['account', {}]"
+                  v-model:value="form.account"
                   :placeholder="apiParams.account.description"/>
               </a-form-item>
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.project')" :tooltip="apiParams.projectid.description"/>
+              <a-form-item name="projectid" ref="projectid">
+                <template #label>
+                  <tooltip-label :title="$t('label.project')" :tooltip="apiParams.projectid.description"/>
+                </template>
                 <a-select
-                  v-decorator="['projectid', {}]"
+                  v-model:value="form.projectid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :options="projectSelectOptions"
                   :loading="optionsLoading.projects"
                   :placeholder="apiParams.projectid.description" />
               </a-form-item>
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
+              <a-form-item name="templateid" ref="templateid">
+                <template #label>
+                  <tooltip-label :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
+                </template>
                 <a-radio-group
                   style="width:100%"
                   :value="templateType"
@@ -100,13 +112,11 @@
                       <a-select
                         :disabled="templateType === 'auto'"
                         style="margin-top:10px"
-                        v-decorator="['templateid', {
-                          rules: [{ required: templateType !== 'auto', message: $t('message.error.input.value') }]
-                        }]"
+                        v-model:value="form.templateid"
                         showSearch
-                        optionFilterProp="children"
+                        optionFilterProp="label"
                         :filterOption="(input, option) => {
-                          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
                         :options="templateSelectOptions"
                         :loading="optionsLoading.templates"
@@ -115,8 +125,10 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+              <a-form-item name="serviceofferingid" ref="serviceofferingid">
+                <template #label>
+                  <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+                </template>
               </a-form-item>
               <compute-offering-selection
                 :compute-items="computeOfferings"
@@ -138,7 +150,7 @@
                 :cpuSpeedInputDecorator="cpuSpeedKey"
                 :memoryInputDecorator="memoryKey"
                 :computeOfferingId="computeOffering.id"
-                :preFillContent="this.resource"
+                :preFillContent="resource"
                 :isConstrained="'serviceofferingdetails' in computeOffering"
                 :minCpu="getMinCpu()"
                 :maxCpu="getMaxCpu()"
@@ -149,20 +161,19 @@
                 @update-compute-cpuspeed="updateFieldValue"
                 @update-compute-memory="updateFieldValue" />
               <div v-if="resource.disk && resource.disk.length > 1">
-                <a-form-item>
-                  <tooltip-label slot="label" :title="$t('label.disk.selection')" :tooltip="apiParams.datadiskofferinglist.description"/>
+                <a-form-item name="selection" ref="selection">
+                  <template #label>
+                    <tooltip-label :title="$t('label.disk.selection')" :tooltip="apiParams.datadiskofferinglist.description"/>
+                  </template>
                 </a-form-item>
-                <a-form-item :label="$t('label.rootdisk')">
+                <a-form-item name="rootdiskid" ref="rootdiskid" :label="$t('label.rootdisk')">
                   <a-select
-                    v-decorator="['rootdiskid', {
-                      rules: [{ required: true, message: $t('message.error.input.value'), }],
-                      initialValue: 0
-                    }]"
+                    v-model:value="form.rootdiskid"
                     defaultActiveFirstOption
                     showSearch
                     optionFilterProp="children"
                     :filterOption="(input, option) => {
-                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     @change="val => { selectedRootDiskIndex = val }">
                     <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex">
@@ -180,8 +191,10 @@
                   @select-multi-disk-offering="updateMultiDiskOffering" />
               </div>
               <div v-if="resource.nic && resource.nic.length > 0">
-                <a-form-item>
-                  <tooltip-label slot="label" :title="$t('label.network.selection')" :tooltip="apiParams.nicnetworklist.description"/>
+                <a-form-item name="networkselection" ref="networkselection">
+                  <template #label>
+                    <tooltip-label :title="$t('label.network.selection')" :tooltip="apiParams.nicnetworklist.description"/>
+                  </template>
                   <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
                 <multi-network-selection
@@ -194,21 +207,25 @@
               </div>
               <a-row :gutter="12">
                 <a-col :md="24" :lg="12">
-                  <a-form-item>
-                    <tooltip-label slot="label" :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
-                    <a-switch v-decorator="['migrateallowed', {initialValue: this.switches.migrateAllowed}]" :checked="this.switches.migrateAllowed" @change="val => { this.switches.migrateAllowed = val }" />
+                  <a-form-item name="migrateallowed" ref="migrateallowed">
+                    <template #label>
+                      <tooltip-label :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
+                    </template>
+                    <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
                 <a-col :md="24" :lg="12">
-                  <a-form-item>
-                    <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
-                    <a-switch v-decorator="['forced', {initialValue: this.switches.forced}]" :checked="this.switches.forced" @change="val => { this.switches.forced = val }" />
+                  <a-form-item name="forced" ref="forced">
+                    <template #label>
+                      <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
+                    </template>
+                    <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
                   </a-form-item>
                 </a-col>
               </a-row>
               <div :span="24" class="action-button">
-                <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-                <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+                <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+                <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
               </div>
             </a-form>
           </a-card>
@@ -219,6 +236,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import InfoCard from '@/components/view/InfoCard'
@@ -288,7 +306,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.importUnmanagedInstance || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -296,13 +313,8 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.fetchData()
-    this.form.getFieldDecorator('computeofferingid', { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator(this.cpuNumberKey, { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator(this.cpuSpeedKey, { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator(this.memoryKey, { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator(this.minIopsKey, { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator(this.maxIopsKey, { initialValue: undefined, preserve: true })
   },
   computed: {
     params () {
@@ -419,6 +431,19 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        rootdiskid: 0,
+        migrateallowed: this.switches.migrateAllowed,
+        forced: this.switches.forced
+      })
+      this.rules = reactive({
+        displayname: [{ required: true, message: this.$t('message.error.input.value') }],
+        templateid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
+        rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }]
+      })
+    },
     fetchData () {
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
@@ -531,9 +556,7 @@ export default {
       })
     },
     updateFieldValue (name, value) {
-      this.form.setFieldsValue({
-        [name]: value
-      })
+      this.form[name] = value
     },
     updateComputeOffering (id) {
       this.updateFieldValue('computeofferingid', id)
@@ -554,6 +577,11 @@ export default {
       if (this.templateType === 'auto') {
         this.updateFieldValue('templateid', undefined)
       }
+      this.rules = reactive({
+        displayname: [{ required: true, message: this.$t('message.error.input.value') }],
+        templateid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
+        rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }]
+      })
     },
     selectMatchingComputeOffering () {
       var offerings = [...this.computeOfferings]
@@ -588,10 +616,9 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           name: this.resource.name,
           clusterid: this.cluster.id,

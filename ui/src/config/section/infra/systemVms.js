@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'systemvm',
   title: 'label.system.vms',
@@ -27,11 +29,11 @@ export default {
   tabs: [
     {
       name: 'details',
-      component: () => import('@/components/view/DetailsTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
       name: 'comments',
-      component: () => import('@/components/view/AnnotationsTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
     }
   ],
   actions: [
@@ -92,7 +94,7 @@ export default {
       message: 'message.migrate.systemvm.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
-      component: () => import('@/views/compute/MigrateWizard'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
       popup: true
     },
     {
@@ -101,7 +103,7 @@ export default {
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
       show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
-      component: () => import('@/views/compute/MigrateVMStorage'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
       popup: true
     },
     {

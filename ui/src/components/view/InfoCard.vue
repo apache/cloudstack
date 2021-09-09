@@ -368,7 +368,7 @@
         <div class="resource-detail-item" v-if="resource.associatednetworkid">
           <div class="resource-detail-item__label">{{ $t('label.associatednetwork') }}</div>
           <div class="resource-detail-item__details">
-            <WifiOutlined />
+            <wifi-outlined />
             <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
           </div>
         </div>

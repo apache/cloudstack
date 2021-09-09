@@ -19,23 +19,28 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
       layout="vertical"
-      :form="form"
-      @submit="handleSubmit">
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit">
       <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
           autoFocus
           v-model:value="form.name"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
-        <a-input
-          v-decorator="['description', {
-            rules: [{ required: true, message: $t('message.error.required.input') }]
-          }]"/>
+        <template #label>
+          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+        </template>
+        <a-input v-model:value="form.description"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        </template>
         <a-select
           showSearch
           allowClear
@@ -48,7 +53,9 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
+        </template>
         <a-select
           allowClear
           v-model:value="form.externalid"
@@ -59,10 +66,10 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
-        <a-switch
-          v-decorator="['allowuserdrivenbackups']"
-          :default-checked="true"/>
+        <template #label>
+          <tooltip-label :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
+        </template>
+        <a-switch v-model:checked="form.allowuserdrivenbackups"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>

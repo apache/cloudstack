@@ -29,14 +29,18 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="size" ref="size">
-          <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+          </template>
           <a-input
             v-model:value="form.size"
             :placeholder="apiParams.size.description"
             autoFocus />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
-          <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          </template>
           <a-select
             id="offering-selection"
             v-model:value="form.serviceofferingid"

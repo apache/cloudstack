@@ -25,29 +25,37 @@
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit">
       <a-form-item ref="name" name="name">
-        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
           v-model:value="form.name"
-          :placeholder="$t('label.vpncustomergatewayname')"
+          :placeholder="apiParams.name.description"
           autoFocus />
       </a-form-item>
       <a-form-item ref="gateway" name="gateway">
-        <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+        </template>
         <a-input
           v-model:value="form.gateway"
-          :placeholder="$t('label.vpncustomergateway')" />
+          :placeholder="apiParams.gateway.description" />
       </a-form-item>
       <a-form-item ref="cidrlist" name="cidrlist">
-        <tooltip-label slot="label" :title="$t('label.cidrlist')" :tooltip="apiParams.cidrlist.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.cidrlist')" :tooltip="apiParams.cidrlist.description"/>
+        </template>
         <a-input
           v-model:value="form.cidrlist"
-          :placeholder="$t('label.vpncustomergateway.cidrlist')" />
+          :placeholder="apiParams.cidrlist.description" />
       </a-form-item>
       <a-form-item ref="ipsecpsk" name="ipsecpsk">
-        <tooltip-label slot="label" :title="$t('label.ipsecpsk')" :tooltip="apiParams.ipsecpsk.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.ipsecpsk')" :tooltip="apiParams.ipsecpsk.description"/>
+        </template>
         <a-input
           v-model:value="form.ipsecpsk"
-          :placeholder="$t('label.vpncustomergateway.secretkey')" />
+          :placeholder="apiParams.ipsecpsk.description" />
       </a-form-item>
       <a-form-item ref="ikeEncryption" name="ikeEncryption" :label="$t('label.ikeencryption')">
         <a-select v-model:value="form.ikeEncryption">
@@ -64,7 +72,12 @@
         </a-select>
       </a-form-item>
       <a-form-item ref="ikeversion" name="ikeversion">
-        <tooltip-label slot="label" :title="$t('label.ikeversion')" :tooltip="apiParams.ikeversion.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.ikeversion')" :tooltip="apiParams.ikeversion.description"/>
+        </template>
+        <a-input
+          v-model:value="form.ipsecpsk"
+          :placeholder="apiParams.ipsecpsk.description" />
         <a-select
           v-model:value="form.ikeversion">
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
@@ -108,27 +121,37 @@
         </a-select>
       </a-form-item>
       <a-form-item ref="ikelifetime" name="ikelifetime">
-        <tooltip-label slot="label" :title="$t('label.ikelifetime')" :tooltip="apiParams.ikelifetime.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.ikelifetime')" :tooltip="apiParams.ikelifetime.description"/>
+        </template>
         <a-input
           v-model:value="form.ikelifetime"
-          :placeholder="$t('label.vpncustomergateway.ikelifetime')"/>
+          :placeholder="apiParams.ikelifetime.description"/>
       </a-form-item>
       <a-form-item ref="esplifetime" name="esplifetime">
-        <tooltip-label slot="label" :title="$t('label.esplifetime')" :tooltip="apiParams.esplifetime.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.esplifetime')" :tooltip="apiParams.esplifetime.description"/>
+        </template>
         <a-input
           v-model:value="form.esplifetime"
-          :placeholder="$t('label.vpncustomergateway.esplifetime')"/>
+          :placeholder="apiParams.esplifetime.description"/>
       </a-form-item>
       <a-form-item ref="dpd" name="dpd">
-        <tooltip-label slot="label" :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
+        </template>
         <a-switch v-model:checked="form.name"/>
       </a-form-item>
       <a-form-item ref="splitconnections" name="splitconnections" v-if="form.ikeversion !== 'ikev1'">
-        <tooltip-label slot="label" :title="$t('label.splitconnections')" :tooltip="apiParams.splitconnections.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.splitconnections')" :tooltip="apiParams.splitconnections.description"/>
+        </template>
         <a-switch v-model:checked="form.splitconnections"/>
       </a-form-item>
       <a-form-item ref="forceencap" name="forceencap">
-        <tooltip-label slot="label" :title="$t('label.forceencap')" :tooltip="apiParams.forceencap.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.forceencap')" :tooltip="apiParams.forceencap.description"/>
+        </template>
         <a-switch v-model:checked="form.forceencap"/>
       </a-form-item>
       <div class="action-button">

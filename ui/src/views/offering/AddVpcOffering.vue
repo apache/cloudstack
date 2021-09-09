@@ -24,64 +24,62 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             autoFocus
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.name') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+        <a-form-item name="displaytext" ref="displaytext">
+          <template #label>
+            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          </template>
           <a-input
-            v-decorator="['displaytext', {
-              rules: [{ required: true, message: $t('message.error.description') }]
-            }]"
+            v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
+          </template>
           <div class="supported-services-container" scroll-to="last-child">
             <a-list itemLayout="horizontal" :dataSource="supportedServices">
-              <a-list-item slot="renderItem" slot-scope="item">
-                <CheckBoxSelectPair
-                  v-decorator="['service.'+item.name, {}]"
-                  :resourceKey="item.name"
-                  :checkBoxLabel="item.description"
-                  :checkBoxDecorator="'service.' + item.name"
-                  :selectOptions="item.provider"
-                  :selectDecorator="item.name + '.provider'"
-                  @handle-checkselectpair-change="handleSupportedServiceChange"/>
-              </a-list-item>
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <CheckBoxSelectPair
+                    :resourceKey="item.name"
+                    :checkBoxLabel="item.description"
+                    :checkBoxDecorator="'service.' + item.name"
+                    :selectOptions="item.provider"
+                    :selectDecorator="item.name + '.provider'"
+                    @handle-checkselectpair-change="handleSupportedServiceChange"/>
+                </a-list-item>
+              </template>
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.regionlevelvpccapabilitycheckbox')" v-if="connectivityServiceChecked">
-          <a-switch v-decorator="['regionlevelvpc', {initialValue: true}]" defaultChecked />
+        <a-form-item name="regionlevelvpc" ref="regionlevelvpc" :label="$t('label.service.connectivity.regionlevelvpccapabilitycheckbox')" v-if="connectivityServiceChecked">
+          <a-switch v-model:checked="form.regionlevelvpc" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
-          <a-switch v-decorator="['distributedrouter', {initialValue: true}]" defaultChecked />
+        <a-form-item name="distributedrouter" ref="distributedrouter" :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
+          <a-switch v-model:checked="form.distributedrouter" />
         </a-form-item>
-        <a-form-item :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
-          <a-switch v-decorator="['redundantrouter', {initialValue: false}]" />
+        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
+          <a-switch v-model:checked="form.redundantrouter" />
         </a-form-item>
-        <a-form-item :label="$t('label.ispublic')" v-if="isAdmin()">
-          <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :defaultChecked="isPublic" @change="val => { isPublic = val }" />
+        <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
+          <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
-        <a-form-item v-if="!isPublic">
-          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+        <a-form-item name="domainid" ref="domainid" v-if="!isPublic">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
           <a-select
             mode="multiple"
-            v-decorator="['domainid', {
-              rules: [
-                {
-                  required: true,
-                  message: $t('message.error.select')
-                }
-              ]
-            }]"
+            v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -94,8 +92,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        <a-form-item name="zoneid" ref="zoneid">
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -112,9 +112,11 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="apiParams.enable">
-          <tooltip-label slot="label" :title="$t('label.enable.vpc.offering')" :tooltip="apiParams.enable.description"/>
-          <a-switch v-decorator="['enable', {initialValue: false}]" />
+        <a-form-item name="enable" ref="enable" v-if="apiParams.enable">
+          <template #label>
+            <tooltip-label :title="$t('label.enable.vpc.offering')" :tooltip="apiParams.enable.description"/>
+          </template>
+          <a-switch v-model:checked="form.enable" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">

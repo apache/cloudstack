@@ -26,20 +26,26 @@
           layout="vertical"
           @finish="handleSubmit">
           <a-form-item :label="$t('label.name')" name="name" ref="name">
-            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            </template>
             <a-input
               v-model:value="form.name"
               :placeholder="$t('label.name')"
               autoFocus />
           </a-form-item>
           <a-form-item name="displaytext" ref="displaytext">
-            <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+            </template>
             <a-input
               v-model:value="form.displaytext"
               :placeholder="$t('label.display.text')"/>
           </a-form-item>
           <a-form-item v-if="isObjectEmpty(zone)" name="zoneid" ref="zoneid">
-            <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            </template>
             <a-select
               v-model:value="form.zoneid"
               showSearch
@@ -56,7 +62,9 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="isObjectEmpty(zone)" name="physicalnetworkid" ref="physicalnetworkid">
-            <tooltip-label slot="label" :title="$t('label.physicalnetworkid')" :tooltip="apiParams.physicalnetworkid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.physicalnetworkid')" :tooltip="apiParams.physicalnetworkid.description"/>
+            </template>
             <a-select
               v-model:value="form.physicalnetworkid"
               showSearch
@@ -73,20 +81,26 @@
             </a-select>
           </a-form-item>
           <a-form-item name="vlanid" ref="vlanid">
-            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
+            </template>
             <a-input
               v-model:value="form.vlanid"
               :placeholder="$t('label.vlanid')"/>
           </a-form-item>
           <a-form-item name="bypassvlanoverlapcheck" ref="bypassvlanoverlapcheck">
-            <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
+            </template>
             <a-switch v-model:checked="form.bypassvlanoverlapcheck" />
           </a-form-item>
           <a-form-item
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan"
             name="isolatedpvlantype"
             ref="isolatedpvlantype">
-            <tooltip-label slot="label" :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
+            </template>
             <a-radio-group
               v-model:value="form.isolatedpvlantype"
               buttonStyle="solid">
@@ -105,7 +119,9 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item v-if="form.isolatedpvlantype=='community' || form.isolatedpvlantype=='isolated'" name="isolatedpvlan" ref="isolatedpvlan">
-            <tooltip-label slot="label" :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
+            </template>
             <a-input
               v-model:value="form.isolatedpvlan"
               :placeholder="$t('label.isolatedpvlanid')"/>
@@ -130,7 +146,9 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item v-if="scopeType !== 'all'" name="domainid" ref="domainid">
-            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            </template>
             <a-select
               v-model:value="form.domainid"
               showSearch
@@ -147,17 +165,23 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="scopeType === 'domain'" name="subdomainaccess" ref="subdomainaccess">
-            <tooltip-label slot="label" :title="$t('label.subdomainaccess')" :tooltip="apiParams.subdomainaccess.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.subdomainaccess')" :tooltip="apiParams.subdomainaccess.description"/>
+            </template>
             <a-switch v-model:checked="form.subdomainaccess" />
           </a-form-item>
           <a-form-item v-if="scopeType === 'account'" name="account" ref="account">
-            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
             <a-input
               v-model:value="form.account"
               :placeholder="$t('label.account')"/>
           </a-form-item>
           <a-form-item v-if="scopeType === 'project'" name="projectid" ref="projectid">
-            <tooltip-label slot="label" :title="$t('label.projectid')" :tooltip="apiParams.projectid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.projectid')" :tooltip="apiParams.projectid.description"/>
+            </template>
             <a-select
               v-model:value="form.projectid"
               showSearch
@@ -174,7 +198,9 @@
             </a-select>
           </a-form-item>
           <a-form-item name="networkofferingid" ref="networkofferingid">
-            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            </template>
             <a-select
               v-model:value="form.networkofferingid"
               showSearch
@@ -192,7 +218,7 @@
           </a-form-item>
           <a-form-item name="ip4gateway" ref="ip4gateway">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
+              <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
             </template>
             <a-input
               v-model:value="form.ip4gateway"
@@ -200,7 +226,7 @@
           </a-form-item>
           <a-form-item name="ip4netmask" ref="ip4netmask">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             </template>
             <a-input
               v-model:value="form.netmask"
@@ -208,7 +234,7 @@
           </a-form-item>
           <a-form-item name="startipv4" ref="startipv4">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+              <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
             </template>
             <a-input
               v-model:value="form.startipv4"
@@ -216,21 +242,21 @@
           </a-form-item>
           <a-form-item name="endipv4" ref="endipv4">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+              <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
             </template>
             <a-input
               v-model:value="form.endipv4"
               :placeholder="$t('label.endipv4')"/>
           </a-form-item>
           <a-form-item v-if="isVirtualRouterForAtLeastOneService">
-            <tooltip-label slot="label" :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
+            <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
             <a-input
               v-decorator="['routerip', {}]"
               :placeholder="this.$t('label.routerip')"/>
           </a-form-item>
           <a-form-item name="ip6gateway" ref="ip6gateway">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+              <tooltip-label :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
             </template>
             <a-input
               v-model:value="form.ip6gateway"
@@ -238,7 +264,7 @@
           </a-form-item>
           <a-form-item name="ip6cidr" ref="ip6cidr">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+              <tooltip-label :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
             </template>
             <a-input
               v-model:value="form.ip6cidr"
@@ -246,7 +272,7 @@
           </a-form-item>
           <a-form-item name="startipv6" ref="startipv6">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+              <tooltip-label :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
             </template>
             <a-input
               v-model:value="form.startipv6"
@@ -254,27 +280,33 @@
           </a-form-item>
           <a-form-item name="endipv6" ref="endipv6">
             <template #label>
-              <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+              <tooltip-label :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
             </template>
             <a-input
               v-model:value="form.endipv6"
               :placeholder="$t('label.endipv6')"/>
           </a-form-item>
           <a-form-item v-if="isVirtualRouterForAtLeastOneService">
-            <tooltip-label slot="label" :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
+            </template>
             <a-input
               v-decorator="['routeripv6', {}]"
               :placeholder="this.$t('label.routeripv6')"/>
           </a-form-item>
           <a-form-item>
           <a-form-item name="networkdomain" ref="networkdomain">
-            <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            </template>
             <a-input
               v-model:value="form.networkdomain"
               :placeholder="$t('label.networkdomain')"/>
           </a-form-item>
           <a-form-item name="hideipaddressusage" ref="hideipaddressusage">
-            <tooltip-label slot="label" :title="$t('label.hideipaddressusage')" :tooltip="apiParams.hideipaddressusage.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.hideipaddressusage')" :tooltip="apiParams.hideipaddressusage.description"/>
+            </template>
             <a-switch v-model:checked="form.hideipaddressusage" />
           </a-form-item>
           <div :span="24" class="action-button">

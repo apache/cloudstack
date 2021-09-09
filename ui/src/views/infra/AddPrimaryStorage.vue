@@ -20,7 +20,9 @@
     <a-spin :spinning="loading">
       <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
         <a-form-item name="scope" ref="scope">
-          <tooltip-label slot="label" :title="$t('label.scope')" :tooltip="apiParams.scope.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.scope')" :tooltip="apiParams.scope.description"/>
+          </template>
           <a-select
             v-model:value="form.scope"
             autoFocus>
@@ -28,18 +30,20 @@
             <a-select-option :value="'zone'"> {{ $t('label.zoneid') }} </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="form.scope === 'zone'">
-          <a-form-item name="hypervisor" ref="hypervisor">
-            <tooltip-label slot="label" :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
-            <a-select v-model:value="form.hypervisor">
-              <a-select-option :value="hypervisor" v-for="(hypervisor, idx) in hypervisors" :key="idx">
-                {{ hypervisor }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </div>
+        <a-form-item name="hypervisor" ref="hypervisor" v-if="form.scope === 'zone'">
+          <template #label>
+            <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
+          </template>
+          <a-select v-model:value="form.hypervisor">
+            <a-select-option :value="hypervisor" v-for="(hypervisor, idx) in hypervisors" :key="idx">
+              {{ hypervisor }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="zoneid" ref="zoneid">
-          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
             v-model:value="form.zone"
             @change="val => changeZone(val)">
@@ -48,96 +52,105 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="form.scope === 'cluster' || form.scope === 'host'">
-          <a-form-item name="pod" ref="pod">
-            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
-            <a-select
-              v-model:value="form.pod"
-              @change="val => changePod(val)">
-              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id">
-                {{ pod.name }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item name="cluster" ref="cluster">
-            <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
-            <a-select
-              v-model:value="form.cluster"
-              @change="val => fetchHypervisor(val)">
-              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id">
-                {{ cluster.name }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </div>
-        <div v-if="form.scope === 'host'">
-          <a-form-item name="host" ref="host" :label="$t('label.hostid')">
-            <a-select
-              v-model:value="form.host"
-              @change="val => form.host = val">
-              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id">
-                {{ host.name }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </div>
+        <a-form-item name="pod" ref="pod" v-if="form.scope === 'cluster' || form.scope === 'host'">
+          <template #label>
+            <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.pod"
+            @change="val => changePod(val)">
+            <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id">
+              {{ pod.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="cluster" ref="cluster" v-if="form.scope === 'cluster' || form.scope === 'host'">
+          <template #label>
+            <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.cluster"
+            @change="val => fetchHypervisor(val)">
+            <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id">
+              {{ cluster.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="host" ref="host" :label="$t('label.hostid')" v-if="form.scope === 'host'">
+          <a-select v-model:value="form.host">
+            <a-select-option :value="host.id" v-for="host in hosts" :key="host.id">
+              {{ host.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="name" ref="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input v-model:value="form.name" />
         </a-form-item>
         <a-form-item name="protocol" ref="protocol">
-          <tooltip-label slot="label" :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
+          <template #label>
+            <tooltip-label :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
+          </template>
           <a-select v-model:value="form.protocol">
             <a-select-option :value="protocol" v-for="(protocol,idx) in protocols" :key="idx">
               {{ protocol }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div
+        <a-form-item
           v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'iscsi' || form.protocol === 'vmfs'|| form.protocol === 'Gluster' ||
-            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'">
-          <a-form-item name="server" ref="server">
-            <tooltip-label slot="label" :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
-            <a-input v-model:value="form.server" />
-          </a-form-item>
-        </div>
-        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
-          <a-form-item name="path" ref="path">
-            <tooltip-label slot="label" :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
-            <a-input v-model:value="form.path" />
-          </a-form-item>
-        </div>
-        <div v-if="form.protocol === 'SMB'">
-          <a-form-item name="smbUsername" ref="smbUsername" :label="$t('label.smbusername')">
-            <a-input v-model:value="form.smbUsername"/>
-          </a-form-item>
-          <a-form-item name="smbPassword" ref="smbPassword" :label="$t('label.smbpassword')">
-            <a-input-password v-model:value="form.smbPassword"/>
-          </a-form-item>
-          <a-form-item name="smbDomain" ref="smbDomain" :label="$t('label.smbdomain')">
-            <a-input v-model:value="form.smbDomain"/>
-          </a-form-item>
-        </div>
-        <div v-if="form.protocol === 'iscsi'">
-          <a-form-item name="iqn" ref="iqn" :label="$t('label.iqn')">
-            <a-input v-model:value="form.iqn"/>
-          </a-form-item>
-          <a-form-item name="lun" ref="lun" :label="$t('label.lun')">
-            <a-input v-model:value="form.lun"/>
-          </a-form-item>
-        </div>
-        <div v-if="form.protocol === 'vmfs' || (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'">
-          <a-form-item name="vCenterDataCenter" ref="vCenterDataCenter">
-            <tooltip-label slot="label" :title="$t('label.vcenterdatacenter')" :tooltip="$t('message.datacenter.description')"/>
-            <a-input v-model:value="form.vCenterDataCenter"/>
-          </a-form-item>
-          <a-form-item name="vCenterDataStore" ref="vCenterDataStore">
-            <tooltip-label slot="label" :title="$t('label.vcenterdatastore')" :tooltip="$t('message.datastore.description')"/>
-            <a-input v-model:value="form.vCenterDataStore"/>
-          </a-form-item>
-        </div>
+            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'"
+          name="server"
+          ref="server">
+          <template #label>
+            <tooltip-label :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
+          </template>
+          <a-input v-model:value="form.server" />
+        </a-form-item>
+        <a-form-item
+          v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'"
+          name="path"
+          ref="path">
+          <template #label>
+            <tooltip-label :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
+          </template>
+          <a-input v-model:value="form.path" />
+        </a-form-item>
+        <a-form-item v-if="form.protocol === 'SMB'" name="smbUsername" ref="smbUsername" :label="$t('label.smbusername')">
+          <a-input v-model:value="form.smbUsername"/>
+        </a-form-item>
+        <a-form-item v-if="form.protocol === 'SMB'" name="smbPassword" ref="smbPassword" :label="$t('label.smbpassword')">
+          <a-input-password v-model:value="form.smbPassword"/>
+        </a-form-item>
+        <a-form-item v-if="form.protocol === 'SMB'" name="smbDomain" ref="smbDomain" :label="$t('label.smbdomain')">
+          <a-input v-model:value="form.smbDomain"/>
+        </a-form-item>
+        <a-form-item v-if="form.protocol === 'iscsi'" name="iqn" ref="iqn" :label="$t('label.iqn')">
+          <a-input v-model:value="form.iqn"/>
+        </a-form-item>
+        <a-form-item v-if="form.protocol === 'iscsi'" name="lun" ref="lun" :label="$t('label.lun')">
+          <a-input v-model:value="form.lun"/>
+        </a-form-item>
+        <a-form-item
+          v-if="form.protocol === 'vmfs' || (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'"
+          name="vCenterDataCenter"
+          ref="vCenterDataCenter">
+          <tooltip-label :title="$t('label.vcenterdatacenter')" :tooltip="$t('message.datacenter.description')"/>
+          <a-input v-model:value="form.vCenterDataCenter"/>
+        </a-form-item>
+        <a-form-item
+          v-if="form.protocol === 'vmfs' || (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'"
+          name="vCenterDataStore"
+          ref="vCenterDataStore">
+          <tooltip-label :title="$t('label.vcenterdatastore')" :tooltip="$t('message.datastore.description')"/>
+          <a-input v-model:value="form.vCenterDataStore"/>
+        </a-form-item>
         <a-form-item name="provider" ref="provider">
-          <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+          </template>
           <a-select
             v-model:value="form.provider">
             <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
@@ -147,39 +160,55 @@
         </a-form-item>
         <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex'">
           <a-form-item name="managed" ref="managed">
-            <tooltip-label slot="label" :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
+            </template>
             <a-checkbox-group v-model:value="form.managed" >
               <a-checkbox value="ismanaged"></a-checkbox>
             </a-checkbox-group>
           </a-form-item>
           <a-form-item name="capacityBytes" ref="capacityBytes">
-            <tooltip-label slot="label" :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
+            </template>
             <a-input v-model:value="form.capacityBytes" />
           </a-form-item>
           <a-form-item name="capacityIops" ref="capacityIops">
-            <tooltip-label slot="label" :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            </template>
             <a-input v-model:value="form.capacityIops" />
           </a-form-item>
           <a-form-item name="url" ref="url">
-            <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            </template>
             <a-input v-model:value="form.url" />
           </a-form-item>
         </div>
         <div v-if="form.provider === 'PowerFlex'">
           <a-form-item name="powerflexGateway" ref="powerflexGateway">
-            <tooltip-label slot="label" :title="$t('label.powerflex.gateway')" :tooltip="$t('label.powerflex.gateway')"/>
+            <template #label>
+              <tooltip-label :title="$t('label.powerflex.gateway')" :tooltip="$t('label.powerflex.gateway')"/>
+            </template>
             <a-input v-decorator="['powerflexGateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item name="powerflexGatewayUsername" ref="powerflexGatewayUsername">
-            <tooltip-label slot="label" :title="$t('label.powerflex.gateway.username')" :tooltip="$t('label.powerflex.gateway.username')"/>
+            <template #label>
+              <tooltip-label :title="$t('label.powerflex.gateway.username')" :tooltip="$t('label.powerflex.gateway.username')"/>
+            </template>
             <a-input v-decorator="['powerflexGatewayUsername', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item name="powerflexGatewayPassword" ref="powerflexGatewayPassword">
-            <tooltip-label slot="label" :title="$t('label.powerflex.gateway.password')" :tooltip="$t('label.powerflex.gateway.password')"/>
+            <template #label>
+              <tooltip-label :title="$t('label.powerflex.gateway.password')" :tooltip="$t('label.powerflex.gateway.password')"/>
+            </template>
             <a-input-password v-decorator="['powerflexGatewayPassword', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item name="powerflexStoragePool" ref="powerflexStoragePool">
-            <tooltip-label slot="label" :title="$t('label.powerflex.storage.pool')" :tooltip="$t('label.powerflex.storage.pool')"/>
+            <template #label>
+              <tooltip-label :title="$t('label.powerflex.storage.pool')" :tooltip="$t('label.powerflex.storage.pool')"/>
+            </template>
             <a-input v-decorator="['powerflexStoragePool', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
         </div>
@@ -208,7 +237,7 @@
           </a-form-item>
         </div>
         <a-form-item name="storagetags" ref="storagetags">
-          <tooltip-label slot="label" :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
+          <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           <a-select
             mode="tags"
             v-model:value="selectedTags"

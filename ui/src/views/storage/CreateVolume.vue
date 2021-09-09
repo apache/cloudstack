@@ -19,23 +19,30 @@
   <a-spin :spinning="loading">
     <a-form
       class="form"
-      :form="form"
-      @submit="handleSubmit"
-      v-ctrl-enter="handleSubmit"
-      layout="vertical">
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+      layout="vertical"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit">
+      <a-form-item ref="name" name="name">
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
+          autoFocus
           v-model:value="form.name"
-          :placeholder="$t('label.volumename')"
-          autoFocus />
+          :placeholder="apiParams.name.description" />
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+      <a-form-item ref="zoneid" name="zoneid">
+        <template #label>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        </template>
         <a-select
           v-model:value="form.zoneid"
           :loading="loading"
-          @change="zone => fetchDiskOfferings(zone)">
+          @change="zone => fetchDiskOfferings(zone)"
+          :placeholder="apiParams.zoneid.description">
           <a-select-option
             v-for="(zone, index) in zones"
             :value="zone.id"
@@ -44,12 +51,15 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+      <a-form-item ref="diskofferingid" name="diskofferingid">
+        <template #label>
+          <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+        </template>
         <a-select
           v-model:value="form.diskofferingid"
           :loading="loading"
           @change="id => onChangeDiskOffering(id)"
+          :placeholder="apiParams.diskofferingid.description || $t('label.diskofferingid')"
         >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -60,35 +70,31 @@
         </a-select>
       </a-form-item>
       <span v-if="customDiskOffering">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+        <a-form-item ref="size" name="size">
+          <template #label>
+            <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+          </template>
           <a-input
             v-model:value="form.size"
-            :placeholder="$t('label.disksize')"/>
+            :placeholder="apiParams.size.description"/>
         </a-form-item>
       </span>
       <span v-if="isCustomizedDiskIOps">
         <a-form-item ref="miniops" name="miniops">
           <template #label>
-            {{ $t('label.miniops') }}
-            <a-tooltip :title="apiParams.miniops.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+            <tooltip-label :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
           </template>
           <a-input
             v-model:value="form.miniops"
-            :placeholder="$t('label.miniops')"/>
+            :placeholder="apiParams.miniops.description"/>
         </a-form-item>
         <a-form-item ref="maxiops" name="maxiops">
           <template #label>
-            {{ $t('label.maxiops') }}
-            <a-tooltip :title="apiParams.maxiops.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+            <tooltip-label :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
           </template>
           <a-input
             v-model:value="form.maxiops"
-            :placeholder="$t('label.maxiops')"/>
+            :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
       <div :span="24" class="action-button">

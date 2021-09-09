@@ -26,7 +26,9 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="username" ref="username">
-          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+          </template>
           <a-input
             v-model:value="form.username"
             :placeholder="apiParams.username.description"
@@ -35,7 +37,9 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item name="password" ref="password">
-              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.password.description"/>
+              <template #label>
+                <tooltip-label :title="$t('label.password')" :tooltip="apiParams.password.description"/>
+              </template>
               <a-input-password
                 v-model:value="form.password"
                 :placeholder="apiParams.password.description"/>
@@ -43,7 +47,9 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item name="confirmpassword" ref="confirmpassword">
-              <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+              <template #label>
+                <tooltip-label :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+              </template>
               <a-input-password
                 v-model:value="form.confirmpassword"
                 :placeholder="apiParams.password.description"/>
@@ -51,7 +57,9 @@
           </a-col>
         </a-row>
         <a-form-item name="email" ref="email">
-          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+          </template>
           <a-input
             v-model:value="form.email"
             :placeholder="apiParams.email.description" />
@@ -59,7 +67,9 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item name="firstname" ref="firstname">
-              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+              <template #label>
+                <tooltip-label :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+              </template>
               <a-input
                 v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
@@ -67,7 +77,9 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item name="lastname" ref="lastname">
-              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+              <template #label>
+                <tooltip-label :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+              </template>
               <a-input
                 v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
@@ -75,7 +87,9 @@
           </a-col>
         </a-row>
         <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin() && !domainid">
-          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
           <a-select
             :loading="domainLoading"
             v-model:value="form.domainid"
@@ -86,7 +100,9 @@
           </a-select>
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="!account">
-          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
           <a-select
             v-model:value="form.account"
             :loading="loadingAccount"
@@ -97,7 +113,9 @@
           </a-select>
         </a-form-item>
         <a-form-item name="timezone" ref="timezone">
-          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+          </template>
           <a-select
             showSearch
             v-model:value="form.timezone"
@@ -112,7 +130,9 @@
             <a-switch v-model:checked="form.samlenable" />
           </a-form-item>
           <a-form-item name="samlentity" ref="samlentity" v-if="form.samlenable">
-            <tooltip-label slot="label" :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
+            </template>
             <a-select
               v-model:value="form.samlentity"
               :loading="idpLoading">

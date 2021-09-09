@@ -29,7 +29,9 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
-          <tooltip-label slot="label" :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
+          </template>
           <a-select
             id="version-selection"
             v-model:value="form.kubernetesversionid"

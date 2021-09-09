@@ -51,11 +51,13 @@
             </p>
             <a-form @finish="handleSslFormSubmit" :ref="formRef" :model="form" :rules="rules">
               <a-form-item name="root" ref="root" :required="true">
-                <tooltip-label slot="label" :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
+                <template #label>
+                  <tooltip-label :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-textarea
                   id="rootCert"
                   rows="2"
-                  :placeholder="$t('label.root.certificate')"
+                  :placeholder="apiParams.name.description"
                   :autoFocus="true"
                   name="rootCert"
                   v-model:value="form.root"
@@ -69,7 +71,9 @@
                   :name="`intermediate${index + 1}`"
                   :ref="`intermediate${index + 1}`"
                   class="intermediate-certificate">
-                  <tooltip-label slot="label" :title="$t('label.intermediate.certificate') + ` ${index + 1} `" :tooltip="apiParams.id.description" tooltipPlacement="bottom"/>
+                  <template #label>
+                    <tooltip-label :title="$t('label.intermediate.certificate') + ` ${index + 1} `" :tooltip="apiParams.id.description" tooltipPlacement="bottom"/>
+                  </template>
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
@@ -82,38 +86,44 @@
 
               <a-form-item>
                 <a-button @click="addIntermediateCert">
-                  <PlusCircleOutlined />
+                  <plus-circle-outlined />
                   {{ $t('label.add.intermediate.certificate') }}
                 </a-button>
               </a-form-item>
 
               <a-form-item name="server" ref="server" :required="true">
-                <tooltip-label slot="label" :title="$t('label.server.certificate')" :tooltip="apiParams.certificate.description" tooltipPlacement="bottom"/>
+                <template #label>
+                  <tooltip-label :title="$t('label.server.certificate')" :tooltip="apiParams.certificate.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-textarea
                   id="serverCert"
                   rows="2"
-                  :placeholder="$t('label.server.certificate')"
+                  :placeholder="apiParams.certificate.description"
                   name="serverCert"
                   v-model:value="form.server"
                 ></a-textarea>
               </a-form-item>
 
               <a-form-item name="pkcsKey" ref="pkcsKey" :required="true">
-                <tooltip-label slot="label" :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
+                <template #label>
+                  <tooltip-label :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
-                  :placeholder="$t('label.pkcs.private.certificate')"
+                  :placeholder="apiParams.privatekey.description"
                   name="pkcsKey"
                   v-model:value="form.pkcs"
                 ></a-textarea>
               </a-form-item>
 
               <a-form-item name="dns" ref="dns" :required="true">
-                <tooltip-label slot="label" :title="$t('label.domain.suffix')" :tooltip="apiParams.domainsuffix.description" tooltipPlacement="bottom"/>
+                <template #label>
+                  <tooltip-label :title="$t('label.domain.suffix')" :tooltip="apiParams.domainsuffix.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-input
                   id="dnsSuffix"
-                  :placeholder="$t('label.domain.suffix')"
+                  :placeholder="apiParams.domainsuffix.description"
                   name="dnsSuffix"
                   v-model:value="form.dns"
                 ></a-input>

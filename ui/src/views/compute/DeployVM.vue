@@ -165,13 +165,15 @@
                 <template #description>
                   <div v-if="zoneSelected">
                     <a-form-item v-if="zoneSelected && templateConfigurationExists" name="templateConfiguration" ref="templateConfiguration">
-                      <tooltip-label slot="label" :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
+                      <template #label>
+                        <tooltip-label :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
+                      </template>
                       <a-select
                         showSearch
                         optionFilterProp="label"
                         v-model:value="form.templateConfiguration"
                         defaultActiveFirstOption
-                        :placeholder="$t('label.configuration')"
+                        :placeholder="$t('message.ovf.configurations')"
                         :filterOption="(input, option) => {
                           return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
@@ -217,7 +219,7 @@
                       @update-compute-cpuspeed="updateFieldValue"
                       @update-compute-memory="updateFieldValue" />
                     <span v-if="serviceOffering && serviceOffering.iscustomized">
-                      <a-form-item class="form-item-hidden">
+                      <a-form-item name="cpunumber" ref="cpunumber" class="form-item-hidden">
                         <a-input v-model:value="form.cpunumber"/>
                       </a-form-item>
                       <a-form-item
@@ -250,7 +252,7 @@
               </a-step>
               <a-step
                 v-else
-                :title="tabKey == 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :title="tabKey === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
@@ -293,8 +295,10 @@
                         :key="nicIndex"
                         :v-bind="nic.name"
                         :name="'networkMap.nic-' + nic.InstanceID.toString()"
-                        :ref="'networkMap.nic-' + nic.InstanceID.toString()">>
-                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
+                        :ref="'networkMap.nic-' + nic.InstanceID.toString()">
+                        <template #label>
+                          <tooltip-label :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
+                        </template>
                         <a-select
                           showSearch
                           optionFilterProp="label"
@@ -381,7 +385,7 @@
                         :v-bind="property.key"
                         :name="'properties.' + escapePropertyKey(property.key)"
                         :ref="'properties.' + escapePropertyKey(property.key)">
-                        <tooltip-label slot="label" style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
+                        <tooltip-label style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
@@ -439,7 +443,7 @@
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
-                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
+                          v-model:value="form.boottype"
                           @change="onBootTypeChange">
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
@@ -447,8 +451,7 @@
                         </a-select>
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')" name="bootmode" ref="bootmode">
-                        <a-select
-                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]">
+                        <a-select v-model:value="form.bootmode">
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -463,7 +466,9 @@
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
                     <a-form-item :label="$t('label.dynamicscalingenabled')" name="dynamicscalingenabled" ref="dynamicscalingenabled">
-                      <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
+                      <template #label>
+                        <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
+                      </template>
                       <a-form-item>
                         <a-switch
                           v-model:checked="form.dynamicscalingenabled"
@@ -525,18 +530,18 @@
                 <template #description>
                   <div style="margin-top: 10px">
                     {{ $t('message.read.accept.license.agreements') }}
-                    <a-form-item>
-                      <div
-                        style="margin-top: 10px"
-                        v-for="(license, licenseIndex) in templateLicenses"
-                        :key="licenseIndex"
-                        :v-bind="license.id">
-                        <tooltip-label slot="label" style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
-                        <a-textarea
-                          :value="license.text"
-                          :auto-size="{ minRows: 3, maxRows: 8 }"
-                          readOnly />
-                      </div>
+                    <a-form-item
+                      style="margin-top: 10px"
+                      v-for="(license, licenseIndex) in templateLicenses"
+                      :key="licenseIndex"
+                      :v-bind="license.id">
+                      <template #label>
+                        <tooltip-label style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
+                      </template>
+                      <a-textarea
+                        v-model:value="license.text"
+                        :auto-size="{ minRows: 3, maxRows: 8 }"
+                        readOnly />
                       <a-checkbox
                         style="margin-top: 10px"
                         v-model:checked="form.licensesaccepted">
@@ -1247,6 +1252,8 @@ export default {
       this.fetchInstaceGroups()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
+        this.form.boottype = this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
+        this.form.bootmode = this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.instanceConfig = toRaw(this.form)
       })
     },

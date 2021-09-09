@@ -90,18 +90,18 @@
           <a-row :gutter="12">
             <a-col :md="24" :lg="12">
               <a-card class="instances-card">
-                <span slot="title">
+                <template #title>
                   {{ $t('label.unmanaged.instances') }}
                   <a-tooltip :title="$t('message.instances.unmanaged')">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <info-circle-outlined />
                   </a-tooltip>
                   <a-button
                     style="margin-left: 12px; margin-top: 4px"
                     :loading="unmanagedInstancesLoading"
-                    icon="reload"
                     size="small"
                     shape="round"
                     @click="fetchUnmanagedInstances()" >
+                    <template #icon><reload-outlined /></template>
                   </a-button>
                   <span style="float: right; width: 50%">
                     <search-view
@@ -111,7 +111,7 @@
                       @search="searchUnmanagedInstances"
                     />
                   </span>
-                </span>
+                </template>
                 <a-table
                   class="instances-card-table"
                   :loading="unmanagedInstancesLoading"
@@ -123,7 +123,7 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
-                  <template slot="state" slot-scope="text">
+                  <template #state="{text}">
                     <status :text="text ? text : ''" displayText />
                   </template>
                 </a-table>
@@ -137,7 +137,7 @@
                     :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.unmanaged-1)*pageSize.unmanaged))}-${Math.min(page.unmanaged*pageSize.unmanaged, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
                     @change="fetchUnmanagedInstances"
                     showQuickJumper>
-                    <template slot="buildOptionText" slot-scope="props">
+                    <template #buildOptionText="props">
                       <span>{{ props.value }} / {{ $t('label.page') }}</span>
                     </template>
                   </a-pagination>
@@ -146,8 +146,8 @@
                       :loading="importUnmanagedInstanceLoading"
                       :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
-                      icon="import"
                       @click="onManageInstanceAction">
+                      <template #icon><inport-outlined /></template>
                       {{ $t('label.import.instance') }}
                     </a-button>
                   </div>
@@ -156,18 +156,18 @@
             </a-col>
             <a-col :md="24" :lg="12">
               <a-card class="instances-card">
-                <span slot="title">
+                <template #title>
                   {{ $t('label.managed.instances') }}
                   <a-tooltip :title="$t('message.instances.managed')">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <info-circle-outlined />
                   </a-tooltip>
                   <a-button
                     style="margin-left: 12px; margin-top: 4px"
                     :loading="managedInstancesLoading"
-                    icon="reload"
                     size="small"
                     shape="round"
                     @click="fetchManagedInstances()" >
+                    <template #icon><reload-outlined /></template>
                   </a-button>
                   <span style="float: right; width: 50%">
                     <search-view
@@ -177,7 +177,7 @@
                       @search="searchManagedInstances"
                     />
                   </span>
-                </span>
+                </template>
                 <a-table
                   class="instances-card-table"
                   :loading="managedInstancesLoading"
@@ -189,10 +189,10 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
-                  <a slot="name" slot-scope="text, record" href="javascript:;">
+                  <template #name="{text, record}" href="javascript:;">
                     <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
-                  </a>
-                  <template slot="state" slot-scope="text">
+                  </template>
+                  <template #state="{text}">
                     <status :text="text ? text : ''" displayText />
                   </template>
                 </a-table>
@@ -206,7 +206,7 @@
                     :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.managed-1)*pageSize.managed))}-${Math.min(page.managed*pageSize.managed, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
                     @change="fetchManagedInstances"
                     showQuickJumper>
-                    <template slot="buildOptionText" slot-scope="props">
+                    <template #buildOptionText="props">
                       <span>{{ props.value }} / {{ $t('label.page') }}</span>
                     </template>
                   </a-pagination>
@@ -478,7 +478,7 @@ export default {
     },
     filterOption (input, option) {
       return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     fetchOptions (param, name, exclude) {

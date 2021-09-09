@@ -26,7 +26,9 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="id" ref="id">
-          <tooltip-label slot="label" :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
+          </template>
           <a-select
             autoFocus
             v-model:value="form.id"
@@ -39,34 +41,44 @@
           </a-select>
         </a-form-item>
         <a-form-item name="kvmnetworklabel" ref="kvmnetworklabel">
-          <tooltip-label slot="label" :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
+          </template>
           <a-input
             v-model:value="form.kvmnetworklabel"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            :placeholder="apiParams.kvmnetworklabel.description" />
         </a-form-item>
         <a-form-item name="vmwarenetworklabel" ref="vmwarenetworklabel">
-          <tooltip-label slot="label" :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
+          </template>
           <a-input
             v-model:value="form.vmwarenetworklabel"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            :placeholder="apiParams.vmwarenetworklabel.description" />
         </a-form-item>
         <a-form-item name="xennetworklabel" ref="xennetworklabel">
-          <tooltip-label slot="label" :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
+          </template>
           <a-input
             v-model:value="form.xennetworklabel"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            :placeholder="apiParams.xennetworklabel.description" />
         </a-form-item>
         <a-form-item name="hypervnetworklabel" ref="hypervnetworklabel">
-          <tooltip-label slot="label" :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
+          </template>
           <a-input
             v-model:value="form.hypervnetworklabel"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            :placeholder="apiParams.hypervnetworklabel.description" />
         </a-form-item>
         <a-form-item name="ovm3networklabel" ref="ovm3networklabel">
-          <tooltip-label slot="label" :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
+          </template>
           <a-input
             v-model:value="form.ovm3networklabel"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            :placeholder="apiParams.ovm3networklabel.description" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>

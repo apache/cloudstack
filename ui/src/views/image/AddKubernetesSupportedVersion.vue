@@ -25,20 +25,26 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item ref="semanticversion" name="semanticversion">
-          <tooltip-label slot="label" :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
+          </template>
           <a-input
             v-model:value="form.semanticversion"
             :placeholder="apiParams.semanticversion.description"
             autoFocus />
         </a-form-item>
         <a-form-item ref="name" name="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
-            :placeholder="$t('label.name')"/>
+            :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item ref="zoneid" name="zoneid">
-          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
             id="zone-selection"
             v-model:value="form.zoneid"
@@ -55,25 +61,33 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="url" name="url">
-          <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+          </template>
           <a-input
             v-model:value="form.url"
             :placeholder="apiParams.url.description" />
         </a-form-item>
         <a-form-item ref="checksum" name="checksum">
-          <tooltip-label slot="label" :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+          </template>
           <a-input
             v-model:value="form.checksum"
             :placeholder="apiParams.checksum.description" />
         </a-form-item>
         <a-form-item ref="mincpunumber" name="mincpunumber">
-          <tooltip-label slot="label" :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
+          </template>
           <a-input
             v-model:value="form.mincpunumber"
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
         <a-form-item ref="minmemory" name="minmemory">
-          <tooltip-label slot="label" :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
+          </template>
           <a-input
             v-model:value="form.minmemory"
             :placeholder="apiParams.minmemory.description"/>

@@ -27,17 +27,23 @@
       v-ctrl-enter="handleSubmit"
       @submit="handleSubmit">
       <a-form-item name="name" ref="name">
-        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
           v-model:value="form.name"
           autoFocus />
       </a-form-item>
       <a-form-item name="displayname" ref="displayname">
-        <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
+        </template>
         <a-input v-model:value="form.displayname" />
       </a-form-item>
       <a-form-item name="ostypeid" ref="ostypeid">
-        <tooltip-label slot="label" :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+        </template>
         <a-select
           showSearch
           optionFilterProp="label"
@@ -52,15 +58,21 @@
         </a-select>
       </a-form-item>
       <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
-        <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+        </template>
         <a-switch v-model:checked="form.isdynamicallyscalable" />
       </a-form-item>
       <a-form-item name="haenable" ref="haenable">
-        <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
+        </template>
         <a-switch v-model:checked="form.haenable" />
       </a-form-item>
       <a-form-item name="group" ref="group">
-        <tooltip-label slot="label" :title="$t('label.group')" :tooltip="apiParams.group.description"/>
+        <template #label>
+          <tooltip-label :title="$t('label.group')" :tooltip="apiParams.group.description"/>
+        </template>
         <a-auto-complete
           v-model:value="form.group"
           :filterOption="(input, option) => {

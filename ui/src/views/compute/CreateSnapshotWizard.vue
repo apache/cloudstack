@@ -25,7 +25,9 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="volumeid" ref="volumeid">
-          <tooltip-label slot="label" :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
+          </template>
           <a-select
             showSearch
             allowClear
@@ -41,17 +43,23 @@
           </a-select>
         </a-form-item>
         <a-form-item name="name" ref="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm">
-          <tooltip-label slot="label" :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
+          </template>
           <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
         <a-form-item name="asyncbackup" ref="asyncbackup">
-          <tooltip-label slot="label" :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
+          </template>
           <a-switch v-model:checked="form.asyncbackup"/>
         </a-form-item>
         <div :span="24" class="action-button">

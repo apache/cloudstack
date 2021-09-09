@@ -47,11 +47,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       related: [{
@@ -153,11 +153,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       related: [{
@@ -241,11 +241,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [{

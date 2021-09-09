@@ -20,7 +20,7 @@
     <a-row :gutter="6">
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
         <a-checkbox
-          v-decorator="[checkBoxDecorator, {}]"
+          v-model:checked="fields[checkBoxDecorator]"
           :checked="checked"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
@@ -28,15 +28,15 @@
       </a-col>
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
         <a-form-item
-          v-if="reversed != checked"
+          v-if="reversed !== checked"
           :label="selectLabel">
           <a-select
-            v-decorator="[selectDecorator, { initialValue: selectedOption ? selectedOption : getSelectInitialValue()}]"
+            v-model:value="fields[selectDecorator]"
             :defaultValue="selectDecorator ? undefined : selectedOption ? selectedOption : getSelectInitialValue()"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @change="val => { this.handleSelectChange(val) }">
             <a-select-option
@@ -97,11 +97,9 @@ export default {
   data () {
     return {
       checked: false,
-      selectedOption: null
+      selectedOption: null,
+      fields: {}
     }
-  },
-  created () {
-    this.checked = this.defaultCheckBoxValue
   },
   computed: {
     selectSource () {
@@ -118,6 +116,7 @@ export default {
     this.fields = {}
     this.fields[this.checkBoxDecorator] = false
     this.fields[this.selectDecorator] = this.selectedOption ? this.selectedOption : this.getSelectInitialValue()
+    this.checked = this.defaultCheckBoxValue
   },
   methods: {
     arrayHasItems (array) {

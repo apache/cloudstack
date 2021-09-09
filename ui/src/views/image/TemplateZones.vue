@@ -38,11 +38,10 @@
       <template #isready="{ record }">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
-      </div>
+      </template>
       <template #expandedRowRender="{ record }">
         <a-table
           style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
-          slot="expandedRowRender"
           :columns="innerColumns"
           :data-source="record.downloaddetails"
           :pagination="false"
@@ -145,9 +144,11 @@
       centered>
       <div v-if="selectedRowKeys.length > 0">
         <a-alert type="error">
-          <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
-          <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-          <span slot="message" v-html="$t(message.confirmMessage)" />
+          <template #message>
+            <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
+            <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+            <span v-html="$t(message.confirmMessage)" />
+          </template>
         </a-alert>
       </div>
       <a-alert v-else :message="$t('message.action.delete.template')" type="warning" />

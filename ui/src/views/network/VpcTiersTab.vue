@@ -172,10 +172,7 @@
           :rules="createNetworkRules">
           <a-form-item ref="name" name="name" :colon="false">
             <template #label>
-              {{ $t('label.name') }}
-              <a-tooltip placement="right" :title="$t('label.create.tier.name.description')">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.name')" :tooltip="$t('label.create.tier.name.description')"/>
             </template>
             <a-input
               :placeholder="$t('label.create.tier.name.description')"
@@ -184,10 +181,7 @@
           </a-form-item>
           <a-form-item ref="networkOffering" name="networkOffering" :colon="false">
             <template #label>
-              {{ $t('label.networkofferingid') }}
-              <a-tooltip placement="right" :title="$t('label.create.tier.networkofferingid.description')">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.networkofferingid')" :tooltip="$t('label.create.tier.networkofferingid.description')"/>
             </template>
             <a-select
               v-model:value="createNetworkForm.networkOffering"
@@ -198,17 +192,16 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
-            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
+            <template #label>
+              <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
+            </template>
             <a-input
               v-model:value="form.vlan"
               :placeholder="this.$t('label.vlan')"/>
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
-              {{ $t('label.gateway') }}
-              <a-tooltip placement="right" :title="$t('label.create.tier.gateway.description')">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="$t('label.create.tier.gateway.description')"/>
             </template>
             <a-input
               :placeholder="$t('label.create.tier.gateway.description')"
@@ -216,10 +209,7 @@
           </a-form-item>
           <a-form-item ref="netmask" name="netmask" :colon="false">
             <template #label>
-              {{ $t('label.netmask') }}
-              <a-tooltip placement="right" :title="$t('label.create.tier.netmask.description')">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="$t('label.create.tier.netmask.description')"/>
             </template>
             <a-input
               :placeholder="$t('label.create.tier.netmask.description')"
@@ -227,10 +217,7 @@
           </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
             <template #label>
-              {{ $t('label.externalid') }}
-              <a-tooltip placement="right" :title="$t('label.create.tier.externalid.description')">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.externalid')" :tooltip="$t('label.create.tier.externalid.description')"/>
             </template>
             <a-input
               :placeholder=" $t('label.create.tier.externalid.description')"
@@ -238,10 +225,7 @@
           </a-form-item>
           <a-form-item ref="acl" name="acl" :colon="false">
             <template #label>
-              {{ $t('label.aclid') }}
-              <a-tooltip placement="right" :title="$t('label.create.tier.aclid.description')">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.aclid')" :tooltip="$t('label.create.tier.aclid.description')"/>
             </template>
             <a-select
               :placeholder="$t('label.create.tier.aclid.description')"

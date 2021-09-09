@@ -26,15 +26,15 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <span slot="name" slot-scope="text, record">
+      <template #name="{record}">
         <span>{{ record.displaytext || record.name }}</span>
         <div v-if="record.meta">
-          <template v-for="meta in record.meta">
+          <div v-for="meta in record.meta" :key="meta.key">
             <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
-          </template>
+          </div>
         </div>
-      </span>
-      <span slot="network" slot-scope="text, record">
+      </template>
+      <template #network="{record}">
         <a-select
           v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
           :defaultValue="validNetworks[record.id][0].id"
@@ -46,8 +46,8 @@
         <span v-else>
           {{ $t('label.no.matching.network') }}
         </span>
-      </span>
-      <span slot="ipaddress" slot-scope="text, record">
+      </template>
+      <template #ipaddress="text, record">
         <check-box-input-pair
           layout="vertical"
           :resourceKey="record.id"
@@ -56,7 +56,7 @@
           :reversed="true"
           :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
           @handle-checkinputpair-change="setIpAddress" />
-      </span>
+      </template>
     </a-table>
   </div>
 </template>

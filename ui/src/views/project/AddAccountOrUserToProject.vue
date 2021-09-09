@@ -26,26 +26,32 @@
           :model="form"
           :rules="rules"
           layout="vertical">
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
+          <a-form-item name="" ref="">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
+            </template>
             <a-input
               v-model:value="form.account"
               :placeholder="apiParams.addAccountToProject.account.description"
               autoFocus />
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.addAccountToProject.email.description"/>
+          <a-form-item name="" ref="">
+            <template #label>
+              <tooltip-label :title="$t('label.email')" :tooltip="apiParams.addAccountToProject.email.description"/>
+            </template>
             <a-input
               v-model:value="form.email"
               :placeholder="apiParams.addAccountToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.projectroleid">
-            <tooltip-label slot="label" :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
+            </template>
             <a-select
               showSearch
               v-model:value="form.projectroleid"
               :loading="loading"
-              :placeholder="$t('label.project.role')"
+              :placeholder="apiParams.addAccountToProject.projectroleid.description"
             >
               <a-select-option v-for="role in projectRoles" :key="role.id">
                 {{ role.name }}
@@ -53,17 +59,19 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.roletype">
-            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
+            </template>
             <a-select
               showSearch
               v-model:value="form.roletype"
-              :placeholder="$t('label.roletype')">
+              :placeholder="apiParams.addAccountToProject.roletype.description">
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
             </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
-            <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
             <a-button type="primary" ref="submit" @click="addAccountToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
@@ -83,38 +91,46 @@
               <div v-html="$t('message.add.user.to.project')"></div>
             </template>
           </a-alert>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
+          <a-form-item name="username" ref="username">
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
+            </template>
             <a-input
               v-model:value="form.username"
               :placeholder="apiParams.addUserToProject.username.description"
               autoFocus />
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.addUserToProject.email.description"/>
+          <a-form-item name="email" ref="email">
+            <template #label>
+              <tooltip-label :title="$t('label.email')" :tooltip="apiParams.addUserToProject.email.description"/>
+            </template>
             <a-input
               v-model:value="form.email"
               :placeholder="apiParams.addUserToProject.email.description"></a-input>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.project.role')" :tooltip="apiParams.addUserToProject.roletype.description"/>
+          <a-form-item name="projectroleid" ref="projectroleid">
+            <template #label>
+              <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addUserToProject.roletype.description"/>
+            </template>
             <a-select
               showSearch
               v-model:value="form.projectroleid"
               :loading="loading"
-              :placeholder="$t('label.project.role')"
+              :placeholder="apiParams.addUserToProject.roletype.description"
             >
               <a-select-option v-for="role in projectRoles" :key="role.id">
                 {{ role.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.roletype')" :tooltip="apiParams.addUserToProject.roletype.description"/>
+          <a-form-item name="roletype" ref="roletype">
+            <template #label>
+              <tooltip-label :title="$t('label.roletype')" :tooltip="apiParams.addUserToProject.roletype.description"/>
+            </template>
             <a-select
               showSearch
               v-model:value="form.roletype"
-              :placeholder="$t('label.roletype')">
+              :placeholder="apiParams.addUserToProject.roletype.description">
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
             </a-select>

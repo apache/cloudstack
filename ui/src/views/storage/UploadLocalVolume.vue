@@ -45,14 +45,18 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item ref="name" name="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="$t('label.volumename')"
             autoFocus />
         </a-form-item>
         <a-form-item ref="zoneId" name="zoneId">
-          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
             v-model:value="form.zoneId">
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
@@ -61,7 +65,9 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="format" name="format">
-          <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+          </template>
           <a-select
             v-model:value="form.format">
             <a-select-option v-for="format in formats" :key="format">
@@ -70,7 +76,9 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="checksum" name="checksum">
-          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
+          </template>
           <a-input
             v-model:value="form.checksum"
             :placeholder="$t('label.volumechecksum.description')"

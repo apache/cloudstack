@@ -29,15 +29,19 @@
           name="expunge"
           ref="expunge"
           v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-          <tooltip-label slot="label" :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
+          </template>
           <a-switch v-model:checked="form.expunge" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item name="volumeids" ref="volumeids" v-if="volumes.length > 0">
-          <tooltip-label slot="label" :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
+          </template>
           <a-select
             v-model:value="form.volumeids"
-            :placeholder="$t('label.delete.volumes')"
+            :placeholder="apiParams.volumeids.description"
             mode="multiple"
             :loading="loading"
             :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">

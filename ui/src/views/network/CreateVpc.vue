@@ -23,20 +23,26 @@
         :rules="rules"
         layout="vertical">
         <a-form-item name="name" ref="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus/>
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
-          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          </template>
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item name="zoneid" ref="zoneid">
-          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
             :loading="loadingZone"
             v-model:value="form.zoneid"
@@ -47,19 +53,25 @@
           </a-select>
         </a-form-item>
         <a-form-item name="cidr" ref="cidr">
-          <tooltip-label slot="label" :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
+          </template>
           <a-input
             v-model:value="form.cidr"
             :placeholder="apiParams.cidr.description"/>
         </a-form-item>
         <a-form-item name="networkdomain" ref="networkdomain">
-          <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+          </template>
           <a-input
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description"/>
         </a-form-item>
         <a-form-item name="vpcofferingid" ref="vpcofferingid">
-          <tooltip-label slot="label" :title="$t('label.vpcofferingid')" :tooltip="apiParams.vpcofferingid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.vpcofferingid')" :tooltip="apiParams.vpcofferingid.description"/>
+          </template>
           <a-select
             :loading="loadingOffering"
             v-model:value="form.vpcofferingid">
@@ -69,7 +81,9 @@
           </a-select>
         </a-form-item>
         <a-form-item name="start" ref="start">
-          <tooltip-label slot="label" :title="$t('label.start')" :tooltip="apiParams.start.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
+          </template>
           <a-switch v-model:checked="form.start" />
         </a-form-item>
       </a-form>

@@ -93,7 +93,7 @@ export default {
         {
           title: this.$t('label.deviceid'),
           dataIndex: 'deviceid',
-          scopedSlots: { customRender: 'deviceid' }
+          slots: { customRender: 'deviceid' }
         },
         {
           title: this.$t('label.networkname'),

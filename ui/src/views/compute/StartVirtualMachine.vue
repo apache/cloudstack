@@ -30,7 +30,9 @@
         layout="vertical">
         <div v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item name="podid" ref="podid">
-            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            </template>
             <a-select
               v-model:value="form.podid"
               showSearch
@@ -48,7 +50,9 @@
             </a-select>
           </a-form-item>
           <a-form-item name="clusterid" ref="clusterid">
-            <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+            </template>
             <a-select
               id="cluster-selection"
               v-model:value="form.clusterid"
@@ -66,7 +70,9 @@
             </a-select>
           </a-form-item>
           <a-form-item name="hostid" ref="hostid">
-            <tooltip-label slot="label" :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
+            </template>
             <a-select
               id="host-selection"
               v-model:value="form.hostid"
@@ -85,7 +91,9 @@
         </div>
 
         <a-form-item name="bootintosetup" ref="bootintosetup" v-if="resource.hypervisor === 'VMware'">
-          <tooltip-label slot="label" :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
+          </template>
           <a-switch v-model:checked="form.bootintosetup" />
         </a-form-item>
 

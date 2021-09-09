@@ -28,10 +28,11 @@
       </a-button>
       <a-button
         v-if="(('disassociateIpAddress' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-        type="danger"
-        icon="delete"
+        type="primary"
+        danger
         style="width: 100%; margin-bottom: 15px"
         @click="bulkActionConfirmation()">
+        <template #icon><delete-outlined /></template>
         {{ $t('label.action.bulk.release.public.ip.address') }}
       </a-button>
       <div v-if="$route.path.startsWith('/vpc')">
@@ -394,7 +395,7 @@ export default {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', jobId, null)
         this.$pollJob({
           title: this.$t('label.action.release.ip'),
           description: ip.id,
@@ -402,14 +403,14 @@ export default {
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, ip.id, 'success')
+              eventBus.emit('update-resource-state', this.selectedItems, ip.id, 'success')
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.release.ip.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, ip.id, 'failed')
+              eventBus.emit('update-resource-state', this.selectedItems, ip.id, 'failed')
             }
             this.fetchData()
           },

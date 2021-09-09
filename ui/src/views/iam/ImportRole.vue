@@ -25,7 +25,9 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="file" ref="file">
-          <tooltip-label slot="label" :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
+          <template #label>
+            <tooltip-label :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
+          </template>
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
@@ -42,7 +44,9 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item name="name" ref="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
@@ -50,7 +54,9 @@
         </a-form-item>
 
         <a-form-item name="description" ref="description">
-          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          </template>
           <a-input
             v-model:value="form.description"
             :placeholder="apiParams.description.description" />
@@ -58,7 +64,9 @@
 
         <a-form-item name="type" ref="type">
         <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          </template>
           <a-select
             v-model:value="form.type"
             :placeholder="apiParams.type.description">
@@ -69,7 +77,9 @@
         </a-form-item>
 
         <a-form-item name="forced" ref="forced">
-          <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
+          </template>
           <a-switch v-model:checked="form.forced" />
         </a-form-item>
 

@@ -326,7 +326,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
-          component: () => import('@/views/compute/MigrateVMStorage'),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
           popup: true
         },
         {
@@ -531,11 +531,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [
@@ -588,11 +588,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [

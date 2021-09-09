@@ -16,19 +16,22 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
+        <a-form-item name="storageid" ref="storageid">
+          <template #label>
+            <tooltip-label :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
+          </template>
           <a-select
             :loading="loading"
-            v-decorator="['storageid', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]">
+            v-model:value="form.storageid"
+            :placeholder="apiParams.storageid ? apiParams.storageid.description : ''">
             <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
               {{ storagePool.name || storagePool.id }}
             </a-select-option>
@@ -36,8 +39,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -46,6 +49,7 @@
 
 <script>
 import { api } from '@/api'
+import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -66,7 +70,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = {}
     if (this.$route.meta.name === 'vm') {
       this.apiConfig = this.$store.getters.apis.migrateVirtualMachineWithVolume || {}
@@ -89,11 +92,15 @@ export default {
     }
   },
   created () {
-  },
-  mounted () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({ storageid: [{ required: true, message: this.$t('message.error.required.input') }] })
+    },
     fetchData () {
       this.loading = true
       api('listStoragePools', {
@@ -117,10 +124,9 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         var isUserVm = true
         if (this.$route.meta.name !== 'vm') {

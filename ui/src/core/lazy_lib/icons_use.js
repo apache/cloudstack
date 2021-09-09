@@ -28,9 +28,9 @@ import {
   BarsOutlined,
   BellOutlined,
   BlockOutlined,
+  BranchesOutlined,
   BuildOutlined,
   BulbOutlined,
-  BranchesOutlined,
   CalendarOutlined,
   CameraOutlined,
   CaretDownOutlined,
@@ -54,6 +54,7 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   DeleteOutlined,
+  DeleteTwoTone,
   DeploymentUnitOutlined,
   DesktopOutlined,
   DoubleLeftOutlined,
@@ -62,9 +63,10 @@ import {
   DownloadOutlined,
   DragOutlined,
   EditOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
   EnvironmentOutlined,
+  ExclamationCircleOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   FileProtectOutlined,
   FilterOutlined,
   FilterTwoTone,
@@ -82,6 +84,7 @@ import {
   HddOutlined,
   HomeOutlined,
   IdcardOutlined,
+  ImportOutlined,
   InboxOutlined,
   InfoCircleOutlined,
   KeyOutlined,
@@ -162,9 +165,9 @@ export default {
     app.component('BarsOutlined', BarsOutlined)
     app.component('BellOutlined', BellOutlined)
     app.component('BlockOutlined', BlockOutlined)
+    app.component('BranchesOutlined', BranchesOutlined)
     app.component('BuildOutlined', BuildOutlined)
     app.component('BulbOutlined', BulbOutlined)
-    app.component('BranchesOutlined', BranchesOutlined)
     app.component('CalendarOutlined', CalendarOutlined)
     app.component('CameraOutlined', CameraOutlined)
     app.component('CaretDownOutlined', CaretDownOutlined)
@@ -188,6 +191,7 @@ export default {
     app.component('DashboardOutlined', DashboardOutlined)
     app.component('DatabaseOutlined', DatabaseOutlined)
     app.component('DeleteOutlined', DeleteOutlined)
+    app.component('DeleteTwoTone', DeleteTwoTone)
     app.component('DeploymentUnitOutlined', DeploymentUnitOutlined)
     app.component('DesktopOutlined', DesktopOutlined)
     app.component('DoubleLeftOutlined', DoubleLeftOutlined)
@@ -196,9 +200,10 @@ export default {
     app.component('DownloadOutlined', DownloadOutlined)
     app.component('DragOutlined', DragOutlined)
     app.component('EditOutlined', EditOutlined)
-    app.component('EyeOutlined', EyeOutlined)
-    app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EnvironmentOutlined', EnvironmentOutlined)
+    app.component('ExclamationCircleOutlined', ExclamationCircleOutlined)
+    app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
+    app.component('EyeOutlined', EyeOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FilterOutlined', FilterOutlined)
     app.component('FilterTwoTone', FilterTwoTone)
@@ -216,6 +221,7 @@ export default {
     app.component('HddOutlined', HddOutlined)
     app.component('HomeOutlined', HomeOutlined)
     app.component('IdcardOutlined', IdcardOutlined)
+    app.component('ImportOutlined', ImportOutlined)
     app.component('InboxOutlined', InboxOutlined)
     app.component('InfoCircleOutlined', InfoCircleOutlined)
     app.component('KeyOutlined', KeyOutlined)

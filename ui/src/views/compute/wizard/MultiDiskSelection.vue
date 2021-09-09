@@ -26,16 +26,17 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <span slot="name" slot-scope="text, record">
+      <template #name="{ record }">
         <span>{{ record.displaytext || record.name }}</span>
         <div v-if="record.meta">
-          <template v-for="meta in record.meta">
+          <div v-for="meta in record.meta" :key="meta.key">
             <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
-          </template>
+          </div>
         </div>
-      </span>
-      <span slot="offering" slot-scope="text, record" style="width: 50%">
+      </template>
+      <template #offering="{ record }">
         <span
+          style="width: 50%"
           v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
           <check-box-select-pair
             v-if="selectedCustomDiskOffering!=null"
@@ -55,7 +56,7 @@
             </a-select-option>
           </a-select>
         </span>
-        <span v-else>
+        <span v-else style="width: 50%">
           {{ $t('label.no.matching.offering') }}
         </span>
       </template>

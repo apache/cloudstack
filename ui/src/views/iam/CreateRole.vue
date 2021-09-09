@@ -25,7 +25,9 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="name" ref="name">
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
@@ -33,14 +35,18 @@
         </a-form-item>
 
         <a-form-item name="description" ref="description">
-          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          </template>
           <a-input
             v-model:value="form.description"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item name="using" ref="using" v-if="'roleid' in apiParams">
-          <tooltip-label slot="label" :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
+          <template #label>
+            <tooltip-label :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
+          </template>
           <a-radio-group
             v-model:value="form.using"
             buttonStyle="solid">
@@ -54,7 +60,9 @@
         </a-form-item>
 
         <a-form-item name="type" ref="type" v-if="form.using === 'type'">
-          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          </template>
           <a-select
             v-model:value="form.type"
             :placeholder="apiParams.type.description">
@@ -65,7 +73,9 @@
         </a-form-item>
 
         <a-form-item name="roleid" ref="roleid" v-if="form.using === 'role'">
-          <tooltip-label slot="label" :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
+          <template #label>
+            <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
+          </template>
           <a-select
             v-model:value="form.roleid"
             :placeholder="apiParams.roleid.description">

@@ -26,7 +26,8 @@
     style="top: 20px;overflow-y: auto"
     centered
   >
-    <span slot="title"> {{ $t(message.title) }}
+    <template #title>
+      {{ $t(message.title) }}
       <a
         v-if="message.docHelp || $route.meta.docHelp"
         style="margin-left: 5px"
@@ -34,14 +35,14 @@
         target="_blank">
         <a-icon type="question-circle-o"></a-icon>
       </a>
-    </span>
-    <template slot="footer">
+    </template>
+    <template #footer>
       <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
     </template>
     <a-card :bordered="false" style="background:#f1f1f1">
-      <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + succeededCount }}</div>
-      <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + failedCount }}</div>
-      <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
+      <div><check-circle-outlined style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + succeededCount }}</div>
+      <div><close-circle-outlined style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + failedCount }}</div>
+      <div><sync-o-outlined style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
     </a-card>
     <a-divider />
     <div v-if="showGroupActionModal">
@@ -54,28 +55,28 @@
         :pagination="true"
         @change="handleTableChange"
         style="overflow-y: auto">
-        <div slot="status" slot-scope="text">
+        <template #status="{text}">
           <status :text=" text ? text : $t('state.inprogress') " displayText></status>
-        </div>
-        <template slot="algorithm" slot-scope="record">
+        </template>
+        <template #algorithm="{record}">
           {{ returnAlgorithmName(record.algorithm) }}
         </template>
-        <template slot="privateport" slot-scope="record">
+        <template #privateport="{record}">
           {{ record.privateport }} - {{ record.privateendport }}
         </template>
-        <template slot="publicport" slot-scope="record">
+        <template #publicport="{record}">
           {{ record.publicport }} - {{ record.publicendport }}
         </template>
-        <template slot="protocol" slot-scope="record">
-          {{ record.protocol | capitalise }}
+        <template #protocol="{record}">
+          {{ capitalise(record.protocol) }}
         </template>
-        <template slot="startport" slot-scope="record">
+        <template #startport="{record}">
           {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
         </template>
-        <template slot="endport" slot-scope="record">
+        <template #endport="{record}">
           {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
         </template>
-        <template slot="vm" slot-scope="record">
+        <template #vm="{record}">
           <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
         </template>
       </a-table>
@@ -90,12 +91,6 @@ export default {
   name: 'BulkActionProgress',
   components: {
     Status
-  },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return 'All'
-      return val.toUpperCase()
-    }
   },
   props: {
     showGroupActionModal: {
@@ -185,6 +180,10 @@ export default {
         default :
           return ''
       }
+    },
+    capitalise (val) {
+      if (val === 'all') return 'All'
+      return val.toUpperCase()
     }
   }
 }
