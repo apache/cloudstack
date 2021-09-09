@@ -55,7 +55,7 @@
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => this.$route.path.includes('/iso/') ? record.zoneid : record.id"
+          :rowKey="(record, idx) => $route.path.includes('/iso/') ? record.zoneid : record.id"
           :pagination="true"
           style="overflow-y: auto">
           <template #algorithm="{record}">
@@ -74,7 +74,7 @@
             {{ capitalise(record.protocol) }}
           </template>
           <template #vm="{record}">
-            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+            <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
           </template>
           <template #startport="{record}">
             {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}

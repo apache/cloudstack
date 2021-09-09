@@ -1029,10 +1029,10 @@ export default {
           this.vm.clustername = cluster.name
         }
 
-      if (this.networks) {
-        this.vm.networks = this.networks
-        this.vm.defaultnetworkid = this.defaultnetworkid
-      }
+        if (this.networks) {
+          this.vm.networks = this.networks
+          this.vm.defaultnetworkid = this.defaultnetworkid
+        }
 
         if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize

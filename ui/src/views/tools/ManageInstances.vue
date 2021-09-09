@@ -24,10 +24,10 @@
           <a-button
             style="margin-left: 12px; margin-top: 4px"
             :loading="viewLoading"
-            icon="reload"
             size="small"
             shape="round"
             @click="fetchData()" >
+            <template #icon><reload-outlined /></template>
             {{ $t('label.refresh') }}
           </a-button>
         </a-col>
@@ -41,14 +41,16 @@
           <br />
           <a-form
             style="min-width: 170px"
-            :form="form"
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
             layout="vertical">
             <a-col :md="24" :lg="8">
-              <a-form-item :label="this.$t('label.zoneid')">
+              <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
                 <a-select
-                  v-decorator="['zoneid', {}]"
+                  v-model:value="form.zoneid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="filterOption"
                   :options="zoneSelectOptions"
                   @change="onSelectZoneId"
@@ -59,11 +61,13 @@
             </a-col>
             <a-col :md="24" :lg="8">
               <a-form-item
-                :label="this.$t('label.podid')">
+                name="podid"
+                ref="podid"
+                :label="$t('label.podid')">
                 <a-select
-                  v-decorator="['podid']"
+                  v-model:value="form.podid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="filterOption"
                   :options="podSelectOptions"
                   :loading="optionLoading.pods"
@@ -73,11 +77,13 @@
             </a-col>
             <a-col :md="24" :lg="8">
               <a-form-item
-                :label="this.$t('label.clusterid')">
+                name="clusterid"
+                ref="clusterid"
+                :label="$t('label.clusterid')">
                 <a-select
-                  v-decorator="['clusterid']"
+                  v-model:value="form.clusterid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="filterOption"
                   :options="clusterSelectOptions"
                   :loading="optionLoading.clusters"
@@ -147,7 +153,7 @@
                       :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
                       @click="onManageInstanceAction">
-                      <template #icon><inport-outlined /></template>
+                      <template #icon><import-outlined /></template>
                       {{ $t('label.import.instance') }}
                     </a-button>
                   </div>
@@ -226,6 +232,7 @@
         </a-card>
 
         <a-modal
+          v-if="showUnmanageForm"
           :visible="showUnmanageForm"
           :title="$t('label.import.instance')"
           :closable="true"
@@ -252,6 +259,7 @@
 </template>
 
 <script>
+import { ref, reactive } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -364,12 +372,10 @@ export default {
       query: {}
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
     this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
+    this.initForm()
     this.fetchData()
   },
   computed: {
@@ -467,6 +473,11 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.unmanagedInstances = []
       this.managedInstances = []
@@ -542,18 +553,14 @@ export default {
           paramid = (this.options[name])[0].id
         }
         if (paramid) {
-          this.form.getFieldDecorator([param.field], { initialValue: paramid })
+          this.form[param.field] = paramid
           if (name === 'zones') {
             this.onSelectZoneId(paramid)
           } else if (name === 'pods') {
-            this.form.setFieldsValue({
-              podid: paramid
-            })
+            this.form.podid = paramid
             this.onSelectPodId(paramid)
           } else if (name === 'clusters') {
-            this.form.setFieldsValue({
-              clusterid: paramid
-            })
+            this.form.clusterid = paramid
             this.onSelectClusterId(paramid)
           }
         }
@@ -585,19 +592,15 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.resetLists()
-      this.form.setFieldsValue({
-        clusterid: undefined,
-        podid: undefined
-      })
+      this.form.clusterid = undefined
+      this.form.podid = undefined
       this.updateQuery('zoneid', value)
       this.fetchOptions(this.params.pods, 'pods')
     },
     onSelectPodId (value) {
       this.podId = value
       this.resetLists()
-      this.form.setFieldsValue({
-        clusterid: undefined
-      })
+      this.form.clusterid = undefined
       this.updateQuery('podid', value)
       this.fetchOptions(this.params.clusters, 'clusters', value)
     },
@@ -766,25 +769,11 @@ export default {
 }
 </script>
 
-<style scoped>
-/deep/ .ant-table-thead {
-  background-color: #f9f9f9;
-}
-
-/deep/ .ant-table-small > .ant-table-content > .ant-table-body {
-  margin: 0;
-}
-
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-</style>
-
 <style scoped lang="less">
+  :deep(.ant-table-small) > .ant-table-content > .ant-table-body {
+    margin: 0;
+  }
+
   .importform {
     width: 80vw;
   }

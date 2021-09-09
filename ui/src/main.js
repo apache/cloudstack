@@ -27,10 +27,13 @@ import bootstrap from './core/bootstrap'
 import lazyUsePlugs from './core/lazy_use'
 import permission from './permission' // permission control
 import filter from './utils/filter' // global filter
+import ctrlEnterDirective from './utils/directives'
 
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
-import './utils/directives'
+import setting from '@/config/settings'
+
+const app = createApp(App)
 
 app.config.productionTip = false
 app.use(VueAxios, router)
@@ -41,6 +44,7 @@ app.use(toLocaleDatePlugin)
 app.use(configUtilPlugin)
 app.use(apiMetaUtilPlugin)
 app.use(filter)
+app.use(ctrlEnterDirective)
 
 fetch('config.json').then(response => response.json()).then(config => {
   app.config.globalProperties.$config = config

@@ -17,6 +17,7 @@
 
 <template>
   <a-modal
+    v-if="showGroupActionModal"
     :visible="showGroupActionModal"
     :closable="true"
     :maskClosable="false"
@@ -33,7 +34,7 @@
         style="margin-left: 5px"
         :href="$config.docBase + '/' + (message.docHelp || $route.meta.docHelp)"
         target="_blank">
-        <a-icon type="question-circle-o"></a-icon>
+        <question-circle-outlined />
       </a>
     </template>
     <template #footer>
@@ -42,7 +43,7 @@
     <a-card :bordered="false" style="background:#f1f1f1">
       <div><check-circle-outlined style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + succeededCount }}</div>
       <div><close-circle-outlined style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + failedCount }}</div>
-      <div><sync-o-outlined style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
+      <div><sync-outlined style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
     </a-card>
     <a-divider />
     <div v-if="showGroupActionModal">
@@ -51,7 +52,7 @@
         size="middle"
         :columns="selectedColumns"
         :dataSource="tableChanged ? filteredItems : selectedItems"
-        :rowKey="(record, idx) => (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) ? record.zoneid: record.id"
+        :rowKey="(record, idx) => ($route.path.includes('/template') || $route.path.includes('/iso')) ? record.zoneid: record.id"
         :pagination="true"
         @change="handleTableChange"
         style="overflow-y: auto">
@@ -77,7 +78,7 @@
           {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
         </template>
         <template #vm="{record}">
-          <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
         </template>
       </a-table>
       <br/>

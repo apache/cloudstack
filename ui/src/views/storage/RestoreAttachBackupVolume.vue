@@ -17,7 +17,13 @@
 
 <template>
   <div class="form-layout">
-    <a-form layout="vertical" :ref="formRef" :model="form" :rules="rules" @finish="handleSubmit" v-ctrl-enter="handleSubmit">
+    <a-form
+      layout="vertical"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit">
       <a-form-item name="volumeid" ref="volumeid" :label="$t('label.volume')">
         <a-select
           allowClear

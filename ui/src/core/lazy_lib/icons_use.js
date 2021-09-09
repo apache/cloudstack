@@ -87,6 +87,7 @@ import {
   ImportOutlined,
   InboxOutlined,
   InfoCircleOutlined,
+  InteractionOutlined,
   KeyOutlined,
   LinkOutlined,
   LoadingOutlined,
@@ -97,6 +98,8 @@ import {
   MedicineBoxOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MessageFilled,
+  MessageOutlined,
   MinusCircleOutlined,
   MinusSquareOutlined,
   MoreOutlined,
@@ -132,6 +135,7 @@ import {
   SyncOutlined,
   TeamOutlined,
   ThunderboltOutlined,
+  ToolOutlined,
   TranslationOutlined,
   UndoOutlined,
   UsbOutlined,
@@ -224,6 +228,7 @@ export default {
     app.component('ImportOutlined', ImportOutlined)
     app.component('InboxOutlined', InboxOutlined)
     app.component('InfoCircleOutlined', InfoCircleOutlined)
+    app.component('InteractionOutlined', InteractionOutlined)
     app.component('KeyOutlined', KeyOutlined)
     app.component('LinkOutlined', LinkOutlined)
     app.component('LoadingOutlined', LoadingOutlined)
@@ -234,6 +239,8 @@ export default {
     app.component('MedicineBoxOutlined', MedicineBoxOutlined)
     app.component('MenuFoldOutlined', MenuFoldOutlined)
     app.component('MenuUnfoldOutlined', MenuUnfoldOutlined)
+    app.component('MessageFilled', MessageFilled)
+    app.component('MessageOutlined', MessageOutlined)
     app.component('MinusCircleOutlined', MinusCircleOutlined)
     app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MoreOutlined', MoreOutlined)
@@ -269,6 +276,7 @@ export default {
     app.component('SyncOutlined', SyncOutlined)
     app.component('TeamOutlined', TeamOutlined)
     app.component('ThunderboltOutlined', ThunderboltOutlined)
+    app.component('ToolOutlined', ToolOutlined)
     app.component('TranslationOutlined', TranslationOutlined)
     app.component('UndoOutlined', UndoOutlined)
     app.component('UsbOutlined', UsbOutlined)

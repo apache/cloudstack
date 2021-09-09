@@ -17,10 +17,9 @@
 
 <template>
   <a-form
-    :ref="formRef"
     id="formLogin"
     class="user-layout-login"
-    ref="formLogin"
+    :ref="formRef"
     :model="form"
     :rules="rules"
     @finish="handleSubmit"
@@ -133,6 +132,7 @@
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
         ref="submit"
+        @click="handleSubmit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>

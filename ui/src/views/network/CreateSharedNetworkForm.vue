@@ -294,7 +294,6 @@
               v-decorator="['routeripv6', {}]"
               :placeholder="this.$t('label.routeripv6')"/>
           </a-form-item>
-          <a-form-item>
           <a-form-item name="networkdomain" ref="networkdomain">
             <template #label>
               <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>

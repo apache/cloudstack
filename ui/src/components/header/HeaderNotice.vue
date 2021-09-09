@@ -46,9 +46,15 @@
                   </template>
                 </a-avatar>
               </template>
-              <template #description v-if="getResourceName(notice.description, 'name') && notice.path"><router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link></template>
-              <template #description v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</template>
-              <template #description v-else> {{ notice.description }} </template>
+              <template #description>
+                <div v-if="getResourceName(notice.description, 'name') && notice.path">
+                  <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link>
+                </div>
+                <div v-if="getResourceName(notice.description, 'name') && notice.path">
+                  <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "msg") }}</router-link>
+                </div>
+                <div v-else>{{ notice.description }}</div>
+              </template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -65,10 +71,11 @@
 <script>
 import store from '@/store'
 import RenderIcon from '@/utils/renderIcon'
+import TemplateIsoRadioGroup from '@/views/compute/wizard/TemplateIsoRadioGroup'
 
 export default {
   name: 'HeaderNotice',
-  components: { RenderIcon },
+  components: { TemplateIsoRadioGroup, RenderIcon },
   data () {
     return {
       loading: false,

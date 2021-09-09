@@ -176,9 +176,9 @@
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
           <a-select
-            v-model:value=form.serviceofferingid"
             showSearch
             optionFilterProp="label"
+            v-model:value="form.serviceofferingid"
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"

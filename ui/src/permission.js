@@ -97,23 +97,14 @@ export default {
           }
         }
       } else {
-        if (whiteList.includes(to.name)) {
+        if (allowList.includes(to.name)) {
           next()
         } else {
           next({ path: '/user/login', query: { redirect: to.fullPath } })
           NProgress.done()
         }
       }
-    }
-  } else {
-    if (allowList.includes(to.name)) {
-      next()
-    } else {
-      next({ path: '/user/login', query: { redirect: to.fullPath } })
-      NProgress.done()
-    }
-  }
-})
+    })
 
     router.afterEach(() => {
       NProgress.done() // finish progress bar

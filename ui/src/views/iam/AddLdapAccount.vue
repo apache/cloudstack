@@ -478,14 +478,6 @@ export default {
   }
 }
 
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-
 .card-footer {
   text-align: right;
 

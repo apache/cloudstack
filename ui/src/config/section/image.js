@@ -213,7 +213,7 @@ export default {
       },
       {
         name: 'comments',
-        component: shallowRef(defineAsyncComponent() => import('@/components/view/AnnotationsTab.vue')))
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {

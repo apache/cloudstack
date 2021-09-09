@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form 
+    <a-form
       :ref="formRef"
       :model="form"
       :rules="rules"

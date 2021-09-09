@@ -46,7 +46,7 @@
                   <a-select
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
-                    v-model:value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
                     style="min-width: 100px; margin-left: 10px"

@@ -76,7 +76,7 @@
         <span v-if="record.hasannotations">
           <span v-if="record.id">
             <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-            <router-link :to="{ path: $route.path + '/' + record.id + '?tab=comments' }"><a-icon style="padding-left: 10px" size="small" type="message" theme="filled"/></router-link>
+            <router-link :to="{ path: $route.path + '/' + record.id + '?tab=comments' }"><message-filled style="padding-left: 10px" size="small"/></router-link>
           </span>
           <router-link v-else :to="{ path: $route.path + '/' + record.name }" >{{ text }}</router-link>
         </span>
@@ -115,14 +115,14 @@
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </span>
+    </template>
     <template #entityid="{ record }" href="javascript:;">
       <router-link :to="{ path: generateCommentsPath(record) }">{{ record.entityname }}</router-link>
     </template>
     <template #entitytype="{ record }" href="javascript:;">
       {{ generateHumanReadableEntityType(record) }}
     </template>
-    <template #adminsonly="{ record }" v-if="['Admin'].includes($store.getters.userInfo.roletype):" href="javascript:;">
+    <template #adminsonly="{ record }" v-if="['Admin'].includes($store.getters.userInfo.roletype)" href="javascript:;">
       <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
       <a-checkbox :checked="record.adminsonly" disabled v-else />
     </template>
@@ -726,15 +726,7 @@ export default {
   margin: 0;
 }
 
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-
-/deep/ .ant-table-tbody>tr>td, .ant-table-thead>tr>th {
+:deep(.ant-table-tbody)>tr>td, :deep(.ant-table-thead)>tr>th {
   overflow-wrap: anywhere;
 }
 </style>

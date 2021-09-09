@@ -151,13 +151,11 @@ export default {
     }
   },
   watch: {
-    items (newData, oldData) {
-      this.items = newData
+    items () {
       this.selectedRowKeys = []
       this.fetchNetworks()
     },
-    zoneId (newData) {
-      this.zoneId = newData
+    zoneId () {
       this.fetchNetworks()
     }
   },

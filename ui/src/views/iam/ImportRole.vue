@@ -63,7 +63,6 @@
         </a-form-item>
 
         <a-form-item name="type" ref="type">
-        <a-form-item>
           <template #label>
             <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           </template>

@@ -171,7 +171,7 @@
                     v-model:value="form.rootdiskid"
                     defaultActiveFirstOption
                     showSearch
-                    optionFilterProp="children"
+                    optionFilterProp="label"
                     :filterOption="(input, option) => {
                       return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"

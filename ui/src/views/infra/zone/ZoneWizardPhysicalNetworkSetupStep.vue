@@ -159,9 +159,10 @@
       :footer="null"
       v-ctrl-enter:[trafficInEdit]="updateTrafficLabel"
     >
-      <a-form :ref="formRef" :model="form" :rules="rules">
+      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
         <a-form-item
+          v-if="hypervisor !== 'VMware'"
           name="trafficLabel"
           ref="trafficLabel"
           v-bind="formItemLayout"
@@ -196,7 +197,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   components: {

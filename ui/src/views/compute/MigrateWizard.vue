@@ -40,24 +40,24 @@
           class="host-item__suitability-icon"
           twoToneColor="#f5222d"
           v-else />
-      </div>
-      <div #memused="{ record }">
+      </template>
+      <template #memused="{ record }">
         <span v-if="record.memoryused">
-          {{ record.memoryused | byteToGigabyte }} GB
+          {{ byteToGigabyte(record.memoryused) }} GB
         </span>
-      </div>
-      <div #memoryallocatedpercentage="{ record }">
+      </template>
+      <template #memoryallocatedpercentage="{ record }">
         {{ record.memoryallocatedpercentage }}
-      </div>
-      <div #cluster="{ record }">
+      </template>
+      <template #cluster="{ record }">
         {{ record.clustername }}
-      </div>
-      <div #pod="{ record }">
+      </template>
+      <template #pod="{ record }">
         {{ record.podname }}
-      </div>
-      <div #requiresstoragemigration="{ record }">
+      </template>
+      <template #requiresstoragemigration="{ record }">
         {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
-      </div>
+      </template>
       <template #select="record">
         <a-radio
           class="host-item__radio"
@@ -88,7 +88,6 @@
       </a-button>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -235,7 +234,7 @@ export default {
       this.pageSize = pageSize
       this.fetchData()
     },
-    byteToGigabyte: value => {
+    byteToGigabyte (value) {
       return (value / Math.pow(10, 9)).toFixed(2)
     }
   }

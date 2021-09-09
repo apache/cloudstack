@@ -709,7 +709,6 @@ export default {
   },
   watch: {
     resource: function (newItem, oldItem) {
-      this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
       this.showKeys = false
       this.setData()
