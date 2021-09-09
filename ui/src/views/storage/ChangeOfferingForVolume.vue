@@ -79,9 +79,11 @@ export default {
         listall: true
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering
-        this.selectedDiskOffering = this.diskOfferings[0].id
-        this.customDiskOffering = this.diskOfferings[0].iscustomized || false
-        this.isCustomizedDiskIOps = this.diskOfferings[0]?.iscustomizediops || false
+        if (this.diskOfferings) {
+          this.selectedDiskOffering = this.diskOfferings[0].id
+          this.customDiskOffering = this.diskOfferings[0].iscustomized || false
+          this.isCustomizedDiskIOps = this.diskOfferings[0]?.iscustomizediops || false
+        }
       }).catch(error => {
         this.$notifyError(error)
         this.closeModal()

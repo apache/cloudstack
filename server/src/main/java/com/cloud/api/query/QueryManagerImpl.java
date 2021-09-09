@@ -2981,6 +2981,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ssc.addOr("customized", SearchCriteria.Op.EQ, true);
                 sc.addAnd("diskSizeOrCustomized", SearchCriteria.Op.SC, ssc);
             }
+            if (!currentDiskOffering.isCustomized()) {
+                sc.addAnd("id", SearchCriteria.Op.NEQ, currentDiskOffering.getId());
+            }
             sc.addAnd("diskSizeStrictness", Op.EQ, currentDiskOffering.getDiskSizeStrictness());
         }
 
