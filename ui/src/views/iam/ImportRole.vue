@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,12 +25,7 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="file" ref="file">
-          <template #label>
-            {{ $t('label.rules.file') }}
-            <a-tooltip :title="$t('label.rules.file.to.import')">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
@@ -47,12 +42,7 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item name="name" ref="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
@@ -60,24 +50,15 @@
         </a-form-item>
 
         <a-form-item name="description" ref="description">
-          <template #label>
-            {{ $t('label.description') }}
-            <a-tooltip :title="apiParams.description.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-model:value="form.description"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item name="type" ref="type">
-          <template #label>
-            {{ $t('label.type') }}
-            <a-tooltip :title="apiParams.type.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           <a-select
             v-model:value="form.type"
             :placeholder="apiParams.type.description">
@@ -88,18 +69,13 @@
         </a-form-item>
 
         <a-form-item name="forced" ref="forced">
-          <template #label>
-            {{ $t('label.forced') }}
-            <a-tooltip :title="apiParams.forced.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
           <a-switch v-model:checked="form.forced" />
         </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -109,9 +85,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportRole',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       fileList: [],
@@ -164,7 +144,9 @@ export default {
       this.fileList = [file]
       return false
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -316,14 +298,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

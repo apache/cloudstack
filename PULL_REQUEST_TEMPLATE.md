@@ -48,4 +48,4 @@ This PR...
 <!-- see how your change affects other areas of the code, etc. -->
 
 
-<!-- Please read the [CONTRIBUTING](https://github.com/apache/cloudstack/blob/master/CONTRIBUTING.md) document -->
+<!-- Please read the [CONTRIBUTING](https://github.com/apache/cloudstack/blob/main/CONTRIBUTING.md) document -->

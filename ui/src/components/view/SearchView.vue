@@ -40,7 +40,7 @@
             placement="bottomRight"
             trigger="click"
             @click="onVisibleForm">
-            <template #content>
+            <template #content v-if="visibleFilter">
               <a-form
                 style="min-width: 170px"
                 :ref="formRef"
@@ -118,7 +118,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton.vue'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'SearchView',
@@ -137,7 +137,6 @@ export default {
       default: () => {}
     }
   },
-  inject: ['parentSearch', 'parentChangeFilter'],
   data () {
     return {
       searchQuery: null,
@@ -216,7 +215,7 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid'].includes(item)) {
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -273,6 +272,13 @@ export default {
         clusterIndex = this.fields.findIndex(item => item.name === 'clusterid')
         this.fields[clusterIndex].loading = true
         promises.push(await this.fetchClusters())
+      }
+
+      if (arrayField.includes('entitytype')) {
+        const entityTypeIndex = this.fields.findIndex(item => item.name === 'entitytype')
+        this.fields[entityTypeIndex].loading = true
+        this.fields[entityTypeIndex].opts = this.fetchEntityType()
+        this.fields[entityTypeIndex].loading = false
       }
 
       Promise.all(promises).then(response => {
@@ -409,6 +415,45 @@ export default {
       }
       return state
     },
+    fetchEntityType () {
+      const entityType = []
+      if (this.apiName.indexOf('listAnnotations') > -1) {
+        const allowedTypes = {
+          VM: 'Virtual Machine',
+          HOST: 'Host',
+          VOLUME: 'Volume',
+          SNAPSHOT: 'Snapshot',
+          VM_SNAPSHOT: 'VM Snapshot',
+          INSTANCE_GROUP: 'Instance Group',
+          NETWORK: 'Network',
+          VPC: 'VPC',
+          PUBLIC_IP_ADDRESS: 'Public IP Address',
+          VPN_CUSTOMER_GATEWAY: 'VPC Customer Gateway',
+          TEMPLATE: 'Template',
+          ISO: 'ISO',
+          SSH_KEYPAIR: 'SSH Key Pair',
+          DOMAIN: 'Domain',
+          SERVICE_OFFERING: 'Service Offfering',
+          DISK_OFFERING: 'Disk Offering',
+          NETWORK_OFFERING: 'Network Offering',
+          POD: 'Pod',
+          ZONE: 'Zone',
+          CLUSTER: 'Cluster',
+          PRIMARY_STORAGE: 'Primary Storage',
+          SECONDARY_STORAGE: 'Secondary Storage',
+          VR: 'Virtual Router',
+          SYSTEM_VM: 'System VM',
+          KUBERNETES_CLUSTER: 'Kubernetes Cluster'
+        }
+        for (var key in allowedTypes) {
+          entityType.push({
+            id: key,
+            name: allowedTypes[key]
+          })
+        }
+      }
+      return entityType
+    },
     fetchLevel () {
       const levels = []
       levels.push({
@@ -428,7 +473,7 @@ export default {
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
-      this.parentSearch({ searchQuery: this.searchQuery })
+      this.$emit('search', { searchQuery: this.searchQuery })
     },
     onClear () {
       this.formRef.value.resetFields()
@@ -437,7 +482,7 @@ export default {
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
-      this.parentSearch(this.paramsFilter)
+      this.$emit('search', this.paramsFilter)
     },
     handleSubmit () {
       this.paramsFilter = {}
@@ -457,7 +502,7 @@ export default {
             this.paramsFilter['tags[0].value'] = this.inputValue
           }
         }
-        this.parentSearch(this.paramsFilter)
+        this.$emit('search', this.paramsFilter)
       })
     },
     handleKeyChange (e) {
@@ -467,7 +512,7 @@ export default {
       this.inputValue = e.target.value
     },
     changeFilter (filter) {
-      this.parentChangeFilter(filter)
+      this.$emit('change-filter', filter)
     }
   }
 }

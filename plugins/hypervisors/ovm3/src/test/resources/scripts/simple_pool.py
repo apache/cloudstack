@@ -55,14 +55,14 @@ def get_ip_address(ifname):
         struct.pack('256s', ifname[:15])
     )[20:24])
 
-# hmm master actions don't apply to a slave
-master = "192.168.1.161"
+# hmm primary actions don't apply to a secondary
+primary = "192.168.1.161"
 port = 8899
 passw = 'test123'
 user = 'oracle'
 auth = "%s:%s" % (user, passw)
 server = getCon(auth, "localhost", port)
-mserver = getCon(auth, master, port)
+mserver = getCon(auth, primary, port)
 try:
     mserver.echo("test")
 except AttributeError, v:
@@ -81,7 +81,7 @@ try:
     poolalias = "Pool 0"
     clusterid = "ba9aaf00ae5e2d72"
     mgr = "d1a749d4295041fb99854f52ea4dea97"
-    poolmvip = master
+    poolmvip = primary
 
     # primary
     primuuid = "7718562d872f47a7b4548f9cac4ffa3a"
@@ -119,7 +119,7 @@ try:
         for node in poolDom.getElementsByTagName('Server_Pool'):
             id = node.getElementsByTagName('Unique_Id')[0].firstChild.nodeValue
             alias = node.getElementsByTagName('Pool_Alias')[0].firstChild.nodeValue
-            mvip = node.getElementsByTagName('Master_Virtual_Ip')[0].firstChild.nodeValue
+            mvip = node.getElementsByTagName('Primary_Virtual_Ip')[0].firstChild.nodeValue
             print "pool: %s, %s, %s" % (id, mvip, alias)
             members = node.getElementsByTagName('Member')
             for member in members:
@@ -134,10 +134,10 @@ try:
         # if (pooled == False):
         try:
             if (poolCount == 0):
-                print "master"
+                print "primary"
                 # check if a pool exists already if not create
                 # pool if so add us to the pool
-                print server.configure_virtual_ip(master, ip)
+                print server.configure_virtual_ip(primary, ip)
                 print server.create_pool_filesystem(
                     fstype,
                     fsmntpoint,
@@ -157,7 +157,7 @@ try:
                 )
             else:
                 try:
-                    print "slave"
+                    print "secondary"
                     print server.join_server_pool(poolalias,
                         primuuid,
                         poolmvip,
@@ -174,7 +174,7 @@ try:
                 # con = getCon(auth, node, port)
                 # print con.set_pool_member_ip_list(nodes);
                 print mserver.dispatch("http://%s@%s:%s/api/3" % (auth, node, port), "set_pool_member_ip_list", nodes)
-            # print server.configure_virtual_ip(master, ip)
+            # print server.configure_virtual_ip(primary, ip)
         except Error, e:
             print "something went wrong: %s" % (e)
 

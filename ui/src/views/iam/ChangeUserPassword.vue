@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,35 +25,20 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="currentpassword" ref="currentpassword" v-if="!this.isAdminOrDomainAdmin()">
-          <template #label>
-            {{ $t('label.currentpassword') }}
-            <a-tooltip :title="apiParams.currentpassword.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>
           <a-input-password
             v-model:value="form.currentpassword"
             :placeholder="$t('message.error.current.password')"
             autoFocus />
         </a-form-item>
         <a-form-item name="password" ref="password">
-          <template #label>
-            {{ $t('label.new.password') }}
-            <a-tooltip :title="apiParams.password.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.new.password')" :tooltip="apiParams.password.description"/>
           <a-input-password
             v-model:value="form.password"
             :placeholder="$t('label.new.password')"/>
         </a-form-item>
         <a-form-item name="confirmpassword" ref="confirmpassword">
-          <template #label>
-            {{ $t('label.confirmpassword') }}
-            <a-tooltip :title="apiParams.password.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
           <a-input-password
             v-model:value="form.confirmpassword"
             :placeholder="$t('label.confirmpassword.description')"/>
@@ -61,7 +46,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -71,9 +56,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ChangeUserPassword',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -126,7 +115,9 @@ export default {
         return Promise.resolve()
       }
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -164,14 +155,6 @@ export default {
 
     @media (min-width: 600px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

@@ -22,48 +22,29 @@
       :model="form"
       :rules="rules"
       layout="vertical"
-      @finish="handleSubmit">
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit">
       <a-form-item ref="name" name="name">
-        <template #label>
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-model:value="form.name"
           :placeholder="$t('label.vpncustomergatewayname')"
           autoFocus />
       </a-form-item>
       <a-form-item ref="gateway" name="gateway">
-        <template #label>
-          {{ $t('label.gateway') }}
-          <a-tooltip :title="apiParams.gateway.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
         <a-input
           v-model:value="form.gateway"
           :placeholder="$t('label.vpncustomergateway')" />
       </a-form-item>
       <a-form-item ref="cidrlist" name="cidrlist">
-        <template #label>
-          {{ $t('label.cidrlist') }}
-          <a-tooltip :title="apiParams.cidrlist.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.cidrlist')" :tooltip="apiParams.cidrlist.description"/>
         <a-input
           v-model:value="form.cidrlist"
           :placeholder="$t('label.vpncustomergateway.cidrlist')" />
       </a-form-item>
       <a-form-item ref="ipsecpsk" name="ipsecpsk">
-        <template #label>
-          {{ $t('label.ipsecpsk') }}
-          <a-tooltip :title="apiParams.ipsecpsk.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.ipsecpsk')" :tooltip="apiParams.ipsecpsk.description"/>
         <a-input
           v-model:value="form.ipsecpsk"
           :placeholder="$t('label.vpncustomergateway.secretkey')" />
@@ -83,12 +64,7 @@
         </a-select>
       </a-form-item>
       <a-form-item ref="ikeversion" name="ikeversion">
-        <template #label>
-          {{ $t('label.ikeversion') }}
-          <a-tooltip :title="apiParams.ikeversion.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.ikeversion')" :tooltip="apiParams.ikeversion.description"/>
         <a-select
           v-model:value="form.ikeversion">
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
@@ -132,55 +108,30 @@
         </a-select>
       </a-form-item>
       <a-form-item ref="ikelifetime" name="ikelifetime">
-        <template #label>
-          {{ $t('label.ikelifetime') }}
-          <a-tooltip :title="apiParams.ikelifetime.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.ikelifetime')" :tooltip="apiParams.ikelifetime.description"/>
         <a-input
           v-model:value="form.ikelifetime"
           :placeholder="$t('label.vpncustomergateway.ikelifetime')"/>
       </a-form-item>
       <a-form-item ref="esplifetime" name="esplifetime">
-        <template #label>
-          {{ $t('label.esplifetime') }}
-          <a-tooltip :title="apiParams.esplifetime.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.esplifetime')" :tooltip="apiParams.esplifetime.description"/>
         <a-input
           v-model:value="form.esplifetime"
           :placeholder="$t('label.vpncustomergateway.esplifetime')"/>
       </a-form-item>
       <a-form-item ref="dpd" name="dpd">
-        <template #label>
-          {{ $t('label.dpd') }}
-          <a-tooltip :title="apiParams.dpd.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
         <a-switch v-model:checked="form.name"/>
       </a-form-item>
       <a-form-item ref="splitconnections" name="splitconnections" v-if="form.ikeversion !== 'ikev1'">
-        <template #label>
-          {{ $t('label.splitconnections') }}
-          <a-tooltip :title="apiParams.splitconnections.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.splitconnections')" :tooltip="apiParams.splitconnections.description"/>
         <a-switch v-model:checked="form.splitconnections"/>
       </a-form-item>
       <a-form-item ref="forceencap" name="forceencap">
-        <template #label>
-          {{ $t('label.forceencap') }}
-          <a-tooltip :title="apiParams.forceencap.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.forceencap')" :tooltip="apiParams.forceencap.description"/>
         <a-switch v-model:checked="form.forceencap"/>
       </a-form-item>
-      <div class="actions">
+      <div class="action-button">
         <a-button @click="closeModal">
           {{ $t('label.cancel') }}
         </a-button>
@@ -194,9 +145,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVpnCustomerGateway',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -233,7 +188,9 @@ export default {
         'Group 17': 'modp6144',
         'Group 18': 'modp8192'
       },
-      ikeDhGroupInitialValue: 'Group 5(modp1536)'
+      ikeDhGroupInitialValue: 'Group 5(modp1536)',
+      isSubmitted: false,
+      ikeversion: 'ike'
     }
   },
   beforeCreate () {
@@ -269,7 +226,9 @@ export default {
     closeModal () {
       this.$parent.$parent.close()
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.isSubmitted) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         let ikepolicy = values.ikeEncryption + '-' + values.ikeHash + ';'
@@ -299,15 +258,18 @@ export default {
             successMessage: this.$t('message.success.add.vpn.customer.gateway'),
             successMethod: () => {
               this.closeModal()
+              this.isSubmitted = false
             },
             errorMessage: `${this.$t('message.create.vpn.customer.gateway.failed')} ` + response,
             errorMethod: () => {
               this.closeModal()
+              this.isSubmitted = false
             },
             loadingMessage: this.$t('message.add.vpn.customer.gateway.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.closeModal()
+              this.isSubmitted = false
             }
           })
           this.closeModal()
@@ -315,6 +277,7 @@ export default {
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
+          this.isSubmitted = false
         })
       })
     }
@@ -324,16 +287,5 @@ export default {
 <style lang="scss" scoped>
 .form-layout {
   width: 500px;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  button {
-    &:not(:last-child) {
-      margin-right: 10px;
-    }
-  }
 }
 </style>

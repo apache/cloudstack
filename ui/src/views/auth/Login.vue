@@ -20,9 +20,12 @@
     :ref="formRef"
     id="formLogin"
     class="user-layout-login"
+    ref="formLogin"
     :model="form"
     :rules="rules"
-    @finish="handleSubmit">
+    @finish="handleSubmit"
+    v-ctrl-enter="handleSubmit"
+  >
     <a-tabs
       :activeKey="customActiveKey"
       size="large"
@@ -129,6 +132,7 @@
         class="login-button"
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
+        ref="submit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>
@@ -218,7 +222,9 @@ export default {
     handleTabClick (key) {
       this.customActiveKey = key
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.state.loginBtn) return
       this.formRef.value.validate().then(() => {
         this.state.loginBtn = true
 

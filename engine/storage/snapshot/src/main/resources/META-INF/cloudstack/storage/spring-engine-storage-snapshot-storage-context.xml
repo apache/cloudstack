@@ -36,7 +36,13 @@
     <bean id="cephSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.CephSnapshotStrategy" />
 
+    <bean id="scaleioSnapshotStrategy"
+          class="org.apache.cloudstack.storage.snapshot.ScaleIOSnapshotStrategy" />
+
     <bean id="DefaultVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy" />
+
+    <bean id="ScaleIOVMSnapshotStrategy"
+          class="org.apache.cloudstack.storage.vmsnapshot.ScaleIOVMSnapshotStrategy" />
 
 </beans>

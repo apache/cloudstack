@@ -75,6 +75,11 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
+    public int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent) {
+        return 0;
+    }
+
+    @Override
     public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         return null;
     }

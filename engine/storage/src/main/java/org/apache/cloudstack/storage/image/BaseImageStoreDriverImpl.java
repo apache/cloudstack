@@ -71,6 +71,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
@@ -361,6 +362,11 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             CopyCommandResult result = new CopyCommandResult("", answer);
             callback.complete(result);
         }
+    }
+
+    @Override
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        copyAsync(srcData, destData, callback);
     }
 
     private Answer sendToLeastBusyEndpoint(List<EndPoint> eps, CopyCommand cmd) {

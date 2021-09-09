@@ -21,7 +21,8 @@
       class="form-content"
       :ref="formRef"
       :model="form"
-      :rules="rules">
+      :rules="rules"
+      v-ctrl-enter="handleSubmit">
       <a-form-item name="zoneType" ref="zoneType">
         <a-radio-group v-model:value="form.zoneType">
           <a-card class="card-item" v-if="$config.basicZoneEnabled">
@@ -72,7 +73,7 @@
       </a-form-item>
     </a-form>
     <div class="form-action">
-      <a-button type="primary" @click="handleSubmit" class="button-next">
+      <a-button ref="submit" type="primary" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
     </div>

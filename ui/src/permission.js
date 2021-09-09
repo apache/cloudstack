@@ -29,7 +29,7 @@ import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const whiteList = ['login'] // no redirect whitelist
+const allowList = ['login'] // no redirect allowlist
 
 export default {
   install: (app) => {
@@ -104,7 +104,16 @@ export default {
           NProgress.done()
         }
       }
-    })
+    }
+  } else {
+    if (allowList.includes(to.name)) {
+      next()
+    } else {
+      next({ path: '/user/login', query: { redirect: to.fullPath } })
+      NProgress.done()
+    }
+  }
+})
 
     router.afterEach(() => {
       NProgress.done() // finish progress bar

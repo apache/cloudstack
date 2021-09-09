@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitForm">
     <a-input-search
       :placeholder="$t('label.search')"
       v-model:value="searchQuery"
@@ -40,14 +40,25 @@
           class="host-item__suitability-icon"
           twoToneColor="#f5222d"
           v-else />
-      </template>
-      <template #memused="{ record }">
-        {{ byteToGigabyte(record.memoryused) }} GB
-      </template>
-      <template #memoryallocatedpercentage="{ record }">
+      </div>
+      <div #memused="{ record }">
+        <span v-if="record.memoryused">
+          {{ record.memoryused | byteToGigabyte }} GB
+        </span>
+      </div>
+      <div #memoryallocatedpercentage="{ record }">
         {{ record.memoryallocatedpercentage }}
-      </template>
-      <template #select="{ record }">
+      </div>
+      <div #cluster="{ record }">
+        {{ record.clustername }}
+      </div>
+      <div #pod="{ record }">
+        {{ record.podname }}
+      </div>
+      <div #requiresstoragemigration="{ record }">
+        {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
+      </div>
+      <template #select="record">
         <a-radio
           class="host-item__radio"
           @click="selectedHost = record"
@@ -72,7 +83,7 @@
     </a-pagination>
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
-      <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
+      <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -122,6 +133,18 @@ export default {
           slots: { customRender: 'memused' }
         },
         {
+          title: this.$t('label.cluster'),
+          slots: { customRender: 'cluster' }
+        },
+        {
+          title: this.$t('label.pod'),
+          slots: { customRender: 'pod' }
+        },
+        {
+          title: this.$t('label.storage.migration.required'),
+          slots: { customRender: 'requiresstoragemigration' }
+        },
+        {
           title: this.$t('label.select'),
           slots: { customRender: 'select' }
         }
@@ -144,6 +167,12 @@ export default {
         this.hosts.sort((a, b) => {
           return b.suitableformigration - a.suitableformigration
         })
+        for (const key in this.hosts) {
+          if (this.hosts[key].suitableformigration && !this.hosts[key].requiresstoragemigration) {
+            this.hosts.unshift({ id: -1, name: this.$t('label.migrate.auto.select'), suitableformigration: true, requiresstoragemigration: false })
+            break
+          }
+        }
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
         this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
@@ -152,12 +181,21 @@ export default {
       })
     },
     submitForm () {
+      if (this.loading) return
       this.loading = true
-      api(this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine', {
-        hostid: this.selectedHost.id,
-        virtualmachineid: this.resource.id
-      }).then(response => {
-        const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
+      var isUserVm = true
+      if (this.$route.meta.name !== 'vm') {
+        isUserVm = false
+      }
+      var migrateApi = isUserVm
+        ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
+        : 'migrateSystemVm'
+      var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
+        : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
+      api(migrateApi, migrateParams).then(response => {
+        const jobid = isUserVm
+          ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
+          : response.migratesystemvmresponse.jobid
         this.$pollJob({
           jobId: jobid,
           title: `${this.$t('label.migrating')} ${this.resource.name}`,
@@ -207,9 +245,9 @@ export default {
 <style scoped lang="scss">
 
   .form {
-    width: 85vw;
-    @media (min-width: 800px) {
-      width: 750px;
+    width: 95vw;
+    @media (min-width: 900px) {
+      width: 850px;
     }
   }
 

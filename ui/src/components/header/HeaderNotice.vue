@@ -37,7 +37,8 @@
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(notice, index) in notices" :key="index">
-            <a-list-item-meta :title="notice.title" :description="notice.description">
+            <template #title>{{ notice.path }} </template>
+            <a-list-item-meta :title="notice.title">
               <template #avatar>
                 <a-avatar :style="notificationAvatar[notice.status].style">
                   <template #icon>
@@ -45,6 +46,9 @@
                   </template>
                 </a-avatar>
               </template>
+              <template #description v-if="getResourceName(notice.description, 'name') && notice.path"><router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link></template>
+              <template #description v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</template>
+              <template #description v-else> {{ notice.description }} </template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -85,6 +89,16 @@ export default {
     clearJobs () {
       this.notices = this.notices.filter(x => x.status === 'progress')
       this.$store.commit('SET_HEADER_NOTICES', this.notices)
+    },
+    getResourceName (description, data) {
+      if (description) {
+        if (data === 'name') {
+          const name = description.match(/\(([^)]+)\)/)
+          return name ? name[1] : null
+        }
+        const msg = description.substring(description.indexOf(')') + 1)
+        return msg
+      }
     }
   },
   mounted () {

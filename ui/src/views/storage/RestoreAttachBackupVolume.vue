@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <a-form layout="vertical" :ref="formRef" :model="form" :rules="rules" @finish="handleSubmit">
+    <a-form layout="vertical" :ref="formRef" :model="form" :rules="rules" @finish="handleSubmit" v-ctrl-enter="handleSubmit">
       <a-form-item name="volumeid" ref="volumeid" :label="$t('label.volume')">
         <a-select
           allowClear
@@ -46,7 +46,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading || actionLoading" @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading || actionLoading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -130,6 +130,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.actionLoading) return
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -174,15 +175,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>

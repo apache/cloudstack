@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -26,12 +26,7 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="id" ref="id">
-          <template #label>
-            {{ $t('label.traffictype') }}
-            <a-tooltip :title="apiParams.id.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
           <a-select
             autoFocus
             v-model:value="form.id"
@@ -44,63 +39,38 @@
           </a-select>
         </a-form-item>
         <a-form-item name="kvmnetworklabel" ref="kvmnetworklabel">
-          <template #label>
-            {{ $t('label.kvmnetworklabel') }}
-            <a-tooltip :title="apiParams.kvmnetworklabel.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
           <a-input
             v-model:value="form.kvmnetworklabel"
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item name="vmwarenetworklabel" ref="vmwarenetworklabel">
-          <template #label>
-            {{ $t('label.vmwarenetworklabel') }}
-            <a-tooltip :title="apiParams.vmwarenetworklabel.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
           <a-input
             v-model:value="form.vmwarenetworklabel"
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item name="xennetworklabel" ref="xennetworklabel">
-          <template #label>
-            {{ $t('label.xennetworklabel') }}
-            <a-tooltip :title="apiParams.xennetworklabel.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
           <a-input
             v-model:value="form.xennetworklabel"
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item name="hypervnetworklabel" ref="hypervnetworklabel">
-          <template #label>
-            {{ $t('label.hypervnetworklabel') }}
-            <a-tooltip :title="apiParams.hypervnetworklabel.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
           <a-input
             v-model:value="form.hypervnetworklabel"
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item name="ovm3networklabel" ref="ovm3networklabel">
-          <template #label>
-            {{ $t('label.ovm3networklabel') }}
-            <a-tooltip :title="apiParams.ovm3networklabel.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
           <a-input
             v-model:value="form.ovm3networklabel"
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -110,9 +80,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'EditTrafficLabel',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -179,6 +153,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -218,13 +193,6 @@ export default {
 
   @media (min-width: 600px) {
     width: 450px;
-  }
-}
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

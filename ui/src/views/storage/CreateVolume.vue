@@ -19,29 +19,19 @@
   <a-spin :spinning="loading">
     <a-form
       class="form"
-      :ref="formRef"
-      :model="form"
-      :rules="rules"
+      :form="form"
+      @submit="handleSubmit"
+      v-ctrl-enter="handleSubmit"
       layout="vertical">
-      <a-form-item ref="name" name="name">
-        <template #label>
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-model:value="form.name"
           :placeholder="$t('label.volumename')"
           autoFocus />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid">
-        <template #label>
-          {{ $t('label.zoneid') }}
-          <a-tooltip :title="apiParams.zoneid.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
           v-model:value="form.zoneid"
           :loading="loading"
@@ -54,13 +44,8 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="diskofferingid" name="diskofferingid">
-        <template #label>
-          {{ $t('label.diskoffering') }}
-          <a-tooltip :title="apiParams.diskofferingid.description || 'Disk Offering'">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
         <a-select
           v-model:value="form.diskofferingid"
           :loading="loading"
@@ -75,13 +60,8 @@
         </a-select>
       </a-form-item>
       <span v-if="customDiskOffering">
-        <a-form-item ref="size" name="size">
-          <template #label>
-            {{ $t('label.sizegb') }}
-            <a-tooltip :title="apiParams.size.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
           <a-input
             v-model:value="form.size"
             :placeholder="$t('label.disksize')"/>
@@ -113,7 +93,7 @@
       </span>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -122,9 +102,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVolume',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       zones: [],
@@ -192,7 +176,8 @@ export default {
         this.loading = false
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -232,14 +217,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

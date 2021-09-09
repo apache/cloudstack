@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public abstract class BaseResponseWithTagInformation extends BaseResponse {
+public abstract class BaseResponseWithTagInformation extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated", responseObject = ResourceTagResponse.class)

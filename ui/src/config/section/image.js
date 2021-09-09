@@ -68,6 +68,10 @@ export default {
       }, {
         name: 'settings',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
+      },
+      {
+        name: 'comments',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
@@ -206,6 +210,10 @@ export default {
       }, {
         name: 'zones',
         component: shallowRef(defineAsyncComponent(() => import('@/views/image/IsoZones.vue')))
+      },
+      {
+        name: 'comments',
+        component: shallowRef(defineAsyncComponent() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
@@ -269,7 +277,7 @@ export default {
           dataView: true,
           show: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
-              (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
+              (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account && record.isextractable) ||
               (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id)) &&
               !(record.account === 'system' && record.domainid === 1) &&
               record.isready

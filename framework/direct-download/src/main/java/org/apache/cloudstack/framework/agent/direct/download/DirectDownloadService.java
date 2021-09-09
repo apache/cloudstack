@@ -33,4 +33,9 @@ public interface DirectDownloadService {
      * Upload a stored certificate on database with id 'certificateId' to host with id 'hostId'
      */
     boolean uploadCertificate(long certificateId, long hostId);
+
+    /**
+     * Sync the stored certificates to host with id 'hostId'
+     */
+    boolean syncCertificatesToHost(long hostId, long zoneId);
 }

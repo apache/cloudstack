@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
         <template #message>{{ $t('message.kubernetes.cluster.scale') }}</template>
@@ -29,24 +29,14 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="size" ref="size">
-          <template #label>
-            {{ $t('label.cks.cluster.size') }}
-            <a-tooltip :title="apiParams.size.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
           <a-input
             v-model:value="form.size"
             :placeholder="apiParams.size.description"
             autoFocus />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
-          <template #label>
-            {{ $t('label.serviceofferingid') }}
-            <a-tooltip :title="apiParams.serviceofferingid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             id="offering-selection"
             v-model:value="form.serviceofferingid"
@@ -65,7 +55,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -75,9 +65,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ScaleKubernetesCluster',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -172,7 +166,9 @@ export default {
         }
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -219,11 +215,4 @@ export default {
     }
   }
 
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
-  }
 </style>

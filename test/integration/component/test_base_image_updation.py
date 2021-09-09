@@ -28,7 +28,8 @@
 from marvin.codes import (PASS,
                           RECURRING)
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 
 from marvin.lib.base import (ServiceOffering,
                                          Account,
@@ -167,7 +168,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-
+        cls._cleanup = []
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -192,6 +193,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                      admin=True,
                                      domainid=cls.domain.id
                                      )
+        cls._cleanup.append(cls.account)
 
         cls.vm_with_reset = VirtualMachine.create(
                                   cls.api_client,
@@ -200,6 +202,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                   domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering_with_reset.id,
                                   )
+        cls._cleanup.append(cls.vm_with_reset)
         cls.vm_with_reset_root_disk_id = cls.get_root_device_uuid_for_vm(cls.vm_with_reset.id,
                                                 cls.vm_with_reset.rootdeviceid)
 
@@ -211,24 +214,15 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                   domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering_without_reset.id,
                                   )
+        cls._cleanup.append(cls.vm_without_reset)
         cls.vm_without_reset_root_disk_id = cls.get_root_device_uuid_for_vm(cls.vm_without_reset.id,
                                                 cls.vm_without_reset.rootdeviceid)
 
-        cls._cleanup = [
-                        cls.account,
-                        cls.service_offering_with_reset,
-                        cls.service_offering_without_reset,
-                        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestBaseImageUpdate, cls).tearDownClass()
 
     @classmethod
     def get_root_device_uuid_for_vm(cls, vm_id, root_device_id):
@@ -244,12 +238,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestBaseImageUpdate, self).tearDown()
 
     def verify_template_listing(self, template):
 
@@ -419,7 +408,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         hypervisor = host_list_validation_result[1].hypervisor
 
-        for k, v in self.services["templates"].items():
+        for k, v in list(self.services["templates"].items()):
             if k.lower() == hypervisor.lower():
                 # Register new template
                 template = Template.register(
@@ -440,7 +429,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                                                 template.id
                                                                 ))
                 template.download(self.apiclient)
-                self._cleanup.append(template)
+                self._cleanup.insert(1, template)
 
                 # Wait for template status to be changed across
                 time.sleep(self.services["sleep"])
@@ -558,6 +547,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                            vm_with_reset_root_disk_id,
                                            self.services["recurring_snapshot"]
                                         )
+        self.cleanup.append(recurring_snapshot)
 
         #ListSnapshotPolicy should return newly created policy
         list_snapshots_policy = SnapshotPolicy.list(

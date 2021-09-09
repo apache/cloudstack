@@ -70,7 +70,9 @@
       :visible="modal"
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
-      @ok="handleSubmit">
+      :footer="null"
+      @cancel="modal = false"
+      v-ctrl-enter="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
           :ref="formRef"
@@ -118,6 +120,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="modal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -127,7 +134,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'DedicatedVLANTab',
@@ -313,6 +320,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.formLoading) return
       this.formRef.value.validate().then(() => {
         this.formLoading = true
         this.parentStartLoading()

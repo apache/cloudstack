@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,12 +25,7 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="name" ref="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
@@ -38,24 +33,14 @@
         </a-form-item>
 
         <a-form-item name="description" ref="description">
-          <template #label>
-            {{ $t('label.description') }}
-            <a-tooltip :title="apiParams.description.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-model:value="form.description"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item name="using" ref="using" v-if="'roleid' in apiParams">
-          <template #label>
-            {{ $t('label.based.on') }}
-            <a-tooltip :title="$t('label.based.on.role.id.or.type')">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
           <a-radio-group
             v-model:value="form.using"
             buttonStyle="solid">
@@ -69,12 +54,7 @@
         </a-form-item>
 
         <a-form-item name="type" ref="type" v-if="form.using === 'type'">
-          <template #label>
-            {{ $t('label.type') }}
-            <a-tooltip :title="apiParams.type.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           <a-select
             v-model:value="form.type"
             :placeholder="apiParams.type.description">
@@ -85,12 +65,7 @@
         </a-form-item>
 
         <a-form-item name="roleid" ref="roleid" v-if="form.using === 'role'">
-          <template #label>
-            {{ $t('label.role') }}
-            <a-tooltip :title="apiParams.roleid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           <a-select
             v-model:value="form.roleid"
             :placeholder="apiParams.roleid.description">
@@ -105,7 +80,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -115,9 +90,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateRole',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       roles: [],
@@ -156,7 +135,9 @@ export default {
         roleid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -217,14 +198,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

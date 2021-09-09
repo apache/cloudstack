@@ -16,13 +16,9 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
-    <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
-      <a-form-item
-        :label="$t('label.diskoffering')"
-        v-if="resource.type !== 'ROOT'"
-        ref="diskofferingid"
-        name="diskofferingid">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
+    <a-form :form="form" layout="vertical">
+      <a-form-item :label="$t('label.diskoffering')" v-if="resource.type !== 'ROOT'">
         <a-select
           v-model:value="form.diskofferingid"
           :loading="loading"
@@ -50,7 +46,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -104,7 +100,8 @@ export default {
         this.loading = false
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -152,12 +149,6 @@ export default {
 
   @media (min-width: 760px) {
     width: 500px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

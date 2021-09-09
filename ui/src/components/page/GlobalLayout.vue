@@ -17,73 +17,79 @@
 
 <template>
   <a-layout class="layout" :class="[device]">
-    <template v-if="isSideMenu()">
-      <a-drawer
-        v-if="isMobile()"
-        :wrapClassName="'drawer-sider ' + navTheme"
-        :closable="false"
-        :visible="collapsed"
-        placement="left"
-        @close="() => this.collapsed = false"
-      >
+
+    <a-affix style="z-index: 200">
+
+      <template v-if="isSideMenu()">
+        <a-drawer
+          v-if="isMobile()"
+          :wrapClassName="'drawer-sider ' + navTheme"
+          :closable="false"
+          :visible="collapsed"
+          placement="left"
+          @close="() => this.collapsed = false"
+        >
+          <side-menu
+            :menus="menus"
+            :theme="navTheme"
+            :collapsed="false"
+            :collapsible="true"
+            mode="inline"
+            @menuSelect="menuSelect"></side-menu>
+        </a-drawer>
+
         <side-menu
+          v-else
+          mode="inline"
           :menus="menus"
           :theme="navTheme"
-          :collapsed="false"
-          :collapsible="true"
-          mode="inline"
-          @menuSelect="menuSelect"></side-menu>
-      </a-drawer>
-
-      <side-menu
-        v-else
-        mode="inline"
-        :menus="menus"
-        :theme="navTheme"
-        :collapsed="collapsed"
-        :collapsible="true"></side-menu>
-    </template>
-    <template v-else>
-      <a-drawer
-        v-if="isMobile()"
-        :wrapClassName="'drawer-sider ' + navTheme"
-        placement="left"
-        @close="() => this.collapsed = false"
-        :closable="false"
-        :visible="collapsed"
-      >
-        <side-menu
-          :menus="menus"
-          :theme="navTheme"
-          :collapsed="false"
-          :collapsible="true"
-          mode="inline"
-          @menuSelect="menuSelect"></side-menu>
-      </a-drawer>
-    </template>
-
-    <drawer :visible="showSetting" placement="right">
-      <template #handler>
-        <a-button type="primary" size="large">
-          <close-outlined v-if="showSetting" />
-          <setting-outlined v-else />
-        </a-button>
+          :collapsed="collapsed"
+          :collapsible="true"></side-menu>
       </template>
-      <template #drawer>
-        <setting :visible="showSetting" />
+      <template v-else>
+        <a-drawer
+          v-if="isMobile()"
+          :wrapClassName="'drawer-sider ' + navTheme"
+          placement="left"
+          @close="() => this.collapsed = false"
+          :closable="false"
+          :visible="collapsed"
+        >
+          <side-menu
+            :menus="menus"
+            :theme="navTheme"
+            :collapsed="false"
+            :collapsible="true"
+            mode="inline"
+            @menuSelect="menuSelect"></side-menu>
+        </a-drawer>
       </template>
-    </drawer>
+
+      <drawer :visible="showSetting" placement="right">
+        <template #handler>
+          <a-button type="primary" size="large">
+            <close-outlined v-if="showSetting" />
+            <setting-outlined v-else />
+          </a-button>
+        </template>
+        <template #drawer>
+          <setting :visible="showSetting" />
+        </template>
+      </drawer>
+    </a-affix>
 
     <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
       <!-- layout header -->
-      <global-header
-        :mode="layoutMode"
-        :menus="menus"
-        :theme="navTheme"
-        :collapsed="collapsed"
-        :device="device"
-        @toggle="toggle"
-      />
+      <a-affix style="z-index: 100">
+        <global-header
+          :mode="layoutMode"
+          :menus="menus"
+          :theme="navTheme"
+          :collapsed="collapsed"
+          :device="device"
+          @toggle="toggle"
+        />
+      </a-affix>
 
       <!-- layout content -->
       <a-layout-content class="layout-content" :class="{'is-header-fixed': fixedHeader}">

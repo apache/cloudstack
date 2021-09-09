@@ -1291,74 +1291,74 @@ export default {
       const protocol = this.prefillContent.primaryStorageProtocol
 
       if (protocol === 'nfs') {
-        let path = this.prefillContent.primaryStoragePath
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.nfsURL(server, path)
       } else if (protocol === 'SMB') {
-        let path = this.prefillContent.primaryStoragePath
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.smbURL(server, path)
-        params['details[0].user'] = this.prefillContent.primaryStorageSMBUsername
-        params['details[0].password'] = this.prefillContent.primaryStorageSMBPassword
-        params['details[0].domain'] = this.prefillContent.primaryStorageSMBDomain
+        params['details[0].user'] = this.prefillContent?.primaryStorageSMBUsername || null
+        params['details[0].password'] = this.prefillContent?.primaryStorageSMBPassword || null
+        params['details[0].domain'] = this.prefillContent?.primaryStorageSMBDomain || null
       } else if (protocol === 'PreSetup') {
         let path = ''
         if (this.stepData.clusterReturned.hypervisortype === 'XenServer') {
-          path = this.prefillContent.primaryStorageSRLabel
+          path = this.prefillContent?.primaryStorageSRLabel || ''
           server = 'localhost'
         } else {
-          path = this.prefillContent.primaryStoragePath
+          path = this.prefillContent?.primaryStoragePath || ''
         }
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.presetupURL(server, path)
       } else if (protocol === 'ocfs2') {
-        let path = this.prefillContent.primaryStoragePath
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.ocfs2URL(server, path)
       } else if (protocol === 'SharedMountPoint') {
-        let path = this.prefillContent.primaryStoragePath
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.sharedMountPointURL(server, path)
       } else if (protocol === 'clvm') {
-        let vg = this.prefillContent.primaryStorageVolumeGroup
+        let vg = this.prefillContent?.primaryStorageVolumeGroup || ''
         if (vg.substring(0, 1) !== '/') {
           vg = '/' + vg
         }
         url = this.clvmURL(vg)
       } else if (protocol === 'rbd') {
-        const rbdmonitor = this.prefillContent.primaryStorageRADOSMonitor
-        const rbdpool = this.prefillContent.primaryStorageRADOSPool
-        const rbdid = this.prefillContent.primaryStorageRADOSUser
-        const rbdsecret = this.prefillContent.primaryStorage
+        const rbdmonitor = this.prefillContent?.primaryStorageRADOSMonitor || ''
+        const rbdpool = this.prefillContent?.primaryStorageRADOSPool || ''
+        const rbdid = this.prefillContent?.primaryStorageRADOSUser || ''
+        const rbdsecret = this.prefillContent?.primaryStorage || ''
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'vmfs') {
-        let path = this.prefillContent.primaryStorageVmfsDatacenter
+        let path = this.prefillContent?.primaryStorageVmfsDatacenter || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
-        path += '/' + this.prefillContent.primaryStorageVmfsDatastore
+        path += '/' + this.prefillContent?.primaryStorageVmfsDatastore || ''
         url = this.vmfsURL('dummy', path)
       } else {
-        let iqn = this.prefillContent.primaryStorageTargetIQN
+        let iqn = this.prefillContent?.primaryStorageTargetIQN || ''
         if (iqn.substring(0, 1) !== '/') {
           iqn = '/' + iqn
         }
-        const lun = this.prefillContent.primaryStorageLUN
+        const lun = this.prefillContent?.primaryStorageLUN || ''
         url = this.iscsiURL(server, iqn, lun)
       }
 
       params.url = url
-      params.tags = this.prefillContent.primaryStorageTags
+      params.tags = this.prefillContent?.primaryStorageTags || ''
 
       try {
         if (!this.stepData.stepMove.includes('createStoragePool')) {
@@ -1383,7 +1383,7 @@ export default {
       this.addStep('message.creating.secondary.storage', 'secondaryResource')
 
       const params = {}
-      params.name = this.prefillContent.secondaryStorageName ? this.prefillContent.secondaryStorageName : null
+      params.name = this.prefillContent?.secondaryStorageName || null
       if (this.prefillContent.secondaryStorageProvider === 'NFS') {
         const nfsServer = this.prefillContent.secondaryStorageServer
         const path = this.prefillContent.secondaryStoragePath
@@ -1415,7 +1415,7 @@ export default {
         params['details[2].key'] = 'bucket'
         params['details[2].value'] = this.prefillContent.secondaryStorageBucket
         params['details[3].key'] = 'usehttps'
-        params['details[3].value'] = this.prefillContent.secondaryStorageHttps ? this.prefillContent.secondaryStorageHttps : false
+        params['details[3].value'] = this.prefillContent?.secondaryStorageHttps || false
 
         let index = 4
         if (this.prefillContent.secondaryStorageEndpoint &&

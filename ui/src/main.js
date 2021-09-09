@@ -30,9 +30,7 @@ import filter from './utils/filter' // global filter
 
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
-import setting from '@/config/settings'
-
-const app = createApp(App)
+import './utils/directives'
 
 app.config.productionTip = false
 app.use(VueAxios, router)

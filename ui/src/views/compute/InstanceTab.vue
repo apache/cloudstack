@@ -139,60 +139,83 @@
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="vm"
+          :items="annotations">
+        </AnnotationsTab>
+      </a-tab-pane>
     </a-tabs>
 
     <a-modal
       :visible="showAddNetworkModal"
       :title="$t('label.network.addvm')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
+      :footer="null"
       @cancel="closeModals"
-      @ok="submitAddNetwork">
+      v-ctrl-enter="submitAddNetwork">
       {{ $t('message.network.addvm.desc') }}
-      <div class="modal-form">
-        <p class="modal-form__label">{{ $t('label.network') }}:</p>
-        <a-select :defaultValue="addNetworkData.network" @change="e => addNetworkData.network = e" autoFocus>
-          <a-select-option
-            v-for="network in addNetworkData.allNetworks"
-            :key="network.id"
-            :value="network.id">
-            {{ network.name }}
-          </a-select-option>
-        </a-select>
-        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-input v-model:value="addNetworkData.ip"></a-input>
-      </div>
+      <a-form @submit="submitAddNetwork">
+        <div class="modal-form">
+          <p class="modal-form__label">{{ $t('label.network') }}:</p>
+          <a-select
+            :defaultValue="addNetworkData.network"
+            @change="e => addNetworkData.network = e"
+            autoFocus>
+            <a-select-option
+              v-for="network in addNetworkData.allNetworks"
+              :key="network.id"
+              :value="network.id">
+              {{ network.name }}
+            </a-select-option>
+          </a-select>
+          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <a-input v-model:value="addNetworkData.ip"></a-input>
+        </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
     </a-modal>
 
     <a-modal
       :visible="showUpdateIpModal"
       :title="$t('label.change.ipaddress')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
+      :footer="null"
       @cancel="closeModals"
-      @ok="submitUpdateIP"
+      v-ctrl-enter="submitUpdateIP"
     >
       {{ $t('message.network.updateip') }}
 
-      <div class="modal-form">
-        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-select
-          showSearch
-          v-if="editNicResource.type==='Shared'"
-          v-model:value="editIpAddressValue"
-          :loading="listIps.loading"
-          :autoFocus="editNicResource.type==='Shared'">
-          <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
-            {{ ip.ipaddress }}
-          </a-select-option>
-        </a-select>
-        <a-input
-          v-else
-          v-model:value="editIpAddressValue"
-          :autoFocus="editNicResource.type!=='Shared'"></a-input>
-      </div>
+      <a-form @submit="submitUpdateIP">
+        <div class="modal-form">
+          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <a-select
+            showSearch
+            v-if="editNicResource.type==='Shared'"
+            v-model:value="editIpAddressValue"
+            :loading="listIps.loading"
+            :autoFocus="editNicResource.type==='Shared'">
+            <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
+              {{ ip.ipaddress }}
+            </a-select-option>
+          </a-select>
+          <a-input
+            v-else
+            v-model:value="editIpAddressValue"
+            :autoFocus="editNicResource.type!=='Shared'"></a-input>
+        </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitUpdateIP">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
     </a-modal>
 
     <a-modal
@@ -202,6 +225,8 @@
       :footer="null"
       :closable="false"
       class="wide-modal"
+      @cancel="closeModals"
+      v-ctrl-enter="submitSecondaryIP"
     >
       <p>
         {{ $t('message.network.secondaryip') }}
@@ -213,7 +238,8 @@
           showSearch
           v-if="editNicResource.type==='Shared'"
           v-model:value="newSecondaryIp"
-          :loading="listIps.loading">
+          :loading="listIps.loading"
+          :autoFocus="editNicResource.type==='Shared'">
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
             {{ ip.ipaddress }}
           </a-select-option>
@@ -221,11 +247,12 @@
         <a-input
           v-else
           :placeholder="$t('label.new.secondaryip.description')"
-          v-model:value="newSecondaryIp"></a-input>
+          v-model:value="newSecondaryIp"
+          :autoFocus="editNicResource.type!=='Shared'"></a-input>
       </div>
 
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-        <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+        <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
         <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
       </div>
 
@@ -263,7 +290,8 @@ import DetailsTab from '@/components/view/DetailsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'InstanceTab',
@@ -274,7 +302,8 @@ export default {
     NicsTable,
     Status,
     ListResourceTable,
-    TooltipButton
+    TooltipButton,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
   props: {
@@ -334,7 +363,8 @@ export default {
       listIps: {
         loading: false,
         opts: []
-      }
+      },
+      annotations: []
     }
   },
   created () {
@@ -373,6 +403,7 @@ export default {
     },
     fetchData () {
       this.volumes = []
+      this.annotations = []
       if (!this.vm || !this.vm.id) {
         return
       }
@@ -382,6 +413,11 @@ export default {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
         }
         this.$set(this.resource, 'volumes', this.volumes)
+      })
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
       })
     },
     listNetworks () {
@@ -464,6 +500,7 @@ export default {
       this.fetchSecondaryIPs(record.nic.id)
     },
     submitAddNetwork () {
+      if (this.loadingNic) return
       const params = {}
       params.virtualmachineid = this.vm.id
       params.networkid = this.addNetworkData.network
@@ -527,6 +564,7 @@ export default {
       })
     },
     submitUpdateIP () {
+      if (this.loadingNic) return
       this.loadingNic = true
       this.showUpdateIpModal = false
       api('updateVmNicIp', {
@@ -590,6 +628,7 @@ export default {
         })
     },
     submitSecondaryIP () {
+      if (this.loadingNic) return
       this.loadingNic = true
 
       const params = {}

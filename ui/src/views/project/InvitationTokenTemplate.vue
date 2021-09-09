@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="row-project-invitation">
+  <div class="row-project-invitation" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -36,10 +36,17 @@
             :placeholder="apiParams.token.description"
           />
         </a-form-item>
+<<<<<<< HEAD
         <div class="card-footer">
           <!-- ToDo extract as component -->
           <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+=======
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => $emit('close-action')">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+>>>>>>> main
         </div>
       </a-form>
     </a-spin>
@@ -69,9 +76,19 @@ export default {
     })
   },
   methods: {
+<<<<<<< HEAD
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+=======
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
+      this.form.validateFields((err, values) => {
+        if (err) {
+          return
+        }
+>>>>>>> main
 
         const title = this.$t('label.accept.project.invitation')
         const description = this.$t('label.projectid') + ' ' + values.projectid
@@ -120,13 +137,5 @@ export default {
 <style lang="less" scoped>
 .row-project-invitation {
   min-width: 450px;
-}
-
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
-  }
 }
 </style>

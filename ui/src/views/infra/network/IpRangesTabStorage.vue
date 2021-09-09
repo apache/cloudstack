@@ -70,8 +70,9 @@
       :title="$t('label.add.ip.range')"
       :closable="true"
       :maskClosable="false"
-      @ok="handleAddIpRange"
-      @cancel="() => addIpRangeModal = false">
+      :footer="null"
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :ref="formRef"
         :model="form"
@@ -100,6 +101,11 @@
         <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
           <a-input v-model:value="form.endip" />
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -109,7 +115,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'IpRangesTabStorage',
@@ -265,6 +271,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.componentLoading = true

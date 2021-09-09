@@ -26,21 +26,23 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -60,7 +62,13 @@ public interface VirtualMachineManager extends Manager {
             "The default label name for the config drive", false);
 
     ConfigKey<Boolean> VmConfigDriveOnPrimaryPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.primarypool.enabled", "false",
-            "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true);
+            "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> VmConfigDriveUseHostCacheOnUnsupportedPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.use.host.cache.on.unsupported.pool", "true",
+            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
+            "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
             "Count the resources of only running VMs in resource limitation.", true);
@@ -70,22 +78,6 @@ public interface VirtualMachineManager extends Manager {
 
     ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
-
-    static final ConfigKey<Integer> VmServiceOfferingMaxCPUCores = new ConfigKey<Integer>("Advanced",
-            Integer.class,
-            "vm.serviceoffering.cpu.cores.max",
-            "0",
-            "Maximum CPU cores for vm service offering. If 0 - no limitation",
-            true
-    );
-
-    static final ConfigKey<Integer> VmServiceOfferingMaxRAMSize = new ConfigKey<Integer>("Advanced",
-            Integer.class,
-            "vm.serviceoffering.ram.size.max",
-            "0",
-            "Maximum RAM size in MB for vm service offering. If 0 - no limitation",
-            true
-    );
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -168,7 +160,7 @@ public interface VirtualMachineManager extends Manager {
 
     VirtualMachine findById(long vmId);
 
-    void storageMigration(String vmUuid, StoragePool storagePoolId);
+    void storageMigration(String vmUuid, Map<Long, Long> volumeToPool);
 
     /**
      * @param vmInstance
@@ -256,6 +248,10 @@ public interface VirtualMachineManager extends Manager {
     boolean unmanage(String vmUuid);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    boolean checkIfVmHasClusterWideVolumes(Long vmId);
+
+    DataCenterDeployment getMigrationDeployment(VirtualMachine vm, Host host, Long poolId, ExcludeList excludes);
 
     /**
      * Returns true if the VM's Root volume is allocated at a local storage pool

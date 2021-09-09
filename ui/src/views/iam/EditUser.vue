@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -26,50 +26,30 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item name="username" ref="username">
-          <template #label>
-            {{ $t('label.username') }}
-            <a-tooltip :title="apiParams.username.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
           <a-input
             v-model:value="form.username"
             :placeholder="apiParams.username.description"
             autoFocus />
         </a-form-item>
         <a-form-item name="email" ref="email">
-          <template #label>
-            {{ $t('label.email') }}
-            <a-tooltip :title="apiParams.email.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
           <a-input
             v-model:value="form.email"
             :placeholder="apiParams.email.description" />
         </a-form-item>
         <a-row :gutter="12">
-          <a-col :span="12">
+          <a-col :md="24" :lg="12">
             <a-form-item name="firstname" ref="firstname">
-              <template #label>
-                {{ $t('label.firstname') }}
-                <a-tooltip :title="apiParams.firstname.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
               <a-input
                 v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
             </a-form-item>
           </a-col>
-          <a-col :span="12">
+          <a-col :md="24" :lg="12">
             <a-form-item name="lastname" ref="lastname">
-              <template #label>
-                {{ $t('label.lastname') }}
-                <a-tooltip :title="apiParams.lastname.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
               <a-input
                 v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
@@ -77,12 +57,7 @@
           </a-col>
         </a-row>
         <a-form-item name="timezone" ref="timezone">
-          <template #label>
-            {{ $t('label.timezone') }}
-            <a-tooltip :title="apiParams.timezone.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
             showSearch
             v-model:value="form.timezone"
@@ -94,7 +69,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -106,9 +81,13 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'EditUser',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -183,7 +162,9 @@ export default {
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -228,12 +209,6 @@ export default {
   width: 80vw;
   @media (min-width: 600px) {
     width: 450px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

@@ -24,11 +24,15 @@ import MigrateWizard from '@/views/compute/MigrateWizard'
 
 jest.mock('axios', () => mockAxios)
 
+<<<<<<< HEAD
 let i18n
 let store
 let mocks
 let wrapper
 const originalFunc = {}
+=======
+let wrapper, i18n, store, mocks, router
+>>>>>>> main
 
 i18n = common.createMockI18n('en', mockData.messages)
 store = common.createMockStore()
@@ -64,8 +68,10 @@ const factory = (opts = {}) => {
   i18n = opts.i18n || i18n
   store = opts.store || store
   mocks = opts.mocks || mocks
+  router = opts.router || router
 
   return common.createFactory(MigrateWizard, {
+    router,
     i18n,
     store,
     mocks,
@@ -75,6 +81,11 @@ const factory = (opts = {}) => {
 }
 
 describe('Views > compute > MigrateWizard.vue', () => {
+<<<<<<< HEAD
+=======
+  // jest.spyOn(console, 'warn').mockImplementation(() => {})
+
+>>>>>>> main
   beforeEach(() => {
     jest.clearAllMocks()
 
@@ -96,6 +107,9 @@ describe('Views > compute > MigrateWizard.vue', () => {
       wrapper.vm.page = 1
       wrapper.vm.pageSize = 10
       wrapper.vm.selectedHost = {}
+    }
+    if (router && router.currentRoute.name !== 'home') {
+      router.replace({ name: 'home' })
     }
 
     if (Object.keys(originalFunc).length > 0) {
@@ -295,7 +309,11 @@ describe('Views > compute > MigrateWizard.vue', () => {
     })
 
     describe('submitForm()', () => {
+<<<<<<< HEAD
       it('API should be called with selectedHost.requiresStorageMotion is true', async (done) => {
+=======
+      it('check api is called when selectedHost.requiresStorageMotion is true and isUserVm=true', async (done) => {
+>>>>>>> main
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id'
@@ -307,7 +325,9 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+        mockAxios.mockResolvedValue(mockData)
 
+<<<<<<< HEAD
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
           resource: {
@@ -322,6 +342,34 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+        router = common.createMockRouter([{
+          name: 'testRouter1',
+          path: '/test-router-1',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter1' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 
@@ -340,7 +388,11 @@ describe('Views > compute > MigrateWizard.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('API should be called with selectedHost.requiresStorageMotion is false', async (done) => {
+=======
+      it('check api is called when selectedHost.requiresStorageMotion is false and isUserVm=true', async (done) => {
+>>>>>>> main
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id'
@@ -352,6 +404,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+<<<<<<< HEAD
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
           resource: {
@@ -366,6 +419,36 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+        mockAxios.mockResolvedValue(mockData)
+
+        router = common.createMockRouter([{
+          name: 'testRouter2',
+          path: '/test-router-2',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: false,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+
+        router.push({ name: 'testRouter2' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 
@@ -384,7 +467,70 @@ describe('Views > compute > MigrateWizard.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('$pollJob have successMethod() should be called with requiresStorageMotion is true', async (done) => {
+=======
+      it('check api is called when isUserVm=false', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter3',
+          path: '/test-router-3',
+          meta: {
+            name: 'test'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter3' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'migrateSystemVm',
+              hostid: 'test-host-id',
+              virtualmachineid: 'test-resource-id',
+              response: 'json'
+            }
+          })
+
+          done()
+        })
+      })
+
+      it('check $pollJob have successMethod() is called with requiresStorageMotion is true', async (done) => {
+>>>>>>> main
         const mockData = {
           migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-1'
@@ -396,6 +542,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+<<<<<<< HEAD
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
           resource: {
@@ -410,6 +557,35 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter4',
+          path: '/test-router-4',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter4' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 
@@ -430,6 +606,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+<<<<<<< HEAD
 
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
@@ -445,6 +622,83 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter5',
+          path: '/test-router-5',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: false,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter5' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mocks.$pollJob).toHaveBeenCalled()
+          expect(wrapper.emitted()['close-action'][0]).toEqual([])
+          done()
+        })
+      })
+
+      it('check $pollJob have successMethod() is called with isUserVm is false', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id-case-2'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter6',
+          path: '/test-router-6',
+          meta: {
+            name: 'test'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: false,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter6' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 
@@ -465,6 +719,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
+<<<<<<< HEAD
 
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
@@ -480,6 +735,26 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+        mockAxios.mockResolvedValue(mockData)
+        wrapper = factory({
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 
@@ -494,6 +769,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             jobid: 'test-job-id-case-4'
           }
         }
+<<<<<<< HEAD
 
         await mockAxios.mockResolvedValue(mockData)
         await wrapper.setProps({
@@ -509,6 +785,26 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+        mockAxios.mockResolvedValue(mockData)
+        wrapper = factory({
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 
@@ -517,6 +813,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('$message.error should be called when api is called with throw error', async (done) => {
         const mockError = { message: 'Error: throw error message' }
 
@@ -529,6 +826,27 @@ describe('Views > compute > MigrateWizard.vue', () => {
             name: 'test-host-name'
           }
         })
+=======
+      it('check $message.error is called when api is called with throw error', async (done) => {
+        const mockError = {
+          message: 'Error: throw error message'
+        }
+        mockAxios.mockRejectedValue(mockError)
+        wrapper = factory({
+          props: {
+            resource: {}
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+>>>>>>> main
         await wrapper.vm.submitForm()
         await flushPromises()
 

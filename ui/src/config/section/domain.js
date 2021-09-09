@@ -25,7 +25,7 @@ export default {
   permission: ['listDomains', 'listDomainChildren'],
   resourceType: 'Domain',
   columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
-  details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain'],
+  details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'created'],
   component: shallowRef(() => import('@/views/iam/DomainView.vue')),
   related: [{
     name: 'account',
@@ -56,6 +56,9 @@ export default {
       name: 'settings',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
+    }, {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
     }
   ],
   treeView: true,

@@ -18,16 +18,15 @@
 <template>
   <div>
     <a-modal
+      centered
       :visible="showAction"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      style="top: 20px;"
-      @ok="handleSubmit"
+      :confirmLoading="action.loading"
+      :footer="null"
       @cancel="parentCloseAction"
-      :confirmLoading="actionLoading"
-      centered
+      style="top: 20px;"
+      v-ctrl-enter="handleSubmit"
     >
       <template #title>
         {{ $t(action.label) }}
@@ -49,12 +48,7 @@
               :v-bind="field.name"
               v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
             >
-              <template #label>
-                {{ $t('label.' + field.name) }}
-                <a-tooltip :title="field.description">
-                  <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
               <a-switch
                 v-if="field.type==='boolean'"
@@ -113,6 +107,11 @@
                 :autoFocus="fieldIndex === firstIndex" />
             </a-form-item>
           </template>
+
+          <div :span="24" class="action-button">
+            <a-button @click="parentCloseAction">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -122,9 +121,13 @@
 <script>
 import { api } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DomainActionForm',
+  components: {
+    TooltipLabel
+  },
   props: {
     action: {
       type: Object,
@@ -166,7 +169,9 @@ export default {
   },
   inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.action.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.actionLoading = true

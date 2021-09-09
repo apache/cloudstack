@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,35 +25,20 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="name" ref="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             autoFocus
             v-model:value="form.name"
             :placeholder="$t('label.name')"/>
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
-          <template #label>
-            {{ $t('label.displaytext') }}
-            <a-tooltip :title="apiParams.displaytext.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-model:value="form.displaytext"
             :placeholder="$t('label.displaytext')"/>
         </a-form-item>
         <a-form-item name="systemvmtype" ref="systemvmtype" v-if="isSystem">
-          <template #label>
-            {{ $t('label.systemvmtype') }}
-            <a-tooltip :title="apiParams.systemvmtype.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           <a-select
             v-model:value="form.systemvmtype"
             showSearch
@@ -61,19 +46,14 @@
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="$t('label.systemvmtype')">
+            :placeholder="apiParams.systemvmtype.description">
             <a-select-option key="domainrouter">{{ $t('label.domain.router') }}</a-select-option>
             <a-select-option key="consoleproxy">{{ $t('label.console.proxy') }}</a-select-option>
             <a-select-option key="secondarystoragevm">{{ $t('label.secondary.storage.vm') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="storagetype" ref="storagetype">
-          <template #label>
-            {{ $t('label.storagetype') }}
-            <a-tooltip :title="apiParams.storagetype.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.storagetype')" :tooltip="apiParams.storagetype.description"/>
           <a-radio-group
             v-model:value="form.storagetype"
             buttonStyle="solid">
@@ -86,12 +66,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item name="provisioningtype" ref="provisioningtype">
-          <template #label>
-            {{ $t('label.provisioningtype') }}
-            <a-tooltip :title="apiParams.provisioningtype.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.provisioningtype')" :tooltip="apiParams.provisioningtype.description"/>
           <a-radio-group
             v-model:value="form.provisioningtype"
             buttonStyle="solid">
@@ -107,12 +82,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item name="cachemode" ref="cachemode">
-          <template #label>
-            {{ $t('label.cachemode') }}
-            <a-tooltip :title="apiParams.cachemode.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.cachemode')" :tooltip="apiParams.cachemode.description"/>
           <a-radio-group
             v-model:value="form.cachemode"
             buttonStyle="solid">
@@ -143,103 +113,64 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item name="cpunumber" ref="cpunumber" v-if="form.offeringtype === 'fixed'">
-          <template #label>
-            {{ $t('label.cpunumber') }}
-            <a-tooltip :title="apiParams.cpunumber.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.cpunumber')" :tooltip="apiParams.cpunumber.description"/>
           <a-input
             v-model:value="form.cpunumber"
-            :placeholder="$t('label.cpunumber')"/>
+            :placeholder="apiParams.cpunumber.description"/>
         </a-form-item>
         <a-form-item name="cpuspeed" ref="cpuspeed" v-if="form.offeringtype !== 'customunconstrained'">
-          <template #label>
-            {{ $t('label.cpuspeed') }}
-            <a-tooltip :title="apiParams.cpuspeed.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.cpuspeed')" :tooltip="apiParams.cpuspeed.description"/>
           <a-input
             v-model:value="form.cpuspeed"
-            :placeholder="$t('label.cpuspeed')"/>
-        </a-form-item>
-        <a-form-item name="mincpunumber" ref="mincpunumber" v-if="form.offeringtype === 'customconstrained'">
-          <template #label>
-            {{ $t('label.mincpunumber') }}
-            <a-tooltip :title="apiParams.mincpunumber.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
-          <a-input
-            v-model:value="form.mincpunumber"
-            :placeholder="$t('label.mincpunumber')"/>
-        </a-form-item>
-        <a-form-item name="maxcpunumber" ref="maxcpunumber" v-if="form.offeringtype === 'customconstrained'">
-          <template #label>
-            {{ $t('label.maxcpunumber') }}
-            <a-tooltip :title="apiParams.maxcpunumber.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
-          <a-input
-            v-model:value="form.maxcpunumber"
-            :placeholder="$t('label.maxcpunumber')"/>
+            :placeholder="apiParams.cpuspeed.description"/>
         </a-form-item>
         <a-form-item name="memory" ref="memory" v-if="form.offeringtype === 'fixed'">
-          <template #label>
-            {{ $t('label.memory.mb') }}
-            <a-tooltip :title="apiParams.memory.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.memory.mb')" :tooltip="apiParams.memory.description"/>
           <a-input
-            v-model:value="form.memory"
-            :placeholder="$t('label.memory')"/>
+            v-decorator="['memory', {
+              rules: [{ required: true, message: $t('message.error.required.input') }, naturalNumberRule]
+            }]"
+            :placeholder="apiParams.memory.description"/>
+        </a-form-item>
+        <a-form-item name="mincpunumber" ref="mincpunumber" v-if="offeringType === 'customconstrained'">
+          <tooltip-label slot="label" :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
+          <a-input
+            v-decorator="['mincpunumber', {
+              rules: [{ required: true, message: $t('message.error.required.input') }, naturalNumberRule]
+            }]"
+            :placeholder="apiParams.mincpunumber.description"/>
+        </a-form-item>
+        <a-form-item name="maxcpunumber" ref="maxcpunumber" v-if="offeringType === 'customconstrained'">
+          <tooltip-label slot="label" :title="$t('label.maxcpunumber')" :tooltip="apiParams.maxcpunumber.description"/>
+          <a-input
+            v-decorator="['maxcpunumber', {
+              rules: [{ required: true, message: $t('message.error.required.input') }, naturalNumberRule]
+            }]"
+            :placeholder="apiParams.maxcpunumber.description"/>
         </a-form-item>
         <a-form-item name="minmemory" ref="minmemory" v-if="form.offeringtype === 'customconstrained'">
-          <template #label>
-            {{ $t('label.minmemory') }}
-            <a-tooltip :title="apiParams.minmemory.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
           <a-input
             v-model:value="form.minmemory"
-            :placeholder="$t('label.minmemory')"/>
+            :placeholder="apiParams.minmemory.description"/>
         </a-form-item>
         <a-form-item name="maxmemory" ref="maxmemory" v-if="form.offeringtype === 'customconstrained'">
-          <template #label>
-            {{ $t('label.maxmemory') }}
-            <a-tooltip :title="apiParams.maxmemory.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.maxmemory')" :tooltip="apiParams.maxmemory.description"/>
           <a-input
             v-model:value="form.maxmemory"
-            :placeholder="$t('label.maxmemory')"/>
+            :placeholder="apiParams.maxmemory.description"/>
         </a-form-item>
         <a-form-item name="networkrate" ref="networkrate">
-          <template #label>
-            {{ $t('label.networkrate') }}
-            <a-tooltip :title="apiParams.networkrate.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.networkrate')" :tooltip="apiParams.networkrate.description"/>
           <a-input
             v-model:value="form.networkrate"
-            :placeholder="$t('label.networkrate')"/>
+            :placeholder="apiParams.networkrate.description"/>
         </a-form-item>
         <a-form-item name="rootdisksize" ref="rootdisksize" v-if="apiParams.rootdisksize">
-          <template #label>
-            {{ $t('label.root.disk.size') }}
-            <a-tooltip :title="apiParams.rootdisksize.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.root.disk.size')" :tooltip="apiParams.rootdisksize.description"/>
           <a-input
             v-model:value="form.rootdisksize"
-            :placeholder="$t('label.root.disk.size')"/>
+            :placeholder="apiParams.rootdisksize.description"/>
         </a-form-item>
         <a-form-item name="qostype" ref="qostype" :label="$t('label.qostype')">
           <a-radio-group
@@ -258,118 +189,67 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item name="diskbytesreadrate" ref="diskbytesreadrate" v-if="form.qostype === 'hypervisor'">
-          <template #label>
-            {{ $t('label.diskbytesreadrate') }}
-            <a-tooltip :title="apiParams.bytesreadrate.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.diskbytesreadrate')" :tooltip="apiParams.bytesreadrate.description"/>
           <a-input
             v-model:value="form.diskbytesreadrate"
-            :placeholder="$t('label.diskbytesreadrate')"/>
+            :placeholder="apiParams.bytesreadrate.description"/>
         </a-form-item>
         <a-form-item name="diskbyteswriterate" ref="diskbyteswriterate" v-if="form.qostype === 'hypervisor'">
-          <template #label>
-            {{ $t('label.diskbyteswriterate') }}
-            <a-tooltip :title="apiParams.byteswriterate.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
           <a-input
             v-model:value="form.diskbyteswriterate"
-            :placeholder="$t('label.diskbyteswriterate')"/>
+            :placeholder="apiParams.byteswriterate.description"/>
         </a-form-item>
         <a-form-item name="diskiopsreadrate" ref="diskiopsreadrate" v-if="form.qostype === 'hypervisor'">
-          <template #label>
-            {{ $t('label.diskiopsreadrate') }}
-            <a-tooltip :title="apiParams.iopsreadrate.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.diskiopsreadrate')" :tooltip="apiParams.iopsreadrate.description"/>
           <a-input
             v-model:value="form.diskiopsreadrate"
-            :placeholder="$t('label.diskiopsreadrate')"/>
+            :placeholder="apiParams.iopsreadrate.description"/>
         </a-form-item>
         <a-form-item name="diskiopswriterate" ref="diskiopswriterate" v-if="form.qostype === 'hypervisor'">
-          <template #label>
-            {{ $t('label.diskiopswriterate') }}
-            <a-tooltip :title="apiParams.iopswriterate.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.diskiopswriterate')" :tooltip="apiParams.iopswriterate.description"/>
           <a-input
             v-model:value="form.diskiopswriterate"
-            :placeholder="$t('label.diskiopswriterate')"/>
+            :placeholder="apiParams.iopswriterate.description"/>
         </a-form-item>
         <a-form-item name="iscustomizeddiskiops" ref="iscustomizeddiskiops" v-if="!isSystem && form.qostype === 'storage'">
-          <template #label>
-            {{ $t('label.iscustomizeddiskiops') }}
-            <a-tooltip :title="apiParams.customizediops.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.iscustomizeddiskiops')" :tooltip="apiParams.customizediops.description"/>
           <a-switch v-model:checked="form.iscustomizeddiskiops" />
         </a-form-item>
         <a-form-item name="diskiopsmin" ref="diskiopsmin" v-if="form.qostype === 'storage' && !form.iscustomizeddiskiops">
-          <template #label>
-            {{ $t('label.diskiopsmin') }}
-            <a-tooltip :title="apiParams.miniops.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.diskiopsmin')" :tooltip="apiParams.miniops.description"/>
           <a-input
             v-model:value="form.diskiopsmin"
-            :placeholder="$t('label.diskiopsmin')"/>
+            :placeholder="apiParams.miniops.description"/>
         </a-form-item>
         <a-form-item name="diskiopsmax" ref="diskiopsmax" v-if="form.qostype === 'storage' && !form.iscustomizeddiskiops">
-          <template #label>
-            {{ $t('label.diskiopsmax') }}
-            <a-tooltip :title="apiParams.maxiops.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.diskiopsmax')" :tooltip="apiParams.maxiops.description"/>
           <a-input
             v-model:value="form.diskiopsmax"
-            :placeholder="$t('label.diskiopsmax')"/>
+            :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
         <a-form-item name="hypervisorsnapshotreserve" ref="hypervisorsnapshotreserve" v-if="!isSystem && form.qostype === 'storage'">
-          <template #label>
-            {{ $t('label.hypervisorsnapshotreserve') }}
-            <a-tooltip :title="apiParams.hypervisorsnapshotreserve.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.hypervisorsnapshotreserve')" :tooltip="apiParams.hypervisorsnapshotreserve.description"/>
           <a-input
             v-model:value="form.hypervisorsnapshotreserve"
-            :placeholder="$t('label.hypervisorsnapshotreserve')"/>
+            :placeholder="apiParams.hypervisorsnapshotreserve.description"/>
         </a-form-item>
         <a-form-item name="offerha" ref="offerha">
-          <template #label>
-            {{ $t('label.offerha') }}
-            <a-tooltip :title="apiParams.offerha.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.offerha')" :tooltip="apiParams.offerha.description"/>
           <a-switch v-model:checked="form.offerha" />
         </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
+          <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
+        </a-form-item>
         <a-form-item name="hosttags" ref="hosttags" v-if="isAdmin()">
-          <template #label>
-            {{ $t('label.hosttags') }}
-            <a-tooltip :title="apiParams.hosttags.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
           <a-input
             v-model:value="form.hosttags"
-            :placeholder="$t('label.hosttags')"/>
+            :placeholder="apiParams.hosttags.description"/>
         </a-form-item>
         <a-form-item name="storagetags" ref="storagetags" v-if="isAdmin()">
-          <template #label>
-            {{ $t('label.storagetags') }}
-            <a-tooltip :title="apiParams.tags.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           <a-select
             mode="tags"
             v-model:value="form.storagetags"
@@ -379,7 +259,7 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
-            :placeholder="$t('label.storagetags')"
+            :placeholder="apiParams.tags.description"
             v-if="isAdmin()">
             <a-select-option v-for="opt in storageTags" :key="opt">
               {{ opt }}
@@ -387,30 +267,15 @@
           </a-select>
         </a-form-item>
         <a-form-item name="limitcpuuse" ref="limitcpuuse">
-          <template #label>
-            {{ $t('label.limitcpuuse') }}
-            <a-tooltip :title="apiParams.limitcpuuse.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
           <a-switch v-model:checked="form.limitcpuuse" />
         </a-form-item>
         <a-form-item name="isvolatile" ref="isvolatile" v-if="!isSystem">
-          <template #label>
-            {{ $t('label.isvolatile') }}
-            <a-tooltip :title="apiParams.isvolatile.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
           <a-switch v-model:checked="form.isvolatile" />
         </a-form-item>
         <a-form-item name="deploymentplanner" ref="deploymentplanner" v-if="!isSystem && isAdmin()">
-          <template #label>
-            {{ $t('label.deploymentplanner') }}
-            <a-tooltip :title="apiParams.deploymentplanner.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           <a-select
             v-model:value="form.deploymentplanner"
             showSearch
@@ -419,7 +284,7 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="deploymentPlannerLoading"
-            :placeholder="$t('label.deploymentplanner')"
+            :placeholder="apiParams.deploymentplanner.description"
             @change="val => { handleDeploymentPlannerChange(val) }">
             <a-select-option v-for="(opt) in deploymentPlanners" :key="opt.name">
               {{ opt.name || opt.description }}
@@ -469,12 +334,7 @@
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
         <a-form-item name="domainid" ref="domainid" v-if="!form.ispublic">
-          <template #label>
-            {{ $t('label.domain') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             mode="multiple"
             v-model:value="form.domainid"
@@ -484,19 +344,14 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="$t('label.domainid')">
+            :placeholder="apiParams.domainid.description">
             <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="zoneid" ref="zoneid" v-if="!isSystem">
-          <template #label>
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -508,19 +363,14 @@
             }"
             @select="val => fetchvSphereStoragePolicies(val)"
             :loading="zoneLoading"
-            :placeholder="$t('label.zoneid')">
+            :placeholder="apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="storagepolicy" ref="storagepolicy" v-if="'listVsphereStoragePolicies' in $store.getters.apis && storagePolicies !== null">
-          <template #label>
-            {{ $t('label.vmware.storage.policy') }}
-            <a-tooltip :title="apiParams.storagetype.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.vmware.storage.polic')" :tooltip="apiParams.storagepolicy.description"/>
           <a-select
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description">
@@ -532,7 +382,7 @@
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -541,12 +391,38 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddServiceOffering',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       isSystem: false,
+      naturalNumberRule: {
+        validator: (rule, value, callback) => {
+          if (value && (isNaN(value) || value <= 0)) {
+            callback(this.$t('message.error.number'))
+          }
+          callback()
+        }
+      },
+      wholeNumberRule: {
+        validator: (rule, value, callback) => {
+          if (value && (isNaN(value) || value < 0)) {
+            callback(this.$t('message.error.number'))
+          }
+          callback()
+        }
+      },
+      storageType: 'shared',
+      provisioningType: 'thin',
+      cacheMode: 'none',
+      offeringType: 'fixed',
+      qosType: '',
+      isCustomizedDiskIops: false,
       isPublic: true,
       domains: [],
       domainLoading: false,
@@ -578,7 +454,8 @@ export default {
       ],
       vGpuVisible: false,
       vGpuTypes: [],
-      loading: false
+      loading: false,
+      dynamicscalingenabled: true
     }
   },
   beforeCreate () {
@@ -764,6 +641,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         var params = {
@@ -775,7 +653,8 @@ export default {
           cachemode: values.cachemode,
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
-          limitcpuuse: values.limitcpuuse === true
+          limitcpuuse: values.limitcpuuse === true,
+          dynamicscalingenabled: values.dynamicscalingenabled
         }
 
         // custom fields (begin)
@@ -930,15 +809,7 @@ export default {
   .form-layout {
     width: 80vw;
     @media (min-width: 800px) {
-      width: 500px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
+      width: 700px;
     }
   }
 </style>

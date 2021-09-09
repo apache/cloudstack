@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,35 +25,20 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="name" ref="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
         <a-form-item name="description" ref="description">
-          <template #label>
-            {{ $t('label.description') }}
-            <a-tooltip :title="apiParams.description.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-model:value="form.description"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
         <a-form-item name="zoneid" ref="zoneid">
-          <template #label>
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             v-model:value="form.zoneid"
@@ -71,12 +56,7 @@
           </a-select>
         </a-form-item>
         <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
-          <template #label>
-            {{ $t('label.kubernetesversionid') }}
-            <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
           <a-select
             id="version-selection"
             v-model:value="form.kubernetesversionid"
@@ -94,12 +74,7 @@
           </a-select>
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
-          <template #label>
-            {{ $t('label.serviceofferingid') }}
-            <a-tooltip :title="apiParams.serviceofferingid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             id="offering-selection"
             v-model:value="form.serviceofferingid"
@@ -116,23 +91,13 @@
           </a-select>
         </a-form-item>
         <a-form-item name="noderootdisksize" ref="noderootdisksize">
-          <template #label>
-            {{ $t('label.noderootdisksize') }}
-            <a-tooltip :title="apiParams.noderootdisksize.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.noderootdisksize')" :tooltip="apiParams.noderootdisksize.description"/>
           <a-input
             v-model:value="form.noderootdisksize"
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
         <a-form-item name="networkid" ref="networkid">
-          <template #label>
-            {{ $t('label.networkid') }}
-            <a-tooltip :title="apiParams.networkid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.networkid')" :tooltip="apiParams.networkid.description"/>
           <a-select
             id="network-selection"
             v-model:value="form.networkid"
@@ -157,46 +122,26 @@
           </template>
           <a-switch v-model:cheked="form.haenable" />
         </a-form-item>
-        <a-form-item name="masternodes" ref="masternodes" v-if="form.haenable">
-          <template #label>
-            {{ $t('label.masternodes') }}
-            <a-tooltip :title="apiParams.masternodes.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+        <a-form-item v-if="form.haenable">
+          <tooltip-label slot="label" :title="$t('label.controlnodes')" :tooltip="apiParams.controlnodes.description"/>
           <a-input
-            v-model:value="form.masternodes"
-            :placeholder="apiParams.masternodes.description"/>
+            v-model:value="form.controlnodes"
+            :placeholder="apiParams.controlnodes.description"/>
         </a-form-item>
-        <a-form-item name="externalloadbalanceripaddress" ref="externalloadbalanceripaddress" v-if="form.haenable">
-          <template #label>
-            {{ $t('label.externalloadbalanceripaddress') }}
-            <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+        <a-form-item v-if="form.haenable">
+          <tooltip-label slot="label" :title="$t('label.externalloadbalanceripaddress')" :tooltip="apiParams.externalloadbalanceripaddress.description"/>
           <a-input
             v-model:value="form.externalloadbalanceripaddress"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
         <a-form-item name="size" ref="size">
-          <template #label>
-            {{ $t('label.cks.cluster.size') }}
-            <a-tooltip :title="apiParams.size.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
           <a-input
             v-model:value="form.size"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
         <a-form-item name="keypair" ref="keypair">
-          <template #label>
-            {{ $t('label.keypair') }}
-            <a-tooltip :title="apiParams.keypair.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.keypair')" :tooltip="apiParams.keypair.description"/>
           <a-select
             id="keypair-selection"
             v-model:value="form.keypair"
@@ -224,45 +169,25 @@
           </a-form-item>
           <div v-if="form.privateregistry">
             <a-form-item name="dockerregistryusername" ref="dockerregistryusername">
-              <template #label>
-                {{ $t('label.username') }}
-                <a-tooltip :title="apiParams.dockerregistryusername.description">
-                  <info-circle-outlined />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.dockerregistryusername.description"/>
               <a-input
                 v-model:value="form.dockerregistryusername"
                 :placeholder="apiParams.dockerregistryusername.description"/>
             </a-form-item>
             <a-form-item name="dockerregistrypassword" ref="dockerregistrypassword">
-              <template #label>
-                {{ $t('label.password') }}
-                <a-tooltip :title="apiParams.dockerregistrypassword.description">
-                  <info-circle-outlined />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.dockerregistrypassword.description"/>
               <a-input-password
                 v-model:value="form.dockerregistrypassword"
                 :placeholder="apiParams.dockerregistrypassword.description"/>
             </a-form-item>
             <a-form-item name="dockerregistryurl" ref="dockerregistryurl">
-              <template #label>
-                {{ $t('label.url') }}
-                <a-tooltip :title="apiParams.dockerregistryurl.description">
-                  <info-circle-outlined />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.dockerregistryurl.description"/>
               <a-input
                 v-model:value="form.dockerregistryurl"
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
             <a-form-item name="dockerregistryemail" ref="dockerregistryemail">
-              <template #label>
-                {{ $t('label.email') }}
-                <a-tooltip :title="apiParams.dockerregistryemail.description">
-                  <info-circle-outlined />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.dockerregistryemail.description"/>
               <a-input
                 v-model:value="form.dockerregistryemail"
                 :placeholder="apiParams.dockerregistryemail.description"/>
@@ -271,7 +196,7 @@
         </div>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -281,9 +206,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateKubernetesCluster',
+  components: {
+    TooltipLabel
+  },
   props: {},
   data () {
     return {
@@ -325,7 +254,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        masternodes: 2,
+        controlnodes: 2,
         size: 1
       })
       this.rules = reactive({
@@ -335,21 +264,6 @@ export default {
         kubernetesversionid: [{ required: true, message: this.$t('message.error.version.for.cluster') }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.serviceoffering.for.cluster') }],
         noderootdisksize: [{ type: 'number', validator: this.validateNumber }],
-        masternodes: [
-          {
-            type: 'number',
-            required: true,
-            message: this.$t('message.error.input.value')
-          },
-          {
-            validator: async (rule, value) => {
-              if (value && (isNaN(value) || value < 2)) {
-                return Promise.reject(this.$t('message.validate.number'))
-              }
-              return Promise.resolve()
-            }
-          }
-        ],
         size: [
           {
             type: 'number',
@@ -361,7 +275,18 @@ export default {
         dockerregistryusername: [{ required: true, message: this.$t('label.required') }],
         dockerregistrypassword: [{ required: true, message: this.$t('label.required') }],
         dockerregistryurl: [{ required: true, message: this.$t('label.required') }],
-        dockerregistryemail: [{ required: true, message: this.$t('label.required') }]
+        dockerregistryemail: [{ required: true, message: this.$t('label.required') }],
+        controlnodes: [
+          { required: true, message: this.$t('message.error.input.value') },
+          {
+            validator: async (rule, value) => {
+              if (value && (isNaN(value) || value < 2)) {
+                return Promise.reject(this.$t('message.validate.number'))
+              }
+              return Promise.resolve()
+            }
+          }
+        ]
       })
     },
     fetchData () {
@@ -486,7 +411,9 @@ export default {
         }
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -501,8 +428,8 @@ export default {
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
           params.noderootdisksize = values.noderootdisksize
         }
-        if (this.isValidValueForKey(values, 'masternodes') && values.masternodes > 0) {
-          params.masternodes = values.masternodes
+        if (this.isValidValueForKey(values, 'controlnodes') && values.controlnodes > 0) {
+          params.controlnodes = values.controlnodes
         }
         if (this.isValidValueForKey(values, 'externalloadbalanceripaddress') && values.externalloadbalanceripaddress !== '') {
           params.externalloadbalanceripaddress = values.externalloadbalanceripaddress
@@ -557,14 +484,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

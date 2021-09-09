@@ -103,7 +103,15 @@
       </draggable>
     </div>
 
-    <a-modal :title="$t('label.edit.tags')" :visible="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      v-if="tagsModalVisible"
+      :title="$t('label.edit.tags')"
+      :visible="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -122,7 +130,7 @@
               <a-input v-model:value="newTagsForm.value" />
             </a-form-item>
           </div>
-          <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;" />
@@ -139,8 +147,16 @@
       </div>
 
     </a-modal>
-    <a-modal :title="ruleModalTitle" :maskClosable="false" :visible="ruleModalVisible" @ok="handleRuleModalForm">
-      <a-form :ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" @submit="handleRuleModalForm">
+    <a-modal
+      v-if="ruleModalVisible"
+      :title="ruleModalTitle"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      :visible="ruleModalVisible"
+      @cancel="ruleModalVisible = false"
+      v-ctrl-enter="handleRuleModalForm">
+      <a-form :ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" @finish="handleRuleModalForm">
         <a-form-item :label="$t('label.number')" ref="number" name="number">
           <a-input-number autoFocus style="width: 100%" v-model:value="form.number" />
         </a-form-item>
@@ -201,6 +217,11 @@
             :autosize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => { ruleModalVisible = false } ">{{ $t('label.cancel') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </a-spin>
@@ -210,7 +231,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import draggable from 'vuedraggable'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'AclListRulesTab',
@@ -361,6 +382,7 @@ export default {
       })
     },
     handleAddTag () {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       this.tagRef.value.validate().then(() => {
@@ -513,6 +535,7 @@ export default {
       })
     },
     handleRuleModalForm (e) {
+      if (this.fetchLoading) return
       if (this.ruleFormMode === 'edit') {
         this.handleEditRule(e)
         return

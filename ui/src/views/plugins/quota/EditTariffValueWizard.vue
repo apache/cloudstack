@@ -25,10 +25,9 @@
     :closable="true"
     :maskClosable="false"
     :visible="showAction"
-    :okText="$t('label.ok')"
-    :cancelText="$t('label.cancel')"
-    @ok="submitTariff"
+    :footer="null"
     @cancel="onClose"
+    v-ctrl-enter="submitTariff"
   >
     <a-form
       :ref="formRef"
@@ -47,6 +46,11 @@
           style="width: 100%"
           v-model:value="form.startdate"></a-date-picker>
       </a-form-item>
+
+      <div :span="24" class="action-button">
+        <a-button @click="onClose">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="submitTariff">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-form>
   </a-modal>
 </template>
@@ -94,6 +98,7 @@ export default {
     },
     submitTariff (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 

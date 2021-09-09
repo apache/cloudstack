@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -23,35 +23,20 @@
         :rules="rules"
         layout="vertical">
         <a-form-item name="name" ref="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus/>
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
-          <template #label>
-            {{ $t('label.displaytext') }}
-            <a-tooltip :title="apiParams.displaytext.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item name="zoneid" ref="zoneid">
-          <template #label>
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             :loading="loadingZone"
             v-model:value="form.zoneid"
@@ -62,34 +47,19 @@
           </a-select>
         </a-form-item>
         <a-form-item name="cidr" ref="cidr">
-          <template #label>
-            {{ $t('label.cidr') }}
-            <a-tooltip :title="apiParams.cidr.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
           <a-input
             v-model:value="form.cidr"
             :placeholder="apiParams.cidr.description"/>
         </a-form-item>
         <a-form-item name="networkdomain" ref="networkdomain">
-          <template #label>
-            {{ $t('label.networkdomain') }}
-            <a-tooltip :title="apiParams.networkdomain.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
           <a-input
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description"/>
         </a-form-item>
         <a-form-item name="vpcofferingid" ref="vpcofferingid">
-          <template #label>
-            {{ $t('label.vpcofferingid') }}
-            <a-tooltip :title="apiParams.vpcofferingid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.vpcofferingid')" :tooltip="apiParams.vpcofferingid.description"/>
           <a-select
             :loading="loadingOffering"
             v-model:value="form.vpcofferingid">
@@ -99,18 +69,13 @@
           </a-select>
         </a-form-item>
         <a-form-item name="start" ref="start">
-          <template #label>
-            {{ $t('label.start') }}
-            <a-tooltip :title="apiParams.start.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.start')" :tooltip="apiParams.start.description"/>
           <a-switch v-model:checked="form.start" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -118,9 +83,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVpc',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       loading: false,
@@ -188,7 +157,9 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -234,12 +205,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

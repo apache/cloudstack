@@ -22,8 +22,16 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface DeploymentPlanningManager extends Manager {
+
+
+    static final ConfigKey<Boolean> allowRouterOnDisabledResource = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.router.on.disabled.resources", "false",
+            "Allow deploying VR in disabled Zones, Pods, and Clusters", true);
+
+    static final ConfigKey<Boolean> allowAdminVmOnDisabledResource = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.admin.vm.on.disabled.resources", "false",
+            "Allow deploying VMs owned by the admin account in disabled Clusters, Pods, and Zones", true);
 
     /**
      * Manages vm deployment stages: First Process Affinity/Anti-affinity - Call

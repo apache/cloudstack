@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
@@ -200,6 +202,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     StorageStrategyFactory _storageStrategyFactory;
     @Inject
     public TaggedResourceService taggedResourceService;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -587,6 +591,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
 
             if (result) {
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
+
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
                             snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
@@ -1286,7 +1292,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        if (storagePoolVO.getPoolType() == StoragePoolType.RBD && !BackupSnapshotAfterTakingSnapshot.value()) {
+        if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
             return DataStoreRole.Primary;
         }
 
@@ -1386,6 +1392,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean backedUpSnapshotsExistsForVolume(Volume volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.BackedUp);
+        if (snapshots.size() > 0) {
+            return true;
+        }
+        return false;
     }
 
     @Override

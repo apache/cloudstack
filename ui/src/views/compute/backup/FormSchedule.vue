@@ -21,7 +21,7 @@
       <label>
         {{ $t('label.header.backup.schedule') }}
       </label>
-      <div class="form">
+      <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
           :ref="formRef"
           :model="form"
@@ -117,6 +117,7 @@
             </a-button>
             <a-button
               :loading="actionLoading"
+              ref="submit"
               type="primary"
               htmlType="submit">
               {{ $t('label.ok') }}
@@ -227,7 +228,8 @@ export default {
           break
       }
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -292,14 +294,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  margin-top: 20px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

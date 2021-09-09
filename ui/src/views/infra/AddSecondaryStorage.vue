@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
         <a-form-item name="name" ref="name" :label="$t('label.name')">
@@ -79,9 +79,9 @@
             <a-input v-model:value="form.storagepolicy" />
           </a-form-item>
         </div>
-        <div class="actions">
+        <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -171,6 +171,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
@@ -239,17 +240,6 @@ export default {
 
   @media (min-width: 1000px) {
     width: 35vw;
-  }
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  button {
-    &:not(:last-child) {
-      margin-right: 10px;
-    }
   }
 }
 </style>

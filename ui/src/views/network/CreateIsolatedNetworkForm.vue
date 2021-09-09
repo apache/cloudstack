@@ -17,43 +17,29 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
           :ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical">
+          layout="vertical"
+          @finish="handleSubmit">
           <a-form-item ref="name" name="name">
-            <template #label>
-              {{ $t('label.name') }}
-              <a-tooltip :title="apiParams.name.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
             <a-input
              v-model:value="form.name"
               :placeholder="$t('label.name')"
               autoFocus/>
           </a-form-item>
           <a-form-item ref="displaytext" name="displaytext">
-            <template #label>
-              {{ $t('label.displaytext') }}
-              <a-tooltip :title="apiParams.displaytext.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
             <a-input
              v-model:value="form.displaytext"
               :placeholder="$t('label.display.text')"/>
           </a-form-item>
           <a-form-item ref="zoneid" name="zoneid">
-            <template #label>
-              {{ $t('label.zoneid') }}
-              <a-tooltip :title="apiParams.zoneid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
             <a-select
              v-model:value="form.zoneid"
               showSearch
@@ -70,12 +56,7 @@
             </a-select>
           </a-form-item>
           <a-form-item ref="domainid" name="domainid" v-if="isAdminOrDomainAdmin()">
-            <template #label>
-              {{ $t('label.domain') }}
-              <a-tooltip :title="apiParams.domainid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
             <a-select
              v-model:value="form.domainid"
               showSearch
@@ -92,12 +73,7 @@
             </a-select>
           </a-form-item>
           <a-form-item ref="networkofferingid" name="networkofferingid">
-            <template #label>
-              {{ $t('label.networkofferingid') }}
-              <a-tooltip :title="apiParams.networkofferingid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
             <a-select
              v-model:value="form.networkofferingid"
               showSearch
@@ -117,12 +93,7 @@
             ref="vlanid"
             name="vlanid"
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
-            <template #label>
-              {{ $t('label.vlan') }}
-              <a-tooltip :title="apiParams.vlan.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             <a-input
              v-model:value="form.vlanid"
               :placeholder="$t('label.vlanid')"/>
@@ -131,12 +102,7 @@
             ref="vpcid"
             name="vpcid"
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.forvpc">
-            <template #label>
-              {{ $t('label.vpcid') }}
-              <a-tooltip :title="apiParams.vpcid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.vpcid')" :tooltip="apiParams.vpcid.description"/>
             <a-select
              v-model:value="form.vpcid"
               showSearch
@@ -155,12 +121,7 @@
           <a-form-item
             ref="externalid"
             name="externalid">
-            <template #label>
-              {{ $t('label.externalid') }}
-              <a-tooltip :title="apiParams.externalid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
             <a-input
              v-model:value="form.externalid"
               :placeholder="$t('label.externalid')"/>
@@ -168,12 +129,7 @@
           <a-form-item
             ref="gateway"
             name="gateway">
-            <template #label>
-              {{ $t('label.gateway') }}
-              <a-tooltip :title="apiParams.gateway.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
             <a-input
              v-model:value="form.gateway"
               :placeholder="$t('label.gateway')"/>
@@ -181,12 +137,7 @@
           <a-form-item
             ref="netmask"
             name="netmask">
-            <template #label>
-              {{ $t('label.netmask') }}
-              <a-tooltip :title="apiParams.netmask.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             <a-input
              v-model:value="form.netmask"
               :placeholder="$t('label.netmask')"/>
@@ -195,12 +146,7 @@
             ref="networkdomain"
             name="networkdomain"
             v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
-            <template #label>
-              {{ $t('label.networkdomain') }}
-              <a-tooltip :title="apiParams.networkdomain.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
             <a-input
              v-model:value="form.networkdomain"
               :placeholder="$t('label.networkdomain')"/>
@@ -209,12 +155,7 @@
             ref="account"
             name="account"
             v-if="accountVisible">
-            <template #label>
-              {{ $t('label.account') }}
-              <a-tooltip :title="apiParams.account.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
             <a-input
              v-model:value="form.account"
               :placeholder="$t('label.account')"/>
@@ -227,6 +168,7 @@
             </a-button>
             <a-button
               :loading="actionLoading"
+              ref="submit"
               type="primary"
               htmlType="submit"
               @click="handleSubmit">
@@ -242,9 +184,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateIsolatedNetworkForm',
+  components: {
+    TooltipLabel
+  },
   props: {
     loading: {
       type: Boolean,
@@ -452,6 +398,7 @@ export default {
       })
     },
     handleSubmit () {
+      if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.actionLoading = true
@@ -544,13 +491,5 @@ export default {
   font-weight: 500;
   color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

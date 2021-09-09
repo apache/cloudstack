@@ -268,8 +268,8 @@ class TestStorageMotion(cloudstackTestCase):
             if not pools:
                 self.skipTest("No suitable storage pools found for volume migration. Skipping")
 
-            self.assert_(isinstance(pools, list), "invalid pool response from listStoragePoolsForMigration: %s" %pools)
-            self.assert_(len(pools) > 0, "no valid storage pools found for migration")
+            self.assertTrue(isinstance(pools, list), "invalid pool response from listStoragePoolsForMigration: %s" %pools)
+            self.assertTrue(len(pools) > 0, "no valid storage pools found for migration")
 
             pool = pools[0]
             self.debug("Migrating Volume-ID: %s to Pool: %s" % (

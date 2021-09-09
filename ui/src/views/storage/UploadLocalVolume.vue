@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
@@ -45,24 +45,14 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item ref="name" name="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="$t('label.volumename')"
             autoFocus />
         </a-form-item>
         <a-form-item ref="zoneId" name="zoneId">
-          <template #label>
-            {{ $t('label.zone') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             v-model:value="form.zoneId">
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
@@ -71,12 +61,7 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="format" name="format">
-          <template #label>
-            {{ $t('label.format') }}
-            <a-tooltip :title="apiParams.format.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           <a-select
             v-model:value="form.format">
             <a-select-option v-for="format in formats" :key="format">
@@ -85,20 +70,15 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="checksum" name="checksum">
-          <template #label>
-            {{ $t('label.volumechecksum') }}
-            <a-tooltip :title="apiParams.checksum.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-model:value="form.checksum"
             :placeholder="$t('label.volumechecksum.description')"
           />
         </a-form-item>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -109,9 +89,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { axios } from '../../utils/request'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadLocalVolume',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       fileList: [],
@@ -165,7 +149,9 @@ export default {
       this.fileList = [...this.fileList, file]
       return false
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -179,6 +165,7 @@ export default {
           }
           params[key] = input
         }
+        this.loading = true
         api('getUploadParamsForVolume', params).then(json => {
           this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
           const { fileList } = this
@@ -193,7 +180,6 @@ export default {
           fileList.forEach(file => {
             formData.append('files[]', file)
           })
-          this.loading = true
           this.uploadPercentage = 0
           axios.post(this.uploadParams.postURL,
             formData,
@@ -239,14 +225,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

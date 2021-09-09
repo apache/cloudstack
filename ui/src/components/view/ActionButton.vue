@@ -37,9 +37,10 @@
         :count="actionBadge[action.api] ? actionBadge[action.api].badgeNum : 0"
         v-if="action.api in $store.getters.apis &&
           action.showBadge && (
-            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
+            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.groupShow(selectedItems, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
-          )" >
+          )"
+        :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
         <a-button
           :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
           :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
@@ -57,9 +58,10 @@
       <a-button
         v-if="action.api in $store.getters.apis &&
           !action.showBadge && (
-            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
+            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.groupShow(selectedItems, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
+        :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
         :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
         :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
         :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
@@ -113,6 +115,12 @@ export default {
       default: false
     },
     selectedRowKeys: {
+      type: Array,
+      default () {
+        return []
+      }
+    },
+    selectedItems: {
       type: Array,
       default () {
         return []

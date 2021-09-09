@@ -23,8 +23,7 @@
     :dataSource="items"
     :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection="['vm', 'alert'].includes($route.name) || $route.name === 'event' && $store.getters.userInfo.roletype === 'Admin'
-      ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -74,7 +73,14 @@
         </span>
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
 
-        <span v-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
+        <span v-if="record.hasannotations">
+          <span v-if="record.id">
+            <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + record.id + '?tab=comments' }"><a-icon style="padding-left: 10px" size="small" type="message" theme="filled"/></router-link>
+          </span>
+          <router-link v-else :to="{ path: $route.path + '/' + record.name }" >{{ text }}</router-link>
+        </span>
+        <span v-else-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
         <span v-else-if="$route.path.startsWith('/alert')">
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
@@ -109,6 +115,16 @@
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
+    </span>
+    <template #entityid="{ record }" href="javascript:;">
+      <router-link :to="{ path: generateCommentsPath(record) }">{{ record.entityname }}</router-link>
+    </template>
+    <template #entitytype="{ record }" href="javascript:;">
+      {{ generateHumanReadableEntityType(record) }}
+    </template>
+    <template #adminsonly="{ record }" v-if="['Admin'].includes($store.getters.userInfo.roletype):" href="javascript:;">
+      <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
+      <a-checkbox :checked="record.adminsonly" disabled v-else />
     </template>
     <template #ipaddress="{ text, record }" href="javascript:;">
       <router-link v-if="['/publicip', '/privategw'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -264,7 +280,7 @@
       <span v-else>{{ text }}</span>
     </template>
     <template #readonly="{ record }">
-      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
+      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>
     <template #current="{ record }">
       <status :text="record.current ? record.current.toString() : 'false'" />
@@ -362,7 +378,7 @@ import { api } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ListView',
@@ -452,9 +468,16 @@ export default {
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
         '/project', '/account',
-        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
+        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
+    },
+    enableGroupAction () {
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
+      ].includes(this.$route.name)
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
@@ -610,6 +633,80 @@ export default {
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     },
+    generateCommentsPath (record) {
+      return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid + '?tab=comments'
+    },
+    generateHumanReadableEntityType (record) {
+      switch (record.entitytype) {
+        case 'VM' : return 'Virtual Machine'
+        case 'HOST' : return 'Host'
+        case 'VOLUME' : return 'Volume'
+        case 'SNAPSHOT' : return 'Snapshot'
+        case 'VM_SNAPSHOT' : return 'VM Snapshot'
+        case 'INSTANCE_GROUP' : return 'Instance Group'
+        case 'NETWORK' : return 'Network'
+        case 'VPC' : return 'VPC'
+        case 'PUBLIC_IP_ADDRESS' : return 'Public IP Address'
+        case 'VPN_CUSTOMER_GATEWAY' : return 'VPC Customer Gateway'
+        case 'TEMPLATE' : return 'Template'
+        case 'ISO' : return 'ISO'
+        case 'SSH_KEYPAIR' : return 'SSH Key Pair'
+        case 'DOMAIN' : return 'Domain'
+        case 'SERVICE_OFFERING' : return 'Service Offfering'
+        case 'DISK_OFFERING' : return 'Disk Offering'
+        case 'NETWORK_OFFERING' : return 'Network Offering'
+        case 'POD' : return 'Pod'
+        case 'ZONE' : return 'Zone'
+        case 'CLUSTER' : return 'Cluster'
+        case 'PRIMARY_STORAGE' : return 'Primary Storage'
+        case 'SECONDARY_STORAGE' : return 'Secondary Storage'
+        case 'VR' : return 'Virtual Router'
+        case 'SYSTEM_VM' : return 'System VM'
+        case 'KUBERNETES_CLUSTER': return 'Kubernetes Cluster'
+        default: return record.entitytype.toLowerCase().replace('_', '')
+      }
+    },
+    entityTypeToPath (entitytype) {
+      switch (entitytype) {
+        case 'VM' : return 'vm'
+        case 'HOST' : return 'host'
+        case 'VOLUME' : return 'volume'
+        case 'SNAPSHOT' : return 'snapshot'
+        case 'VM_SNAPSHOT' : return 'vmsnapshot'
+        case 'INSTANCE_GROUP' : return 'vmgroup'
+        case 'NETWORK' : return 'guestnetwork'
+        case 'VPC' : return 'vpc'
+        case 'PUBLIC_IP_ADDRESS' : return 'publicip'
+        case 'VPN_CUSTOMER_GATEWAY' : return 'vpncustomergateway'
+        case 'TEMPLATE' : return 'template'
+        case 'ISO' : return 'iso'
+        case 'SSH_KEYPAIR' : return 'ssh'
+        case 'DOMAIN' : return 'domain'
+        case 'SERVICE_OFFERING' : return 'computeoffering'
+        case 'DISK_OFFERING' : return 'diskoffering'
+        case 'NETWORK_OFFERING' : return 'networkoffering'
+        case 'POD' : return 'pod'
+        case 'ZONE' : return 'zone'
+        case 'CLUSTER' : return 'cluster'
+        case 'PRIMARY_STORAGE' : return 'storagepool'
+        case 'SECONDARY_STORAGE' : return 'imagestore'
+        case 'VR' : return 'router'
+        case 'SYSTEM_VM' : return 'systemvm'
+        case 'KUBERNETES_CLUSTER': return 'kubernetes'
+        default: return entitytype.toLowerCase().replace('_', '')
+      }
+    },
+    updateAdminsOnly (e) {
+      api('updateAnnotationVisibility', {
+        id: e.target.value,
+        adminsonly: e.target.checked
+      }).finally(() => {
+        const data = this.items
+        const index = data.findIndex(item => item.id === e.target.value)
+        const elem = data[index]
+        elem.adminsonly = e.target.checked
+      })
+    },
     getHostState (host) {
       if (host && host.hypervisor === 'KVM' && host.state === 'Up' && host.details && host.details.secured !== 'true') {
         return 'Unsecure'
@@ -627,6 +724,18 @@ export default {
 
 :deep(.ant-table-small) > .ant-table-content > .ant-table-body {
   margin: 0;
+}
+
+/deep/ .light-row {
+  background-color: #fff;
+}
+
+/deep/ .dark-row {
+  background-color: #f9f9f9;
+}
+
+/deep/ .ant-table-tbody>tr>td, .ant-table-thead>tr>th {
+  overflow-wrap: anywhere;
 }
 </style>
 

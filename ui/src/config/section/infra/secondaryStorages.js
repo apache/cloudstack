@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
@@ -26,7 +27,10 @@ export default {
   columns: () => {
     var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
-      fields.push('readonly')
+      fields.push({
+        field: 'readonly',
+        customTitle: 'access'
+      })
     }
     return fields
   },
@@ -37,22 +41,18 @@ export default {
     }
     return fields
   },
+  resourceType: 'SecondaryStorage',
   tabs: [{
     name: 'details',
-    component: () => shallowRef(defineAsyncComponent(import('@/components/view/DetailsTab.vue')))
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'settings',
-    component: () => shallowRef(defineAsyncComponent(import('@/components/view/SettingsTab.vue')))
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+  }, {
+    name: 'comments',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   }],
   actions: [
-    {
-      api: 'migrateSecondaryStorageData',
-      icon: 'drag-outlined',
-      label: 'label.migrate.data.from.image.store',
-      listView: true,
-      popup: true,
-      component: () => shallowRef(defineAsyncComponent(import('@/views/infra/MigrateData.vue')))
-    },
     {
       api: 'addImageStore',
       icon: 'plus-outlined',
@@ -61,6 +61,14 @@ export default {
       listView: true,
       popup: true,
       component: () => shallowRef(defineAsyncComponent(import('@/views/infra/AddSecondaryStorage.vue')))
+    },
+    {
+      api: 'migrateSecondaryStorageData',
+      icon: 'drag-outlined',
+      label: 'label.migrate.data.from.image.store',
+      listView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/MigrateData.vue')))
     },
     {
       api: 'updateImageStore',

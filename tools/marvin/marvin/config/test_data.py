@@ -234,6 +234,16 @@ test_data = {
             "PortForwarding": 'VirtualRouter',
         },
     },
+    "nw_off_no_services": {
+        "name": 'Test Network offering without services',
+        "displaytext": 'Test Network offering without services',
+        "guestiptype": 'Isolated',
+        "supportedservices": '',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+        },
+    },
     "nw_off_isolated_netscaler": {
         "name": 'Netscaler',
         "displaytext": 'Netscaler',
@@ -306,13 +316,21 @@ test_data = {
             "StaticNat": "VirtualRouter"
         }
     },
+    "nw_off_L2_persistent": {
+        "name": 'Test L2 Network Offering persistent',
+        "displaytext": 'Test L2 Network Offering persistent',
+        "guestiptype": 'L2',
+        "traffictype": 'GUEST',
+        "ispersistent": 'True',
+        "specifyVlan": 'True'
+    },
     "network_offering_vlan": {
         "name": 'Test Network offering',
         "displaytext": 'Test Network offering',
         "guestiptype": 'Isolated',
         "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
         "traffictype": 'GUEST',
-        "specifyvlan": 'False',
+        "specifyVlan": 'False',
         "availability": 'Optional',
         "serviceProviderList": {
             "Dhcp": 'VirtualRouter',
@@ -337,6 +355,10 @@ test_data = {
     "isolated_network": {
         "name": "Isolated Network",
         "displaytext": "Isolated Network"
+    },
+    "l2_network": {
+        "name": "L2 Network",
+        "displaytext": "L2 Network"
     },
     "netscaler_VPX": {
         "ipaddress": "10.223.240.174",

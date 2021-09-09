@@ -24,9 +24,11 @@
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
+        v-ctrl-enter="handleSubmit"
         :ref="formRef"
         :model="form"
         :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
         <a-form-item
           v-if="currentForm === 'Create'"
@@ -127,7 +129,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -285,7 +287,9 @@ export default {
         })
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -362,14 +366,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

@@ -95,7 +95,7 @@ known_categories = {
     'StorageMaintenance': 'Storage Pool',
     'StoragePool': 'Storage Pool',
     'StorageProvider': 'Storage Pool',
-    'syncStoragePool': 'Storage Pool',
+    'updateStorageCapabilities' : 'Storage Pool',
     'SecurityGroup': 'Security Group',
     'SSH': 'SSH',
     'register': 'Registration',
@@ -185,6 +185,7 @@ known_categories = {
     'listAnnotations' : 'Annotations',
     'addAnnotation' : 'Annotations',
     'removeAnnotation' : 'Annotations',
+    'updateAnnotationVisibility' : 'Annotations',
     'CA': 'Certificate',
     'listElastistorInterface': 'Misc',
     'cloudian': 'Cloudian',
@@ -249,10 +250,10 @@ for f in sys.argv:
 
 def xml_for(command):
     name = command['name']
-    async = command['async'] and ' (A)' or ''
+    isAsync = command['async'] and ' (A)' or ''
     dirname = command['dirname']
     return '''<xsl:if test="name=\'%(name)s\'">
-<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(async)s</a></li>
+<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s</a></li>
 </xsl:if>
 ''' % locals()
 

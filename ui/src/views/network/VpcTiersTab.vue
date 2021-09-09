@@ -160,7 +160,10 @@
       :visible="showCreateNetworkModal"
       :title="$t('label.add.new.tier')"
       :maskClosable="false"
-      @ok="handleAddNetworkSubmit">
+      :closable="true"
+      :footer="null"
+      @cancel="showCreateNetworkModal = false"
+      v-ctrl-enter="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form
           @submit.prevent="handleAddNetworkSubmit"
@@ -186,11 +189,19 @@
                 <info-circle-outlined />
               </a-tooltip>
             </template>
-            <a-select v-model:value="createNetworkForm.networkOffering">
+            <a-select
+              v-model:value="createNetworkForm.networkOffering"
+              @change="val => { this.handleNetworkOfferingChange(val) }">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
+          </a-form-item>
+          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
+            <a-input
+              v-model:value="form.vlan"
+              :placeholder="this.$t('label.vlan')"/>
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
@@ -247,6 +258,10 @@
           <a-alert v-else-if="selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
             <template #message><div v-html="$t('message.network.acl.default.deny')"/></template>
           </a-alert>
+          <div :span="24" class="action-button">
+            <a-button @click="showCreateNetworkModal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -255,7 +270,10 @@
       :visible="showAddInternalLB"
       :title="$t('label.add.internal.lb')"
       :maskClosable="false"
-      @ok="handleAddInternalLBSubmit">
+      :closable="true"
+      :footer="null"
+      @cancel="showAddInternalLB = false"
+      v-ctrl-enter="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
         <a-form
           @submit.prevent="handleAddInternalLBSubmit"
@@ -291,6 +309,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="showAddInternalLB = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -301,11 +324,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'VpcTiersTab',
   components: {
-    Status
+    Status,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -333,6 +358,7 @@ export default {
       LBPublicIPs: {},
       staticNats: {},
       vms: {},
+      selectedNetworkOffering: {},
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -440,6 +466,9 @@ export default {
     }
   },
   methods: {
+    isObjectEmpty (obj) {
+      return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
+    },
     initForm () {
       this.createNetworkRef = ref()
       this.internalLbRef = ref()
@@ -450,7 +479,8 @@ export default {
         networkOffering: [{ required: true, message: this.$t('label.required') }],
         gateway: [{ required: true, message: this.$t('label.required') }],
         netmask: [{ required: true, message: this.$t('label.required') }],
-        acl: [{ required: true, message: this.$t('label.required') }]
+        acl: [{ required: true, message: this.$t('label.required') }],
+        vlan: [{ required: true, message: this.$t('message.please.enter.value') }]
       })
       this.internalLbRules = reactive({
         name: [{ required: true, message: this.$t('message.error.internallb.name') }],
@@ -577,6 +607,9 @@ export default {
         this.fetchLoading = false
       })
     },
+    handleNetworkOfferingChange (networkOfferingId) {
+      this.selectedNetworkOffering = this.networkOfferings.filter(offering => offering.id === networkOfferingId)[0]
+    },
     handleNetworkAclChange (aclId) {
       if (aclId) {
         this.selectedNetworkAcl = this.networkAclList.filter(acl => acl.id === aclId)[0]
@@ -597,13 +630,15 @@ export default {
       this.networkid = id
     },
     handleAddNetworkSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
+      this.modalLoading = true
 
       this.createNetworkRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
         this.showCreateNetworkModal = false
-        api('createNetwork', {
+        var params = {
           vpcid: this.resource.id,
           domainid: this.resource.domainid,
           account: this.resource.account,
@@ -615,7 +650,13 @@ export default {
           zoneId: this.resource.zoneid,
           externalid: values.externalId,
           aclid: values.acl
-        }).then(() => {
+        }
+
+        if (values.vlan) {
+          params.vlan = values.vlan
+        }
+
+        api('createNetwork', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
           })
@@ -625,10 +666,15 @@ export default {
           this.parentFetchData()
           this.fetchData()
           this.fetchLoading = false
+          this.modalLoading = false
         })
-      }).catch(() => { this.fetchLoading = false })
+      }).catch(() => {
+        this.fetchLoading = false
+        this.modalLoading = false
+      })
     },
     handleAddInternalLBSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
       this.modalLoading = true
       this.internalLbRef.value.validate().then(() => {
@@ -650,27 +696,34 @@ export default {
             successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             errorMessage: `${this.$t('message.create.internallb.failed')} ` + response,
             errorMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             loadingMessage: this.$t('message.create.internallb.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             }
           })
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.create.internallb.failed'))
+          this.modalLoading = false
         }).finally(() => {
           this.modalLoading = false
           this.fetchLoading = false
           this.showAddInternalLB = false
           this.fetchData()
         })
-      }).catch(() => { this.fetchLoading = true })
+      }).catch(() => {
+        this.fetchLoading = true
+        this.modalLoading = false
+      })
     },
     changePage (page, pageSize) {
       this.page = page

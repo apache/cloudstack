@@ -24,16 +24,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles =  HandleConfigDriveIsoCommand.class)
 public final class LibvirtHandleConfigDriveCommandWrapper extends CommandWrapper<HandleConfigDriveIsoCommand, Answer, LibvirtComputingResource> {
@@ -41,38 +46,103 @@ public final class LibvirtHandleConfigDriveCommandWrapper extends CommandWrapper
 
     @Override
     public Answer execute(final HandleConfigDriveIsoCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-        final KVMStoragePool pool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, command.getDestStore().getUuid());
-        if (pool == null) {
-            return new Answer(command, false, "Pool not found, config drive for KVM is only supported for NFS");
-        }
+        String mountPoint = null;
 
-        final String mountPoint = pool.getLocalPath();
-        final Path isoPath = Paths.get(mountPoint, command.getIsoFile());
-        final File isoFile = new File(mountPoint, command.getIsoFile());
-        if (command.isCreate()) {
-            LOG.debug("Creating config drive: " + command.getIsoFile());
-            if (command.getIsoData() == null) {
-                return new Answer(command, false, "Invalid config drive ISO data received");
-            }
-            if (isoFile.exists()) {
-                LOG.debug("An old config drive iso already exists");
-            }
-            try {
+        try {
+            if (command.isCreate()) {
+                LOG.debug("Creating config drive: " + command.getIsoFile());
+
+                NetworkElement.Location location = NetworkElement.Location.PRIMARY;
+                if (command.isHostCachePreferred()) {
+                    LOG.debug("Using the KVM host for config drive");
+                    mountPoint = libvirtComputingResource.getConfigPath();
+                    location = NetworkElement.Location.HOST;
+                } else {
+                    final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+                    KVMStoragePool pool = null;
+                    String poolUuid = null;
+                    Storage.StoragePoolType poolType = null;
+                    DataStoreTO dataStoreTO = command.getDestStore();
+                    if (dataStoreTO != null) {
+                        if (dataStoreTO instanceof PrimaryDataStoreTO) {
+                            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
+                            poolType = primaryDataStoreTO.getPoolType();
+                        } else {
+                            poolType = Storage.StoragePoolType.NetworkFilesystem;
+                        }
+                        poolUuid = command.getDestStore().getUuid();
+                        pool = storagePoolMgr.getStoragePool(poolType, poolUuid);
+                    }
+
+                    if (pool == null || poolType == null) {
+                        return new HandleConfigDriveIsoAnswer(command, "Unable to create config drive, Pool " + (poolUuid != null ? poolUuid : "") + " not found");
+                    }
+
+                    if (pool.supportsConfigDriveIso()) {
+                        LOG.debug("Using the pool: " + poolUuid + " for config drive");
+                        mountPoint = pool.getLocalPath();
+                    } else if (command.getUseHostCacheOnUnsupportedPool()) {
+                        LOG.debug("Config drive for KVM is not supported for pool type: " + poolType.toString() + ", using the KVM host");
+                        mountPoint = libvirtComputingResource.getConfigPath();
+                        location = NetworkElement.Location.HOST;
+                    } else {
+                        LOG.debug("Config drive for KVM is not supported for pool type: " + poolType.toString());
+                        return new HandleConfigDriveIsoAnswer(command, "Config drive for KVM is not supported for pool type: " + poolType.toString());
+                    }
+                }
+
+                Path isoPath = Paths.get(mountPoint, command.getIsoFile());
+                File isoFile = new File(mountPoint, command.getIsoFile());
+
+                if (command.getIsoData() == null) {
+                    return new HandleConfigDriveIsoAnswer(command, "Invalid config drive ISO data received");
+                }
+                if (isoFile.exists()) {
+                    LOG.debug("An old config drive iso already exists");
+                }
+
                 Files.createDirectories(isoPath.getParent());
                 ConfigDriveBuilder.base64StringToFile(command.getIsoData(), mountPoint, command.getIsoFile());
-            } catch (IOException e) {
-                return new Answer(command, false, "Failed due to exception: " + e.getMessage());
-            }
-        } else {
-            try {
-                Files.deleteIfExists(isoPath);
-            } catch (IOException e) {
-                LOG.warn("Failed to delete config drive: " + isoPath.toAbsolutePath().toString());
-                return new Answer(command, false, "Failed due to exception: " + e.getMessage());
-            }
-        }
 
-        return new Answer(command);
+                return new HandleConfigDriveIsoAnswer(command, location);
+            } else {
+                LOG.debug("Deleting config drive: " + command.getIsoFile());
+                Path configDrivePath = null;
+
+                if (command.isHostCachePreferred()) {
+                    // Check and delete config drive in host storage if exists
+                    mountPoint = libvirtComputingResource.getConfigPath();
+                    configDrivePath = Paths.get(mountPoint, command.getIsoFile());
+                    Files.deleteIfExists(configDrivePath);
+                } else {
+                    final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+                    KVMStoragePool pool = null;
+                    DataStoreTO dataStoreTO = command.getDestStore();
+                    if (dataStoreTO != null) {
+                        if (dataStoreTO instanceof PrimaryDataStoreTO) {
+                            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
+                            Storage.StoragePoolType poolType = primaryDataStoreTO.getPoolType();
+                            pool = storagePoolMgr.getStoragePool(poolType, command.getDestStore().getUuid());
+                        } else {
+                            pool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, command.getDestStore().getUuid());
+                        }
+                    }
+
+                    if (pool != null && pool.supportsConfigDriveIso()) {
+                        mountPoint = pool.getLocalPath();
+                        configDrivePath = Paths.get(mountPoint, command.getIsoFile());
+                        Files.deleteIfExists(configDrivePath);
+                    }
+                }
+
+                return new HandleConfigDriveIsoAnswer(command);
+            }
+        } catch (final IOException e) {
+            LOG.debug("Failed to handle config drive due to " + e.getMessage(), e);
+            return new HandleConfigDriveIsoAnswer(command, "Failed due to exception: " + e.getMessage());
+        } catch (final CloudRuntimeException e) {
+            LOG.debug("Failed to handle config drive due to " + e.getMessage(), e);
+            return new HandleConfigDriveIsoAnswer(command, "Failed due to exception: " + e.toString());
+        }
     }
 }

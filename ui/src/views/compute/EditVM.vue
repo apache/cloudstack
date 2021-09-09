@@ -23,34 +23,21 @@
       :ref="formRef"
       :model="form"
       :rules="rules"
-      @finish="handleSubmit">
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+      @submit="handleSubmit">
       <a-form-item name="name" ref="name">
-        <template #label>
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <info-circle-outlined />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-model:value="form.name"
           autoFocus />
       </a-form-item>
       <a-form-item name="displayname" ref="displayname">
-        <template #label>
-          {{ $t('label.displayname') }}
-          <a-tooltip :title="apiParams.displayname.description">
-             <info-circle-outlined />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
         <a-input v-model:value="form.displayname" />
       </a-form-item>
       <a-form-item name="ostypeid" ref="ostypeid">
-        <template #label>
-          {{ $t('label.ostypeid') }}
-          <a-tooltip :title="apiParams.ostypeid.description">
-             <info-circle-outlined />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
         <a-select
           showSearch
           optionFilterProp="label"
@@ -65,30 +52,15 @@
         </a-select>
       </a-form-item>
       <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
-        <template #label>
-          {{ $t('label.isdynamicallyscalable') }}
-          <a-tooltip :title="apiParams.isdynamicallyscalable.description">
-             <info-circle-outlined />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
         <a-switch v-model:checked="form.isdynamicallyscalable" />
       </a-form-item>
       <a-form-item name="haenable" ref="haenable">
-        <template #label>
-          {{ $t('label.haenable') }}
-          <a-tooltip :title="apiParams.haenable.description">
-             <info-circle-outlined />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
         <a-switch v-model:checked="form.haenable" />
       </a-form-item>
       <a-form-item name="group" ref="group">
-        <template #label>
-          {{ $t('label.group') }}
-          <a-tooltip :title="apiParams.group.description">
-             <info-circle-outlined />
-          </a-tooltip>
-        </template>
+        <tooltip-label slot="label" :title="$t('label.group')" :tooltip="apiParams.group.description"/>
         <a-auto-complete
           v-model:value="form.group"
           :filterOption="(input, option) => {
@@ -99,7 +71,7 @@
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -108,9 +80,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'EditVM',
+  components: {
+    TooltipLabel
+  },
   props: {
     action: {
       type: Object,
@@ -123,6 +99,9 @@ export default {
   },
   data () {
     return {
+      serviceOffering: {},
+      template: {},
+      dynamicScalingVmConfig: false,
       loading: false,
       osTypes: {
         loading: false,
@@ -156,6 +135,44 @@ export default {
     fetchData () {
       this.fetchOsTypes()
       this.fetchInstaceGroups()
+      this.fetchServiceOfferingData()
+      this.fetchTemplateData()
+      this.fetchDynamicScalingVmConfig()
+    },
+    fetchServiceOfferingData () {
+      const params = {}
+      params.id = this.resource.serviceofferingid
+      params.isrecursive = true
+      var apiName = 'listServiceOfferings'
+      api(apiName, params).then(json => {
+        const offerings = json.listserviceofferingsresponse.serviceoffering
+        this.serviceOffering = offerings[0]
+      })
+    },
+    fetchTemplateData () {
+      const params = {}
+      console.log('templateid ' + this.resource.templateid)
+      params.id = this.resource.templateid
+      params.isrecursive = true
+      params.templatefilter = 'all'
+      var apiName = 'listTemplates'
+      api(apiName, params).then(json => {
+        const templateResponses = json.listtemplatesresponse.template
+        this.template = templateResponses[0]
+      })
+    },
+    fetchDynamicScalingVmConfig () {
+      const params = {}
+      params.name = 'enable.dynamic.scale.vm'
+      params.zoneid = this.resource.zoneid
+      var apiName = 'listConfigurations'
+      api(apiName, params).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration
+        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
+      })
+    },
+    canDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
     },
     fetchOsTypes () {
       this.osTypes.loading = true
@@ -190,10 +207,13 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        params.isdynamicallyscalable = values.isdynamicallyscalable || false
-        params.haenable = values.haenable || false
+        if (values.isdynamicallyscalable !== undefined) {
+          params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.haenable !== undefined) {
+          params.haenable = values.haenable
+        }
         params.group = values.group
-
         this.loading = true
 
         api('updateVirtualMachine', params).then(json => {

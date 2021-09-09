@@ -17,72 +17,78 @@
 
 <template>
   <div>
-    <a-card class="breadcrumb-card">
-      <a-row>
-        <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
-          <breadcrumb :resource="resource">
-            <template #end>
-              <a-button
-                :loading="loading"
-                style="margin-bottom: 5px"
-                shape="round"
-                size="small"
-                @click="fetchData({ irefresh: true })">
-                <template #icon><reload-outlined /></template>
-                {{ $t('label.refresh') }}
-              </a-button>
-              <a-switch
-                v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
-                style="margin-left: 8px"
-                :checked-children="$t('label.metrics')"
-                :un-checked-children="$t('label.metrics')"
-                :checked="$store.getters.metrics"
-                @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
-              <a-tooltip placement="right">
-                <template #title>
-                  {{ $t('label.filterby') }}
-                </template>
-                <a-select
-                  v-if="!dataView && filters && filters.length > 0"
-                  :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                    ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                    ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
-                  style="min-width: 100px; margin-left: 10px"
-                  @change="changeFilter">
-                  <template #suffixIcon><filter-outlined /></template>
-                  <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
-                    {{ $t('label.all') }}
-                  </a-select-option>
-                  <a-select-option v-for="filter in filters" :key="filter">
-                    {{ $t('label.' + filter) }}
-                  </a-select-option>
-                </a-select>
-              </a-tooltip>
-            </template>
-          </breadcrumb>
-        </a-col>
-        <a-col
-          :span="device === 'mobile' ? 24 : 12"
-          :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
-          <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
-          <action-button
-            v-else
-            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
-            :loading="loading"
-            :actions="actions"
-            :selectedRowKeys="selectedRowKeys"
-            :dataView="dataView"
-            :resource="resource"
-            @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
-          <search-view
-            v-if="!dataView"
-            :searchFilters="searchFilters"
-            :searchParams="searchParams"
-            :apiName="apiName"/>
-        </a-col>
-      </a-row>
-    </a-card>
+    <a-affix :offsetTop="78">
+      <a-card class="breadcrumb-card" style="z-index: 10">
+        <a-row>
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+            <breadcrumb :resource="resource">
+              <span slot="end">
+                <a-button
+                  :loading="loading"
+                  style="margin-bottom: 5px"
+                  shape="round"
+                  size="small"
+                  icon="reload"
+                  @click="fetchData({ irefresh: true })">
+                  {{ $t('label.refresh') }}
+                </a-button>
+                <a-switch
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.metrics')"
+                  :un-checked-children="$t('label.metrics')"
+                  :checked="$store.getters.metrics"
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-tooltip placement="right">
+                  <template slot="title">
+                    {{ $t('label.filterby') }}
+                  </template>
+                  <a-select
+                    v-if="!dataView && filters && filters.length > 0"
+                    :placeholder="$t('label.filterby')"
+                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                    style="min-width: 100px; margin-left: 10px"
+                    @change="changeFilter">
+                    <a-icon slot="suffixIcon" type="filter" />
+                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                      {{ $t('label.all') }}
+                    </a-select-option>
+                    <a-select-option v-for="filter in filters" :key="filter">
+                      {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
+                      <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
+                    </a-select-option>
+                  </a-select>
+                </a-tooltip>
+              </span>
+            </breadcrumb>
+          </a-col>
+          <a-col
+            :span="device === 'mobile' ? 24 : 12"
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
+            <action-button
+              v-else
+              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
+              :loading="loading"
+              :actions="actions"
+              :selectedRowKeys="selectedRowKeys"
+              :selectedItems="selectedItems"
+              :dataView="dataView"
+              :resource="resource"
+              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
+            <search-view
+              v-if="!dataView"
+              :searchFilters="searchFilters"
+              :searchParams="searchParams"
+              :apiName="apiName"
+              @search="onSearch"
+              @change-filter="changeFilter"/>
+          </a-col>
+        </a-row>
+      </a-card>
+    </a-affix>
 
     <div v-show="showAction">
       <keep-alive v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0)">
@@ -126,12 +132,14 @@
         :visible="showAction"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
+        :footer="null"
         style="top: 20px;"
-        @ok="handleSubmit"
-        @cancel="closeAction"
+        :width="modalWidth"
+        :ok-button-props="getOkProps()"
+        :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
+        @cancel="closeAction"
+        v-ctrl-enter="handleSubmit"
         centered
       >
         <template #title>
@@ -145,15 +153,38 @@
           </a>
         </template>
         <a-spin :spinning="actionLoading">
-          <span v-if="currentAction.message || 'displayName' in currentAction">
-            <a-alert type="warning">
-              <template #message>
-                <div v-if="currentAction.message" v-html="$t(currentAction.message)"></div>
-                <div v-if="'displayName' in currentAction">
-                  <strong>{{ currentAction.displayName(resource) }}</strong>
-                </div>
-              </template>
-            </a-alert>
+          <span v-if="currentAction.message">
+            <div v-if="selectedRowKeys.length > 0">
+              <a-alert
+                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                type="error">
+                <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+                <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+              <a-alert v-else type="warning">
+                <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-else>
+              <a-alert type="warning">
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-divider />
+              <a-table
+                v-if="selectedRowKeys.length > 0"
+                size="middle"
+                :columns="chosenColumns"
+                :dataSource="selectedItems"
+                :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+                :pagination="true"
+                style="overflow-y: auto"
+              >
+              </a-table>
+            </div>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
@@ -162,19 +193,13 @@
             :rules="rules"
             @finish="handleSubmit"
             layout="vertical" >
-            <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
-              <a-form-item
-                :ref="field.name"
-                :v-bind="field.name"
-                :name="field.name"
-                v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
-              >
-                <template #label>
-                  {{ $t('label.' + field.name) }}
-                  <a-tooltip :title="field.description">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                </template>
+            <a-form-item
+              v-for="(field, fieldIndex) in currentAction.paramFields"
+              :key="fieldIndex"
+              :v-bind="field.name"
+              v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
+            >
+              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
                 <a-switch
                   v-if="field.type==='boolean'"
@@ -267,14 +292,20 @@
                   :autoFocus="fieldIndex === firstIndex"
                   v-model:value="form[field.name]"
                   :placeholder="field.description" />
-              </a-form-item>
+              </span>
+            </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-spin>
+        <br />
       </a-modal>
     </div>
 
-    <div v-if="dataView">
+    <div v-if="dataView" style="margin-top: -10px">
       <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
       <resource-view
         v-else
@@ -293,12 +324,13 @@
         @refresh="fetchData" />
       <a-pagination
         class="row-element"
+        style="margin-top: 10px"
         size="small"
         :current="page"
         :pageSize="pageSize"
         :total="itemCount"
         :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '200'] : ['10', '20', '50', '100', '200']"
+        :pageSizeOptions="pageSizeOptions"
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
@@ -308,6 +340,12 @@
         </template>
       </a-pagination>
     </div>
+    <bulk-action-progress
+      :showGroupActionModal="showGroupActionModal"
+      :selectedItems="selectedItems"
+      :selectedColumns="selectedColumns"
+      :message="modalInfo"
+      @handle-cancel="handleCancel" />
   </div>
 </template>
 
@@ -324,6 +362,8 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import BulkActionProgress from '@/components/view/BulkActionProgress'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Resource',
@@ -332,7 +372,9 @@ export default {
     ResourceView,
     ListView,
     ActionButton,
-    SearchView
+    SearchView,
+    BulkActionProgress,
+    TooltipLabel
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -354,10 +396,15 @@ export default {
       loading: false,
       actionLoading: false,
       columns: [],
+      selectedColumns: [],
+      chosenColumns: [],
+      showGroupActionModal: false,
+      selectedItems: [],
       items: [],
+      modalInfo: {},
       itemCount: 0,
       page: 1,
-      pageSize: 10,
+      pageSize: this.$store.getters.defaultListViewPageSize,
       resource: {},
       selectedRowKeys: [],
       currentAction: {},
@@ -370,8 +417,9 @@ export default {
       searchParams: {},
       actions: [],
       confirmDirty: false,
-      promises: [],
-      firstIndex: 0
+      firstIndex: 0,
+      modalWidth: '30vw',
+      promises: []
     }
   },
   beforeUnmount () {
@@ -389,15 +437,64 @@ export default {
       }
     })
     eventBus.on('async-job-complete', (action) => {
+      if (this.$route.path.includes('/vm/')) {
+        if (action && 'api' in action && ['destroyVirtualMachine'].includes(action.api)) {
+          return
+        }
+      }
+
+      if ((this.$route.path.includes('/publicip/') && ['firewall', 'portforwarding', 'loadbalancing'].includes(this.$route.query.tab)) ||
+        (this.$route.path.includes('/guestnetwork/') && (this.$route.query.tab === 'egress.rules' || this.$route.query.tab === 'public.ip.addresses'))) {
+        return
+      }
+
+      if (this.$route.path.includes('/template/') || this.$route.path.includes('/iso/')) {
+        return
+      }
       this.fetchData()
     })
     eventBus.on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
     })
+    eventBus.on('update-bulk-job-status', (items, action) => {
+      for (const item of items) {
+        this.$store.getters.headerNotices.map(function (j) {
+          if (j.jobid === item.jobid) {
+            j.bulkAction = action
+          }
+        })
+      }
+    })
 
-    if (this.device === 'desktop') {
-      this.pageSize = 20
-    }
+    eventBus.on('update-resource-state', (selectedItems, resource, state, jobid) => {
+      if (selectedItems.length === 0) {
+        return
+      }
+      var tempResource = []
+      if (selectedItems && resource) {
+        if (resource.includes(',')) {
+          resource = resource.split(',')
+          tempResource = resource
+        } else {
+          tempResource.push(resource)
+        }
+        for (var r = 0; r < tempResource.length; r++) {
+          var objIndex = 0
+          if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
+            objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else {
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+          }
+          if (state && objIndex !== -1) {
+            selectedItems[objIndex].status = state
+          }
+          if (jobid && objIndex !== -1) {
+            selectedItems[objIndex].jobid = jobid
+          }
+        }
+      }
+    })
+
     this.currentPath = this.$route.fullPath
     this.fetchData()
     if ('projectid' in this.$route.query) {
@@ -420,7 +517,6 @@ export default {
           this.pageSize = Number(to.query.pagesize)
         } else {
           this.page = 1
-          this.pageSize = (this.device === 'desktop' ? 20 : 10)
         }
         this.itemCount = 0
         this.fetchData()
@@ -438,7 +534,41 @@ export default {
       this.fetchData()
     }
   },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
+    },
+    pageSizeOptions () {
+      var sizes = [20, 50, 100, 200, this.$store.getters.defaultListViewPageSize]
+      if (this.device !== 'desktop') {
+        sizes.unshift(10)
+      }
+      return [...new Set(sizes)].sort(function (a, b) {
+        return a - b
+      }).map(String)
+    }
+  },
   methods: {
+    getStyle () {
+      if (['snapshot', 'vmsnapshot', 'publicip'].includes(this.$route.name)) {
+        return 'table-cell'
+      }
+      return 'inline-flex'
+    },
+    getOkProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'default' } }
+      } else {
+        return { props: { type: 'primary' } }
+      }
+    },
+    getCancelProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'primary' } }
+      } else {
+        return { props: { type: 'default' } }
+      }
+    },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
         return
@@ -473,7 +603,12 @@ export default {
 
       params.listall = true
       if (this.$route.meta.params) {
-        Object.assign(params, this.$route.meta.params)
+        const metaParams = this.$route.meta.params
+        if (typeof metaParams === 'function') {
+          Object.assign(params, metaParams())
+        } else {
+          Object.assign(params, metaParams)
+        }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'templatefilter' in params && this.routeName === 'template') {
@@ -553,18 +688,32 @@ export default {
 
       const customRender = {}
       for (var columnKey of this.columnKeys) {
-        var key = columnKey
+        let key = columnKey
+        let title = columnKey
         if (typeof columnKey === 'object') {
-          key = Object.keys(columnKey)[0]
-          customRender[key] = columnKey[key]
+          if ('customTitle' in columnKey && 'field' in columnKey) {
+            key = columnKey.field
+            title = columnKey.customTitle
+            customRender[key] = columnKey[key]
+          } else {
+            key = Object.keys(columnKey)[0]
+            title = Object.keys(columnKey)[0]
+            customRender[key] = columnKey[key]
+          }
         }
         this.columns.push({
-          title: this.$t('label.' + String(key).toLowerCase()),
+          title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
           slots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
       }
+      this.chosenColumns = this.columns.filter(column => {
+        return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
+          this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
+          this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
+          this.$t('label.created'), this.$t('label.order')].includes(column.title)
+      })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
@@ -573,9 +722,7 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
-        if (this.$route.path.startsWith('/ssh/')) {
-          params.name = this.$route.params.id
-        } else if (this.$route.path.startsWith('/vmsnapshot/')) {
+        if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
@@ -584,6 +731,7 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
+
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -619,6 +767,18 @@ export default {
           })
         }
 
+        if (this.apiName === 'listAnnotations') {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -627,9 +787,7 @@ export default {
               this.items[idx][key] = func(this.items[idx])
             }
           }
-          if (this.$route.path.startsWith('/ssh')) {
-            this.items[idx].id = this.items[idx].name
-          } else if (this.$route.path.startsWith('/ldapsetting')) {
+          if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
         }
@@ -681,6 +839,14 @@ export default {
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
+      if (selection?.length > 0) {
+        this.modalWidth = '50vw'
+        this.selectedItems = (this.items.filter(function (item) {
+          return selection.indexOf(item.id) !== -1
+        }))
+      } else {
+        this.modalWidth = '30vw'
+      }
     },
     execAction (action, isGroupAction) {
       const self = this
@@ -737,12 +903,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (!(this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].value)) {
-          this.rules[param.name] = []
-          this.setRules(param)
-        }
-
-        if (param.type === 'list' && ['tags', 'hosttags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -831,7 +992,7 @@ export default {
       }).then(function () {
       })
     },
-    pollActionCompletion (jobId, action, resourceName, showLoading = true) {
+    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
       if (this.shouldNavigateBack(action)) {
         action.isFetchData = false
       }
@@ -842,6 +1003,9 @@ export default {
           description: resourceName,
           name: resourceName,
           successMethod: result => {
+            if (this.selectedItems.length > 0) {
+              eventBus.emit('update-resource-state', this.selectedItems, resource, 'success')
+            }
             if (action.response) {
               const description = action.response(result.jobresult)
               if (description) {
@@ -855,12 +1019,17 @@ export default {
             resolve(true)
           },
           errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.emit('update-resource-state', this.selectedItems, resource, 'failed')
+            }
             resolve(true)
           },
           loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
           showLoading: showLoading,
           catchMessage: this.$t('error.fetching.async.job.result'),
-          action
+          action,
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal,
+          resourceId: resource
         })
       })
     },
@@ -879,8 +1048,35 @@ export default {
         }
       })
     },
+    handleCancel () {
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.message = {}
+    },
     handleSubmit (e) {
+      if (this.actionLoading) return
+      this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
+        if (this.selectedRowKeys.length > 0) {
+          this.selectedColumns = this.chosenColumns
+          this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+          this.selectedColumns.splice(0, 0, {
+            dataIndex: 'status',
+            title: this.$t('label.operation.status'),
+            scopedSlots: { customRender: 'status' },
+            filters: [
+              { text: 'In Progress', value: 'InProgress' },
+              { text: 'Success', value: 'success' },
+              { text: 'Failed', value: 'failed' }
+            ]
+          })
+          this.showGroupActionModal = true
+          this.modalInfo.title = this.currentAction.label
+          this.modalInfo.docHelp = this.currentAction.docHelp
+        }
         this.formRef.value.validate().then(() => {
           const values = toRaw(this.form)
           this.actionLoading = true
@@ -912,17 +1108,25 @@ export default {
       return new Promise((resolve, reject) => {
         const action = this.currentAction
         api(action.api, params).then(json => {
-          resolve(this.handleResponse(json, resourceName, action, false))
+          resolve(this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false))
           this.closeAction()
         }).catch(error => {
           if ([401].includes(error.response.status)) {
             return
           }
-          this.$notifyError(error)
+          if (this.selectedItems.length !== 0) {
+            this.$notifyError(error)
+            eventBus.emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+          }
         })
       })
     },
-    handleResponse (response, resourceName, action, showLoading = true) {
+    getDataIdentifier (params) {
+      var dataIdentifier = ''
+      dataIdentifier = params.id || params.username || params.name || params.vmsnapshotid || params.ids
+      return dataIdentifier
+    },
+    handleResponse (response, resourceName, resource, action, showLoading = true) {
       return new Promise(resolve => {
         let jobId = null
         for (const obj in response) {
@@ -930,6 +1134,12 @@ export default {
             if (response[obj].jobid) {
               jobId = response[obj].jobid
             } else {
+              if (this.selectedItems.length > 0) {
+                eventBus.emit('update-resource-state', this.selectedItems, resource, 'success')
+                if (resource) {
+                  this.selectedItems.filter(item => item === resource)
+                }
+              }
               var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
                 (resourceName ? ' - ' + resourceName : '')
               var duration = 2
@@ -937,23 +1147,25 @@ export default {
                 message = message + ' - ' + this.$t(action.successMessage)
                 duration = 5
               }
-              this.$message.success({
-                content: message,
-                key: action.label + resourceName,
-                duration: duration
-              })
+              if (this.selectedItems.length === 0) {
+                this.$message.success({
+                  content: message,
+                  key: action.label + resourceName,
+                  duration: duration
+                })
+              }
+              break
             }
-            break
           }
         }
         if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
           this.$store.dispatch('UpdateConfiguration')
         }
         if (jobId) {
-          return resolve(this.pollActionCompletion(jobId, action, resourceName, showLoading))
+          eventBus.emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
         }
-
-        return resolve(false)
+        resolve(false)
       })
     },
     execSubmit (e) {
@@ -972,13 +1184,13 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1027,7 +1239,13 @@ export default {
           args = [action.api, params]
         }
         api(...args).then(json => {
-          this.handleResponse(json, resourceName, action).then(jobId => {
+          var response = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
+          if (!response) {
+            this.fetchData()
+            this.closeAction()
+            return
+          }
+          response.then(jobId => {
             hasJobId = jobId
             if (this.shouldNavigateBack(action)) {
               this.$router.go(-1)
@@ -1044,6 +1262,7 @@ export default {
           }
 
           console.log(error)
+          eventBus.emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false
@@ -1060,6 +1279,7 @@ export default {
       delete query.account
       delete query.domainid
       delete query.state
+      delete query.annotationfilter
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1077,6 +1297,8 @@ export default {
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
         }
+      } else if (this.$route.name === 'comment') {
+        query.annotationfilter = filter
       }
       query.filter = filter
       query.page = '1'
@@ -1267,7 +1489,6 @@ export default {
 }
 
 .row-element {
-  margin-top: 10px;
   margin-bottom: 10px;
 }
 

@@ -59,7 +59,10 @@
           :visible="editModalVisible"
           :footer="null"
           :afterClose="closeAction"
-          :maskClosable="false">
+          :maskClosable="false"
+          :closable="true"
+          @cancel="closeAction"
+          v-ctrl-enter="updateProjectRole">
           <a-form
             :ref="formRef"
             :model="form"
@@ -73,7 +76,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" ref="submit" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -82,7 +85,10 @@
           :visible="createModalVisible"
           :footer="null"
           :afterClose="closeAction"
-          :maskClosable="false">
+          :maskClosable="false"
+          :closable="true"
+          @cancel="closeAction"
+          v-ctrl-enter="createProjectRole">
           <a-form
             :ref="formRef"
             :model="form"
@@ -99,7 +105,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" ref="submit" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -111,7 +117,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import ProjectRolePermissionTab from '@/views/project/iam/ProjectRolePermissionTab'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ProjectRoleTab',
@@ -200,7 +206,9 @@ export default {
         name: [{ required: true, message: this.$t('message.error.required.input') }]
       }
     },
-    updateProjectRole () {
+    updateProjectRole (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         var params = {}
@@ -236,7 +244,9 @@ export default {
         this.createModalVisible = false
       }
     },
-    createProjectRole () {
+    createProjectRole (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -284,11 +294,3 @@ export default {
   }
 }
 </script>
-<style lang="scss" scoped>
-.action-button {
-    text-align: right;
-    button {
-      margin-right: 5px;
-    }
-  }
-</style>

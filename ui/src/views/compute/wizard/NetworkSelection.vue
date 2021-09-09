@@ -76,7 +76,6 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      :cancelText="$t('label.cancel')"
       @cancel="showCreateForm = false"
       centered
       width="auto">

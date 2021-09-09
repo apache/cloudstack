@@ -14,6 +14,7 @@
       "label.cpuused": "label.cpuused",
       "label.memoryallocated": "label.memoryallocated",
       "label.memused": "label.memused",
+<<<<<<< HEAD
       "label.select": "label.select",
       "label.search": "label.search",
       "label.total": "label.total",
@@ -25,6 +26,23 @@
       "message.success.migrating": "message.success.migrating",
       "message.migrating.failed": "message.migrating.failed",
       "message.migrating.processing": "message.migrating.processing",
+=======
+      "label.cluster": "label.cluster",
+      "label.pod": "label.pod",
+      "label.storage.migration.required": "label.storage.migration.required",
+      "label.select": "label.select",
+      "label.search": "label.search",
+      "label.ok": "label.ok",
+      "label.total": "label.total",
+      "label.items": "label.items",
+      "label.page": "label.page",
+      "label.no": "label.no",
+      "label.migrating": "label.migrating",
+      "message.request.failed": "message.request.failed",
+      "message.success.migrating": "message.success.migrating",
+      "message.migrating.processing": "message.migrating.processing",
+      "message.migrating.failed": "message.migrating.failed",
+>>>>>>> main
       "error.fetching.async.job.result": "error.fetching.async.job.result"
     },
     "de": {
@@ -35,7 +53,28 @@
       "select": "select-de",
       "ok": "ok-de",
       "message.load.host.failed": "Failed to load hosts",
-      "message.migrating.vm.to.host.failed": "Failed to migrate VM to host"
+      "message.migrating.vm.to.host.failed": "Failed to migrate VM to host",
+      "label.name": "label.name",
+      "label.suitability": "label.suitability",
+      "label.cpuused": "label.cpuused",
+      "label.memoryallocated": "label.memoryallocated",
+      "label.memused": "label.memused",
+      "label.cluster": "label.cluster",
+      "label.pod": "label.pod",
+      "label.storage.migration.required": "label.storage.migration.required",
+      "label.select": "label.select",
+      "label.search": "label.search",
+      "label.ok": "label.ok",
+      "label.total": "label.total",
+      "label.items": "label.items",
+      "label.page": "label.page",
+      "label.no": "label.no",
+      "label.migrating": "label.migrating",
+      "message.request.failed": "message.request.failed",
+      "message.success.migrating": "message.success.migrating",
+      "message.migrating.processing": "message.migrating.processing",
+      "message.migrating.failed": "message.migrating.failed",
+      "error.fetching.async.job.result": "error.fetching.async.job.result"
     }
   },
   "routes": []

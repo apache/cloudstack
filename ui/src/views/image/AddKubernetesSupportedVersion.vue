@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,35 +25,20 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item ref="semanticversion" name="semanticversion">
-          <template #label>
-            {{ $t('label.semanticversion') }}
-            <a-tooltip :title="apiParams.semanticversion.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
           <a-input
             v-model:value="form.semanticversion"
             :placeholder="apiParams.semanticversion.description"
             autoFocus />
         </a-form-item>
         <a-form-item ref="name" name="name">
-          <template #label>
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="$t('label.name')"/>
         </a-form-item>
         <a-form-item ref="zoneid" name="zoneid">
-          <template #label>
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             v-model:value="form.zoneid"
@@ -70,45 +55,25 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="url" name="url">
-          <template #label>
-            {{ $t('label.url') }}
-            <a-tooltip :title="apiParams.url.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.url.description"/>
           <a-input
             v-model:value="form.url"
             :placeholder="apiParams.url.description" />
         </a-form-item>
         <a-form-item ref="checksum" name="checksum">
-          <template #label>
-            {{ $t('label.checksum') }}
-            <a-tooltip :title="apiParams.checksum.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-model:value="form.checksum"
             :placeholder="apiParams.checksum.description" />
         </a-form-item>
         <a-form-item ref="mincpunumber" name="mincpunumber">
-          <template #label>
-            {{ $t('label.mincpunumber') }}
-            <a-tooltip :title="apiParams.mincpunumber.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
           <a-input
             v-model:value="form.mincpunumber"
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
         <a-form-item ref="minmemory" name="minmemory">
-          <template #label>
-            {{ $t('label.minmemory') }}
-            <a-tooltip :title="apiParams.minmemory.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
           <a-input
             v-model:value="form.minmemory"
             :placeholder="apiParams.minmemory.description"/>
@@ -116,7 +81,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -126,10 +91,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddKubernetesSupportedVersion',
-  props: {},
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       zones: [],
@@ -213,7 +181,9 @@ export default {
         }
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -260,14 +230,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

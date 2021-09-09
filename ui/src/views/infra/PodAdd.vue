@@ -17,13 +17,14 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form
+    <a-form 
       :ref="formRef"
       :model="form"
       :rules="rules"
       layout="vertical"
       class="form"
-      @finish="handleSubmit">
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit">
 
       <a-form-item name="zoneid" ref="zoneid" class="form__item" :label="$t('label.zone')">
         <a-select
@@ -87,9 +88,9 @@
 
       <a-divider />
 
-      <div class="actions">
-        <a-button @click="() => $parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button html-type="submit" type="primary">{{ $t('label.ok') }}</a-button>
+      <div :span="24" class="action-button">
+        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="handleSubmit" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>
@@ -170,6 +171,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
@@ -258,18 +260,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
 

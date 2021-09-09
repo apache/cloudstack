@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="$t('label.newinstance')">
           <a-form
+            v-ctrl-enter="handleSubmit"
             :ref="formRef"
             :model="form"
             :rules="rules"
@@ -163,13 +164,8 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
-                    <a-form-item v-if="zoneSelected && templateConfigurationExists">
-                      <template #label>
-                        {{ $t('label.configuration') }}
-                        <a-tooltip :title="$t('message.ovf.configurations')">
-                          <info-circle-outlined />
-                        </a-tooltip>
-                      </template>
+                    <a-form-item v-if="zoneSelected && templateConfigurationExists" name="templateConfiguration" ref="templateConfiguration">
+                      <tooltip-label slot="label" :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
                       <a-select
                         showSearch
                         optionFilterProp="label"
@@ -203,9 +199,9 @@
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
-                      cpunumber-input-decorator="cpunumber"
-                      cpuspeed-input-decorator="cpuspeed"
-                      memory-input-decorator="memory"
+                      cpuNumberInputDecorator="cpunumber"
+                      cpuSpeedInputDecorator="cpuspeed"
+                      memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
@@ -297,13 +293,8 @@
                         :key="nicIndex"
                         :v-bind="nic.name"
                         :name="'networkMap.nic-' + nic.InstanceID.toString()"
-                        :ref="'networkMap.nic-' + nic.InstanceID.toString()">
-                        <template #label>
-                          {{ nic.elementName + ' - ' + nic.name }}
-                          <a-tooltip :title="nic.networkDescription">
-                            <info-circle-outlined />
-                          </a-tooltip>
-                        </template>
+                        :ref="'networkMap.nic-' + nic.InstanceID.toString()">>
+                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
                         <a-select
                           showSearch
                           optionFilterProp="label"
@@ -390,12 +381,7 @@
                         :v-bind="property.key"
                         :name="'properties.' + escapePropertyKey(property.key)"
                         :ref="'properties.' + escapePropertyKey(property.key)">
-                        <template #label style="text-transform: capitalize">
-                          {{ property.label }}
-                          <a-tooltip :title="property.description">
-                            <info-circle-outlined />
-                          </a-tooltip>
-                        </template>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
@@ -450,13 +436,11 @@
                   </span>
                   <div style="margin-top: 15px" v-show="showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
+                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
-                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
-                          v-model:value="form.boottype"
-                          @change="fetchBootModes"
-                        >
+                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
+                          @change="onBootTypeChange">
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
@@ -464,7 +448,7 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')" name="bootmode" ref="bootmode">
                         <a-select
-                          v-model:value="form.bootmode">
+                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]">
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -477,6 +461,16 @@
                       name="bootintosetup"
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
+                    </a-form-item>
+                    <a-form-item :label="$t('label.dynamicscalingenabled')" name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                      <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
+                      <a-form-item>
+                        <a-switch
+                          v-model:checked="form.dynamicscalingenabled"
+                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
+                          :disabled="!isDynamicallyScalable()"
+                          @change="val => { dynamicscalingenabled = val }"/>
+                      </a-form-item>
                     </a-form-item>
                     <a-form-item :label="$t('label.userdata')" name="userdata" ref="userdata">
                       <a-textarea
@@ -531,22 +525,18 @@
                 <template #description>
                   <div style="margin-top: 10px">
                     {{ $t('message.read.accept.license.agreements') }}
-                    <a-form-item
-                      style="margin-top: 10px"
-                      v-for="(license, licenseIndex) in templateLicenses"
-                      :key="licenseIndex"
-                      :v-bind="license.id">
-                      <template #label>
-                        <span style="text-transform: capitalize">
-                          {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
-                        </span>
-                      </template>
-                      <a-textarea
-                        :value="license.text"
-                        :auto-size="{ minRows: 3, maxRows: 8 }"
-                        readOnly />
-                    </a-form-item>
-                    <a-form-item name="licensesaccepted" ref="licensesaccepted">
+                    <a-form-item>
+                      <div
+                        style="margin-top: 10px"
+                        v-for="(license, licenseIndex) in templateLicenses"
+                        :key="licenseIndex"
+                        :v-bind="license.id">
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
+                        <a-textarea
+                          :value="license.text"
+                          :auto-size="{ minRows: 3, maxRows: 8 }"
+                          readOnly />
+                      </div>
                       <a-checkbox
                         style="margin-top: 10px"
                         v-model:checked="form.licensesaccepted">
@@ -567,7 +557,7 @@
               <a-button @click="() => $router.back()" :disabled="loading.deploy">
                 {{ $t('label.cancel') }}
               </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <rocket-outlined />
                 {{ $t('label.launch.vm') }}
                 <template #icon><down-outlined /></template>
@@ -613,6 +603,7 @@ import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Wizard',
@@ -628,7 +619,8 @@ export default {
     InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
-    SecurityGroupSelection
+    SecurityGroupSelection,
+    TooltipLabel
   },
   props: {
     visible: {
@@ -647,6 +639,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       startvm: true,
+      dynamicscalingenabled: true,
       vm: {
         name: null,
         zoneid: null,
@@ -682,7 +675,8 @@ export default {
         groups: [],
         keyboards: [],
         bootTypes: [],
-        bootModes: []
+        bootModes: [],
+        dynamicScalingVmConfig: false
       },
       rowCount: {},
       loading: {
@@ -730,7 +724,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultNetwork: '',
+      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabList: [
@@ -754,9 +748,8 @@ export default {
       diskSelected: {},
       diskIOpsMin: 0,
       diskIOpsMax: 0,
-      minIOPs: 0,
-      maxIOPs: 0,
-      formModel: {}
+      minIops: 0,
+      maxIops: 0
     }
   },
   computed: {
@@ -875,6 +868,13 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        dynamicScalingVmConfig: {
+          list: 'listConfigurations',
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            name: 'enable.dynamic.scale.vm'
+          }
         }
       }
     },
@@ -954,6 +954,9 @@ export default {
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     },
+    dynamicScalingVmConfigValue () {
+      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+    },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
@@ -1021,11 +1024,10 @@ export default {
           this.vm.clustername = cluster.name
         }
 
-        const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
-        if (host) {
-          this.vm.hostid = host.id
-          this.vm.hostname = host.name
-        }
+      if (this.networks) {
+        this.vm.networks = this.networks
+        this.vm.defaultnetworkid = this.defaultnetworkid
+      }
 
         if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
@@ -1080,6 +1082,16 @@ export default {
           this.vm.affinitygroup = this.affinityGroups
         }
       }
+    }
+  },
+  serviceOffering (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
+  template (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
     }
   },
   created () {
@@ -1238,6 +1250,9 @@ export default {
         this.instanceConfig = toRaw(this.form)
       })
     },
+    isDynamicallyScalable () {
+      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
       this.options.zones = await this.fetchZones()
@@ -1252,38 +1267,20 @@ export default {
       await this.fetchAllTemplates()
     },
     fetchBootTypes () {
-      const bootTypes = []
-
-      bootTypes.push({
-        id: 'BIOS',
-        description: 'BIOS'
-      })
-      bootTypes.push({
-        id: 'UEFI',
-        description: 'UEFI'
-      })
-
-      this.options.bootTypes = bootTypes
+      this.options.bootTypes = [
+        { id: 'BIOS', description: 'BIOS' },
+        { id: 'UEFI', description: 'UEFI' }
+      ]
     },
     fetchBootModes (bootType) {
-      const bootModes = []
-
+      const bootModes = [
+        { id: 'LEGACY', description: 'LEGACY' }
+      ]
       if (bootType === 'UEFI') {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
-        bootModes.push({
-          id: 'SECURE',
-          description: 'SECURE'
-        })
-      } else {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
+        bootModes.unshift(
+          { id: 'SECURE', description: 'SECURE' }
+        )
       }
-
       this.options.bootModes = bootModes
     },
     fetchInstaceGroups () {
@@ -1375,6 +1372,7 @@ export default {
     },
     updateDefaultNetworks (id) {
       this.defaultNetwork = id
+      this.form.defaultnetworkid = id
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
@@ -1400,15 +1398,10 @@ export default {
       this.handleSubmit()
       this.form.stayonpage = false
     },
-    handleSubmit () {
+    handleSubmit (e) {
       console.log('wizard submit')
-      if (this.hasError) {
-        this.$notification.error({
-          message: this.$t('message.request.failed'),
-          description: this.$t('error.form.message')
-        })
-        return
-      }
+      e.preventDefault()
+      if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
 
@@ -1453,6 +1446,7 @@ export default {
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
+        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
@@ -1490,8 +1484,8 @@ export default {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
         if (this.isCustomizedIOPS) {
-          deployVmData['details[0].minIops'] = this.minIOPs
-          deployVmData['details[0].maxIops'] = this.maxIOPs
+          deployVmData['details[0].minIops'] = this.minIops
+          deployVmData['details[0].maxIops'] = this.maxIops
         }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
@@ -1532,9 +1526,9 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultNetwork) {
+                if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
-                    networkid: this.defaultNetwork
+                    networkid: this.defaultnetworkid
                   }
                   arrNetwork.unshift(ipToNetwork)
                 } else {
@@ -1610,6 +1604,7 @@ export default {
                     duration: 0
                   })
                 }
+                eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
@@ -2027,6 +2022,10 @@ export default {
     },
     updateIOPSValue (input, value) {
       this[input] = value
+    },
+    onBootTypeChange (value) {
+      this.fetchBootModes(value)
+      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
     }
   }
 }

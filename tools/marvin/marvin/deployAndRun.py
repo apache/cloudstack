@@ -44,11 +44,11 @@ class VerifyAndExit(object):
                 if original_func(*args, **kwargs) == FAILED:
                     exit_check = True
             except Exception as e:
-                print "===Exception.Please Check:===", e
+                print("===Exception.Please Check:===", e)
                 exit_check = True
             finally:
                 if exit_check:
-                    print "==== %s ====" % self.msg
+                    print("==== %s ====" % self.msg)
                     MarvinCliHelp.print_cmds_help()
                     sys.exit(1)
         return new_function
@@ -135,12 +135,12 @@ class MarvinCliHelp(object):
     @classmethod
     def print_cmds_help(cls):
         msg = ''
-        for cmd_name, cmd_txt in MarvinCliCommands.cmds_info.items():
+        for cmd_name, cmd_txt in list(MarvinCliCommands.cmds_info.items()):
             msg = msg + \
                 '\n----------------------------------------------------\n'
             cmd_info = ShellColor.BOLD + ShellColor.RED + \
                 'cmd_name:%s' % str(cmd_name) + ShellColor.END
-            for key, value in cmd_txt.iteritems():
+            for key, value in cmd_txt.items():
                 cmd_info = cmd_info + '\n' + \
                     str(key) + ' : ' + str(value).strip('\n')
             msg = msg + cmd_info
@@ -199,7 +199,7 @@ class MarvinCli(cmd.Cmd, object):
             self.__configFile = out_dict.get('config-file', '')
             if not self.__configFile:
                 return FAILED
-            print "\n==== Parsing Input Options Successful ===="
+            print("\n==== Parsing Input Options Successful ====")
             return SUCCESS
         return FAILED
 
@@ -222,7 +222,7 @@ class MarvinCli(cmd.Cmd, object):
             self.__requiredHw = out_dict.get("required-hardware")
             if not all([self.__tcPath, self.__configFile]):
                 return FAILED
-            print "\n==== Parsing Input Options Successful ===="
+            print("\n==== Parsing Input Options Successful ====")
             return SUCCESS
         return FAILED
 
@@ -246,12 +246,12 @@ class MarvinCli(cmd.Cmd, object):
                 return SUCCESS
             return FAILED
         except Exception as e:
-            print "====Exception Occurred under start_marvin: %s ====" % \
-                  GetDetailExceptionInfo(e)
+            print("====Exception Occurred under start_marvin: %s ====" % \
+                  GetDetailExceptionInfo(e))
             return FAILED
 
     def run_test_suites(self):
-        print "\n==== Started Running Test Cases ===="
+        print("\n==== Started Running Test Cases ====")
         xunit_out_path = "/tmp/marvin_xunit_out" + \
                          str(random.randrange(1, 10000)) + ".xml"
         marvin_tc_run_cmd = "nosetests-2.7 -s --with-marvin --marvin-config=%s --with-xunit --xunit-file=%s  %s  -a tags=advanced, required_hardware=%s  --zone=%s --hypervisor=%s"
@@ -272,7 +272,7 @@ class MarvinCli(cmd.Cmd, object):
             engine.loadTestsFromDir(self.__tcPath)
         engine.run()
         '''
-        print "\n==== Running Test Cases Successful ===="
+        print("\n==== Running Test Cases Successful ====")
 
     @VerifyAndExit(
         "cmd failed, may be invalid input options, please check help")
@@ -283,7 +283,7 @@ class MarvinCli(cmd.Cmd, object):
             self.start_marvin()
             return SUCCESS
         except Exception as e:
-            print "==== deploy cmd failed :%s ==== " % str(e)
+            print("==== deploy cmd failed :%s ==== " % str(e))
             return FAILED
 
     @VerifyAndExit(
@@ -295,7 +295,7 @@ class MarvinCli(cmd.Cmd, object):
             self.run_test_suites()
             return SUCCESS
         except Exception as e:
-            print "==== deploydc cmd failed:%s ==== " % str(e)
+            print("==== deploydc cmd failed:%s ==== " % str(e))
             return FAILED
 
     @VerifyAndExit(
@@ -311,7 +311,7 @@ class MarvinCli(cmd.Cmd, object):
                     if os.path.exists(value):
                         api_spec_file = value
                     elif not os.path.exists(api_spec_file):
-                        print "=== Mentioned api spec file :%s does not exists ===" % str(api_spec_file)
+                        print("=== Mentioned api spec file :%s does not exists ===" % str(api_spec_file))
                         sys.exit(1)
                     if key.lower() == 'cs-folder-path':
                         cs_api_folder = self.create_marvin_api_folder(value)
@@ -321,7 +321,7 @@ class MarvinCli(cmd.Cmd, object):
                 cg.generateCodeFromXML(api_spec_file)
                 return SUCCESS
             except Exception as e:
-                print "==== Generating apis from api spec file failed: %s ====" % str(e.message())
+                print("==== Generating apis from api spec file failed: %s ====" % str(e.message()))
                 return FAILED
         return FAILED
 
@@ -354,7 +354,7 @@ response=json'
                 cg.generateCodeFromJSON(endpoint_url)
                 return SUCCESS
             except Exception as e:
-                print "==== Generating apis from end point failed: %s ====" % str(e.message())
+                print("==== Generating apis from end point failed: %s ====" % str(e.message()))
                 return FAILED
         return FAILED
 
@@ -367,7 +367,7 @@ response=json'
             self.run_test_suites()
             return SUCCESS
         except Exception as e:
-            print "==== run test failed: %s ====" % str(e.message())
+            print("==== run test failed: %s ====" % str(e.message()))
             return FAILED
 
     def install_marvin(self):
@@ -375,9 +375,9 @@ response=json'
             marvin_setup_file_path = self.__csFolder + "/tools/marvin/setup.py"
         try:
             os.system("python %s install" % str(marvin_setup_file_path))
-            print "==== Marvin Installed Successfully ===="
+            print("==== Marvin Installed Successfully ====")
         except Exception as e:
-            print "==== Marvin Installation Failed ===="
+            print("==== Marvin Installation Failed ====")
 
     @VerifyAndExit(
         "cmd failed, may be invalid input options, please check help")
@@ -387,7 +387,7 @@ response=json'
             self.install_marvin()
             return SUCCESS
         except Exception as e:
-            print "==== build from end point and install marvin failed: %s ====" % str(e)
+            print("==== build from end point and install marvin failed: %s ====" % str(e))
             return FAILED
 
     @VerifyAndExit(
@@ -398,7 +398,7 @@ response=json'
             self.install_marvin()
             return SUCCESS
         except Exception as e:
-            print "==== sync from spec file and install  marvin failed: %s ====" % str(e)
+            print("==== sync from spec file and install  marvin failed: %s ====" % str(e))
             return FAILED
 
 
@@ -427,12 +427,12 @@ def main():
         MarvinCliHelp.help_printversion()
         sys.exit(0)
     if len(sys.argv) > 1:
-        if sys.argv[1].lower() not in MarvinCliCommands.cmds_info.keys():
-            print "\n==== Invalid Command ===="
+        if sys.argv[1].lower() not in list(MarvinCliCommands.cmds_info.keys()):
+            print("\n==== Invalid Command ====")
             sys.exit(1)
         args = ' '.join(args)
         if '-h' in args or '--help' in args:
-            print MarvinCliCommands.cmds_info[sys.argv[0]]
+            print(MarvinCliCommands.cmds_info[sys.argv[0]])
         else:
             MarvinCli().onecmd(args)
     sys.exit(0)

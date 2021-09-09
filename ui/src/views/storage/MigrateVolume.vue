@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="migrate-volume-container">
+  <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
         <a-alert type="warning">
@@ -62,7 +62,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" @click="submitMigrateVolume">
+      <a-button type="primary" ref="submit" @click="submitMigrateVolume">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -88,7 +88,8 @@ export default {
       selectedStoragePool: null,
       diskOfferings: [],
       replaceDiskOffering: false,
-      selectedDiskOffering: null
+      selectedDiskOffering: null,
+      isSubmitted: false
     }
   },
   created () {
@@ -139,10 +140,12 @@ export default {
       this.$emit('close-action')
     },
     submitMigrateVolume () {
+      if (this.isSubmitted) return
       if (this.storagePools.length === 0) {
         this.closeModal()
         return
       }
+      this.isSubmitted = true
       api('migrateVolume', {
         livemigrate: this.resource.vmstate === 'Running',
         storageid: this.selectedStoragePool,
@@ -153,15 +156,20 @@ export default {
           jobId: response.migratevolumeresponse.jobid,
           successMessage: this.$t('message.success.migrate.volume'),
           errorMessage: this.$t('message.migrate.volume.failed'),
+          errorMethod: () => {
+            this.isSubmitted = false
+          },
           loadingMessage: this.$t('message.migrate.volume.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
+            this.isSubmitted = false
           }
         })
         this.closeModal()
       }).catch(error => {
         this.$notifyError(error)
+        this.isSubmitted = false
       })
     }
   }

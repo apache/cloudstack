@@ -41,10 +41,13 @@ const spyConsole = {
 const state = {
   user: {
     apis: mockData.apis,
-    info: mockData.info
+    info: mockData.info,
+    headerNotices: mockData.headerNotices,
+    asyncJobIds: mockData.asyncJobIds
   }
 }
 
+<<<<<<< HEAD
 const actions = {
   SetProject: jest.fn(({ commit }, project) => {}),
   ToggleTheme: jest.fn(({ commit }, theme) => {})
@@ -83,6 +86,20 @@ router = common.createMockRouter(mockData.routes)
 store = common.createMockStore(state, actions)
 i18n = common.createMockI18n('en', mockData.messages)
 
+=======
+const mutations = {
+  SET_HEADER_NOTICES: (state, jobsJsonArray) => {
+    state.user.headerNotices = jobsJsonArray
+  }
+}
+
+store = common.createMockStore(state, {}, mutations)
+i18n = common.createMockI18n('en', mockData.messages)
+const spyConsole = {
+  log: null,
+  warn: null
+}
+>>>>>>> main
 mocks = {
   $notifyError: jest.fn((error) => {
     return error
@@ -738,11 +755,27 @@ describe('Views > AutogenView.vue', () => {
         await router.push({ name: 'testRouter17' })
         await flushPromises()
 
+<<<<<<< HEAD
         expect(wrapper.vm.items).toEqual([{
           id: 'test-hostname-value',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
+=======
+      it('check $notifyError is called when api is called with throw error', (done) => {
+        const errorMock = {
+          response: {},
+          message: 'Error: throw exception error'
+        }
+        mockAxios.mockRejectedValue(errorMock)
+        router = common.createMockRouter([{
+          name: 'testRouter22',
+          path: '/test-router-22',
+          meta: {
+            icon: 'test-router-22',
+            permission: ['testApiNameCase1']
+          }
+>>>>>>> main
         }])
         expect(wrapper.vm.resource).toEqual({
           id: 'test-hostname-value',
@@ -753,11 +786,16 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('check $notifyError is called when api is called with throw error', async (done) => {
         const errorMock = {
           response: {},
           message: 'Error: throw exception error'
         }
+=======
+        wrapper = factory({ router: router })
+        router.push({ name: 'testRouter22' })
+>>>>>>> main
 
         await mockAxios.mockRejectedValue(errorMock)
         await router.push({ name: 'testRouter18' })
@@ -768,6 +806,7 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('check $notifyError is called and router path = /exception/403 when api is called with throw error', async (done) => {
         const errorMock = {
           response: {
@@ -793,6 +832,27 @@ describe('Views > AutogenView.vue', () => {
           },
           message: 'Error: Request Header Fields Too Large'
         }
+=======
+      it('check $notifyError is called and router path = /exception/404 when api is called with throw error', (done) => {
+        const errorMock = {
+          response: {
+            status: 430
+          },
+          message: 'Error: Request Header Fields Too Large'
+        }
+        mockAxios.mockRejectedValue(errorMock)
+        router = common.createMockRouter([{
+          name: 'testRouter23',
+          path: '/test-router-23',
+          meta: {
+            icon: 'test-router-23',
+            permission: ['testApiNameCase1']
+          }
+        }])
+
+        wrapper = factory({ router: router })
+        router.push({ name: 'testRouter23' })
+>>>>>>> main
 
         await mockAxios.mockRejectedValue(errorMock)
         await router.push({ name: 'testRouter19' })
@@ -804,13 +864,32 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('check $notifyError is called and router path = /exception/500 when api is called with throw error', async (done) => {
+=======
+      it('check $notifyError is called and router path = /exception/500 when api is called with throw error', (done) => {
+>>>>>>> main
         const errorMock = {
           response: {
             status: 530
           },
           message: 'Error: Site is frozen'
         }
+<<<<<<< HEAD
+=======
+        mockAxios.mockRejectedValue(errorMock)
+        router = common.createMockRouter([{
+          name: 'testRouter23',
+          path: '/test-router-23',
+          meta: {
+            icon: 'test-router-23',
+            permission: ['testApiNameCase1']
+          }
+        }])
+
+        wrapper = factory({ router: router })
+        router.push({ name: 'testRouter23' })
+>>>>>>> main
 
         await mockAxios.mockRejectedValue(errorMock)
         await router.push({ name: 'testRouter19' })
@@ -1088,6 +1167,7 @@ describe('Views > AutogenView.vue', () => {
         })
         await flushPromises()
 
+<<<<<<< HEAD
         expect(wrapper.vm.currentAction.paramFields).toEqual([
           { name: 'id', type: 'uuid' },
           { name: 'tags', type: 'string' },
@@ -1114,6 +1194,84 @@ describe('Views > AutogenView.vue', () => {
         wrapper.vm.setRules = jest.fn((param) => {})
         wrapper.vm.listUuidOpts = jest.fn((param) => {})
         wrapper.vm.fillEditFormFieldValues = jest.fn()
+=======
+      it('check currentAction params and paramsField when execAction() is called', () => {
+        wrapper = factory()
+        wrapper.vm.$nextTick()
+        wrapper.vm.execAction({
+          api: 'testApiNameCase5'
+        })
+        expect(wrapper.vm.currentAction.params).toEqual([
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' },
+          { name: 'name', type: 'string' },
+          { name: 'id', type: 'string' }
+        ])
+        expect(wrapper.vm.currentAction.paramFields).toEqual([])
+        expect(wrapper.vm.showAction).toBeTruthy()
+      })
+
+      it('check currentAction params and paramsField when execAction() is called with args is exists', () => {
+        wrapper = factory()
+        wrapper.vm.execAction({
+          api: 'testApiNameCase7',
+          args: ['column1', 'column2', 'column3']
+        })
+        expect(wrapper.vm.currentAction.params).toEqual([
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' },
+          { name: 'name', type: 'string' },
+          { name: 'id', type: 'string' }
+        ])
+        expect(wrapper.vm.currentAction.paramFields).toEqual([
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' }
+        ])
+        expect(wrapper.vm.showAction).toBeTruthy()
+      })
+
+      it('check currentAction params and paramsField when execAction() is called with args is function', () => {
+        wrapper = factory()
+        wrapper.vm.$nextTick()
+        wrapper.vm.execAction({
+          api: 'testApiNameCase8',
+          resource: { id: 'test-id-value', name: 'test-name-value' },
+          args: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype) ? ['column1', 'column2', 'column3'] : ['id', 'name']
+          }
+        })
+        expect(wrapper.vm.currentAction.params).toEqual([
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' },
+          { name: 'name', type: 'string' },
+          { name: 'id', type: 'string' }
+        ])
+        expect(wrapper.vm.currentAction.paramFields).toEqual([
+          { name: 'id', type: 'string' },
+          { name: 'name', type: 'string' }
+        ])
+        expect(wrapper.vm.showAction).toBeTruthy()
+      })
+
+      it('check currentAction paramsField and listUuidOpts() is called when execAction() is called', () => {
+        wrapper = factory()
+        const spy = jest.spyOn(wrapper.vm, 'listUuidOpts')
+
+        wrapper.vm.$nextTick(() => {
+          wrapper.vm.execAction({
+            api: 'testApiNameCase6',
+            args: ['id', 'tags', 'column1', 'column2', 'account'],
+            mapping: {
+              column2: () => {
+                return 'test-value'
+              }
+            }
+          })
+>>>>>>> main
 
         const fillEditFormFieldValues = jest.spyOn(wrapper.vm, 'fillEditFormFieldValues')
 
@@ -1453,6 +1611,16 @@ describe('Views > AutogenView.vue', () => {
         await mockAxios.mockRejectedValue({
           response: {},
           stack: 'Error: throw exception error'
+<<<<<<< HEAD
+=======
+        }
+        mockAxios.mockRejectedValue(errorMock)
+        wrapper = factory()
+
+        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        wrapper.setData({
+          apiName: 'testApiNameCase1'
+>>>>>>> main
         })
         await wrapper.setData({ apiName: 'testApiNameCase1' })
         await wrapper.vm.listUuidOpts(param)
@@ -1481,6 +1649,7 @@ describe('Views > AutogenView.vue', () => {
     })
 
     describe('pollActionCompletion()', () => {
+<<<<<<< HEAD
       it('check $notification, fetchData() when pollActionCompletion() is called with action is empty', async (done) => {
         originalFunc.fetchData = wrapper.vm.fetchData
         wrapper.vm.fetchData = jest.fn((args) => {})
@@ -1488,15 +1657,44 @@ describe('Views > AutogenView.vue', () => {
         const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
         await mockAxios.mockResolvedValue({
+=======
+      it('check $notification when pollActionCompletion() is called with action is empty', (done) => {
+        const mockData = {
+>>>>>>> main
           queryasyncjobresultresponse: {
             jobstatus: 1,
             jobresult: {
               name: 'test-name-value'
             }
           }
+<<<<<<< HEAD
         })
         await wrapper.vm.pollActionCompletion('test-job-id', { label: 'label.name' })
         await flushPromises()
+=======
+        }
+        mockAxios.mockResolvedValue(mockData)
+        wrapper = factory()
+
+        const jobId = 'test-job-id'
+        const action = {}
+
+        wrapper.vm.pollActionCompletion(jobId, action)
+
+        setTimeout(() => {
+          expect(mocks.$notification.info).not.toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'queryAsyncJobResult',
+              jobId: jobId,
+              response: 'json'
+            }
+          })
+>>>>>>> main
 
         expect(fetchData).toHaveBeenCalled()
         expect(mocks.$notification.info).not.toHaveBeenCalled()
@@ -1514,26 +1712,63 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('check $notification, fetchData() when pollActionCompletion() is called with action is not empty', async (done) => {
         originalFunc.fetchData = wrapper.vm.fetchData
         wrapper.vm.fetchData = jest.fn((args) => {})
         const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
         await mockAxios.mockResolvedValue({
+=======
+      it('check $notification when pollActionCompletion() is called with action is not empty', (done) => {
+        const mockData = {
+>>>>>>> main
           queryasyncjobresultresponse: {
             jobstatus: 1,
             jobresult: {
               name: 'test-name-value'
             }
           }
+<<<<<<< HEAD
         })
         await wrapper.vm.pollActionCompletion('test-job-id', {
+=======
+        }
+        mockAxios.mockResolvedValue(mockData)
+        wrapper = factory()
+        const jobId = 'test-job-id'
+        const action = {
+>>>>>>> main
           label: 'labelname',
           response: (jobResult) => {
             return jobResult.name
           }
+<<<<<<< HEAD
         })
         await flushPromises()
+=======
+        }
+        wrapper.vm.pollActionCompletion(jobId, action)
+
+        setTimeout(() => {
+          expect(mocks.$notification.info).toHaveBeenCalled()
+          expect(mocks.$notification.info).toHaveLastReturnedWith({
+            message: 'test-name-en',
+            description: 'test-description',
+            duration: 0
+          })
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'queryAsyncJobResult',
+              jobId: jobId,
+              response: 'json'
+            }
+          })
+>>>>>>> main
 
         expect(fetchData).toHaveBeenCalled()
         expect(mocks.$notification.info).toHaveBeenCalled()
@@ -1556,6 +1791,7 @@ describe('Views > AutogenView.vue', () => {
 
         done()
       })
+<<<<<<< HEAD
 
       it('fetchData() should be called when $pollJob error response', async (done) => {
         originalFunc.fetchData = wrapper.vm.fetchData
@@ -1592,6 +1828,8 @@ describe('Views > AutogenView.vue', () => {
         })
         done()
       })
+=======
+>>>>>>> main
     })
 
     describe('fillEditFormFieldValues()', () => {
@@ -1956,10 +2194,14 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.handleConfirmBlur({ target: { value: true } }, 'confirmpassword')
         await flushPromises()
 
+<<<<<<< HEAD
         expect(wrapper.vm.confirmDirty).toBeTruthy()
         done()
       })
     })
+=======
+        spyConsole.warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+>>>>>>> main
 
     describe('validateTwoPassword()', () => {
       it('validate password result is empty when validateTwoPassword() calling with value empty', async (done) => {
@@ -1982,6 +2224,10 @@ describe('Views > AutogenView.vue', () => {
         } catch (e) {
           result = e
         }
+<<<<<<< HEAD
+=======
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         expect(result).not.toBeUndefined()
         expect(result).toEqual('message validate password')
@@ -2001,8 +2247,17 @@ describe('Views > AutogenView.vue', () => {
       it('validate field `password` valid when validateTwoPassword() is called with `confirmpassword` is empty', async (done) => {
         wrapper.vm.form = { confirmpassword: '' }
 
+<<<<<<< HEAD
         const result = await wrapper.vm.validateTwoPassword({ field: 'password' }, 'abc123')
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         expect(result).toBeUndefined()
         done()
@@ -2023,10 +2278,19 @@ describe('Views > AutogenView.vue', () => {
         originalFunc.RefValidateFields = wrapper.vm.formRef.value.validateFields
         wrapper.vm.formRef.value.validateFields = jest.fn((field) => {})
 
+<<<<<<< HEAD
         const formRefValidate = jest.spyOn(wrapper.vm.formRef.value, 'validateFields')
         await wrapper.setData({ confirmDirty: true })
         const result = await wrapper.vm.validateTwoPassword({ field: 'password' }, 'abc123')
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         expect(result).toBeUndefined()
         expect(formRefValidate).toHaveBeenCalledTimes(1)
@@ -2048,8 +2312,17 @@ describe('Views > AutogenView.vue', () => {
       it('validate result empty when validateTwoPassword() is called with rules.field not equals `password` or `confirmpassword`', async (done) => {
         wrapper.vm.form = {}
 
+<<<<<<< HEAD
         const result = await wrapper.vm.validateTwoPassword({ field: 'name' }, 'abc123')
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         expect(result).toBeUndefined()
         done()
@@ -2069,6 +2342,7 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.setRules({ name: 'field', required: true })
         await flushPromises()
 
+<<<<<<< HEAD
         expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-input' }] })
         done()
       })
@@ -2076,6 +2350,30 @@ describe('Views > AutogenView.vue', () => {
       it('check rules when setRules() is called with args field.type equal `boolean`', async (done) => {
         await wrapper.vm.setRules({ name: 'field', required: true, type: 'boolean' })
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        wrapper.vm.$nextTick(() => {
+          wrapper.vm.form.getFieldDecorator('column1', { initialValue: 1 })
+          const event = document.createEvent('Event')
+          wrapper.vm.execSubmit(event)
+
+          expect(mockAxios).toHaveBeenCalledTimes(1)
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'testApiNameCase1',
+              column1: 'column-value2',
+              response: 'json'
+            }
+          })
+>>>>>>> main
 
         expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-input' }] })
         done()
@@ -2094,6 +2392,7 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.setRules({ name: 'field', required: true })
         await flushPromises()
 
+<<<<<<< HEAD
         expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-select' }] })
         done()
       })
@@ -2101,6 +2400,30 @@ describe('Views > AutogenView.vue', () => {
       it('check rules when setRules() is called with field.name equal `keypair`', async (done) => {
         await wrapper.vm.setRules({ name: 'keypair', required: true })
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        wrapper.vm.$nextTick(() => {
+          wrapper.vm.form.getFieldDecorator('column1', { initialValue: [1, 2] })
+          const event = document.createEvent('Event')
+          wrapper.vm.execSubmit(event)
+
+          expect(mockAxios).toHaveBeenCalledTimes(1)
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'testApiNameCase1',
+              column1: 'test-id-2,test-id-3',
+              response: 'json'
+            }
+          })
+>>>>>>> main
 
         expect(wrapper.vm.rules).toEqual({ keypair: [{ required: true, message: 'required-select' }] })
         done()
@@ -2111,6 +2434,7 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.setRules({ name: 'account', required: true })
         await flushPromises()
 
+<<<<<<< HEAD
         expect(wrapper.vm.rules).toEqual({ account: [{ required: true, message: 'required-select' }] })
         done()
       })
@@ -2118,6 +2442,30 @@ describe('Views > AutogenView.vue', () => {
       it('check rules when setRules() is called with field.type equal `uuid`', async (done) => {
         await wrapper.vm.setRules({ name: 'field', required: true, type: 'uuid' })
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        wrapper.vm.$nextTick(() => {
+          wrapper.vm.form.getFieldDecorator('account', { initialValue: 'test-account-value' })
+          const event = document.createEvent('Event')
+          wrapper.vm.execSubmit(event)
+
+          expect(mockAxios).toHaveBeenCalledTimes(1)
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'createAccount',
+              account: 'test-account-value',
+              response: 'json'
+            }
+          })
+>>>>>>> main
 
         expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-select' }] })
         done()
@@ -2155,9 +2503,18 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('check rules when setRules() is called with field.name equal `currentpassword`', async (done) => {
         originalFunc.validateTwoPassword = wrapper.vm.validateTwoPassword
         wrapper.vm.validateTwoPassword = jest.fn()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         await wrapper.vm.setRules({ name: 'currentpassword', required: true })
         await flushPromises()
@@ -2187,9 +2544,18 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('check rules when setRules() is called with field.name equal `certificate`', async (done) => {
         await wrapper.vm.setRules({ name: 'certificate', required: true })
         await flushPromises()
+=======
+        const mockData = {
+          testapinamecase1response: {
+            testapinamecase1: {}
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         expect(wrapper.vm.rules).toEqual({
           certificate: [
@@ -2362,9 +2728,14 @@ describe('Views > AutogenView.vue', () => {
             id: 'test-resource-id',
             response: 'json'
           }
+<<<<<<< HEAD
         })
         done()
       })
+=======
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
       it('API should be called when form has input key exist in currentAction.params, type is boolean and value is undefined', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
@@ -2476,9 +2847,14 @@ describe('Views > AutogenView.vue', () => {
             column1: false,
             response: 'json'
           }
+<<<<<<< HEAD
         })
         done()
       })
+=======
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
       it('API should be called when form has not input tag', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
@@ -2556,9 +2932,14 @@ describe('Views > AutogenView.vue', () => {
             column1: 'column-value2',
             response: 'json'
           }
+<<<<<<< HEAD
         })
         done()
       })
+=======
+        }
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
       it('API should be called when form has input key not exist in currentAction.mapping, type is list and currentAction.params[input] has id', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
@@ -2605,6 +2986,7 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.execSubmit(event)
         await flushPromises()
 
+<<<<<<< HEAD
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
@@ -2737,6 +3119,51 @@ describe('Views > AutogenView.vue', () => {
           },
           resource: {}
         })
+=======
+      it('check router name when api is called and currentAction.icon = delete and dataView is true', async (done) => {
+        const mockData = {
+          testapinamecase1response: {
+            jobid: 'test-job-id'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter26',
+          path: '/test-router-26',
+          meta: {
+            icon: 'test-router-26'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          data: {
+            currentAction: {
+              api: 'testApiNameCase1',
+              icon: 'delete',
+              loading: false,
+              label: 'labelname',
+              params: [
+                { name: 'column1', type: 'string' }
+              ],
+              paramFields: [
+                { name: 'column1', type: 'string', description: '', required: false }
+              ]
+            },
+            resource: {}
+          }
+        })
+        router.push({ name: 'testRouter26', query: { dataView: true } })
+        await wrapper.vm.$nextTick()
+        wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
+        const event = document.createEvent('Event')
+>>>>>>> main
         await wrapper.vm.execSubmit(event)
         await flushPromises()
 
@@ -2754,6 +3181,7 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('API should be called when form has input key do not fall under special condition.', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
         originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
@@ -2788,11 +3216,45 @@ describe('Views > AutogenView.vue', () => {
             command: 'testApiNameCase1',
             column1: 'test-column-value',
             response: 'json'
+=======
+      it('check pollActionCompletion() and action AddAsyncJob is called when api is called and response have jobId result', async (done) => {
+        store = common.createMockStore(state)
+        wrapper = factory({
+          store: store,
+          data: {
+            showAction: true,
+            currentAction: {
+              api: 'testApiNameCase1',
+              loading: false,
+              label: 'labelname',
+              params: [
+                { name: 'column1', type: 'string' }
+              ],
+              paramFields: [
+                { name: 'column1', type: 'string', description: '', required: false }
+              ]
+            },
+            resource: {}
+          }
+        })
+
+        const spyPollAction = jest.spyOn(wrapper.vm, 'pollActionCompletion').mockImplementation(() => {})
+        const mockData = {
+          testapinamecase1response: {
+            jobid: 'test-job-id'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+>>>>>>> main
           }
         })
         done()
       })
 
+<<<<<<< HEAD
       it('API should be called when currentAction has defaultArgs', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
         originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
@@ -2801,6 +3263,9 @@ describe('Views > AutogenView.vue', () => {
         wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
         wrapper.vm.fetchData = jest.fn()
         wrapper.vm.form = { column1: 'test-column1-value' }
+=======
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
@@ -2836,6 +3301,7 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('API should be called when currentAction.mapping has value and value is function', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
         originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
@@ -2860,6 +3326,25 @@ describe('Views > AutogenView.vue', () => {
                   return record.name
                 }
               }
+=======
+      it('check $notification when api is called and response have not jobId result', async (done) => {
+        wrapper = factory({
+          data: {
+            showAction: true,
+            currentAction: {
+              api: 'testApiNameCase1',
+              loading: false,
+              label: 'labelname',
+              params: [
+                { name: 'column1', type: 'string' }
+              ],
+              paramFields: [
+                { name: 'column1', type: 'string', description: '', required: false }
+              ]
+            },
+            resource: {
+              name: 'test-name-value'
+>>>>>>> main
             }
           },
           resource: {
@@ -2885,6 +3370,7 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
+<<<<<<< HEAD
       it('API should be called with post method', async (done) => {
         originalFunc.handleResponse = wrapper.vm.handleResponse
         originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
@@ -2894,6 +3380,9 @@ describe('Views > AutogenView.vue', () => {
         wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
         wrapper.vm.fetchData = jest.fn()
         wrapper.vm.closeAction = jest.fn()
+=======
+        mockAxios.mockResolvedValue(mockData)
+>>>>>>> main
 
         const event = document.createEvent('Event')
         await mockAxios.mockResolvedValue({})
@@ -2913,8 +3402,18 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.vm.execSubmit(event)
         await flushPromises()
 
+<<<<<<< HEAD
         const postData = new URLSearchParams()
         postData.append('id', 'test-id-value')
+=======
+        setTimeout(() => {
+          expect(mocks.$message.success).toHaveBeenCalled()
+          expect(mocks.$message.success).toHaveLastReturnedWith({
+            content: 'test-name-en - test-name-value',
+            key: 'labelnametest-name-value',
+            duration: 2
+          })
+>>>>>>> main
 
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({

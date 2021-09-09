@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import cloudstackException
+from . import cloudstackException
 import json
 import inspect
 from marvin.cloudstackAPI import *
@@ -51,11 +51,11 @@ class jsonLoader(object):
 
     def __repr__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 
     def __str__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 
 
 class jsonDump(object):
@@ -63,7 +63,7 @@ class jsonDump(object):
     @staticmethod
     def __serialize(obj):
         """Recursively walk object's hierarchy."""
-        if isinstance(obj, (bool, int, long, float, basestring)):
+        if isinstance(obj, (bool, int, float, str)):
             return obj
         elif isinstance(obj, dict):
             obj = obj.copy()
@@ -115,18 +115,18 @@ def finalizeResultObj(result, responseName, responsecls):
                                              responsecls)
         return result
     elif responsecls is not None:
-        for k, v in result.__dict__.iteritems():
+        for k, v in result.__dict__.items():
             if k in responsecls.__dict__:
                 return result
 
-        attr = result.__dict__.keys()[0]
+        attr = list(result.__dict__.keys())[0]
 
         value = getattr(result, attr)
         if not isinstance(value, jsonLoader):
             return result
 
         findObj = False
-        for k, v in value.__dict__.iteritems():
+        for k, v in value.__dict__.items():
             if k in responsecls.__dict__:
                 findObj = True
                 break
@@ -141,8 +141,7 @@ def finalizeResultObj(result, responseName, responsecls):
 def getResultObj(returnObj, responsecls=None):
     if len(returnObj) == 0:
         return None
-    responseName = filter(lambda a: a != u'cloudstack-version',
-                          returnObj.keys())[0]
+    responseName = [a for a in list(returnObj.keys()) if a != 'cloudstack-version'][0]
 
     response = returnObj[responseName]
     if len(response) == 0:
@@ -156,7 +155,7 @@ def getResultObj(returnObj, responsecls=None):
         raise cloudstackException.CloudstackAPIException(respname, errMsg)
 
     if result.count is not None:
-        for key in result.__dict__.iterkeys():
+        for key in result.__dict__.keys():
             if key == "count":
                 continue
             else:
@@ -186,7 +185,7 @@ if __name__ == "__main__":
           } ]
     } }'''
     nsp = getResultObj(result)
-    print nsp[0].id
+    print(nsp[0].id)
 
     result = '''{ "listzonesresponse" : {
     "count" : 1,
@@ -205,7 +204,7 @@ if __name__ == "__main__":
     }
 }'''
     zones = getResultObj(result)
-    print zones[0].id
+    print(zones[0].id)
     res = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressResponse()
     result = '''{
     "queryasyncjobresultresponse" : {
@@ -242,8 +241,8 @@ if __name__ == "__main__":
     }
 }'''
     asynJob = getResultObj(result, res)
-    print asynJob.jobid, repr(asynJob.jobresult)
-    print asynJob.jobresult.ingressrule[0].account
+    print(asynJob.jobid, repr(asynJob.jobresult))
+    print(asynJob.jobresult.ingressrule[0].account)
 
     result = '''{
     "queryasyncjobresultresponse" : {
@@ -256,15 +255,15 @@ due to missing parameter jobid"
     try:
         asynJob = getResultObj(result)
     except cloudstackException.CloudstackAPIException as e:
-        print e
+        print(e)
 
     result = '{ "queryasyncjobresultresponse" : {}  }'
     asynJob = getResultObj(result)
-    print asynJob
+    print(asynJob)
 
     result = '{}'
     asynJob = getResultObj(result)
-    print asynJob
+    print(asynJob)
 
     result = '''{
     "createzoneresponse" : {
@@ -280,15 +279,15 @@ due to missing parameter jobid"
 }'''
     res = createZone.createZoneResponse()
     zone = getResultObj(result, res)
-    print zone.id
+    print(zone.id)
 
     result = '{ "attachvolumeresponse" : {"jobid":24} }'
     res = attachVolume.attachVolumeResponse()
     res = getResultObj(result, res)
-    print res
+    print(res)
 
     result = '{ "listtemplatesresponse" : { } }'
-    print getResultObj(result, listTemplates.listTemplatesResponse())
+    print(getResultObj(result, listTemplates.listTemplatesResponse()))
 
     result = '''{
     "queryasyncjobresultresponse" : {
@@ -300,7 +299,7 @@ due to missing parameter jobid"
         }
     }
 }'''
-    print getResultObj(result, listTemplates.listTemplatesResponse())
+    print(getResultObj(result, listTemplates.listTemplatesResponse()))
     result = '''{
     "queryasyncjobresultresponse" : {
         "jobid":41,"jobstatus":1,"jobprocstatus":0,
@@ -381,9 +380,9 @@ due to missing parameter jobid"
 }'''
     vm = getResultObj(result,
                       deployVirtualMachine.deployVirtualMachineResponse())
-    print vm.jobresult.id
+    print(vm.jobresult.id)
 
     cmd = deployVirtualMachine.deployVirtualMachineCmd()
     responsename = cmd.__class__.__name__.replace("Cmd", "Response")
     response = getclassFromName(cmd, responsename)
-    print response.id
+    print(response.id)

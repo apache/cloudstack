@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
           :ref="formRef"
@@ -25,17 +25,13 @@
           :rules="rules"
           layout="vertical">
           <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0" name="podid" ref="podid">
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select autoFocus v-model:value="form.podid">
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item name="gateway" ref="gateway">
-            <template #label>
-              {{ $t('label.gateway') }}
-              <a-tooltip :title="apiParams.gateway.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
             <a-input
               autoFocus
               v-model:value="form.gateway"
@@ -43,10 +39,7 @@
           </a-form-item>
           <a-form-item name="netmask" ref="netmask">
             <template #label>
-              {{ $t('label.netmask') }}
-              <a-tooltip :title="apiParams.netmask.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
+              <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             </template>
             <a-input
               v-model:value="form.netmask"
@@ -56,10 +49,7 @@
             <a-col :md="12" lg="12">
               <a-form-item name="startip" ref="startip">
                 <template #label>
-                  {{ $t('label.startipv4') }}
-                  <a-tooltip :title="apiParams.startip.description">
-                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
+                  <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
                 </template>
                 <a-input
                   v-model:value="form.startip"
@@ -69,10 +59,7 @@
             <a-col :md="12" :lg="12">
               <a-form-item name="endip" ref="endip">
                 <template #label>
-                  {{ $t('label.endipv4') }}
-                  <a-tooltip :title="apiParams.endip.description">
-                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
+                  <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
                 </template>
                 <a-input
                   v-model:value="form.endip"
@@ -82,10 +69,7 @@
           </a-row>
           <a-form-item name="ip6cidr" ref="ip6cidr">
             <template #label>
-              {{ $t('label.ip6cidr') }}
-              <a-tooltip :title="apiParams.ip6cidr.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
+              <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
             </template>
             <a-input
               v-model:value="form.ip6cidr"
@@ -93,10 +77,7 @@
           </a-form-item>
           <a-form-item name="ip6gateway" ref="ip6gateway">
             <template #label>
-              {{ $t('label.ip6gateway') }}
-              <a-tooltip :title="apiParams.ip6gateway.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
+              <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
             </template>
             <a-input
               v-model:value="form.ip6gateway"
@@ -106,10 +87,7 @@
             <a-col :md="12" :lg="12">
               <a-form-item name="startipv6" ref="startipv6">
                 <template #label>
-                  {{ $t('label.startipv6') }}
-                  <a-tooltip :title="apiParams.startipv6.description">
-                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
+                  <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
                 </template>
                 <a-input
                   v-model:value="form.startipv6"
@@ -119,10 +97,7 @@
             <a-col :md="12" :lg="12">
               <a-form-item name="endipv6" ref="endipv6">
                 <template #label>
-                  {{ $t('label.endipv6') }}
-                  <a-tooltip :title="apiParams.endipv6.description">
-                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
+                  <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
                 </template>
                 <a-input
                   v-model:value="form.endipv6"
@@ -139,6 +114,7 @@
             <a-button
               :loading="loading"
               type="primary"
+              ref="submit"
               @click="handleSubmit">
               {{ $t('label.ok') }}
             </a-button>
@@ -152,9 +128,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVlanIpRange',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -247,7 +227,10 @@ export default {
         this.loading = false
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -310,14 +293,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

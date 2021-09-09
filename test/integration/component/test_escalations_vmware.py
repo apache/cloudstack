@@ -111,7 +111,7 @@ class TestVMware(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test1_attach_volume_ide(self):
+    def test_01_attach_volume_ide(self):
         """
         @desc: Exception when attaching data disk to RHEL VM on vSphere
         Step1: Confirm that vmware.root.disk.controller = "ide" in Global Settings.
@@ -206,8 +206,9 @@ class TestVMware(cloudstackTestCase):
             self.fail("Failed to attach data disk to RHEL vm whose root disk type is IDE")
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
-    def test2_attach_ISO_in_CentOSVM(self):
+    # @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
+    def test_02_attach_ISO_in_CentOSVM(self):
         """
         @desc:Incorrect guest os mapping in vmware for CentOS 5.9 and above
         Step1 :Register an CentOS 6.3 template
@@ -252,7 +253,7 @@ class TestVMware(cloudstackTestCase):
             isready="true"
         )
         status = validateList(list_default_iso_response)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "ISO list is empty")
@@ -260,7 +261,7 @@ class TestVMware(cloudstackTestCase):
             "Registered a ISO with name {}".format(list_default_iso_response[0].name))
         try:
             vm.attach_iso(self.userapiclient,list_default_iso_response[0])
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.fail("Attached ISO failed : %s" % e)
         response = VirtualMachine.list(self.userapiclient, id=vm.id)
         status = validateList(response)
@@ -269,8 +270,9 @@ class TestVMware(cloudstackTestCase):
         self.assertEqual(attachedIsoName, "vmware-tools.iso", "vmware-tools.iso not attached")
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
-    def test3_attach_ISO_in_RHEL7OSVM(self):
+    # @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
+    def test_03_attach_ISO_in_RHEL7OSVM(self):
         """
         @desc:Incorrect guest os mapping in vmware for Rhel7. Add a valid RHEL7 URL to execute this test case
         Step1 :Register an RHEL 7 template
@@ -316,7 +318,7 @@ class TestVMware(cloudstackTestCase):
             isready="true"
         )
         status = validateList(list_default_iso_response)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "ISO list is empty")
@@ -324,7 +326,7 @@ class TestVMware(cloudstackTestCase):
             "Registered a ISO with name {}".format(list_default_iso_response[0].name))
         try:
             vm.attach_iso(self.userapiclient,list_default_iso_response[0])
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.fail("Attached ISO failed : %s" % e)
         response = VirtualMachine.list(self.userapiclient, id=vm.id)
         status = validateList(response)

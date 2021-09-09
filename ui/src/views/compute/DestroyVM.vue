@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
@@ -29,22 +29,12 @@
           name="expunge"
           ref="expunge"
           v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-          <template #label>
-            {{ $t('label.expunge') }}
-            <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
           <a-switch v-model:checked="form.expunge" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item name="volumeids" ref="volumeids" v-if="volumes.length > 0">
-          <template #label>
-            {{ $t('label.delete.volumes') }}
-            <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
           <a-select
             v-model:value="form.volumeids"
             :placeholder="$t('label.delete.volumes')"
@@ -60,7 +50,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -70,9 +60,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DestroyVM',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -112,7 +106,9 @@ export default {
         this.loading = false
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
@@ -168,14 +164,6 @@ export default {
 
     @media (min-width: 500px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

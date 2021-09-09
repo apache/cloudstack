@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="take-snapshot">
+  <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
         <template #message>
@@ -39,9 +39,9 @@
                 autoFocus />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
-              <a-switch v-model:checked="form.asyncbackup" />
+          <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
+            <a-form-item :label="$t('label.asyncbackup')">
+              <a-switch v-decorator="['asyncbackup']" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="quiescevm" name="quiescevm" ref="quiescevm">
@@ -90,6 +90,7 @@
             v-if="handleShowButton()"
             :loading="actionLoading"
             type="primary"
+            ref="submit"
             @click="handleSubmit">
             {{ $t('label.ok') }}
           </a-button>
@@ -102,7 +103,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'TakeSnapshot',
@@ -123,6 +124,7 @@ export default {
     return {
       actionLoading: false,
       quiescevm: false,
+      supportsStorageSnapshot: false,
       inputValue: '',
       inputKey: '',
       inputVisible: '',
@@ -136,6 +138,7 @@ export default {
   created () {
     this.initForm()
     this.quiescevm = this.resource.quiescevm
+    this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
   },
   methods: {
     initForm () {
@@ -147,7 +150,9 @@ export default {
       })
       this.rules = reactive({})
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
@@ -267,13 +272,5 @@ export default {
 .tagsTitle {
   font-weight: 500;
   margin-bottom: 12px;
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

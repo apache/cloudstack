@@ -44,20 +44,14 @@
             :visible="sslFormVisible"
             :footer="null"
             :maskClosable="false"
-            :cancelText="$t('label.cancel')"
-            @cancel="sslModalClose">
+            @cancel="sslModalClose"
+            v-ctrl-enter="handleSslFormSubmit">
             <p>
               {{ $t('message.update.ssl') }}
             </p>
-
-            <a-form @submit.prevent="handleSslFormSubmit" :ref="formRef" :model="form" :rules="rules">
+            <a-form @finish="handleSslFormSubmit" :ref="formRef" :model="form" :rules="rules">
               <a-form-item name="root" ref="root" :required="true">
-                <template #label>
-                  {{ $t('label.root.certificate') }}
-                  <a-tooltip placement="bottom" :title="apiParams.name.description">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                </template>
+                <tooltip-label slot="label" :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
                 <a-textarea
                   id="rootCert"
                   rows="2"
@@ -75,12 +69,7 @@
                   :name="`intermediate${index + 1}`"
                   :ref="`intermediate${index + 1}`"
                   class="intermediate-certificate">
-                  <template #label>
-                    {{ $t('label.intermediate.certificate') + ` ${index + 1} ` }}
-                    <a-tooltip placement="bottom" :title="apiParams.id.description">
-                      <info-circle-outlined />
-                    </a-tooltip>
-                  </template>
+                  <tooltip-label slot="label" :title="$t('label.intermediate.certificate') + ` ${index + 1} `" :tooltip="apiParams.id.description" tooltipPlacement="bottom"/>
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
@@ -99,12 +88,7 @@
               </a-form-item>
 
               <a-form-item name="server" ref="server" :required="true">
-                <template #label>
-                  {{ $t('label.server.certificate') }}
-                  <a-tooltip placement="bottom" :title="apiParams.certificate.description">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                </template>
+                <tooltip-label slot="label" :title="$t('label.server.certificate')" :tooltip="apiParams.certificate.description" tooltipPlacement="bottom"/>
                 <a-textarea
                   id="serverCert"
                   rows="2"
@@ -115,12 +99,7 @@
               </a-form-item>
 
               <a-form-item name="pkcsKey" ref="pkcsKey" :required="true">
-                <template #label>
-                  {{ $t('label.pkcs.private.certificate') }}
-                  <a-tooltip placement="bottom" :title="apiParams.privatekey.description">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                </template>
+                <tooltip-label slot="label" :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
@@ -131,12 +110,7 @@
               </a-form-item>
 
               <a-form-item name="dns" ref="dns" :required="true">
-                <template #label>
-                  {{ $t('label.domain.suffix') }}
-                  <a-tooltip placement="bottom" :title="apiParams.domainsuffix.description">
-                    <info-circle-outlined />
-                  </a-tooltip>
-                </template>
+                <tooltip-label slot="label" :title="$t('label.domain.suffix')" :tooltip="apiParams.domainsuffix.description" tooltipPlacement="bottom"/>
                 <a-input
                   id="dnsSuffix"
                   :placeholder="$t('label.domain.suffix')"
@@ -149,7 +123,7 @@
                 <a-button @click="sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
-                <a-button type="primary" htmlType="submit" :loading="sslFormSubmitting">
+                <a-button type="primary" ref="submit" :loading="sslFormSubmitting">
                   {{ $t('label.submit' ) }}
                 </a-button>
               </a-form-item>
@@ -184,12 +158,14 @@ import RenderIcon from '@/utils/renderIcon'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'InfraSummary',
   components: {
     Breadcrumb,
     ChartCard,
+    TooltipLabel,
     RenderIcon
   },
   data () {
@@ -286,6 +262,7 @@ export default {
     },
 
     handleSslFormSubmit () {
+      if (this.sslFormSubmitting) return
       this.sslFormSubmitting = true
 
       this.formRef.value.validate().then(() => {

@@ -64,8 +64,7 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      :cancelText="$t('label.cancel')"
-      @cancel="closeAction"
+      @cancel="showCreateForm = false"
       centered
       width="auto">
       <CreateNetwork :resource="{ zoneid: resource.zoneid }" @close-action="closeAction"/>

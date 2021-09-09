@@ -39,6 +39,8 @@ export const pollJobPlugin = {
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
        * @param {Object} [action=null]
+       * @param {Object} [bulkAction=false]
+       * @param {String} resourceId
        */
       const {
         jobId,
@@ -53,7 +55,9 @@ export const pollJobPlugin = {
         showLoading = true,
         catchMessage = i18n.global.t('label.error.caught'),
         catchMethod = () => {},
-        action = null
+        action = null,
+        bulkAction = false,
+        resourceId = null
       } = options
 
       store.dispatch('AddHeaderNotice', {
@@ -63,10 +67,26 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
-      options.originalPage = options.originalPage || this.$router.currentRoute.path
+      eventBus.on('update-job-details', (jobId, resourceId) => {
+        const fullPath = this.$route.fullPath
+        const path = this.$route.path
+        var jobs = this.$store.getters.headerNotices.map(job => {
+          if (job.key === jobId) {
+            if (resourceId && !path.includes(resourceId)) {
+              job.path = path + '/' + resourceId
+            } else {
+              job.path = fullPath
+            }
+          }
+          return job
+        })
+        this.$store.commit('SET_HEADER_NOTICES', jobs)
+      })
+
+      options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
-        if (!this.$t) this.$t = i18n.global.t
+        eventBus.emit('update-job-details', jobId, resourceId)
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {
@@ -87,47 +107,51 @@ export const pollJobPlugin = {
             status: 'done',
             duration: 2
           })
-
+          eventBus.emit('update-job-details', jobId, resourceId)
           // Ensure we refresh on the same / parent page
-          const currentPage = this.$router.currentRoute.path
+          const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
-            eventBus.$emit('async-job-complete', action)
+            eventBus.emit('async-job-complete', action)
           }
           successMethod(result)
         } else if (result.jobstatus === 2) {
-          message.error({
-            content: errorMessage,
-            key: jobId,
-            duration: 1
-          })
-          var errTitle = errorMessage
+          if (!bulkAction) {
+            message.error({
+              content: errorMessage,
+              key: jobId,
+              duration: 1
+            })
+          }
+          var errMessage = errorMessage
           if (action && action.label) {
-            errTitle = i18n.global.t(action.label)
+            errMessage = i18n.global.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
             desc = `(${name}) ${desc}`
           }
-          notification.error({
-            message: errTitle,
-            description: desc,
-            key: jobId,
-            duration: 0
-          })
+          if (!bulkAction) {
+            notification.error({
+              message: errMessage,
+              description: desc,
+              key: jobId,
+              duration: 0
+            })
+          }
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title: title,
             description: desc,
             status: 'failed',
-            duration: 0
+            duration: 2
           })
-
+          eventBus.$emit('update-job-details', jobId, resourceId)
           // Ensure we refresh on the same / parent page
-          const currentPage = this.$router.currentRoute.path
+          const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
-            eventBus.$emit('async-job-complete', action)
+            eventBus.emit('async-job-complete', action)
           }
           errorMethod(result)
         } else if (result.jobstatus === 0) {

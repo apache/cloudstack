@@ -72,8 +72,11 @@
         <a-modal
           :visible="modals.networkAcl"
           :title="$t('label.add.acl.list')"
+          :footer="null"
           :maskClosable="false"
-          @ok="handleNetworkAclFormSubmit">
+          :closable="true"
+          @cancel="modals.networkAcl = fetchAclList"
+          v-ctrl-enter="handleNetworkAclFormSubmit">
           <a-form
             @finish="handleNetworkAclFormSubmit"
             :ref="networkRef"
@@ -87,6 +90,11 @@
             <a-form-item :label="$t('label.description')"  ref="description" name="description">
               <a-input v-model:value="networkAclForm.description" />
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="modals.networkAcl = false">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" @click="handleNetworkAclFormSubmit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-modal>
       </a-tab-pane>
@@ -134,7 +142,10 @@
           :visible="modals.gateway"
           :title="$t('label.add.new.gateway')"
           :maskClosable="false"
-          @ok="handleGatewayFormSubmit">
+          :closable="true"
+          :footer="null"
+          @cancel="modals.gateway = false"
+          v-ctrl-enter="handleGatewayFormSubmit">
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form
@@ -192,6 +203,11 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
+
+              <div :span="24" class="action-button">
+                <a-button @click="modals.gateway = false">{{ $t('label.cancel') }}</a-button>
+                <a-button type="primary" @click="handleGatewayFormSubmit">{{ $t('label.ok') }}</a-button>
+              </div>
             </a-form>
           </a-spin>
         </a-modal>
@@ -265,7 +281,10 @@
           :visible="modals.vpnConnection"
           :title="$t('label.create.vpn.connection')"
           :maskClosable="false"
-          @ok="handleVpnConnectionFormSubmit">
+          :closable="true"
+          :footer="null"
+          @cancel="modals.vpnConnection = false"
+          v-ctrl-enter="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form
               @finish="handleVpnConnectionFormSubmit"
@@ -282,12 +301,23 @@
               <a-form-item :label="$t('label.passive')" ref="passive" name="passive">
                 <a-checkbox v-model:checked="vpnConnectionForm.passive"></a-checkbox>
               </a-form-item>
+
+              <div :span="24" class="action-button">
+                <a-button @click="modals.vpnConnection = false">{{ $t('label.cancel') }}</a-button>
+                <a-button type="primary" htmlType="submit" @click="handleVpnConnectionFormSubmit">{{ $t('label.ok') }}</a-button>
+              </div>
             </a-form>
           </a-spin>
         </a-modal>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="resource"
+          :items="annotations">
+        </AnnotationsTab>
       </a-tab-pane>
     </a-tabs>
   </a-spin>
@@ -302,6 +332,7 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'VpcTab',
@@ -310,7 +341,8 @@ export default {
     Status,
     IpAddressesTab,
     RoutersTab,
-    VpcTiersTab
+    VpcTiersTab,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
   props: {
@@ -407,7 +439,8 @@ export default {
       },
       page: 1,
       pageSize: 10,
-      currentTab: 'details'
+      currentTab: 'details',
+      annotations: []
     }
   },
   watch: {
@@ -479,7 +512,22 @@ export default {
         case 'acl':
           this.fetchAclList()
           break
+        case 'comments':
+          this.fetchComments()
+          break
       }
+    },
+    fetchComments () {
+      this.fetchLoading = true
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+      })
     },
     fetchPrivateGateways () {
       this.fetchLoading = true
@@ -592,6 +640,7 @@ export default {
       }
     },
     handleGatewayFormSubmit () {
+      if (this.modals.gatewayLoading) return
       this.modals.gatewayLoading = true
 
       this.gatewayRef.value.validate().then(() => {
@@ -642,6 +691,7 @@ export default {
       }).catch(() => { this.modals.gatewayLoading = false })
     },
     handleVpnConnectionFormSubmit () {
+      if (this.fetchLoading) return
       this.fetchLoading = true
       this.modals.vpnConnection = false
 
@@ -682,6 +732,7 @@ export default {
       }).catch(() => { this.fetchLoading = false })
     },
     handleNetworkAclFormSubmit () {
+      if (this.fetchLoading) return
       this.fetchLoading = true
       this.modals.networkAcl = false
 

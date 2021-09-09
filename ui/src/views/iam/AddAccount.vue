@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -26,12 +26,7 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item ref="roleid" name="roleid">
-          <template #label>
-            {{ $t('label.role') }}
-            <a-tooltip :title="apiParams.roleid.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           <a-select
             v-model:value="form.roleid"
             :loading="roleLoading"
@@ -43,12 +38,7 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="username" name="username">
-          <template #label>
-            {{ $t('label.username') }}
-            <a-tooltip :title="apiParams.username.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
           <a-input
             v-model:value="form.username"
             :placeholder="apiParams.username.description" />
@@ -56,12 +46,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item ref="password" name="password">
-              <template #label>
-                {{ $t('label.password') }}
-                <a-tooltip :title="apiParams.password.description">
-                  <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.password.description"/>
               <a-input-password
                 v-model:value="form.password"
                 :placeholder="apiParams.password.description"/>
@@ -69,12 +54,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item ref="confirmpassword" name="confirmpassword">
-              <template #label>
-                {{ $t('label.confirmpassword') }}
-                <a-tooltip :title="apiParams.password.description">
-                  <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
               <a-input-password
                 v-model:value="form.confirmpassword"
                 :placeholder="apiParams.password.description"/>
@@ -82,12 +62,7 @@
           </a-col>
         </a-row>
         <a-form-item ref="email" name="email">
-          <template #label>
-            {{ $t('label.email') }}
-            <a-tooltip :title="apiParams.email.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
           <a-input
             v-model:value="form.email"
             :placeholder="apiParams.email.description" />
@@ -95,12 +70,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item ref="firstname" name="firstname">
-              <template #label>
-                {{ $t('label.firstname') }}
-                <a-tooltip :title="apiParams.firstname.description">
-                  <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
               <a-input
                 v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
@@ -108,12 +78,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item ref="lastname" name="lastname">
-              <template #label>
-                {{ $t('label.lastname') }}
-                <a-tooltip :title="apiParams.lastname.description">
-                  <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
               <a-input
                 v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
@@ -121,12 +86,7 @@
           </a-col>
         </a-row>
         <a-form-item v-if="isAdminOrDomainAdmin()" ref="domainid" name="domainid">
-          <template #label>
-            {{ $t('label.domain') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             :loading="domainLoading"
             v-model:value="form.domainid"
@@ -137,21 +97,11 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="account" name="account">
-          <template #label>
-            {{ $t('label.account') }}
-            <a-tooltip :title="apiParams.account.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           <a-input v-model:value="form.account" :placeholder="apiParams.account.description" />
         </a-form-item>
         <a-form-item ref="timezone" name="timezone">
-          <template #label>
-            {{ $t('label.timezone') }}
-            <a-tooltip :title="apiParams.timezone.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
             showSearch
             v-model:value="form.timezone"
@@ -163,12 +113,7 @@
           </a-select>
         </a-form-item>
         <a-form-item ref="networkdomain" name="networkdomain">
-          <template #label>
-            {{ $t('label.networkdomain') }}
-            <a-tooltip :title="apiParams.networkdomain.description">
-              <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
           <a-input
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description" />
@@ -178,12 +123,7 @@
             <a-switch v-model:checked="form.samlenable" />
           </a-form-item>
           <a-form-item v-if="form.samlenable" ref="samlentity" name="samlentity">
-            <template #label>
-              {{ $t('label.samlentity') }}
-              <a-tooltip :title="apiParams.entityid.description">
-                <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
             <a-select
               v-model:value="form.samlentity"
               :loading="idpLoading">
@@ -194,13 +134,8 @@
           </a-form-item>
         </div>
         <div :span="24" class="action-button">
-          <a-form-item>
-            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-            <a-button
-              :loading="loading"
-              type="primary"
-              html-type="submit">{{ $t('label.ok') }}</a-button>
-          </a-form-item>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -211,9 +146,13 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountForm',
+  components: {
+    TooltipLabel
+  },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
@@ -335,7 +274,9 @@ export default {
         this.idpLoading = false
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
@@ -409,12 +350,6 @@ export default {
     width: 80vw;
     @media (min-width: 600px) {
       width: 450px;
-    }
-  }
-  .action-button {
-    text-align: right;
-    button {
-      margin-right: 5px;
     }
   }
 </style>

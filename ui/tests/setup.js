@@ -16,7 +16,11 @@
 // under the License.
 
 import registerRequireContextHook from 'babel-plugin-require-context-hook/register'
+<<<<<<< HEAD
 import { config } from '@vue/test-utils'
+=======
+import '@/utils/directives'
+>>>>>>> main
 
 import componentsUse from '@/core/lazy_lib/components_use'
 import iconsUse from '@/core/lazy_lib/icons_use'

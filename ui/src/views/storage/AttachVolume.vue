@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :ref="formRef" :model="form" :rules="rules" layout="vertical">
+    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical" v-ctrl-enter="handleSubmit">
       <div style="margin-bottom: 10px">
         <a-alert type="warning">
           <template #message>
@@ -38,7 +38,7 @@
     </a-form>
     <div class="actions">
       <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-      <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+      <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
     </div>
   </a-spin>
 </template>
@@ -107,7 +107,9 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 

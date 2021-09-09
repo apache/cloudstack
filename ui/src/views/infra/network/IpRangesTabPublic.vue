@@ -88,7 +88,8 @@
       v-if="selectedItem"
       :closable="true"
       :maskClosable="false"
-      @ok="accountModal = false">
+      :footer="null"
+      @cancel="accountModal = false">
       <div>
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}</div>
@@ -103,6 +104,10 @@
           <div>{{ selectedItem.forsystemvms }}</div>
         </div>
       </div>
+
+      <div :span="24" class="action-button">
+        <a-button @click="accountModal = false">{{ $t('label.close') }}</a-button>
+      </div>
     </a-modal>
 
     <a-modal
@@ -112,8 +117,9 @@
       :maskClosable="false"
       :visible="addAccountModal"
       :title="$t('label.add.account')"
-      @ok="handleAddAccount"
-      @cancel="() => addAccountModal = false">
+      :footer="null"
+      @cancel="addAccountModal = false"
+      v-ctrl-enter="handleAddAccount">
       <a-spin :spinning="domainsLoading">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
@@ -129,6 +135,11 @@
             </a-select-option>
           </a-select>
         </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addAccountModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddAccount">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-spin>
     </a-modal>
 
@@ -138,8 +149,9 @@
       :title="$t('label.add.ip.range')"
       :closable="true"
       :maskClosable="false"
-      @ok="handleAddIpRange"
-      @cancel="() => addIpRangeModal = false">
+      :footer="null"
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :ref="formRef"
         :model="form"
@@ -192,6 +204,11 @@
             </a-form-item>
           </a-spin>
         </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </a-spin>
@@ -200,7 +217,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'IpRangesTabPublic',
@@ -361,6 +378,7 @@ export default {
       })
     },
     handleAddAccount () {
+      if (this.domainsLoading) return
       this.domainsLoading = true
 
       if (this.addIpRangeModal === true) {
@@ -425,6 +443,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.componentLoading = true

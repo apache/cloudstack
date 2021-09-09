@@ -189,6 +189,9 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Column(name = "backup_volumes")
     private String backupVolumes;
 
+    @Column(name = "dynamically_scalable")
+    protected boolean dynamicallyScalable;
+
     @Transient
     private VMReservationVO vmReservation;
 
@@ -557,8 +560,18 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     @Override
+    public String getName() {
+        return instanceName;
+    }
+
+    @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isDynamicallyScalable() {
+        return dynamicallyScalable;
     }
 
     public void setDisplay(boolean display) {

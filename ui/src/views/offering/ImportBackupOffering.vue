@@ -16,40 +16,26 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
       layout="vertical"
-      :ref="formRef"
-      :model="form"
-      :rules="rules"
-      @finish="handleSubmit">
-      <a-form-item name="name" ref="name">
-        <template #label>
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+      :form="form"
+      @submit="handleSubmit">
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           autoFocus
           v-model:value="form.name"/>
       </a-form-item>
-      <a-form-item name="description" ref="description">
-        <template #label>
-          {{ $t('label.description') }}
-          <a-tooltip :title="apiParams.description.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
-        <a-input v-model:value="form.description"/>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+        <a-input
+          v-decorator="['description', {
+            rules: [{ required: true, message: $t('message.error.required.input') }]
+          }]"/>
       </a-form-item>
-      <a-form-item name="zoneid" ref="zoneid">
-        <template #label>
-          {{ $t('label.zoneid') }}
-          <a-tooltip :title="apiParams.zoneid.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
           showSearch
           allowClear
@@ -61,13 +47,8 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item name="externalid" ref="externalid">
-        <template #label>
-          {{ $t('label.externalid') }}
-          <a-tooltip :title="apiParams.externalid.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
         <a-select
           allowClear
           v-model:value="form.externalid"
@@ -77,18 +58,15 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item name="allowuserdrivenbackups" ref="allowuserdrivenbackups">
-        <template #label>
-          {{ $t('label.allowuserdrivenbackups') }}
-          <a-tooltip :title="apiParams.allowuserdrivenbackups.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
-        <a-switch v-model:checked="form.allowuserdrivenbackups"/>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
+        <a-switch
+          v-decorator="['allowuserdrivenbackups']"
+          :default-checked="true"/>
       </a-form-item>
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -97,9 +75,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportBackupOffering',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       loading: false,
@@ -162,6 +144,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -185,14 +168,17 @@ export default {
               description: values.name,
               successMethod: result => {
                 this.closeAction()
+                this.loading = false
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${params.name}`,
-              catchMessage: this.$t('error.fetching.async.job.result')
+              catchMessage: this.$t('error.fetching.async.job.result'),
+              catchMethod: () => {
+                this.loading = false
+              }
             })
           }
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(f => {
           this.loading = false
         })
       })
@@ -218,15 +204,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>

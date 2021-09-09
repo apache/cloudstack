@@ -45,10 +45,9 @@
         :visible="showGetHealthChecksForm"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
-        @ok="handleGetHealthChecksSubmit"
+        :footer="null"
         @cancel="onCloseGetHealthChecksForm"
+        v-ctrl-enter="handleGetHealthChecksSubmit"
         centered>
         <a-spin :spinning="loading">
           <a-form
@@ -58,17 +57,17 @@
             @submit="handleGetHealthChecksSubmit"
             layout="vertical">
             <a-form-item name="performfreshchecks" ref="performfreshchecks">
-              <template #label>
-                {{ $t('label.perform.fresh.checks') }}
-                <a-tooltip :title="apiParams.performfreshchecks.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
+              <tooltip-label slot="label" :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>
               <a-switch
                 v-model:checked="form.performfreshchecks"
                 :placeholder="apiParams.performfreshchecks.description"
                 autoFocus/>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="onCloseGetHealthChecksForm">{{ $t('label.cancel') }}</a-button>
+              <a-button ref="submit" type="primary" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
       </a-modal>
@@ -80,11 +79,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RouterHealthCheck',
   components: {
-    Status
+    Status,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -157,6 +158,7 @@ export default {
     },
     handleGetHealthChecksSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.onCloseGetHealthChecksForm()

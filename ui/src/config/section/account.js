@@ -24,7 +24,7 @@ export default {
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
-  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes'],
+  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{
     name: 'accountuser',
     title: 'label.users',
@@ -100,7 +100,10 @@ export default {
           !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1) &&
           (record.state === 'disabled' || record.state === 'locked')
       },
-      params: { lock: 'false' }
+      params: { lock: 'false' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'disableAccount',
@@ -118,7 +121,10 @@ export default {
         lock: {
           value: (record) => { return false }
         }
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x, lock: false } }) }
     },
     {
       api: 'disableAccount',
@@ -136,7 +142,10 @@ export default {
         lock: {
           value: (record) => { return true }
         }
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x, lock: true } }) }
     },
     {
       api: 'uploadSslCert',
@@ -164,7 +173,10 @@ export default {
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

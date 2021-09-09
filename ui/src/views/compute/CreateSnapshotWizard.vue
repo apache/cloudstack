@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :ref="formRef"
@@ -25,12 +25,7 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="volumeid" ref="volumeid">
-          <template #label :title="apiParams.volumeid.description">
-            {{ $t('label.volumeid') }}
-            <a-tooltip :title="apiParams.volumeid.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
           <a-select
             showSearch
             allowClear
@@ -46,37 +41,22 @@
           </a-select>
         </a-form-item>
         <a-form-item name="name" ref="name">
-          <template #label :title="apiParams.name.description">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm">
-          <template #label :title="apiParams.quiescevm.description">
-            {{ $t('label.quiescevm') }}
-            <a-tooltip :title="apiParams.quiescevm.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
         <a-form-item name="asyncbackup" ref="asyncbackup">
-          <template #label :title="apiParams.asyncbackup.description">
-            {{ $t('label.asyncbackup') }}
-            <a-tooltip :title="apiParams.asyncbackup.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
           <a-switch v-model:checked="form.asyncbackup"/>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -86,9 +66,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateSnapshotWizard',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -99,6 +83,7 @@ export default {
     return {
       loading: false,
       isQuiesceVm: false,
+      supportsStorageSnapshot: false,
       listVolumes: []
     }
   },
@@ -127,13 +112,19 @@ export default {
         .catch(e => {})
         .finally(() => { this.loading = false })
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
         params.volumeid = values.volumeid
         params.name = values.name
-        params.asyncbackup = values.asyncbackup
+        params.asyncbackup = false
+        if (values.asyncbackup) {
+          params.asyncbackup = values.asyncbackup
+        }
         params.quiescevm = values.quiescevm
 
         const title = this.$t('label.action.vmstoragesnapshot.create')
@@ -174,6 +165,7 @@ export default {
       const volumeFilter = this.listVolumes.filter(volume => volume.id === volumeId)
       if (volumeFilter && volumeFilter.length > 0) {
         this.isQuiesceVm = volumeFilter[0].quiescevm
+        this.supportsStorageSnapshot = volumeFilter[0].supportsstoragesnapshot
       }
     },
     closeAction () {
@@ -188,12 +180,6 @@ export default {
   width: 80vw;
   @media (min-width: 600px) {
     width: 450px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

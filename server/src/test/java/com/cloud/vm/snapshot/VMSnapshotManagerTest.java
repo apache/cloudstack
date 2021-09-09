@@ -23,9 +23,9 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +33,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,12 +47,6 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ResourceDetail;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.exception.AgentUnavailableException;
@@ -183,6 +183,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._userVMDao = _userVMDao;
         _vmSnapshotMgr._vmSnapshotDao = _vmSnapshotDao;
         _vmSnapshotMgr._volumeDao = _volumeDao;
+        _vmSnapshotMgr._storagePoolDao = _storagePoolDao;
         _vmSnapshotMgr._accountMgr = _accountMgr;
         _vmSnapshotMgr._snapshotDao = _snapshotDao;
         _vmSnapshotMgr._guestOSDao = _guestOSDao;
@@ -208,6 +209,8 @@ public class VMSnapshotManagerTest {
         mockVolumeList.add(volumeMock);
         when(volumeMock.getInstanceId()).thenReturn(TEST_VM_ID);
         when(_volumeDao.findByInstance(anyLong())).thenReturn(mockVolumeList);
+        when(_volumeDao.findReadyRootVolumesByInstance(anyLong())).thenReturn(mockVolumeList);
+        when(_storagePoolDao.findById(anyLong())).thenReturn(mock(StoragePoolVO.class));
 
         when(vmMock.getId()).thenReturn(TEST_VM_ID);
         when(vmMock.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_ID);
@@ -299,7 +302,6 @@ public class VMSnapshotManagerTest {
     public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException, NoTransitionException {
         when(vmMock.getState()).thenReturn(State.Running);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
-
     }
 
     @Test

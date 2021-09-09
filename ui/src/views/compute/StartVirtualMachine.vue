@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
         <template #message>{{ $t('message.action.start.instance') }}</template>
@@ -30,12 +30,7 @@
         layout="vertical">
         <div v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item name="podid" ref="podid">
-            <template #label>
-              {{ $t('label.podid') }}
-              <a-tooltip :title="apiParams.podid.description">
-                <info-circle-outlined />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               v-model:value="form.podid"
               showSearch
@@ -53,12 +48,7 @@
             </a-select>
           </a-form-item>
           <a-form-item name="clusterid" ref="clusterid">
-            <template #label>
-              {{ $t('label.clusterid') }}
-              <a-tooltip :title="apiParams.clusterid.description">
-                <info-circle-outlined />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
             <a-select
               id="cluster-selection"
               v-model:value="form.clusterid"
@@ -76,12 +66,7 @@
             </a-select>
           </a-form-item>
           <a-form-item name="hostid" ref="hostid">
-            <template #label>
-              {{ $t('label.hostid') }}
-              <a-tooltip :title="apiParams.hostid.description">
-                <info-circle-outlined />
-              </a-tooltip>
-            </template>
+            <tooltip-label slot="label" :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
             <a-select
               id="host-selection"
               v-model:value="form.hostid"
@@ -100,18 +85,13 @@
         </div>
 
         <a-form-item name="bootintosetup" ref="bootintosetup" v-if="resource.hypervisor === 'VMware'">
-          <template #label>
-            {{ $t('label.bootintosetup') }}
-            <a-tooltip :title="apiParams.bootintosetup.description">
-              <info-circle-outlined />
-            </a-tooltip>
-          </template>
+          <tooltip-label slot="label" :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
           <a-switch v-model:checked="form.bootintosetup" />
         </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -121,9 +101,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'StartVirtualMachine',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -225,7 +209,9 @@ export default {
       this.form.hostid = undefined
       this.fetchHosts('', clusterid)
     },
-    handleSubmit () {
+    handleSubmit (e) {
+      e.preventDefault()
+      if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
@@ -270,14 +256,6 @@ export default {
 
     @media (min-width: 500px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>
