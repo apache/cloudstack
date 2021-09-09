@@ -4927,10 +4927,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (owner.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
-        if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (!VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
             // check if account/domain is with in resource limits to start a new vm
             ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-            resourceLimitCheck(owner, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceLimitCheck(owner, vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
 
         // check if vm is security group enabled
