@@ -108,7 +108,7 @@
       </a-list>
     </setting-item>
 
-    <div v-if="isDevelopmentMode" class="setting-action">
+    <div class="setting-action">
       <a-divider style="margin: 15px 0;" />
       <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
@@ -152,9 +152,6 @@ export default {
   computed: {
     projectView () {
       return Boolean(this.$store.getters.project && this.$store.getters.project.id)
-    },
-    isDevelopmentMode () {
-      return process.env.NODE_ENV === 'development'
     },
     pageStyles () {
       const arrStyle = [
