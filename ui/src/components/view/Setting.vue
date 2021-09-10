@@ -108,11 +108,10 @@
       </a-list>
     </setting-item>
 
-    <div class="setting-action">
+    <div v-if="isDevelopmentMode" class="setting-action">
       <a-divider style="margin: 15px 0;" />
-      <a-alert v-if="isDevelopmentMode" class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
+      <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
-        v-if="isDevelopmentMode"
         class="setting-action-btn"
         icon="copy"
         @click="saveSetting">{{ $t('label.save.setting') }}</a-button>
