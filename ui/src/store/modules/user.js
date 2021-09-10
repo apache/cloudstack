@@ -262,9 +262,7 @@ const user = {
         api('listConfigurations', { name: 'default.ui.page.size' }).then(response => {
           const defaultListViewPageSize = parseInt(response.listconfigurationsresponse.configuration[0].value)
           commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', defaultListViewPageSize)
-        }).catch(error => {
-          reject(error)
-        })
+        }).catch(ignored => {})
 
         api('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
