@@ -418,6 +418,11 @@ export default {
     eventBus.$off('async-job-complete')
     eventBus.$off('exec-action')
   },
+  mounted () {
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      this.execAction(action, isGroupAction)
+    })
+  },
   created () {
     eventBus.$on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
@@ -426,9 +431,6 @@ export default {
     })
     eventBus.$on('async-job-complete', (action) => {
       this.fetchData()
-    })
-    eventBus.$on('exec-action', (action, isGroupAction) => {
-      this.execAction(action, isGroupAction)
     })
 
     this.currentPath = this.$route.fullPath
