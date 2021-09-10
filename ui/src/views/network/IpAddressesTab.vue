@@ -38,7 +38,7 @@
       <div v-if="$route.path.startsWith('/vpc')">
         {{ $t('label.select.tier"') + ':' }}
         <a-select
-          autoFocus
+          v-focus="true"
           style="width: 40%; margin-left: 15px;margin-bottom: 15px"
           :loading="fetchLoading"
           defaultActiveFirstOption
@@ -116,14 +116,13 @@
       :closable="true"
       :footer="null"
       @cancel="onCloseModal"
-      v-ctrl-enter="acquireIpAddress"
       centered
       width="450px">
-      <a-spin :spinning="acquireLoading">
+      <a-spin :spinning="acquireLoading" v-ctrl-enter="acquireIpAddress">
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
         <a-form-item :label="$t('label.ipaddress')">
           <a-select
-            autoFocus
+            v-focus="true"
             style="width: 100%;"
             showSearch
             v-model:value="acquireIp">
@@ -363,7 +362,7 @@ export default {
       })
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []

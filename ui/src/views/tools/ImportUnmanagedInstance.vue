@@ -42,7 +42,7 @@
                   v-model:value="form.displayname"
                   :placeholder="apiParams.displayname.description"
                   ref="displayname"
-                  autoFocus />
+                  v-focus="true" />
               </a-form-item>
               <a-form-item name="hostname" ref="hostname">
                 <template #label>

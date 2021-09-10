@@ -71,18 +71,18 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      @cancel="addIpRangeModal = false"
-      v-ctrl-enter="handleAddIpRange">
+      @cancel="addIpRangeModal = false">
       <a-form
         :ref="formRef"
         :model="form"
         :rules="rules"
         @finish="handleAddIpRange"
+        v-ctrl-enter="handleAddIpRange"
         layout="vertical"
         class="form"
       >
         <a-form-item name="pod" ref="pod" :label="$t('label.podid')" class="form__item">
-          <a-select autoFocus v-model:value="form.pod">
+          <a-select v-focus="true" v-model:value="form.pod">
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>

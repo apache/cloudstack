@@ -29,7 +29,7 @@
             <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           </template>
           <a-input
-            autoFocus
+            v-focus="true"
             v-model:value="form.name"
             :placeholder="$t('label.name')"/>
         </a-form-item>
@@ -145,9 +145,7 @@
             <tooltip-label :title="$t('label.memory.mb')" :tooltip="apiParams.memory.description"/>
           </template>
           <a-input
-            v-decorator="['memory', {
-              rules: [{ required: true, message: $t('message.error.required.input') }, naturalNumberRule]
-            }]"
+            v-model:value="form.memory"
             :placeholder="apiParams.memory.description"/>
         </a-form-item>
         <a-form-item name="mincpunumber" ref="mincpunumber" v-if="offeringType === 'customconstrained'">
@@ -155,9 +153,7 @@
             <tooltip-label :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
           </template>
           <a-input
-            v-decorator="['mincpunumber', {
-              rules: [{ required: true, message: $t('message.error.required.input') }, naturalNumberRule]
-            }]"
+            v-model:value="form.mincpunumber"
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
         <a-form-item name="maxcpunumber" ref="maxcpunumber" v-if="offeringType === 'customconstrained'">
@@ -165,9 +161,7 @@
             <tooltip-label :title="$t('label.maxcpunumber')" :tooltip="apiParams.maxcpunumber.description"/>
           </template>
           <a-input
-            v-decorator="['maxcpunumber', {
-              rules: [{ required: true, message: $t('message.error.required.input') }, naturalNumberRule]
-            }]"
+            v-model:value="form.maxcpunumber"
             :placeholder="apiParams.maxcpunumber.description"/>
         </a-form-item>
         <a-form-item name="minmemory" ref="minmemory" v-if="form.offeringtype === 'customconstrained'">
@@ -290,7 +284,7 @@
           <template #label>
             <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
           </template>
-          <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
+          <a-switch v-model:checked="form.dynamicscalingenabled" />
         </a-form-item>
         <a-form-item name="hosttags" ref="hosttags" v-if="isAdmin()">
           <template #label>
@@ -468,19 +462,14 @@ export default {
     return {
       isSystem: false,
       naturalNumberRule: {
-        validator: (rule, value, callback) => {
-          if (value && (isNaN(value) || value <= 0)) {
-            callback(this.$t('message.error.number'))
-          }
-          callback()
-        }
+        validator: this.validateNumber
       },
       wholeNumberRule: {
-        validator: (rule, value, callback) => {
+        validator: async (rule, value) => {
           if (value && (isNaN(value) || value < 0)) {
-            callback(this.$t('message.error.number'))
+            return Promise.reject(this.$t('message.error.number'))
           }
-          callback()
+          return Promise.resolve()
         }
       },
       storageType: 'shared',
@@ -520,8 +509,7 @@ export default {
       ],
       vGpuVisible: false,
       vGpuTypes: [],
-      loading: false,
-      dynamicscalingenabled: true
+      loading: false
     }
   },
   beforeCreate () {
@@ -557,31 +545,31 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         cpunumber: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.naturalNumberRule
         ],
         cpuspeed: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.wholeNumberRule
         ],
         mincpunumber: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.naturalNumberRule
         ],
         maxcpunumber: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.naturalNumberRule
         ],
         memory: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.naturalNumberRule
         ],
         minmemory: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.naturalNumberRule
         ],
         maxmemory: [
           { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          this.naturalNumberRule
         ],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
         rootdisksize: [{ type: 'number', validator: this.validateNumber }],

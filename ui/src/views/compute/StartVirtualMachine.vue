@@ -43,7 +43,7 @@
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
               @change="handlePodChange"
-              :autoFocus="$store.getters.userInfo.roletype === 'Admin'">
+              v-focus="$store.getters.userInfo.roletype === 'Admin'">
               <a-select-option v-for="pod in pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>

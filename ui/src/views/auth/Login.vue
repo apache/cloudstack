@@ -57,7 +57,7 @@
           <a-input
             size="large"
             type="text"
-            autoFocus
+            v-focus="true"
             :placeholder="$t('label.username')"
             v-model:value="form.username"
           >

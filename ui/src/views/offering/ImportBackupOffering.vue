@@ -28,7 +28,7 @@
           <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         </template>
         <a-input
-          autoFocus
+          v-focus="true"
           v-model:value="form.name"/>
       </a-form-item>
       <a-form-item>

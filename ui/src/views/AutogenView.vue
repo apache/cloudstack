@@ -139,7 +139,6 @@
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         @cancel="closeAction"
-        v-ctrl-enter="handleSubmit"
         centered
       >
         <template #title>
@@ -152,7 +151,7 @@
             <question-circle-outlined />
           </a>
         </template>
-        <a-spin :spinning="actionLoading">
+        <a-spin :spinning="actionLoading" v-ctrl-enter="handleSubmit">
           <span v-if="currentAction.message">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
@@ -213,14 +212,14 @@
                 v-if="field.type==='boolean'"
                 v-model:checked="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               />
               <a-select
                 v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options"
                 :loading="field.loading"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option key="" >{{ }}</a-select-option>
                 <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
@@ -238,7 +237,7 @@
                 :filterOption="(input, option) => {
                   return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option key="">{{ }}</a-select-option>
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
@@ -255,7 +254,7 @@
                 :filterOption="(input, option) => {
                   return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option key="">{{ }}</a-select-option>
                 <a-select-option v-for="opt in field.opts" :key="opt.id">
@@ -268,7 +267,7 @@
                 mode="multiple"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -276,7 +275,7 @@
               </a-select>
               <a-input-number
                 v-else-if="field.type==='long'"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
                 style="width: 100%;"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
@@ -286,18 +285,18 @@
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
                 @blur="($event) => handleConfirmBlur($event, field.name)"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               />
               <a-textarea
                 v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'"
                 rows="2"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               />
               <a-input
                 v-else
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
                 v-model:value="form[field.name]"
                 :placeholder="field.description" />
             </a-form-item>

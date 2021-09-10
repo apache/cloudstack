@@ -20,7 +20,7 @@
     <div class="list__header">
       <div class="list__header__col" v-if="tiersSelect">
         <a-select
-          autoFocus
+          v-focus="true"
           @change="handleTierSelect"
           v-model:value="vpcTiers"
           :placeholder="$t('label.select.tier')">

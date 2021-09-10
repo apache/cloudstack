@@ -23,7 +23,7 @@
       :placeholder="$t('label.search')"
       v-model:value="filter"
       @search="handleSearch"
-      autoFocus />
+      v-focus="true" />
 
     <a-table
       size="small"

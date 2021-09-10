@@ -32,7 +32,7 @@
           <a-input
             v-model:value="form.username"
             :placeholder="apiParams.username.description"
-            autoFocus/>
+            v-focus="true"/>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">

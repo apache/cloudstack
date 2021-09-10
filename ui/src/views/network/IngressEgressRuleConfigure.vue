@@ -31,7 +31,7 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select
-            autoFocus
+            v-focus="true"
             v-model:value="newRule.protocol"
             style="width: 100%;"
             @change="resetRulePorts">
@@ -141,7 +141,7 @@
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item ref="key" name="key">
               <a-input
-                autoFocus
+                v-focus="true"
                 v-model:value="newTagsForm.key" />
             </a-form-item>
           </div>

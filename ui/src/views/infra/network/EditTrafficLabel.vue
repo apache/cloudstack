@@ -30,7 +30,7 @@
             <tooltip-label :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
           </template>
           <a-select
-            autoFocus
+            v-focus="true"
             v-model:value="form.id"
             :loading="typeLoading"
             :placeholder="apiParams.id.description"

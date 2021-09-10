@@ -118,12 +118,11 @@
       :visible="addAccountModal"
       :title="$t('label.add.account')"
       :footer="null"
-      @cancel="addAccountModal = false"
-      v-ctrl-enter="handleAddAccount">
-      <a-spin :spinning="domainsLoading">
+      @cancel="addAccountModal = false">
+      <a-spin :spinning="domainsLoading" v-ctrl-enter="handleAddAccount">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
-          <a-input v-model:value="addAccount.account" autoFocus></a-input>
+          <a-input v-model:value="addAccount.account" v-focus="true"></a-input>
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
@@ -150,23 +149,23 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      @cancel="addIpRangeModal = false"
-      v-ctrl-enter="handleAddIpRange">
+      @cancel="addIpRangeModal = false">
       <a-form
         :ref="formRef"
         :model="form"
         :rules="rules"
         @finish="handleAddIpRange"
+        v-ctrl-enter="handleAddIpRange"
         layout="vertical"
         class="form"
       >
         <a-form-item name="podid" ref="podid" :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
-          <a-select autoFocus v-model:value="form.podid">
+          <a-select v-focus="true" v-model:value="form.podid">
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
-          <a-input autoFocus v-model:value="form.gateway" />
+          <a-input v-focus="true" v-model:value="form.gateway" />
         </a-form-item>
         <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
           <a-input v-model:value="form.netmask" />

@@ -25,7 +25,7 @@
           :placeholder="$t('label.search')"
           v-model:value="searchQuery"
           @search="onSearch"
-          autoFocus />
+          v-focus="true" />
       </a-col>
       <a-col :md="24" :lg="24">
         <a-table

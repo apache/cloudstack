@@ -28,7 +28,7 @@
             <template #label>
               <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             </template>
-            <a-select autoFocus v-model:value="form.podid">
+            <a-select v-focus="true" v-model:value="form.podid">
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>
@@ -37,7 +37,7 @@
               <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
             </template>
             <a-input
-              autoFocus
+              v-focus="true"
               v-model:value="form.gateway"
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>

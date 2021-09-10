@@ -55,7 +55,7 @@
                   :options="zoneSelectOptions"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
-                  autoFocus
+                  v-focus="true"
                 ></a-select>
               </a-form-item>
             </a-col>

@@ -93,14 +93,14 @@
       :footer="null"
       :confirmLoading="copyLoading"
       @cancel="onCloseCopyForm"
-      v-ctrl-enter="handleCopyIsoSubmit"
       centered>
-      <a-spin :spinning="copyLoading">
+      <a-spin :spinning="copyLoading" @finish="handleCopyIsoSubmit">
         <a-form
           :ref="formRef"
           :model="form"
           :rules="rules"
           layout="vertical">
+          v-ctrl-enter="handleCopyIsoSubmit">
           <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
@@ -113,7 +113,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              autoFocus>
+              v-focus="true">
               <a-select-option v-for="zone in zones" :key="zone.id">
                 {{ zone.name }}
               </a-select-option>
@@ -305,7 +305,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []

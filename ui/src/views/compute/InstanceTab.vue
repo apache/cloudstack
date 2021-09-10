@@ -153,10 +153,9 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="closeModals"
-      v-ctrl-enter="submitAddNetwork">
+      @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
-      <a-form @submit="submitAddNetwork">
+      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.network') }}:</p>
           <a-select
@@ -188,11 +187,10 @@
       :closable="true"
       :footer="null"
       @cancel="closeModals"
-      v-ctrl-enter="submitUpdateIP"
     >
       {{ $t('message.network.updateip') }}
 
-      <a-form @submit="submitUpdateIP">
+      <a-form @finish="submitUpdateIP" v-ctrl-enter="submitUpdateIP">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
           <a-select
@@ -200,7 +198,7 @@
             v-if="editNicResource.type==='Shared'"
             v-model:value="editIpAddressValue"
             :loading="listIps.loading"
-            :autoFocus="editNicResource.type==='Shared'">
+            v-focus="editNicResource.type==='Shared'">
             <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
               {{ ip.ipaddress }}
             </a-select-option>
@@ -208,7 +206,7 @@
           <a-input
             v-else
             v-model:value="editIpAddressValue"
-            :autoFocus="editNicResource.type!=='Shared'"></a-input>
+            v-focus="editNicResource.type!=='Shared'"></a-input>
         </div>
 
         <div :span="24" class="action-button">
@@ -226,34 +224,35 @@
       :closable="false"
       class="wide-modal"
       @cancel="closeModals"
-      v-ctrl-enter="submitSecondaryIP"
     >
       <p>
         {{ $t('message.network.secondaryip') }}
       </p>
       <a-divider />
-      <div class="modal-form">
-        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-select
-          showSearch
-          v-if="editNicResource.type==='Shared'"
-          v-model:value="newSecondaryIp"
-          :loading="listIps.loading"
-          :autoFocus="editNicResource.type==='Shared'">
-          <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
-            {{ ip.ipaddress }}
-          </a-select-option>
-        </a-select>
-        <a-input
-          v-else
-          :placeholder="$t('label.new.secondaryip.description')"
-          v-model:value="newSecondaryIp"
-          :autoFocus="editNicResource.type!=='Shared'"></a-input>
-      </div>
+      <div v-ctrl-enter="submitSecondaryIP">
+        <div class="modal-form">
+          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <a-select
+            showSearch
+            v-if="editNicResource.type==='Shared'"
+            v-model:value="newSecondaryIp"
+            :loading="listIps.loading"
+            v-focus="editNicResource.type==='Shared'">
+            <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
+              {{ ip.ipaddress }}
+            </a-select-option>
+          </a-select>
+          <a-input
+            v-else
+            :placeholder="$t('label.new.secondaryip.description')"
+            v-model:value="newSecondaryIp"
+            v-focus="editNicResource.type!=='Shared'"></a-input>
+        </div>
 
-      <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-        <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
-        <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
+        <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
+          <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+          <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
+        </div>
       </div>
 
       <a-divider />

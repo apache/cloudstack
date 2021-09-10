@@ -31,8 +31,8 @@
             </template>
             <a-input
               v-model:value="form.name"
-              :placeholder="$t('label.name')"
-              autoFocus />
+              :placeholder="apiParams.name.description"
+              v-focus="true" />
           </a-form-item>
           <a-form-item name="displaytext" ref="displaytext">
             <template #label>
@@ -40,7 +40,7 @@
             </template>
             <a-input
               v-model:value="form.displaytext"
-              :placeholder="$t('label.display.text')"/>
+              :placeholder="apiParams.displaytext.description"/>
           </a-form-item>
           <a-form-item v-if="isObjectEmpty(zone)" name="zoneid" ref="zoneid">
             <template #label>
@@ -54,7 +54,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              :placeholder="$t('label.zoneid')"
+              :placeholder="apiParams.zoneid.description"
               @change="val => { handleZoneChange(zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
                 {{ opt.name || opt.description }}
@@ -73,7 +73,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="formPhysicalNetworkLoading"
-              :placeholder="$t('label.physicalnetworkid')"
+              :placeholder="apiParams.physicalnetworkid.description"
               @change="val => { handlePhysicalNetworkChange(formPhysicalNetworks[val]) }">
               <a-select-option v-for="(opt, optIndex) in formPhysicalNetworks" :key="optIndex">
                 {{ opt.name || opt.description }}
@@ -86,7 +86,7 @@
             </template>
             <a-input
               v-model:value="form.vlanid"
-              :placeholder="$t('label.vlanid')"/>
+              :placeholder="apiParams.vlan.description"/>
           </a-form-item>
           <a-form-item name="bypassvlanoverlapcheck" ref="bypassvlanoverlapcheck">
             <template #label>
@@ -124,7 +124,7 @@
             </template>
             <a-input
               v-model:value="form.isolatedpvlan"
-              :placeholder="$t('label.isolatedpvlanid')"/>
+              :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
           <a-form-item :label="$t('label.scope')" name="scope" ref="scope">
             <a-radio-group
@@ -157,7 +157,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="domainLoading"
-              :placeholder="$t('label.domainid')"
+              :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
                 {{ opt.path || opt.name || opt.description }}
@@ -176,7 +176,7 @@
             </template>
             <a-input
               v-model:value="form.account"
-              :placeholder="$t('label.account')"/>
+              :placeholder="apiParams.account.description"/>
           </a-form-item>
           <a-form-item v-if="scopeType === 'project'" name="projectid" ref="projectid">
             <template #label>
@@ -190,7 +190,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="projectLoading"
-              :placeholder="$t('label.projectid')"
+              :placeholder="apiParams.projectid.description"
               @change="val => { handleProjectChange(projects[val]) }">
               <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex">
                 {{ opt.name || opt.description }}
@@ -209,7 +209,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
-              :placeholder="$t('label.networkofferingid')"
+              :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
               <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
                 {{ opt.displaytext || opt.name || opt.description }}
@@ -218,11 +218,11 @@
           </a-form-item>
           <a-form-item name="ip4gateway" ref="ip4gateway">
             <template #label>
-              <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
+              <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.netmask.description"/>
             </template>
             <a-input
               v-model:value="form.ip4gateway"
-              :placeholder="$t('label.ip4gateway')"/>
+              :placeholder="apiParams.netmask.description"/>
           </a-form-item>
           <a-form-item name="ip4netmask" ref="ip4netmask">
             <template #label>
@@ -230,7 +230,7 @@
             </template>
             <a-input
               v-model:value="form.netmask"
-              :placeholder="$t('label.netmask')"/>
+              :placeholder="apiParams.netmask.description"/>
           </a-form-item>
           <a-form-item name="startipv4" ref="startipv4">
             <template #label>
@@ -238,7 +238,7 @@
             </template>
             <a-input
               v-model:value="form.startipv4"
-              :placeholder="$t('label.startipv4')"/>
+              :placeholder="apiParams.startip.description"/>
           </a-form-item>
           <a-form-item name="endipv4" ref="endipv4">
             <template #label>
@@ -246,13 +246,13 @@
             </template>
             <a-input
               v-model:value="form.endipv4"
-              :placeholder="$t('label.endipv4')"/>
+              :placeholder="apiParams.endip.description"/>
           </a-form-item>
-          <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService" name="routerip" ref="routerip">
             <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
             <a-input
-              v-decorator="['routerip', {}]"
-              :placeholder="this.$t('label.routerip')"/>
+              v-model:value="form.routerip"
+              :placeholder="apiParams.routerip.description"/>
           </a-form-item>
           <a-form-item name="ip6gateway" ref="ip6gateway">
             <template #label>
@@ -260,7 +260,7 @@
             </template>
             <a-input
               v-model:value="form.ip6gateway"
-              :placeholder="$t('label.ip6gateway')"/>
+              :placeholder="apiParams.ip6gateway.description"/>
           </a-form-item>
           <a-form-item name="ip6cidr" ref="ip6cidr">
             <template #label>
@@ -268,7 +268,7 @@
             </template>
             <a-input
               v-model:value="form.ip6cidr"
-              :placeholder="$t('label.ip6cidr')"/>
+              :placeholder="apiParams.ip6cidr.description"/>
           </a-form-item>
           <a-form-item name="startipv6" ref="startipv6">
             <template #label>
@@ -276,7 +276,7 @@
             </template>
             <a-input
               v-model:value="form.startipv6"
-              :placeholder="$t('label.startipv6')"/>
+              :placeholder="apiParams.startipv6.description"/>
           </a-form-item>
           <a-form-item name="endipv6" ref="endipv6">
             <template #label>
@@ -284,15 +284,15 @@
             </template>
             <a-input
               v-model:value="form.endipv6"
-              :placeholder="$t('label.endipv6')"/>
+              :placeholder="apiParams.endipv6.description"/>
           </a-form-item>
           <a-form-item v-if="isVirtualRouterForAtLeastOneService">
             <template #label>
               <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
             </template>
             <a-input
-              v-decorator="['routeripv6', {}]"
-              :placeholder="this.$t('label.routeripv6')"/>
+              v-model:value="form.routeripv6"
+              :placeholder="apiParams.routeripv6.description"/>
           </a-form-item>
           <a-form-item name="networkdomain" ref="networkdomain">
             <template #label>
@@ -300,7 +300,7 @@
             </template>
             <a-input
               v-model:value="form.networkdomain"
-              :placeholder="$t('label.networkdomain')"/>
+              :placeholder="apiParams.networkdomain.description"/>
           </a-form-item>
           <a-form-item name="hideipaddressusage" ref="hideipaddressusage">
             <template #label>

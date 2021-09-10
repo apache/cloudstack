@@ -40,7 +40,7 @@
             v-if="field.select"
             v-model:value="form[field.key]"
             :allowClear="true"
-            :autoFocus="index === 0"
+            v-focus="index === 0"
           >
             <a-select-option
               v-for="option in field.options"
@@ -53,18 +53,18 @@
           <a-switch
             v-else-if="field.switch"
             v-model:checked="form[field.key]"
-            :autoFocus="index === 0"
+            v-focus="index === 0"
           />
           <a-input
             v-else-if="field.password"
             type="password"
             v-model:value="form[field.key]"
-            :autoFocus="index === 0"
+            v-focus="index === 0"
           />
           <a-input
             v-else
             v-model:value="form[field.key]"
-            :autoFocus="index === 0"
+            v-focus="index === 0"
           />
         </a-form-item>
       </div>

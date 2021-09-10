@@ -42,7 +42,7 @@
             }"
             :loading="kubernetesVersionLoading"
             :placeholder="apiParams.kubernetesversionid.description"
-            autoFocus >
+            v-focus="true" >
             <a-select-option v-for="(opt, optIndex) in this.kubernetesVersions" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>

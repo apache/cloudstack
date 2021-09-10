@@ -43,7 +43,7 @@
           <a-input-number
             v-model:value="form.vlanRangeStart"
             style="width: 100%;"
-            autoFocus
+            v-focus="true"
           />
         </a-form-item>
         <span :style="{ display: 'inline-block', width: '24px', textAlign: 'center' }">

@@ -329,7 +329,7 @@
     <template #value="{ text, record }">
       <a-input
         v-if="editableValueKey === record.key"
-        :autoFocus="true"
+        v-focus="true"
         :defaultValue="record.value"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-model:value="editableValue"

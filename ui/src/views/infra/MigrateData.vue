@@ -31,7 +31,7 @@
           <a-select
             v-model:value="form.srcpool"
             :loading="loading"
-            autoFocus
+            v-focus="true"
           >
             <a-select-option
               v-for="store in imageStores"

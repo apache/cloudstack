@@ -24,15 +24,14 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
-      v-ctrl-enter="handleSubmit"
-      @submit="handleSubmit">
+      v-ctrl-enter="handleSubmit">
       <a-form-item name="name" ref="name">
         <template #label>
           <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         </template>
         <a-input
           v-model:value="form.name"
-          autoFocus />
+          v-focus="true" />
       </a-form-item>
       <a-form-item name="displayname" ref="displayname">
         <template #label>

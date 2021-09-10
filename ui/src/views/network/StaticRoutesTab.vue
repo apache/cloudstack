@@ -18,7 +18,7 @@
 <template>
   <a-spin :spinning="componentLoading">
     <div class="new-route" v-ctrl-enter="handleAdd">
-      <a-input v-model:value="newRoute" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
+      <a-input v-model:value="newRoute" :placeholder="$t('label.cidr.destination.network')" v-focus="true"></a-input>
       <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
     </div>
 
@@ -57,7 +57,7 @@
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item name="key" ref="key">
               <a-input
-                autoFocus
+                v-focus="true"
                 v-model:value="newTagsForm.key" />
             </a-form-item>
           </div>

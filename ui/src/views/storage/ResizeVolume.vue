@@ -17,14 +17,18 @@
 
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <a-form :form="form" layout="vertical">
-      <a-form-item :label="$t('label.diskoffering')" v-if="resource.type !== 'ROOT'">
+    <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
+      <a-form-item
+        name="diskofferingid"
+        ref="diskofferingid"
+        :label="$t('label.diskoffering')"
+        v-if="resource.type !== 'ROOT'">
         <a-select
           v-model:value="form.diskofferingid"
           :loading="loading"
           :placeholder="$t('label.diskoffering')"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
-          :autoFocus="resource.type !== 'ROOT'"
+          v-focus="resource.type !== 'ROOT'"
         >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -33,12 +37,12 @@
           >{{ offering.displaytext || offering.name }}</a-select-option>
         </a-select>
       </a-form-item>
-      <div v-if="customDiskOffering || resource.type === 'ROOT'">
+      <div name="size" ref="size" v-if="customDiskOffering || resource.type === 'ROOT'">
         <a-form-item :label="$t('label.sizegb')" ref="size" name="size">
           <a-input
             v-model:value="form.size"
             :placeholder="$t('label.disksize')"
-            :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
+            v-focus="customDiskOffering || resource.type === 'ROOT'"/>
         </a-form-item>
       </div>
       <a-form-item :label="$t('label.shrinkok')" name="shrinkok" ref="shrinkok">
@@ -77,11 +81,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        diskofferingid: undefined,
-        size: undefined,
-        shrinkok: false
-      })
+      this.form = reactive({})
       this.rules = reactive({
         diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
         size: [{ required: true, message: this.$t('message.error.size') }]

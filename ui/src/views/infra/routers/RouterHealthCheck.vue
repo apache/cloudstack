@@ -47,14 +47,13 @@
         :maskClosable="false"
         :footer="null"
         @cancel="onCloseGetHealthChecksForm"
-        v-ctrl-enter="handleGetHealthChecksSubmit"
         centered>
-        <a-spin :spinning="loading">
+        <a-spin :spinning="loading" v-ctrl-enter="handleGetHealthChecksSubmit">
           <a-form
             :ref="formRef"
             :model="form"
             :rules="rules"
-            @submit="handleGetHealthChecksSubmit"
+            @finish="handleGetHealthChecksSubmit"
             layout="vertical">
             <a-form-item name="performfreshchecks" ref="performfreshchecks">
               <template #label>
@@ -63,7 +62,7 @@
               <a-switch
                 v-model:checked="form.performfreshchecks"
                 :placeholder="apiParams.performfreshchecks.description"
-                autoFocus/>
+                v-focus="true"/>
             </a-form-item>
 
             <div :span="24" class="action-button">

@@ -44,12 +44,11 @@
             :visible="sslFormVisible"
             :footer="null"
             :maskClosable="false"
-            @cancel="sslModalClose"
-            v-ctrl-enter="handleSslFormSubmit">
+            @cancel="sslModalClose">
             <p>
               {{ $t('message.update.ssl') }}
             </p>
-            <a-form @finish="handleSslFormSubmit" :ref="formRef" :model="form" :rules="rules">
+            <a-form :ref="formRef" :model="form" :rules="rules" @finish="handleSslFormSubmit" v-ctrl-enter="handleSslFormSubmit">
               <a-form-item name="root" ref="root" :required="true">
                 <template #label>
                   <tooltip-label :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
@@ -58,7 +57,7 @@
                   id="rootCert"
                   rows="2"
                   :placeholder="apiParams.name.description"
-                  :autoFocus="true"
+                  v-focus="true"
                   name="rootCert"
                   v-model:value="form.root"
                 ></a-textarea>

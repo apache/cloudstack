@@ -47,7 +47,8 @@
                 :model="form"
                 :rules="rules"
                 layout="vertical"
-                @submit="handleSubmit">
+                @finish="handleSubmit"
+                v-ctrl-enter="handleSubmit">
                 <a-form-item
                   v-for="(field, index) in fields"
                   :key="index"

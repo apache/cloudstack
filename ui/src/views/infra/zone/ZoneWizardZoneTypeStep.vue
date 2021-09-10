@@ -59,7 +59,7 @@
                     class="card-form-item"
                     v-model:checked="form.securityGroupsEnabled"
                     :disabled="!isAdvancedZone"
-                    autoFocus
+                    v-focus="true"
                   />
                 </a-form-item>
                 <span>{{ $t('label.menu.security.groups') }}</span>

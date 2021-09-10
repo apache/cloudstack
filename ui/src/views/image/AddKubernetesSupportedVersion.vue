@@ -31,7 +31,7 @@
           <a-input
             v-model:value="form.semanticversion"
             :placeholder="apiParams.semanticversion.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item ref="name" name="name">
           <template #label>

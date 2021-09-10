@@ -29,7 +29,7 @@
         <div class="rules-table__col rules-table__col--grab"></div>
         <div class="rules-table__col rules-table__col--rule rules-table__col--new">
           <a-auto-complete
-            :autoFocus="true"
+            v-focus="true"
             :filterOption="filterOption"
             :options="apis"
             v-model:value="newRule"

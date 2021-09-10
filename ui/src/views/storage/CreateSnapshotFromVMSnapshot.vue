@@ -19,13 +19,15 @@
   <a-spin :spinning="loading">
     <a-form
       class="form"
-      :form="form"
-      @submit="handleSubmit"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
       v-ctrl-enter="handleSubmit"
       layout="vertical">
-      <a-form-item :label="$t('label.name')">
+      <a-form-item :label="$t('label.name')" name="name" ref="name">
         <a-input
-          autoFocus
+          v-focus="true"
           v-model:value="form.name"
           :placeholder="$t('label.snapshot.name')"/>
       </a-form-item>
@@ -76,10 +78,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        name: undefined,
-        volumeid: undefined
-      })
+      this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         volumeid: [{ required: true, message: this.$t('message.error.select') }]

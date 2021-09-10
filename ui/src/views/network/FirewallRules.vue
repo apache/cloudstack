@@ -21,7 +21,7 @@
       <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input autoFocus v-model:value="newRule.cidrlist"></a-input>
+          <a-input v-focus="true" v-model:value="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
@@ -118,26 +118,25 @@
       :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
-      <a-form :form="newTagsForm" @submit="handleAddTag">
+      @cancel="tagsModalVisible = false">
+      <a-form :ref="newTagsRef" :model="newTagsForm" :rules="newTagsRules" @finish="handleAddTag" v-ctrl-enter="handleAddTag">
         <div class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
-            <a-form-item>
+            <a-form-item name="key" ref="key">
               <a-input
-                autoFocus
-                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+                v-focus="true"
+                v-model:value="form.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
-            <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+            <a-form-item name="value" ref="value">
+              <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
           <a-button
-            html-type="submit"
+            ref="submit"
             type="primary"
             :disabled="!('createTags' in $store.getters.apis)"
             @click="handleAddTag"
@@ -177,6 +176,7 @@
 </template>
 
 <script>
+import { reactive, ref, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -251,8 +251,7 @@ export default {
           title: this.$t('label.action'),
           slots: { customRender: 'actions' }
         }
-      ],
-      newTagsForm: this.$form.createForm(this)
+      ]
     }
   },
   computed: {
@@ -261,6 +260,7 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -272,6 +272,14 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.newTagsRef = ref()
+      this.newTagsForm = reactive({})
+      this.newTagsRules = reactive({
+        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listFirewallRules', {
@@ -309,7 +317,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -351,7 +359,7 @@ export default {
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+              eventBus.emit('update-resource-state', this.selectedItems, rule.id, 'success')
             }
             this.fetchData()
           },
@@ -423,7 +431,7 @@ export default {
     openTagsModal (id) {
       this.selectedRule = id
       this.tagsModalVisible = true
-      this.newTagsForm.resetFields()
+      this.newTagsRef.value.resetFields()
 
       api('listTags', {
         resourceId: id,
@@ -439,14 +447,11 @@ export default {
     handleAddTag (e) {
       e.preventDefault()
       if (this.addTagLoading) return
-      this.addTagLoading = true
 
-      this.newTagsForm.validateFields((err, values) => {
-        if (err) {
-          this.tagsLoading = false
-          return
-        }
+      this.newTagsRef.value.validate().then(() => {
+        const values = toRaw(this.newTagsForm)
 
+        this.addTagLoading = true
         api('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,

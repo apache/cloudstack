@@ -35,7 +35,7 @@
         has-feedback>
         <a-input
           v-model:value="form.name"
-          autoFocus
+          v-focus="true"
         />
       </a-form-item>
       <a-form-item

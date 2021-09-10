@@ -31,7 +31,7 @@
 
         <a-form-item name="domainid" ref="domainid" :label="$t('label.domainid')" v-if="!form.ispublic">
           <a-select
-            :autoFocus="!form.ispublic"
+            v-focus="!form.ispublic"
             mode="multiple"
             v-model:value="form.domainid"
             showSearch
@@ -49,7 +49,7 @@
 
         <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
           <a-select
-            :autoFocus="form.ispublic"
+            v-focus="form.ispublic"
             id="zone-selection"
             mode="multiple"
             v-model:value="form.zoneid"

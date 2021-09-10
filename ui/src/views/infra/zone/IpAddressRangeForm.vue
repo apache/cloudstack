@@ -22,89 +22,91 @@
       style="text-align: justify; margin: 10px 0; padding: 24px;"
       v-html="$t(description)">
     </a-card>
-    <a-table
-      bordered
-      :scroll="{ x: 500 }"
-      :dataSource="ipRanges"
-      :columns="columns"
-      :pagination="false"
-      style="margin-bottom: 24px; width: 100%" >
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="onDelete(record.key)" />
-      </template>
-      <template #footer>
-        <a-form
-          :layout="isMobile() ? 'horizontal': 'inline'"
-          :ref="formRef"
-          :model="form"
-          :rules="rules"
-          @finish="handleAddRange">
-          <div class="form-row">
-            <div class="form-col">
-              <a-form-item name="gateway" ref="gateway">
-                <a-input
-                  v-model:value="form.gateway"
-                  :placeholder="$t('label.gateway')"
-                  autoFocus
-                />
-              </a-form-item>
+    <div v-ctrl-enter="handleSubmit">
+      <a-table
+        bordered
+        :scroll="{ x: 500 }"
+        :dataSource="ipRanges"
+        :columns="columns"
+        :pagination="false"
+        style="margin-bottom: 24px; width: 100%" >
+        <template #actions="{ record }">
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="onDelete(record.key)" />
+        </template>
+        <template #footer>
+          <a-form
+            :layout="isMobile() ? 'horizontal': 'inline'"
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
+            @finish="handleAddRange">
+            <div class="form-row">
+              <div class="form-col">
+                <a-form-item name="gateway" ref="gateway">
+                  <a-input
+                    v-model:value="form.gateway"
+                    :placeholder="$t('label.gateway')"
+                    v-focus="true"
+                  />
+                </a-form-item>
+              </div>
+              <div class="form-col">
+                <a-form-item name="netmask" ref="netmask">
+                  <a-input
+                    v-model:value="form.netmask"
+                    :placeholder="$t('label.netmask')"
+                  />
+                </a-form-item>
+              </div>
+              <div class="form-col">
+                <a-form-item name="vlan" ref="vlan">
+                  <a-input
+                    v-model:value="form.vlan"
+                    :placeholder="$t('label.vlan')"
+                  />
+                </a-form-item>
+              </div>
+              <div class="form-col">
+                <a-form-item name="startIp" ref="startIp">
+                  <a-input
+                    v-model:value="form.startIp"
+                    :placeholder="$t('label.start.ip')"
+                  />
+                </a-form-item>
+              </div>
+              <div class="form-col">
+                <a-form-item name="endIp" ref="endIp">
+                  <a-input
+                    v-model:value="form.endIp"
+                    :placeholder="$t('label.end.ip')"
+                  />
+                </a-form-item>
+              </div>
+              <div class="form-col">
+                <a-form-item :style="{ display: 'inline-block', float: 'right', marginRight: 0 }">
+                  <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+                </a-form-item>
+              </div>
             </div>
-            <div class="form-col">
-              <a-form-item name="netmask" ref="netmask">
-                <a-input
-                  v-model:value="form.netmask"
-                  :placeholder="$t('label.netmask')"
-                />
-              </a-form-item>
-            </div>
-            <div class="form-col">
-              <a-form-item name="vlan" ref="vlan">
-                <a-input
-                  v-model:value="form.vlan"
-                  :placeholder="$t('label.vlan')"
-                />
-              </a-form-item>
-            </div>
-            <div class="form-col">
-              <a-form-item name="startIp" ref="startIp">
-                <a-input
-                  v-model:value="form.startIp"
-                  :placeholder="$t('label.start.ip')"
-                />
-              </a-form-item>
-            </div>
-            <div class="form-col">
-              <a-form-item name="endIp" ref="endIp">
-                <a-input
-                  v-model:value="form.endIp"
-                  :placeholder="$t('label.end.ip')"
-                />
-              </a-form-item>
-            </div>
-            <div class="form-col">
-              <a-form-item :style="{ display: 'inline-block', float: 'right', marginRight: 0 }">
-                <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
-              </a-form-item>
-            </div>
-          </div>
-        </a-form>
-      </template>
-    </a-table>
-    <div class="form-action" v-ctrl-enter="handleSubmit">
-      <a-button
-        v-if="!isFixError"
-        class="button-prev"
-        @click="handleBack">
-        {{ $t('label.previous') }}
-      </a-button>
-      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
-        {{ $t('label.next') }}
-      </a-button>
+          </a-form>
+        </template>
+      </a-table>
+      <div class="form-action">
+        <a-button
+          v-if="!isFixError"
+          class="button-prev"
+          @click="handleBack">
+          {{ $t('label.previous') }}
+        </a-button>
+        <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
+          {{ $t('label.next') }}
+        </a-button>
+      </div>
     </div>
     <a-modal
       :visible="showError"
@@ -112,13 +114,14 @@
       :maskClosable="false"
       :title="`${$t('label.error')}!`"
       @cancel="showError = false"
-      v-ctrl-enter="showError = false"
       centered
     >
-      <span>{{ $t('message.required.add.least.ip') }}</span>
-      <div :span="24" class="action-button">
-        <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+      <div v-ctrl-enter="showError = false">
+        <span>{{ $t('message.required.add.least.ip') }}</span>
+        <div :span="24" class="action-button">
+          <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>

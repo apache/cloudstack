@@ -27,7 +27,7 @@
           <a-input
             v-model:value="form.projectid"
             :placeholder="apiParams.projectid.description"
-            autoFocus
+            v-focus="true"
           />
         </a-form-item>
         <a-form-item ref="token" name="token" :label="$t('label.token')">

@@ -33,7 +33,7 @@
             v-model:value="form.roleid"
             :loading="roleLoading"
             :placeholder="apiParams.roleid.description"
-            autoFocus>
+            v-focus="true">
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>

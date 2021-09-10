@@ -62,7 +62,7 @@
                     v-model:value="form.time"
                     :min="1"
                     :max="59"
-                    autoFocus />
+                    v-focus="true" />
                 </a-tooltip>
               </a-form-item>
             </a-col>

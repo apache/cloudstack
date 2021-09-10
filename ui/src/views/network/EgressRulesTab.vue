@@ -21,7 +21,7 @@
       <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model:value="newRule.cidrlist" autoFocus></a-input>
+          <a-input v-model:value="newRule.cidrlist" v-focus="true"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
@@ -261,7 +261,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []

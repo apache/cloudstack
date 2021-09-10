@@ -26,12 +26,11 @@
       :footer="null"
       @cancel="parentCloseAction"
       style="top: 20px;"
-      v-ctrl-enter="handleSubmit"
     >
       <template #title>
         {{ $t(action.label) }}
       </template>
-      <a-spin :spinning="actionLoading">
+      <a-spin :spinning="actionLoading" v-ctrl-enter="handleSubmit">
         <a-form
           :ref="formRef"
           :model="form"
@@ -62,7 +61,7 @@
                 :loading="field.loading"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
@@ -78,7 +77,7 @@
                 :filterOption="(input, option) => {
                   return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
@@ -90,7 +89,7 @@
                 mode="multiple"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -100,13 +99,13 @@
                 v-else-if="field.type==='long'"
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               />
               <a-input
                 v-else
                 v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex" />
+                v-focus="fieldIndex === firstIndex" />
             </a-form-item>
           </template>
 

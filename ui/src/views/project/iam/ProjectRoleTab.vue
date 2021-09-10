@@ -61,15 +61,16 @@
           :afterClose="closeAction"
           :maskClosable="false"
           :closable="true"
-          @cancel="closeAction"
-          v-ctrl-enter="updateProjectRole">
+          @cancel="closeAction">
           <a-form
             :ref="formRef"
             :model="form"
             :rules="rules"
-            layout="vertical">
+            layout="vertical"
+            @finish="updateProjectRole"
+            v-ctrl-enter="updateProjectRole">
             <a-form-item ref="name" name="name" :label="$t('label.name')">
-              <a-input v-model:value="form.name" autoFocus></a-input>
+              <a-input v-model:value="form.name" v-focus="true"></a-input>
             </a-form-item>
             <a-form-item ref="description" name="description" :label="$t('label.description')">
               <a-input v-model:value="form.description"></a-input>
@@ -87,18 +88,18 @@
           :afterClose="closeAction"
           :maskClosable="false"
           :closable="true"
-          @cancel="closeAction"
-          v-ctrl-enter="createProjectRole">
+          @cancel="closeAction">
           <a-form
             :ref="formRef"
             :model="form"
             :rules="rules"
-            @submit="createProjectRole"
+            @finish="createProjectRole"
+            v-ctrl-enter="createProjectRole"
             layout="vertical">
             <a-form-item ref="name" name="name" :label="$t('label.name')">
               <a-input
                 v-model:value="form.name"
-                autoFocus></a-input>
+                v-focus="true"></a-input>
             </a-form-item>
             <a-form-item ref="description" name="description" :label="$t('label.description')">
               <a-input v-model:value="form.description"></a-input>

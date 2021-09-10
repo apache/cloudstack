@@ -85,7 +85,7 @@
             <a-form-item :label="$t('label.add.list.name')" ref="name" name="name">
               <a-input
                 v-model:value="networkAclForm.name"
-                autoFocus></a-input>
+                v-focus="true"></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.description')"  ref="description" name="description">
               <a-input v-model:value="networkAclForm.description" />
@@ -154,7 +154,7 @@
               :model="gatewayForm"
               :rules="gatewayRules">
               <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork">
-                <a-select v-model:value="gatewayForm.physicalnetwork" autoFocus>
+                <a-select v-model:value="gatewayForm.physicalnetwork" v-focus="true">
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -292,7 +292,7 @@
               :model="vpnConnectionForm"
               :rules="vpnRules">
               <a-form-item :label="$t('label.vpncustomergatewayid')" ref="vpncustomergateway" name="vpncustomergateway">
-                <a-select v-model:value="vpnConnectionForm.vpncustomergateway" autoFocus>
+                <a-select v-model:value="vpnConnectionForm.vpncustomergateway" v-focus="true">
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>

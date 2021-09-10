@@ -52,7 +52,7 @@
             @finish="handleSubmit"
             layout="vertical" >
             <a-form-item :label="$t('label.filterby')">
-              <a-select @change="fetchListLdapUsers" v-model:value="selectedFilter" autoFocus >
+              <a-select @change="fetchListLdapUsers" v-model:value="selectedFilter" v-focus="true" >
                 <a-select-option v-for="opt in filters" :key="opt.id" >
                   {{ opt.name }}
                 </a-select-option>

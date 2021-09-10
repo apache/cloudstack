@@ -27,7 +27,7 @@
       <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
         <a-switch
           v-model:checked="form.samlEnable"
-          autoFocus
+          v-focus="true"
         />
       </a-form-item>
       <a-form-item name="samlEntity" ref="samlEntity" :label="$t('label.samlentity')">

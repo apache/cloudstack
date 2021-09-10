@@ -90,7 +90,7 @@
             <status class="status" :text="resource.state || resource.status" displayText/>
           </div>
         </div>
-       <div class="resource-detail-item" v-if="resource.allocationstate">
+        <div class="resource-detail-item" v-if="resource.allocationstate">
           <div class="resource-detail-item__label">{{ $t('label.allocationstate') }}</div>
           <div class="resource-detail-item__details">
             <status class="status" :text="resource.allocationstate" displayText/>
@@ -421,7 +421,7 @@
           <div class="resource-detail-item__details">
             <cloud-outlined />
             <router-link v-if="!isStatic && $route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
-            <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).route.name !== '404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).name !== '404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
         </div>
@@ -429,21 +429,21 @@
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).route.name !== '404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).name !== '404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
             <span v-else>{{ resource.diskofferingname || resource.diskofferingid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.backupofferingid">
           <div class="resource-detail-item__label">{{ $t('label.backupofferingid') }}</div>
           <cloud-upload-outlined />
-          <router-link v-if="!isStatic && $router.resolve('/backupoffering/' + resource.backupofferingid).route.name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
+          <router-link v-if="!isStatic && $router.resolve('/backupoffering/' + resource.backupofferingid).name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
           <span v-else>{{ resource.backupofferingname || resource.backupofferingid }}</span>
         </div>
         <div class="resource-detail-item" v-if="resource.networkofferingid">
           <div class="resource-detail-item__label">{{ $t('label.networkofferingid') }}</div>
           <div class="resource-detail-item__details">
             <wifi-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/networkoffering/' + resource.networkofferingid).route.name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/networkoffering/' + resource.networkofferingid).name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
             <span v-else>{{ resource.networkofferingname || resource.networkofferingid }}</span>
           </div>
         </div>
@@ -451,7 +451,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vpcoffering') }}</div>
           <div class="resource-detail-item__details">
             <DeploymentUnitOutlined />
-            <router-link v-if="!isStatic && $router.resolve('/vpcoffering/' + resource.vpcofferingid).route.name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/vpcoffering/' + resource.vpcofferingid).name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
             <span v-else>{{ resource.vpcofferingname || resource.vpcofferingid }}</span>
           </div>
         </div>
@@ -459,7 +459,7 @@
           <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
           <div class="resource-detail-item__details">
             <database-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).route.name !== '404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).name !== '404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
             <span v-else>{{ resource.storage || resource.storageid }}</span>
             <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
               {{ resource.storagetype }}
@@ -470,7 +470,7 @@
           <div class="resource-detail-item__label">{{ $t('label.hostname') }}</div>
           <div class="resource-detail-item__details">
             <desktop-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/host/' + resource.hostid).route.name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/host/' + resource.hostid).name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
             <span v-else>{{ resource.hostname || resource.hostid }}</span>
           </div>
         </div>
@@ -478,7 +478,7 @@
           <div class="resource-detail-item__label">{{ $t('label.clusterid') }}</div>
           <div class="resource-detail-item__details">
             <cluster-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/cluster/' + resource.clusterid).route.name !== '404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/cluster/' + resource.clusterid).name !== '404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
             <span v-else>{{ resource.clustername || resource.cluster || resource.clusterid }}</span>
           </div>
         </div>
@@ -486,7 +486,7 @@
           <div class="resource-detail-item__label">{{ $t('label.podid') }}</div>
           <div class="resource-detail-item__details">
             <appstore-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/pod/' + resource.podid).route.name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/pod/' + resource.podid).name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
         </div>
@@ -494,7 +494,7 @@
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <global-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
@@ -525,7 +525,7 @@
           <div class="resource-detail-item__label">{{ $t('label.role') }}</div>
           <div class="resource-detail-item__details">
             <idcard-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/role/' + resource.roleid).route.name !== '404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/role/' + resource.roleid).name !== '404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
             <span v-else>{{ resource.rolename || resource.role || resource.roleid }}</span>
           </div>
         </div>
@@ -541,7 +541,7 @@
           <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
           <div class="resource-detail-item__details">
             <rocket-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).route.name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
         </div>
@@ -704,22 +704,27 @@ export default {
       inputValue: '',
       tags: [],
       showKeys: false,
-      loadingTags: false
+      loadingTags: false,
+      newResource: {}
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.resourceType = this.$route.meta.resourceType
-      this.showKeys = false
-      this.setData()
+    resource: {
+      deep: true,
+      handler () {
+        this.newResource = this.resource
+        this.resourceType = this.$route.meta.resourceType
+        this.showKeys = false
+        this.setData()
 
-      if ('tags' in this.resource) {
-        this.tags = this.resource.tags
-      } else if (this.resourceType) {
-        this.getTags()
-      }
-      if ('apikey' in this.resource) {
-        this.getUserKeys()
+        if ('tags' in this.resource) {
+          this.tags = this.resource.tags
+        } else if (this.resourceType) {
+          this.getTags()
+        }
+        if ('apikey' in this.resource) {
+          this.getUserKeys()
+        }
       }
     }
   },
@@ -835,6 +840,10 @@ export default {
       }).finally(e => {
         this.getTags()
       })
+    },
+    setResourceOsType (name) {
+      this.newResource.ostypename = name
+      this.$emit('change-resource', this.newResource)
     }
   }
 }

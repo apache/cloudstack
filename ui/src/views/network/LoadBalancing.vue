@@ -21,7 +21,7 @@
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
-          <a-input autoFocus v-model:value="newRule.name"></a-input>
+          <a-input v-focus="true" v-model:value="newRule.name"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePublicPort">
@@ -155,6 +155,7 @@
     </a-pagination>
 
     <a-modal
+      v-if="tagsModalVisible"
       :title="$t('label.edit.tags')"
       :visible="tagsModalVisible"
       :footer="null"
@@ -162,18 +163,23 @@
       :afterClose="closeModal"
       :maskClosable="false"
       class="tags-modal"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
+      @cancel="tagsModalVisible = false">
       <span v-show="tagsModalLoading" class="modal-loading">
         <loading-outlined />
       </span>
 
-      <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags" @finish="handleAddTag">
+      <a-form
+        :ref="tagRef"
+        :model="newTagsForm"
+        :rules="tagRules"
+        class="add-tags"
+        @finish="handleAddTag"
+        v-ctrl-enter="handleAddTag">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item ref="key" name="key">
             <a-input
-              autoFocus
+              v-focus="true"
               v-model:value="newTagsForm.key" />
           </a-form-item>
         </div>
@@ -207,8 +213,7 @@
       :maskClosable="false"
       :closable="true"
       :okButtonProps="{ props: {htmlType: 'submit'}}"
-      @cancel="stickinessModalVisible = false"
-      v-ctrl-enter="handleSubmitStickinessForm">
+      @cancel="stickinessModalVisible = false">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
         <loading-outlined />
@@ -219,9 +224,10 @@
         :model="stickinessPolicyForm"
         :rules="stickRules"
         @finish="handleSubmitStickinessForm"
+        v-ctrl-enter="handleSubmitStickinessForm"
         class="custom-ant-form">
         <a-form-item name="methodname" ref="methodname" :label="$t('label.stickiness.method')">
-          <a-select autoFocus v-model:value="stickinessPolicyForm.methodname" @change="handleStickinessMethodSelectChange">
+          <a-select v-focus="true" v-model:value="stickinessPolicyForm.methodname" @change="handleStickinessMethodSelectChange">
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
             <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
@@ -285,7 +291,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -297,16 +303,15 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="editRuleModalVisible = false"
-      v-ctrl-enter="handleSubmitEditForm">
+      @cancel="editRuleModalVisible = false">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <loading-outlined />
       </span>
 
-      <div class="edit-rule" v-if="selectedRule">
+      <div class="edit-rule" v-if="selectedRule" v-ctrl-enter="handleSubmitEditForm">
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.name') }}</p>
-          <a-input autoFocus v-model:value="editRuleDetails.name" />
+          <a-input v-focus="true" v-model:value="editRuleDetails.name" />
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
@@ -335,92 +340,94 @@
       :title="$t('label.add.vms')"
       :maskClosable="false"
       :closable="true"
+      v-if="addVmModalVisible"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === [] } }"
       @cancel="closeModal"
-      v-ctrl-enter="handleAddNewRule"
     >
-      <div>
-        <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
-          <strong>{{ $t('label.select.tier') }} </strong>
-          <a-select
-            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
-            v-model:value="selectedTier"
-            @change="fetchVirtualMachines()"
-            :placeholder="$t('label.select.tier')" >
-            <a-select-option
-              v-for="tier in tiers.data"
-              :loading="tiers.loading"
-              :key="tier.id">
-              {{ tier.displaytext }}
-            </a-select-option>
-          </a-select>
-        </span>
-        <a-input-search
-          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
-          class="input-search"
-          :placeholder="$t('label.search')"
-          v-model:value="searchQuery"
-          allowClear
-          @search="onSearch" />
-        <a-table
-          size="small"
-          class="list-view"
-          :loading="addVmModalLoading"
-          :columns="vmColumns"
-          :dataSource="vms"
-          :pagination="false"
-          :rowKey="record => record.id"
-          :scroll="{ y: 300 }">
-          <template #name="{text, record, index}">
-            <span>
-              {{ text }}
-            </span>
-            <loading-outlined v-if="addVmModalNicLoading" />
+      <div v-ctrl-enter="handleAddNewRule">
+        <div>
+          <span
+            v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+            <strong>{{ $t('label.select.tier') }} </strong>
             <a-select
-              style="display: block"
-              v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
-              mode="multiple"
-              v-model:value="newRule.vmguestip[index]"
-            >
-              <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+              v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+              v-model:value="selectedTier"
+              @change="fetchVirtualMachines()"
+              :placeholder="$t('label.select.tier')" >
+              <a-select-option
+                v-for="tier in tiers.data"
+                :loading="tiers.loading"
+                :key="tier.id">
+                {{ tier.displaytext }}
               </a-select-option>
             </a-select>
-          </template>
+          </span>
+          <a-input-search
+            v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+            class="input-search"
+            :placeholder="$t('label.search')"
+            v-model:value="searchQuery"
+            allowClear
+            @search="onSearch" />
+          <a-table
+            size="small"
+            class="list-view"
+            :loading="addVmModalLoading"
+            :columns="vmColumns"
+            :dataSource="vms"
+            :pagination="false"
+            :rowKey="record => record.id"
+            :scroll="{ y: 300 }">
+            <template #name="{text, record, index}">
+              <span>
+                {{ text }}
+              </span>
+              <loading-outlined v-if="addVmModalNicLoading" />
+              <a-select
+                style="display: block"
+                v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
+                mode="multiple"
+                v-model:value="newRule.vmguestip[index]"
+              >
+                <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
+                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+                </a-select-option>
+              </a-select>
+            </template>
 
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText></status>
-          </template>
+            <template #state="{text}">
+              <status :text="text ? text : ''" displayText></status>
+            </template>
 
-          <template #action="{text, record, index}" style="text-align: center" :text="text">
-            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
-          </template>
-        </a-table>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="vmPage"
-          :pageSize="vmPageSize"
-          :total="vmCount"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
-          showSizeChanger>
-          <template #buildOptionText="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
-      </div>
+            <template #action="{text, record, index}" style="text-align: center" :text="text">
+              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+            </template>
+          </a-table>
+          <a-pagination
+            class="pagination"
+            size="small"
+            :current="vmPage"
+            :pageSize="vmPageSize"
+            :total="vmCount"
+            :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+            :pageSizeOptions="['10', '20', '40', '80', '100']"
+            @change="handleChangePage"
+            @showSizeChange="handleChangePageSize"
+            showSizeChanger>
+            <template #buildOptionText="props">
+              <span>{{ props.value }} / {{ $t('label.page') }}</span>
+            </template>
+          </a-pagination>
+        </div>
 
-      <div :span="24" class="action-button">
-        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
 
@@ -1035,7 +1042,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -1067,7 +1074,7 @@ export default {
         id: rule.id
       }).then(response => {
         const jobId = response.deleteloadbalancerruleresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', jobId, null)
         this.$pollJob({
           title: this.$t('label.action.delete.load.balancer'),
           description: rule.id,

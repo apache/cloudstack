@@ -21,7 +21,7 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model:value="zoneId" @change="fetchPods" autoFocus>
+        <a-select v-model:value="zoneId" @change="fetchPods" v-focus="true">
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"

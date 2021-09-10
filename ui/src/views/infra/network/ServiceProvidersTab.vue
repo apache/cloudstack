@@ -69,7 +69,6 @@
         :closable="true"
         :maskClosable="false"
         @cancel="onCloseAction"
-        v-ctrl-enter="handleSubmit"
         style="top: 20px;"
         centered
       >
@@ -78,6 +77,7 @@
           :model="form"
           :rules="rules"
           @finish="handleSubmit"
+          v-ctrl-enter="handleSubmit"
           layout="vertical">
           <a-form-item
             :name="field.name"
@@ -87,18 +87,18 @@
             :label="$t('label.' + field.name)">
             <a-input-password
               v-if="field.name==='password'"
-              :autoFocus="index===0"
+              v-focus="index===0"
               v-model:value="form[field.name]"
               :placeholder="field.description" />
             <a-switch
               v-else-if="field.type==='boolean'"
-              :autoFocus="index===0"
+              v-focus="index===0"
               v-model:checked="form[field.name]"
               :placeholder="field.description"
             />
             <a-select
               v-else-if="field.type==='uuid'"
-              :autoFocus="index===0"
+              v-focus="index===0"
               v-model:value="form[field.name]"
               :loading="field.loading"
               :placeholder="field.description">
@@ -108,7 +108,7 @@
             </a-select>
             <a-input
               v-else
-              :autoFocus="index===0"
+              v-focus="index===0"
               v-model:value="form[field.name]"
               :placeholder="field.description" />
           </a-form-item>

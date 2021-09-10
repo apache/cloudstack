@@ -31,7 +31,7 @@
           <a-input-password
             v-model:value="form.currentpassword"
             :placeholder="$t('message.error.current.password')"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="password" ref="password">
           <template #label>

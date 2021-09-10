@@ -71,9 +71,8 @@
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
       :footer="null"
-      @cancel="modal = false"
-      v-ctrl-enter="handleSubmit">
-      <a-spin :spinning="formLoading">
+      @cancel="modal = false">
+      <a-spin :spinning="formLoading" v-ctrl-enter="handleSubmit">
         <a-form
           :ref="formRef"
           :model="form"
@@ -81,7 +80,7 @@
           @finish="handleSubmit"
           layout="vertical" >
           <a-form-item name="range" ref="range" :label="$t('label.vlanrange')">
-            <a-input v-model:value="form.range" autoFocus />
+            <a-input v-model:value="form.range" v-focus="true" />
           </a-form-item>
 
           <a-form-item name="scope" ref="scope" :label="$t('label.scope')">

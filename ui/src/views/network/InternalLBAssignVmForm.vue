@@ -37,7 +37,7 @@
             </span>
             <loading-outlined v-if="addVmModalNicLoading"  />
             <a-select
-              :autoFocus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
+              v-focus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
               mode="multiple"
               v-model:value="iLb.vmguestip[index]"
@@ -54,7 +54,7 @@
           <span>{{ vm.account }}</span>
           <span>{{ vm.zonename }}</span>
           <a-checkbox
-            :autoFocus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
+            v-focus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
             :value="vm.id"
             @change="e => fetchNics(e, index)" />
         </div>

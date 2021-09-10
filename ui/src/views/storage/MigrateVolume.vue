@@ -28,7 +28,7 @@
         <a-select
           v-model:value="selectedStoragePool"
           style="width: 100%;"
-          :autoFocus="storagePools.length > 0">
+          v-focus="storagePools.length > 0">
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
             {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
           </a-select-option>

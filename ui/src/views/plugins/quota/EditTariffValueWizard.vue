@@ -27,17 +27,17 @@
     :visible="showAction"
     :footer="null"
     @cancel="onClose"
-    v-ctrl-enter="submitTariff"
   >
     <a-form
       :ref="formRef"
       :model="form"
       :rules="rules"
       layout="vertical"
-      @finish="submitTariff">
+      @finish="submitTariff"
+      v-ctrl-enter="submitTariff">
       <a-form-item name="value" ref="value" :label="$t('label.quota.value')">
         <a-input
-          autoFocus
+          v-focus="true"
           v-model:value="form.value"></a-input>
       </a-form-item>
       <a-form-item name="startdate" ref="startdate" :label="$t('label.quota.tariff.effectivedate')">

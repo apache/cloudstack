@@ -50,7 +50,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
 
         <a-form-item name="description" ref="description">

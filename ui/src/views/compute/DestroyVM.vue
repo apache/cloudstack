@@ -44,7 +44,7 @@
             :placeholder="apiParams.volumeids.description"
             mode="multiple"
             :loading="loading"
-            :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
+            v-focus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
             <a-select-option v-for="volume in volumes" :key="volume.id">
               {{ volume.name }}
             </a-select-option>

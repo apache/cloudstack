@@ -34,7 +34,7 @@
             v-model:value="form.volumeid"
             @change="onChangeVolume"
             :placeholder="apiParams.volumeid.description"
-            autoFocus>
+            v-focus="true">
             <a-select-option
               v-for="volume in listVolumes"
               :key="volume.id">

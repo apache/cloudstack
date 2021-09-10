@@ -29,7 +29,7 @@
       <a-form-item name="zoneid" ref="zoneid" class="form__item" :label="$t('label.zone')">
         <a-select
           v-model:value="form.zoneid"
-          autoFocus>
+          v-focus="true">
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"

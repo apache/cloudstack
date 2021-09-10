@@ -93,14 +93,14 @@
       :footer="null"
       :confirmLoading="copyLoading"
       @cancel="onCloseModal"
-      v-ctrl-enter="handleCopyTemplateSubmit"
       centered>
-      <a-spin :spinning="copyLoading">
+      <a-spin :spinning="copyLoading" v-ctrl-enter="handleCopyTemplateSubmit">
         <a-form
           :ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical">
+          layout="vertical"
+          @finish="handleCopyTemplateSubmit">
           <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
@@ -113,7 +113,7 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              autoFocus>
+              v-focus="true">
               <a-select-option v-for="zone in zones" :key="zone.id">
                 {{ zone.name }}
               </a-select-option>
@@ -134,7 +134,6 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      v-ctrl-enter="deleteTemplate"
       :width="showTable ? modalWidth : '30vw'"
       @ok="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)"
       @cancel="onCloseModal"
@@ -142,35 +141,37 @@
       :cancel-button-props="getCancelProps()"
       :confirmLoading="deleteLoading"
       centered>
-      <div v-if="selectedRowKeys.length > 0">
-        <a-alert type="error">
-          <template #message>
-            <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
-            <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-            <span v-html="$t(message.confirmMessage)" />
-          </template>
-        </a-alert>
-      </div>
-      <a-alert v-else :message="$t('message.action.delete.template')" type="warning" />
-      <br />
-      <a-table
-        v-if="selectedRowKeys.length > 0 && showTable"
-        size="middle"
-        :columns="selectedColumns"
-        :dataSource="selectedItems"
-        :rowKey="(record, idx) => record.zoneid || record.name"
-        :pagination="true"
-        style="overflow-y: auto">
-      </a-table>
-      <a-spin :spinning="deleteLoading">
-        <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
-          <a-switch v-model:checked="forcedDelete" autoFocus></a-switch>
-        </a-form-item>
-        <div :span="24" class="action-button">
-          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+      <div v-ctrl-enter="deleteTemplate">
+        <div v-if="selectedRowKeys.length > 0">
+          <a-alert type="error">
+            <template #message>
+              <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
+              <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+              <span v-html="$t(message.confirmMessage)" />
+            </template>
+          </a-alert>
         </div>
-      </a-spin>
+        <a-alert v-else :message="$t('message.action.delete.template')" type="warning" />
+        <br />
+        <a-table
+          v-if="selectedRowKeys.length > 0 && showTable"
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.zoneid || record.name"
+          :pagination="true"
+          style="overflow-y: auto">
+        </a-table>
+        <a-spin :spinning="deleteLoading">
+          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
+            <a-switch v-model:checked="forcedDelete" v-focus="true"></a-switch>
+          </a-form-item>
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-spin>
+      </div>
     </a-modal>
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
@@ -366,7 +367,7 @@ export default {
       this.onShowDeleteModal(this.selectedItems[0])
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -442,7 +443,7 @@ export default {
               }
             }
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, template.zoneid, 'success')
+              eventBus.emit('update-resource-state', this.selectedItems, template.zoneid, 'success')
             }
           },
           errorMethod: () => {

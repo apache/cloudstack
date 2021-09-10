@@ -30,7 +30,7 @@
       :pagination="false"
       style="margin-bottom: 24px; width: 100%">
       <template #name="{ text, record }">
-        <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" autoFocus />
+        <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" v-focus="true" />
       </template>
       <template #isolationMethod="{ text, record }">
         <a-select
@@ -141,13 +141,14 @@
       :closable="true"
       :footer="null"
       @cancel="() => { showError = false }"
-      v-ctrl-enter="showError = false"
       centered
     >
-      <span>{{ $t('message.required.traffic.type') }}</span>
-      <div :span="24" class="action-button">
-        <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+      <div v-ctrl-enter="showError = false">
+        <span>{{ $t('message.required.traffic.type') }}</span>
+        <div :span="24" class="action-button">
+          <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
     <a-modal
@@ -156,10 +157,8 @@
       :closable="true"
       :maskClosable="false"
       centered
-      :footer="null"
-      v-ctrl-enter:[trafficInEdit]="updateTrafficLabel"
-    >
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+      :footer="null">
+      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" v-ctrl-enter:[trafficInEdit]="updateTrafficLabel">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
         <a-form-item
           v-if="hypervisor !== 'VMware'"
@@ -171,14 +170,14 @@
           <a-input v-model:value="form.trafficLabel" />
         </a-form-item>
         <span v-else>
-          <a-form-item :label="$t('label.vswitch.name')">
-            <a-input v-decorator="['vSwitchName']" />
+          <a-form-item :label="$t('label.vswitch.name')" name="vSwitchName" ref="vSwitchName">
+            <a-input v-model:value="form.vSwitchName" />
           </a-form-item>
-          <a-form-item :label="$t('label.vlanid')">
-            <a-input v-decorator="['vlanId']" />
+          <a-form-item :label="$t('label.vlanid')" name="vlanId" ref="vlanId">
+            <a-input v-model:value="form.vlanId" />
           </a-form-item>
-          <a-form-item v-if="isAdvancedZone" :label="$t('label.vswitch.type')">
-            <a-select v-decorator="['vSwitchType']">
+          <a-form-item v-if="isAdvancedZone" :label="$t('label.vswitch.type')" name="vSwitchType" ref="vSwitchType">
+            <a-select v-model:value="form.vSwitchType">
               <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
               <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
               <a-select-option value="vmwaredvs">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>

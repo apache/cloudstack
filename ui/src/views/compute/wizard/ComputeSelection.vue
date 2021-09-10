@@ -35,7 +35,7 @@
               </a-col>
               <a-col :md="4" :lg="4">
                 <a-input-number
-                  :autoFocus="isConstrained"
+                  v-focus="isConstrained"
                   v-model:value="cpuNumberInputValue"
                   @change="($event) => updateComputeCpuNumber($event)"
                 />
@@ -49,7 +49,7 @@
             :validate-status="errors.cpuspeed.status"
             :help="errors.cpuspeed.message">
             <a-input-number
-              :autoFocus="!isConstrained"
+              v-focus="!isConstrained"
               v-model:value="cpuSpeedInputValue"
               @change="($event) => updateComputeCpuSpeed($event)"
             />

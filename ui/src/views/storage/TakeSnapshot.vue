@@ -29,19 +29,19 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        @submit="handleSubmit">
+        @finish="handleSubmit">
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
             <a-form-item :label="$t('label.name')" name="name" ref="name">
               <a-input
                 v-model:value="form.name"
                 :placeholder="apiParams.name.description"
-                autoFocus />
+                v-focus="true" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
-            <a-form-item :label="$t('label.asyncbackup')">
-              <a-switch v-decorator="['asyncbackup']" />
+            <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
+              <a-switch v-model:checked="form.asyncbackup" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="quiescevm" name="quiescevm" ref="quiescevm">

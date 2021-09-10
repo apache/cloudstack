@@ -177,7 +177,7 @@
             <a-input
               :placeholder="$t('label.create.tier.name.description')"
               v-model:value="createNetworkForm.name"
-              autoFocus></a-input>
+              v-focus="true"></a-input>
           </a-form-item>
           <a-form-item ref="networkOffering" name="networkOffering" :colon="false">
             <template #label>
@@ -197,7 +197,7 @@
             </template>
             <a-input
               v-model:value="form.vlan"
-              :placeholder="this.$t('label.vlan')"/>
+              :placeholder="$t('label.vlan')"/>
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
@@ -262,11 +262,11 @@
         <a-form
           @submit.prevent="handleAddInternalLBSubmit"
           :ref="internalLbRef"
-          :form="internalLbForm"
+          :model="internalLbForm"
           :rules="internalLbRules">
           <a-form-item ref="name" name="name" :label="$t('label.name')">
             <a-input
-              autoFocus
+              v-focus="true"
               :placeholder="$t('label.internallb.name.description')"
               v-model:value="internalLbForm.name"/>
           </a-form-item>

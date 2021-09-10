@@ -46,3 +46,11 @@ vueApp.directive('ctrlEnter', {
     })
   }
 })
+
+vueApp.directive('focus', {
+  mounted: (el, binding, vnode) => {
+    if (binding.value) {
+      el.focus()
+    }
+  }
+})

@@ -27,7 +27,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
-              autoFocus
+              v-focus="true"
               v-model:value="form.ip" />
           </a-form-item>
         </a-col>

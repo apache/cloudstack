@@ -27,7 +27,7 @@
           <a-select
             :loading="loading"
             v-model:value="form.id"
-            autoFocus>
+            v-focus="true">
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>

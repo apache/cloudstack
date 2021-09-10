@@ -19,7 +19,7 @@
   <a-select
     v-model:value="value"
     @change="handleChange"
-    autoFocus>
+    v-focus="true">
     <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
     <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
   </a-select>

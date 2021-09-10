@@ -42,7 +42,7 @@
                         :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
-                        autoFocus
+                        v-focus="true"
                       ></a-select>
                     </a-form-item>
                     <a-form-item
@@ -754,7 +754,8 @@ export default {
       diskIOpsMin: 0,
       diskIOpsMax: 0,
       minIops: 0,
-      maxIops: 0
+      maxIops: 0,
+      formModel: {}
     }
   },
   computed: {

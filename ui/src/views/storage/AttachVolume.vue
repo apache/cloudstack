@@ -17,7 +17,14 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical" v-ctrl-enter="handleSubmit">
+    <a-form
+      class="form"
+      layout="vertical"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit">
       <div style="margin-bottom: 10px">
         <a-alert type="warning">
           <template #message>
@@ -27,7 +34,7 @@
       </div>
       <a-form-item :label="$t('label.virtualmachineid')" name="virtualmachineid" ref="virtualmachineid">
         <a-select
-          autoFocus
+          v-focus="true"
           v-model:value="form.virtualmachineid"
           :placeholder="apiParams.virtualmachineid.description">
           <a-select-option v-for="vm in virtualmachines" :key="vm.id">
@@ -70,9 +77,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        virtualmachineid: undefined
-      })
+      this.form = reactive({})
       this.rules = reactive({
         virtualmachineid: [{ required: true, message: this.$t('message.error.select') }]
       })

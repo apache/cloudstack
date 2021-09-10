@@ -34,7 +34,7 @@
             }"
             :loading="stateLoading"
             :placeholder="apiParams.state.description"
-            autoFocus >
+            v-focus="true" >
             <a-select-option v-for="(opt, optIndex) in states" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>

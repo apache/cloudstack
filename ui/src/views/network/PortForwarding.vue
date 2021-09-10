@@ -23,7 +23,7 @@
           <div class="form__label">{{ $t('label.privateport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
-              autoFocus
+              v-focus="true"
               v-model:value="newRule.privateport"
               :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
@@ -143,25 +143,30 @@
       :closable="true"
       :maskClosable="false"
       :afterClose="closeModal"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
+      @cancel="tagsModalVisible = false">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
         <loading-outlined />
       </span>
 
-      <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
+      <a-form
+        :ref="newTagsRef"
+        :model="newTagsForm"
+        :rules="newTagsRules"
+        class="add-tags"
+        @finish="handleAddTag"
+        v-ctrl-enter="handleAddTag">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-form-item>
+          <a-form-item name="key" ref="key">
             <a-input
-              autoFocus
-              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+              v-focus="true"
+              v-model:value="form.key" />
           </a-form-item>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-form-item>
-            <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+          <a-form-item name="value" ref="value">
+            <a-input v-model:value="form.value" />
           </a-form-item>
         </div>
 
@@ -211,7 +216,7 @@
           </a-select>
         </span>
         <a-input-search
-          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+          v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
           v-model:value="searchQuery"
@@ -292,6 +297,7 @@
 </template>
 
 <script>
+import { reactive, ref, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -417,8 +423,7 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null,
-      newTagsForm: this.$form.createForm(this)
+      searchQuery: null
     }
   },
   computed: {
@@ -427,6 +432,7 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -438,6 +444,14 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.newTagsRef = ref()
+      this.newTagsForm = reactive({})
+      this.newTagsRules = reactive({
+        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+      })
+    },
     fetchData () {
       this.fetchListTiers()
       this.fetchPFRules()
@@ -500,7 +514,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -608,7 +622,7 @@ export default {
       this.newRule.virtualmachineid = null
     },
     resetTagInputs () {
-      this.newTagsForm.resetFields()
+      this.newTagsRef.value.resetFields()
     },
     closeModal () {
       this.selectedRule = null
@@ -644,11 +658,9 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
-        if (err) {
-          this.tagsModalLoading = false
-          return
-        }
+      this.newTagsRef.value.validate().then(() => {
+        const values = toRaw(this.newTagsForm)
+        this.tagsModalLoading = false
 
         api('createTags', {
           'tags[0].key': values.key,

@@ -36,7 +36,7 @@
           name="url"
           :label="$t('label.url')">
           <a-input
-            :autoFocus="currentForm === 'Create'"
+            v-focus="currentForm === 'Create'"
             v-model:value="form.url"
             :placeholder="apiParams.url.description" />
         </a-form-item>
@@ -63,7 +63,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            :autoFocus="currentForm !== 'Create'" />
+            v-focus="currentForm !== 'Create'" />
         </a-form-item>
         <a-form-item ref="displaytext" name="displaytext" :label="$t('label.displaytext')">
           <a-input

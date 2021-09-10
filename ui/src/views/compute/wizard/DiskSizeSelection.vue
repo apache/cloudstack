@@ -23,7 +23,7 @@
         class="form-item">
         <span style="display: inline-flex">
           <a-input-number
-            autoFocus
+            v-focus="true"
             v-model:value="inputValue"
             @change="($event) => updateDiskSize($event)"
           />

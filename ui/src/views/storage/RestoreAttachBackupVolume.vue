@@ -29,7 +29,7 @@
           allowClear
           v-model:value="form.volumeid"
           :loading="volumeOptions.loading"
-          autoFocus>
+          v-focus="true">
           <a-select-option
             v-for="(opt) in volumeOptions.opts"
             :key="opt.id">
