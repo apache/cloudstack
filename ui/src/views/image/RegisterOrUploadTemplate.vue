@@ -220,7 +220,7 @@
         </a-form-item>
 
         <a-row :gutter="12" v-if="hyperKVMShow || hyperVMWShow">
-          <a-col :md="24" :lg="24" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
+          <a-col :md="24" :lg="hyperKVMShow ? 24 : 12" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
@@ -240,8 +240,28 @@
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
-            <a-form-item v-if="hyperVMWShow && !deployasis" :label="$t('label.keyboardtype')">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
+            <a-form-item :label="$t('label.nicadaptertype')">
+              <a-select
+                v-decorator="['nicAdapterType', {
+                  rules: [
+                    {
+                      required: false,
+                      message: `${this.$t('message.error.select')}`
+                    }
+                  ]
+                }]"
+                :placeholder="$t('label.nicadaptertype')">
+                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
+                  {{ opt.name || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
+            <a-form-item :label="$t('label.keyboardtype')">
               <a-select
                 v-decorator="['keyboardType', {
                   rules: [
@@ -258,9 +278,7 @@
               </a-select>
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="12" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
-          <a-col :md="24" :lg="24">
+          <a-col :md="24" :lg="hyperVMWShow && !deployasis ? 12 : 24">
             <a-form-item :label="$t('label.ostypeid')">
               <a-select
                 showSearch
