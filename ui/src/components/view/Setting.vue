@@ -110,8 +110,9 @@
 
     <div class="setting-action">
       <a-divider style="margin: 15px 0;" />
-      <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
+      <a-alert v-if="isDevelopmentMode" class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
+        v-if="isDevelopmentMode"
         class="setting-action-btn"
         icon="copy"
         @click="saveSetting">{{ $t('label.save.setting') }}</a-button>
@@ -152,6 +153,9 @@ export default {
   computed: {
     projectView () {
       return Boolean(this.$store.getters.project && this.$store.getters.project.id)
+    },
+    isDevelopmentMode () {
+      return process.env.NODE_ENV === 'development'
     },
     pageStyles () {
       const arrStyle = [
