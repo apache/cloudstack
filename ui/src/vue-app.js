@@ -15,32 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { vueApp } from '@/vue-app'
-import StoragePlugin from 'vue-web-storage'
-import config from '@/config/settings'
+import { createApp } from 'vue'
+import App from './App.vue'
 
-// base library'
-import VueCropper from 'vue-cropper'
-import '@/core/lazy_lib/components_use'
-import '@/core/lazy_lib/icons_use'
+const app = createApp(App)
+const vueProps = app.config.globalProperties
 
-import 'ant-design-vue/dist/antd.min.css'
-import '@/style/vars.less'
+app.config.productionTip = false
 
-// ext library
-import VueClipboard from 'vue3-clipboard'
-import PermissionHelper from '@/utils/helper/permission'
-
-// customisation
-import { Spin } from 'ant-design-vue'
-
-vueApp.use(StoragePlugin, config.storageOptions)
-vueApp.use(VueClipboard, { autoSetContainer: true })
-vueApp.use(PermissionHelper)
-vueApp.use(VueCropper)
-
-Spin.setDefaultIndicator({
-  indicator: () => {
-    return <loading-outlined style="font-size: 30px" spin />
-  }
-})
+export {
+  app as vueApp,
+  vueProps
+}

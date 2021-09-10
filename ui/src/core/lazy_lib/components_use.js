@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { vueApp, vueProps } from '@/vue-app'
 import {
   ConfigProvider,
   Layout,
@@ -65,65 +66,58 @@ import {
   AutoComplete,
   Collapse
 } from 'ant-design-vue'
-import VueClipboard from 'vue3-clipboard'
 
-export default {
-  install: (app) => {
-    app.config.globalProperties.$confirm = Modal.confirm
-    app.config.globalProperties.$message = message
-    app.config.globalProperties.$notification = notification
-    app.config.globalProperties.$info = Modal.info
-    app.config.globalProperties.$success = Modal.success
-    app.config.globalProperties.$error = Modal.error
-    app.config.globalProperties.$warning = Modal.warning
+vueProps.$confirm = Modal.confirm
+vueProps.$message = message
+vueProps.$notification = notification
+vueProps.$info = Modal.info
+vueProps.$success = Modal.success
+vueProps.$error = Modal.error
+vueProps.$warning = Modal.warning
 
-    app.use(VueClipboard, { autoSetContainer: true })
-    app.use(ConfigProvider)
-    app.use(Layout)
-    app.use(Input)
-    app.use(InputNumber)
-    app.use(Button)
-    app.use(Switch)
-    app.use(Radio)
-    app.use(Checkbox)
-    app.use(Select)
-    app.use(Card)
-    app.use(Form)
-    app.use(Row)
-    app.use(Col)
-    app.use(Modal)
-    app.use(Table)
-    app.use(Tabs)
-    app.use(Badge)
-    app.use(Popover)
-    app.use(Dropdown)
-    app.use(List)
-    app.use(Avatar)
-    app.use(Breadcrumb)
-    app.use(Steps)
-    app.use(Spin)
-    app.use(Menu)
-    app.use(Drawer)
-    app.use(Tooltip)
-    app.use(Alert)
-    app.use(Tag)
-    app.use(Divider)
-    app.use(DatePicker)
-    app.use(TimePicker)
-    app.use(Upload)
-    app.use(Progress)
-    app.use(Skeleton)
-    app.use(Popconfirm)
-    // app.use(Notification)
-    app.use(Affix)
-    app.use(Timeline)
-    app.use(Pagination)
-    app.use(Comment)
-    app.use(Tree)
-    app.use(Calendar)
-    app.use(Slider)
-    app.use(AutoComplete)
-    app.use(Collapse)
-    app.use(Descriptions)
-  }
-}
+vueApp.use(ConfigProvider)
+vueApp.use(Layout)
+vueApp.use(Input)
+vueApp.use(InputNumber)
+vueApp.use(Button)
+vueApp.use(Switch)
+vueApp.use(Radio)
+vueApp.use(Checkbox)
+vueApp.use(Select)
+vueApp.use(Card)
+vueApp.use(Form)
+vueApp.use(Row)
+vueApp.use(Col)
+vueApp.use(Modal)
+vueApp.use(Table)
+vueApp.use(Tabs)
+vueApp.use(Badge)
+vueApp.use(Popover)
+vueApp.use(Dropdown)
+vueApp.use(List)
+vueApp.use(Avatar)
+vueApp.use(Breadcrumb)
+vueApp.use(Steps)
+vueApp.use(Spin)
+vueApp.use(Menu)
+vueApp.use(Drawer)
+vueApp.use(Tooltip)
+vueApp.use(Alert)
+vueApp.use(Tag)
+vueApp.use(Divider)
+vueApp.use(DatePicker)
+vueApp.use(TimePicker)
+vueApp.use(Upload)
+vueApp.use(Progress)
+vueApp.use(Skeleton)
+vueApp.use(Popconfirm)
+vueApp.use(Affix)
+vueApp.use(Timeline)
+vueApp.use(Pagination)
+vueApp.use(Comment)
+vueApp.use(Tree)
+vueApp.use(Calendar)
+vueApp.use(Slider)
+vueApp.use(AutoComplete)
+vueApp.use(Collapse)
+vueApp.use(Descriptions)

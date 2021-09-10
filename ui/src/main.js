@@ -15,59 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { createApp } from 'vue'
-import StoragePlugin from 'vue-web-storage'
-
-import App from './App.vue'
+import { vueApp, vueProps } from './vue-app'
 import router from './router'
 import store from './store'
 import { i18n, loadLanguageAsync } from './locales'
 
 import bootstrap from './core/bootstrap'
-import lazyUsePlugs from './core/lazy_use'
-import permission from './permission' // permission control
-import filter from './utils/filter' // global filter
-import ctrlEnterDirective from './utils/directives'
-
+import './core/lazy_use'
+import './core/ext'
+import './permission' // permission control
+import './utils/filter' // global filter
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
-import { VueAxios } from './utils/request'
-import setting from '@/config/settings'
+import { VueAxios } from '@/utils/request'
+import './utils/directives'
 
-const app = createApp(App)
-
-app.config.productionTip = false
-app.use(VueAxios, router)
-app.use(pollJobPlugin)
-app.use(permission)
-app.use(notifierPlugin)
-app.use(toLocaleDatePlugin)
-app.use(configUtilPlugin)
-app.use(apiMetaUtilPlugin)
-app.use(filter)
-app.use(ctrlEnterDirective)
+vueApp.use(VueAxios, router)
+vueApp.use(pollJobPlugin)
+vueApp.use(notifierPlugin)
+vueApp.use(toLocaleDatePlugin)
+vueApp.use(configUtilPlugin)
+vueApp.use(apiMetaUtilPlugin)
 
 fetch('config.json').then(response => response.json()).then(config => {
-  app.config.globalProperties.$config = config
-  app.use(StoragePlugin, setting.storageOptions)
-  // set global localStorage for using
-  window.ls = app.config.globalProperties.$localStorage
-  window.appPrototype = app.config.globalProperties
-
+  vueProps.$config = config
   let basUrl = config.apiBase
   if (config.multipleServer) {
     basUrl = (config.servers[0].apiHost || '') + config.servers[0].apiBase
   }
 
-  app.config.globalProperties.axios.defaults.baseURL = basUrl
+  vueProps.axios.defaults.baseURL = basUrl
 
   loadLanguageAsync().then(() => {
-    app.use(store)
-      .use(lazyUsePlugs)
+    vueApp.use(store)
       .use(router)
       .use(i18n)
       .use(bootstrap)
       .mount('#app')
-
-    app.config.globalProperties.axios.defaults.baseURL = config.apiBase
   })
 })

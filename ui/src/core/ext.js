@@ -16,31 +16,17 @@
 // under the License.
 
 import { vueApp } from '@/vue-app'
-import StoragePlugin from 'vue-web-storage'
-import config from '@/config/settings'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
-// base library'
-import VueCropper from 'vue-cropper'
-import '@/core/lazy_lib/components_use'
-import '@/core/lazy_lib/icons_use'
+// import { fab } from '@fortawesome/free-brands-svg-icons'
+// import { fas } from '@fortawesome/free-solid-svg-icons'
+// import { far } from '@fortawesome/free-regular-svg-icons'
 
-import 'ant-design-vue/dist/antd.min.css'
-import '@/style/vars.less'
+import { faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava } from '@fortawesome/free-brands-svg-icons'
+import { faLanguage, faCompactDisc, faCameraRetro } from '@fortawesome/free-solid-svg-icons'
 
-// ext library
-import VueClipboard from 'vue3-clipboard'
-import PermissionHelper from '@/utils/helper/permission'
+library.add(faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava)
+library.add(faLanguage, faCompactDisc, faCameraRetro)
 
-// customisation
-import { Spin } from 'ant-design-vue'
-
-vueApp.use(StoragePlugin, config.storageOptions)
-vueApp.use(VueClipboard, { autoSetContainer: true })
-vueApp.use(PermissionHelper)
-vueApp.use(VueCropper)
-
-Spin.setDefaultIndicator({
-  indicator: () => {
-    return <loading-outlined style="font-size: 30px" spin />
-  }
-})
+vueApp.component('font-awesome-icon', FontAwesomeIcon)

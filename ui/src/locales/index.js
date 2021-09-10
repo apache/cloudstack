@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n'
+import { vueProps } from '@/vue-app'
 
 const loadedLanguage = []
 const messages = {}
@@ -13,7 +14,7 @@ export const i18n = createI18n({
 
 export function loadLanguageAsync (lang) {
   if (!lang) {
-    lang = Window.ls ? Window.ls.get('LOCALE') || 'en' : 'en'
+    lang = vueProps.$localStorage ? vueProps.$localStorage.get('LOCALE') || 'en' : 'en'
   }
   if (loadedLanguage.includes(lang)) {
     return Promise.resolve(setLanguage(lang))

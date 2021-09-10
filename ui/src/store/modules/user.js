@@ -19,10 +19,13 @@ import Cookies from 'js-cookie'
 import md5 from 'md5'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
+
+import { vueProps } from '@/vue-app'
 import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import { i18n } from '@/locales'
+
 import {
   ACCESS_TOKEN,
   CURRENT_PROJECT,
@@ -63,15 +66,15 @@ const user = {
       state.token = token
     },
     SET_TIMEZONE_OFFSET: (state, timezoneoffset) => {
-      window.ls.set(TIMEZONE_OFFSET, timezoneoffset)
+      vueProps.$localStorage.set(TIMEZONE_OFFSET, timezoneoffset)
       state.timezoneoffset = timezoneoffset
     },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
-      window.ls.set(USE_BROWSER_TIMEZONE, bool)
+      vueProps.$localStorage.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
     },
     SET_PROJECT: (state, project = {}) => {
-      window.ls.set(CURRENT_PROJECT, project)
+      vueProps.$localStorage.set(CURRENT_PROJECT, project)
       state.project = project
     },
     SET_NAME: (state, name) => {
@@ -85,13 +88,13 @@ const user = {
     },
     SET_APIS: (state, apis) => {
       state.apis = apis
-      window.ls.set(APIS, apis)
+      vueProps.$localStorage.set(APIS, apis)
     },
     SET_FEATURES: (state, features) => {
       state.features = features
     },
     SET_HEADER_NOTICES: (state, noticeJsonArray) => {
-      window.ls.set(HEADER_NOTICES, noticeJsonArray)
+      vueProps.$localStorage.set(HEADER_NOTICES, noticeJsonArray)
       state.headerNotices = noticeJsonArray
     },
     SET_LDAP: (state, isLdapEnabled) => {
@@ -101,23 +104,23 @@ const user = {
       state.cloudian = cloudian
     },
     RESET_THEME: (state) => {
-      window.ls.set(DEFAULT_THEME, 'light')
+      vueProps.$localStorage.set(DEFAULT_THEME, 'light')
     },
     SET_ZONES: (state, zones) => {
       state.zones = zones
-      window.ls.set(ZONES, zones)
+      vueProps.$localStorage.set(ZONES, zones)
     },
     SET_DOMAIN_STORE (state, domainStore) {
       state.domainStore = domainStore
-      window.ls.set(DOMAIN_STORE, domainStore)
+      vueProps.$localStorage.set(DOMAIN_STORE, domainStore)
     },
     SET_DARK_MODE (state, darkMode) {
       state.darkMode = darkMode
-      window.ls.set(DARK_MODE, darkMode)
+      vueProps.$localStorage.set(DARK_MODE, darkMode)
     },
     SET_THEME_SETTING (state, setting) {
       state.themeSetting = setting
-      window.ls.set(THEME_SETTING, setting)
+      vueProps.$localStorage.set(THEME_SETTING, setting)
     },
     SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
       state.defaultListViewPageSize = defaultListViewPageSize
@@ -140,15 +143,15 @@ const user = {
           Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
           Cookies.set('userid', result.userid, { expires: 1 })
           Cookies.set('username', result.username, { expires: 1 })
-          window.ls.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
+          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
           commit('SET_TOKEN', result.sessionkey)
           commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
 
-          const cachedUseBrowserTimezone = window.ls.get(USE_BROWSER_TIMEZONE, false)
+          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = window.ls.get(DARK_MODE, false)
+          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
           commit('SET_DARK_MODE', darkMode)
-          const themeSetting = window.ls.get(THEME_SETTING, {})
+          const themeSetting = vueProps.$localStorage.get(THEME_SETTING, {})
           commit('SET_THEME_SETTING', themeSetting)
 
           commit('SET_APIS', {})
@@ -173,13 +176,13 @@ const user = {
 
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
-        const cachedApis = window.ls.get(APIS, {})
-        const cachedZones = window.ls.get(ZONES, [])
-        const cachedTimezoneOffset = window.ls.get(TIMEZONE_OFFSET, 0.0)
-        const cachedUseBrowserTimezone = window.ls.get(USE_BROWSER_TIMEZONE, false)
-        const domainStore = window.ls.get(DOMAIN_STORE, {})
-        const darkMode = window.ls.get(DARK_MODE, false)
-        const themeSetting = window.ls.get(THEME_SETTING, {})
+        const cachedApis = vueProps.$localStorage.get(APIS, {})
+        const cachedZones = vueProps.$localStorage.get(ZONES, [])
+        const cachedTimezoneOffset = vueProps.$localStorage.get(TIMEZONE_OFFSET, 0.0)
+        const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
+        const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
+        const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+        const themeSetting = vueProps.$localStorage.get(THEME_SETTING, {})
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
@@ -302,9 +305,9 @@ const user = {
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
-        window.ls.remove(CURRENT_PROJECT)
-        window.ls.remove(ACCESS_TOKEN)
-        window.ls.remove(HEADER_NOTICES)
+        vueProps.$localStorage.remove(CURRENT_PROJECT)
+        vueProps.$localStorage.remove(ACCESS_TOKEN)
+        vueProps.$localStorage.remove(HEADER_NOTICES)
 
         logout(state.token).then(() => {
           message.destroy()
@@ -322,7 +325,7 @@ const user = {
       if (!noticeJson || !noticeJson.title) {
         return
       }
-      const noticeArray = window.ls.get(HEADER_NOTICES, [])
+      const noticeArray = vueProps.$localStorage.get(HEADER_NOTICES, [])
       const noticeIdx = noticeArray.findIndex(notice => notice.key === noticeJson.key)
       if (noticeIdx === -1) {
         noticeArray.push(noticeJson)

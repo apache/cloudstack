@@ -85,6 +85,7 @@ export const pollJobPlugin = {
 
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       api('queryAsyncJobResult', { jobId }).then(json => {
+        if (!this.$t) this.$t = i18n.global.t
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', jobId, resourceId)
         if (result.jobstatus === 1) {
@@ -146,7 +147,7 @@ export const pollJobPlugin = {
             status: 'failed',
             duration: 2
           })
-          eventBus.$emit('update-job-details', jobId, resourceId)
+          eventBus.emit('update-job-details', jobId, resourceId)
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')

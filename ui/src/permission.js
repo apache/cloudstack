@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { vueProps } from '@/vue-app'
 import Cookies from 'js-cookie'
 import { i18n } from './locales'
 import router from './router'
@@ -31,83 +32,78 @@ NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
 const allowList = ['login'] // no redirect allowlist
 
-export default {
-  install: (app) => {
-    router.beforeEach((to, from, next) => {
-      // start progress bar
-      NProgress.start()
+router.beforeEach((to, from, next) => {
+  // start progress bar
+  NProgress.start()
 
-      if (to.meta && typeof to.meta.title !== 'undefined') {
-        const title = i18n.global.t(to.meta.title) + ' - ' + app.config.globalProperties.$config.appTitle
-        setDocumentTitle(title)
-      }
-
-      const ls = app.config.globalProperties.$localStorage
-      if (app.config.globalProperties.$config.multipleServer) {
-        const servers = app.config.globalProperties.$config.servers
-        const serverStorage = ls.get(SERVER_MANAGER)
-        let apiFullPath = ''
-        if (serverStorage) {
-          apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
-        }
-        const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
-        const server = serverFilter[0] || servers[0]
-        app.config.globalProperties.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
-        store.dispatch('SetServer', server)
-      }
-
-      const validLogin = ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
-      if (validLogin) {
-        if (to.path === '/user/login') {
-          next({ path: '/dashboard' })
-          NProgress.done()
-        } else {
-          if (Object.keys(store.getters.apis).length === 0) {
-            const cachedApis = ls.get(APIS, {})
-            if (Object.keys(cachedApis).length > 0) {
-              message.loading(`${i18n.global.t('label.loading')}...`, 1.5)
-            }
-            store
-              .dispatch('GetInfo')
-              .then(apis => {
-                store.dispatch('GenerateRoutes', { apis }).then(() => {
-                  store.getters.addRouters.map(route => {
-                    router.addRoute(route)
-                  })
-                  const redirect = decodeURIComponent(from.query.redirect || to.path)
-                  if (to.path === redirect) {
-                    next({ ...to, replace: true })
-                  } else {
-                    next({ path: redirect })
-                  }
-                })
-              })
-              .catch(() => {
-                notification.error({
-                  message: 'Error',
-                  description: i18n.global.t('message.error.discovering.feature'),
-                  duration: 0
-                })
-                store.dispatch('Logout').then(() => {
-                  next({ path: '/user/login', query: { redirect: to.fullPath } })
-                })
-              })
-          } else {
-            next()
-          }
-        }
-      } else {
-        if (allowList.includes(to.name)) {
-          next()
-        } else {
-          next({ path: '/user/login', query: { redirect: to.fullPath } })
-          NProgress.done()
-        }
-      }
-    })
-
-    router.afterEach(() => {
-      NProgress.done() // finish progress bar
-    })
+  if (to.meta && typeof to.meta.title !== 'undefined') {
+    const title = i18n.global.t(to.meta.title) + ' - ' + vueProps.$config.appTitle
+    setDocumentTitle(title)
   }
-}
+
+  if (vueProps.$config.multipleServer) {
+    const servers = vueProps.$config.servers
+    const serverStorage = vueProps.$localStorage.get(SERVER_MANAGER)
+    let apiFullPath = ''
+    if (serverStorage) {
+      apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
+    }
+    const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
+    const server = serverFilter[0] || servers[0]
+    vueProps.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
+    store.dispatch('SetServer', server)
+  }
+
+  const validLogin = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
+  if (validLogin) {
+    if (to.path === '/user/login') {
+      next({ path: '/dashboard' })
+      NProgress.done()
+    } else {
+      if (Object.keys(store.getters.apis).length === 0) {
+        const cachedApis = vueProps.$localStorage.get(APIS, {})
+        if (Object.keys(cachedApis).length > 0) {
+          message.loading(`${i18n.global.t('label.loading')}...`, 1.5)
+        }
+        store
+          .dispatch('GetInfo')
+          .then(apis => {
+            store.dispatch('GenerateRoutes', { apis }).then(() => {
+              store.getters.addRouters.map(route => {
+                router.addRoute(route)
+              })
+              const redirect = decodeURIComponent(from.query.redirect || to.path)
+              if (to.path === redirect) {
+                next({ ...to, replace: true })
+              } else {
+                next({ path: redirect })
+              }
+            })
+          })
+          .catch(() => {
+            notification.error({
+              message: 'Error',
+              description: i18n.global.t('message.error.discovering.feature'),
+              duration: 0
+            })
+            store.dispatch('Logout').then(() => {
+              next({ path: '/user/login', query: { redirect: to.fullPath } })
+            })
+          })
+      } else {
+        next()
+      }
+    }
+  } else {
+    if (allowList.includes(to.name)) {
+      next()
+    } else {
+      next({ path: '/user/login', query: { redirect: to.fullPath } })
+      NProgress.done()
+    }
+  }
+})
+
+router.afterEach(() => {
+  NProgress.done() // finish progress bar
+})

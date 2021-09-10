@@ -21,6 +21,7 @@ import AutogenView from '@/views/AutogenView.vue'
 import IFramePlugin from '@/views/plugins/IFramePlugin.vue'
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import { vueProps } from '@/vue-app'
 
 import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
@@ -44,7 +45,7 @@ function generateRouterMap (section) {
     name: section.name,
     path: '/' + section.name,
     hidden: section.hidden,
-    meta: { title: section.title, icon: section.icon, docHelp: window.appPrototype.$applyDocHelpMappings(section.docHelp), searchFilters: section.searchFilters },
+    meta: { title: section.title, icon: section.icon, docHelp: vueProps.$applyDocHelpMappings(section.docHelp), searchFilters: section.searchFilters },
     component: shallowRef(RouteView)
   }
 
@@ -65,7 +66,7 @@ function generateRouterMap (section) {
           title: child.title,
           name: child.name,
           icon: child.icon,
-          docHelp: window.appPrototype.$applyDocHelpMappings(child.docHelp),
+          docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
           resourceType: child.resourceType,
           filters: child.filters,
@@ -87,7 +88,7 @@ function generateRouterMap (section) {
               title: child.title,
               name: child.name,
               icon: child.icon,
-              docHelp: window.appPrototype.$applyDocHelpMappings(child.docHelp),
+              docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
               permission: child.permission,
               resourceType: child.resourceType,
               params: child.params ? child.params : {},
@@ -142,7 +143,7 @@ function generateRouterMap (section) {
         title: section.title,
         name: section.name,
         icon: section.icon,
-        docHelp: window.appPrototype.$applyDocHelpMappings(section.docHelp),
+        docHelp: vueProps.$applyDocHelpMappings(section.docHelp),
         hidden: section.hidden,
         permission: section.permission,
         resourceType: section.resourceType,
@@ -271,7 +272,7 @@ export function asyncRouterMap () {
     path: '/:catchAll(.*)', redirect: '/exception/404', hidden: true
   }]
 
-  const plugins = window.appPrototype.$config.plugins
+  const plugins = vueProps.$config.plugins
   if (plugins && plugins.length > 0) {
     plugins.map(plugin => {
       routerMap[0].children.push({

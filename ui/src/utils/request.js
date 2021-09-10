@@ -16,6 +16,8 @@
 // under the License.
 
 import axios from 'axios'
+
+import { vueProps } from '@/vue-app'
 import router from '@/router'
 import { VueAxios } from './axios'
 import notification from 'ant-design-vue/es/notification'
@@ -82,7 +84,7 @@ const err = (error) => {
 service.interceptors.request.use(config => {
   if (config && config.params) {
     config.params.response = 'json'
-    const project = window.ls.get(CURRENT_PROJECT)
+    const project = vueProps.$localStorage.get(CURRENT_PROJECT)
     if (!config.params.projectid && project && project.id) {
       if (config.params.command === 'listTags') {
         config.params.projectid = '-1'
