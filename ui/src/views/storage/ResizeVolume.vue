@@ -22,14 +22,27 @@
         <a-input
           v-decorator="['size', {
             rules: [{ required: true, message: $t('message.error.size') }]}]"
-          :placeholder="$t('label.disksize')"
-          :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
+          :placeholder="$t('label.disksize')"/>
           showSearch
           optionFilterProp="children"
           :filterOption="(input, option) => {
             return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
       </a-form-item>
+      <div v-if="customDiskOfferingIops">
+        <a-form-item :label="$t('label.miniops')">
+          <a-input
+            v-decorator="['miniops', {
+              rules: [{ required: true, message: $t('message.error.number') }]}]"
+            :placeholder="$t('label.miniops')"/>
+        </a-form-item>
+        <a-form-item :label="$t('label.maxiops')">
+          <a-input
+            v-decorator="['maxiops', {
+              rules: [{ required: true, message: $t('message.error.number') }]}]"
+            :placeholder="$t('label.maxiops')"/>
+        </a-form-item>
+      </div>
       <a-form-item :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
         <a-checkbox v-decorator="['shrinkok']" />
       </a-form-item>

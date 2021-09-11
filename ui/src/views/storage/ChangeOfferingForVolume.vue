@@ -16,25 +16,83 @@
 // under the License.
 
 <template>
-  <div class="change-offering-for-volume-container">
-    <div class="modal-form">
+  <a-form
+    class="form"
+    :form="form"
+    @submit="submitChangeOfferingForVolume"
+    v-ctrl-enter="submitChangeOfferingForVolume"
+    layout="vertical">
+    <a-form-item>
       <a-alert type="warning">
         <span slot="message" v-html="$t('message.confirm.change.offering.for.volume')" />
       </a-alert>
-      <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
-      <a-select v-model="selectedDiskOffering" style="width: 100%;">
-        <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
-          {{ diskOffering.displaytext }}
+    </a-form-item>
+    <a-form-item>
+      <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+      <a-select
+        v-decorator="['diskofferingid', {
+          initialValue: selectedDiskOfferingId,
+          rules: [{ required: true, message: $t('message.error.select') }]}]"
+        :loading="loading"
+        @change="id => onChangeDiskOffering(id)">
+        <a-select-option
+          v-for="(offering, index) in diskOfferings"
+          :value="offering.id"
+          :key="index">
+          {{ offering.displaytext || offering.name }}
         </a-select-option>
       </a-select>
-      <p class="modal-form__label" @click="autoMigrate = !autoMigrate" style="cursor:pointer;">
-        {{ $t('label.automigrate.volume') }}
-      </p>
-      <a-checkbox v-model="autoMigrate" />
-    </div>
-
+    </a-form-item>
+    <span v-if="customDiskOffering">
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+        <a-input
+          v-decorator="['size', {
+            rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
+          :placeholder="$t('label.disksize')"/>
+      </a-form-item>
+    </span>
+    <span v-if="isCustomizedDiskIOps">
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
+        <a-input
+          v-decorator="['miniops', {
+            rules: [{
+              validator: (rule, value, callback) => {
+                if (value && (isNaN(value) || value <= 0)) {
+                  callback(this.$t('message.error.number'))
+                }
+                callback()
+              }
+            }]
+          }]"
+          :placeholder="this.$t('label.miniops')"/>
+      </a-form-item>
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
+        <a-input
+          v-decorator="['maxiops', {
+            rules: [{
+              validator: (rule, value, callback) => {
+                if (value && (isNaN(value) || value <= 0)) {
+                  callback(this.$t('message.error.number'))
+                }
+                callback()
+              }
+            }]
+          }]"
+          :placeholder="this.$t('label.maxiops')"/>
+      </a-form-item>
+    </span>
+    <a-form-item :label="$t('label.automigrate.volume')">
+      <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      <a-checkbox
+        :checked="autoMigrate"
+        v-decorator="['autoMigrate']"
+        @change="handleCheckChange"
+      ></a-checkbox>
+    </a-form-item>
     <a-divider />
-
     <div class="actions">
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
@@ -43,12 +101,12 @@
         {{ $t('label.ok') }}
       </a-button>
     </div>
-
-  </div>
+  </a-form>
 </template>
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ChangeOfferingForVolume',
@@ -58,16 +116,24 @@ export default {
       required: true
     }
   },
+  components: {
+    TooltipLabel
+  },
   inject: ['parentFetchData'],
   data () {
     return {
       diskOfferings: [],
       autoMigrate: true,
-      selectedDiskOffering: null,
+      selectedDiskOfferingId: null,
+      size: null,
       customDiskOffering: false,
       loading: false,
       isCustomizedDiskIOps: false
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
+    this.apiParams = this.$getApiParams('changeOfferingForVolume')
   },
   created () {
     this.fetchDiskOfferings()
@@ -80,7 +146,7 @@ export default {
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering
         if (this.diskOfferings) {
-          this.selectedDiskOffering = this.diskOfferings[0].id
+          this.selectedDiskOfferingId = this.diskOfferings[0].id
           this.customDiskOffering = this.diskOfferings[0].iscustomized || false
           this.isCustomizedDiskIOps = this.diskOfferings[0]?.iscustomizediops || false
         }
@@ -93,32 +159,56 @@ export default {
       this.$parent.$parent.close()
     },
     submitChangeOfferingForVolume () {
-      api('changeOfferingForVolume', {
-        diskofferingid: this.selectedDiskOffering,
-        id: this.resource.id,
-        automigrate: this.autoMigrate
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.changeofferingforvolumeresponse.jobid,
-          successMessage: this.$t('message.change.offering.for.volume'),
-          successMethod: () => {
-            this.parentFetchData()
-          },
-          errorMessage: this.$t('message.change.offering.for.volume.failed'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
-          loadingMessage: this.$t('message.change.offering.for.volume.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.parentFetchData()
-          }
+      if (this.loading) return
+      this.form.validateFields((err, values) => {
+        if (err) {
+          return
+        }
+        this.loading = true
+        const params = {}
+        params.diskofferingid = values.diskofferingid
+        params.id = this.resource.id
+        params.automigrate = values.autoMigrate
+        if (values.size) {
+          params.size = values.size
+        }
+        if (values.miniops) {
+          params.miniops = values.miniops
+        }
+        if (values.maxiops) {
+          params.maxiops = values.maxiops
+        }
+        api('changeOfferingForVolume', params).then(response => {
+          this.$pollJob({
+            jobId: response.changeofferingforvolumeresponse.jobid,
+            successMessage: this.$t('message.change.offering.for.volume'),
+            successMethod: () => {
+              this.parentFetchData()
+            },
+            errorMessage: this.$t('message.change.offering.for.volume.failed'),
+            errorMethod: () => {
+              this.parentFetchData()
+            },
+            loadingMessage: this.$t('message.change.offering.for.volume.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentFetchData()
+            }
+          })
+          this.closeModal()
+          this.parentFetchData()
+        }).catch(error => {
+          this.$notifyError(error)
         })
-        this.closeModal()
-        this.parentFetchData()
-      }).catch(error => {
-        this.$notifyError(error)
       })
+    },
+    onChangeDiskOffering (id) {
+      const offering = this.diskOfferings.filter(x => x.id === id)
+      this.customDiskOffering = offering[0]?.iscustomized || false
+      this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
+    },
+    handleCheckChange (e) {
+      this.autoMigrate = e.target.checked
     }
   }
 }
@@ -143,15 +233,5 @@ export default {
         margin-right: 10px;
       }
     }
-  }
-
-  .modal-form {
-    margin-top: -20px;
-
-    &__label {
-      margin-top: 10px;
-      margin-bottom: 5px;
-    }
-
   }
 </style>
