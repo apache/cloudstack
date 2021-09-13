@@ -122,7 +122,13 @@
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
-          <a-select v-model="addAccount.domain">
+          <a-select
+            v-model="addAccount.domain"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
@@ -157,7 +163,11 @@
             v-decorator="['podid', {
               rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
@@ -201,7 +211,13 @@
               <a-input v-decorator="['account']"></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.domain')" class="form__item">
-              <a-select v-decorator="['domain']">
+              <a-select
+                v-decorator="['domain']"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"

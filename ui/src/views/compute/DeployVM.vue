@@ -142,7 +142,10 @@
                               rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                             }]"
                             :options="hypervisorSelectOptions"
-                            @change="value => this.hypervisor = value" />
+                            @change="value => this.hypervisor = value"
+                            showSearch
+                            optionFilterProp="children"
+                            :filterOption="filterOption" />
                         </a-form-item>
                       </p>
                     </a-card>
@@ -481,7 +484,10 @@
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
                           v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
-                          @change="onBootTypeChange">
+                          @change="fetchBootModes"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
@@ -489,7 +495,10 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]">
+                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -553,6 +562,9 @@
                       <a-select
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')">

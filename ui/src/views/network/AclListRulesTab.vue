@@ -157,13 +157,25 @@
           <a-input v-decorator="['cidrlist']" />
         </a-form-item>
         <a-form-item :label="$t('label.action')">
-          <a-select v-decorator="['action']">
+          <a-select
+            v-decorator="['action']"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
             <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.protocol')">
-          <a-select v-decorator="['protocol']">
+          <a-select
+            v-decorator="['protocol']"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
             <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
@@ -195,7 +207,13 @@
         </div>
 
         <a-form-item :label="$t('label.traffictype')">
-          <a-select v-decorator="['traffictype']">
+          <a-select
+            v-decorator="['traffictype']"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>

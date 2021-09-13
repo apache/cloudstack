@@ -23,7 +23,12 @@
           autoFocus
           @change="handleTierSelect"
           v-model="vpcTiers"
-          :placeholder="$t('label.select.tier')">
+          :placeholder="$t('label.select.tier')"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
           </a-select-option>
@@ -52,7 +57,12 @@
         <a-select
           v-if="nicsList.length && selectedVm && selectedVm === record.id"
           class="nic-select"
-          :defaultValue="selectedNic.ipaddress">
+          :defaultValue="selectedNic.ipaddress"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             @click="selectedNic = item"
             v-for="item in nicsList"

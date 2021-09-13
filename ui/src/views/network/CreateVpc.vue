@@ -45,7 +45,12 @@
               initialValue: this.selectedZone,
               rules: [{ required: true, message: `${this.$t('label.required')}`}]
             }]"
-            @change="val => changeZone(val)">
+            @change="val => changeZone(val)"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="zone in zones" :key="zone.id">
               {{ zone.name }}
             </a-select-option>
@@ -71,7 +76,12 @@
             :loading="loadingOffering"
             v-decorator="['vpcofferingid', {
               initialValue: this.selectedOffering,
-              rules: [{ required: true, message: `${this.$t('label.required')}`}]}]">
+              rules: [{ required: true, message: `${this.$t('label.required')}`}]}]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id">
               {{ offering.name }}
             </a-select-option>
