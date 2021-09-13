@@ -45,6 +45,8 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -399,6 +401,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     HostTagsDao hostTagDao;
     @Inject
     StoragePoolTagsDao storagePoolTagDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -1234,6 +1238,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (dr != null) {
                     _dedicatedDao.remove(dr.getId());
                 }
+
+                // Remove comments (if any)
+                annotationDao.removeByEntityType(AnnotationService.EntityType.POD.name(), pod.getUuid());
             }
         });
 
@@ -1888,6 +1895,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteZone(final DeleteZoneCmd cmd) {
 
         final Long zoneId = cmd.getId();
+        DataCenterVO zone = _zoneDao.findById(zoneId);
 
         // Make sure the zone exists
         if (!validZone(zoneId)) {
@@ -1924,6 +1932,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null, null);
                         }
                     }
+                    annotationDao.removeByEntityType(AnnotationService.EntityType.ZONE.name(), zone.getUuid());
                 }
 
                 return success;
@@ -3451,6 +3460,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete disk offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_diskOfferingDao.update(offering.getId(), offering)) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
@@ -3518,6 +3528,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete service offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.SERVICE_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_serviceOfferingDao.update(offeringId, offering)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
@@ -5866,6 +5877,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + "To make the network offering unavaiable, disable it");
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());
         if (_networkOfferingDao.remove(offeringId)) {
             return true;
         } else {

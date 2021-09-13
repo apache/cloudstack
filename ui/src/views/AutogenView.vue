@@ -61,7 +61,8 @@
                       {{ $t('label.all') }}
                     </a-select-option>
                     <a-select-option v-for="filter in filters" :key="filter">
-                      {{ $t('label.' + filter) }}
+                      {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
+                      <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
@@ -78,6 +79,7 @@
               :loading="loading"
               :actions="actions"
               :selectedRowKeys="selectedRowKeys"
+              :selectedItems="selectedItems"
               :dataView="dataView"
               :resource="resource"
               @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
@@ -480,6 +482,11 @@ export default {
     eventBus.$off('async-job-complete')
     eventBus.$off('exec-action')
   },
+  mounted () {
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      this.execAction(action, isGroupAction)
+    })
+  },
   created () {
     eventBus.$on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
@@ -502,9 +509,6 @@ export default {
         return
       }
       this.fetchData()
-    })
-    eventBus.$on('exec-action', (action, isGroupAction) => {
-      this.execAction(action, isGroupAction)
     })
     eventBus.$on('update-bulk-job-status', (items, action) => {
       for (const item of items) {
@@ -653,7 +657,12 @@ export default {
 
       params.listall = true
       if (this.$route.meta.params) {
-        Object.assign(params, this.$route.meta.params)
+        const metaParams = this.$route.meta.params
+        if (typeof metaParams === 'function') {
+          Object.assign(params, metaParams())
+        } else {
+          Object.assign(params, metaParams)
+        }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'templatefilter' in params && this.routeName === 'template') {
@@ -767,9 +776,7 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
-        if (this.$route.path.startsWith('/ssh/')) {
-          params.name = this.$route.params.id
-        } else if (this.$route.path.startsWith('/vmsnapshot/')) {
+        if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
@@ -814,6 +821,18 @@ export default {
           })
         }
 
+        if (this.apiName === 'listAnnotations') {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -822,9 +841,7 @@ export default {
               this.items[idx][key] = func(this.items[idx])
             }
           }
-          if (this.$route.path.startsWith('/ssh')) {
-            this.items[idx].id = this.items[idx].name
-          } else if (this.$route.path.startsWith('/ldapsetting')) {
+          if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
         }
@@ -1320,6 +1337,7 @@ export default {
       delete query.account
       delete query.domainid
       delete query.state
+      delete query.annotationfilter
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1337,6 +1355,8 @@ export default {
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
         }
+      } else if (this.$route.name === 'comment') {
+        query.annotationfilter = filter
       }
       query.filter = filter
       query.page = 1

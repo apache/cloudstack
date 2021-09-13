@@ -697,6 +697,22 @@ CREATE VIEW `cloud`.`host_view` AS
     GROUP BY
         `host`.`id`;
 
+ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 1;
+
+-- Allow annotations for resource admins, domain admins and users
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 2, 'listAnnotations', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 2, 'addAnnotation', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 2, 'removeAnnotation', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 3, 'listAnnotations', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 3, 'addAnnotation', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 3, 'removeAnnotation', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'listAnnotations', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'addAnnotation', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'removeAnnotation', 'ALLOW');
+
+-- Add uuid for ssh keypairs
+ALTER TABLE `cloud`.`ssh_keypairs` ADD COLUMN `uuid` varchar(40) AFTER `id`;
+
 -- PR#4699 Drop the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` if it already exist.
 DROP PROCEDURE IF EXISTS `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING`;
 
@@ -757,3 +773,4 @@ UPDATE cloud.user_vm_deploy_as_is_details SET value='' WHERE value IS NULL;
 ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
 UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
 ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
+

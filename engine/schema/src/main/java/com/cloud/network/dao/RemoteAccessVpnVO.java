@@ -170,4 +170,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public Class<?> getEntityType() {
         return RemoteAccessVpn.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

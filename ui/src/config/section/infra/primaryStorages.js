@@ -39,12 +39,16 @@ export default {
     title: 'label.volumes',
     param: 'storageid'
   }],
+  resourceType: 'PrimaryStorage',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   actions: [
     {

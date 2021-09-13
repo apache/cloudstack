@@ -23,11 +23,15 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -55,6 +59,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Inject
     protected PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
@@ -144,6 +152,8 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setJobId(pool.getJobUuid());
             poolResponse.setJobStatus(pool.getJobStatus());
         }
+        poolResponse.setHasAnnotation(annotationDao.hasAnnotations(pool.getUuid(), AnnotationService.EntityType.PRIMARY_STORAGE.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         poolResponse.setObjectName("storagepool");
         return poolResponse;
@@ -158,6 +168,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             } else {
                 response.setTags(tag);
             }
+        }
+        if (response.hasAnnotation() == null) {
+            response.setHasAnnotation(annotationDao.hasAnnotations(sp.getUuid(), AnnotationService.EntityType.PRIMARY_STORAGE.name(),
+                    accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
         return response;
     }

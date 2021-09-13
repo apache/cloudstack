@@ -64,6 +64,32 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        generateUuidForExistingSshKeyPairs(conn);
+    }
+
+    private void generateUuidForExistingSshKeyPairs(Connection conn) {
+        LOG.debug("Generating uuid for existing ssh key-pairs");
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`ssh_keypairs` WHERE uuid is null");
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                long sshKeyId = rs.getLong(1);
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`ssh_keypairs` SET `uuid` = UUID() WHERE id = ?");
+                pstmt.setLong(1, sshKeyId);
+                pstmt.executeUpdate();
+            }
+            if (!rs.isClosed())  {
+                rs.close();
+            }
+            if (!pstmt.isClosed())  {
+                pstmt.close();
+            }
+            LOG.debug("Successfully generated uuid for existing ssh key-pairs");
+        } catch (SQLException e) {
+            String errMsg = "Exception while generating uuid for existing ssh key-pairs: " + e.getMessage();
+            LOG.error(errMsg, e);
+            throw new CloudRuntimeException(errMsg, e);
+        }
     }
 
     @Override

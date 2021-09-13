@@ -177,4 +177,9 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     public Class<?> getEntityType() {
         return Site2SiteVpnConnection.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }
