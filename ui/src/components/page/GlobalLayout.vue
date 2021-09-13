@@ -65,7 +65,7 @@
         </a-drawer>
       </template>
 
-      <drawer :visible="showSetting" placement="right">
+      <drawer :visible="showSetting" placement="right" v-if="isDevelopmentMode">
         <template #handler>
           <a-button type="primary" size="large">
             <close-outlined v-if="showSetting" />
@@ -76,6 +76,7 @@
           <setting :visible="showSetting" />
         </template>
       </drawer>
+
     </a-affix>
 
     <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
@@ -135,6 +136,9 @@ export default {
     ...mapState({
       mainMenu: state => state.permission.addRouters
     }),
+    isDevelopmentMode () {
+      return process.env.NODE_ENV === 'development'
+    },
     contentPaddingLeft () {
       if (!this.fixSidebar || this.isMobile()) {
         return '0'

@@ -198,108 +198,108 @@
             :rules="rules"
             @finish="handleSubmit"
             layout="vertical" >
-            <a-form-item
-              v-for="(field, fieldIndex) in currentAction.paramFields"
-              :key="fieldIndex"
-              :v-bind="field.name"
-              v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
-            >
-              <template #label>
-                <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
-              </template>
+            <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
+              <a-form-item
+                :v-bind="field.name"
+                v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
+              >
+                <template #label>
+                  <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                </template>
 
-              <a-switch
-                v-if="field.type==='boolean'"
-                v-model:checked="form[field.name]"
-                :placeholder="field.description"
-                v-focus="fieldIndex === firstIndex"
-              />
-              <a-select
-                v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options"
-                :loading="field.loading"
-                v-model:value="form[field.name]"
-                :placeholder="field.description"
-                v-focus="fieldIndex === firstIndex"
-              >
-                <a-select-option key="" >{{ }}</a-select-option>
-                <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
-                  {{ opt }}
-                </a-select-option>
-              </a-select>
-              <a-select
-                v-else-if="field.name==='keypair' ||
-                  (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))"
-                showSearch
-                optionFilterProp="label"
-                v-model:value="form[field.name]"
-                :loading="field.loading"
-                :placeholder="field.description"
-                :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }"
-                v-focus="fieldIndex === firstIndex"
-              >
-                <a-select-option key="">{{ }}</a-select-option>
-                <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                  {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
-                </a-select-option>
-              </a-select>
-              <a-select
-                v-else-if="field.type==='uuid'"
-                showSearch
-                optionFilterProp="label"
-                v-model:value="form[field.name]"
-                :loading="field.loading"
-                :placeholder="field.description"
-                :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }"
-                v-focus="fieldIndex === firstIndex"
-              >
-                <a-select-option key="">{{ }}</a-select-option>
-                <a-select-option v-for="opt in field.opts" :key="opt.id">
-                  {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
-                </a-select-option>
-              </a-select>
-              <a-select
-                v-else-if="field.type==='list'"
-                :loading="field.loading"
-                mode="multiple"
-                v-model:value="form[field.name]"
-                :placeholder="field.description"
-                v-focus="fieldIndex === firstIndex"
-              >
-                <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
-                  {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
-                </a-select-option>
-              </a-select>
-              <a-input-number
-                v-else-if="field.type==='long'"
-                v-focus="fieldIndex === firstIndex"
-                style="width: 100%;"
-                v-model:value="form[field.name]"
-                :placeholder="field.description"
-              />
-              <a-input-password
-                v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
-                v-model:value="form[field.name]"
-                :placeholder="field.description"
-                @blur="($event) => handleConfirmBlur($event, field.name)"
-                v-focus="fieldIndex === firstIndex"
-              />
-              <a-textarea
-                v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'"
-                rows="2"
-                v-model:value="form[field.name]"
-                :placeholder="field.description"
-                v-focus="fieldIndex === firstIndex"
-              />
-              <a-input
-                v-else
-                v-focus="fieldIndex === firstIndex"
-                v-model:value="form[field.name]"
-                :placeholder="field.description" />
-            </a-form-item>
+                <a-switch
+                  v-if="field.type==='boolean'"
+                  v-model:checked="form[field.name]"
+                  :placeholder="field.description"
+                  v-focus="fieldIndex === firstIndex"
+                />
+                <a-select
+                  v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options"
+                  :loading="field.loading"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  v-focus="fieldIndex === firstIndex"
+                >
+                  <a-select-option key="" >{{ }}</a-select-option>
+                  <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
+                    {{ opt }}
+                  </a-select-option>
+                </a-select>
+                <a-select
+                  v-else-if="field.name==='keypair' ||
+                    (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))"
+                  showSearch
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
+                  :loading="field.loading"
+                  :placeholder="field.description"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  v-focus="fieldIndex === firstIndex"
+                >
+                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  </a-select-option>
+                </a-select>
+                <a-select
+                  v-else-if="field.type==='uuid'"
+                  showSearch
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
+                  :loading="field.loading"
+                  :placeholder="field.description"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  v-focus="fieldIndex === firstIndex"
+                >
+                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option v-for="opt in field.opts" :key="opt.id">
+                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  </a-select-option>
+                </a-select>
+                <a-select
+                  v-else-if="field.type==='list'"
+                  :loading="field.loading"
+                  mode="multiple"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  v-focus="fieldIndex === firstIndex"
+                >
+                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                    {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
+                  </a-select-option>
+                </a-select>
+                <a-input-number
+                  v-else-if="field.type==='long'"
+                  v-focus="fieldIndex === firstIndex"
+                  style="width: 100%;"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                />
+                <a-input-password
+                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  @blur="($event) => handleConfirmBlur($event, field.name)"
+                  v-focus="fieldIndex === firstIndex"
+                />
+                <a-textarea
+                  v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'"
+                  rows="2"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description"
+                  v-focus="fieldIndex === firstIndex"
+                />
+                <a-input
+                  v-else
+                  v-focus="fieldIndex === firstIndex"
+                  v-model:value="form[field.name]"
+                  :placeholder="field.description" />
+              </a-form-item>
+            </div>
 
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -433,6 +433,11 @@ export default {
     eventBus.off('async-job-complete')
     eventBus.off('exec-action')
   },
+  mounted () {
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      this.execAction(action, isGroupAction)
+    })
+  },
   created () {
     this.formRef = ref()
     this.form = reactive({})
@@ -458,9 +463,6 @@ export default {
         return
       }
       this.fetchData()
-    })
-    eventBus.on('exec-action', (action, isGroupAction) => {
-      this.execAction(action, isGroupAction)
     })
     eventBus.on('update-bulk-job-status', (items, action) => {
       for (const item of items) {

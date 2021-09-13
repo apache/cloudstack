@@ -165,7 +165,7 @@
         </a-form-item>
 
         <a-row :gutter="12" v-if="hyperKVMShow || hyperVMWShow">
-          <a-col :md="24" :lg="24" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
+          <a-col :md="24" :lg="hyperKVMShow ? 24 : 12" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
             <a-form-item ref="rootDiskControllerType" name="rootDiskControllerType" :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-model:value="form.rootDiskControllerType"
@@ -177,37 +177,46 @@
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
-            <a-form-item ref="keyboardType" name="keyboardType" v-if="hyperVMWShow && !deployasis" :label="$t('label.keyboardtype')">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
+            <a-form-item :label="$t('label.nicadaptertype')" name="nicadaptertype" ref="nicadaptertype">
               <a-select
-                v-model:value="form.keyboardType"
-                :placeholder="$t('label.keyboard')">
-                <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
+                v-model:value="form.nicAdapterType"
+                :placeholder="$t('label.nicadaptertype')">
+                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
-          <a-col :md="24" :lg="24">
-            <a-form-item ref="ostypeid" name="ostypeid" :label="$t('label.ostypeid')">
-              <a-select
-                showSearch
-                optionFilterProp="label"
-                :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }"
-                v-model:value="form.ostypeid"
-                :loading="osTypes.loading"
-                :placeholder="apiParams.ostypeid.description">
-                <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
-                  {{ opt.name || opt.description }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <a-form-item
+          :label="$t('label.keyboardtype')"
+          v-if="hyperVMWShow && !deployasis"
+          name="keyboardType"
+          ref="keyboardType">
+          <a-select
+            v-model:value="form.keyboardType"
+            :placeholder="$t('label.keyboard')">
+            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.ostypeid')" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+          <a-select
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.ostypeid"
+            :loading="osTypes.loading"
+            :placeholder="apiParams.ostypeid.description">
+            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
             <a-form-item ref="groupenabled" name="groupenabled">
