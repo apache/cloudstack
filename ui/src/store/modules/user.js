@@ -254,13 +254,9 @@ const user = {
         api('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           commit('SET_FEATURES', result)
-        }).catch(error => {
-          reject(error)
-        })
-
-        api('listConfigurations', { name: 'default.ui.page.size' }).then(response => {
-          const defaultListViewPageSize = parseInt(response.listconfigurationsresponse.configuration[0].value)
-          commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', defaultListViewPageSize)
+          if (result && result.defaultuipagesize) {
+            commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
+          }
         }).catch(error => {
           reject(error)
         })

@@ -467,6 +467,11 @@ export default {
     eventBus.$off('async-job-complete')
     eventBus.$off('exec-action')
   },
+  mounted () {
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      this.execAction(action, isGroupAction)
+    })
+  },
   created () {
     eventBus.$on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
@@ -489,9 +494,6 @@ export default {
         return
       }
       this.fetchData()
-    })
-    eventBus.$on('exec-action', (action, isGroupAction) => {
-      this.execAction(action, isGroupAction)
     })
     eventBus.$on('update-bulk-job-status', (items, action) => {
       for (const item of items) {
