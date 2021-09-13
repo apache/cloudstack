@@ -633,12 +633,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    protected void updateResourceCount(long accountId, long domainId) {
-        _resourceLimitMgr.recalculateResourceCount(accountId, domainId, ResourceType.user_vm.getOrdinal());
-        _resourceLimitMgr.recalculateResourceCount(accountId, domainId, ResourceType.cpu.getOrdinal());
-        _resourceLimitMgr.recalculateResourceCount(accountId, domainId, ResourceType.memory.getOrdinal());
-    }
-
     public class VmAndCountDetails {
         long vmId;
         int  retrievalCount = VmIpFetchTrialMax.value();
@@ -2582,8 +2576,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyVmLimits(UserVmVO vmInstance, Map<String,String> details) {
-        Long newCpu = Long.valueOf(details.get(VmDetailConstants.CPU_NUMBER));
-        Long newMemory = Long.valueOf(details.get(VmDetailConstants.MEMORY));
+        Long newCpu = Long.valueOf(details.get(VmDetailConstants.CPU_NUMBER) != null ? details.get(VmDetailConstants.CPU_NUMBER) : "0");
+        Long newMemory = Long.valueOf(details.get(VmDetailConstants.MEMORY) != null ? details.get(VmDetailConstants.MEMORY) : "0");
         long currentCpu = 0L;
         long currentMemory = 0L;
         List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(vmInstance.getId());
@@ -2599,18 +2593,33 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (owner == null) {
             throw new InvalidParameterValueException("The owner of " + vmInstance + " does not exist: " + vmInstance.getAccountId());
         }
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
-            try {
-                if (newCpu > currentCpu) {
-                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
-                }
-                if (newMemory > currentMemory) {
-                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
-                }
-            } catch (ResourceAllocationException e) {
-                throw new CloudRuntimeException("Failed to update VM settings", e);
-            }
+
+        if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+            return;
         }
+
+        try {
+            if (newCpu > currentCpu) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
+            }
+            if (newMemory > currentMemory) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
+            }
+        } catch (ResourceAllocationException e) {
+            throw new CloudRuntimeException("Failed to update VM settings", e);
+        }
+
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, newCpu - currentCpu);
+        } else {
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, currentCpu - newCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, newMemory - currentMemory);
+        } else {
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, currentMemory - newMemory);
+        }
+
     }
 
     @Override
@@ -4967,7 +4976,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (owner.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
-
+        if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+            // check if account/domain is with in resource limits to start a new vm
+            ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+            resourceLimitCheck(owner, vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
+        }
         // check if vm is security group enabled
         if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty()
                 && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkModel.canAddDefaultSecurityGroup()) {
@@ -5091,7 +5104,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        updateResourceCount(owner.getAccountId(), owner.getDomainId());
         return vmParamPair;
     }
 

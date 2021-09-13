@@ -38,6 +38,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -144,6 +145,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private VMTemplateDao templateDao;
+
+    @Mock
+    private AccountDao accountDao;
 
     private long vmId = 1l;
 
@@ -280,6 +284,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateVirtualMachineTestCleanUpFalseAndDetailsEmpty() throws ResourceUnavailableException, InsufficientCapacityException {
+        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(callerAccount);
         prepareAndExecuteMethodDealingWithDetails(false, false);
     }
 
