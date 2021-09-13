@@ -186,9 +186,7 @@
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      :okButtonProps="{ props:
-        {disabled: newRule.virtualmachineid === null } }"
-      @cancel="closeModal"
+      :footer="null"
       v-ctrl-enter="addRule"
     >
       <div>
@@ -266,7 +264,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" :disabled="newRule.virtualmachineid === null" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
