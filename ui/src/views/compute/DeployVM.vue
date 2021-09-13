@@ -1465,7 +1465,7 @@ export default {
 
         let networkIds = []
 
-        const deployVmData = {}
+        let deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
         deployVmData.podid = values.podid
@@ -1615,7 +1615,10 @@ export default {
         const description = values.name || ''
         const password = this.$t('label.password')
 
-        api('deployVirtualMachine', deployVmData).then(response => {
+        deployVmData = Object.fromEntries(
+          Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
+
+        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
