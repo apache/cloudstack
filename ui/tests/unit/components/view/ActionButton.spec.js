@@ -107,7 +107,7 @@ describe('Components > View > ActionButton.vue', () => {
 
       const wrapperHtml = wrapper.html()
       const received = common.decodeHtml(wrapperHtml)
-      const expected = '<span class="ant-badge button-action-badge">'
+      const expected = '<span class="ant-badge button-action-badge" disabled="false">'
 
       expect(received).toContain(expected)
 

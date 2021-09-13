@@ -22,12 +22,12 @@ import { i18n, loadLanguageAsync } from './locales'
 
 import bootstrap from './core/bootstrap'
 import './core/lazy_use'
-import './core/ext'
+import extensions from './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from '@/utils/request'
-import './utils/directives'
+import directives from './utils/directives'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -35,6 +35,8 @@ vueApp.use(notifierPlugin)
 vueApp.use(toLocaleDatePlugin)
 vueApp.use(configUtilPlugin)
 vueApp.use(apiMetaUtilPlugin)
+vueApp.use(extensions)
+vueApp.use(directives)
 
 fetch('config.json').then(response => response.json()).then(config => {
   vueProps.$config = config

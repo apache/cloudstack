@@ -21,23 +21,23 @@ import config from '@/config/settings'
 
 // base library'
 import VueCropper from 'vue-cropper'
-import '@/core/lazy_lib/components_use'
-import '@/core/lazy_lib/icons_use'
+import componentsUse from '@/core/lazy_lib/components_use'
+import iconsUse from '@/core/lazy_lib/icons_use'
 
 import 'ant-design-vue/dist/antd.min.css'
 import '@/style/vars.less'
 
 // ext library
-import VueClipboard from 'vue3-clipboard'
 import PermissionHelper from '@/utils/helper/permission'
 
 // customisation
 import { Spin } from 'ant-design-vue'
 
 vueApp.use(StoragePlugin, config.storageOptions)
-vueApp.use(VueClipboard, { autoSetContainer: true })
 vueApp.use(PermissionHelper)
 vueApp.use(VueCropper)
+vueApp.use(componentsUse)
+vueApp.use(iconsUse)
 
 Spin.setDefaultIndicator({
   indicator: () => {

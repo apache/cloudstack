@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { vueApp } from '@/vue-app'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
@@ -29,4 +28,8 @@ import { faLanguage, faCompactDisc, faCameraRetro } from '@fortawesome/free-soli
 library.add(faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava)
 library.add(faLanguage, faCompactDisc, faCameraRetro)
 
-vueApp.component('font-awesome-icon', FontAwesomeIcon)
+export default {
+  install: (app) => {
+    app.component('font-awesome-icon', FontAwesomeIcon)
+  }
+}

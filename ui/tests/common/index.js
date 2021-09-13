@@ -39,8 +39,8 @@ function createMockI18n (locale = 'en', messages = {}) {
   return mockI18n.mock(locale, messages)
 }
 
-function createMockStore (state = {}, actions = {}, mutation = {}) {
-  return mockStore.mock(state, actions, mutation)
+function createMockStore (state = {}, actions = {}, mutations = {}) {
+  return mockStore.mock(state, actions, mutations)
 }
 
 function decodeHtml (html) {

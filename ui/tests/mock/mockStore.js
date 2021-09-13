@@ -27,14 +27,9 @@ const mockStore = {
       user: {},
       permission: {}
     }
-    mockStore.mutations = {}
 
     if (state && Object.keys(state).length > 0) {
       mockStore.state = { ...mockStore.state, ...state }
-    }
-
-    if (mutations && Object.keys(mutations).length > 0) {
-      mockStore.mutations = { ...mockStore.mutations, ...mutations }
     }
 
     if (!actions) {
@@ -46,10 +41,11 @@ const mockStore = {
       getters: {
         apis: () => mockStore.state.user.apis,
         userInfo: () => mockStore.state.user.info,
+        defaultListViewPageSize: () => mockStore.state.user.defaultListViewPageSize,
         headerNotices: () => mockStore.state.user.headerNotices
       },
-      actions,
-      mutations
+      mutations,
+      actions
     })
   }
 }

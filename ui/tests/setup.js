@@ -16,19 +16,19 @@
 // under the License.
 
 import registerRequireContextHook from 'babel-plugin-require-context-hook/register'
-<<<<<<< HEAD
 import { config } from '@vue/test-utils'
-=======
-import '@/utils/directives'
->>>>>>> main
 
 import componentsUse from '@/core/lazy_lib/components_use'
 import iconsUse from '@/core/lazy_lib/icons_use'
+import extensions from '@/core/ext'
+import directives from '@/utils/directives'
 
 registerRequireContextHook()
 
 config.global.plugins.push(componentsUse)
 config.global.plugins.push(iconsUse)
+config.global.plugins.push(extensions)
+config.global.plugins.push(directives)
 
 window.matchMedia = window.matchMedia || function () {
   return {
