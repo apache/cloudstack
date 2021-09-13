@@ -19,6 +19,7 @@ package com.cloud.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,12 +33,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.configuration.Resource;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
@@ -149,6 +152,9 @@ public class UserVmManagerImplTest {
     @Mock
     private AccountDao accountDao;
 
+    @Mock
+    ResourceLimitService resourceLimitMgr;
+
     private long vmId = 1l;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
@@ -171,6 +177,8 @@ public class UserVmManagerImplTest {
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
+        lenient().doNothing().when(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class));
+        lenient().doNothing().when(resourceLimitMgr).decrementResourceCount(anyLong(), any(Resource.ResourceType.class), anyLong());
     }
 
     @After
@@ -308,7 +316,6 @@ public class UserVmManagerImplTest {
         }
         Mockito.when(updateVmCommand.getDetails()).thenReturn(details);
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(cleanUpDetails);
-
         configureDoNothingForDetailsMethod();
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);

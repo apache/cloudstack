@@ -114,6 +114,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -2576,28 +2577,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyVmLimits(UserVmVO vmInstance, Map<String,String> details) {
-        Long newCpu = Long.valueOf(details.get(VmDetailConstants.CPU_NUMBER) != null ? details.get(VmDetailConstants.CPU_NUMBER) : "0");
-        Long newMemory = Long.valueOf(details.get(VmDetailConstants.MEMORY) != null ? details.get(VmDetailConstants.MEMORY) : "0");
-        long currentCpu = 0L;
-        long currentMemory = 0L;
-        List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(vmInstance.getId());
-        for (UserVmDetailVO detailVO : vmDetails) {
-            if (VmDetailConstants.CPU_NUMBER.equals(detailVO.getName())) {
-                currentCpu = Long.parseLong(detailVO.getValue());
-            }
-            if (VmDetailConstants.MEMORY.equals(detailVO.getName())) {
-                currentMemory = Long.parseLong(detailVO.getValue());
-            }
-        }
-        Account owner = _accountDao.findById(vmInstance.getAccountId());
-        if (owner == null) {
-            throw new InvalidParameterValueException("The owner of " + vmInstance + " does not exist: " + vmInstance.getAccountId());
-        }
-
         if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
             return;
         }
 
+        long newCpu = NumberUtils.toLong(details.get(VmDetailConstants.CPU_NUMBER));
+        long newMemory = NumberUtils.toLong(details.get(VmDetailConstants.MEMORY));
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        long currentCpu = currentServiceOffering.getCpu();
+        long currentMemory = currentServiceOffering.getRamSize();
+
+        Account owner = _accountDao.findById(vmInstance.getAccountId());
+        if (owner == null) {
+            throw new InvalidParameterValueException("The owner of " + vmInstance + " does not exist: " + vmInstance.getAccountId());
+        }
         try {
             if (newCpu > currentCpu) {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
