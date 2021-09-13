@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -263,13 +264,17 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
-        UserVm result = _userVmService.updateVirtualMachine(this);
-        if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
+        try {
+            UserVm result = _userVmService.updateVirtualMachine(this);
+            if (result != null) {
+                UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to update VM", e);
         }
     }
 
