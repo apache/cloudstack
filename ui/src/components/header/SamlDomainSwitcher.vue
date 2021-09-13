@@ -22,6 +22,11 @@
       :loading="loading"
       :defaultValue="currentAccount"
       :value="currentAccount"
+      showSearch
+      optionFilterProp="children"
+      :filterOption="(input, option) => {
+        return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      }"
       @change="changeAccount"
       @focus="fetchData" >
 

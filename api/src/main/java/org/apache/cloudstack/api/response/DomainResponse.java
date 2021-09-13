@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.domain.Domain;
@@ -28,7 +28,7 @@ import com.cloud.serializer.Param;
 import java.util.Date;
 
 @EntityReference(value = Domain.class)
-public class DomainResponse extends BaseResponse implements ResourceLimitAndCountResponse {
+public class DomainResponse extends BaseResponseWithAnnotations implements ResourceLimitAndCountResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the domain")
     private String id;

@@ -142,7 +142,10 @@
                               rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                             }]"
                             :options="hypervisorSelectOptions"
-                            @change="value => this.hypervisor = value" />
+                            @change="value => this.hypervisor = value"
+                            showSearch
+                            optionFilterProp="children"
+                            :filterOption="filterOption" />
                         </a-form-item>
                       </p>
                     </a-card>
@@ -473,16 +476,18 @@
                 <template slot="description" v-if="zoneSelected">
                   <span>
                     {{ $t('label.isadvanced') }}
-                    <a-switch @change="val => { this.showDetails = val }" :checked="this.showDetails" style="margin-left: 10px"/>
+                    <a-switch @change="val => { showDetails = val }" :checked="showDetails" style="margin-left: 10px"/>
                   </span>
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          v-decorator="['boottype']"
+                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
                           @change="fetchBootModes"
-                        >
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
@@ -490,7 +495,10 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode']">
+                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -554,6 +562,9 @@
                       <a-select
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')">
@@ -1250,39 +1261,21 @@ export default {
       await this.fetchAllTemplates()
     },
     fetchBootTypes () {
-      const bootTypes = []
-
-      bootTypes.push({
-        id: 'BIOS',
-        description: 'BIOS'
-      })
-      bootTypes.push({
-        id: 'UEFI',
-        description: 'UEFI'
-      })
-
-      this.options.bootTypes = bootTypes
+      this.options.bootTypes = [
+        { id: 'BIOS', description: 'BIOS' },
+        { id: 'UEFI', description: 'UEFI' }
+      ]
       this.$forceUpdate()
     },
     fetchBootModes (bootType) {
-      const bootModes = []
-
+      const bootModes = [
+        { id: 'LEGACY', description: 'LEGACY' }
+      ]
       if (bootType === 'UEFI') {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
-        bootModes.push({
-          id: 'SECURE',
-          description: 'SECURE'
-        })
-      } else {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
+        bootModes.unshift(
+          { id: 'SECURE', description: 'SECURE' }
+        )
       }
-
       this.options.bootModes = bootModes
       this.$forceUpdate()
     },
@@ -1484,7 +1477,7 @@ export default {
 
         let networkIds = []
 
-        const deployVmData = {}
+        let deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
         deployVmData.podid = values.podid
@@ -1634,7 +1627,10 @@ export default {
         const description = values.name || ''
         const password = this.$t('label.password')
 
-        api('deployVirtualMachine', deployVmData).then(response => {
+        deployVmData = Object.fromEntries(
+          Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
+
+        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -2063,6 +2059,10 @@ export default {
     },
     updateIOPSValue (input, value) {
       this[input] = value
+    },
+    onBootTypeChange (value) {
+      this.fetchBootModes(value)
+      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
     }
   }
 }

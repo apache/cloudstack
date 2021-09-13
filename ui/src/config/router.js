@@ -172,6 +172,10 @@ function generateRouterMap (section) {
     map.meta.actions = section.actions
   }
 
+  if (section.params) {
+    map.meta.params = section.params
+  }
+
   return map
 }
 

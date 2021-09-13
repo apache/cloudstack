@@ -58,6 +58,8 @@ import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
@@ -535,6 +537,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupDao backupDao;
     @Inject
     private BackupManager backupManager;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -862,7 +866,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
         }
 
-        _vmDao.loadDetails(userVm);
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
 
         // Do parameters input validation
@@ -892,16 +895,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
 
-        removeEncryptedPasswordFromUserVmVoDetails(userVm);
+        removeEncryptedPasswordFromUserVmVoDetails(vmId);
 
+        _vmDao.loadDetails(userVm);
         return userVm;
     }
 
-    protected void removeEncryptedPasswordFromUserVmVoDetails(UserVmVO userVmVo) {
-        Map<String, String> details = userVmVo.getDetails();
-        details.remove(VmDetailConstants.ENCRYPTED_PASSWORD);
-        userVmVo.setDetails(details);
-        _vmDao.saveDetails(userVmVo);
+    protected void removeEncryptedPasswordFromUserVmVoDetails(long vmId) {
+        userVmDetailsDao.removeDetail(vmId, VmDetailConstants.ENCRYPTED_PASSWORD);
     }
 
     private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -3163,6 +3164,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public boolean deleteVmGroup(long groupId) {
+        InstanceGroupVO group = _vmGroupDao.findById(groupId);
+        annotationDao.removeByEntityType(AnnotationService.EntityType.INSTANCE_GROUP.name(), group.getUuid());
         // delete all the mappings from group_vm_map table
         List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByGroupId(groupId);
         for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
@@ -6031,9 +6034,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
         final Long srcHostId = srcHost.getId();
         final Host host = _hostDao.findById(srcHostId);
-        final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
+        final DataCenterDeployment plan = _itMgr.getMigrationDeployment(vm, host, null, excludes);
         try {
             return _planningMgr.planDeployment(profile, plan, excludes, null);
         } catch (final AffinityConflictException e2) {

@@ -229,4 +229,9 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     public Class<?> getEntityType() {
         return Event.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

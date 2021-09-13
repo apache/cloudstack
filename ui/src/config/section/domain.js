@@ -54,6 +54,9 @@ export default {
       name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
+    }, {
+      name: 'comments',
+      component: () => import('@/components/view/AnnotationsTab.vue')
     }
   ],
   treeView: true,

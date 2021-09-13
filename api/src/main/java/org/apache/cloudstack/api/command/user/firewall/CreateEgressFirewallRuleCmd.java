@@ -384,4 +384,9 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         return FirewallRule.class;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
 }

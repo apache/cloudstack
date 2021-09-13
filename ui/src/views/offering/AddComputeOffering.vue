@@ -486,7 +486,12 @@
           <tooltip-label slot="label" :title="$t('label.vmware.storage.polic')" :tooltip="apiParams.storagepolicy.description"/>
           <a-select
             v-decorator="['storagepolicy']"
-            :placeholder="apiParams.storagepolicy.description">
+            :placeholder="apiParams.storagepolicy.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="policy in storagePolicies" :key="policy.id">
               {{ policy.name || policy.id }}
             </a-select-option>

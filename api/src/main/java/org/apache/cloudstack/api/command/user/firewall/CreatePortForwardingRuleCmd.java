@@ -447,4 +447,9 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return FirewallRule.class;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
 }

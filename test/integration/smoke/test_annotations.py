@@ -31,39 +31,87 @@ import time
 
 _multiprocess_shared_ = True
 
-class TestHostAnnotations(cloudstackTestCase):
+
+class TestAnnotations(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestAnnotations, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls.services['mode'] = cls.zone.networktype
+        template = get_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        if template == FAILED:
+            cls.fail("get_test_template() failed to return template")
+
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+
+        cls._cleanup = []
+
+        # Create an account, network, VM and IP addresses
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
+        cls.userApiClient = testClient.getUserApiClient(cls.account.name, 'ROOT', 'User')
+
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["tiny"]
+        )
+        cls._cleanup.append(cls.service_offering)
+        cls.user_vm = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["virtual_machine"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
+        cls._cleanup.append(cls.user_vm)
+        cls.host = list_hosts(cls.apiclient,
+                               zoneid=cls.zone.id,
+                               type='Routing')[0]
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestAnnotations, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.services = self.testClient.getParsedTestDataConfig()
-        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        self.host = list_hosts(self.apiclient,
-            zoneid=self.zone.id,
-            type='Routing')[0]
         self.cleanup = []
         self.added_annotations = []
 
         return
 
     def tearDown(self):
-        try:
-            #Clean up
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.cleanAnnotations()
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        self.cleanAnnotations()
+        super(TestAnnotations, self).tearDown()
 
     def cleanAnnotations(self):
         """Remove annotations"""
         for annotation in self.added_annotations:
             self.removeAnnotation(annotation.annotation.id)
 
-    def addAnnotation(self, annotation):
+    def addAnnotation(self, annotation, entityid, entitytype, adminsonly=None):
         cmd = addAnnotation.addAnnotationCmd()
-        cmd.entityid = self.host.id
-        cmd.entitytype = "HOST"
+        cmd.entityid = entityid
+        cmd.entitytype = entitytype
         cmd.annotation = annotation
+        if adminsonly:
+            cmd.adminsonly = adminsonly
 
         self.added_annotations.append(self.apiclient.addAnnotation(cmd))
 
@@ -84,7 +132,7 @@ class TestHostAnnotations(cloudstackTestCase):
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_add_annotation(self):
         """Testing the addAnnotations API ability to add an annoatation per host"""
-        self.addAnnotation("annotation1")
+        self.addAnnotation("annotation1", self.host.id, "HOST")
         self.assertEqual(self.added_annotations[-1].annotation.annotation, "annotation1")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -92,17 +140,17 @@ class TestHostAnnotations(cloudstackTestCase):
         """Testing the addAnnotations API ability to add an annoatation per host
         when there are annotations already.
         And only the last one stands as annotation attribute on host level."""
-        self.addAnnotation("annotation1")
+        self.addAnnotation("annotation1", self.host.id, "HOST")
         self.assertEqual(self.added_annotations[-1].annotation.annotation, "annotation1")
 
         #   Adds sleep of 1 second just to be sure next annotation will not be created in the same second.
         time.sleep(1)
-        self.addAnnotation("annotation2")
+        self.addAnnotation("annotation2", self.host.id, "HOST")
         self.assertEqual(self.added_annotations[-1].annotation.annotation, "annotation2")
 
         #   Adds sleep of 1 second just to be sure next annotation will not be created in the same second.
         time.sleep(1)
-        self.addAnnotation("annotation3")
+        self.addAnnotation("annotation3", self.host.id, "HOST")
         self.assertEqual(self.added_annotations[-1].annotation.annotation, "annotation3")
 
         #Check that the last one is visible in host details
@@ -110,19 +158,11 @@ class TestHostAnnotations(cloudstackTestCase):
         print()
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_03_user_role_dont_see_annotations(self):
-        """Testing the annotations api are restricted to users"""
+    def test_03_user_role_dont_infrastructure_annotations(self):
+        """Testing the annotations on infrastructure are restricted to users"""
 
-        self.addAnnotation("annotation1")
+        self.addAnnotation("annotation1", self.host.id, "HOST")
         self.assertEqual(self.added_annotations[-1].annotation.annotation, "annotation1")
-
-        self.account = Account.create(
-            self.apiclient,
-            self.services["account"],
-        )
-        self.cleanup.append(self.account)
-
-        userApiClient = self.testClient.getUserApiClient(self.account.name, 'ROOT', 'User')
 
         cmd = addAnnotation.addAnnotationCmd()
         cmd.entityid = self.host.id
@@ -130,15 +170,15 @@ class TestHostAnnotations(cloudstackTestCase):
         cmd.annotation = "test"
 
         try:
-            self.added_annotations.append(userApiClient.addAnnotation(cmd))
+            self.added_annotations.append(self.userApiClient.addAnnotation(cmd))
         except Exception:
             pass
         else:
             self.fail("AddAnnotation is allowed for User")
 
-        cmd = listAnnotations.listAnnotationsCmd()
+
         try:
-            userApiClient.listAnnotations(cmd)
+            self.userApiClient.listAnnotations(cmd)
         except Exception:
             pass
         else:
@@ -147,7 +187,7 @@ class TestHostAnnotations(cloudstackTestCase):
         cmd = removeAnnotation.removeAnnotationCmd()
         cmd.id = self.added_annotations[-1].annotation.id
         try:
-            userApiClient.removeAnnotation(cmd)
+            self.userApiClient.removeAnnotation(cmd)
         except Exception:
             pass
         else:
@@ -156,7 +196,7 @@ class TestHostAnnotations(cloudstackTestCase):
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_04_remove_annotations(self):
         """Testing the deleteAnnotation API ability to delete annotation"""
-        self.addAnnotation("annotation1")
+        self.addAnnotation("annotation1", self.host.id, "HOST")
         self.removeAnnotation(self.added_annotations[-1].annotation.id)
         del self.added_annotations[-1]
 
@@ -175,3 +215,42 @@ class TestHostAnnotations(cloudstackTestCase):
         else:
             self.fail("AddAnnotation is allowed for on an unknown entityType")
 
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_06_add_adminsonly_and_update_annotation_visibility(self):
+        """Testing admins ability to create private annotations"""
+
+        # Admin creates an annotation only visible to admin
+        self.addAnnotation("private annotation by admin", self.user_vm.id, "VM", True)
+        cmd = listAnnotations.listAnnotationsCmd()
+        cmd.entityid = self.user_vm.id
+        cmd.entitytype = "VM"
+        cmd.annotationfilter = "all"
+        annotation_id = self.added_annotations[-1].annotation.id
+
+        # Verify users cannot see private annotations created by admins
+        userVisibleAnnotations = self.userApiClient.listAnnotations(cmd)
+        self.assertIsNone(
+            userVisibleAnnotations,
+            "User must not access admin-only annotations"
+        )
+
+        # Admin updates the annotation visibility
+        cmd = updateAnnotationVisibility.updateAnnotationVisibilityCmd()
+        cmd.id = annotation_id
+        cmd.adminsonly = False
+        self.apiclient.updateAnnotationVisibility(cmd)
+
+        # Verify user can see the annotation after updating its visibility
+        cmd = listAnnotations.listAnnotationsCmd()
+        cmd.entityid = self.user_vm.id
+        cmd.entitytype = "VM"
+        cmd.annotationfilter = "all"
+        userVisibleAnnotations = self.userApiClient.listAnnotations(cmd)
+        self.assertIsNotNone(
+            userVisibleAnnotations,
+            "User must access public annotations"
+        )
+
+        # Remove the annotation
+        self.removeAnnotation(annotation_id)
+        del self.added_annotations[-1]
