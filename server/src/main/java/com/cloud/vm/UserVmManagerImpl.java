@@ -2583,7 +2583,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long newCpu = NumberUtils.toLong(details.get(VmDetailConstants.CPU_NUMBER));
         long newMemory = NumberUtils.toLong(details.get(VmDetailConstants.MEMORY));
-        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         long currentCpu = currentServiceOffering.getCpu();
         long currentMemory = currentServiceOffering.getRamSize();
 
@@ -2604,15 +2604,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (newCpu > currentCpu) {
             _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, newCpu - currentCpu);
-        } else {
+        } else if (currentCpu > newCpu){
             _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, currentCpu - newCpu);
         }
         if (newMemory > currentMemory) {
             _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, newMemory - currentMemory);
-        } else {
+        } else if (currentMemory > newMemory){
             _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, currentMemory - newMemory);
         }
-
     }
 
     @Override

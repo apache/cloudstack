@@ -301,6 +301,10 @@ public class UserVmManagerImplTest {
 
         ServiceOffering offering = getSvcoffering(512);
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+        ServiceOfferingVO currentServiceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.lenient().when(currentServiceOffering.getCpu()).thenReturn(1);
+        Mockito.lenient().when(currentServiceOffering.getRamSize()).thenReturn(512);
 
         List<NicVO> nics = new ArrayList<>();
         NicVO nic1 = mock(NicVO.class);
