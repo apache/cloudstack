@@ -434,7 +434,7 @@ export default {
     eventBus.off('exec-action')
   },
   mounted () {
-    eventBus.$on('exec-action', (action, isGroupAction) => {
+    eventBus.on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
     })
   },
