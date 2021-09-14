@@ -58,6 +58,11 @@
                   v-decorator="[field.name, {
                     initialValue: fieldValues[field.name] || null
                   }]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   :loading="field.loading">
                   <a-select-option
                     v-for="(opt, idx) in field.opts"

@@ -21,7 +21,15 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
+        <a-select
+          v-model="zoneId"
+          @change="fetchPods"
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -35,7 +43,14 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.podname') }}</div>
-        <a-select v-model="podId" @change="fetchClusters">
+        <a-select
+          v-model="podId"
+          @change="fetchClusters"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
@@ -47,7 +62,14 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.clustername') }}</div>
-        <a-select v-model="clusterId" @change="handleChangeCluster">
+        <a-select
+          v-model="clusterId"
+          @change="handleChangeCluster"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="cluster in clustersList"
             :value="cluster.id"
@@ -97,7 +119,11 @@
           mode="tags"
           :placeholder="placeholder.hosttags"
           v-model="selectedTags"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
         </a-select>
       </div>

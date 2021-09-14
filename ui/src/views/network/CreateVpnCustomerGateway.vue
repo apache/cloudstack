@@ -69,7 +69,12 @@
             {
               initialValue: 'aes128',
             },
-          ]">
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
           </a-select-option>
@@ -82,7 +87,12 @@
             {
               initialValue: 'sha1',
             },
-          ]">
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
           </a-select-option>
@@ -97,7 +107,12 @@
               initialValue: 'ike',
             },
           ]"
-          @change="val => { ikeversion = val }">
+          @change="val => { ikeversion = val }"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
             {{ vers }}
           </a-select-option>
@@ -111,7 +126,12 @@
             {
               initialValue: 'Group 5(modp1536)',
             },
-          ]">
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
             <div v-if="group !== ''">
               {{ group+"("+DHGroups[group]+")" }}
@@ -127,7 +147,12 @@
             {
               initialValue: 'aes128',
             },
-          ]">
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
           </a-select-option>
@@ -141,7 +166,12 @@
             {
               initialValue: 'sha1',
             },
-          ]">
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
           </a-select-option>
@@ -155,7 +185,12 @@
             {
               initialValue: 'None',
             },
-          ]">
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
             <div v-if="group === ''">
               {{ DHGroups[group] }}

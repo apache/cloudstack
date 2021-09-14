@@ -24,7 +24,12 @@
           <a-select
             v-decorator="['scope', { initialValue: 'cluster' }]"
             @change="val => { this.scope = val }"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option :value="'cluster'"> {{ $t('label.clusterid') }} </a-select-option>
             <a-select-option :value="'zone'"> {{ $t('label.zoneid') }} </a-select-option>
           </a-select>
@@ -34,7 +39,12 @@
             <tooltip-label slot="label" :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
             <a-select
               v-decorator="['hypervisor', { initialValue: hypervisors[0]}]"
-              @change="val => this.selectedHypervisor = val">
+              @change="val => this.selectedHypervisor = val"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option :value="hypervisor" v-for="(hypervisor, idx) in hypervisors" :key="idx">
                 {{ hypervisor }}
               </a-select-option>
@@ -45,7 +55,12 @@
           <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             v-decorator="['zone', { initialValue: this.zoneSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-            @change="val => changeZone(val)">
+            @change="val => changeZone(val)"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id">
               <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
               <a-icon v-else type="global" style="margin-right: 5px" />
@@ -58,7 +73,12 @@
             <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               v-decorator="['pod', { initialValue: this.podSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-              @change="val => changePod(val)">
+              @change="val => changePod(val)"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>
@@ -68,7 +88,12 @@
             <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
             <a-select
               v-decorator="['cluster', { initialValue: this.clusterSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-              @change="val => fetchHypervisor(val)">
+              @change="val => fetchHypervisor(val)"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id">
                 {{ cluster.name }}
               </a-select-option>
@@ -79,7 +104,12 @@
           <a-form-item :label="$t('label.hostid')">
             <a-select
               v-decorator="['host', { initialValue: this.hostSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-              @change="val => this.hostSelected = val">
+              @change="val => this.hostSelected = val"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option :value="host.id" v-for="host in hosts" :key="host.id">
                 {{ host.name }}
               </a-select-option>
@@ -94,7 +124,12 @@
           <tooltip-label slot="label" :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
           <a-select
             v-decorator="['protocol', { initialValue: this.protocols[0], rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-            @change="val => this.protocolSelected = val">
+            @change="val => this.protocolSelected = val"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option :value="protocol" v-for="(protocol,idx) in protocols" :key="idx">
               {{ protocol }}
             </a-select-option>
@@ -147,7 +182,12 @@
           <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
           <a-select
             v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-            @change="updateProviderAndProtocol">
+            @change="updateProviderAndProtocol"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
               {{ provider }}
             </a-select-option>
@@ -219,7 +259,11 @@
           <a-select
             mode="tags"
             v-model="selectedTags"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="tag in storageTags" :key="tag.name">{{ tag.name }}</a-select-option>
           </a-select>
         </a-form-item>

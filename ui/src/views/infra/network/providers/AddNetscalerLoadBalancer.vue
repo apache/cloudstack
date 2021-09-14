@@ -58,7 +58,12 @@
             <a-select
               v-decorator="['networkdevicetype', {
                 rules: [{ required: true, message: $t('message.error.select') }]
-              }]">
+              }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="opt in networkDeviceType"
                 :key="opt.id">{{ $t(opt.description) }}</a-select-option>

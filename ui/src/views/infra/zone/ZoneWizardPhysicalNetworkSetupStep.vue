@@ -37,7 +37,11 @@
           style="width: 100%"
           :defaultValue="text"
           @change="value => onCellChange(record.key, 'isolationMethod', value)"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option value="VLAN"> VLAN </a-select-option>
           <a-select-option value="VXLAN"> VXLAN </a-select-option>
           <a-select-option value="GRE"> GRE </a-select-option>
@@ -66,7 +70,11 @@
               :defaultValue="trafficLabelSelected"
               @change="val => { trafficLabelSelected = val }"
               style="min-width: 120px;"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="(traffic, index) in availableTrafficToAdd"
                 :value="traffic"
@@ -171,7 +179,13 @@
             <a-input v-decorator="['vlanId']" />
           </a-form-item>
           <a-form-item v-if="isAdvancedZone" :label="$t('label.vswitch.type')">
-            <a-select v-decorator="['vSwitchType']">
+            <a-select
+              v-decorator="['vSwitchType']"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
               <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
               <a-select-option value="vmwaredvs">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>

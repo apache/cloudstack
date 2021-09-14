@@ -25,7 +25,12 @@
             initialValue: this.zoneId,
             rules: [{ required: true, message: `${$t('label.required')}` }] }
           ]"
-          autoFocus>
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"

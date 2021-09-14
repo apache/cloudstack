@@ -50,7 +50,12 @@
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
                     style="min-width: 100px; margin-left: 10px"
-                    @change="changeFilter">
+                    @change="changeFilter"
+                    showSearch
+                    optionFilterProp="children"
+                    :filterOption="(input, option) => {
+                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
                     <a-icon slot="suffixIcon" type="filter" />
                     <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
                       {{ $t('label.all') }}
@@ -215,6 +220,11 @@
                   }]"
                   :placeholder="field.description"
                   :autoFocus="fieldIndex === firstIndex"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
@@ -312,6 +322,11 @@
                   }]"
                   :placeholder="field.description"
                   :autoFocus="fieldIndex === firstIndex"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -509,6 +524,11 @@ export default {
     eventBus.$off('async-job-complete')
     eventBus.$off('exec-action')
   },
+  mounted () {
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      this.execAction(action, isGroupAction)
+    })
+  },
   created () {
     eventBus.$on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
@@ -536,9 +556,6 @@ export default {
         return
       }
       this.fetchData()
-    })
-    eventBus.$on('exec-action', (action, isGroupAction) => {
-      this.execAction(action, isGroupAction)
     })
     eventBus.$on('update-bulk-job-status', (items, action) => {
       for (const item of items) {

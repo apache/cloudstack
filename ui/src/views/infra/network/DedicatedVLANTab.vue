@@ -81,7 +81,15 @@
           </a-form-item>
 
           <a-form-item :label="$t('label.scope')">
-            <a-select defaultValue="account" v-model="selectedScope" @change="handleScopeChange">
+            <a-select
+              defaultValue="account"
+              v-model="selectedScope"
+              @change="handleScopeChange"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
               <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
             </a-select>
@@ -93,7 +101,11 @@
               v-decorator="['domain', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">
                 <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <a-icon v-else type="block" style="margin-right: 5px" />
@@ -107,7 +119,11 @@
               v-decorator="['account', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="account in accounts"
                 :key="account.id"
@@ -124,7 +140,11 @@
               v-decorator="['project', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="project in projects"
                 :key="project.id"

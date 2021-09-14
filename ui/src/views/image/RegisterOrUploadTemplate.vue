@@ -162,7 +162,12 @@
                 }]"
                 :loading="hyperVisor.loading"
                 :placeholder="apiParams.hypervisor.description"
-                @change="handlerSelectHyperVisor">
+                @change="handlerSelectHyperVisor"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -181,7 +186,12 @@
                   ]
                 }]"
                 :placeholder="apiParams.format.description"
-                @change="val => { selectedFormat = val }">
+                @change="val => { selectedFormat = val }"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -225,7 +235,7 @@
         </a-form-item>
 
         <a-row :gutter="12" v-if="hyperKVMShow || hyperVMWShow">
-          <a-col :md="24" :lg="24" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
+          <a-col :md="24" :lg="hyperKVMShow ? 24 : 12" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
@@ -238,17 +248,22 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('label.rootdiskcontrollertype')">
+                :placeholder="$t('label.rootdiskcontrollertype')"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
-            <a-form-item v-if="hyperVMWShow && !deployasis" :label="$t('label.keyboardtype')">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
+            <a-form-item :label="$t('label.nicadaptertype')">
               <a-select
-                v-decorator="['keyboardType', {
+                v-decorator="['nicAdapterType', {
                   rules: [
                     {
                       required: false,
@@ -256,41 +271,63 @@
                     }
                   ]
                 }]"
-                :placeholder="$t('label.keyboard')">
-                <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
-                  {{ opt.name || opt.description }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
-          <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.ostypeid')">
-              <a-select
                 showSearch
                 optionFilterProp="children"
                 :filterOption="(input, option) => {
                   return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                v-decorator="['ostypeid', {
-                  initialValue: defaultOsId,
-                  rules: [
-                    {
-                      required: true,
-                      message: `${this.$t('message.error.select')}`
-                    }
-                  ]
-                }]"
-                :loading="osTypes.loading"
-                :placeholder="apiParams.ostypeid.description">
-                <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+                :placeholder="$t('label.nicadaptertype')">
+                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item :label="$t('label.keyboardtype')" :lg="12" v-if="hyperVMWShow && !deployasis">
+          <a-select
+            v-decorator="['keyboardType', {
+              rules: [
+                {
+                  required: false,
+                  message: `${this.$t('message.error.select')}`
+                }
+              ]
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="$t('label.keyboard')">
+            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.ostypeid')" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+          <a-select
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-decorator="['ostypeid', {
+              initialValue: defaultOsId,
+              rules: [
+                {
+                  required: true,
+                  message: `${this.$t('message.error.select')}`
+                }
+              ]
+            }]"
+            :loading="osTypes.loading"
+            :placeholder="apiParams.ostypeid.description">
+            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
             <a-form-item>

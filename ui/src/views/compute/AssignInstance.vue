@@ -29,7 +29,15 @@
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
-        <a-select v-model="selectedAccountType" defaultValue="account" autoFocus>
+        <a-select
+          v-model="selectedAccountType"
+          defaultValue="account"
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -37,7 +45,15 @@
 
       <div class="form__item">
         <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
-        <a-select @change="changeDomain" v-model="selectedDomain" :defaultValue="selectedDomain">
+        <a-select
+          @change="changeDomain"
+          v-model="selectedDomain"
+          :defaultValue="selectedDomain"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id">
             <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
             <a-icon v-else type="block" style="margin-right: 5px" />
@@ -49,7 +65,14 @@
       <template v-if="selectedAccountType === 'Account'">
         <div class="form__item">
           <p class="form__label"><span class="required">*</span>{{ $t('label.account') }}</p>
-          <a-select @change="changeAccount" v-model="selectedAccount">
+          <a-select
+            @change="changeAccount"
+            v-model="selectedAccount"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
               <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
               <a-icon v-else type="team" style="margin-right: 5px" />
@@ -63,7 +86,14 @@
       <template v-else>
         <div class="form__item">
           <p class="form__label"><span class="required">*</span>{{ $t('label.project') }}</p>
-          <a-select @change="changeProject" v-model="selectedProject">
+          <a-select
+            @change="changeProject"
+            v-model="selectedProject"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="project in projects" :key="project.id" :value="project.id">
               <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
               <a-icon v-else type="project" style="margin-right: 5px" />
@@ -76,7 +106,13 @@
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.network') }}</p>
-        <a-select v-model="selectedNetwork">
+        <a-select
+          v-model="selectedNetwork"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="network in networks" :key="network.id" :value="network.id">
             <resource-icon v-if="network && network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
             <a-icon v-else type="apartment" style="margin-right: 5px" />
