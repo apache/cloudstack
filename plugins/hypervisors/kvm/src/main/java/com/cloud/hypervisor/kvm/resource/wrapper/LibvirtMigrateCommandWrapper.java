@@ -286,7 +286,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             | TransformerException
             | URISyntaxException e) {
             s_logger.debug(String.format("%s : %s", e.getClass().getSimpleName(), e.getMessage()));
-            result = "Exception during migrate: " + e.getMessage();
+            if (result == null) {
+                result = "Exception during migrate: " + e.getMessage();
+            }
         } finally {
             try {
                 if (dm != null && result != null) {
