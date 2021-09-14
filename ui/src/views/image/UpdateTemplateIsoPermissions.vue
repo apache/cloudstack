@@ -27,7 +27,12 @@
         v-model="selectedOperation"
         :defaultValue="$t('label.add')"
         @change="fetchData"
-        autoFocus>
+        autoFocus
+        showSearch
+        optionFilterProp="children"
+        :filterOption="(input, option) => {
+          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+        }" >
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
         <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
@@ -40,7 +45,15 @@
           <span class="required">*</span>
           {{ $t('label.sharewith') }}
         </p>
-        <a-select v-model="selectedShareWith" :defaultValue="$t('label.account')" @change="fetchData">
+        <a-select
+          v-model="selectedShareWith"
+          :defaultValue="$t('label.account')"
+          @change="fetchData"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -57,7 +70,12 @@
               placeholder="Select Accounts"
               :value="selectedAccounts"
               @change="handleChange"
-              style="width: 100%">
+              style="width: 100%"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="account in accountsList" :key="account.name">
                 {{ account.name }}
               </a-select-option>
@@ -79,7 +97,12 @@
             :placeholder="$t('label.select.projects')"
             :value="selectedProjects"
             @change="handleChange"
-            style="width: 100%">
+            style="width: 100%"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="project in projectsList" :key="project.name">
               {{ project.name }}
             </a-select-option>

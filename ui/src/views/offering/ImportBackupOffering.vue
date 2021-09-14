@@ -39,13 +39,17 @@
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
-          showSearch
           allowClear
           v-decorator="['zoneid', {
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
           :loading="zones.loading"
-          @change="onChangeZone">
+          @change="onChangeZone"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="zone in zones.opts" :key="zone.name">
             {{ zone.name }}
           </a-select-option>
@@ -58,7 +62,12 @@
           v-decorator="['externalid', {
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }] "
-          :loading="externals.loading">
+          :loading="externals.loading"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="opt in externals.opts" :key="opt.id">
             {{ opt.name }}
           </a-select-option>

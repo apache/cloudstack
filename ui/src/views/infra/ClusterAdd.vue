@@ -20,7 +20,15 @@
     <div class="form" v-ctrl-enter="handleSubmitForm">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
+        <a-select
+          v-model="zoneId"
+          @change="fetchPods"
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -32,7 +40,14 @@
 
       <div class="form__item">
         <div class="form__label">{{ $t('label.hypervisor') }}</div>
-        <a-select v-model="hypervisor" @change="resetAllFields">
+        <a-select
+          v-model="hypervisor"
+          @change="resetAllFields"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="hv in hypervisorsList"
             :value="hv.name"
@@ -44,7 +59,13 @@
 
       <div class="form__item">
         <div class="form__label">{{ $t('label.podname') }}</div>
-        <a-select v-model="podId">
+        <a-select
+          v-model="podId"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"

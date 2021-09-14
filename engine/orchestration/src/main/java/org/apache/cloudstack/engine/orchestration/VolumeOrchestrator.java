@@ -313,7 +313,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
-        String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        String accountStoragePoolUuid = null;
+        if (vm != null) {
+            accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        }
         Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
 
         if (storagePool.isPresent()) {

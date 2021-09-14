@@ -2062,30 +2062,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             handleQualityOfServiceForVolumeMigration(destVolumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.NO_MIGRATION);
 
             if (success) {
-                srcVolumeInfo.processEvent(Event.OperationSuccessed);
-                destVolumeInfo.processEvent(Event.OperationSuccessed);
-
-                _volumeDao.updateUuid(srcVolumeInfo.getId(), destVolumeInfo.getId());
-
                 VolumeVO volumeVO = _volumeDao.findById(destVolumeInfo.getId());
-
                 volumeVO.setFormat(ImageFormat.QCOW2);
-
                 _volumeDao.update(volumeVO.getId(), volumeVO);
 
-                try {
-                    _volumeService.destroyVolume(srcVolumeInfo.getId());
+                _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSuccessed, null, srcVolumeInfo, destVolumeInfo, false);
 
-                    srcVolumeInfo = _volumeDataFactory.getVolume(srcVolumeInfo.getId());
-
-                    AsyncCallFuture<VolumeApiResult> destroyFuture = _volumeService.expungeVolumeAsync(srcVolumeInfo);
-
-                    if (destroyFuture.get().isFailed()) {
-                        LOGGER.debug("Failed to clean up source volume on storage");
-                    }
-                } catch (Exception e) {
-                    LOGGER.debug("Failed to clean up source volume on storage", e);
-                }
 
                 // Update the volume ID for snapshots on secondary storage
                 if (!_snapshotDao.listByVolumeId(srcVolumeInfo.getId()).isEmpty()) {

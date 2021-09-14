@@ -29,7 +29,12 @@
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: $t('message.error.select') }]
           }]"
-          :placeholder="apiParams.virtualmachineid.description">
+          :placeholder="apiParams.virtualmachineid.description"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="vm in virtualmachines" :key="vm.id">
             {{ vm.name || vm.displayname }}
           </a-select-option>

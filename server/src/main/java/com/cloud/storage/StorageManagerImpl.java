@@ -45,6 +45,8 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -330,6 +332,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -2076,6 +2080,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (poolId != null) {
             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, poolId);
         }
+        sc.addAnd("parent", SearchCriteria.Op.EQ, 0L);
         if (poolId != null) {
             pools.add(_storagePoolDao.findById(poolId));
         } else {
@@ -2925,6 +2930,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
                 _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
                 _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SECONDARY_STORAGE.name(), store.getUuid());
                 _imageStoreDao.remove(storeId);
             }
         });

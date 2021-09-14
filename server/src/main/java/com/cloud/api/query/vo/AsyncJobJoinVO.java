@@ -208,6 +208,11 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
     public String getProjectUuid() {
         // TODO Auto-generated method stub
         return null;

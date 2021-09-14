@@ -26,7 +26,17 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.deployasis.DeployAsIsConstants;
+import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ChildTemplateResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -36,20 +46,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
-import com.cloud.deployasis.DeployAsIsConstants;
-import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
-import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
@@ -85,6 +88,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private VMTemplateDetailsDao _templateDetailsDao;
     @Inject
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -262,6 +267,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
+        templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+                _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
@@ -359,6 +367,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
+        if (templateResponse.hasAnnotation() == null) {
+            templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+                    _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        }
+
         return templateResponse;
     }
 
@@ -446,6 +459,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+        isoResponse.setHasAnnotation(annotationDao.hasAnnotations(iso.getUuid(), AnnotationService.EntityType.ISO.name(),
+                _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
 

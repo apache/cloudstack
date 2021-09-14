@@ -652,57 +652,6 @@
           </div>
         </a-spin>
       </div>
-
-      <div class="account-center-team" v-if="!isStatic && annotationType && 'listAnnotations' in $store.getters.apis">
-        <a-divider :dashed="true"/>
-        <a-spin :spinning="loadingAnnotations">
-          <div class="title">
-            {{ $t('label.comments') }} ({{ notes.length }})
-          </div>
-          <a-list
-            v-if="notes.length"
-            :dataSource="notes"
-            itemLayout="horizontal"
-            size="small" >
-            <a-list-item slot="renderItem" slot-scope="item">
-              <a-comment
-                :content="item.annotation"
-                :datetime="$toLocaleDate(item.created)" >
-                <a-button
-                  v-if="'removeAnnotation' in $store.getters.apis"
-                  slot="avatar"
-                  type="danger"
-                  shape="circle"
-                  size="small"
-                  @click="deleteNote(item)">
-                  <a-icon type="delete"/>
-                </a-button>
-              </a-comment>
-            </a-list-item>
-          </a-list>
-
-          <a-comment v-if="'addAnnotation' in $store.getters.apis">
-            <a-avatar
-              slot="avatar"
-              icon="edit"
-              @click="showNotesInput = true" />
-            <div slot="content">
-              <a-textarea
-                rows="4"
-                @change="handleNoteChange"
-                :value="annotation"
-                :placeholder="$t('label.add.note')" />
-              <a-button
-                style="margin-top: 10px"
-                @click="saveNote"
-                type="primary"
-              >
-                {{ $t('label.save') }}
-              </a-button>
-            </div>
-          </a-comment>
-        </a-spin>
-      </div>
     </a-card>
   </a-spin>
 </template>
@@ -749,50 +698,25 @@ export default {
     return {
       ipaddress: '',
       resourceType: '',
-      annotationType: '',
       inputVisible: false,
       inputKey: '',
       inputValue: '',
       tags: [],
-      notes: [],
-      annotation: '',
       showKeys: false,
-      showNotesInput: false,
-      loadingTags: false,
-      loadingAnnotations: false
+      loadingTags: false
     }
   },
   watch: {
     resource: function (newItem, oldItem) {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
-      this.annotationType = ''
       this.showKeys = false
       this.setData()
-
-      switch (this.resourceType) {
-        case 'UserVm':
-          this.annotationType = 'VM'
-          break
-        case 'Domain':
-          this.annotationType = 'DOMAIN'
-          // Domain resource type is not supported for tags
-          this.resourceType = ''
-          break
-        case 'Host':
-          this.annotationType = 'HOST'
-          // Host resource type is not supported for tags
-          this.resourceType = ''
-          break
-      }
 
       if ('tags' in this.resource) {
         this.tags = this.resource.tags
       } else if (this.resourceType) {
         this.getTags()
-      }
-      if (this.annotationType) {
-        this.getNotes()
       }
       if ('apikey' in this.resource) {
         this.getUserKeys()
@@ -866,20 +790,6 @@ export default {
         this.loadingTags = false
       })
     },
-    getNotes () {
-      if (!('listAnnotations' in this.$store.getters.apis)) {
-        return
-      }
-      this.loadingAnnotations = true
-      this.notes = []
-      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
-          this.notes = json.listannotationsresponse.annotation
-        }
-      }).finally(() => {
-        this.loadingAnnotations = false
-      })
-    },
     isAdminOrOwner () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
@@ -923,34 +833,6 @@ export default {
       api('deleteTags', args).then(json => {
       }).finally(e => {
         this.getTags()
-      })
-    },
-    handleNoteChange (e) {
-      this.annotation = e.target.value
-    },
-    saveNote () {
-      if (this.annotation.length < 1) {
-        return
-      }
-      this.loadingAnnotations = true
-      this.showNotesInput = false
-      const args = {}
-      args.entityid = this.resource.id
-      args.entitytype = this.annotationType
-      args.annotation = this.annotation
-      api('addAnnotation', args).then(json => {
-      }).finally(e => {
-        this.getNotes()
-      })
-      this.annotation = ''
-    },
-    deleteNote (annotation) {
-      this.loadingAnnotations = true
-      const args = {}
-      args.id = annotation.id
-      api('removeAnnotation', args).then(json => {
-      }).finally(e => {
-        this.getNotes()
       })
     }
   }
@@ -1035,31 +917,6 @@ export default {
     margin-bottom: 10px;
   }
 
-}
-.account-center-team {
-  .members {
-    a {
-      display: block;
-      margin: 12px 0;
-      line-height: 24px;
-      height: 24px;
-      .member {
-        font-size: 14px;
-        color: rgba(0, 0, 0, 0.65);
-        line-height: 24px;
-        max-width: 100px;
-        vertical-align: top;
-        margin-left: 12px;
-        transition: all 0.3s;
-        display: inline-block;
-      }
-      &:hover {
-        span {
-          color: #1890ff;
-        }
-      }
-    }
-  }
 }
 .title {
   margin-bottom: 5px;

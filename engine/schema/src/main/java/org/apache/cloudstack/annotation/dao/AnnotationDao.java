@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.annotation.dao;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.annotation.AnnotationVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -25,6 +26,10 @@ import java.util.List;
  * @since 4.11
  */
 public interface AnnotationDao extends GenericDao<AnnotationVO, Long> {
-    public List<AnnotationVO> findByEntityType(String entityType);
-    public List<AnnotationVO> findByEntity(String entityType, String entityUuid);
+    List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword);
+    List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword);
+    List<AnnotationVO> listAllAnnotations(String userUuid, RoleType roleType, String annotationFilter, String keyword);
+    boolean hasAnnotations(String entityUuid, String entityType, boolean isCallerAdmin);
+    boolean removeByEntityType(String entityType, String entityUuid);
+    AnnotationVO findOneByEntityId(String entityUuid);
 }

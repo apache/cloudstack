@@ -49,6 +49,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.DataStoreRole;
@@ -68,6 +69,12 @@ import com.cloud.utils.storage.encoding.EncodingType;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
@@ -100,6 +107,13 @@ public class VolumeObject implements VolumeInfo {
     private boolean directDownload;
     private String vSphereStoragePolicyId;
 
+    private final List<Volume.State> volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage = Arrays.asList(Volume.State.Migrating, Volume.State.Uploaded, Volume.State.Copying,
+      Volume.State.Expunged);
+
+    private final List<Volume.State> volumeStatesThatShouldNotDeleteEntry = Arrays.asList(Volume.State.UploadError, Volume.State.Uploaded, Volume.State.Copying);
+
+    private final List<DataStoreRole> imageAndImageCacheRoles = Arrays.asList(DataStoreRole.Image, DataStoreRole.ImageCache);
+
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
     }
@@ -118,26 +132,21 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public String getAttachedVmName() {
         Long vmId = volumeVO.getInstanceId();
-        if (vmId != null) {
-            VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        VMInstanceVO vm = null;
 
-            if (vm == null) {
-                return null;
-            }
-            return vm.getInstanceName();
+        if (vmId != null) {
+            vm = vmInstanceDao.findById(vmId);
         }
-        return null;
+
+        return vm == null ? null : vm.getInstanceName();
     }
 
     @Override
     public VirtualMachine getAttachedVM() {
         Long vmId = volumeVO.getInstanceId();
-        if (vmId != null) {
-            VMInstanceVO vm = vmInstanceDao.findById(vmId);
-            return vm;
-        }
-        return null;
+        return vmId == null ? null : vmInstanceDao.findById(vmId);
     }
+
     @Override
     public String getUuid() {
         return volumeVO.getUuid();
@@ -210,125 +219,82 @@ public class VolumeObject implements VolumeInfo {
                 volumeVO = volumeDao.findById(volumeVO.getId());
             }
         } catch (NoTransitionException e) {
-            String errorMessage = "Failed to transit volume: " + getVolumeId() + ", due to: " + e.toString();
-            s_logger.debug(errorMessage);
-            throw new CloudRuntimeException(errorMessage);
+            String errorMessage = String.format("Failed to transit volume %s to [%s] due to [%s].", volumeVO.getVolumeDescription(), event, e.getMessage());
+            s_logger.warn(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
         }
         return result;
     }
 
-    private DiskOfferingVO getDiskOfferingVO() {
-        if (getDiskOfferingId() != null) {
-            DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(getDiskOfferingId());
-            return diskOfferingVO;
-        }
-        return null;
+    protected DiskOfferingVO getDiskOfferingVO() {
+        Long diskOfferingId = getDiskOfferingId();
+        return diskOfferingId == null ? null : diskOfferingDao.findById(diskOfferingId);
     }
 
     @Override
     public Long getBytesReadRate() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getBytesReadRate();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesReadRate);
     }
 
     @Override
     public Long getBytesReadRateMax() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getBytesReadRateMax();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesReadRateMax);
     }
 
     @Override
     public Long getBytesReadRateMaxLength() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getBytesReadRateMaxLength();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesReadRateMaxLength);
     }
 
     @Override
     public Long getBytesWriteRate() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getBytesWriteRate();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesWriteRate);
     }
 
     @Override
     public Long getBytesWriteRateMax() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getBytesWriteRateMax();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesWriteRateMax);
     }
 
     @Override
     public Long getBytesWriteRateMaxLength() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getBytesWriteRateMaxLength();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesWriteRateMaxLength);
     }
 
     @Override
     public Long getIopsReadRate() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getIopsReadRate();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getIopsReadRate);
     }
 
     @Override
     public Long getIopsReadRateMax() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getIopsReadRateMax();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getIopsReadRateMax);
     }
 
     @Override
     public Long getIopsReadRateMaxLength() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getIopsReadRateMaxLength();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getIopsReadRateMaxLength);
     }
 
     @Override
     public Long getIopsWriteRate() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getIopsWriteRate();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getIopsWriteRate);
     }
 
     @Override
     public Long getIopsWriteRateMax() {
-        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getIopsWriteRateMax();
-        }
-        return null;
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getIopsWriteRateMax);
     }
 
     @Override
     public Long getIopsWriteRateMaxLength() {
+        return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getIopsWriteRateMaxLength);
+    }
+
+    protected Long getLongValueFromDiskOfferingVoMethod(Function<DiskOfferingVO, Long> method){
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
         if (diskOfferingVO != null) {
-            return diskOfferingVO.getIopsWriteRateMaxLength();
+            return method.apply(diskOfferingVO);
         }
         return null;
     }
@@ -336,10 +302,7 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public DiskCacheMode getCacheMode() {
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
-        if (diskOfferingVO != null) {
-            return diskOfferingVO.getCacheMode();
-        }
-        return null;
+        return diskOfferingVO == null ? null : diskOfferingVO.getCacheMode();
     }
 
     @Override
@@ -374,7 +337,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public boolean isAttachedVM() {
-        return (volumeVO.getInstanceId() == null) ? false : true;
+        return volumeVO.getInstanceId() != null;
     }
 
     @Override
@@ -401,64 +364,39 @@ public class VolumeObject implements VolumeInfo {
         if (dataStore == null) {
             return;
         }
-        try {
-            Volume.Event volEvent = null;
-            if (dataStore.getRole() == DataStoreRole.ImageCache) {
-                objectInStoreMgr.update(this, event);
+
+        if (imageAndImageCacheRoles.contains(dataStore.getRole())) {
+            updateObjectInDataStoreManager(event, volumeVO != null && !volumeStatesThatShouldNotDeleteEntry.contains(volumeVO.getState()));
+
+            if (dataStore.getRole() == DataStoreRole.ImageCache || volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage.contains(volumeVO.getState())
+              || event == ObjectInDataStoreStateMachine.Event.MigrateDataRequested) {
                 return;
             }
-            if (dataStore.getRole() == DataStoreRole.Image) {
-                objectInStoreMgr.update(this, event);
-                if (volumeVO.getState() == Volume.State.Migrating || volumeVO.getState() == Volume.State.Copying ||
-                    volumeVO.getState() == Volume.State.Uploaded || volumeVO.getState() == Volume.State.Expunged) {
-                    return;
-                }
-                if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
-                    volEvent = Volume.Event.UploadRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
-                    volEvent = Volume.Event.CopyRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.MigrateDataRequested) {
-                    return;
-                }
-            } else {
-                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested || event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
-                    volEvent = Volume.Event.CreateRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.CopyingRequested) {
-                    volEvent = Volume.Event.CopyRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
-                    volEvent = Volume.Event.MigrationRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.MigrationCopyRequested) {
-                    volEvent = Event.MigrationCopyRequested;
-                }
-            }
-
-            if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
-                volEvent = Volume.Event.DestroyRequested;
-            } else if (event == ObjectInDataStoreStateMachine.Event.ExpungeRequested) {
-                volEvent = Volume.Event.ExpungingRequested;
-            } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
-                volEvent = Volume.Event.OperationSucceeded;
-            } else if (event == ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded) {
-              volEvent = Event.MigrationCopySucceeded;
-            } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                volEvent = Volume.Event.OperationFailed;
-            } else if (event == ObjectInDataStoreStateMachine.Event.MigrationCopyFailed) {
-              volEvent = Event.MigrationCopyFailed;
-            } else if (event == ObjectInDataStoreStateMachine.Event.ResizeRequested) {
-                volEvent = Volume.Event.ResizeRequested;
-            }
-            stateTransit(volEvent);
-        } catch (Exception e) {
-            s_logger.debug("Failed to update state", e);
-            throw new CloudRuntimeException("Failed to update state:" + e.toString());
-        } finally {
-            // in case of OperationFailed, expunge the entry
-            // state transit call reloads the volume from DB and so check for null as well
-            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed &&
-                (volumeVO != null && volumeVO.getState() != Volume.State.Copying && volumeVO.getState() != Volume.State.Uploaded && volumeVO.getState() != Volume.State.UploadError)) {
-                objectInStoreMgr.deleteIfNotReady(this);
-            }
         }
+
+        stateTransit(getMapOfEvents().get(event));
+    }
+
+    protected Map<ObjectInDataStoreStateMachine.Event, Volume.Event> getMapOfEvents() {
+        Map<ObjectInDataStoreStateMachine.Event, Volume.Event> mapOfEvents = new HashMap<>();
+        if (dataStore.getRole() == DataStoreRole.Image) {
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested, Volume.Event.UploadRequested);
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationRequested, Volume.Event.CopyRequested);
+        } else {
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.CreateRequested, Volume.Event.CreateRequested);
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested, Volume.Event.CreateRequested);
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.CopyingRequested, Volume.Event.CopyRequested);
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationRequested, Volume.Event.MigrationRequested);
+            mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopyRequested, Volume.Event.MigrationCopyRequested);
+        }
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.DestroyRequested, Volume.Event.DestroyRequested);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.ExpungeRequested, Volume.Event.ExpungingRequested);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationSuccessed, Volume.Event.OperationSucceeded);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded, Volume.Event.MigrationCopySucceeded);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationFailed, Volume.Event.OperationFailed);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopyFailed, Volume.Event.MigrationCopyFailed);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.ResizeRequested, Volume.Event.ResizeRequested);
+        return mapOfEvents;
     }
 
     @Override
@@ -475,16 +413,29 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public void processEventOnly(ObjectInDataStoreStateMachine.Event event) {
+        updateObjectInDataStoreManager(event, true);
+    }
+
+    protected void updateObjectInDataStoreManager(ObjectInDataStoreStateMachine.Event event, boolean callExpungeEntry){
         try {
             objectInStoreMgr.update(this, event);
-        } catch (Exception e) {
-            s_logger.debug("Failed to update state", e);
-            throw new CloudRuntimeException("Failed to update state:" + e.toString());
+        } catch (ConcurrentOperationException | NoTransitionException e) {
+            String message = String.format("Failed to update %sto state [%s] due to [%s].", volumeVO == null ? "" : String.format("volume %s ", volumeVO.getVolumeDescription()),
+              getMapOfEvents().get(event), e.getMessage());
+            s_logger.warn(message, e);
+            throw new CloudRuntimeException(message, e);
         } finally {
-            // in case of OperationFailed, expunge the entry
-            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.deleteIfNotReady(this);
-            }
+            expungeEntryOnOperationFailed(event, callExpungeEntry);
+        }
+    }
+
+    protected void expungeEntryOnOperationFailed(ObjectInDataStoreStateMachine.Event event) {
+        expungeEntryOnOperationFailed(event, true);
+    }
+
+    protected void expungeEntryOnOperationFailed(ObjectInDataStoreStateMachine.Event event, boolean callExpungeEntry) {
+        if (event == ObjectInDataStoreStateMachine.Event.OperationFailed && callExpungeEntry) {
+            objectInStoreMgr.deleteIfNotReady(this);
         }
     }
 
@@ -647,90 +598,150 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
-        try {
-            if (dataStore.getRole() == DataStoreRole.Primary) {
-                if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-                    VolumeVO vol = volumeDao.findById(getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
-                    vol.setPath(newVol.getPath());
-                    if (newVol.getSize() != null) {
-                        // Root disk resize may be requested where the original
-                        // template size is less than the requested root disk size
-                        if (vol.getSize() == null || vol.getSize() < newVol.getSize()) {
-                            vol.setSize(newVol.getSize());
-                        }
-                    }
-                    if (newVol.getFormat() != null) {
-                        vol.setFormat(newVol.getFormat());
-                    }
-                    vol.setPoolId(getDataStore().getId());
-                    volumeDao.update(vol.getId(), vol);
-                } else if (answer instanceof CreateObjectAnswer) {
-                    CreateObjectAnswer createAnswer = (CreateObjectAnswer)answer;
-                    VolumeObjectTO newVol = (VolumeObjectTO)createAnswer.getData();
-                    VolumeVO vol = volumeDao.findById(getId());
-                    vol.setPath(newVol.getPath());
-                    if (newVol.getSize() != null) {
-                        vol.setSize(newVol.getSize());
-                    }
-                    vol.setPoolId(getDataStore().getId());
-                    if (newVol.getFormat() != null) {
-                        vol.setFormat(newVol.getFormat());
-                    }
-                    volumeDao.update(vol.getId(), vol);
-                }
-            } else {
-                // image store or imageCache store
-                if (answer instanceof DownloadAnswer) {
-                    DownloadAnswer dwdAnswer = (DownloadAnswer)answer;
-                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-                    volStore.setInstallPath(dwdAnswer.getInstallPath());
-                    volStore.setChecksum(dwdAnswer.getCheckSum());
-                    volumeStoreDao.update(volStore.getId(), volStore);
-                } else if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
-                    volStore.setInstallPath(newVol.getPath());
-                    if (newVol.getSize() != null) {
-                        volStore.setSize(newVol.getSize());
-                    }
-                    volumeStoreDao.update(volStore.getId(), volStore);
-                }
-            }
-        } catch (RuntimeException ex) {
-            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.deleteIfNotReady(this);
-            }
-            throw ex;
+        if (answer != null) {
+            handleProcessEventAnswer(event, answer);
         }
-        this.processEvent(event);
 
+        this.processEvent(event);
     }
 
-    @Override
-    public void incRefCount() {
-        if (dataStore == null) {
+    protected void handleProcessEventAnswer(ObjectInDataStoreStateMachine.Event event, Answer answer) throws RuntimeException {
+        try {
+            if (answer instanceof CopyCmdAnswer) {
+                handleProcessEventAnswer((CopyCmdAnswer)answer);
+            } else if (answer instanceof CreateObjectAnswer) {
+                handleProcessEventAnswer((CreateObjectAnswer)answer);
+            } else if (answer instanceof DownloadAnswer) {
+                handleProcessEventAnswer((DownloadAnswer) answer);
+            }
+        } catch (RuntimeException ex) {
+            expungeEntryOnOperationFailed(event);
+            throw ex;
+        }
+    }
+
+    protected boolean isPrimaryDataStore(){
+        return dataStore.getRole() == DataStoreRole.Primary;
+    }
+
+    protected void setVolumeFormat(VolumeObjectTO newVolume, boolean setFormat, VolumeVO volumeVo) {
+        if (newVolume.getFormat() != null && setFormat) {
+            volumeVo.setFormat(newVolume.getFormat());
+        }
+    }
+
+    protected void handleProcessEventAnswer(CopyCmdAnswer copyAnswer) {
+        handleProcessEventAnswer(copyAnswer, true, true);
+    }
+
+    protected void handleProcessEventAnswer(CopyCmdAnswer copyAnswer, boolean validateVolumeSize, boolean setFormat) {
+        VolumeObjectTO newVolume = (VolumeObjectTO)copyAnswer.getNewData();
+
+        if (this.isPrimaryDataStore()) {
+            handleProcessEventCopyCmdAnswerPrimaryStore(newVolume, validateVolumeSize, setFormat);
+        } else {
+            handleProcessEventCopyCmdAnswerNotPrimaryStore(newVolume);
+        }
+    }
+
+    protected void handleProcessEventCopyCmdAnswerPrimaryStore(VolumeObjectTO newVolume, boolean validateVolumeSize, boolean setFormat) {
+        VolumeVO volumeVo = volumeDao.findById(getId());
+        updateVolumeInfo(newVolume, volumeVo, (!validateVolumeSize || newVolume.getSize() == null || volumeVo.getSize() == null || volumeVo.getSize() < newVolume.getSize()),
+          setFormat);
+    }
+
+    protected void updateVolumeInfo(VolumeObjectTO newVolume, VolumeVO volumeVo, boolean setVolumeSize, boolean setFormat) {
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "poolId");
+
+        volumeVo.setPath(newVolume.getPath());
+        Long newVolumeSize = newVolume.getSize();
+
+        if (newVolumeSize != null && setVolumeSize) {
+            volumeVo.setSize(newVolumeSize);
+        }
+
+        setVolumeFormat(newVolume, setFormat, volumeVo);
+
+        volumeVo.setPoolId(getDataStore().getId());
+        volumeDao.update(volumeVo.getId(), volumeVo);
+
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "poolId");
+        s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
+    }
+
+   protected void handleProcessEventCopyCmdAnswerNotPrimaryStore(VolumeObjectTO newVolume) {
+        VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
+
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
+
+        volStore.setInstallPath(newVolume.getPath());
+        Long newVolumeSize = newVolume.getSize();
+
+        if (newVolumeSize != null) {
+            volStore.setSize(newVolumeSize);
+        }
+
+        volumeStoreDao.update(volStore.getId(), volStore);
+
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
+        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
+          previousValues, newValues));
+    }
+
+    protected void handleProcessEventAnswer(CreateObjectAnswer createObjectAnswer) {
+        handleProcessEventAnswer(createObjectAnswer, true);
+    }
+
+    protected void handleProcessEventAnswer(CreateObjectAnswer createObjectAnswer, boolean setFormat) {
+        if (!isPrimaryDataStore()) {
             return;
         }
 
-        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-            store.incrRefCnt();
-            store.setLastUpdated(new Date());
-            volumeStoreDao.update(store.getId(), store);
+        VolumeObjectTO newVolume = (VolumeObjectTO)createObjectAnswer.getData();
+        VolumeVO volumeVo = volumeDao.findById(getId());
+        updateVolumeInfo(newVolume, volumeVo, true, setFormat);
+    }
+
+    protected void handleProcessEventAnswer(DownloadAnswer downloadAnswer) {
+        if (isPrimaryDataStore()) {
+            return;
         }
+
+        VolumeDataStoreVO volumeDataStoreVo = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
+
+        volumeDataStoreVo.setInstallPath(downloadAnswer.getInstallPath());
+        volumeDataStoreVo.setChecksum(downloadAnswer.getCheckSum());
+        volumeStoreDao.update(volumeDataStoreVo.getId(), volumeDataStoreVo);
+
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
+        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
+          reflectOnlySelectedFields(volumeDataStoreVo, "id", "volumeId"), previousValues, newValues));
+    }
+    @Override
+    public void incRefCount() {
+        updateRefCount(true);
     }
 
     @Override
     public void decRefCount() {
+        updateRefCount(false);
+    }
+
+    protected void updateRefCount(boolean increase){
         if (dataStore == null) {
             return;
         }
-        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+
+        if (imageAndImageCacheRoles.contains(dataStore.getRole())) {
             VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-            store.decrRefCnt();
+
+            if (increase) {
+                store.incrRefCnt();
+            } else {
+                store.decrRefCnt();
+            }
+
             store.setLastUpdated(new Date());
             volumeStoreDao.update(store.getId(), store);
         }
@@ -741,7 +752,8 @@ public class VolumeObject implements VolumeInfo {
         if (dataStore == null) {
             return null;
         }
-        if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+
+        if (imageAndImageCacheRoles.contains(dataStore.getRole())) {
             VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
             return store.getRefCnt();
         }
@@ -751,55 +763,19 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            if (dataStore.getRole() == DataStoreRole.Primary) {
-                if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-                    VolumeVO vol = volumeDao.findById(getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
-                    vol.setPath(newVol.getPath());
-                    if (newVol.getSize() != null) {
-                        vol.setSize(newVol.getSize());
-                    }
-                    vol.setPoolId(getDataStore().getId());
-                    volumeDao.update(vol.getId(), vol);
-                } else if (answer instanceof CreateObjectAnswer) {
-                    CreateObjectAnswer createAnswer = (CreateObjectAnswer)answer;
-                    VolumeObjectTO newVol = (VolumeObjectTO)createAnswer.getData();
-                    VolumeVO vol = volumeDao.findById(getId());
-                    vol.setPath(newVol.getPath());
-                    if (newVol.getSize() != null) {
-                        vol.setSize(newVol.getSize());
-                    }
-                    vol.setPoolId(getDataStore().getId());
-                    volumeDao.update(vol.getId(), vol);
-                }
-            } else {
-                // image store or imageCache store
-                if (answer instanceof DownloadAnswer) {
-                    DownloadAnswer dwdAnswer = (DownloadAnswer)answer;
-                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-                    volStore.setInstallPath(dwdAnswer.getInstallPath());
-                    volStore.setChecksum(dwdAnswer.getCheckSum());
-                    volumeStoreDao.update(volStore.getId(), volStore);
-                } else if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-                    VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-                    VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
-                    volStore.setInstallPath(newVol.getPath());
-                    if (newVol.getSize() != null) {
-                        volStore.setSize(newVol.getSize());
-                    }
-                    volumeStoreDao.update(volStore.getId(), volStore);
-                }
+            if (answer instanceof CopyCmdAnswer){
+                handleProcessEventAnswer((CopyCmdAnswer) answer, false, false);
+            } else if (answer instanceof CreateObjectAnswer) {
+                handleProcessEventAnswer((CreateObjectAnswer) answer, false);
+            } else if (answer instanceof DownloadAnswer) {
+                handleProcessEventAnswer((DownloadAnswer) answer);
             }
         } catch (RuntimeException ex) {
-            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                objectInStoreMgr.deleteIfNotReady(this);
-            }
+            expungeEntryOnOperationFailed(event);
             throw ex;
         }
-        this.processEventOnly(event);
 
+        this.processEventOnly(event);
     }
 
     public String getvSphereStoragePolicyId() {
@@ -836,10 +812,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public boolean delete() {
-        if (dataStore != null) {
-            return dataStore.delete(this);
-        }
-        return true;
+        return dataStore == null ? true : dataStore.delete(this);
     }
 
     @Override

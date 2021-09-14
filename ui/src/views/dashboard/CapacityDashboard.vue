@@ -21,12 +21,15 @@
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
-            showSearch
-            optionFilterProp="children"
             :defaultValue="zoneSelected.name"
             :placeholder="$t('label.select.a.zone')"
             :value="zoneSelected.name"
-            @change="changeZone">
+            @change="changeZone"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="(zone, index) in zones" :key="index">
               {{ zone.name }}
             </a-select-option>

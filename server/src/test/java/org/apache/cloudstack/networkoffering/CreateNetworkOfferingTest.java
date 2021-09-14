@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -99,6 +100,9 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Inject
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
+
+    @Inject
+    AnnotationDao annotationDao;
 
     @Override
     @Before

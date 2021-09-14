@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
@@ -140,6 +142,9 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 @Component
 public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService, Configurable {
@@ -200,6 +205,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     StorageStrategyFactory _storageStrategyFactory;
     @Inject
     public TaggedResourceService taggedResourceService;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -587,6 +594,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
 
             if (result) {
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
+
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
                             snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
@@ -819,11 +828,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
         Long volumeId = cmd.getVolumeId();
         boolean display = cmd.isDisplay();
-        SnapshotPolicyVO policy = null;
         VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
         }
+
+        String volumeDescription = volume.getVolumeDescription();
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
@@ -841,45 +851,55 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         AccountVO owner = _accountDao.findById(volume.getAccountId());
         Long instanceId = volume.getInstanceId();
+        String intervalType = cmd.getIntervalType();
         if (instanceId != null) {
             // It is not detached, but attached to a VM
             if (_vmDao.findById(instanceId) == null) {
                 // It is not a UserVM but a SystemVM or DomR
-                throw new InvalidParameterValueException("Failed to create snapshot policy, snapshots of volumes attached to System or router VM are not allowed");
+                throw new InvalidParameterValueException(String.format("Failed to create snapshot policy [%s] for volume %s; Snapshots of volumes attached to System or router VM are not allowed.", intervalType, volumeDescription));
             }
         }
-        IntervalType intvType = DateUtil.IntervalType.getIntervalType(cmd.getIntervalType());
+
+        IntervalType intvType = DateUtil.IntervalType.getIntervalType(intervalType);
         if (intvType == null) {
-            throw new InvalidParameterValueException("Unsupported interval type " + cmd.getIntervalType());
+            throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
         }
         Type type = getSnapshotType(intvType);
+        String cmdTimezone = cmd.getTimezone();
 
-        TimeZone timeZone = TimeZone.getTimeZone(cmd.getTimezone());
+        TimeZone timeZone = TimeZone.getTimeZone(cmdTimezone);
         String timezoneId = timeZone.getID();
-        if (!timezoneId.equals(cmd.getTimezone())) {
-            s_logger.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + cmd.getTimezone());
-        }
-        try {
-            DateUtil.getNextRunTime(intvType, cmd.getSchedule(), timezoneId, null);
-        } catch (Exception e) {
-            throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + cmd.getIntervalType());
+        if (!timezoneId.equals(cmdTimezone)) {
+            s_logger.warn(String.format("Using timezone [%s] for running the snapshot policy [%s] for volume %s, as an equivalent of [%s].", timezoneId, intervalType, volumeDescription,
+              cmdTimezone));
         }
 
-        if (cmd.getMaxSnaps() <= 0) {
-            throw new InvalidParameterValueException("maxSnaps should be greater than 0");
+        String schedule = cmd.getSchedule();
+
+        try {
+            DateUtil.getNextRunTime(intvType, schedule, timezoneId, null);
+        } catch (Exception e) {
+            throw new InvalidParameterValueException(String.format("%s has an invalid schedule [%s] for interval type [%s].",
+              volumeDescription, schedule, intervalType));
+        }
+
+        int maxSnaps = cmd.getMaxSnaps();
+
+        if (maxSnaps <= 0) {
+            throw new InvalidParameterValueException(String.format("maxSnaps [%s] for volume %s should be greater than 0.", maxSnaps, volumeDescription));
         }
 
         int intervalMaxSnaps = type.getMax();
-        if (cmd.getMaxSnaps() > intervalMaxSnaps) {
-            throw new InvalidParameterValueException("maxSnaps exceeds limit: " + intervalMaxSnaps + " for interval type: " + cmd.getIntervalType());
+        if (maxSnaps > intervalMaxSnaps) {
+            throw new InvalidParameterValueException(String.format("maxSnaps [%s] for volume %s exceeds limit [%s] for interval type [%s].", maxSnaps, volumeDescription,
+              intervalMaxSnaps, intervalType));
         }
 
         // Verify that max doesn't exceed domain and account snapshot limits in case display is on
         if (display) {
             long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot);
             long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
-            int max = cmd.getMaxSnaps().intValue();
-            if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
+            if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
                 String message = "domain/account";
                 if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     message = "domain/project";
@@ -889,43 +909,85 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        final GlobalLock createSnapshotPolicyLock = GlobalLock.getInternLock("createSnapshotPolicy_" + volumeId);
+        Map<String, String> tags = cmd.getTags();
+        boolean active = true;
+
+        return persistSnapshotPolicy(volume, schedule, timezoneId, intvType, maxSnaps, display, active, tags);
+    }
+
+    protected SnapshotPolicyVO persistSnapshotPolicy(VolumeVO volume, String schedule, String timezone, IntervalType intervalType, int maxSnaps, boolean display, boolean active, Map<String, String> tags) {
+        long volumeId = volume.getId();
+        String volumeDescription = volume.getVolumeDescription();
+
+        GlobalLock createSnapshotPolicyLock = GlobalLock.getInternLock("createSnapshotPolicy_" + volumeId);
         boolean isLockAcquired = createSnapshotPolicyLock.lock(5);
-        if (isLockAcquired) {
-            s_logger.debug("Acquired lock for creating snapshot policy of volume : " + volume.getName());
-            try {
-                policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
-                if (policy == null) {
-                    policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps(), display);
-                    policy = _snapshotPolicyDao.persist(policy);
-                    _snapSchedMgr.scheduleNextSnapshotJob(policy);
-                } else {
-                    boolean previousDisplay = policy.isDisplay();
-                    policy.setSchedule(cmd.getSchedule());
-                    policy.setTimezone(timezoneId);
-                    policy.setInterval((short)intvType.ordinal());
-                    policy.setMaxSnaps(cmd.getMaxSnaps());
-                    policy.setActive(true);
-                    policy.setDisplay(display);
-                    _snapshotPolicyDao.update(policy.getId(), policy);
-                    _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
-                    taggedResourceService.deleteTags(Collections.singletonList(policy.getUuid()), ResourceObjectType.SnapshotPolicy, null);
-                }
-                final Map<String, String> tags = cmd.getTags();
-                if (MapUtils.isNotEmpty(tags)) {
-                    taggedResourceService.createTags(Collections.singletonList(policy.getUuid()), ResourceObjectType.SnapshotPolicy, tags, null);
-                }
-            } finally {
-                createSnapshotPolicyLock.unlock();
+
+        if (!isLockAcquired) {
+            throw new CloudRuntimeException(String.format("Unable to aquire lock for creating snapshot policy [%s] for %s.", intervalType, volumeDescription));
+        }
+
+        s_logger.debug(String.format("Acquired lock for creating snapshot policy [%s] for volume %s.", intervalType, volumeDescription));
+
+        try {
+            SnapshotPolicyVO policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intervalType);
+
+            if (policy == null) {
+                policy = createSnapshotPolicy(volumeId, schedule, timezone, intervalType, maxSnaps, display);
+            } else {
+                updateSnapshotPolicy(policy, schedule, timezone, intervalType, maxSnaps, active, display);
             }
 
-            // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
+            createTagsForSnapshotPolicy(tags, policy);
             CallContext.current().putContextParameter(SnapshotPolicy.class, policy.getUuid());
+
             return policy;
-        } else {
-            s_logger.warn("Unable to acquire lock for creating snapshot policy of volume : " + volume.getName());
-            return null;
+        } finally {
+            createSnapshotPolicyLock.unlock();
         }
+    }
+
+    protected SnapshotPolicyVO createSnapshotPolicy(long volumeId, String schedule, String timezone, IntervalType intervalType, int maxSnaps, boolean display) {
+        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, schedule, timezone, intervalType, maxSnaps, display);
+        policy = _snapshotPolicyDao.persist(policy);
+        _snapSchedMgr.scheduleNextSnapshotJob(policy);
+        s_logger.debug(String.format("Created snapshot policy %s.", new ReflectionToStringBuilder(policy, ToStringStyle.JSON_STYLE).setExcludeFieldNames("id", "uuid", "active")));
+        return policy;
+    }
+
+    protected void updateSnapshotPolicy(SnapshotPolicyVO policy, String schedule, String timezone, IntervalType intervalType, int maxSnaps, boolean active, boolean display) {
+        String previousPolicy = new ReflectionToStringBuilder(policy, ToStringStyle.JSON_STYLE).setExcludeFieldNames("id", "uuid").toString();
+        boolean previousDisplay = policy.isDisplay();
+        policy.setSchedule(schedule);
+        policy.setTimezone(timezone);
+        policy.setInterval((short) intervalType.ordinal());
+        policy.setMaxSnaps(maxSnaps);
+        policy.setActive(active);
+        policy.setDisplay(display);
+        _snapshotPolicyDao.update(policy.getId(), policy);
+        _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
+        taggedResourceService.deleteTags(Collections.singletonList(policy.getUuid()), ResourceObjectType.SnapshotPolicy, null);
+        s_logger.debug(String.format("Updated snapshot policy %s to %s.", previousPolicy, new ReflectionToStringBuilder(policy, ToStringStyle.JSON_STYLE)
+          .setExcludeFieldNames("id", "uuid")));
+    }
+
+    protected void createTagsForSnapshotPolicy(Map<String, String> tags, SnapshotPolicyVO policy) {
+        if (MapUtils.isNotEmpty(tags)) {
+            taggedResourceService.createTags(Collections.singletonList(policy.getUuid()), ResourceObjectType.SnapshotPolicy, tags, null);
+        }
+    }
+
+    @Override
+    public void copySnapshotPoliciesBetweenVolumes(VolumeVO srcVolume, VolumeVO destVolume){
+        IntervalType[] intervalTypes = IntervalType.values();
+        List<SnapshotPolicyVO> policies = listPoliciesforVolume(srcVolume.getId());
+
+        s_logger.debug(String.format("Copying snapshot policies %s from volume %s to volume %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(policies,
+          "id", "uuid"), srcVolume.getVolumeDescription(), destVolume.getVolumeDescription()));
+
+        policies.forEach(policy ->
+          persistSnapshotPolicy(destVolume, policy.getSchedule(), policy.getTimezone(), intervalTypes[policy.getInterval()], policy.getMaxSnaps(),
+            policy.isDisplay(), policy.isActive(), taggedResourceService.getTagsFromResource(ResourceObjectType.SnapshotPolicy, policy.getId()))
+        );
     }
 
     protected boolean deletePolicy(Long policyId) {
