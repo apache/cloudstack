@@ -40,9 +40,7 @@
         <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
           {{ $toLocaleDate(resource[item]) }}
         </div>
-        <div v-else>
-          {{ resource[item] }}
-        </div>
+        <div v-else>{{ resource[item] }}</div>
       </div>
     </a-list-item>
     <HostInfo :resource="resource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
