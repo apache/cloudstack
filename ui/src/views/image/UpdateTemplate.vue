@@ -46,7 +46,7 @@
         </a-form-item>
 
         <a-row :gutter="12" v-if="['KVM', 'VMware'].includes(resource.hypervisor)">
-          <a-col :md="24" :lg="24" v-if="resource.hypervisor === 'KVM' || (resource.hypervisor === 'VMware' && !resource.deployasis)">
+          <a-col :md="24" :lg="resource.hypervisor === 'KVM' ? 24 : 12" v-if="resource.hypervisor === 'KVM' || (resource.hypervisor === 'VMware' && !resource.deployasis)">
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskController', {
@@ -125,7 +125,7 @@
           <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
           <a-switch v-decorator="['isdynamicallyscalable', {}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.templatetype')">
+        <a-form-item :label="$t('label.templatetype')" v-if="isAdmin">
           <a-select
             showSearch
             optionFilterProp="children"
@@ -187,7 +187,10 @@ export default {
     this.$set(this.keyboardType, 'opts', [])
     this.$set(this.osTypes, 'loading', false)
     this.$set(this.osTypes, 'opts', [])
-    const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'templatetype']
+    const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
+    if (this.isAdmin()) {
+      resourceFields.push('templatetype')
+    }
     for (var field of resourceFields) {
       var fieldValue = this.resource[field]
       if (fieldValue) {
@@ -209,6 +212,9 @@ export default {
     this.fetchData()
   },
   methods: {
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
     fetchData () {
       this.fetchOsTypes()
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
@@ -346,7 +352,7 @@ export default {
           id: this.resource.id
         }
         const detailsField = ['rootDiskController', 'nicAdapter', 'keyboardType']
-        for (const key of values) {
+        for (const key in values) {
           if (!this.isValidValueForKey(values, key)) continue
           if (detailsField.includes(key)) {
             params['details[0].' + key] = values[key]

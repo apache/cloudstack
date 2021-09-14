@@ -93,31 +93,6 @@ export default {
         },
         {
           api: 'updateTemplate',
-          icon: 'settings',
-          label: 'label.edit',
-          dataView: true,
-          show: (record, store) => {
-            return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
-              (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
-              (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id)) &&
-              record.templatetype !== 'SYSTEM' &&
-              record.isready
-          },
-          args: (record, store) => {
-            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('templatetype')
-            }
-            return fields
-          },
-          mapping: {
-            templatetype: {
-              options: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING']
-            }
-          }
-        },
-        {
-          api: 'updateTemplate',
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
