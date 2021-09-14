@@ -3170,6 +3170,7 @@
 "message.restart.mgmt.server": "Please restart your management server(s) for your new settings to take effect.",
 "message.restart.mgmt.usage.server": "Please restart your management server(s) and usage server(s) for your new settings to take effect.",
 "message.restart.network": "All services provided by this network will be interrupted. Please confirm that you want to restart this network.",
+"message.restart.vm.to.update.settings": "Update in fields other than Name and Display Name will require the VM to be restarted",
 "message.restart.vpc": "Please confirm that you want to restart the VPC",
 "message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</p>",
 "message.restorevm": "Do you want to restore the VM ?",

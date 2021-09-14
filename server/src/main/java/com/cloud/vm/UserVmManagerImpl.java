@@ -51,6 +51,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -117,6 +118,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -539,6 +542,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private AnnotationDao annotationDao;
     @Inject
     protected CommandSetupHelper commandSetupHelper;
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper nwHelper;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2938,8 +2944,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Commands commands = new Commands(Command.OnError.Stop);
                 commandSetupHelper.createDhcpEntryCommand(router, vm, nic, false, commands);
                 try {
-                    _agentMgr.send(router.getHostId(), commands);
-                } catch (final OperationTimedoutException | AgentUnavailableException e) {
+                    if (!nwHelper.sendCommandsToRouter(router, commands)) {
+                        throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId());
+                    }
+                } catch (final ResourceUnavailableException e) {
                     String errMsg = String.format("Unable to send commands to virtual router: %s ", router.getHostId());
                     s_logger.warn(errMsg, e);
                     throw new CloudRuntimeException(errMsg, e);
