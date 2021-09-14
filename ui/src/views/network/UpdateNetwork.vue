@@ -169,6 +169,8 @@ export default {
       this.networkOfferings = []
       if (!this.isUpdatingIsolatedNetwork) return
       const params = {
+        zoneid: this.resource.zoneid,
+        state: 'Enabled',
         guestiptype: this.resource.type,
         forvpc: !!this.resource.vpcid
       }
