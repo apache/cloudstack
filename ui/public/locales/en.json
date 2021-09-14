@@ -3102,7 +3102,7 @@
 "message.number.pods": "<h2><span> # of </span> Pods</h2>",
 "message.number.storage": "<h2><span> # of </span> Primary Storage Volumes</h2>",
 "message.number.zones": "<h2><span> # of </span> Zones</h2>",
-"message.network.offering.change.warning": "WARNING: Changing network offering for the network will cause network downtime.",
+"message.network.offering.change.warning": "WARNING: Changing the offering will cause connectivity downtime for the VMs with NICs in the network.",
 "message.outofbandmanagement.action.maintenance": "Warning host is in maintenance mode",
 "message.ovf.configurations": "OVF configurations available for the selected appliance. Please select the desired value. Incompatible compute offerings will get disbaled.",
 "message.ovf.properties.available": "There are OVF properties available for customizing the selected appliance. Please edit the values accordingly.",
