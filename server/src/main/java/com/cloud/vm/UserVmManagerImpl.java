@@ -2814,10 +2814,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             userData = vm.getUserData();
         }
 
-        if (!StringUtils.isEmpty(hostName)) {
-            updateUserdata = true;
-        }
-
         if (osTypeId == null) {
             osTypeId = vm.getGuestOSId();
         }
@@ -2916,46 +2912,51 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName, instanceName);
 
         if (updateUserdata) {
-            boolean result = updateUserDataInternal(_vmDao.findById(id));
-            if (result) {
-                s_logger.debug("User data successfully updated for vm id=" + id);
-            } else {
-                throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
-            }
+            updateUserData(vm);
         }
 
-        if (!StringUtils.isEmpty(hostName)) {
-            vm.setHostName(hostName);
-            try {
-                updateDns(vm);
-            } catch (CloudRuntimeException e) {
-                throw new CloudRuntimeException(String.format("Failed to update hostname of VM %s to %s", vm.getInstanceName(), vm.getHostName()));
-            }
+        if (State.Running == vm.getState()) {
+            updateDns(vm, hostName);
         }
 
         return _vmDao.findById(id);
     }
 
-    private void updateDns(UserVmVO vm) {
-        List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
-        for (NicVO nic : nicVOs) {
-            List<DomainRouterVO> routers = _routerDao.findByNetwork(nic.getNetworkId());
-            for (DomainRouterVO router : routers) {
-                Commands commands = new Commands(Command.OnError.Stop);
-                commandSetupHelper.createDhcpEntryCommand(router, vm, nic, false, commands);
-                try {
-                    if (!nwHelper.sendCommandsToRouter(router, commands)) {
-                        throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId());
+    private void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
+        boolean result = updateUserDataInternal(vm);
+        if (result) {
+            s_logger.debug(String.format("User data successfully updated for vm id:  %s", vm.getId()));
+        } else {
+            throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
+        }
+    }
+
+    private void updateDns(UserVmVO vm, String hostName) throws ResourceUnavailableException, InsufficientCapacityException {
+        if (!StringUtils.isEmpty(hostName)) {
+            vm.setHostName(hostName);
+            try {
+                List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
+                for (NicVO nic : nicVOs) {
+                    List<DomainRouterVO> routers = _routerDao.findByNetwork(nic.getNetworkId());
+                    for (DomainRouterVO router : routers) {
+                        if (router.getState() != State.Running) {
+                            s_logger.warn(String.format("Unable to update DNS for VM %s, as virtual router: %s is not in the right state: %s ", vm, router.getName(), router.getState()));
+                            continue;
+                        }
+                        Commands commands = new Commands(Command.OnError.Stop);
+                        commandSetupHelper.createDhcpEntryCommand(router, vm, nic, false, commands);
+                        if (!nwHelper.sendCommandsToRouter(router, commands)) {
+                            throw new CloudRuntimeException(String.format("Unable to send commands to virtual router: %s", router.getHostId()));
+                        }
+                        Answer answer = commands.getAnswer("dhcp");
+                        if (answer == null || !answer.getResult()) {
+                            throw new CloudRuntimeException("Failed to update hostname");
+                        }
+                        updateUserData(vm);
                     }
-                } catch (final ResourceUnavailableException e) {
-                    String errMsg = String.format("Unable to send commands to virtual router: %s ", router.getHostId());
-                    s_logger.warn(errMsg, e);
-                    throw new CloudRuntimeException(errMsg, e);
                 }
-                Answer answer = commands.getAnswer("dhcp");
-                if (answer == null || !answer.getResult()) {
-                    throw new CloudRuntimeException("Failed to update hostname");
-                }
+            } catch (CloudRuntimeException e) {
+                throw new CloudRuntimeException(String.format("Failed to update hostname of VM %s to %s", vm.getInstanceName(), vm.getHostName()));
             }
         }
     }
