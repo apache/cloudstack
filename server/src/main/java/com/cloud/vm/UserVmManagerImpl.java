@@ -50,6 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.network.router.CommandSetupHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -536,6 +537,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupManager backupManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    protected CommandSetupHelper commandSetupHelper;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2805,6 +2808,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             userData = vm.getUserData();
         }
 
+        if (!StringUtils.isEmpty(hostName)) {
+            updateUserdata = true;
+        }
+
         if (osTypeId == null) {
             osTypeId = vm.getGuestOSId();
         }
@@ -2911,7 +2918,38 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        if (!StringUtils.isEmpty(hostName)) {
+            vm.setHostName(hostName);
+            try {
+                updateDns(vm);
+            } catch (CloudRuntimeException e) {
+                throw new CloudRuntimeException(String.format("Failed to update hostname of VM %s to %s", vm.getInstanceName(), vm.getHostName()));
+            }
+        }
+
         return _vmDao.findById(id);
+    }
+
+    private void updateDns(UserVmVO vm) {
+        List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
+        for (NicVO nic : nicVOs) {
+            List<DomainRouterVO> routers = _routerDao.findByNetwork(nic.getNetworkId());
+            for (DomainRouterVO router : routers) {
+                Commands commands = new Commands(Command.OnError.Stop);
+                commandSetupHelper.createDhcpEntryCommand(router, vm, nic, false, commands);
+                try {
+                    _agentMgr.send(router.getHostId(), commands);
+                } catch (final OperationTimedoutException | AgentUnavailableException e) {
+                    String errMsg = String.format("Unable to send commands to virtual router: %s ", router.getHostId());
+                    s_logger.warn(errMsg, e);
+                    throw new CloudRuntimeException(errMsg, e);
+                }
+                Answer answer = commands.getAnswer("dhcp");
+                if (answer == null || !answer.getResult()) {
+                    throw new CloudRuntimeException("Failed to update hostname");
+                }
+            }
+        }
     }
 
     private boolean updateUserDataInternal(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
