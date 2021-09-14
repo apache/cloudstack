@@ -39,7 +39,12 @@
             initialValue: selectedZoneId,
             rules: [{ required: true, message: $t('message.error.zone') }] }]"
           :loading="loading"
-          @change="zone => fetchDiskOfferings(zone)">
+          @change="zone => fetchDiskOfferings(zone)"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(zone, index) in zones"
             :value="zone.id"
@@ -56,7 +61,11 @@
             rules: [{ required: true, message: $t('message.error.select') }]}]"
           :loading="loading"
           @change="id => onChangeDiskOffering(id)"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(offering, index) in offerings"
             :value="offering.id"
