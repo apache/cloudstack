@@ -482,7 +482,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     volumeMgr.allocateRawVolume(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vmFinal, template, owner, null);
                 } else if (template.getFormat() == ImageFormat.BAREMETAL) {
-                    s_logger.debug(String.format("Template [%s] has format [%s]. Skipping ROOT volume [%s] allocation.", template.toString(), ImageFormat.BAREMETAL, rootVolumeName));
+                    s_logger.debug(String.format("%s has format [%s]. Skipping ROOT volume [%s] allocation.", template.toString(), ImageFormat.BAREMETAL, rootVolumeName));
                 } else {
                     volumeMgr.allocateTemplatedVolumes(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
@@ -2321,7 +2321,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         for (Answer answer : hypervisorMigrationResults) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("received an %s: %s", answer.getClass().getSimpleName(), answer));
+                s_logger.debug(String.format("Received an %s: %s", answer.getClass().getSimpleName(), answer));
             }
             if (answer instanceof MigrateVmToPoolAnswer) {
                 relevantAnswer = (MigrateVmToPoolAnswer) answer;
