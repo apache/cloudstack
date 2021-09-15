@@ -505,11 +505,8 @@ class hostConfig(serviceCfgBase):
             cfo = configFileOps("/etc/cloudstack/agent/agent.properties", self)
             reservedMemory = float(cfo.getEntry("host.reserved.mem.mb").strip() or 1024)
             totalMemory = float(bash("awk '/MemTotal/ { printf \"%.3f \\n\", $2/1024 }' /proc/meminfo").getStdout().strip())
-            if totalMemory < reservedMemory or totalMemory < 4096 :
+            if totalMemory < reservedMemory :
                 raise CloudRuntimeException("CloudStack requires a minimum of 4096 MB and more than %d MB memory since %d MB is reserved" %(reservedMemory, reservedMemory))
-
-            if not bash('uname -a | grep x86_64').isSuccess() :
-                raise CloudRuntimeException("Unsupported CPU Architecture. CloudStack requires x86_64 CPU Architecture")
 
             if int(bash('ip a | grep "^\\w" | grep -iv "^lo" | wc -l').getStdout()) < 1 :
                 raise CloudRuntimeException("CloudStack requires at least a single NIC")
