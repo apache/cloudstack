@@ -774,3 +774,6 @@ ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
 UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
 ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
 
+ALTER TABLE cloud_usage.usage_network DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`,`zone_id`,`host_id`,`network_id`,`event_time_millis`);
+ALTER TABLE `cloud`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
+ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
