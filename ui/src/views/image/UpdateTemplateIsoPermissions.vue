@@ -77,6 +77,8 @@
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="account in accountsList" :key="account.name">
+                <resource-icon v-if="account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="team" style="margin-right: 5px" />
                 {{ account.name }}
               </a-select-option>
             </a-select>
@@ -104,6 +106,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="project in projectsList" :key="project.name">
+              <resource-icon v-if="project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="project" style="margin-right: 5px" />
               {{ project.name }}
             </a-select-option>
           </a-select>
@@ -119,6 +123,7 @@
 </template>
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'UpdateTemplateIsoPermissions',
@@ -127,6 +132,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -188,7 +196,8 @@ export default {
     fetchAccounts () {
       this.loading = true
       api('listAccounts', {
-        domainid: this.resource.domainid
+        domainid: this.resource.domainid,
+        showicon: true
       }).then(response => {
         this.accounts = response.listaccountsresponse.account.filter(account => account.name !== this.resource.account)
       }).finally(e => {
@@ -198,6 +207,7 @@ export default {
     fetchProjects () {
       api('listProjects', {
         details: 'min',
+        showicon: true,
         listall: true
       }).then(response => {
         this.projects = response.listprojectsresponse.project

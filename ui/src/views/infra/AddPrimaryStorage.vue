@@ -62,6 +62,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id">
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
               {{ zone.name }}
             </a-select-option>
           </a-select>
@@ -278,12 +280,14 @@
 <script>
 import { api } from '@/api'
 import _ from 'lodash'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddPrimaryStorage',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -332,7 +336,7 @@ export default {
     },
     getInfraData () {
       this.loading = true
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.changeZone(this.zones[0] ? this.zones[0].id : '')
       }).finally(() => {

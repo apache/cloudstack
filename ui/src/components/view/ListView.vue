@@ -71,7 +71,15 @@
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
-        <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+          <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px; margin-right: 5px" :type="$route.meta.icon"/>
+          <a-icon v-else style="font-size: 16px; margin-right: 5px" :component="$route.meta.icon" />
+        </span>
+        <span v-else>
+          <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        </span>
 
         <span v-if="record.hasannotations">
           <span v-if="record.id">
@@ -99,6 +107,14 @@
       <span v-else>{{ text }}</span>
     </template>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
+      <span v-if="['vm'].includes($route.path.split('/')[1])">
+        <span v-if="record.icon && record.icon.base64image">
+          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        </span>
+        <span v-else>
+          <os-logo :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
+        </span>
+      </span>
       <QuickView
         style="margin-left: 5px"
         :actions="actions"
@@ -108,6 +124,10 @@
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
     <span slot="username" slot-scope="text, record" href="javascript:;">
+      <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
+        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        <a-icon v-else style="font-size: 16px; margin-right: 5px" type="user" />
+      </span>
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
@@ -347,6 +367,7 @@ import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ListView',
@@ -356,7 +377,8 @@ export default {
     Status,
     InfoCard,
     QuickView,
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     columns: {
@@ -382,6 +404,7 @@ export default {
       selectedRowKeys: [],
       editableValueKey: null,
       editableValue: '',
+      resourceIcon: '',
       thresholdMapping: {
         cpuused: {
           notification: 'cputhreshold',

@@ -95,6 +95,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="domain in domainsList" :key="domain.id">
+              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="block" style="margin-right: 5px" />
               {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
@@ -113,6 +115,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="(item, idx) in accountList" :key="idx">
+              <resource-icon v-if="item && item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="team" style="margin-right: 5px" />
               {{ item.name }}
             </a-select-option>
           </a-select>
@@ -167,12 +171,14 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddUser',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
@@ -217,6 +223,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
@@ -233,7 +240,7 @@ export default {
     fetchAccount () {
       this.accountList = []
       this.loadingAccount = true
-      api('listAccounts', { listAll: true }).then(response => {
+      api('listAccounts', { listAll: true, showicon: true }).then(response => {
         this.accountList = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notification.error({

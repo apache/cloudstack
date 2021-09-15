@@ -61,7 +61,8 @@
       </a-descriptions>
     </p>
     <template slot="networkname" slot-scope="text, item">
-      <a-icon type="apartment" />
+      <resource-icon v-if="!networkIconLoading && networkicon[item.id]" :image="networkicon[item.id]" size="1x" style="margin-right: 5px"/>
+      <a-icon v-else type="apartment" style="margin-right: 5px" />
       <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
         {{ text }}
       </router-link>
@@ -73,6 +74,8 @@
 </template>
 
 <script>
+import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'NicsTable',
@@ -85,6 +88,9 @@ export default {
       type: Boolean,
       default: false
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -116,12 +122,56 @@ export default {
           title: this.$t('label.gateway'),
           dataIndex: 'gateway'
         }
-      ]
+      ],
+      networkicon: {},
+      networkIconLoading: false
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
+    resource (newItem, oldItem) {
       this.resource = newItem
+      if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
+        this.fetchNetworks()
+      }
+    }
+  },
+  created () {
+    this.fetchNetworks()
+  },
+  methods: {
+    fetchNetworks () {
+      if (!this.resource || !this.resource.nic) return
+      this.networkIconLoading = true
+      this.networkicon = {}
+      const promises = []
+      this.resource.nic.forEach((item, index) => {
+        promises.push(this.fetchNetworkIcon(item.id, item.networkid))
+      })
+      Promise.all(promises).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.networkIconLoading = false
+      })
+    },
+    fetchNetworkIcon (id, networkid) {
+      return new Promise((resolve, reject) => {
+        this.networkicon[id] = null
+        api('listNetworks', {
+          id: networkid,
+          showicon: true
+        }).then(json => {
+          const network = json.listnetworksresponse?.network || []
+          if (network?.[0]?.icon) {
+            this.networkicon[id] = network[0]?.icon?.base64image
+            resolve(this.networkicon)
+          } else {
+            this.networkicon[id] = ''
+            resolve(this.networkicon)
+          }
+        }).catch(error => {
+          reject(error)
+        })
+      })
     }
   }
 }

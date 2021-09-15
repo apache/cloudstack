@@ -35,6 +35,8 @@
       :pagination="false"
     >
       <template slot="name" slot-scope="text, item">
+        <resource-icon v-if="item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+        <a-icon v-else type="apartment" style="margin-right: 5px"/>
         <router-link :to="{ path: '/guestnetwork/' + item.id }">
           {{ text }}
         </router-link>
@@ -75,11 +77,13 @@
 <script>
 import { api } from '@/api'
 import CreateNetwork from '@/views/network/CreateNetwork'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'IpRangesTabGuest',
   components: {
-    CreateNetwork
+    CreateNetwork,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -145,6 +149,7 @@ export default {
       api('listNetworks', {
         zoneid: this.resource.zoneid,
         physicalnetworkid: this.resource.id,
+        showicon: true,
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {

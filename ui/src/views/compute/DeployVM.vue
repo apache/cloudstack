@@ -32,18 +32,53 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="this.$t('label.zoneid')">
+                      <div v-if="zones.length <= 8">
+                        <a-row type="flex" :gutter="5" justify="start">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-decorator="['zoneid', {
+                                initialValue: selectedZone,
+                                rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
+                              @change="onSelectZoneId(zoneItem.id)">
+                              <a-col :span="8">
+                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                  <a-radio :value="zoneItem.id">
+                                    <div>
+                                      <img
+                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                        :src="getImg(zoneItem.icon.base64image)"
+                                        style="marginTop: -30px; marginLeft: 60px"
+                                        width="36px"
+                                        height="36px" />
+                                      <a-icon v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}" type="global"/>
+                                    </div>
+                                  </a-radio>
+                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
+                                </a-card-grid>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
                       <a-select
+                        v-else
                         v-decorator="['zoneid', {
-                          rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
+                          rules: [{ required: true, message: `${$t('message.error.select')}` }]
                         }]"
                         showSearch
                         optionFilterProp="children"
                         :filterOption="filterOption"
-                        :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         autoFocus
-                      ></a-select>
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id">
+                          <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <a-icon v-else style="margin-right: 5px" type="global" />
+                          {{ zone1.name }}
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
@@ -657,6 +692,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -685,6 +721,7 @@ export default {
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
+    ResourceIcon,
     TooltipLabel
   },
   props: {
@@ -813,7 +850,9 @@ export default {
       diskIOpsMin: 0,
       diskIOpsMax: 0,
       minIops: 0,
-      maxIops: 0
+      maxIops: 0,
+      zones: [],
+      selectedZone: ''
     }
   },
   computed: {
@@ -898,7 +937,8 @@ export default {
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
             page: 1,
             pageSize: 10,
-            keyword: undefined
+            keyword: undefined,
+            showIcon: true
           }
         },
         pods: {
@@ -1102,6 +1142,7 @@ export default {
       }
 
       if (this.iso) {
+        this.vm.isoid = this.iso.id
         this.vm.templateid = this.iso.id
         this.vm.templatename = this.iso.displaytext
         this.vm.ostypeid = this.iso.ostypeid
@@ -1226,6 +1267,7 @@ export default {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
     fetchData () {
+      this.fetchZones()
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1246,6 +1288,9 @@ export default {
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1677,9 +1722,9 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        api(param.list, { listall: true }).then(json => {
-          const zones = json.listzonesresponse.zone || []
-          resolve(zones)
+        api(param.list, { listall: true, showicon: true }).then(json => {
+          this.zones = json.listzonesresponse.zone || []
+          resolve(this.zones)
         }).catch(function (error) {
           console.log(error.stack)
         }).finally(() => {
@@ -1759,6 +1804,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -1778,6 +1824,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
@@ -1842,7 +1889,9 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.selectedZone = this.zoneId
       this.form.setFieldsValue({
+        zoneid: this.zoneId,
         clusterid: undefined,
         podid: undefined,
         hostid: undefined,

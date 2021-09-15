@@ -51,6 +51,8 @@
             return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="zone in zones.opts" :key="zone.name">
+            <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="global" style="margin-right: 5px"/>
             {{ zone.name }}
           </a-select-option>
         </a-select>
@@ -89,12 +91,14 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportBackupOffering',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   data () {
     return {
@@ -122,7 +126,7 @@ export default {
     },
     fetchZone () {
       this.zones.loading = true
-      api('listZones', { available: true }).then(json => {
+      api('listZones', { available: true, showicon: true }).then(json => {
         this.zones.opts = json.listzonesresponse.zone || []
         this.$forceUpdate()
       }).catch(error => {

@@ -34,6 +34,15 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }"
     >
+      <template slot="name" slot-scope="text, item">
+        <resource-icon
+          v-if="item.icon"
+          :image="item.icon.base64image"
+          size="1x"
+          style="margin-right: 5px"/>
+        <a-icon slot="name" v-else type="apartment" style="margin-right: 5px" />
+        {{ item.name }}
+      </template>
       <a-list
         slot="expandedRowRender"
         slot-scope="record"
@@ -91,11 +100,13 @@ import _ from 'lodash'
 import { api } from '@/api'
 import store from '@/store'
 import CreateNetwork from '@/views/network/CreateNetwork'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'NetworkSelection',
   components: {
-    CreateNetwork
+    CreateNetwork,
+    ResourceIcon
   },
   props: {
     items: {
@@ -158,6 +169,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.networks'),
+          scopedSlots: { customRender: 'name' },
           width: '40%'
         },
         {

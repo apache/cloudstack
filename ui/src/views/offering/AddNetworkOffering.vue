@@ -346,6 +346,8 @@
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+              <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="block" style="margin-right: 5px" />
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -375,6 +377,8 @@
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
+              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px"/>
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -395,12 +399,14 @@
 <script>
 import { api } from '@/api'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddNetworkOffering',
   components: {
     CheckBoxSelectPair,
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -467,6 +473,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -479,6 +486,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
