@@ -736,6 +736,9 @@ export default {
       return 'Configure'
     },
     getCapitalise (val) {
+      if (!val) {
+        return
+      }
       if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     },
