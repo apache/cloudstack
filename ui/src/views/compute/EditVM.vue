@@ -23,6 +23,9 @@
       :form="form"
       v-ctrl-enter="handleSubmit"
       @submit="handleSubmit">
+      <a-alert style="margin-bottom: 5px" type="warning" show-icon>
+        <span slot="message" v-html="$t('message.restart.vm.to.update.settings')" />
+      </a-alert>
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input

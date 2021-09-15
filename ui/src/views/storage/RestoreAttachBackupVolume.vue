@@ -25,7 +25,12 @@
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
           :loading="volumeOptions.loading"
-          autoFocus>
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(opt) in volumeOptions.opts"
             :key="opt.id">
@@ -35,12 +40,16 @@
       </a-form-item>
       <a-form-item :label="$t('label.vm')">
         <a-select
-          showSearch
           allowClear
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
-          :loading="virtualMachineOptions.loading">
+          :loading="virtualMachineOptions.loading"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(opt) in virtualMachineOptions.opts"
             :key="opt.name">
