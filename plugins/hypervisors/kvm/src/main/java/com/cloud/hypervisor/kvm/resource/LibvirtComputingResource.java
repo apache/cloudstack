@@ -46,6 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.configuration.Config;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -356,6 +357,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _migrateSpeed;
     protected int _migrateDowntime;
     protected int _migratePauseAfter;
+    protected int _migrateWait;
     protected boolean _diskActivityCheckEnabled;
     protected RollingMaintenanceExecutor rollingMaintenanceExecutor;
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
@@ -538,6 +540,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public int getMigratePauseAfter() {
         return _migratePauseAfter;
+    }
+
+    public int getMigrateWait() {
+        return _migrateWait;
     }
 
     public int getMigrateSpeed() {
@@ -1228,6 +1234,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("vm.migrate.pauseafter");
         _migratePauseAfter = NumbersUtil.parseInt(value, -1);
 
+        value = (String) params.get("vm.migrate.wait");
+        _migrateWait = NumbersUtil.parseInt(value, -1);
+
         configureAgentHooks(params);
 
         value = (String)params.get("vm.migrate.speed");
@@ -1289,6 +1298,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String value = (String)params.get("router.aggregation.command.each.timeout");
             Long longValue = NumbersUtil.parseLong(value, 600);
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
+        }
+
+        if (params.get(Config.MigrateWait.toString()) != null) {
+            String value = (String)params.get(Config.MigrateWait.toString());
+            Integer intValue = NumbersUtil.parseInt(value, -1);
+            storage.persist("vm.migrate.wait", String.valueOf(intValue));
+            _migrateWait = intValue;
         }
 
         return true;
