@@ -86,6 +86,7 @@ import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
@@ -1084,24 +1085,40 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
-        List<String> startIp = new ArrayList<String>();
-        List<String> endIp = new ArrayList<String>();
+        List<String> startIps = new ArrayList<String>();
+        List<String> endIps = new ArrayList<String>();
         List<String> forSystemVms = new ArrayList<String>();
         List<String> vlanIds = new ArrayList<String>();
+
+        List<IpRangeResponse> ipRanges = new ArrayList<>();
 
         if (pod.getDescription() != null && pod.getDescription().length() > 0) {
             final String[] existingPodIpRanges = pod.getDescription().split(",");
 
             for(String podIpRange: existingPodIpRanges) {
+                IpRangeResponse ipRangeResponse = new IpRangeResponse();
                 final String[] existingPodIpRange = podIpRange.split("-");
 
-                startIp.add(((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "");
-                endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
-                forSystemVms.add((existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0");
-                vlanIds.add((existingPodIpRange.length > 3) &&
+                String startIp = ((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "";
+                ipRangeResponse.setStartIp(startIp);
+                startIps.add(startIp);
+
+                String endIp = ((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "";
+                ipRangeResponse.setEndIp(endIp);
+                endIps.add(endIp);
+
+                String forSystemVm = (existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0";
+                ipRangeResponse.setForSystemVms(forSystemVm);
+                forSystemVms.add(forSystemVm);
+
+                String vlanId = (existingPodIpRange.length > 3) &&
                         (existingPodIpRange[3] != null && !existingPodIpRange[3].equals("untagged")) ?
                         BroadcastDomainType.Vlan.toUri(existingPodIpRange[3]).toString() :
-                        BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
+                        BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString();
+                ipRangeResponse.setVlanId(vlanId);
+                vlanIds.add(vlanId);
+
+                ipRanges.add(ipRangeResponse);
             }
         }
 
@@ -1114,8 +1131,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             podResponse.setZoneName(zone.getName());
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
-        podResponse.setStartIp(startIp);
-        podResponse.setEndIp(endIp);
+        podResponse.setIpRanges(ipRanges);
+        podResponse.setStartIp(startIps);
+        podResponse.setEndIp(endIps);
         podResponse.setForSystemVms(forSystemVms);
         podResponse.setVlanId(vlanIds);
         podResponse.setGateway(pod.getGateway());
@@ -1144,7 +1162,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // Do it for stats as well.
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
-            podResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+            podResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
         podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));

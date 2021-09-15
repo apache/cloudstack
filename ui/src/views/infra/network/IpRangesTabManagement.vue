@@ -229,17 +229,17 @@ export default {
         this.total = response.listpodsresponse.count || 0
         this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
         for (const pod of this.pods) {
-          if (pod && pod.startip && pod.startip.length > 0) {
-            for (var idx = 0; idx < pod.startip.length; idx++) {
+          if (pod && pod.ipranges && pod.ipranges.length > 0) {
+            for (var idx = 0; idx < pod.ipranges.length; idx++) {
               this.items.push({
                 id: pod.id,
                 name: pod.name,
                 gateway: pod.gateway,
                 netmask: pod.netmask,
-                vlanid: pod.vlanid[idx],
-                startip: pod.startip[idx],
-                endip: pod.endip[idx],
-                forsystemvms: pod.forsystemvms[idx] === '1'
+                vlanid: pod.ipranges[idx].vlanid,
+                startip: pod.ipranges[idx].startip,
+                endip: pod.ipranges[idx].endip,
+                forsystemvms: pod.ipranges[idx].forsystemvms === '1'
               })
             }
           }
