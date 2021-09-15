@@ -282,6 +282,9 @@ export default {
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     getCapitalise (val) {
+      if (!val) {
+        return
+      }
       if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     },
