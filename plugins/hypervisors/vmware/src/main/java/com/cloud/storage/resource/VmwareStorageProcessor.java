@@ -1120,7 +1120,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
-                //detach volume and destroy worker vm
                 workerVm.detachAllDisksAndDestroy();
             }
         }
@@ -1985,7 +1984,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 try {
                     if (workerVm != null) {
-                        // detach volume and destroy worker vm
                         workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
