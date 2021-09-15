@@ -660,11 +660,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void addAllExpungeCommandsFromList(List<Command> cmdList, Commands cmds, VMInstanceVO vm) {
-        if (CollectionUtils.isNotEmpty(cmdList)) {
-            for (final Command command : cmdList) {
-                command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
-                cmds.addCommand(command);
+        if (CollectionUtils.isEmpty(cmdList)) {
+            return;
+        }
+        for (final Command command : cmdList) {
+            command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("Adding expunge command [%s] for VM [%s]", command.toString(), vm.toString()));
             }
+            cmds.addCommand(command);
         }
     }
 
