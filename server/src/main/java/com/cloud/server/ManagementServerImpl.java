@@ -46,7 +46,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.dao.DomainVlanMapDao;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
