@@ -34,6 +34,13 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
+      <div slot="zonename" slot-scope="text, record">
+        <span v-if="fetchZoneIcon(record.zoneid)">
+          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+        </span>
+        <a-icon v-else type="global" style="margin-right: 5px" />
+        <span> {{ record.zonename }} </span>
+      </div>
       <div slot="isready" slot-scope="text, record">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
@@ -119,6 +126,10 @@
               :loading="zoneLoading"
               autoFocus>
               <a-select-option v-for="zone in zones" :key="zone.id">
+                <span v-if="zone.icon && zone.icon.base64image">
+                  <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                </span>
+                <a-icon v-else type="global" style="margin-right: 5px" />
                 {{ zone.name }}
               </a-select-option>
             </a-select>
@@ -152,6 +163,8 @@
 <script>
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 
@@ -159,6 +172,8 @@ export default {
   name: 'IsoZones',
   components: {
     TooltipButton,
+    OsLogo,
+    ResourceIcon,
     BulkActionView
   },
   props: {
@@ -206,7 +221,8 @@ export default {
     this.columns = [
       {
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename'
+        dataIndex: 'zonename',
+        scopedSlots: { customRender: 'zonename' }
       },
       {
         title: this.$t('label.status'),
@@ -262,6 +278,15 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      this.fetchZoneData()
+    },
+    fetchZoneIcon (zoneid) {
+      const zoneItem = this.zones.filter(zone => zone.id === zoneid)
+      if (zoneItem?.[0]?.icon?.base64image) {
+        this.zoneIcon = zoneItem[0].icon.base64image
+        return true
+      }
+      return false
     },
     handleChangePage (page, pageSize) {
       this.page = page
@@ -381,7 +406,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { listall: true }).then(json => {
+      api('listZones', { listall: true, showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {

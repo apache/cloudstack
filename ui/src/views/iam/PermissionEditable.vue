@@ -19,7 +19,12 @@
   <a-select
     :value="defaultValue"
     @change="handleChange"
-    autoFocus>
+    autoFocus
+    showSearch
+    optionFilterProp="children"
+    :filterOption="(input, option) => {
+      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+    }" >
     <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
     <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
   </a-select>

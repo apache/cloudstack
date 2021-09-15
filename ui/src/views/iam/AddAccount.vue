@@ -27,7 +27,12 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="roleLoading"
             :placeholder="apiParams.roleid.description"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
@@ -103,8 +108,15 @@
             v-decorator="['domainid', {
               initialValue: selectedDomain,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
-            :placeholder="apiParams.domainid.description">
+            :placeholder="apiParams.domainid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="domain in domainsList" :key="domain.id">
+              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="block" style="margin-right: 5px"/>
               {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
@@ -116,10 +128,14 @@
         <a-form-item>
           <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
-            showSearch
             v-decorator="['timezone']"
             :loading="timeZoneLoading"
-            :placeholder="apiParams.timezone.description">
+            :placeholder="apiParams.timezone.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -141,7 +157,12 @@
               v-decorator="['samlentity', {
                 initialValue: selectedIdp,
               }]"
-              :loading="idpLoading">
+              :loading="idpLoading"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(idp, idx) in idps" :key="idx">
                 {{ idp.orgName }}
               </a-select-option>
@@ -160,12 +181,14 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountForm',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
@@ -230,6 +253,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []

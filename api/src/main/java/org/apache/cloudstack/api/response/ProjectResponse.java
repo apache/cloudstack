@@ -30,7 +30,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Project.class)
-public class ProjectResponse extends BaseResponse implements ResourceLimitAndCountResponse {
+public class ProjectResponse extends BaseResponse implements ResourceLimitAndCountResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the project")
@@ -208,12 +208,20 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total number of virtual machines running for this project", since = "4.2.0")
     private Integer vmRunning;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date this project was created", since = "4.16.0")
     private Date created;
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setName(String name) {
@@ -425,6 +433,11 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
 
     public void setOwners(List<Map<String, String>> owners) {
         this.owners = owners;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
     }
 
     public Date getCreated() {

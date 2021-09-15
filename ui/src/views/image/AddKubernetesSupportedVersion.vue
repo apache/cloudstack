@@ -63,6 +63,8 @@
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px"/>
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -129,11 +131,13 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddKubernetesSupportedVersion',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -169,6 +173,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone

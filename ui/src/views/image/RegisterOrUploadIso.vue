@@ -93,6 +93,8 @@
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
             <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id">
+              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -121,6 +123,8 @@
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">
             <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex">
+              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -162,6 +166,7 @@
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterIso',
@@ -174,6 +179,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -218,6 +226,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
 
       this.zoneLoading = true
       if (store.getters.userInfo.roletype === this.rootAdmin) {

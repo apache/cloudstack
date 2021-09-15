@@ -54,12 +54,12 @@ public class ListDetailOptionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public ResourceTag.ResourceObjectType getResourceType() {
-        return _taggedResourceService.getResourceType(resourceType);
+        return resourceManagerUtil.getResourceType(resourceType);
     }
 
     public String getResourceId() {
         if (!Strings.isNullOrEmpty(resourceId)) {
-            return _taggedResourceService.getUuid(resourceId, getResourceType());
+            return resourceManagerUtil.getUuid(resourceId, getResourceType());
         }
         return null;
     }

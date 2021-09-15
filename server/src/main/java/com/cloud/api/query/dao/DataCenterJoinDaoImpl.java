@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.ResourceIconVO;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -61,7 +63,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     }
 
     @Override
-    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities) {
+    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities, Boolean showResourceImage) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
         zoneResponse.setName(dataCenter.getName());
@@ -105,6 +107,14 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         for (ResourceTagJoinVO resourceTag : resourceTags) {
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
             zoneResponse.addTag(tagResponse);
+        }
+
+        if (showResourceImage) {
+            ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
+            if (resourceIcon != null) {
+                ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
+                zoneResponse.setResourceIconResponse(iconResponse);
+            }
         }
 
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));

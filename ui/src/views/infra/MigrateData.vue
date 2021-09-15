@@ -33,7 +33,11 @@
             :loading="loading"
             @change="val => { selectedStore = val }"
             autoFocus
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="store in imageStores"
               :key="store.id"
@@ -52,7 +56,11 @@
             }]"
             mode="multiple"
             :loading="loading"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="store in imageStores"
               v-if="store.id !== selectedStore"
@@ -71,7 +79,11 @@
                 }]
             }]"
             :loading="loading"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="Complete">{{ $t('label.complete') }}</a-select-option>
             <a-select-option value="Balance">{{ $t('label.balance') }}</a-select-option>
           </a-select>
