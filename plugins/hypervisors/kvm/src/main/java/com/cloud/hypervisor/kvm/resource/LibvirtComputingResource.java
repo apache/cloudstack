@@ -190,6 +190,8 @@ import com.cloud.vm.VmDetailConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.HOST_RESERVED_MEM_MB_STRING;
+
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
  * the libvirt API
@@ -1050,7 +1052,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("vm.video.ram");
         _videoRam = NumbersUtil.parseInt(value, 0);
 
-        value = (String)params.get("host.reserved.mem.mb");
+        value = (String)params.get(HOST_RESERVED_MEM_MB_STRING);
         // Reserve 1GB unless admin overrides
         _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024* 1024L;
 
@@ -1334,11 +1336,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
         }
 
+<<<<<<< HEAD
         if (params.get(Config.MigrateWait.toString()) != null) {
             String value = (String)params.get(Config.MigrateWait.toString());
             Integer intValue = NumbersUtil.parseInt(value, -1);
             storage.persist("vm.migrate.wait", String.valueOf(intValue));
             _migrateWait = intValue;
+=======
+        if (params.get(HOST_RESERVED_MEM_MB_STRING) != null) {
+            long value = Long.parseLong(params.get(HOST_RESERVED_MEM_MB_STRING));
+            s_logger.info("Reserved memory for host is " + value + "MB");
+            _dom0MinMem = value * 1024L * 1024L;
+            if (!String.valueOf(value).equals("")) {
+                storage.persist(HOST_RESERVED_MEM_MB_STRING, String.valueOf(value));
+            }
+>>>>>>> 42340e88d6 (Reserve memory for host)
         }
 
         return true;

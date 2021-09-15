@@ -43,6 +43,7 @@ import java.util.Vector;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -93,7 +94,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
@@ -430,6 +430,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Set<String> overprovisioningFactorsForValidation;
     public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
+    public static final String HOST_RESERVED_MEM_MB_STRING = "host.reserved.mem.mb";
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
@@ -452,6 +453,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
             "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
             true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Integer> HOST_RESERVED_MEM_MB = new ConfigKey<Integer>("Advanced", Integer.class, HOST_RESERVED_MEM_MB_STRING, "1024",
+            "Set an upper limit for memory in megabytes which will be reserved for host and not used for VM allocation.", true);
 
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
       + "for vm service offering. If 0 - no limitation", true);
@@ -548,23 +551,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private void initMessageBusListener() {
-        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String serderAddress, String subject, Object args) {
-                String globalSettingUpdated = (String) args;
-                if (StringUtils.isEmpty(globalSettingUpdated)) {
-                    return;
-                }
-                if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
-                        globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
-                    _indirectAgentLB.propagateMSListToAgents();
-                } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
-                        ||  globalSettingUpdated.equals(Config.MigrateWait.toString())) {
-                    Map<String, String> params = new HashMap<String, String>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
-                    _agentManager.propagateChangeToAgents(params);
-                }
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (serverAddress, subject, args) -> {
+            String globalSettingUpdated = (String) args;
+            if (Strings.isNullOrEmpty(globalSettingUpdated)) {
+                return;
+            }
+            if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
+                    globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
+                _indirectAgentLB.propagateMSListToAgents();
+            } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
+                    || globalSettingUpdated.equals(Config.MigrateWait.toString())) {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                _agentManager.propagateChangeToAgents(params);
+            } else if (globalSettingUpdated.equalsIgnoreCase(HOST_RESERVED_MEM_MB.key())) {
+                _agentManager.updateCapacityOfHosts();
             }
         });
     }
@@ -7313,7 +7315,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
-                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN
+                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN, HOST_RESERVED_MEM_MB
         };
     }
 
