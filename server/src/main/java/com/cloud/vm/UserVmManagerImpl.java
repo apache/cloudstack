@@ -50,6 +50,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -116,6 +118,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -536,6 +540,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupManager backupManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    protected CommandSetupHelper commandSetupHelper;
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper nwHelper;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2903,15 +2912,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName, instanceName);
 
         if (updateUserdata) {
-            boolean result = updateUserDataInternal(_vmDao.findById(id));
-            if (result) {
-                s_logger.debug("User data successfully updated for vm id=" + id);
-            } else {
-                throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
-            }
+            updateUserData(vm);
+        }
+
+        if (State.Running == vm.getState()) {
+            updateDns(vm, hostName);
         }
 
         return _vmDao.findById(id);
+    }
+
+    private void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
+        boolean result = updateUserDataInternal(vm);
+        if (result) {
+            s_logger.debug(String.format("User data successfully updated for vm id:  %s", vm.getId()));
+        } else {
+            throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
+        }
+    }
+
+    private void updateDns(UserVmVO vm, String hostName) throws ResourceUnavailableException, InsufficientCapacityException {
+        if (!StringUtils.isEmpty(hostName)) {
+            vm.setHostName(hostName);
+            try {
+                List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
+                for (NicVO nic : nicVOs) {
+                    List<DomainRouterVO> routers = _routerDao.findByNetwork(nic.getNetworkId());
+                    for (DomainRouterVO router : routers) {
+                        if (router.getState() != State.Running) {
+                            s_logger.warn(String.format("Unable to update DNS for VM %s, as virtual router: %s is not in the right state: %s ", vm, router.getName(), router.getState()));
+                            continue;
+                        }
+                        Commands commands = new Commands(Command.OnError.Stop);
+                        commandSetupHelper.createDhcpEntryCommand(router, vm, nic, false, commands);
+                        if (!nwHelper.sendCommandsToRouter(router, commands)) {
+                            throw new CloudRuntimeException(String.format("Unable to send commands to virtual router: %s", router.getHostId()));
+                        }
+                        Answer answer = commands.getAnswer("dhcp");
+                        if (answer == null || !answer.getResult()) {
+                            throw new CloudRuntimeException("Failed to update hostname");
+                        }
+                        updateUserData(vm);
+                    }
+                }
+            } catch (CloudRuntimeException e) {
+                throw new CloudRuntimeException(String.format("Failed to update hostname of VM %s to %s", vm.getInstanceName(), vm.getHostName()));
+            }
+        }
     }
 
     private boolean updateUserDataInternal(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {

@@ -28,7 +28,12 @@
             :loading="loading"
             v-decorator="['storageid', {
               rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]">
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
               {{ storagePool.name || storagePool.id }}
             </a-select-option>

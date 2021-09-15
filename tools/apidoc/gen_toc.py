@@ -136,6 +136,7 @@ known_categories = {
     'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
+    'Icon': 'Resource Icon',
     'NiciraNvpDevice': 'Nicira NVP',
     'BrocadeVcsDevice': 'Brocade VCS',
     'BigSwitchBcfDevice': 'BigSwitch BCF',
