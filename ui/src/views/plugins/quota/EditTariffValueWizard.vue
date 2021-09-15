@@ -112,7 +112,7 @@ export default {
 
         this.loading = true
 
-        api('quotaTariffUpdate', {}, 'POST', params).then(json => {
+        api('quotaTariffUpdate', params, 'GET').then(json => {
           const tariffResponse = json.quotatariffupdateresponse.quotatariff || {}
           if (Object.keys(tariffResponse).length > 0) {
             const effectiveDate = moment(tariffResponse.effectiveDate).format(this.pattern)
@@ -122,7 +122,7 @@ export default {
             }
             this.parentFetchData()
           }
-
+          this.$message.success(`${this.$t('message.setting.updated')} ${this.resource.description}`)
           this.onClose()
         }).catch(error => {
           this.$notification.error({

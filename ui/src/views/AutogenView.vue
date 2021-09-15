@@ -479,8 +479,7 @@ export default {
       parentSearch: this.onSearch,
       parentChangeFilter: this.changeFilter,
       parentChangeResource: this.changeResource,
-      parentPollActionCompletion: this.pollActionCompletion,
-      parentEditTariffAction: () => {}
+      parentPollActionCompletion: this.pollActionCompletion
     }
   },
   data () {
