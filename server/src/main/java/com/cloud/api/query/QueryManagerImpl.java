@@ -3746,14 +3746,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr,
-                showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
+                showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc, templateTag);
 
     }
 
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
                                                                HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr,
                                                                boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
-                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
+                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc, String templateTag) {
         if (!isIso) {
             // add hypervisor criteria for template case
             if (hypers != null && !hypers.isEmpty()) {
