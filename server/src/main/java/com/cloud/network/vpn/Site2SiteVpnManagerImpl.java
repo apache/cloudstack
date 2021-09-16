@@ -610,13 +610,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _accountMgr.checkAccess(caller, null, false, conn);
 
-        if (conn.getState() == State.Pending) {
-            conn.setState(State.Disconnected);
-        }
-        if (conn.getState() == State.Connected || conn.getState() == State.Error
-            || conn.getState() == State.Disconnected || conn.getState() == State.Connecting) {
-            stopVpnConnection(id);
-        }
+        // Set vpn state to disconnected
+        conn.setState(State.Disconnected);
+        _vpnConnectionDao.persist(conn);
+
+        // Stop and start the connection again
+        stopVpnConnection(id);
         startVpnConnection(id);
         conn = _vpnConnectionDao.findById(id);
         return conn;
