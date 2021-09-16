@@ -282,7 +282,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
-                if (primaryPool.getType() == StoragePoolType.RBD || primaryPool.getType() == StoragePoolType.PowerFlex) {
+                if (primaryPool.getType() == StoragePoolType.RBD ||
+                    primaryPool.getType() == StoragePoolType.PowerFlex ||
+                    primaryPool.getType() == StoragePoolType.Linstor) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);

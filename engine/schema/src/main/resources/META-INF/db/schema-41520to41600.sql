@@ -710,6 +710,20 @@ CREATE VIEW `cloud`.`host_view` AS
     GROUP BY
         `host`.`id`;
 
+CREATE TABLE `cloud`.`resource_icon` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `icon` blob COMMENT 'Base64 version of the resource icon',
+  `resource_id` bigint unsigned NOT NULL,
+  `resource_uuid` varchar(40),
+  `resource_type` varchar(255),
+  `updated` datetime default NULL,
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_resource_icon__uuid` UNIQUE (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 1;
 
 -- Allow annotations for resource admins, domain admins and users
@@ -787,3 +801,6 @@ ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
 UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
 ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
 
+ALTER TABLE cloud_usage.usage_network DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`,`zone_id`,`host_id`,`network_id`,`event_time_millis`);
+ALTER TABLE `cloud`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
+ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);

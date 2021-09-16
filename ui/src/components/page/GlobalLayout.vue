@@ -65,7 +65,7 @@
         </a-drawer>
       </template>
 
-      <template>
+      <template v-if="isDevelopmentMode">
         <drawer :visible="showSetting" placement="right">
           <div slot="handler">
             <a-button type="primary" size="large">
@@ -135,6 +135,9 @@ export default {
     ...mapState({
       mainMenu: state => state.permission.addRouters
     }),
+    isDevelopmentMode () {
+      return process.env.NODE_ENV === 'development'
+    },
     contentPaddingLeft () {
       if (!this.fixSidebar || this.isMobile()) {
         return '0'

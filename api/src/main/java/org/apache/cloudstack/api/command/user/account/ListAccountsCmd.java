@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -68,6 +71,10 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
                description = "comma separated list of account details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for accounts")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -111,6 +118,10 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         return dv;
     }
 
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -125,5 +136,19 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         ListResponse<AccountResponse> response = _queryService.searchForAccounts(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateAccountResponse(response.getResponses());
+        }
+    }
+
+    private void updateAccountResponse(List<AccountResponse> response) {
+        for (AccountResponse accountResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Account, accountResponse.getObjectId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            accountResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }
