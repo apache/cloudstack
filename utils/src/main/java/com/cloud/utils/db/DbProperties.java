@@ -42,7 +42,7 @@ public class DbProperties {
 
     protected static Properties wrapEncryption(Properties dbProps) throws IOException {
         EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
-        checker.check(dbProps);
+        checker.check(dbProps, EncryptionSecretKeyChecker.dbEncryptionType);
 
         if (EncryptionSecretKeyChecker.useEncryption()) {
             return dbProps;
@@ -77,7 +77,7 @@ public class DbProperties {
                 }
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
-                checker.check(dbProps);
+                checker.check(dbProps, EncryptionSecretKeyChecker.dbEncryptionType);
 
                 if (EncryptionSecretKeyChecker.useEncryption()) {
                     StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();

@@ -42,7 +42,7 @@ https.keystore=/etc/cloudstack/management/cloud.jks
 # http://docs.cloudstack.apache.org/projects/archived-cloudstack-administration/en/latest/management.html?highlight=jasypt#changing-the-database-password
 https.keystore.password=vmops.com
 # If an encrypted password is used, specify the encryption type - valid types: file, env (set environment variable CLOUD_SECRET_KEY), web
-# db.cloud.encryption.type=none
+# password.encryption.type=none
 
 # The path to webapp directory
 webapp.dir=/usr/share/cloudstack-management/webapp

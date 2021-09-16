@@ -16,50 +16,30 @@
 // under the License.
 package com.cloud.utils.server;
 
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.properties.EncryptableProperties;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class ServerProperties {
-    private static final Logger log = Logger.getLogger(ServerProperties.class);
+    private static final Logger LOG = Logger.getLogger(ServerProperties.class);
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;
 
-    public synchronized static Properties getServerProperties() {
+    public synchronized static Properties getServerProperties(InputStream inputStream) {
         if (!loaded) {
             Properties serverProps = new Properties();
-            InputStream is = null;
             try {
-                File props = PropertiesUtil.findConfigFile("server.properties");
-                if (props != null && props.exists()) {
-                    is = new FileInputStream(props);
-                }
-
-                if (is == null) {
-                    is = PropertiesUtil.openStreamFromURL("server.properties");
-                }
-
-                if (is == null) {
-                    System.err.println("Failed to find server.properties");
-                    log.error("Failed to find server.properties");
-                }
-
-                if (is != null) {
-                    serverProps.load(is);
-                }
+                serverProps.load(inputStream);
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
-                checker.check(serverProps);
+                checker.check(serverProps, EncryptionSecretKeyChecker.passwordEncryptionType);
 
                 if (EncryptionSecretKeyChecker.useEncryption()) {
                     StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
@@ -70,7 +50,7 @@ public class ServerProperties {
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to load server.properties", e);
             } finally {
-                IOUtils.closeQuietly(is);
+                IOUtils.closeQuietly(inputStream);
             }
 
             properties = serverProps;

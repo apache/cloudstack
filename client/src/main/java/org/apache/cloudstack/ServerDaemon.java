@@ -19,6 +19,9 @@
 package org.apache.cloudstack;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.Properties;
@@ -116,7 +119,8 @@ public class ServerDaemon implements Daemon {
         LOG.info("Server configuration file found: " + confFile.getAbsolutePath());
 
         try {
-            final Properties properties = ServerProperties.getServerProperties();
+            InputStream is = new FileInputStream(confFile);
+            final Properties properties = ServerProperties.getServerProperties(is);
             if (properties == null) {
                 return;
             }
@@ -131,7 +135,7 @@ public class ServerDaemon implements Daemon {
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
-        } catch (final IllegalStateException e) {
+        } catch (final IOException e) {
             LOG.warn("Failed to read configuration from server.properties file", e);
         } finally {
             // make sure that at least HTTP is enabled if both of them are set to false (misconfiguration)
