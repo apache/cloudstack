@@ -3035,7 +3035,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // 2.In case vm is running return only offerings greater than equal to current offering compute and offering's dynamic scalability should match
             if (vmInstance.getState() == VirtualMachine.State.Running) {
                 Integer vmCpu = currentVmOffering.getCpu();
-                Integer vmMemory = currentVmOffering.getSpeed();
+                Integer vmMemory = currentVmOffering.getRamSize();
                 Integer vmSpeed = currentVmOffering.getSpeed();
                 if ((vmCpu == null || vmMemory == null || vmSpeed == null) && VirtualMachine.Type.User.equals(vmInstance.getType())) {
                     UserVmVO userVmVO = _userVmDao.findById(vmId);
