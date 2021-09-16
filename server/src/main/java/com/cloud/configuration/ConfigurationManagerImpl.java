@@ -1527,10 +1527,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
         final long podId = cmd.getPodId();
+        final HostPodVO pod = _podDao.findById(podId);
+        if (pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
+        }
+
         final String currentStartIP = cmd.getCurrentStartIP();
         final String currentEndIP = cmd.getCurrentEndIP();
-        final HostPodVO pod = _podDao.findById(podId);
-
         String newStartIP = cmd.getNewStartIP();
         String newEndIP = cmd.getNewEndIP();
 
@@ -1542,13 +1545,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             newEndIP = currentEndIP;
         }
 
-        if (pod == null) {
-            throw new InvalidParameterValueException("Unable to find pod by id " + podId);
+        if (newStartIP.equals(currentStartIP) && newEndIP.equals(currentEndIP)) {
+            throw new InvalidParameterValueException("New starting and ending IP address are the same as current starting and ending IP address");
         }
 
         final String[] existingPodIpRanges = pod.getDescription().split(",");
         if (existingPodIpRanges.length == 0) {
-            throw new InvalidParameterValueException("The IP range cannot be found since the existing IP range is empty.");
+            throw new InvalidParameterValueException("The IP range cannot be found in the pod: " + podId + " since the existing IP range is empty.");
         }
 
         verifyIpRangeParameters(currentStartIP,currentEndIP);
@@ -1597,7 +1600,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     vlan = existingPodIpRange[3];
                 }
                 if (!foundRange && NetUtils.ipRangesOverlap(newStartIP, newEndIP, existingPodIpRange[0], existingPodIpRange[1])) {
-                    throw new InvalidParameterValueException("The Start IP and EndIP address range overlap with private IP :" + existingPodIpRange[0] + "-" + existingPodIpRange[1]);
+                    throw new InvalidParameterValueException("The Start and End IP address range: (" + newStartIP + "-" + newEndIP + ") overlap with the pod IP range: " + podIpRange);
                 }
             }
         }

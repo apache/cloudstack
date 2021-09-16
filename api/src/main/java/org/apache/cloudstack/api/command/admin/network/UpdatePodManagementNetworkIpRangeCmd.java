@@ -30,12 +30,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
 @APICommand(name = UpdatePodManagementNetworkIpRangeCmd.APINAME,
         description = "Updates a management network IP range. Only allowed when no IPs are allocated.",
         responseObject = SuccessResponse.class,
-        since = "4.15.0.0",
+        since = "4.16.0.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
@@ -134,6 +135,9 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
+        if (getNewStartIP() == null && getNewEndIP() == null) {
+            throw new InvalidParameterValueException("Either new starting IP address or new ending IP address must be specified");
+        }
 
         try {
             _configService.updatePodIpRange(this);
