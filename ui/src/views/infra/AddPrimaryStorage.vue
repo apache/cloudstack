@@ -136,7 +136,7 @@
           </a-select>
         </a-form-item>
         <div
-          v-if="protocolSelected === 'nfs' || protocolSelected === 'SMB' || protocolSelected === 'iscsi' || protocolSelected === 'vmfs'|| protocolSelected === 'Gluster' ||
+          v-if="protocolSelected === 'nfs' || protocolSelected === 'SMB' || protocolSelected === 'iscsi' || protocolSelected === 'vmfs'|| protocolSelected === 'Gluster' || protocolSelected === 'Linstor' ||
             (protocolSelected === 'PreSetup' && hypervisorType === 'VMware') || protocolSelected === 'datastorecluster'">
           <a-form-item>
             <tooltip-label slot="label" :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
@@ -193,7 +193,19 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="this.providerSelected !== 'DefaultPrimary' && this.providerSelected !== 'PowerFlex'">
+        <div v-if="protocolSelected !== 'Linstor'">
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+            <a-select
+              v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
+              @change="updateProviderAndProtocol">
+              <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
+                {{ provider }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </div>
+        <div v-if="this.providerSelected !== 'DefaultPrimary' && this.providerSelected !== 'PowerFlex' && this.providerSelected !== 'Linstor'">
           <a-form-item>
             <tooltip-label slot="label" :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
             <a-checkbox-group v-decorator="['managed']" >
@@ -252,6 +264,17 @@
         <div v-if="protocolSelected === 'Gluster'">
           <a-form-item :label="$t('label.volume')">
             <a-input v-decorator="['volume']" />
+          </a-form-item>
+        </div>
+        <div v-if="protocolSelected === 'Linstor'">
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.resourcegroup') }}
+              <a-tooltip :title="$t('message.linstor.resourcegroup.description')">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input v-decorator="['resourcegroup', { rules: [{ required: true, message: `${$t('label.required')}` }] }]" />
           </a-form-item>
         </div>
         <a-form-item>
@@ -408,7 +431,7 @@ export default {
       const cluster = this.clusters.find(cluster => cluster.id === this.clusterSelected)
       this.hypervisorType = cluster.hypervisortype
       if (this.hypervisorType === 'KVM') {
-        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'custom']
+        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom']
       } else if (this.hypervisorType === 'XenServer') {
         this.protocols = ['nfs', 'PreSetup', 'iscsi', 'custom']
       } else if (this.hypervisorType === 'VMware') {
@@ -562,6 +585,16 @@ export default {
     closeModal () {
       this.$parent.$parent.close()
     },
+    linstorURL (server) {
+      var url
+      if (server.indexOf('://') === -1) {
+        url = 'http://' + server
+      } else {
+        url = server
+      }
+
+      return url
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -650,6 +683,11 @@ export default {
           }
           var lun = values.lun
           url = this.iscsiURL(server, iqn, lun)
+        } else if (values.protocol === 'Linstor') {
+          url = this.linstorURL(server)
+          params.provider = 'Linstor'
+          values.managed = false
+          params['details[0].resourceGroup'] = values.resourcegroup
         }
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {

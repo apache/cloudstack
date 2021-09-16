@@ -4881,6 +4881,46 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testResizeVolumeCommandLinstorNotifyOnly() {
+        final String path = "/dev/drbd1000";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 200l;
+        final boolean shrinkOk = false;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(0)).getResizeScriptType(storagePool, vol);
+
+        verify(libvirtComputingResource, times(0)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(0)).getConnection();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
     public void testResizeVolumeCommandSameSize() {
         final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);

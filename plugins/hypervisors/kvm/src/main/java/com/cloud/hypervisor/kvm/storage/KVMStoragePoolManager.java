@@ -378,7 +378,7 @@ public class KVMStoragePoolManager {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.DIR, provisioningType,
                     size, destPool, timeout);
-        } else if (destPool.getType() == StoragePoolType.PowerFlex) {
+        } else if (destPool.getType() == StoragePoolType.PowerFlex || destPool.getType() == StoragePoolType.Linstor) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.RAW, provisioningType,
                     size, destPool, timeout);

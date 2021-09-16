@@ -279,6 +279,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private static final String AARCH64 = "aarch64";
 
+    public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
+
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -1910,6 +1912,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 || poolType == StoragePoolType.Gluster)
                 && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
+        } else if (poolType == StoragePoolType.Linstor) {
+            return RESIZE_NOTIFY_ONLY;
         }
         throw new CloudRuntimeException("Cannot determine resize type from pool type " + pool.getType());
     }
