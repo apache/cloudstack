@@ -31,6 +31,7 @@ public class ServerProperties {
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;
+    public static final String passwordEncryptionType = "password.encryption.type";
 
     public synchronized static Properties getServerProperties(InputStream inputStream) {
         if (!loaded) {
@@ -39,7 +40,7 @@ public class ServerProperties {
                 serverProps.load(inputStream);
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
-                checker.check(serverProps, EncryptionSecretKeyChecker.passwordEncryptionType);
+                checker.check(serverProps, passwordEncryptionType);
 
                 if (EncryptionSecretKeyChecker.useEncryption()) {
                     StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();

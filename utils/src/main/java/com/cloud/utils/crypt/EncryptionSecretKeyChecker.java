@@ -45,8 +45,6 @@ public class EncryptionSecretKeyChecker {
     private static final String s_altKeyFile = "key";
     private static final String s_keyFile = "key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
-    public static final String dbEncryptionType = "db.cloud.encryption.type";
-    public static final String passwordEncryptionType = "password.encryption.type";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
     private static boolean s_useEncryption = false;
 
@@ -57,8 +55,8 @@ public class EncryptionSecretKeyChecker {
         DbProperties.getDbProperties();
     }
 
-    public void check(Properties dbProps, String property) throws IOException {
-        String encryptionType = dbProps.getProperty(property);
+    public void check(Properties properties, String property) throws IOException {
+        String encryptionType = properties.getProperty(property);
 
         s_logger.debug("Encryption Type: " + encryptionType);
 
