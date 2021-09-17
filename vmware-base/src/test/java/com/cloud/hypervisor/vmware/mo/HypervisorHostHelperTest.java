@@ -214,7 +214,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertTrue(specCompareResult);
     }
 
@@ -274,7 +274,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertFalse(specCompareResult);
     }
 
@@ -333,7 +333,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertTrue(specCompareResult);
     }
 
@@ -392,7 +392,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertFalse(specCompareResult);
     }
 
@@ -451,7 +451,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertFalse(specCompareResult);
     }
 
@@ -501,7 +501,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertFalse(specCompareResult);
     }
 
@@ -541,7 +541,7 @@ public class HypervisorHostHelperTest {
         when(dvPortgroupConfigSpec.isAutoExpand()).thenReturn(newAutoExpand);
         when(dvPortgroupConfigSpec.getDefaultPortConfig()).thenReturn(newVmwareDvsPortSetting);
 
-        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec);
+        boolean specCompareResult = HypervisorHostHelper.isSpecMatch(currentDvPortgroupInfo, dvPortgroupConfigSpec, false);
         assertTrue(specCompareResult);
     }
 
@@ -802,7 +802,7 @@ public class HypervisorHostHelperTest {
         assertEquals(expected, HypervisorHostHelper.removeOVFNetwork(ovfString));
     }
 
-    private Map<NetworkOffering.Detail, String> getSecurityDetails() {
+    private Map<NetworkOffering.Detail, String> getNicDetails() {
         final Map<NetworkOffering.Detail, String> details = new HashMap<>();
         details.put(NetworkOffering.Detail.PromiscuousMode, "false");
         details.put(NetworkOffering.Detail.ForgedTransmits, "false");
@@ -821,7 +821,7 @@ public class HypervisorHostHelperTest {
 
     @Test
     public void testVSSecurityPolicyDefaultWithDetail() {
-        HostNetworkSecurityPolicy secPolicy = HypervisorHostHelper.createVSSecurityPolicy(getSecurityDetails());
+        HostNetworkSecurityPolicy secPolicy = HypervisorHostHelper.createVSSecurityPolicy(getNicDetails());
         assertFalse(secPolicy.isAllowPromiscuous());
         assertFalse(secPolicy.isForgedTransmits());
         assertFalse(secPolicy.isMacChanges());
@@ -829,7 +829,7 @@ public class HypervisorHostHelperTest {
 
     @Test
     public void testVSSecurityPolicyWithDetail() {
-        Map<NetworkOffering.Detail, String> details = getSecurityDetails();
+        Map<NetworkOffering.Detail, String> details = getNicDetails();
         details.put(NetworkOffering.Detail.MacAddressChanges, "true");
         HostNetworkSecurityPolicy secPolicy = HypervisorHostHelper.createVSSecurityPolicy(details);
         assertFalse(secPolicy.isAllowPromiscuous());
@@ -838,11 +838,40 @@ public class HypervisorHostHelperTest {
     }
 
     @Test
-    public void testDVSSecurityPolicyDefault() {
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null);
+    public void testDVSSecurityPolicyLegacyDefault() {
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null, false);
         assertFalse(secPolicy.getAllowPromiscuous().isValue());
         assertTrue(secPolicy.getForgedTransmits().isValue());
         assertTrue(secPolicy.getMacChanges().isValue());
+    }
+
+    @Test
+    public void testDVSSecurityPolicyNewDefault() {
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null, true);
+        assertFalse(secPolicy.getAllowPromiscuous().isValue());
+        assertFalse(secPolicy.getForgedTransmits().isValue());
+        assertFalse(secPolicy.getMacChanges().isValue());
+    }
+
+    @Test
+    public void testDVSSecurityPolicyLegacyDefaultWithDetail() {
+        Map<NetworkOffering.Detail, String> details = getNicDetails();
+        details.remove(NetworkOffering.Detail.ForgedTransmits);
+        details.remove(NetworkOffering.Detail.PromiscuousMode);
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details, false);
+        assertFalse(secPolicy.getAllowPromiscuous().isValue());
+        assertFalse(secPolicy.getMacChanges().isValue());
+        assertTrue(secPolicy.getForgedTransmits().isValue());
+    }
+
+    @Test
+    public void testDVSSecurityPolicyLegacyWithDetail() {
+        Map<NetworkOffering.Detail, String> details = getNicDetails();
+        details.put(NetworkOffering.Detail.ForgedTransmits, "true");
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details, false);
+        assertFalse(secPolicy.getAllowPromiscuous().isValue());
+        assertTrue(secPolicy.getForgedTransmits().isValue());
+        assertFalse(secPolicy.getMacChanges().isValue());
     }
 
     @Test
@@ -855,24 +884,15 @@ public class HypervisorHostHelperTest {
     }
 
     @Test
-    public void testDVSSecurityPolicyDefaultWithDetail() {
-        Map<NetworkOffering.Detail, String> details = getSecurityDetails();
-        details.remove(NetworkOffering.Detail.ForgedTransmits);
-        details.remove(NetworkOffering.Detail.PromiscuousMode);
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details);
-        assertFalse(secPolicy.getAllowPromiscuous().isValue());
-        assertFalse(secPolicy.getMacChanges().isValue());
-        assertTrue(secPolicy.getForgedTransmits().isValue());
-    }
-
-    @Test
-    public void testDVSSecurityPolicyWithDetail() {
-        Map<NetworkOffering.Detail, String> details = getSecurityDetails();
+    public void testDVSMacManagementPolicyWithDetail() {
+        Map<NetworkOffering.Detail, String> details = getNicDetails();
         details.put(NetworkOffering.Detail.ForgedTransmits, "true");
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details);
-        assertFalse(secPolicy.getAllowPromiscuous().isValue());
-        assertTrue(secPolicy.getForgedTransmits().isValue());
-        assertFalse(secPolicy.getMacChanges().isValue());
+        details.put(NetworkOffering.Detail.MacLearning, "true");
+        DVSMacManagementPolicy macManagementPolicy = HypervisorHostHelper.createDVSMacManagementPolicy(details);
+        assertFalse(macManagementPolicy.isAllowPromiscuous());
+        assertTrue(macManagementPolicy.isForgedTransmits());
+        assertFalse(macManagementPolicy.isMacChanges());
+        assertTrue(macManagementPolicy.getMacLearningPolicy().isEnabled());
     }
 
     @Test
