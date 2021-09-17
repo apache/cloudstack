@@ -422,7 +422,7 @@
               <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
             </span>
             <a-icon v-else type="deployment-unit" />
-            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclid }}</router-link>
+            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname }}</router-link>
           </div>
         </div>
 
