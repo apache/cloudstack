@@ -65,4 +65,9 @@ if [ "$1" = configure ]; then
     grep -s -q "db.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
 fi
 
+    # Create symbolic link for python
+    if [ ! -f "/usr/bin/python" ]; then
+        ln -s /usr/bin/python2 /usr/bin/python
+    fi
+
 #DEBHELPER#
