@@ -112,7 +112,7 @@ export default {
 
         this.loading = true
 
-        api('quotaTariffUpdate', params, 'GET').then(json => {
+        api('quotaTariffUpdate', {}, 'POST', params).then(json => {
           const tariffResponse = json.quotatariffupdateresponse.quotatariff || {}
           if (Object.keys(tariffResponse).length > 0) {
             const effectiveDate = moment(tariffResponse.effectiveDate).format(this.pattern)

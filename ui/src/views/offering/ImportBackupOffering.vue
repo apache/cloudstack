@@ -78,7 +78,7 @@
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
         <a-switch
-          v-decorator="['allowuserdrivenbackups']"
+          v-decorator="['allowuserdrivenbackups', { initialValue: true }]"
           :default-checked="true"/>
       </a-form-item>
       <div :span="24" class="action-button">
@@ -167,7 +167,7 @@ export default {
             params[key] = input
           }
         }
-        params.allowuserdrivenbackups = values.allowuserdrivenbackups == null ? true : values.allowuserdrivenbackups
+        params.allowuserdrivenbackups = values.allowuserdrivenbackups
         this.loading = true
         const title = this.$t('label.import.offering')
         api('importBackupOffering', params).then(json => {
