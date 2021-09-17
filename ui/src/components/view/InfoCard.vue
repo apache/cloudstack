@@ -416,7 +416,7 @@
         </div>
 
         <div class="resource-detail-item" v-if="resource.aclid">
-          <div class="resource-detail-item__label">{{ $t('label.acl') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.acl">
               <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
