@@ -453,6 +453,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public Answer executeRequest(Command cmd) {
+        logCommand(cmd);
         Answer answer = null;
         NDC.push(getCommandLogTitle(cmd));
         try {
@@ -631,8 +632,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(SetupPersistentNetworkCommand cmd) {
-        logCommand(cmd);
-
         VmwareHypervisorHost host = getHyperHost(getServiceContext());
         String hostname = null;
         VmwareContext context = getServiceContext();
@@ -769,8 +768,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(ResizeVolumeCommand cmd) {
-        logCommand(cmd);
-
         String path = cmd.getPath();
         String vmName = cmd.getInstanceName();
         long newSize = cmd.getNewSize() / ResourceType.bytesToKiB;
@@ -950,8 +947,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(NetworkUsageCommand cmd) {
-        logCommand(cmd);
-
         if (cmd.isForVpc()) {
             return VPCNetworkUsage(cmd);
         }
@@ -1198,8 +1193,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
-        logCommand(cmd);
-
         getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareContext context = getServiceContext();
         try {
@@ -1280,8 +1273,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private ReplugNicAnswer execute(ReplugNicCommand cmd) {
-        logCommand(cmd);
-
         getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareContext context = getServiceContext();
         try {
@@ -1358,8 +1349,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
-        logCommand(cmd);
-
         VmwareContext context = getServiceContext();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -1592,8 +1581,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
-        logCommand(cmd);
-
         String vmName = cmd.getName();
         String privateIp = cmd.getIp();
         int cmdPort = cmd.getPort();
@@ -1663,8 +1650,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected ScaleVmAnswer execute(ScaleVmCommand cmd) {
-        logCommand(cmd);
-
         VmwareContext context = getServiceContext();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         try {
@@ -1768,8 +1753,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected StartAnswer execute(StartCommand cmd) {
-        logCommand(cmd);
-
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         boolean vmAlreadyExistsInVcenter = false;
 
@@ -3846,7 +3829,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(ReadyCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             if (hyperHost.isHyperHostConnected()) {
@@ -3861,7 +3843,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetHostStatsCommand cmd) {
-        logCommand(cmd);
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
@@ -3886,7 +3867,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetVmStatsCommand cmd) {
-        logCommand(cmd);
         HashMap<String, VmStatsEntry> vmStatsMap = null;
 
         try {
@@ -3917,8 +3897,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(GetVmDiskStatsCommand cmd) {
         try {
-            logCommand(cmd);
-
             final VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             final ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
             VimPortType service = getServiceContext().getService();
@@ -4048,8 +4026,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected GetVolumeStatsAnswer execute(GetVolumeStatsCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareHypervisorHost srcHyperHost = getHyperHost(getServiceContext());
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, cmd.getPoolUuid());
             assert (morDs != null);
@@ -4096,7 +4072,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(CheckHealthCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             if (hyperHost.isHyperHostConnected()) {
                 return new CheckHealthAnswer(cmd, true);
@@ -4108,8 +4083,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(StopCommand cmd) {
-        logCommand(cmd);
-
         // In the stop command, we're passed in the name of the VM as seen by cloudstack,
         // i.e., i-x-y. This is the internal VM name.
         VmwareContext context = getServiceContext();
@@ -4179,8 +4152,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(RebootCommand cmd) {
-        logCommand(cmd);
-
         boolean toolsInstallerMounted = false;
         VirtualMachineMO vmMo = null;
         VmwareContext context = getServiceContext();
@@ -4260,8 +4231,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CheckVirtualMachineCommand cmd) {
-        logCommand(cmd);
-
         final String vmName = cmd.getVmName();
         PowerState powerState = PowerState.PowerUnknown;
         Integer vncPort = null;
@@ -4286,8 +4255,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(PrepareForMigrationCommand cmd) {
-        logCommand(cmd);
-
         VirtualMachineTO vm = cmd.getVirtualMachine();
         final String vmName = vm.getName();
         try {
@@ -4340,8 +4307,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(MigrateVmToPoolCommand cmd) {
-        logCommand(cmd);
-
         final String vmName = cmd.getVmName();
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
@@ -4481,8 +4446,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(MigrateCommand cmd) {
-        logCommand(cmd);
-
         final String vmName = cmd.getVmName();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
@@ -4514,8 +4477,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(MigrateWithStorageCommand cmd) {
-        logCommand(cmd);
-
         final VirtualMachineTO vmTo = cmd.getVirtualMachine();
         final List<Pair<VolumeTO, StorageFilerTO>> volToFiler = cmd.getVolumeToFilerAsList();
         final String targetHost = cmd.getTargetHost();
@@ -4690,8 +4651,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     // OfflineVmwareMigration: refactor to be able to handle a detached volume
     private Answer execute(MigrateVolumeCommand cmd) {
-        logCommand(cmd);
-
         String volumePath = cmd.getVolumePath();
         StorageFilerTO poolTo = cmd.getPool();
 
@@ -4828,7 +4787,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CreateStoragePoolCommand cmd) {
-        logCommand(cmd);
         if (cmd.getCreateDatastore()) {
             try {
                 VmwareContext context = getServiceContext();
@@ -4845,8 +4803,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(ModifyTargetsCommand cmd) {
-        logCommand(cmd);
-
         VmwareContext context = getServiceContext(cmd);
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
@@ -4880,8 +4836,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             StorageFilerTO pool = cmd.getPool();
 
@@ -4963,8 +4917,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(GetStoragePoolCapabilitiesCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
 
             HostMO host = (HostMO) hyperHost;
@@ -5022,8 +4974,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
         try {
-            logCommand(cmd);
-
             if (cmd.getRemoveDatastore()) {
                 _storageProcessor.handleDatastoreAndVmdkDetach(cmd, cmd.getDetails().get(DeleteStoragePoolCommand.DATASTORE_NAME),
                         cmd.getDetails().get(DeleteStoragePoolCommand.IQN), cmd.getDetails().get(DeleteStoragePoolCommand.STORAGE_HOST),
@@ -5064,8 +5014,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected AttachIsoAnswer execute(AttachIsoCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo == null) {
@@ -5183,7 +5131,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(ManageSnapshotCommand cmd) {
-        logCommand(cmd);
         long snapshotId = cmd.getSnapshotId();
 
         /*
@@ -5213,7 +5160,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(BackupSnapshotCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
@@ -5225,8 +5171,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(CreateVMSnapshotCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
@@ -5239,8 +5183,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(DeleteVMSnapshotCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
@@ -5253,8 +5195,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(RevertToVMSnapshotCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return mgr.getStorageManager().execute(this, cmd);
@@ -5265,8 +5205,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
-        logCommand(cmd);
-
         String details = null;
         boolean success = false;
         String newVolumeName = UUID.randomUUID().toString();
@@ -5284,7 +5222,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
@@ -5301,7 +5238,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(CreatePrivateTemplateFromSnapshotCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return mgr.getStorageManager().execute(this, cmd);
 
@@ -5312,8 +5248,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(GetStorageStatsCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getStorageId());
@@ -5364,8 +5298,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(GetVncPortCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             assert (hyperHost instanceof HostMO);
@@ -5404,8 +5336,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(PingTestCommand cmd) {
-        logCommand(cmd);
-
         String controlIp = cmd.getRouterIp();
         if (controlIp != null) {
             String args = " -c 1 -n -q " + cmd.getPrivateIp();
@@ -5455,8 +5385,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetVmIpAddressCommand cmd) {
-        logCommand(cmd);
-
         String details = "Unable to find IP Address of VM. ";
         String vmName = cmd.getVmName();
         boolean result = false;
@@ -5505,7 +5433,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return (PrimaryStorageDownloadAnswer) mgr.getStorageManager().execute(this, cmd);
@@ -5523,8 +5450,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(UnregisterVMCommand cmd) {
-        logCommand(cmd);
-
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
@@ -5565,8 +5490,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * @return
      */
     protected Answer execute(UnregisterNicCommand cmd) {
-        logCommand(cmd);
-
         if (_guestTrafficInfo == null) {
             return new Answer(cmd, false, "No Guest Traffic Info found, unable to determine where to clean up");
         }
@@ -5654,7 +5577,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
         try {
-            logCommand(cmd);
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             return (CopyVolumeAnswer) mgr.getStorageManager().execute(this, cmd);
@@ -6774,8 +6696,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public Answer execute(DestroyCommand cmd) {
         try {
-            logCommand(cmd);
-
             VmwareContext context = getServiceContext(null);
             VmwareHypervisorHost hyperHost = getHyperHost(context, null);
             VolumeTO vol = cmd.getVolume();
@@ -7117,8 +7037,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(GetUnmanagedInstancesCommand cmd) {
-        logCommand(cmd);
-
         VmwareContext context = getServiceContext();
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
@@ -7155,8 +7073,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(PrepareUnmanageVMInstanceCommand cmd) {
-        logCommand(cmd);
-
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         String instanceName = cmd.getInstanceName();
@@ -7454,7 +7370,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Answer execute(ValidateVcenterDetailsCommand cmd) {
-        logCommand(cmd);
         String vCenterServerAddress = cmd.getvCenterServerAddress();
         VmwareContext context = getServiceContext();
 
@@ -7474,8 +7389,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private GetVmVncTicketAnswer execute(GetVmVncTicketCommand cmd) {
-        logCommand(cmd);
-
         String vmInternalName = cmd.getVmInternalName();
         s_logger.info("Getting VNC ticket for VM " + vmInternalName);
         try {
