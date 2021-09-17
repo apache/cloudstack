@@ -33,7 +33,12 @@
             v-model:value="form.roleid"
             :loading="roleLoading"
             :placeholder="apiParams.roleid.description"
-            v-focus="true">
+            v-focus="true"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
@@ -106,8 +111,15 @@
           <a-select
             :loading="domainLoading"
             v-model:value="form.domainid"
-            :placeholder="apiParams.domainid.description">
+            :placeholder="apiParams.domainid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
+              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <block-outlined v-else style="margin-right: 5px"/>
               {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
@@ -126,7 +138,12 @@
             showSearch
             v-model:value="form.timezone"
             :loading="timeZoneLoading"
-            :placeholder="apiParams.timezone.description">
+            :placeholder="apiParams.timezone.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -151,7 +168,12 @@
             <a-select
               v-model:value="form.samlentity"
               :loading="idpLoading"
-              :placeholder="apiParams.entityid.description">
+              :placeholder="apiParams.entityid.description"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }">
               <a-select-option v-for="(idp, idx) in idps" :key="idx">
                 {{ idp.orgName }}
               </a-select-option>
@@ -171,12 +193,14 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountForm',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
@@ -253,6 +277,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []

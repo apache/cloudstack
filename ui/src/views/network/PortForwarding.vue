@@ -60,7 +60,14 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model:value="newRule.protocol" style="width: 100%;">
+          <a-select
+            v-model="newRule.protocol"
+            style="width: 100%;"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
@@ -193,9 +200,7 @@
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      :okButtonProps="{ props:
-        {disabled: newRule.virtualmachineid === null } }"
-      @cancel="closeModal"
+      :footer="null"
       v-ctrl-enter="addRule"
     >
       <div>
@@ -206,7 +211,12 @@
             :autoFocu="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
-            :placeholder="$t('label.select.tier')" >
+            :placeholder="$t('label.select.tier')"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
@@ -239,8 +249,12 @@
             <a-select
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"
-              v-model:value="newRule.vmguestip"
-            >
+              v-model="newRule.vmguestip"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
@@ -273,7 +287,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" :disabled="newRule.virtualmachineid === null" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 

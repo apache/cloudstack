@@ -44,7 +44,12 @@
             size="large"
             :placeholder="$t('server')"
             v-model:value="form.server"
-            @change="onChangeServer">
+            @change="onChangeServer"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
               <template #prefix>
                 <database-outlined />
@@ -104,7 +109,12 @@
             size="large"
             :placeholder="$t('server')"
             v-model:value="form.server"
-            @change="onChangeServer">
+            @change="onChangeServer"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
               <template #prefix>
                 <database-outlined />
@@ -114,7 +124,13 @@
           </a-select>
         </a-form-item>
         <a-form-item name="idp" ref="idp">
-          <a-select v-model:value="form.idp">
+          <a-select
+            v-model:value="form.idp"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
               {{ idp.orgName }}
             </a-select-option>

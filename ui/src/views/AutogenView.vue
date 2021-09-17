@@ -50,7 +50,12 @@
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
                     style="min-width: 100px; margin-left: 10px"
-                    @change="changeFilter">
+                    @change="changeFilter"
+                    showSearch
+                    optionFilterProp="children"
+                    :filterOption="(input, option) => {
+                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
                     <template #suffixIcon><filter-outlined /></template>
                     <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
                       {{ $t('label.all') }}
@@ -218,7 +223,12 @@
                   :loading="field.loading"
                   v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  v-focus="fieldIndex === firstIndex"
+                  :autoFocus="fieldIndex === firstIndex"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
@@ -257,6 +267,44 @@
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id">
+                    <span>
+                      <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <os-logo v-else :osId="opt.ostypeid" :osName="opt.ostypename" size="lg" style="margin-left: -1px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="global" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('project'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="project" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('network'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                      </span>
+                    </span>
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
@@ -266,7 +314,12 @@
                   mode="multiple"
                   v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  v-focus="fieldIndex === firstIndex"
+                  :autoFocus="fieldIndex === firstIndex"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -368,6 +421,8 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -380,7 +435,9 @@ export default {
     ActionButton,
     SearchView,
     BulkActionProgress,
-    TooltipLabel
+    TooltipLabel,
+    OsLogo,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -444,6 +501,11 @@ export default {
     this.rules = reactive({})
     eventBus.on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        this.fetchData()
+      }
+    })
+    eventBus.on('refresh-icon', () => {
+      if (this.$showIcon()) {
         this.fetchData()
       }
     })
@@ -739,7 +801,11 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
+      this.searchParams = params
 
+      if (this.$showIcon()) {
+        params.showIcon = true
+      }
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -941,6 +1007,10 @@ export default {
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
       const possibleName = 'list' + extractedParamName + 's'
+      var showIcon = false
+      if (this.$showIcon(extractedParamName)) {
+        showIcon = true
+      }
       var possibleApi
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].api) {
         possibleApi = this.currentAction.mapping[param.name].api
@@ -971,6 +1041,9 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+      }
+      if (showIcon) {
+        params.showicon = true
       }
       api(possibleApi, params).then(json => {
         param.loading = false

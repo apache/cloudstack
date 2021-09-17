@@ -29,10 +29,18 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model:value="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp'))  }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
+          <a-select
+            v-model="newRule.protocol"
+            style="width: 100%;"
+            @change="resetRulePorts"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
+            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
           </a-select>
         </div>

@@ -52,16 +52,37 @@
                 <a-form-item
                   v-for="(field, index) in fields"
                   :key="index"
-                  :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
+                  :label="field.name==='keyword' ?
+                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) :
+                    (field.name==='entitytype' ? $t('label.annotation.entity.type') : $t('label.' + field.name))">
                   <a-select
                     allowClear
                     v-if="field.type==='list'"
                     v-model:value="form[field.name]"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
                     :loading="field.loading">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
-                      :value="opt.id">{{ $t(opt.name) }}</a-select-option>
+                      :value="opt.id">
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <global-outlined v-else style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <block-outlined v-else style="margin-right: 5px" />
+                      </span>
+                      {{ $t(opt.name) }}
+                    </a-select-option>
                   </a-select>
                   <a-input
                     v-else-if="field.type==='input'"
@@ -71,13 +92,13 @@
                       type="text"
                       size="small"
                       compact>
-                      <a-input ref="input" v-model:value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
+                      <a-input ref="input" v-model:value="inputKey" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
                       <a-input
                         class="tag-disabled-input"
                         style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
                         placeholder="="
                         disabled />
-                      <a-input v-model:value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                      <a-input v-model:value="inputValue" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
                       <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
@@ -120,10 +141,14 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'SearchView',
-  components: { TooltipButton },
+  components: {
+    TooltipButton,
+    ResourceIcon
+  },
   props: {
     searchFilters: {
       type: Array,
@@ -340,7 +365,7 @@ export default {
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
-        api('listZones', { listAll: true }).then(json => {
+        api('listZones', { listAll: true, showicon: true }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -353,7 +378,7 @@ export default {
     },
     fetchDomains () {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true }).then(json => {
+        api('listDomains', { listAll: true, showicon: true }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -505,12 +530,6 @@ export default {
         }
         this.$emit('search', this.paramsFilter)
       })
-    },
-    handleKeyChange (e) {
-      this.inputKey = e.target.value
-    },
-    handleValueChange (e) {
-      this.inputValue = e.target.value
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)

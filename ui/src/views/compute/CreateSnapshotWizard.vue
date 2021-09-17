@@ -29,12 +29,16 @@
             <tooltip-label :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
           </template>
           <a-select
-            showSearch
             allowClear
             v-model:value="form.volumeid"
             @change="onChangeVolume"
             :placeholder="apiParams.volumeid.description"
-            v-focus="true">
+            v-focus="true"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option
               v-for="volume in listVolumes"
               :key="volume.id">

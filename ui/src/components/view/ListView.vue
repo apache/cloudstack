@@ -71,7 +71,15 @@
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
         </span>
-        <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+          <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px; margin-right: 5px" :icon="$route.meta.icon"/>
+          <render-icon v-else style="font-size: 16px; margin-right: 5px" :svgIcon="$route.meta.icon" />
+        </span>
+        <span v-else>
+          <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        </span>
 
         <span v-if="record.hasannotations">
           <span v-if="record.id">
@@ -100,8 +108,16 @@
       <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(text)">{{ $t(text.toLowerCase()) }}</span>
       <span v-else>{{ text }}</span>
     </template>
-    <template #displayname="{ text, record }">
+    <template #displayname="{text, record}">
       <a href="javascript:;">
+        <span v-if="['vm'].includes($route.path.split('/')[1])">
+          <span v-if="record.icon && record.icon.base64image">
+            <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          </span>
+          <span v-else>
+            <os-logo :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
+          </span>
+        </span>
         <QuickView
           style="margin-left: 5px"
           :actions="actions"
@@ -111,10 +127,16 @@
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </a>
     </template>
-    <template #username="{ text, record }" href="javascript:;">
-      <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
-      <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+    <template #username="{text, record}">
+      <a href="javascript:;">
+        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <user-outlined v-else style="font-size: 16px; margin-right: 5px" />
+        </span>
+        <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
+        <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </a>
     </template>
     <template #entityid="{ record }" href="javascript:;">
       <router-link :to="{ path: generateCommentsPath(record) }">{{ record.entityname }}</router-link>
@@ -379,6 +401,8 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'ListView',
@@ -386,7 +410,9 @@ export default {
     OsLogo,
     Status,
     QuickView,
-    TooltipButton
+    TooltipButton,
+    ResourceIcon,
+    RenderIcon
   },
   props: {
     columns: {
@@ -412,6 +438,7 @@ export default {
       selectedRowKeys: [],
       editableValueKey: null,
       editableValue: '',
+      resourceIcon: '',
       thresholdMapping: {
         cpuused: {
           notification: 'cputhreshold',

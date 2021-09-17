@@ -28,8 +28,12 @@
           :loading="loading"
           :placeholder="$t('label.diskoffering')"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
-          v-focus="resource.type !== 'ROOT'"
-        >
+          :autoFocus="resource.type !== 'ROOT'"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(offering, index) in offerings"
             :value="offering.id"

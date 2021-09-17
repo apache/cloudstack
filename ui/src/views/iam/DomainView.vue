@@ -85,6 +85,7 @@ import ActionButton from '@/components/view/ActionButton'
 import TreeView from '@/components/view/TreeView'
 import DomainActionForm from '@/views/iam/DomainActionForm'
 import ResourceView from '@/components/view/ResourceView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'DomainView',
@@ -130,6 +131,11 @@ export default {
   created () {
     this.domainStore = store.getters.domainStore
     this.fetchData()
+    eventBus.$on('refresh-domain-icon', () => {
+      if (this.$showIcon()) {
+        this.fetchData()
+      }
+    })
   },
   watch: {
     '$route' (to, from) {
@@ -164,7 +170,7 @@ export default {
       }
 
       this.loading = true
-
+      params.showicon = true
       api('listDomains', params).then(json => {
         const domains = json.listdomainsresponse.domain || []
         this.treeData = this.generateTreeData(domains)
@@ -290,6 +296,9 @@ export default {
 
       rootItem[0].title = rootItem[0].title ? rootItem[0].title : rootItem[0].name
       rootItem[0].key = rootItem[0].id ? rootItem[0].id : 0
+      rootItem[0].slots = {
+        icon: 'leaf'
+      }
 
       if (!rootItem[0].haschild) {
         rootItem[0].isLeaf = true

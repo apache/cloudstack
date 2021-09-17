@@ -57,6 +57,8 @@
               :placeholder="apiParams.zoneid.description"
               @change="val => { handleZoneChange(zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -160,6 +162,8 @@
               :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
                 {{ opt.path || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -193,6 +197,8 @@
               :placeholder="apiParams.projectid.description"
               @change="val => { handleProjectChange(projects[val]) }">
               <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex">
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <project-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -331,12 +337,14 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateGuestNetworkForm',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     loading: {
@@ -453,6 +461,7 @@ export default {
           params.id = this.resource.zoneid
         }
         params.listAll = true
+        params.showicon = true
         this.zoneLoading = true
         api('listZones', params).then(json => {
           for (const i in json.listzonesresponse.zone) {
@@ -631,6 +640,7 @@ export default {
       } else {
         params.listall = true
       }
+      params.showicon = true
       this.domainLoading = true
       api('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
@@ -651,6 +661,7 @@ export default {
       this.projects = []
       const params = {}
       params.listall = true
+      params.showicon = true
       params.details = 'min'
       this.projectLoading = true
       api('listProjects', params).then(json => {

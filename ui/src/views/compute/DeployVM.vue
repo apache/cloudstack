@@ -34,16 +34,49 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
+                      <div v-if="zones.length <= 8">
+                        <a-row type="flex" :gutter="5" justify="start">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-model:value="form.zoneid"
+                              @change="onSelectZoneId(zoneItem.id)">
+                              <a-col :span="8">
+                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                  <a-radio :value="zoneItem.id">
+                                    <div>
+                                      <img
+                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                        :src="getImg(zoneItem.icon.base64image)"
+                                        style="marginTop: -30px; marginLeft: 60px"
+                                        width="36px"
+                                        height="36px" />
+                                      <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
+                                    </div>
+                                  </a-radio>
+                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
+                                </a-card-grid>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
                       <a-select
+                        v-else
                         v-model:value="form.zoneid"
                         showSearch
                         optionFilterProp="label"
                         :filterOption="filterOption"
-                        :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         v-focus="true"
-                      ></a-select>
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id">
+                          <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <global-outlined v-else style="margin-right: 5px" />
+                          {{ zone1.name }}
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
@@ -143,7 +176,10 @@
                           <a-select
                             v-model:value="form.hypervisor"
                             :options="hypervisorSelectOptions"
-                            @change="value => hypervisor = value" />
+                            @change="value => hypervisor = value"
+                            showSearch
+                            optionFilterProp="label"
+                            :filterOption="filterOption" />
                         </a-form-item>
                       </div>
                     </a-card>
@@ -444,14 +480,21 @@
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
                           v-model:value="form.boottype"
-                          @change="onBootTypeChange">
+                          @change="onBootTypeChange"
+                          showSearch
+                          optionFilterProp="label"
+                          :filterOption="filterOption">
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
                         </a-select>
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')" name="bootmode" ref="bootmode">
-                        <a-select v-model:value="form.bootmode">
+                        <a-select
+                          v-model:value="form.bootmode"
+                          showSearch
+                          optionFilterProp="label"
+                          :filterOption="filterOption">
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -515,6 +558,9 @@
                       <a-select
                         v-model:value="form.keyboard"
                         :options="keyboardSelectOptions"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
@@ -597,6 +643,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -625,6 +672,7 @@ export default {
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
+    ResourceIcon,
     TooltipLabel
   },
   props: {
@@ -755,6 +803,8 @@ export default {
       diskIOpsMax: 0,
       minIops: 0,
       maxIops: 0,
+      zones: [],
+      selectedZone: '',
       formModel: {}
     }
   },
@@ -843,7 +893,8 @@ export default {
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
             page: 1,
             pageSize: 10,
-            keyword: undefined
+            keyword: undefined,
+            showIcon: true
           }
         },
         pods: {
@@ -1039,8 +1090,14 @@ export default {
           this.vm.disksizetotalgb = this.diskSize
         }
 
-        if (this.networks) {
-          this.vm.networks = this.networks
+      if (this.iso) {
+        this.vm.isoid = this.iso.id
+        this.vm.templateid = this.iso.id
+        this.vm.templatename = this.iso.displaytext
+        this.vm.ostypeid = this.iso.ostypeid
+        this.vm.ostypename = this.iso.ostypename
+        if (this.hypervisor) {
+          this.vm.hypervisor = this.hypervisor
         }
 
         if (this.template) {
@@ -1238,6 +1295,7 @@ export default {
       this.form[field] = this.dataPreFill[field]
     },
     fetchData () {
+      this.fetchZones()
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1260,6 +1318,9 @@ export default {
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1445,7 +1506,7 @@ export default {
 
         let networkIds = []
 
-        const deployVmData = {}
+        let deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
         deployVmData.podid = values.podid
@@ -1595,7 +1656,10 @@ export default {
         const description = values.name || ''
         const password = this.$t('label.password')
 
-        api('deployVirtualMachine', deployVmData).then(response => {
+        deployVmData = Object.fromEntries(
+          Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
+
+        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -1653,9 +1717,9 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        api(param.list, { listall: true }).then(json => {
-          const zones = json.listzonesresponse.zone || []
-          resolve(zones)
+        api(param.list, { listall: true, showicon: true }).then(json => {
+          this.zones = json.listzonesresponse.zone || []
+          resolve(this.zones)
         }).catch(function (error) {
           console.log(error.stack)
         }).finally(() => {
@@ -1733,6 +1797,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -1752,6 +1817,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
@@ -1803,7 +1869,7 @@ export default {
       })
     },
     filterOption (input, option) {
-      return option.label.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      return option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
     },
     onSelectZoneId (value) {
       this.dataPreFill = {}
@@ -1812,6 +1878,8 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.selectedZone = this.zoneId
+      this.form.zoneid = this.zoneId
       this.form.clusterid = undefined
       this.form.podid = undefined
       this.form.hostid = undefined

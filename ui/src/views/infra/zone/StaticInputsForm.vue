@@ -27,7 +27,8 @@
       class="form-content"
       :ref="formRef"
       :model="form"
-      :rules="rules">
+      :rules="rules"
+      @finish="handleSubmit">
       <div v-for="(field, index) in fields" :key="index">
         <a-form-item
           :name="field.key"
@@ -41,7 +42,11 @@
             v-model:value="form[field.key]"
             :allowClear="true"
             v-focus="index === 0"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="option in field.options"
               :key="option.id"

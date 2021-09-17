@@ -24,92 +24,112 @@
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
+        v-ctrl-enter="handleSubmit"
         :ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical"
         @finish="handleSubmit"
-        v-ctrl-enter="handleSubmit">
-        <a-form-item
-          v-if="currentForm === 'Create'"
-          ref="url"
-          name="url"
-          :label="$t('label.url')">
-          <a-input
-            v-focus="currentForm === 'Create'"
-            v-model:value="form.url"
-            :placeholder="apiParams.url.description" />
-        </a-form-item>
-        <a-form-item
-          v-if="currentForm === 'Upload'"
-          ref="file"
-          name="file"
-          :label="$t('label.templatefileupload')">
-          <a-upload-dragger
-            :multiple="false"
-            :fileList="fileList"
-            :remove="handleRemove"
-            :beforeUpload="beforeUpload"
-            v-model:value="form.file">
-            <p class="ant-upload-drag-icon">
-              <cloud-upload-outlined />
-            </p>
-            <p class="ant-upload-text" v-if="fileList.length === 0">
-              {{ $t('label.volume.volumefileupload.description') }}
-            </p>
-          </a-upload-dragger>
-        </a-form-item>
-        <a-form-item ref="name" name="name" :label="$t('label.name')">
-          <a-input
-            v-model:value="form.name"
-            :placeholder="apiParams.name.description"
-            v-focus="currentForm !== 'Create'" />
-        </a-form-item>
-        <a-form-item ref="displaytext" name="displaytext" :label="$t('label.displaytext')">
-          <a-input
-            v-model:value="form.displaytext"
-            :placeholder="apiParams.displaytext.description" />
-        </a-form-item>
-        <a-form-item
-          v-if="currentForm === 'Create'"
-          ref="zoneids"
-          name="zoneids"
-          :label="$t('label.zone')">
-          <a-select
-            v-model:value="form.zoneids"
-            :loading="zones.loading"
-            mode="multiple"
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.zoneids.description"
-            @change="handlerSelectZone">
-            <a-select-option v-for="opt in zones.opts" :key="opt.id">
-              {{ opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item
-          v-else
-          ref="zoneid"
-          name="zoneid"
-          :label="$t('label.zoneid')">
-          <a-select
-            v-model:value="form.zoneid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            @change="handlerSelectZone"
-            :placeholder="apiParams.zoneid.description"
-            :loading="zones.loading">
-            <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
-              {{ zone.name || zone.description }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
+        layout="vertical">
+        <div v-if="currentForm === 'Create'">
+          <a-row :gutter="12">
+            <a-form-item :label="$t('label.url')" name="url" ref="url">
+              <a-input
+                v-focus="currentForm === 'Create'"
+                v-model:value="form.url"
+                :placeholder="apiParams.url.description" />
+            </a-form-item>
+          </a-row>
+        </div>
+        <div v-if="currentForm === 'Upload'">
+          <a-form-item :label="$t('label.templatefileupload')" name="file" ref="file">
+            <a-upload-dragger
+              :multiple="false"
+              :fileList="fileList"
+              :remove="handleRemove"
+              :beforeUpload="beforeUpload"
+              v-model:value="form.file">
+              <p class="ant-upload-drag-icon">
+                <cloud-upload-outlined />
+              </p>
+              <p class="ant-upload-text" v-if="fileList.length === 0">
+                {{ $t('label.volume.volumefileupload.description') }}
+              </p>
+            </a-upload-dragger>
+          </a-form-item>
+        </div>
+        <a-row :gutter="12">
+          <a-form-item :label="$t('label.name')" ref="name" name="name">
+            <a-input
+              v-model:value="form.name"
+              :placeholder="apiParams.name.description"
+              v-focus="currentForm !== 'Create'"/>
+          </a-form-item>
+        </a-row>
+        <a-row :gutter="12">
+          <a-form-item :label="$t('label.displaytext')" ref="displaytext" name="displaytext">
+            <a-input
+              v-model:value="form.displaytext"
+              :placeholder="apiParams.displaytext.description" />
+          </a-form-item>
+        </a-row>
+        <div v-if="currentForm === 'Create'">
+          <a-row :gutter="12">
+            <a-col :md="24" :lg="24">
+              <a-form-item
+                :label="$t('label.zone')"
+                :validate-status="zoneError"
+                :help="zoneErrorMessage"
+                name="zoneids"
+                ref="zoneids">
+                <a-select
+                  v-model:value="form.zoneids"
+                  :loading="zones.loading"
+                  mode="multiple"
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :placeholder="apiParams.zoneids.description"
+                  @change="handlerSelectZone">
+                  <a-select-option v-for="opt in zones.opts" :key="opt.id">
+                    <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <global-outlined v-else style="margin-right: 5px" />
+                    {{ opt.name || opt.description }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </div>
+        <div v-else>
+          <a-row :gutter="12">
+            <a-col :md="24" :lg="24">
+              <a-form-item
+                :label="$t('label.zoneid')"
+                :validate-status="zoneError"
+                :help="zoneErrorMessage"
+                ref="zoneid"
+                name="zoneid">
+                <a-select
+                  v-model:value="form.zoneid"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  @change="handlerSelectZone"
+                  :placeholder="apiParams.zoneid.description"
+                  :loading="zones.loading">
+                  <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
+                    <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <global-outlined v-else style="margin-right: 5px" />
+                    {{ zone.name || zone.description }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </div>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item ref="hypervisor" name="hypervisor" :label="$t('label.hypervisor')">
@@ -117,7 +137,12 @@
                 v-model:value="form.hypervisor"
                 :loading="hyperVisor.loading"
                 :placeholder="apiParams.hypervisor.description"
-                @change="handlerSelectHyperVisor">
+                @change="handlerSelectHyperVisor"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -129,7 +154,12 @@
               <a-select
                 v-model:value="form.format"
                 :placeholder="apiParams.format.description"
-                @change="val => { selectedFormat = val }">
+                @change="val => { selectedFormat = val }"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -170,7 +200,12 @@
               <a-select
                 v-model:value="form.rootDiskControllerType"
                 :loading="rootDisk.loading"
-                :placeholder="$t('label.rootdiskcontrollertype')">
+                :placeholder="$t('label.rootdiskcontrollertype')"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -181,6 +216,11 @@
             <a-form-item :label="$t('label.nicadaptertype')" name="nicadaptertype" ref="nicadaptertype">
               <a-select
                 v-model:value="form.nicAdapterType"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
                 :placeholder="$t('label.nicadaptertype')">
                 <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -196,6 +236,11 @@
           ref="keyboardType">
           <a-select
             v-model:value="form.keyboardType"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
             :placeholder="$t('label.keyboard')">
             <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -288,6 +333,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -300,6 +346,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -423,7 +472,7 @@ export default {
       const params = {}
       let listZones = []
       params.listAll = true
-
+      params.showicon = true
       this.allowed = false
 
       if (store.getters.userInfo.roletype === this.rootAdmin && this.currentForm === 'Create') {

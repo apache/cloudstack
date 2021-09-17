@@ -139,7 +139,7 @@ export default {
     this.$store.watch(
       (state, getters) => getters.project,
       (newValue, oldValue) => {
-        if (newValue && newValue.id) {
+        if (newValue && newValue !== oldValue) {
           this.fetchData()
         }
       }

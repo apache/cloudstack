@@ -65,7 +65,12 @@
           </template>
           <a-select
             v-model:value="form.type"
-            :placeholder="apiParams.type.description">
+            :placeholder="apiParams.type.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
             </a-select-option>
@@ -78,7 +83,12 @@
           </template>
           <a-select
             v-model:value="form.roleid"
-            :placeholder="apiParams.roleid.description">
+            :placeholder="apiParams.roleid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="role in roles"
               :value="role.id"

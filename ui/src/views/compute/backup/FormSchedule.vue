@@ -79,7 +79,12 @@
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='weekly'">
               <a-form-item :label="$t('label.day.of.week')" ref="day-of-week" name="day-of-week">
                 <a-select
-                  v-model:value="form['day-of-week']" >
+                  v-model:value="form['day-of-week']"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
                     {{ opt.name || opt.description }}
                   </a-select-option>
@@ -89,7 +94,12 @@
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='monthly'">
               <a-form-item :label="$t('label.day.of.month')" ref="day-of-month" name="day-of-month">
                 <a-select
-                  v-model:value="form['day-of-month']">
+                  v-model:value="form['day-of-month']"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }">
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
                   </a-select-option>
@@ -101,6 +111,10 @@
                 <a-select
                   showSearch
                   v-model:value="form.timezone"
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   :loading="fetching">
                   <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                     {{ opt.name || opt.description }}

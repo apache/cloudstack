@@ -20,7 +20,6 @@ import StoragePlugin from 'vue-web-storage'
 import config from '@/config/settings'
 
 // base library'
-import VueCropper from 'vue-cropper'
 import componentsUse from '@/core/lazy_lib/components_use'
 import iconsUse from '@/core/lazy_lib/icons_use'
 
@@ -35,7 +34,6 @@ import { Spin } from 'ant-design-vue'
 
 vueApp.use(StoragePlugin, config.storageOptions)
 vueApp.use(PermissionHelper)
-vueApp.use(VueCropper)
 vueApp.use(componentsUse)
 vueApp.use(iconsUse)
 

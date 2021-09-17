@@ -71,7 +71,12 @@
           <a-select
             showSearch
             v-model:value="form.timezone"
-            :loading="timeZoneLoading">
+            :loading="timeZoneLoading"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>

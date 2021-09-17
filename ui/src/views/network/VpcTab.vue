@@ -148,13 +148,16 @@
           v-ctrl-enter="handleGatewayFormSubmit">
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
-            <a-form
-              @finish="handleGatewayFormSubmit"
-              :ref="gatewayRef"
-              :model="gatewayForm"
-              :rules="gatewayRules">
-              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork">
-                <a-select v-model:value="gatewayForm.physicalnetwork" v-focus="true">
+            <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
+              <a-form-item :label="$t('label.physicalnetworkid')">
+                <a-select
+                  v-decorator="['physicalnetwork']"
+                  autoFocus
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -196,8 +199,14 @@
               <a-form-item :label="$t('label.sourcenat')" ref="nat" name="nat">
                 <a-checkbox v-model:checked="gatewayForm.nat"></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.aclid')" ref="acl" name="acl">
-                <a-select v-model:value="gatewayForm.acl">
+              <a-form-item :label="$t('label.aclid')">
+                <a-select
+                  v-decorator="['acl']"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
                     <strong>{{ item.name }}</strong> ({{ item.description }})
                   </a-select-option>
@@ -286,13 +295,16 @@
           @cancel="modals.vpnConnection = false"
           v-ctrl-enter="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
-            <a-form
-              @finish="handleVpnConnectionFormSubmit"
-              :ref="vpnRef"
-              :model="vpnConnectionForm"
-              :rules="vpnRules">
-              <a-form-item :label="$t('label.vpncustomergatewayid')" ref="vpncustomergateway" name="vpncustomergateway">
-                <a-select v-model:value="vpnConnectionForm.vpncustomergateway" v-focus="true">
+            <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
+              <a-form-item :label="$t('label.vpncustomergatewayid')">
+                <a-select
+                  v-decorator="['vpncustomergateway']"
+                  autoFocus
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>

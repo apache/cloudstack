@@ -31,7 +31,12 @@
           <a-select
             :loading="loading"
             v-model:value="form.storageid"
-            :placeholder="apiParams.storageid ? apiParams.storageid.description : ''">
+            :placeholder="apiParams.storageid ? apiParams.storageid.description : ''"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
               {{ storagePool.name || storagePool.id }}
             </a-select-option>

@@ -57,6 +57,8 @@
             :placeholder="apiParams.zoneid.description"
             @change="val => { handleZoneChange(zones[val]) }">
             <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
+              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px" />
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -230,12 +232,14 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateKubernetesCluster',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {},
   data () {
@@ -330,6 +334,7 @@ export default {
     fetchZoneData () {
       const params = {}
       this.zoneLoading = true
+      params.showicon = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         this.zones = this.zones.concat(listZones)

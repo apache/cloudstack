@@ -44,7 +44,12 @@
             :placeholder="apiParams.volumeids.description"
             mode="multiple"
             :loading="loading"
-            v-focus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
+            v-focus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="volume in volumes" :key="volume.id">
               {{ volume.name }}
             </a-select-option>

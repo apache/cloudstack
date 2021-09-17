@@ -26,7 +26,11 @@
           <a-select
             v-model:value="form.provider"
             @change="val => { form.provider = val }"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               :value="prov"
               v-for="(prov,idx) in providers"
@@ -36,12 +40,21 @@
         </a-form-item>
         <div v-if="form.provider !== 'Swift'">
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
-            <a-select v-model:value="form.zone">
+            <a-select
+              v-model:value="form.zone"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 :value="zone.id"
                 v-for="(zone) in zones"
-                :key="zone.id"
-              >{{ zone.name }}</a-select-option>
+                :key="zone.id">
+                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ zone.name }}
+              </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item name="server" ref="server" :label="$t('label.server')">
@@ -90,6 +103,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AddSecondryStorage',
@@ -98,6 +112,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -137,7 +154,7 @@ export default {
       this.$parent.$parent.close()
     },
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {

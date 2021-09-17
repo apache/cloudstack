@@ -85,32 +85,41 @@
             v-for="(field, index) in currentAction.fieldParams"
             :key="index"
             :label="$t('label.' + field.name)">
-            <a-input-password
-              v-if="field.name==='password'"
-              v-focus="index===0"
-              v-model:value="form[field.name]"
-              :placeholder="field.description" />
-            <a-switch
-              v-else-if="field.type==='boolean'"
-              v-focus="index===0"
-              v-model:checked="form[field.name]"
-              :placeholder="field.description"
-            />
-            <a-select
-              v-else-if="field.type==='uuid'"
-              v-focus="index===0"
-              v-model:value="form[field.name]"
-              :loading="field.loading"
-              :placeholder="field.description">
-              <a-select-option
-                v-for="(opt, idx) in field.opts"
-                :key="idx">{{ opt.name || opt.description }}</a-select-option>
-            </a-select>
-            <a-input
-              v-else
-              v-focus="index===0"
-              v-model:value="form[field.name]"
-              :placeholder="field.description" />
+            <span v-if="field.name==='password'">
+              <a-input-password
+                v-focus="index===0"
+                v-model:value="form[field.name]"
+                :placeholder="field.description" />
+            </span>
+            <span v-else-if="field.type==='boolean'">
+              <a-switch
+                v-focus="index===0"
+                v-model:checked="form[field.name]"
+                :placeholder="field.description"
+              />
+            </span>
+            <span v-else-if="field.type==='uuid'">
+              <a-select
+                v-focus="index===0"
+                v-model:value="form[field.name]"
+                :loading="field.loading"
+                :placeholder="field.description"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option
+                  v-for="(opt, idx) in field.opts"
+                  :key="idx">{{ opt.name || opt.description }}</a-select-option>
+              </a-select>
+            </span>
+            <span v-else>
+              <a-input
+                v-focus="index===0"
+                v-model:value="form[field.name]"
+                :placeholder="field.description" />
+            </span>
           </a-form-item>
 
           <div :span="24" class="action-button">

@@ -21,12 +21,18 @@
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
-            showSearch
             :defaultValue="zoneSelected.name"
             :placeholder="$t('label.select.a.zone')"
             v-model:value="zoneSelected.name"
-            @change="changeZone">
+            @change="changeZone"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="(zone, index) in zones" :key="index">
+              <resource-icon v-if="zone.icon && zone.icon.base64image" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px" />
               {{ zone.name }}
             </a-select-option>
           </a-select>
@@ -125,11 +131,13 @@
 import { api } from '@/api'
 
 import ChartCard from '@/components/widgets/ChartCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'CapacityDashboard',
   components: {
-    ChartCard
+    ChartCard,
+    ResourceIcon
   },
   data () {
     return {
@@ -243,7 +251,7 @@ export default {
       return 'blue'
     },
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {

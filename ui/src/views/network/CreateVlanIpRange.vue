@@ -24,11 +24,19 @@
           :model="form"
           :rules="rules"
           layout="vertical">
-          <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0" name="podid" ref="podid">
-            <template #label>
-              <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
-            </template>
-            <a-select v-focus="true" v-model:value="form.podid">
+          <a-form-item v-if="pods && pods.length > 0">
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            <a-select
+              autoFocus
+              v-decorator="['podid', {
+                initialValue: this.pods && this.pods.length > 0 ? this.pods[0].id : '',
+                rules: [{ required: true, message: `${$t('label.required')}` }]
+              }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>

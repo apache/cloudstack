@@ -66,6 +66,7 @@ import {
   Collapse
 } from 'ant-design-vue'
 import VueClipboard from 'vue3-clipboard'
+import VueCropper from 'vue-cropper'
 
 export default {
   install: (app) => {
@@ -78,6 +79,7 @@ export default {
     app.config.globalProperties.$warning = Modal.warning
 
     app.use(VueClipboard, { autoSetContainer: true })
+    app.use(VueCropper)
     app.use(ConfigProvider)
     app.use(Layout)
     app.use(Input)

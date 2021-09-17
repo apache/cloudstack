@@ -84,37 +84,69 @@
           </a-form-item>
 
           <a-form-item name="scope" ref="scope" :label="$t('label.scope')">
-            <a-select v-model:value="form.scope" @change="handleScopeChange">
+            <a-select
+              v-model:value="form.scope"
+              @change="handleScopeChange"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
               <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
             </a-select>
           </a-form-item>
 
           <a-form-item name="domain" ref="domain" :label="$t('label.domain')">
-            <a-select @change="handleDomainChange" v-model:value="form.domain">
+            <a-select
+              @change="handleDomainChange"
+              v-model:value="form.domain"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px" />
                 {{ domain.path || domain.name || domain.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
 
           <a-form-item name="account" ref="account" :label="$t('label.account')" v-if="form.scope === 'account'">
-            <a-select v-model:value="form.account">
+            <a-select
+              v-model:value="form.account"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="account in accounts"
                 :key="account.id"
                 :value="account.name">
+                <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <team-outlined v-else style="margin-right: 5px" />
                 {{ account.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
 
           <a-form-item name="project" ref="project" :label="$t('label.project')" v-if="form.scope === 'project'">
-            <a-select v-model:value="form.project">
+            <a-select
+              v-model:value="form.project"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="project in projects"
                 :key="project.id"
                 :value="project.id">
+                <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <project-outlined v-else style="margin-right: 5px" />
                 {{ project.name }}
               </a-select-option>
             </a-select>
@@ -134,11 +166,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'DedicatedVLANTab',
   components: {
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -231,6 +265,7 @@ export default {
     fetchDomains () {
       api('listDomains', {
         details: 'min',
+        showicon: true,
         listAll: true
       }).then(response => {
         this.domains = response.listdomainsresponse.domain || []
@@ -251,6 +286,7 @@ export default {
       api('listAccounts', {
         domainid: e,
         details: 'min',
+        showicon: true,
         listAll: true
       }).then(response => {
         this.accounts = response.listaccountsresponse.account
@@ -270,6 +306,7 @@ export default {
       this.formLoading = true
       api('listProjects', {
         domainid: e,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.projects = response.listprojectsresponse.project

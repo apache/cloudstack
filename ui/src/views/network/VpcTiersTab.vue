@@ -184,8 +184,13 @@
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="$t('label.create.tier.networkofferingid.description')"/>
             </template>
             <a-select
-              v-model:value="createNetworkForm.networkOffering"
-              @change="val => { this.handleNetworkOfferingChange(val) }">
+              v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              @change="val => { this.handleNetworkOfferingChange(val) }"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
@@ -229,8 +234,13 @@
             </template>
             <a-select
               :placeholder="$t('label.create.tier.aclid.description')"
-              v-model:value="createNetworkForm.acl"
-              @change="val => { handleNetworkAclChange(val) }">
+              v-decorator="['acl',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              @change="val => { this.handleNetworkAclChange(val) }"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
@@ -286,8 +296,19 @@
           <a-form-item ref="instancePort" name="instancePort" :label="$t('label.instanceport')">
             <a-input v-model:value="internalLbForm.instancePort"/>
           </a-form-item>
-          <a-form-item ref="algorithm" name="algorithm" :label="$t('label.algorithm')">
-            <a-select v-model:value="internalLbForm.algorithm">
+          <a-form-item :label="$t('label.algorithm')">
+            <a-select
+              v-decorator="[
+                'algorithm',
+                {
+                  initialValue: 'Source',
+                  rules: [{ required: true, message: `${$t('label.required')}`}]
+                }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
                 {{ key }}
               </a-select-option>

@@ -23,8 +23,13 @@
       :ref="formRef"
       :model="form"
       :rules="rules"
-      @finish="handleSubmit"
-      v-ctrl-enter="handleSubmit">
+      v-ctrl-enter="handleSubmit"
+      @finish="handleSubmit">
+      <a-alert style="margin-bottom: 5px" type="warning" show-icon>
+        <template #message>
+          <span v-html="$t('message.restart.vm.to.update.settings')" />
+        </template>
+      </a-alert>
       <a-form-item name="name" ref="name">
         <template #label>
           <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>

@@ -19,7 +19,7 @@
   <a-list
     size="small"
     :dataSource="fetchDetails()">
-    <template #renderItem="{ item }">
+    <template #renderItem="{item}">
       <a-list-item v-if="item in resource">
         <div>
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
@@ -46,9 +46,7 @@
           <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
             {{ $toLocaleDate(resource[item]) }}
           </div>
-          <div v-else>
-            {{ resource[item] }}
-          </div>
+          <div v-else>{{ resource[item] }}</div>
         </div>
       </a-list-item>
       <a-list-item v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">

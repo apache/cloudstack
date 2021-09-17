@@ -52,11 +52,16 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="filterOption"
-                  :options="zoneSelectOptions"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
-                  v-focus="true"
-                ></a-select>
+                  autoFocus
+                >
+                  <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value">
+                    <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
+                    <a-icon v-else style="margin-right: 5px" type="global" />
+                    {{ zoneitem.label }}
+                  </a-select-option>
+                </a-select>
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="8">
@@ -266,13 +271,15 @@ import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Status from '@/components/widgets/Status'
 import SearchView from '@/components/view/SearchView'
 import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   components: {
     Breadcrumb,
     Status,
     SearchView,
-    ImportUnmanagedInstances
+    ImportUnmanagedInstances,
+    ResourceIcon
   },
   name: 'ManageVms',
   data () {
@@ -394,7 +401,10 @@ export default {
         zones: {
           list: 'listZones',
           isLoad: true,
-          field: 'zoneid'
+          field: 'zoneid',
+          options: {
+            showicon: true
+          }
         },
         pods: {
           list: 'listPods',
@@ -427,7 +437,8 @@ export default {
       return this.options.zones.map((zone) => {
         return {
           label: zone.name,
-          value: zone.id
+          value: zone.id,
+          icon: zone?.icon?.base64image || ''
         }
       })
     },

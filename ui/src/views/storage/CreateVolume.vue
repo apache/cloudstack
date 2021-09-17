@@ -42,11 +42,17 @@
           v-model:value="form.zoneid"
           :loading="loading"
           @change="zone => fetchDiskOfferings(zone)"
-          :placeholder="apiParams.zoneid.description">
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(zone, index) in zones"
             :value="zone.id"
             :key="index">
+            <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="global" style="margin-right: 5px"/>
             {{ zone.name }}
           </a-select-option>
         </a-select>
@@ -59,8 +65,11 @@
           v-model:value="form.diskofferingid"
           :loading="loading"
           @change="id => onChangeDiskOffering(id)"
-          :placeholder="apiParams.diskofferingid.description || $t('label.diskofferingid')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(offering, index) in offerings"
             :value="offering.id"
@@ -108,11 +117,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVolume',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -160,7 +171,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
         this.fetchDiskOfferings(this.form.zoneid)

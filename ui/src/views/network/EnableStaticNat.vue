@@ -22,8 +22,13 @@
         <a-select
           v-focus="true"
           @change="handleTierSelect"
-          v-model:value="vpcTiers"
-          :placeholder="$t('label.select.tier')">
+          v-model="vpcTiers"
+          :placeholder="$t('label.select.tier')"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
           </a-select-option>
@@ -38,57 +43,60 @@
       </div>
     </div>
 
-    <div class="list__content">
-      <a-table
-        size="small"
-        :loading="loading"
-        :columns="columns"
-        :dataSource="vmsList"
-        :pagination="false"
-        :rowKey="record => record.id || record.account">
-        <template #name="{ record }">
-          <div>
-            {{ record.name }}
-          </div>
-          <a-select
-            v-if="nicsList.length && selectedVm && selectedVm === record.id"
-            class="nic-select"
-            :defaultValue="selectedNic.ipaddress">
-            <a-select-option
-              @click="selectedNic = item"
-              v-for="item in nicsList"
-              :key="item.id">
-              {{ item.ipaddress }}
-            </a-select-option>
-          </a-select>
-        </template>
-        <template #state="{ text }">
-          <status :text="text ? text : ''" displayText />
-        </template>
-        <template #radio="{ text }">
-          <a-radio
-            class="list__radio"
-            :value="text"
-            :checked="selectedVm && selectedVm === text"
-            @change="fetchNics"></a-radio>
-        </template>
-      </a-table>
-      <a-pagination
-        class="row-element pagination"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="vmsList.length"
-        :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="['10', '20', '40', '80', '100']"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
-    </div>
+    <a-table
+      size="small"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="vmsList"
+      :pagination="false"
+      :rowKey="record => record.id || record.account">
+      <template slot="name" slot-scope="record">
+        <div>
+          {{ record.name }}
+        </div>
+        <a-select
+          v-if="nicsList.length && selectedVm && selectedVm === record.id"
+          class="nic-select"
+          :defaultValue="selectedNic.ipaddress"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            @click="selectedNic = item"
+            v-for="item in nicsList"
+            :key="item.id">
+            {{ item.ipaddress }}
+          </a-select-option>
+        </a-select>
+      </template>
+      <template slot="state" slot-scope="text">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template slot="radio" slot-scope="text">
+        <a-radio
+          class="list__radio"
+          :value="text"
+          :checked="selectedVm && selectedVm === text"
+          @change="fetchNics"></a-radio>
+      </template>
+    </a-table>
+    <a-pagination
+      class="row-element pagination"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="vmsList.length"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      @change="changePage"
+      @showSizeChange="changePageSize"
+      showSizeChanger>
+      <template slot="buildOptionText" slot-scope="props">
+        <span>{{ props.value }} / {{ $t('label.page') }}</span>
+      </template>
+    </a-pagination>
 
     <div class="list__footer">
       <a-button @click="handleClose">{{ $t('label.cancel') }}</a-button>

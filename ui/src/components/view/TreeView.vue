@@ -86,6 +86,7 @@ import { api } from '@/api'
 import DetailsTab from '@/components/view/DetailsTab'
 import ResourceView from '@/components/view/ResourceView'
 import ResourceLayout from '@/layouts/ResourceLayout'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'TreeView',
@@ -157,6 +158,9 @@ export default {
     this.metaName = this.$route.meta.name
     this.apiList = this.$route.meta.permission[0] ? this.$route.meta.permission[0] : ''
     this.apiChildren = this.$route.meta.permission[1] ? this.$route.meta.permission[1] : ''
+    eventBus.$on('refresh-domain-icon', () => {
+      this.getDetailResource(this.selectedTreeKey)
+    })
   },
   watch: {
     loading () {
@@ -229,7 +233,8 @@ export default {
 
       const params = {
         listAll: true,
-        id: treeNode.eventKey
+        id: treeNode.eventKey,
+        showicon: true
       }
 
       return new Promise(resolve => {
@@ -347,7 +352,6 @@ export default {
       this.treeViewData = []
       this.loadingSearch = true
       this.$emit('change-tree-store', {})
-
       api(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)
         this.treeVerticalData = this.treeVerticalData.concat(listDomains)
@@ -399,11 +403,11 @@ export default {
       // set id to parameter
       params.id = selectedKey
       params.listAll = true
+      params.showicon = true
       params.page = 1
       params.pageSize = 1
 
       this.detailLoading = true
-
       api(apiName, params).then(json => {
         const jsonResponse = this.getResponseJsonData(json)
 

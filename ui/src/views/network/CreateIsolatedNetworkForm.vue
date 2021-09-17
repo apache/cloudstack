@@ -57,6 +57,8 @@
               :placeholder="apiParams.zoneid.description"
               @change="val => { handleZoneChange(zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -208,12 +210,14 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateIsolatedNetworkForm',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     loading: {
@@ -308,6 +312,7 @@ export default {
         params.id = this.resource.zoneid
       }
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {

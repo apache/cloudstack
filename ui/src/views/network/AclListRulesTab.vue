@@ -162,13 +162,25 @@
           <a-input v-model:value="form.cidrlist" />
         </a-form-item>
         <a-form-item :label="$t('label.action')" ref="action" name="action">
-          <a-select v-model:value="form.action">
+          <a-select
+            v-model:value="form.action"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
             <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.protocol')" ref="protocol" name="protocol">
-          <a-select v-model:value="form.protocol">
+          <a-select
+           v-model:value="form.protocol"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
             <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
             <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
@@ -204,7 +216,13 @@
         </div>
 
         <a-form-item :label="$t('label.traffictype')" ref="traffictype" name="traffictype">
-          <a-select v-model:value="form.traffictype">
+          <a-select
+            v-model:value="form.traffictype"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>

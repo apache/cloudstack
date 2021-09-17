@@ -82,7 +82,14 @@
         class="form"
       >
         <a-form-item name="pod" ref="pod" :label="$t('label.podid')" class="form__item">
-          <a-select v-focus="true" v-model:value="form.pod">
+          <a-select 
+            v-focus="true"
+            v-model:value="form.pod"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>

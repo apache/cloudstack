@@ -222,6 +222,8 @@
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+              <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="block" style="margin-right: 5px" />
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -243,6 +245,8 @@
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
+              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px"/>
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -252,8 +256,13 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
-            v-model:value="form.storagepolicy"
-            :placeholder="apiParams.storagepolicy.description">
+            v-decorator="['storagepolicy']"
+            :placeholder="apiParams.storagepolicy.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="policy in storagePolicies" :key="policy.id">
               {{ policy.name || policy.id }}
             </a-select-option>
@@ -270,12 +279,13 @@
 
 <script>
 import { api } from '@/api'
-import { reactive, ref, toRaw } from 'vue'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddDiskOffering',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -358,6 +368,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -370,6 +381,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone

@@ -48,11 +48,14 @@
               <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
             </template>
             <a-select
-              showSearch
-              v-model:value="form.projectroleid"
+              v-decorator="['projectroleid']"
               :loading="loading"
-              :placeholder="apiParams.addAccountToProject.projectroleid.description"
-            >
+              :placeholder="$t('label.project.role')"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="role in projectRoles" :key="role.id">
                 {{ role.name }}
               </a-select-option>
@@ -63,9 +66,13 @@
               <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
             </template>
             <a-select
+              v-decorator="['roletype']"
+              :placeholder="$t('label.roletype')"
               showSearch
-              v-model:value="form.roletype"
-              :placeholder="apiParams.addAccountToProject.roletype.description">
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
             </a-select>
@@ -113,11 +120,14 @@
               <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addUserToProject.roletype.description"/>
             </template>
             <a-select
-              showSearch
-              v-model:value="form.projectroleid"
+              v-decorator="['projectroleid']"
               :loading="loading"
-              :placeholder="apiParams.addUserToProject.roletype.description"
-            >
+              :placeholder="$t('label.project.role')"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="role in projectRoles" :key="role.id">
                 {{ role.name }}
               </a-select-option>
@@ -128,9 +138,13 @@
               <tooltip-label :title="$t('label.roletype')" :tooltip="apiParams.addUserToProject.roletype.description"/>
             </template>
             <a-select
+              v-decorator="['roletype']"
+              :placeholder="$t('label.roletype')"
               showSearch
-              v-model:value="form.roletype"
-              :placeholder="apiParams.addUserToProject.roletype.description">
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
             </a-select>

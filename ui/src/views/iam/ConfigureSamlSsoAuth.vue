@@ -32,7 +32,12 @@
       </a-form-item>
       <a-form-item name="samlEntity" ref="samlEntity" :label="$t('label.samlentity')">
         <a-select
-          v-model:value="form.samlEntity">
+          v-model:value="form.samlEntity"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="(idp, idx) in idps" :key="idx">
             {{ idp.orgName }}
           </a-select-option>

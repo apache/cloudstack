@@ -57,15 +57,37 @@
           v-model:value="form.ipsecpsk"
           :placeholder="apiParams.ipsecpsk.description" />
       </a-form-item>
-      <a-form-item ref="ikeEncryption" name="ikeEncryption" :label="$t('label.ikeencryption')">
-        <a-select v-model:value="form.ikeEncryption">
+      <a-form-item :label="$t('label.ikeencryption')">
+        <a-select
+          v-decorator="[
+            'ikeEncryption',
+            {
+              initialValue: 'aes128',
+            },
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="ikeHash" name="ikeHash" :label="$t('label.ikehash')">
-        <a-select v-model:value="form.ikeHash">
+      <a-form-item :label="$t('label.ikehash')">
+        <a-select
+          v-decorator="[
+            'ikeHash',
+            {
+              initialValue: 'sha1',
+            },
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
           </a-select-option>
@@ -79,14 +101,37 @@
           v-model:value="form.ipsecpsk"
           :placeholder="apiParams.ipsecpsk.description" />
         <a-select
-          v-model:value="form.ikeversion">
+          v-decorator="[
+            'ikeversion',
+            {
+              initialValue: 'ike',
+            },
+          ]"
+          @change="val => { ikeversion = val }"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
             {{ vers }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="ikeDh" name="ikeDh" :label="$t('label.ikedh')">
-        <a-select v-model:value="form.ikeDh">
+      <a-form-item
+        :label="$t('label.ikedh')">
+        <a-select
+          v-decorator="[
+            'ikeDh',
+            {
+              initialValue: 'Group 5(modp1536)',
+            },
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
             <div v-if="group !== ''">
               {{ group+"("+DHGroups[group]+")" }}
@@ -94,22 +139,58 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="espEncryption" name="espEncryption" :label="$t('label.espencryption')">
-        <a-select v-model:value="form.espEncryption">
+      <a-form-item
+        :label="$t('label.espencryption')">
+        <a-select
+          v-decorator="[
+            'espEncryption',
+            {
+              initialValue: 'aes128',
+            },
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="espHash" name="espHash" :label="$t('label.esphash')">
-        <a-select v-model:value="form.espHash">
+      <a-form-item
+        :label="$t('label.esphash')">
+        <a-select
+          v-decorator="[
+            'espHash',
+            {
+              initialValue: 'sha1',
+            },
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="perfectForwardSecrecy" name="perfectForwardSecrecy" :label="$t('label.perfectforwardsecrecy')">
-        <a-select v-model:value="form.perfectForwardSecrecy">
+      <a-form-item
+        :label="$t('label.perfectforwardsecrecy')">
+        <a-select
+          v-decorator="[
+            'perfectForwardSecrecy',
+            {
+              initialValue: 'None',
+            },
+          ]"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
             <div v-if="group === ''">
               {{ DHGroups[group] }}

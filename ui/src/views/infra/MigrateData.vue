@@ -32,7 +32,11 @@
             v-model:value="form.srcpool"
             :loading="loading"
             v-focus="true"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="store in imageStores"
               :key="store.id"
@@ -47,7 +51,11 @@
             v-model:value="form.destpools"
             mode="multiple"
             :loading="loading"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="store in imageStores"
               v-if="store.id !== this.form.srcpool"
@@ -59,7 +67,11 @@
           <a-select
             v-model:value="form.migrationtype"
             :loading="loading"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="Complete">{{ $t('label.complete') }}</a-select-option>
             <a-select-option value="Balance">{{ $t('label.balance') }}</a-select-option>
           </a-select>

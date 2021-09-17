@@ -118,6 +118,7 @@ import {
   QuestionCircleOutlined,
   ReadOutlined,
   ReconciliationOutlined,
+  RedoOutlined,
   ReloadOutlined,
   RightCircleOutlined,
   RocketOutlined,
@@ -248,6 +249,7 @@ export default {
     app.component('QuestionCircleOutlined', QuestionCircleOutlined)
     app.component('ReadOutlined', ReadOutlined)
     app.component('ReconciliationOutlined', ReconciliationOutlined)
+    app.component('RedoOutlined', RedoOutlined)
     app.component('ReloadOutlined', ReloadOutlined)
     app.component('RightCircleOutlined', RightCircleOutlined)
     app.component('RocketOutlined', RocketOutlined)

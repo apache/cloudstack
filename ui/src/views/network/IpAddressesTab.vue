@@ -44,7 +44,11 @@
           defaultActiveFirstOption
           v-model:value="vpcTier"
           @change="handleTierSelect"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option key="all" value="">
             {{ $t('label.view.all') }}
           </a-select-option>
@@ -124,8 +128,11 @@
           <a-select
             v-focus="true"
             style="width: 100%;"
-            showSearch
-            v-model:value="acquireIp">
+            v-model="acquireIp"
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="ip in listPublicIpAddress"
               :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>

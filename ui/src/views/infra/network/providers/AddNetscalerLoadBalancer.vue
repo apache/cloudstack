@@ -52,7 +52,12 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="networkdevicetype" ref="networkdevicetype" :label="$t('label.networkdevicetype')">
             <a-select
-              v-model:value="form.networkdevicetype">
+              v-model:value="form.networkdevicetype"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="opt in networkDeviceType"
                 :key="opt.id">{{ $t(opt.description) }}</a-select-option>

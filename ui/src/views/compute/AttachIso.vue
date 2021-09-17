@@ -27,7 +27,12 @@
           <a-select
             :loading="loading"
             v-model:value="form.id"
-            v-focus="true">
+            v-focus="true"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>

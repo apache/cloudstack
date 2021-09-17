@@ -126,7 +126,13 @@
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
-          <a-select v-model:value="addAccount.domain">
+          <a-select
+            v-model="addAccount.domain"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
@@ -160,7 +166,14 @@
         class="form"
       >
         <a-form-item name="podid" ref="podid" :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
-          <a-select v-focus="true" v-model:value="form.podid">
+          <a-select
+            v-focus="true"
+            v-model:value="form.podid"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
@@ -193,7 +206,13 @@
               <a-input v-model:value="form.account"></a-input>
             </a-form-item>
             <a-form-item name="domain" ref="domain" :label="$t('label.domain')" class="form__item">
-              <a-select v-model:value="form.domain">
+              <a-select
+                v-model:value="form.domain"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"

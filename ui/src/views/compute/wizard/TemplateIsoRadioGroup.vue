@@ -23,7 +23,7 @@
       size="small"
       :dataSource="osList"
       :pagination="false">
-      <template #renderItem="{ item, index } ">
+      <template #renderItem="{ item, index }">
         <a-list-item :key="item.id" @click="onClickRow(item)">
           <a-radio-group
             class="radio-group"
@@ -34,7 +34,13 @@
               class="radio-group__radio"
               :value="item.id">
               {{ item.displaytext }}&nbsp;
+              <resource-icon
+                v-if="os.icon && os.icon.base64image"
+                class="radio-group__os-logo"
+                :image="os.icon.base64image"
+                size="1x" />
               <os-logo
+                v-else
                 class="radio-group__os-logo"
                 :osId="item.ostypeid"
                 :os-name="item.osName" />
@@ -65,10 +71,14 @@
 
 <script>
 import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'TemplateIsoRadioGroup',
-  components: { OsLogo },
+  components: {
+    OsLogo,
+    ResourceIcon
+  },
   props: {
     osList: {
       type: Array,
@@ -94,6 +104,7 @@ export default {
   data () {
     return {
       value: '',
+      image: '',
       options: {
         page: 1,
         pageSize: 10

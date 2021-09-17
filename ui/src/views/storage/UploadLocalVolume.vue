@@ -58,8 +58,23 @@
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           </template>
           <a-select
-            v-model:value="form.zoneId">
+            v-decorator="['zoneId', {
+              initialValue: zoneSelected,
+              rules: [
+                {
+                  required: true,
+                  message: `${this.$t('message.error.select')}`
+                }
+              ]
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px"/>
               {{ zone.name || zone.description }}
             </a-select-option>
           </a-select>
@@ -69,7 +84,20 @@
             <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           </template>
           <a-select
-            v-model:value="form.format">
+            v-decorator="['format', {
+              initialValue: formats[0],
+              rules: [
+                {
+                  required: false,
+                  message: `${this.$t('message.error.select')}`
+                }
+              ]
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
             </a-select-option>
@@ -97,11 +125,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadLocalVolume',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -138,7 +168,7 @@ export default {
       })
     },
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {

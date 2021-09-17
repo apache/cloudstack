@@ -40,8 +40,12 @@
               v-focus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
               mode="multiple"
-              v-model:value="iLb.vmguestip[index]"
-            >
+              v-model="iLb.vmguestip[index]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
               </a-select-option>
