@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import com.google.common.base.Strings;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -40,9 +41,18 @@ public final class LibvirtOvsFetchInterfaceCommandWrapper extends CommandWrapper
 
         s_logger.debug("Will look for network with name-label:" + label);
         try {
-            final String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
-            final String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
-            final String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
+            String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
+            if (Strings.isNullOrEmpty(ipadd)) {
+                ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep ' inet ' | awk '{ print $2}'");
+            }
+            String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
+            if (Strings.isNullOrEmpty(mask)) {
+                mask = Script.runSimpleBashScript("ifconfig " + label + " | grep ' inet ' | awk '{ print $4}'");
+            }
+            String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
+            if (Strings.isNullOrEmpty(mac)) {
+                mac = Script.runSimpleBashScript("ifconfig " + label + " | grep ' ether ' | awk '{ print $2}'");
+            }
             return new OvsFetchInterfaceAnswer(command, true, "Interface " + label
                     + " retrieved successfully", ipadd, mask, mac);
 
