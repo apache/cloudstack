@@ -846,14 +846,6 @@ public class HypervisorHostHelperTest {
     }
 
     @Test
-    public void testDVSSecurityPolicyNewDefault() {
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null);
-        assertFalse(secPolicy.getAllowPromiscuous().isValue());
-        assertFalse(secPolicy.getForgedTransmits().isValue());
-        assertFalse(secPolicy.getMacChanges().isValue());
-    }
-
-    @Test
     public void testDVSSecurityPolicyLegacyDefaultWithDetail() {
         Map<NetworkOffering.Detail, String> details = getNicDetails();
         details.remove(NetworkOffering.Detail.ForgedTransmits);
