@@ -1237,6 +1237,7 @@ describe('Views > AutogenView.vue', () => {
           params: {
             command: 'testApiNameCase1',
             listall: true,
+            showicon: true,
             response: 'json'
           }
         })
@@ -1332,6 +1333,7 @@ describe('Views > AutogenView.vue', () => {
             command: 'testApiNameCase1',
             listall: true,
             name: 'test-name-value',
+            showicon: true,
             response: 'json'
           }
         })
