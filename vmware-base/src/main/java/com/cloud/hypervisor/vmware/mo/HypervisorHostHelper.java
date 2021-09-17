@@ -628,8 +628,6 @@ public class HypervisorHostHelper {
             dvSwitchMo = new DistributedVirtualSwitchMO(context, morDvSwitch);
             String dvSwitchVersion = dvSwitchMo.getDVSProductVersion(morDvSwitch);
             s_logger.debug(String.format("Found distributed vSwitch: %s with product version: %s", dvSwitchName, dvSwitchVersion));
-            boolean dvSwitchSupportNewPolicies = (isFeatureSupportedInVcenterApiVersion(vcApiVersion, MINIMUM_VCENTER_API_VERSION_WITH_DVS_NEW_POLICIES_SUPPORT)
-                    && isVersionEqualOrHigher(dvSwitchVersion, MINIMUM_DVS_VERSION_WITH_NEW_POLICIES_SUPPORT));
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
                 if (!dataCenterMo.hasDvPortGroup(networkName)) {
@@ -637,8 +635,10 @@ public class HypervisorHostHelper {
                 }
                 bWaitPortGroupReady = false;
             } else {
+                boolean dvSwitchSupportNewPolicies = (isFeatureSupportedInVcenterApiVersion(vcApiVersion, MINIMUM_VCENTER_API_VERSION_WITH_DVS_NEW_POLICIES_SUPPORT)
+                        && isVersionEqualOrHigher(dvSwitchVersion, MINIMUM_DVS_VERSION_WITH_NEW_POLICIES_SUPPORT));
                 DVSTrafficShapingPolicy shapingPolicy = getDVSShapingPolicy(networkRateMbps);
-                DVSSecurityPolicy secPolicy = createDVSSecurityPolicy(details, dvSwitchSupportNewPolicies);
+                DVSSecurityPolicy secPolicy = createDVSSecurityPolicy(details);
                 DVSMacManagementPolicy macManagementPolicy = createDVSMacManagementPolicy(details);
 
                 // First, if both vlan id and pvlan id are provided, we need to
@@ -1203,18 +1203,12 @@ public class HypervisorHostHelper {
         return details;
     }
 
-    public static DVSSecurityPolicy createDVSSecurityPolicy(Map<NetworkOffering.Detail, String> nicDetails, boolean dvSwitchSupportNewPolicies) {
+    public static DVSSecurityPolicy createDVSSecurityPolicy(Map<NetworkOffering.Detail, String> nicDetails) {
         DVSSecurityPolicy secPolicy = new DVSSecurityPolicy();
         BoolPolicy allow = new BoolPolicy();
         allow.setValue(true);
         BoolPolicy deny = new BoolPolicy();
         deny.setValue(false);
-        if (dvSwitchSupportNewPolicies) {
-            secPolicy.setAllowPromiscuous(deny);
-            secPolicy.setForgedTransmits(deny);
-            secPolicy.setMacChanges(deny);
-            return secPolicy;
-        }
         secPolicy.setAllowPromiscuous(deny);
         secPolicy.setForgedTransmits(allow);
         secPolicy.setMacChanges(allow);

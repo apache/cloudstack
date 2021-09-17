@@ -20,11 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,17 +42,17 @@ import com.cloud.offering.NetworkOffering;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ClusterConfigInfoEx;
-import com.vmware.vim25.DVSMacManagementPolicy;
-import com.vmware.vim25.DatacenterConfigInfo;
-import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
+import com.vmware.vim25.DVSMacManagementPolicy;
 import com.vmware.vim25.DVSSecurityPolicy;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
+import com.vmware.vim25.DatacenterConfigInfo;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ServiceContent;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
@@ -839,7 +839,7 @@ public class HypervisorHostHelperTest {
 
     @Test
     public void testDVSSecurityPolicyLegacyDefault() {
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null, false);
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null);
         assertFalse(secPolicy.getAllowPromiscuous().isValue());
         assertTrue(secPolicy.getForgedTransmits().isValue());
         assertTrue(secPolicy.getMacChanges().isValue());
@@ -847,7 +847,7 @@ public class HypervisorHostHelperTest {
 
     @Test
     public void testDVSSecurityPolicyNewDefault() {
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null, true);
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null);
         assertFalse(secPolicy.getAllowPromiscuous().isValue());
         assertFalse(secPolicy.getForgedTransmits().isValue());
         assertFalse(secPolicy.getMacChanges().isValue());
@@ -858,7 +858,7 @@ public class HypervisorHostHelperTest {
         Map<NetworkOffering.Detail, String> details = getNicDetails();
         details.remove(NetworkOffering.Detail.ForgedTransmits);
         details.remove(NetworkOffering.Detail.PromiscuousMode);
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details, false);
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details);
         assertFalse(secPolicy.getAllowPromiscuous().isValue());
         assertFalse(secPolicy.getMacChanges().isValue());
         assertTrue(secPolicy.getForgedTransmits().isValue());
@@ -868,7 +868,7 @@ public class HypervisorHostHelperTest {
     public void testDVSSecurityPolicyLegacyWithDetail() {
         Map<NetworkOffering.Detail, String> details = getNicDetails();
         details.put(NetworkOffering.Detail.ForgedTransmits, "true");
-        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details, false);
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details);
         assertFalse(secPolicy.getAllowPromiscuous().isValue());
         assertTrue(secPolicy.getForgedTransmits().isValue());
         assertFalse(secPolicy.getMacChanges().isValue());
