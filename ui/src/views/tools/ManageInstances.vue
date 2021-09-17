@@ -54,11 +54,11 @@
                   :filterOption="filterOption"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
-                  autoFocus
+                  v-focus="true"
                 >
                   <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value">
                     <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                    <a-icon v-else style="margin-right: 5px" type="global" />
+                    <global-outlined v-else style="margin-right: 5px" />
                     {{ zoneitem.label }}
                   </a-select-option>
                 </a-select>
@@ -225,8 +225,8 @@
                     <a-button
                       :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
-                      icon="disconnect"
                       @click="onUnmanageInstanceAction">
+                      <template #icon><disconnect-outlined /></template>
                       {{ managedInstancesSelectedRowKeys.length > 1 ? $t('label.action.unmanage.instances') : $t('label.action.unmanage.instance') }}
                     </a-button>
                   </div>

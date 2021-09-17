@@ -40,9 +40,9 @@
           :defaultValue="validNetworks[record.id][0].id"
           @change="val => handleNetworkChange(record, val)"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="network in validNetworks[record.id]" :key="network.id">
             {{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}

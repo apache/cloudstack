@@ -63,9 +63,9 @@
                 :placeholder="field.description"
                 v-focus="fieldIndex === firstIndex"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
@@ -95,9 +95,9 @@
                 :placeholder="field.description"
                 v-focus="fieldIndex === firstIndex"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}

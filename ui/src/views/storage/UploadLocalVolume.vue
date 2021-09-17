@@ -58,23 +58,15 @@
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           </template>
           <a-select
-            v-decorator="['zoneId', {
-              initialValue: zoneSelected,
-              rules: [
-                {
-                  required: true,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ]
-            }]"
+            v-model:value="form.zoneId"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
               <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px"/>
               {{ zone.name || zone.description }}
             </a-select-option>
           </a-select>
@@ -84,19 +76,11 @@
             <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           </template>
           <a-select
-            v-decorator="['format', {
-              initialValue: formats[0],
-              rules: [
-                {
-                  required: false,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ]
-            }]"
+            v-model:value="form.format"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}

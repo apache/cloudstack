@@ -38,9 +38,9 @@
           :defaultValue="text"
           @change="value => onCellChange(record.key, 'isolationMethod', value)"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option value="VLAN"> VLAN </a-select-option>
           <a-select-option value="VXLAN"> VXLAN </a-select-option>
@@ -71,9 +71,9 @@
               @change="val => { trafficLabelSelected = val }"
               style="min-width: 120px;"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="(traffic, index) in availableTrafficToAdd"
@@ -185,12 +185,12 @@
             <a-input v-model:value="form.vlanId" />
           </a-form-item>
           <a-form-item v-if="isAdvancedZone" :label="$t('label.vswitch.type')" name="vSwitchType" ref="vSwitchType">
-            <a-select 
+            <a-select
               v-model:value="form.vSwitchType"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
               <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>

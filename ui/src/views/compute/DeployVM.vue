@@ -512,7 +512,7 @@
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
-                      <a-form-item>
+                      <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
                         <a-switch
                           v-model:checked="form.dynamicscalingenabled"
                           :checked="isDynamicallyScalable() && dynamicscalingenabled"
@@ -1090,24 +1090,8 @@ export default {
           this.vm.disksizetotalgb = this.diskSize
         }
 
-      if (this.iso) {
-        this.vm.isoid = this.iso.id
-        this.vm.templateid = this.iso.id
-        this.vm.templatename = this.iso.displaytext
-        this.vm.ostypeid = this.iso.ostypeid
-        this.vm.ostypename = this.iso.ostypename
-        if (this.hypervisor) {
-          this.vm.hypervisor = this.hypervisor
-        }
-
-        if (this.template) {
-          this.vm.templateid = this.template.id
-          this.vm.templatename = this.template.displaytext
-          this.vm.ostypeid = this.template.ostypeid
-          this.vm.ostypename = this.template.ostypename
-        }
-
         if (this.iso) {
+          this.vm.isoid = this.iso.id
           this.vm.templateid = this.iso.id
           this.vm.templatename = this.iso.displaytext
           this.vm.ostypeid = this.iso.ostypeid
@@ -1115,34 +1099,51 @@ export default {
           if (this.hypervisor) {
             this.vm.hypervisor = this.hypervisor
           }
-        }
 
-        if (this.serviceOffering) {
-          this.vm.serviceofferingid = this.serviceOffering.id
-          this.vm.serviceofferingname = this.serviceOffering.displaytext
-          if (this.serviceOffering.cpunumber) {
-            this.vm.cpunumber = this.serviceOffering.cpunumber
+          if (this.template) {
+            this.vm.templateid = this.template.id
+            this.vm.templatename = this.template.displaytext
+            this.vm.ostypeid = this.template.ostypeid
+            this.vm.ostypename = this.template.ostypename
           }
-          if (this.serviceOffering.cpuspeed) {
-            this.vm.cpuspeed = this.serviceOffering.cpuspeed
-          }
-          if (this.serviceOffering.memory) {
-            this.vm.memory = this.serviceOffering.memory
-          }
-        }
 
-        if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
-          this.vm.diskofferingid = ''
-          this.vm.diskofferingname = ''
-          this.vm.diskofferingsize = ''
-        } else if (this.diskOffering) {
-          this.vm.diskofferingid = this.diskOffering.id
-          this.vm.diskofferingname = this.diskOffering.displaytext
-          this.vm.diskofferingsize = this.diskOffering.disksize
-        }
+          if (this.iso) {
+            this.vm.templateid = this.iso.id
+            this.vm.templatename = this.iso.displaytext
+            this.vm.ostypeid = this.iso.ostypeid
+            this.vm.ostypename = this.iso.ostypename
+            if (this.hypervisor) {
+              this.vm.hypervisor = this.hypervisor
+            }
+          }
 
-        if (this.affinityGroups) {
-          this.vm.affinitygroup = this.affinityGroups
+          if (this.serviceOffering) {
+            this.vm.serviceofferingid = this.serviceOffering.id
+            this.vm.serviceofferingname = this.serviceOffering.displaytext
+            if (this.serviceOffering.cpunumber) {
+              this.vm.cpunumber = this.serviceOffering.cpunumber
+            }
+            if (this.serviceOffering.cpuspeed) {
+              this.vm.cpuspeed = this.serviceOffering.cpuspeed
+            }
+            if (this.serviceOffering.memory) {
+              this.vm.memory = this.serviceOffering.memory
+            }
+          }
+
+          if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
+            this.vm.diskofferingid = ''
+            this.vm.diskofferingname = ''
+            this.vm.diskofferingsize = ''
+          } else if (this.diskOffering) {
+            this.vm.diskofferingid = this.diskOffering.id
+            this.vm.diskofferingname = this.diskOffering.displaytext
+            this.vm.diskofferingsize = this.diskOffering.disksize
+          }
+
+          if (this.affinityGroups) {
+            this.vm.affinitygroup = this.affinityGroups
+          }
         }
       }
     }

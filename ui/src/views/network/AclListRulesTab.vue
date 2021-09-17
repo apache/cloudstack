@@ -165,9 +165,9 @@
           <a-select
             v-model:value="form.action"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
             <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
@@ -177,9 +177,9 @@
           <a-select
            v-model:value="form.protocol"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
             <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
@@ -219,9 +219,9 @@
           <a-select
             v-model:value="form.traffictype"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>

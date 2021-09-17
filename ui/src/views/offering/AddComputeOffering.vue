@@ -280,7 +280,7 @@
           </template>
           <a-switch v-model:checked="form.offerha" />
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
           <template #label>
             <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
           </template>
@@ -403,7 +403,7 @@
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="block" style="margin-right: 5px" />
+              <block-outlined v-else style="margin-right: 5px" />
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -426,7 +426,7 @@
             :placeholder="apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px"/>
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -436,12 +436,12 @@
             <tooltip-label :title="$t('label.vmware.storage.polic')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
-            v-decorator="['storagepolicy']"
+            v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="policy in storagePolicies" :key="policy.id">
               {{ policy.name || policy.id }}

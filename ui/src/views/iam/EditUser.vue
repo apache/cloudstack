@@ -69,13 +69,12 @@
             <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           </template>
           <a-select
-            showSearch
             v-model:value="form.timezone"
             :loading="timeZoneLoading"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}

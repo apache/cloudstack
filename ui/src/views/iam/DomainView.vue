@@ -131,7 +131,7 @@ export default {
   created () {
     this.domainStore = store.getters.domainStore
     this.fetchData()
-    eventBus.$on('refresh-domain-icon', () => {
+    eventBus.on('refresh-domain-icon', () => {
       if (this.$showIcon()) {
         this.fetchData()
       }

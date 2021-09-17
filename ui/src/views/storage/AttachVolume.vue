@@ -34,15 +34,13 @@
       </div>
       <a-form-item :label="$t('label.virtualmachineid')" name="virtualmachineid" ref="virtualmachineid">
         <a-select
-          autoFocus
-          v-decorator="['virtualmachineid', {
-            rules: [{ required: true, message: $t('message.error.select') }]
-          }]"
+          v-focus="true"
+          v-model:value="form.virtualmachineid"
           :placeholder="apiParams.virtualmachineid.description"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="vm in virtualmachines" :key="vm.id">
             {{ vm.name || vm.displayname }}

@@ -23,7 +23,7 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit">
-      <a-form-item>
+      <a-form-item name="name" ref="name">
         <template #label>
           <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         </template>
@@ -31,13 +31,13 @@
           v-focus="true"
           v-model:value="form.name"/>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="description" ref="description">
         <template #label>
           <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
         </template>
         <a-input v-model:value="form.description"/>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="zoneid" ref="zoneid">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -47,38 +47,36 @@
           :loading="zones.loading"
           @change="onChangeZone"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="zone in zones.opts" :key="zone.name">
             <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-            <a-icon v-else type="global" style="margin-right: 5px"/>
+            <global-outlined v-else style="margin-right: 5px"/>
             {{ zone.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="externalid" ref="externalid">
         <template #label>
           <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
         </template>
         <a-select
           allowClear
-          v-decorator="['externalid', {
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
-          }] "
+          v-model:value="form.externalid"
           :loading="externals.loading"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="opt in externals.opts" :key="opt.id">
             {{ opt.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="allowuserdrivenbackups" ref="allowuserdrivenbackups">
         <template #label>
           <tooltip-label :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
         </template>

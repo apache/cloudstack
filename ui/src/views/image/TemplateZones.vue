@@ -35,7 +35,7 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <template #zonename={record}">
+      <template #zonename="{record}">
         <span v-if="fetchZoneIcon(record.zoneid)">
           <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
         </span>

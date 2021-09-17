@@ -68,7 +68,7 @@
                   @change="val => { this.selectedDomainId = val }">
                   <a-select-option v-for="dom in domainSelectOptions" :key="dom.value">
                     <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
-                    <a-icon v-else-if="dom.value !== null" style="margin-right: 5px" type="block" />
+                    <block-outlined v-else-if="dom.value !== null" style="margin-right: 5px" />
                     {{ dom.label }}
                   </a-select-option>
                 </a-select>
@@ -96,7 +96,7 @@
                   :placeholder="apiParams.projectid.description">
                   <a-select-option v-for="proj in projectSelectOptions" :key="proj.value">
                     <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
-                    <a-icon v-else-if="proj.value !== null" style="margin-right: 5px" type="project" />
+                    <project-outlined  v-else-if="proj.value !== null" style="margin-right: 5px" />
                     {{ proj.label }}
                   </a-select-option>
                 </a-select>

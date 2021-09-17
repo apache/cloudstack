@@ -87,7 +87,7 @@
             :placeholder="apiParams.zoneid.description">
             <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id">
               <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
+              <global-outlined v-else style="margin-right: 5px" />
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -109,7 +109,7 @@
             :placeholder="apiParams.ostypeid.description">
             <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex">
               <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
+              <global-outlined v-else style="margin-right: 5px" />
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>

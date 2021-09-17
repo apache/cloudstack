@@ -35,9 +35,9 @@
             :placeholder="apiParams.roleid.description"
             v-focus="true"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
@@ -113,9 +113,9 @@
             v-model:value="form.domainid"
             :placeholder="apiParams.domainid.description"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
               <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -135,14 +135,13 @@
             <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           </template>
           <a-select
-            showSearch
             v-model:value="form.timezone"
             :loading="timeZoneLoading"
             :placeholder="apiParams.timezone.description"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -170,9 +169,9 @@
               :loading="idpLoading"
               :placeholder="apiParams.entityid.description"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }">
               <a-select-option v-for="(idp, idx) in idps" :key="idx">
                 {{ idp.orgName }}

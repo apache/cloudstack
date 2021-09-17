@@ -52,9 +52,9 @@
                     style="min-width: 100px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
-                    optionFilterProp="children"
+                    optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
                     <template #suffixIcon><filter-outlined /></template>
                     <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
@@ -223,11 +223,11 @@
                   :loading="field.loading"
                   v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
@@ -278,31 +278,31 @@
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="global" style="margin-right: 5px" />
+                        <global-outlined v-else style="margin-right: 5px" />
                       </span>
                       <span v-if="(field.name.startsWith('project'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="project" style="margin-right: 5px" />
+                        <project-outlined v-else style="margin-right: 5px" />
                       </span>
                       <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                        <user-outlined v-else style="margin-right: 5px"/>
                       </span>
                       <span v-if="(field.name.startsWith('network'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                        <apartment-outlined v-else style="margin-right: 5px"/>
                       </span>
                       <span v-if="(field.name.startsWith('domain'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                        <block-outlined v-else style="margin-right: 5px"/>
                       </span>
                     </span>
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
@@ -314,11 +314,11 @@
                   mode="multiple"
                   v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
@@ -801,7 +801,6 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
 
       if (this.$showIcon()) {
         params.showIcon = true

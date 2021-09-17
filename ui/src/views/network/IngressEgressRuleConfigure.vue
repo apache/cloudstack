@@ -36,15 +36,15 @@
             style="width: 100%;"
             @change="resetRulePorts"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
-            <a-select-option value="all">{{ $t('label.all') | capitalise }}</a-select-option>
-            <a-select-option value="protocolnumber">{{ $t('label.protocol.number') | capitalise }}</a-select-option>
+            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
+            <a-select-option value="all">{{ capitalise($t('label.all')) }}</a-select-option>
+            <a-select-option value="protocolnumber">{{ capitalise($t('label.protocol.number')) }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">

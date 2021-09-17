@@ -22,7 +22,7 @@ import mockI18n from '../mock/mockI18n'
 import mockStore from '../mock/mockStore'
 import mockRouter from '../mock/mockRouter'
 
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from '@/utils/plugins'
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin }  from '@/utils/plugins'
 
 function createMockRouter (newRoutes = []) {
   let routes = []
@@ -74,6 +74,8 @@ function createFactory (component, options) {
         toLocaleDatePlugin,
         configUtilPlugin,
         apiMetaUtilPlugin,
+        showIconPlugin,
+        resourceTypePlugin,
         StoragePlugin
       ],
       mocks

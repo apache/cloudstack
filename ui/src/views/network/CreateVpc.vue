@@ -45,19 +45,16 @@
           </template>
           <a-select
             :loading="loadingZone"
-            v-decorator="['zoneid', {
-              initialValue: this.selectedZone,
-              rules: [{ required: true, message: `${this.$t('label.required')}`}]
-            }]"
+            v-model:value="form.zoneid"
             @change="val => changeZone(val)"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="zone in zones" :key="zone.id">
               <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
+              <global-outlined v-else style="margin-right: 5px" />
               {{ zone.name }}
             </a-select-option>
           </a-select>
@@ -84,13 +81,11 @@
           </template>
           <a-select
             :loading="loadingOffering"
-            v-decorator="['vpcofferingid', {
-              initialValue: this.selectedOffering,
-              rules: [{ required: true, message: `${this.$t('label.required')}`}]}]"
+            v-model:value="form.vpcofferingid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id">
               {{ offering.name }}

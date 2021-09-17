@@ -56,11 +56,10 @@
                 @change="fetchListLdapUsers"
                 v-model:value="selectedFilter"
                 v-focus="true"
-                
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
                 <a-select-option v-for="opt in filters" :key="opt.id" >
                   {{ opt.name }}
@@ -69,15 +68,14 @@
             </a-form-item>
             <a-form-item :label="$t('label.domain')" ref="domainid" name="domainid">
               <a-select
-                showSearch
                 v-model:value="form.domainid"
                 :placeholder="apiParams.domainid.description"
                 :loading="domainLoading"
                 @change="fetchListLdapUsers($event)"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="opt in listDomains" :key="opt.name">
                   {{ opt.name }}
@@ -92,14 +90,13 @@
             </a-form-item>
             <a-form-item :label="$t('label.role')" ref="roleid" name="roleid">
               <a-select
-                showSearch
                 v-model:value="form.roleid"
                 :placeholder="apiParams.roleid.description"
                 :loading="roleLoading"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
                 <a-select-option v-for="opt in listRoles" :key="opt.name">
                   {{ opt.name }}
@@ -108,14 +105,13 @@
             </a-form-item>
             <a-form-item :label="$t('label.timezone')" ref="timezone" name="timezone">
               <a-select
-                showSearch
                 v-model:value="form.timezone"
                 :placeholder="apiParams.timezone.description"
                 :loading="timeZoneLoading"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
                 <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -144,9 +140,9 @@
                   :placeholder="$t('label.choose.saml.indentity')"
                   :loading="loading"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }">
                   <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
                     {{ idp.orgName }}

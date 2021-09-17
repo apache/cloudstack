@@ -113,9 +113,9 @@
                 <a-select
                   v-model:value="form.zoneid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   @change="handlerSelectZone"
                   :placeholder="apiParams.zoneid.description"
@@ -139,9 +139,9 @@
                 :placeholder="apiParams.hypervisor.description"
                 @change="handlerSelectHyperVisor"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
                   {{ opt.name || opt.description }}
@@ -156,9 +156,9 @@
                 :placeholder="apiParams.format.description"
                 @change="val => { selectedFormat = val }"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -202,9 +202,9 @@
                 :loading="rootDisk.loading"
                 :placeholder="$t('label.rootdiskcontrollertype')"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -217,9 +217,9 @@
               <a-select
                 v-model:value="form.nicAdapterType"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 :placeholder="$t('label.nicadaptertype')">
                 <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
@@ -237,9 +237,9 @@
           <a-select
             v-model:value="form.keyboardType"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.keyboard')">
             <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
@@ -250,9 +250,9 @@
         <a-form-item :label="$t('label.ostypeid')" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
           <a-select
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="form.ostypeid"
             :loading="osTypes.loading"

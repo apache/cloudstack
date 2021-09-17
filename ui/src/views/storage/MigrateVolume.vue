@@ -28,11 +28,11 @@
         <a-select
           v-model:value="selectedStoragePool"
           style="width: 100%;"
-          :autoFocus="storagePools.length > 0"
+          v-focus="storagePools.length > 0"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
             {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
@@ -47,12 +47,12 @@
           <template v-if="replaceDiskOffering">
             <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
             <a-select
-              v-model="selectedDiskOffering"
+              v-model:value="selectedDiskOffering"
               style="width: 100%;"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
                 {{ diskOffering.displaytext }}

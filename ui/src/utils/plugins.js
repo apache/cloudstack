@@ -252,8 +252,8 @@ export const configUtilPlugin = {
 }
 
 export const showIconPlugin = {
-  install (Vue) {
-    Vue.prototype.$showIcon = function (resource) {
+  install (app) {
+    app.config.globalProperties.$showIcon = function (resource) {
       var resourceType = this.$route.path.split('/')[1]
       if (resource) {
         resourceType = resource
@@ -268,8 +268,8 @@ export const showIconPlugin = {
 }
 
 export const resourceTypePlugin = {
-  install (Vue) {
-    Vue.prototype.$getResourceType = function () {
+  install (app) {
+    app.config.globalProperties.$getResourceType = function () {
       const type = this.$route.path.split('/')[1]
       if (type === 'vm') {
         return 'UserVM'

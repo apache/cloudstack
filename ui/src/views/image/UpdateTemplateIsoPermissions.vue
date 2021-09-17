@@ -29,9 +29,9 @@
         @change="fetchData"
         v-focus="true"
         showSearch
-        optionFilterProp="children"
+        optionFilterProp="label"
         :filterOption="(input, option) => {
-          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
@@ -50,9 +50,9 @@
           :defaultValue="$t('label.account')"
           @change="fetchData"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
@@ -72,9 +72,9 @@
               @change="handleChange"
               style="width: 100%"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="account in accountsList" :key="account.name">
                 <resource-icon v-if="account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -101,9 +101,9 @@
             @change="handleChange"
             style="width: 100%"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="project in projectsList" :key="project.name">
               <resource-icon v-if="project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>

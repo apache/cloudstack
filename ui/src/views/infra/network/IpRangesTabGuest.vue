@@ -34,7 +34,7 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #name="{ text, record }">
+      <template #name="{ text }">
         <resource-icon v-if="item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
         <apartment-outlined v-else style="margin-right: 5px"/>
         <router-link :to="{ path: '/guestnetwork/' + item.id }">

@@ -27,7 +27,7 @@ import './permission' // permission control
 import './utils/filter' // global filter
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
-import './utils/directives'
+import directives from './utils/directives'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)

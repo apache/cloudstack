@@ -59,10 +59,10 @@
           </a-descriptions-item>
         </template>
       </a-descriptions>
-    </p>
-    <template slot="networkname" slot-scope="text, item">
+    </template>
+    <template #networkname="text, item">
       <resource-icon v-if="!networkIconLoading && networkicon[item.id]" :image="networkicon[item.id]" size="1x" style="margin-right: 5px"/>
-      <a-icon v-else type="apartment" style="margin-right: 5px" />
+      <apartment-outlined v-else style="margin-right: 5px" />
       <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
         {{ text }}
       </router-link>
@@ -128,10 +128,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      this.resource = newItem
-      if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
-        this.fetchNetworks()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
+          this.fetchNetworks()
+        }
       }
     }
   },

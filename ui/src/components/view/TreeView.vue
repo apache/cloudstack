@@ -158,7 +158,7 @@ export default {
     this.metaName = this.$route.meta.name
     this.apiList = this.$route.meta.permission[0] ? this.$route.meta.permission[0] : ''
     this.apiChildren = this.$route.meta.permission[1] ? this.$route.meta.permission[1] : ''
-    eventBus.$on('refresh-domain-icon', () => {
+    eventBus.on('refresh-domain-icon', () => {
       this.getDetailResource(this.selectedTreeKey)
     })
   },

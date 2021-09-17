@@ -40,10 +40,10 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+            :placeholder="apiParams.domainid.description">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="block" style="margin-right: 5px" />
+              <block-outlined v-else style="margin-right: 5px" />
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -61,10 +61,10 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+            :placeholder="apiParams.zoneid.description">
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px"/>
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>

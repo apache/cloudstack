@@ -52,9 +52,9 @@
             @change="updateOfferingSelect($event, record.id)"
             :defaultValue="validOfferings[record.id][0].id"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id">
               {{ offering.displaytext }}
