@@ -4342,10 +4342,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String cidrAddress = getCidrAddress(cidr);
         final long cidrSize = getCidrSize(cidr);
 
-        checkIpRange(currentStartIP, currentEndIP, cidrAddress, cidrSize);
-        if (startIp != currentStartIP || endIp != currentEndIP) {
-            checkIpRange(startIp, endIp, cidrAddress, cidrSize);
-        }
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
         checkGatewayOverlap(startIp, endIp, gateway);
 
@@ -4832,7 +4829,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
-        return problemIps != null && problemIps.size() == 0;
+        return CollectionUtils.isEmpty(problemIps);
     }
 
     @DB

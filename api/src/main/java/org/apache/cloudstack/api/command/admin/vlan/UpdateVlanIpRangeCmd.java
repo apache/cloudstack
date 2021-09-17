@@ -20,7 +20,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -28,7 +27,6 @@ import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.Vlan;
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -39,7 +37,7 @@ import com.cloud.utils.net.NetUtils;
         VlanIpRangeResponse.class, since = "4.16.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
+public class UpdateVlanIpRangeCmd extends BaseCmd {
 
     public static final String APINAME = "updateVlanIpRange";
     public static final Logger s_logger = Logger.getLogger(UpdateVlanIpRangeCmd.class.getName());
@@ -139,18 +137,6 @@ public class UpdateVlanIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VLAN_IP_RANGE_UPDATE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Update vlan ip range " + getId() + " [StartIp=" + getStartIp() + ", EndIp=" + getEndIp() + ", gateway=" + getGateway() + ", netmask=" + getNetmask()
-                + ", StartIpv6=" + getStartIpv6() + ", EndIpv6=" + getEndIpv6() + ", ip6gateway=" + getIp6Gateway() + ", ip6cidr=" + getIp6Cidr() + ']';
-    }
-
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
