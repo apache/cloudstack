@@ -1006,7 +1006,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 }
                 for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
                     if (dataCenter == null || isDisabled(dataCenter.getId())) {
-                        LOG.warn(String.format("Backup Sync Task is not enabled in zone [%s]. Skipping this zone!", dataCenter == null ? "NULL Zone!" : dataCenter.getId()));
+                        LOG.debug(String.format("Backup Sync Task is not enabled in zone [%s]. Skipping this zone!", dataCenter == null ? "NULL Zone!" : dataCenter.getId()));
                         continue;
                     }
 
@@ -1018,7 +1018,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                     List<VMInstanceVO> vms = vmInstanceDao.listByZoneWithBackups(dataCenter.getId(), null);
                     if (vms == null || vms.isEmpty()) {
-                        LOG.warn(String.format("Can't find any VM to sync backups in zone [id: %s].", dataCenter.getId()));
+                        LOG.debug(String.format("Can't find any VM to sync backups in zone [id: %s].", dataCenter.getId()));
                         continue;
                     }
 
