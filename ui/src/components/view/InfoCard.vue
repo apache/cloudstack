@@ -416,13 +416,13 @@
         </div>
 
         <div class="resource-detail-item" v-if="resource.aclid">
-          <div class="resource-detail-item__label">{{ $t('label.acl.id') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.acl') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.acl">
               <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
             </span>
             <a-icon v-else type="deployment-unit" />
-            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname }}</router-link>
+            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
           </div>
         </div>
 
