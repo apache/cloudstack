@@ -264,17 +264,18 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        UserVm result = null;
         try {
-            UserVm result = _userVmService.updateVirtualMachine(this);
-            if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to update VM", e);
+            result = _userVmService.updateVirtualMachine(this);
+        } catch (CloudRuntimeException e) {
+            throw new CloudRuntimeException(String.format("Failed to update VM, due to %s: ", e.getLocalizedMessage()));
+        }
+        if (result != null) {
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm");
         }
     }
 
