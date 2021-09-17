@@ -161,11 +161,18 @@
           <a-select
             :defaultValue="addNetworkData.network"
             @change="e => addNetworkData.network = e"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="network in addNetworkData.allNetworks"
               :key="network.id"
               :value="network.id">
+              <resource-icon v-if="network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="apartment" style="margin-right: 5px" />
               {{ network.name }}
             </a-select-option>
           </a-select>
@@ -195,11 +202,15 @@
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
           <a-select
-            showSearch
             v-if="editNicResource.type==='Shared'"
             v-model="editIpAddressValue"
             :loading="listIps.loading"
-            :autoFocus="editNicResource.type==='Shared'">
+            :autoFocus="editNicResource.type==='Shared'"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
               {{ ip.ipaddress }}
             </a-select-option>
@@ -234,11 +245,15 @@
       <div class="modal-form">
         <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
         <a-select
-          showSearch
           v-if="editNicResource.type==='Shared'"
           v-model="newSecondaryIp"
           :loading="listIps.loading"
-          :autoFocus="editNicResource.type==='Shared'">
+          :autoFocus="editNicResource.type==='Shared'"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
             {{ ip.ipaddress }}
           </a-select-option>
@@ -289,6 +304,7 @@ import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
@@ -301,6 +317,7 @@ export default {
     Status,
     ListResourceTable,
     TooltipButton,
+    ResourceIcon,
     AnnotationsTab
   },
   mixins: [mixinDevice],
@@ -421,6 +438,7 @@ export default {
     listNetworks () {
       api('listNetworks', {
         listAll: 'true',
+        showicon: true,
         zoneid: this.vm.zoneid
       }).then(response => {
         this.addNetworkData.allNetworks = response.listnetworksresponse.network.filter(network => !this.vm.nic.map(nic => nic.networkid).includes(network.id))

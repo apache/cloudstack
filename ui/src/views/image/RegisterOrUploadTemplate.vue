@@ -104,6 +104,8 @@
                   :placeholder="apiParams.zoneids.description"
                   @change="handlerSelectZone">
                   <a-select-option v-for="opt in zones.opts" :key="opt.id">
+                    <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <a-icon v-else type="global" style="margin-right: 5px" />
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -137,6 +139,8 @@
                   :placeholder="apiParams.zoneid.description"
                   :loading="zones.loading">
                   <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
+                    <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <a-icon v-else type="global" style="margin-right: 5px" />
                     {{ zone.name || zone.description }}
                   </a-select-option>
                 </a-select>
@@ -158,7 +162,12 @@
                 }]"
                 :loading="hyperVisor.loading"
                 :placeholder="apiParams.hypervisor.description"
-                @change="handlerSelectHyperVisor">
+                @change="handlerSelectHyperVisor"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -177,7 +186,12 @@
                   ]
                 }]"
                 :placeholder="apiParams.format.description"
-                @change="val => { selectedFormat = val }">
+                @change="val => { selectedFormat = val }"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -234,7 +248,12 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('label.rootdiskcontrollertype')">
+                :placeholder="$t('label.rootdiskcontrollertype')"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -252,6 +271,11 @@
                     }
                   ]
                 }]"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
                 :placeholder="$t('label.nicadaptertype')">
                 <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -270,6 +294,11 @@
                 }
               ]
             }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
             :placeholder="$t('label.keyboard')">
             <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -369,6 +398,7 @@
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -381,6 +411,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -497,7 +530,7 @@ export default {
       const params = {}
       let listZones = []
       params.listAll = true
-
+      params.showicon = true
       this.allowed = false
 
       if (store.getters.userInfo.roletype === this.rootAdmin && this.currentForm === 'Create') {
