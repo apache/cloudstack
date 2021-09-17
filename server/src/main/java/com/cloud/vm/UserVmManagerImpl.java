@@ -2594,7 +2594,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long newMemory = NumberUtils.toLong(details.get(VmDetailConstants.MEMORY));
         ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vmInstance.getServiceOfferingId());
-        boolean isDynamic = svcOffering.isDynamic();
+        boolean isDynamic = currentServiceOffering.isDynamic();
         if (isDynamic) {
             Map<String, String> customParameters = new HashMap<>();
             customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(newCpu));
@@ -2616,7 +2616,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
             }
         } catch (ResourceAllocationException e) {
-            throw new CloudRuntimeException("Failed to update VM settings", e);
+            s_logger.error(String.format("Failed to updated VM due to: %s", e.getLocalizedMessage()));
+            throw new InvalidParameterValueException(e.getLocalizedMessage());
         }
 
         if (newCpu > currentCpu) {
