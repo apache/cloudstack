@@ -168,11 +168,18 @@
             </a-form-item>
             <a-form-item>
               <tooltip-label slot="label" :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
+              <span v-if="macLearningValue === 'true'">
+                <a-alert type="warning">
+                  <span slot="message" v-html="$t('message.network.offering.mac.learning.warning')" />
+                </a-alert>
+                <br/>
+              </span>
               <a-radio-group
                 v-decorator="['maclearning', {
-                  initialValue: ''
+                  initialValue: macLearningValue
                 }]"
-                buttonStyle="solid">
+                buttonStyle="solid"
+                @change="e => { macLearningValue = e.target.value }">
                 <a-radio-button value="">
                   {{ $t('label.none') }}
                 </a-radio-button>
@@ -435,6 +442,7 @@ export default {
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
+      macLearningValue: '',
       supportedServices: [],
       supportedServiceLoading: false,
       isVirtualRouterForAtLeastOneService: false,
