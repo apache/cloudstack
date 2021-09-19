@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -109,6 +111,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -234,6 +237,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -2884,14 +2889,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         Map<VirtualMachineProfile.Param, Object> additonalParams = null;
         if (cmd.getBootIntoSetup() != null) {
-            if (additonalParams == null) {
-                additonalParams = new HashMap<>();
-            }
+            additonalParams = new HashMap<>();
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoSetup.getName()));
             }
 
             additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
+        }
+        UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getId(), ApiConstants.BootType.UEFI.toString());
+        if (uefiDetail != null) {
+            if (additonalParams == null) {
+                additonalParams = new HashMap<>();
+            }
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("Adding boot options (%s, %s, %s) into the param map for VM start as UEFI detail(%s=%s) found for the VM",
+                        VirtualMachineProfile.Param.UefiFlag.getName(),
+                        VirtualMachineProfile.Param.BootType.getName(),
+                        VirtualMachineProfile.Param.BootMode.getName(),
+                        uefiDetail.getName(),
+                        uefiDetail.getValue()));
+            }
+            additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
+            additonalParams.put(VirtualMachineProfile.Param.BootType, uefiDetail.getName());
+            additonalParams.put(VirtualMachineProfile.Param.BootMode, uefiDetail.getValue());
         }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();

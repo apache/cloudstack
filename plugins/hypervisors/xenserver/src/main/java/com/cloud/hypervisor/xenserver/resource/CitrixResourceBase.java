@@ -1956,6 +1956,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
             bootType = ApiConstants.BootType.BIOS.toString();
         }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Setting boottype=%s and bootmode=%s for VM: %s", bootType, bootMode, vm.getUuid(conn)));
+        }
         Boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
                 ApiConstants.BootMode.SECURE.toString().equals(bootMode);
         final Map<String, String> bootParams = vm.getHVMBootParams(conn);
