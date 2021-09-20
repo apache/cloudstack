@@ -2623,12 +2623,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (newCpu > currentCpu) {
             _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, newCpu - currentCpu);
-        } else if (currentCpu > newCpu){
+        } else if (newCpu > 0 && currentCpu > newCpu){
             _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, currentCpu - newCpu);
         }
         if (newMemory > currentMemory) {
             _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, newMemory - currentMemory);
-        } else if (currentMemory > newMemory){
+        } else if (newMemory > 0 && currentMemory > newMemory){
             _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, currentMemory - newMemory);
         }
     }
