@@ -2388,14 +2388,14 @@ public class Upgrade410to420 implements DbUpgrade {
                                 conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");) {
                             alter_iso_pstmt.executeUpdate();
                         }catch (SQLException e) {
-                            s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception:"+e.getMessage());
+                            s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
                             if (s_logger.isTraceEnabled()) {
                                 s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
                             }
                             //implies iso_id1 is not present, so do nothing.
                         }
                     }catch (SQLException e) {
-                        s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception:"+e.getMessage());
+                        s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
                         }
@@ -2403,14 +2403,14 @@ public class Upgrade410to420 implements DbUpgrade {
                     }
                 }
             }catch (SQLException e) {
-                s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception:"+e.getMessage());
+                s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
                 }
                 //implies iso_id1 is not present, so do nothing.
             }
         } catch (SQLException e) {
-          s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception:"+e.getMessage());
+          s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
           if (s_logger.isTraceEnabled()) {
               s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
           }
