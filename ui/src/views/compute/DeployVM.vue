@@ -68,15 +68,19 @@
                         }]"
                         showSearch
                         optionFilterProp="children"
-                        :filterOption="filterOption"
+                        :filterOption="(input, option) => {
+                          return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         autoFocus
                       >
-                        <a-select-option v-for="zone1 in zones" :key="zone1.id">
-                          <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
-                          <a-icon v-else style="margin-right: 5px" type="global" />
-                          {{ zone1.name }}
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
+                          <span>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <a-icon v-else style="margin-right: 5px" type="global" />
+                            {{ zone1.name }}
+                          </span>
                         </a-select-option>
                       </a-select>
                     </a-form-item>
@@ -1878,9 +1882,10 @@ export default {
       })
     },
     filterOption (input, option) {
-      return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
-      )
+      console.log(option)
+      // return (
+      //   option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      // )
     },
     onSelectZoneId (value) {
       this.dataPreFill = {}

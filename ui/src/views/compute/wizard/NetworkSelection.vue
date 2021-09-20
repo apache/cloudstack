@@ -267,8 +267,11 @@ export default {
     this.form = this.$form.createForm(this)
   },
   created () {
+    this.vpcs = []
+    const projectId = store?.getters?.project?.id || null
+    if (!projectId) return
     api('listVPCs', {
-      projectid: store.getters.project.id
+      projectid: projectId
     }).then((response) => {
       this.vpcs = _.get(response, 'listvpcsresponse.vpc')
     })

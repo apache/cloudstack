@@ -55,15 +55,17 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"
                   @change="val => { this.selectedDomainId = val }">
-                  <a-select-option v-for="dom in domainSelectOptions" :key="dom.value">
-                    <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
-                    <a-icon v-else-if="dom.value !== null" style="margin-right: 5px" type="block" />
-                    {{ dom.label }}
+                  <a-select-option v-for="dom in domainSelectOptions" :key="dom.value" :label="dom.label">
+                    <span>
+                      <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else-if="dom.value !== null" style="margin-right: 5px" type="block" />
+                      {{ dom.label }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -80,14 +82,16 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="optionsLoading.projects"
                   :placeholder="apiParams.projectid.description">
-                  <a-select-option v-for="proj in projectSelectOptions" :key="proj.value">
-                    <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
-                    <a-icon v-else-if="proj.value !== null" style="margin-right: 5px" type="project" />
-                    {{ proj.label }}
+                  <a-select-option v-for="proj in projectSelectOptions" :key="proj.value" :label="proj.label">
+                    <span>
+                      <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else-if="proj.value !== null" style="margin-right: 5px" type="project" />
+                      {{ proj.label }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -116,14 +120,16 @@
                         showSearch
                         optionFilterProp="children"
                         :filterOption="(input, option) => {
-                          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
                         :loading="optionsLoading.templates"
                         :placeholder="apiParams.templateid.description">
-                        <a-select-option v-for="temp in templateSelectOptions" :key="temp.value">
-                          <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
-                          <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
-                          {{ temp.label }}
+                        <a-select-option v-for="temp in templateSelectOptions" :key="temp.value" :label="temp.label">
+                          <span>
+                            <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
+                            <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
+                            {{ temp.label }}
+                          </span>
                         </a-select-option>
                       </a-select>
                     </a-col>
