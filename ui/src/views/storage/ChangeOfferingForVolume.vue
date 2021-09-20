@@ -34,6 +34,11 @@
           initialValue: selectedDiskOfferingId,
           rules: [{ required: true, message: $t('message.error.select') }]}]"
         :loading="loading"
+        showSearch
+        optionFilterProp="children"
+        :filterOption="(input, option) => {
+          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+        }"
         @change="id => onChangeDiskOffering(id)">
         <a-select-option
           v-for="(offering, index) in diskOfferings"

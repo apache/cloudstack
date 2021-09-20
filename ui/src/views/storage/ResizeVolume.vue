@@ -23,11 +23,6 @@
           v-decorator="['size', {
             rules: [{ required: true, message: $t('message.error.size') }]}]"
           :placeholder="$t('label.disksize')"/>
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
       </a-form-item>
       <div v-if="customDiskOfferingIops">
         <a-form-item :label="$t('label.miniops')">
