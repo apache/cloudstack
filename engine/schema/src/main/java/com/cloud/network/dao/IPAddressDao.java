@@ -19,6 +19,7 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.network.IpAddress.State;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
 
@@ -31,6 +32,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     List<IPAddressVO> listByAccount(long accountId);
 
     List<IPAddressVO> listByVlanId(long vlanId);
+
+    List<IPAddressVO> listByVlanIdAndState(long vlanId, State state);
 
     List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 

@@ -61,13 +61,14 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="field.loading">
                   <a-select-option
                     v-for="(opt, idx) in field.opts"
                     :key="idx"
-                    :value="opt.id">
+                    :value="opt.id"
+                    :label="$t(opt.name)">
                     <span v-if="(field.name.startsWith('zone'))">
                       <span v-if="opt.icon">
                         <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
