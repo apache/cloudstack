@@ -1336,13 +1336,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
         }
 
-<<<<<<< HEAD
         if (params.get(Config.MigrateWait.toString()) != null) {
-            String value = (String)params.get(Config.MigrateWait.toString());
+            String value = (String) params.get(Config.MigrateWait.toString());
             Integer intValue = NumbersUtil.parseInt(value, -1);
             storage.persist("vm.migrate.wait", String.valueOf(intValue));
             _migrateWait = intValue;
-=======
+        }
         if (params.get(HOST_RESERVED_MEM_MB_STRING) != null) {
             long value = Long.parseLong(params.get(HOST_RESERVED_MEM_MB_STRING));
             s_logger.info("Reserved memory for host is " + value + "MB");
@@ -1350,7 +1349,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (!String.valueOf(value).equals("")) {
                 storage.persist(HOST_RESERVED_MEM_MB_STRING, String.valueOf(value));
             }
->>>>>>> 42340e88d6 (Reserve memory for host)
         }
 
         return true;
