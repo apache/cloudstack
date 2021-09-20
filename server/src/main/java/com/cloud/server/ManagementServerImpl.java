@@ -44,6 +44,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DomainVlanMapVO;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -889,6 +891,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private VpcDao _vpcDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private DomainVlanMapDao _domainVlanMapDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1894,6 +1898,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb.join("accountVlanMapSearch", accountVlanMapSearch, sb.entity().getId(), accountVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (domainId != null) {
+            DomainVO domain = ApiDBUtils.findDomainById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain with id " + domainId);
+            }
+            final SearchBuilder<DomainVlanMapVO> domainVlanMapSearch = _domainVlanMapDao.createSearchBuilder();
+            domainVlanMapSearch.and("domainId", domainVlanMapSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+            sb.join("domainVlanMapSearch", domainVlanMapSearch, sb.entity().getId(), domainVlanMapSearch.entity().getVlanDbId(), JoinType.INNER);
+        }
+
         if (podId != null) {
             final SearchBuilder<PodVlanMapVO> podVlanMapSearch = _podVlanMapDao.createSearchBuilder();
             podVlanMapSearch.and("podId", podVlanMapSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -1936,6 +1950,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
             if (physicalNetworkId != null) {
                 sc.setParameters("physicalNetworkId", physicalNetworkId);
+            }
+
+            if (domainId != null) {
+                sc.setJoinParameters("domainVlanMapSearch", "domainId", domainId);
             }
         }
 
