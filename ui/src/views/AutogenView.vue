@@ -1071,6 +1071,13 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+      } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
+        if (this.resource.type) {
+          params.guestiptype = this.resource.type
+        }
+        if (!this.resource.vpcid) {
+          params.forvpc = false
+        }
       }
       if (showIcon) {
         params.showicon = true

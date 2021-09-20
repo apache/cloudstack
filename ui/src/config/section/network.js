@@ -75,15 +75,10 @@ export default {
         {
           api: 'updateNetwork',
           icon: 'edit',
-          label: 'label.edit',
+          label: 'label.update.network',
           dataView: true,
-          args: (record) => {
-            var fields = ['name', 'displaytext', 'guestvmcidr']
-            if (record.type === 'Isolated') {
-              fields.push(...['networkofferingid', 'networkdomain'])
-            }
-            return fields
-          }
+          popup: true,
+          component: () => import('@/views/network/UpdateNetwork.vue')
         },
         {
           api: 'restartNetwork',
