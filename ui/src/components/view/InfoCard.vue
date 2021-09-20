@@ -418,7 +418,7 @@
             <span v-if="images.acl">
               <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
             </span>
-            <a-icon v-else type="deployment-unit" />
+            <deployment-unit-outlined v-else />
             <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
           </div>
         </div>
