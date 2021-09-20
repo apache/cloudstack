@@ -41,7 +41,7 @@
           size="1x"
           style="margin-right: 5px"/>
         <apartment-outlined v-else style="margin-right: 5px" />
-        {{ item.name }}
+        {{ record.name }}
       </template>
       <template #expandedRowRender="{ record }">
         <a-list

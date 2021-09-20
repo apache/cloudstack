@@ -140,6 +140,9 @@ export default {
       (state, getters) => getters.project,
       (newValue, oldValue) => {
         if (newValue && newValue !== oldValue) {
+          if (!newValue.id) {
+            return
+          }
           this.fetchData()
         }
       }

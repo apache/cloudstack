@@ -282,7 +282,7 @@
         </a-form-item>
         <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
           <template #label>
-            <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
+            <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled ? apiParams.dynamicscalingenabled.description : ''"/>
           </template>
           <a-switch v-model:checked="form.dynamicscalingenabled" />
         </a-form-item>

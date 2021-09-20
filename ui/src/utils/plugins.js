@@ -168,6 +168,7 @@ export const pollJobPlugin = {
           }, 3000)
         }
       }).catch(e => {
+        if (!this.$t) this.$t = i18n.global.t
         console.error(`${catchMessage} - ${e}`)
         notification.error({
           message: i18n.global.t('label.error'),

@@ -71,10 +71,12 @@
                         :loading="loading.zones"
                         v-focus="true"
                       >
-                        <a-select-option v-for="zone1 in zones" :key="zone1.id">
-                          <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
-                          <global-outlined v-else style="margin-right: 5px" />
-                          {{ zone1.name }}
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
+                          <span>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <global-outlined v-else style="margin-right: 5px" />
+                            {{ zone1.name }}
+                          </span>
                         </a-select-option>
                       </a-select>
                     </a-form-item>
@@ -1870,7 +1872,7 @@ export default {
       })
     },
     filterOption (input, option) {
-      return option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      return option.label.toUpperCase().indexOf(input.toUpperCase()) >= 0
     },
     onSelectZoneId (value) {
       this.dataPreFill = {}

@@ -528,7 +528,7 @@
               <resource-icon :image="getImage(images.zone)" size="1x" style="margin-right: 5px"/>
             </span>
             <global-outlined v-else />
-            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>

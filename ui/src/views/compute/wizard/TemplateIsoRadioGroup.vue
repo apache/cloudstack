@@ -33,17 +33,17 @@
             <a-radio
               class="radio-group__radio"
               :value="item.id">
-              {{ item.displaytext }}&nbsp;
               <resource-icon
-                v-if="os.icon && os.icon.base64image"
+                v-if="item.icon && item.icon.base64image"
                 class="radio-group__os-logo"
-                :image="os.icon.base64image"
+                :image="item.icon.base64image"
                 size="1x" />
               <os-logo
                 v-else
                 class="radio-group__os-logo"
                 :osId="item.ostypeid"
                 :os-name="item.osName" />
+              {{ item.displaytext }}&nbsp;
             </a-radio>
           </a-radio-group>
         </a-list-item>

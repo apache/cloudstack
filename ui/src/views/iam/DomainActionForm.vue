@@ -241,10 +241,6 @@ export default {
                     title: this.$t(this.action.label),
                     description: this.resource.name,
                     successMethod: result => {
-                      if (this.action.api === 'deleteDomain') {
-                        this.$set(this.resource, 'isDel', true)
-                        this.parentUpdActionData(this.resource)
-                      }
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)
                         if (description) {
@@ -255,6 +251,7 @@ export default {
                           })
                         }
                       }
+                      this.parentFetchData()
                     },
                     loadingMessage: `${this.$t(this.action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
                     catchMessage: this.$t('error.fetching.async.job.result'),

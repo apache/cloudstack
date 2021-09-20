@@ -31,14 +31,12 @@
         @finish="handleSubmit"
         layout="vertical">
         <div v-if="currentForm === 'Create'">
-          <a-row :gutter="12">
-            <a-form-item :label="$t('label.url')" name="url" ref="url">
-              <a-input
-                v-focus="currentForm === 'Create'"
-                v-model:value="form.url"
-                :placeholder="apiParams.url.description" />
-            </a-form-item>
-          </a-row>
+          <a-form-item :label="$t('label.url')" name="url" ref="url">
+            <a-input
+              v-focus="currentForm === 'Create'"
+              v-model:value="form.url"
+              :placeholder="apiParams.url.description" />
+          </a-form-item>
         </div>
         <div v-if="currentForm === 'Upload'">
           <a-form-item :label="$t('label.templatefileupload')" name="file" ref="file">
@@ -57,78 +55,64 @@
             </a-upload-dragger>
           </a-form-item>
         </div>
-        <a-row :gutter="12">
-          <a-form-item :label="$t('label.name')" ref="name" name="name">
-            <a-input
-              v-model:value="form.name"
-              :placeholder="apiParams.name.description"
-              v-focus="currentForm !== 'Create'"/>
-          </a-form-item>
-        </a-row>
-        <a-row :gutter="12">
-          <a-form-item :label="$t('label.displaytext')" ref="displaytext" name="displaytext">
-            <a-input
-              v-model:value="form.displaytext"
-              :placeholder="apiParams.displaytext.description" />
-          </a-form-item>
-        </a-row>
+        <a-form-item :label="$t('label.name')" ref="name" name="name">
+          <a-input
+            v-model:value="form.name"
+            :placeholder="apiParams.name.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
+        <a-form-item :label="$t('label.displaytext')" ref="displaytext" name="displaytext">
+          <a-input
+            v-model:value="form.displaytext"
+            :placeholder="apiParams.displaytext.description" />
+        </a-form-item>
         <div v-if="currentForm === 'Create'">
-          <a-row :gutter="12">
-            <a-col :md="24" :lg="24">
-              <a-form-item
-                :label="$t('label.zone')"
-                :validate-status="zoneError"
-                :help="zoneErrorMessage"
-                name="zoneids"
-                ref="zoneids">
-                <a-select
-                  v-model:value="form.zoneids"
-                  :loading="zones.loading"
-                  mode="multiple"
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  :placeholder="apiParams.zoneids.description"
-                  @change="handlerSelectZone">
-                  <a-select-option v-for="opt in zones.opts" :key="opt.id">
-                    <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                    <global-outlined v-else style="margin-right: 5px" />
-                    {{ opt.name || opt.description }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
+          <a-form-item
+            :label="$t('label.zone')"
+            :validate-status="zoneError"
+            name="zoneids"
+            ref="zoneids">
+            <a-select
+              v-model:value="form.zoneids"
+              :loading="zones.loading"
+              mode="multiple"
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :placeholder="apiParams.zoneids.description"
+              @change="handlerSelectZone">
+              <a-select-option v-for="opt in zones.opts" :key="opt.id">
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
         </div>
         <div v-else>
-          <a-row :gutter="12">
-            <a-col :md="24" :lg="24">
-              <a-form-item
-                :label="$t('label.zoneid')"
-                :validate-status="zoneError"
-                :help="zoneErrorMessage"
-                ref="zoneid"
-                name="zoneid">
-                <a-select
-                  v-model:value="form.zoneid"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  @change="handlerSelectZone"
-                  :placeholder="apiParams.zoneid.description"
-                  :loading="zones.loading">
-                  <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
-                    <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                    <global-outlined v-else style="margin-right: 5px" />
-                    {{ zone.name || zone.description }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
+          <a-form-item
+            :label="$t('label.zoneid')"
+            :validate-status="zoneError"
+            ref="zoneid"
+            name="zoneid">
+            <a-select
+              v-model:value="form.zoneid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              @change="handlerSelectZone"
+              :placeholder="apiParams.zoneid.description"
+              :loading="zones.loading">
+              <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
+                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ zone.name || zone.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
         </div>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
@@ -247,7 +231,11 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.ostypeid')" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+        <a-form-item
+          name="ostypeid"
+          ref="ostypeid"
+          :label="$t('label.ostypeid')"
+          v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
           <a-select
             showSearch
             optionFilterProp="label"
