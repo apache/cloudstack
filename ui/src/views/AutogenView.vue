@@ -265,12 +265,12 @@
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
-                  <a-select-option v-for="opt in field.opts" :key="opt.id">
+                  <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                     <span>
                       <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
                         <span v-if="opt.icon">
