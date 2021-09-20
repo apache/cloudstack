@@ -268,7 +268,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
         try {
             result = _userVmService.updateVirtualMachine(this);
         } catch (CloudRuntimeException e) {
-            throw new CloudRuntimeException(String.format("Failed to update VM, due to: %s", e.getLocalizedMessage()));
+            throw new CloudRuntimeException(String.format("Failed to update VM, due to: %s", e.getLocalizedMessage()), e);
         }
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);
