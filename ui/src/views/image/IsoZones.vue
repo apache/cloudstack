@@ -121,16 +121,18 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
               autoFocus>
-              <a-select-option v-for="zone in zones" :key="zone.id">
-                <span v-if="zone.icon && zone.icon.base64image">
-                  <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                </span>
-                <a-icon v-else type="global" style="margin-right: 5px" />
-                {{ zone.name }}
+              <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
+                <div>
+                  <span v-if="zone.icon && zone.icon.base64image">
+                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  </span>
+                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  {{ zone.name }}
+                </div>
               </a-select-option>
             </a-select>
           </a-form-item>

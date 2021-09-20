@@ -69,19 +69,21 @@
                     :key="idx"
                     :value="opt.id"
                     :label="$t(opt.name)">
-                    <span v-if="(field.name.startsWith('zone'))">
-                      <span v-if="opt.icon">
-                        <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <div>
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="global" style="margin-right: 5px" />
                       </span>
-                      <a-icon v-else type="global" style="margin-right: 5px" />
-                    </span>
-                    <span v-if="(field.name.startsWith('domain'))">
-                      <span v-if="opt.icon">
-                        <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="block" style="margin-right: 5px" />
                       </span>
-                      <a-icon v-else type="block" style="margin-right: 5px" />
-                    </span>
-                    {{ $t(opt.name) }}
+                      {{ $t(opt.name) }}
+                    </div>
                   </a-select-option>
                 </a-select>
                 <a-input
