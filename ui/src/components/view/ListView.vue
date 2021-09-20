@@ -60,8 +60,14 @@
     </div>
     -->
 
-    <template #name="{ text, record }">
-      <div style="min-width: 120px" >
+    <template #name="{text, record}">
+      <span v-if="['vm'].includes($route.path.split('/')[1])">
+        <span v-if="record.icon && record.icon.base64image">
+          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        </span>
+        <os-logo v-else :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
+      </span>
+      <span style="min-width: 120px" >
         <QuickView
           style="margin-left: 5px"
           :actions="actions"
@@ -97,7 +103,7 @@
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
         </span>
-      </div>
+      </span>
     </template>
     <template #templatetype="{ text, record }">
       <a href="javascript:;">
@@ -110,14 +116,6 @@
     </template>
     <template #displayname="{text, record}">
       <a href="javascript:;">
-        <span v-if="['vm'].includes($route.path.split('/')[1])">
-          <span v-if="record.icon && record.icon.base64image">
-            <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
-          </span>
-          <span v-else>
-            <os-logo :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
-          </span>
-        </span>
         <QuickView
           style="margin-left: 5px"
           :actions="actions"

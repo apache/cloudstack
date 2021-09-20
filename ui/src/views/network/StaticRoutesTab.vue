@@ -142,7 +142,10 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      api('listStaticRoutes', { gatewayid: this.resource.id }).then(json => {
+      api('listStaticRoutes', {
+        gatewayid: this.resource.id,
+        listall: true
+      }).then(json => {
         this.routes = json.liststaticroutesresponse.staticroute
       }).catch(error => {
         this.$notifyError(error)
