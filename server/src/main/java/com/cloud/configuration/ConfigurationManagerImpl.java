@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
@@ -802,7 +800,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
         final Long imageStoreId = cmd.getImageStoreId();
-        final Long domainId = cmd.getDomainId();
+        Long domainId = cmd.getDomainId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
@@ -810,15 +808,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isDomainAdmin(caller.getId())) {
-            if (domainId == null) {
-                throw new PermissionDeniedException("Domain admins can change only domain level configurations");
-            }
-
-            final List<String> domainAdminWhitelistConfigs = Stream.of(QueryService.DomainAdminAllowListedConfigurations.value().split(","))
-                    .map(item -> (item).trim())
-                    .collect(Collectors.toList());
-            if (!domainAdminWhitelistConfigs.contains(name)) {
-                throw new PermissionDeniedException("Domain admins can not change this configuration");
+            if (accountId == null && domainId == null) {
+                domainId = caller.getDomainId();
             }
         }
 

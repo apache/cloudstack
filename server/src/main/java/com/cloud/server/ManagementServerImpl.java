@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -1975,15 +1974,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
-        final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        Long domainId = cmd.getDomainId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
 
         final Account caller = CallContext.current().getCallingAccount();
-        if (_accountMgr.isDomainAdmin(caller.getId()) && domainId == null) {
-            throw new PermissionDeniedException("Domain admins can view only domain level configurations");
+        if (_accountMgr.isDomainAdmin(caller.getId())) {
+            if (accountId == null && domainId == null) {
+                domainId = caller.getDomainId();
+            }
         }
 
         if (zoneId != null) {
@@ -2054,21 +2055,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Pair<List<ConfigurationVO>, Integer> result = _configDao.searchAndCount(sc, searchFilter);
 
-        List<ConfigurationVO> configs = result.first();
-
-        if (_accountMgr.isDomainAdmin(caller.getId())) {
-            final List<String> domainAdminWhitelistConfigs = Stream.of(QueryService.DomainAdminAllowListedConfigurations.value().split(","))
-                .map(item -> (item).trim())
-                .collect(Collectors.toList());
-            configs = configs.stream()
-                .filter(item -> domainAdminWhitelistConfigs.contains(item.getName()))
-                .collect(Collectors.toList());
-        }
-
         if (scope != null && !scope.isEmpty()) {
             // Populate values corresponding the resource id
             final List<ConfigurationVO> configVOList = new ArrayList<ConfigurationVO>();
-            for (final ConfigurationVO param : configs) {
+            for (final ConfigurationVO param : result.first()) {
                 final ConfigurationVO configVo = _configDao.findByName(param.getName());
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
@@ -2086,7 +2076,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return new Pair<List<? extends Configuration>, Integer>(configVOList, configVOList.size());
         }
 
-        return new Pair<List<? extends Configuration>, Integer>(configs, result.second());
+        return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
     }
 
     @Override

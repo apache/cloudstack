@@ -19,7 +19,7 @@ export default {
   name: 'config',
   title: 'label.configuration',
   icon: 'setting',
-  permission: ['listConfigurations'],
+  permission: ['listConfigurations', 'listInfrastructure'],
   children: [
     {
       name: 'globalsetting',
