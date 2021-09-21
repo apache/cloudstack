@@ -302,14 +302,23 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             self.apiclient,
             vol
         )
-        self.virtual_machine_with_disk.detach_volume(
+        detach_vol_res = self.virtual_machine_with_disk.detach_volume(
             self.apiclient,
             vol
         )
 
+        if detach_vol_res.storageid != storage.id:
+            dest_store = storage
+        else:
+            all_stores = store_pools = list_storage_pools(self.apiclient)
+            for store in all_stores:
+                if store.id != storage.id:
+                    dest_store = store
+                    break
+
         # Migrate volume to new Primary Storage
         Volume.migrate(self.apiclient,
-                       storageid=storage.id,
+                       storageid=dest_store.id,
                        volumeid=vol.id
                        )
 
@@ -325,7 +334,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         volume_migrated = volume_response[0]
         self.assertEqual(
             volume_migrated.storageid,
-            storage.id,
+            dest_store.id,
             "Check volume storage id"
         )
 
