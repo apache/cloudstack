@@ -28,7 +28,8 @@ import {
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
   USE_BROWSER_TIMEZONE,
-  SERVER_MANAGER
+  SERVER_MANAGER,
+  VUE_VERSION
 } from '@/store/mutation-types'
 
 const app = {
@@ -46,7 +47,8 @@ const app = {
     inverted: true,
     multiTab: true,
     metrics: false,
-    server: ''
+    server: '',
+    vueVersion: ''
   },
   mutations: {
     SET_SIDEBAR_TYPE: (state, type) => {
@@ -106,6 +108,10 @@ const app = {
     SET_SERVER: (state, server) => {
       vueProps.$localStorage.set(SERVER_MANAGER, server)
       state.server = server
+    },
+    SET_VUE_VERSION: (state, version) => {
+      vueProps.$localStorage.set(VUE_VERSION, version)
+      state.vueVersion = version
     }
   },
   actions: {

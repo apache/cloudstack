@@ -31,11 +31,19 @@ import {
   DEFAULT_FIXED_SIDEMENU,
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
-  HEADER_NOTICES
+  HEADER_NOTICES,
+  VUE_VERSION
 } from '@/store/mutation-types'
 
 export default {
-  install: () => {
+  install: (app) => {
+    let vueVersion = vueProps.$localStorage.get(VUE_VERSION)
+    if (vueVersion !== app.version) {
+      vueVersion = app.version
+      vueProps.$localStorage.clear()
+    }
+
+    store.commit('SET_VUE_VERSION', vueVersion)
     store.commit('SET_SIDEBAR_TYPE', vueProps.$localStorage.get(SIDEBAR_TYPE, true))
     store.commit('TOGGLE_THEME', vueProps.$localStorage.get(DEFAULT_THEME, config.navTheme))
     store.commit('TOGGLE_LAYOUT_MODE', vueProps.$localStorage.get(DEFAULT_LAYOUT_MODE, config.layout))
