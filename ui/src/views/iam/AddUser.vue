@@ -92,12 +92,14 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="domain in domainsList" :key="domain.id">
-              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="block" style="margin-right: 5px" />
-              {{ domain.path || domain.name || domain.description }}
+            <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
+              <span>
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ domain.path || domain.name || domain.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -112,12 +114,14 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="(item, idx) in accountList" :key="idx">
-              <resource-icon v-if="item && item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="team" style="margin-right: 5px" />
-              {{ item.name }}
+            <a-select-option v-for="(item, idx) in accountList" :key="idx" :label="item.name">
+              <span>
+                <resource-icon v-if="item && item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="team" style="margin-right: 5px" />
+                {{ item.name }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
