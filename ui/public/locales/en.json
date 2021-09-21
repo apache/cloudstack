@@ -1443,6 +1443,7 @@
 "label.miniops": "Min IOPS",
 "label.minmaxiops": "Min IOPS / Max IOPS",
 "label.minmemory": "Min Memory (in MB)",
+"label.minsize": "Minimum size",
 "label.minute.past.hour": "minute(s) past the hour",
 "label.minutes.past.hour": "minutes(s) past the hour",
 "label.monday": "Monday",
