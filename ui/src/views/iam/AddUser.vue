@@ -219,9 +219,7 @@ export default {
         this.fetchAccount()
       }
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
-        this.fetchIdps()
-      }
+      this.fetchIdps()
     },
     fetchDomains () {
       this.domainLoading = true

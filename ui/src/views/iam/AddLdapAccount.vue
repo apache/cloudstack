@@ -276,7 +276,7 @@ export default {
         this.fetchTimeZone(),
         this.fetchListDomains(),
         this.fetchListRoles(),
-        ('listIdps' in this.$store.getters.apis) ? this.fetchIdps() : []
+        this.fetchIdps()
       ]).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

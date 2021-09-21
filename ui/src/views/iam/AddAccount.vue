@@ -222,9 +222,7 @@ export default {
       this.fetchDomains()
       this.fetchRoles()
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
-        this.fetchIdps()
-      }
+      this.fetchIdps()
     },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
