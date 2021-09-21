@@ -115,12 +115,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }">
-            <a-select-option v-for="domain in domainsList" :key="domain.id">
-              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <block-outlined v-else style="margin-right: 5px"/>
-              {{ domain.path || domain.name || domain.description }}
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
+              <span>
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px"/>
+                {{ domain.path || domain.name || domain.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>

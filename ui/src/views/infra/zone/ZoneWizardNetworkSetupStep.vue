@@ -83,7 +83,7 @@
         @submitLaunchZone="submitLaunchZone"
         :fields="guestTrafficFields"
         :prefillContent="prefillContent"
-        :description="guestTrafficDescription[this.zoneType.toLowerCase()]"
+        :description="guestTrafficDescription[zoneType.toLowerCase()]"
         :isFixError="isFixError"
       />
     </div>
@@ -95,7 +95,7 @@
         @fieldsChanged="fieldsChanged"
         @submitLaunchZone="submitLaunchZone"
         :prefillContent="prefillContent"
-        :description="guestTrafficDescription[this.zoneType.toLowerCase()]"
+        :description="guestTrafficDescription[zoneType.toLowerCase()]"
         :isFixError="isFixError"
       />
     </div>

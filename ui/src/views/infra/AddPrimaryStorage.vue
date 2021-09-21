@@ -65,13 +65,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.zoneid.description">
-            <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id">
-              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <global-outlined v-else style="margin-right: 5px" />
-              {{ zone.name }}
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id" :label="zone.name">
+              <span>
+                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ zone.name }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>

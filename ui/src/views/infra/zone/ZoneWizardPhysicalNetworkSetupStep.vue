@@ -200,8 +200,8 @@
         </span>
 
         <div :span="24" class="action-button">
-          <a-button @click="cancelEditTraffic">{{ this.$t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="updateTrafficLabel(trafficInEdit)">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="cancelEditTraffic">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="updateTrafficLabel(trafficInEdit)">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>

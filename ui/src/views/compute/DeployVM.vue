@@ -66,7 +66,9 @@
                         v-model:value="form.zoneid"
                         showSearch
                         optionFilterProp="label"
-                        :filterOption="filterOption"
+                        :filterOption="(input, option) => {
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         v-focus="true"

@@ -40,10 +40,12 @@
         </a-tooltip>
       </template>
 
-      <a-select-option v-for="(project, index) in projects" :key="index">
-        <resource-icon v-if="project.icon && project.icon.base64image" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-        <project-outlined v-else style="margin-right: 5px" />
-        {{ project.displaytext || project.name }}
+      <a-select-option v-for="(project, index) in projects" :key="index" :label="project.displaytext || project.name">
+        <span>
+          <resource-icon v-if="project.icon && project.icon.base64image" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <project-outlined v-else style="margin-right: 5px" />
+          {{ project.displaytext || project.name }}
+        </span>
       </a-select-option>
     </a-select>
   </span>
@@ -108,7 +110,7 @@ export default {
       }
     },
     filterProject (input, option) {
-      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
   }
 }

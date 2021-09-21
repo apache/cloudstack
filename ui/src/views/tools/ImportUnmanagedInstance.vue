@@ -61,15 +61,17 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"
                   @change="val => { this.selectedDomainId = val }">
-                  <a-select-option v-for="dom in domainSelectOptions" :key="dom.value">
-                    <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
-                    <block-outlined v-else-if="dom.value !== null" style="margin-right: 5px" />
-                    {{ dom.label }}
+                  <a-select-option v-for="dom in domainSelectOptions" :key="dom.value" :label="dom.label">
+                    <span>
+                      <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
+                      <block-outlined v-else-if="dom.value !== null" style="margin-right: 5px" />
+                      {{ dom.label }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -90,14 +92,16 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="optionsLoading.projects"
                   :placeholder="apiParams.projectid.description">
-                  <a-select-option v-for="proj in projectSelectOptions" :key="proj.value">
-                    <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
-                    <project-outlined  v-else-if="proj.value !== null" style="margin-right: 5px" />
-                    {{ proj.label }}
+                  <a-select-option v-for="proj in projectSelectOptions" :key="proj.value" :label="proj.label">
+                    <span>
+                      <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
+                      <project-outlined  v-else-if="proj.value !== null" style="margin-right: 5px" />
+                      {{ proj.label }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -126,14 +130,16 @@
                         showSearch
                         optionFilterProp="label"
                         :filterOption="(input, option) => {
-                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
                         :loading="optionsLoading.templates"
                         :placeholder="apiParams.templateid.description">
-                        <a-select-option v-for="temp in templateSelectOptions" :key="temp.value">
-                          <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
-                          <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
-                          {{ temp.label }}
+                        <a-select-option v-for="temp in templateSelectOptions" :key="temp.value" :label="temp.label">
+                          <span>
+                            <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
+                            <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
+                            {{ temp.label }}
+                          </span>
                         </a-select-option>
                       </a-select>
                     </a-col>

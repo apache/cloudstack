@@ -54,13 +54,19 @@
                     showSearch
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
                     <template #suffixIcon><filter-outlined /></template>
-                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                    <a-select-option
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      key="all"
+                      :label="$t('label.all')">
                       {{ $t('label.all') }}
                     </a-select-option>
-                    <a-select-option v-for="filter in filters" :key="filter">
+                    <a-select-option
+                      v-for="filter in filters"
+                      :key="filter"
+                      :label="$t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter)">
                       {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
                       <clock-circle-outlined v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
                     </a-select-option>
@@ -261,13 +267,13 @@
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   v-focus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
-                  <a-select-option v-for="opt in field.opts" :key="opt.id">
-                    <span>
+                  <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
+                    <div>
                       <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -304,8 +310,8 @@
                         </span>
                         <block-outlined v-else style="margin-right: 5px"/>
                       </span>
-                    </span>
-                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                      {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                    </div>
                   </a-select-option>
                 </a-select>
                 <a-select

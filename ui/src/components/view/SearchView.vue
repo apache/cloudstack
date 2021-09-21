@@ -62,26 +62,29 @@
                     showSearch
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="field.loading">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
-                      :value="opt.id">
-                      <span v-if="(field.name.startsWith('zone'))">
-                        <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      :value="opt.id"
+                      :label="$t(opt.name)">
+                      <div>
+                        <span v-if="(field.name.startsWith('zone'))">
+                          <span v-if="opt.icon">
+                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          </span>
+                          <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <global-outlined v-else style="margin-right: 5px" />
-                      </span>
-                      <span v-if="(field.name.startsWith('domain'))">
-                        <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        <span v-if="(field.name.startsWith('domain'))">
+                          <span v-if="opt.icon">
+                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          </span>
+                          <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <block-outlined v-else style="margin-right: 5px" />
-                      </span>
-                      {{ $t(opt.name) }}
+                        {{ $t(opt.name) }}
+                      </div>
                     </a-select-option>
                   </a-select>
                   <a-input

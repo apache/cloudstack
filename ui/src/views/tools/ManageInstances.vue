@@ -51,15 +51,19 @@
                   v-model:value="form.zoneid"
                   showSearch
                   optionFilterProp="label"
-                  :filterOption="filterOption"
+                  :filterOption="(input, option) => {
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
                   v-focus="true"
                 >
-                  <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value">
-                    <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                    <global-outlined v-else style="margin-right: 5px" />
-                    {{ zoneitem.label }}
+                  <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
+                    <span>
+                      <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
+                      <global-outlined v-else style="margin-right: 5px" />
+                      {{ zoneitem.label }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>

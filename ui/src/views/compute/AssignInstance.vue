@@ -52,12 +52,14 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }">
-          <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id">
-            <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-            <block-outlined v-else style="margin-right: 5px" />
-            {{ domain.path || domain.name || domain.description }}
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id" :label="domain.path || domain.name || domain.description">
+            <span>
+              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <block-outlined v-else style="margin-right: 5px" />
+              {{ domain.path || domain.name || domain.description }}
+            </span>
           </a-select-option>
         </a-select>
       </div>
@@ -71,12 +73,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }">
+              return option.componentOptions.propsData.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
-              <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <team-outlined v-else style="margin-right: 5px" />
-              {{ account.name }}
+              <span>
+                <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <team-outlined v-else style="margin-right: 5px" />
+                {{ account.name }}
+              </span>
             </a-select-option>
           </a-select>
           <span v-if="accountError" class="required">{{ $t('label.required') }}</span>
@@ -92,12 +96,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }">
-            <a-select-option v-for="project in projects" :key="project.id" :value="project.id">
-              <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <project-outlined v-else style="margin-right: 5px" />
-              {{ project.name }}
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
+              <span>
+                <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <project-outlined v-else style="margin-right: 5px" />
+                {{ project.name }}
+              </span>
             </a-select-option>
           </a-select>
           <span v-if="projectError" class="required">{{ $t('label.required') }}</span>
@@ -111,12 +117,14 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }">
-          <a-select-option v-for="network in networks" :key="network.id" :value="network.id">
-            <resource-icon v-if="network && network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
-            <apartment-outlined v-else style="margin-right: 5px" />
-            {{ network.name ? network.name : '-' }}
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option v-for="network in networks" :key="network.id" :value="network.id" :label="network.name ? network.name : '-'">
+            <span>
+              <resource-icon v-if="network && network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <apartment-outlined v-else style="margin-right: 5px" />
+              {{ network.name ? network.name : '-' }}
+            </span>
           </a-select-option>
         </a-select>
       </div>

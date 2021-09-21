@@ -269,7 +269,14 @@ export default {
     }
   },
   created () {
-    this.fetchVPCs()
+    this.vpcs = []
+    const projectId = store?.getters?.project?.id || null
+    if (!projectId) return
+    api('listVPCs', {
+      projectid: projectId
+    }).then((response) => {
+      this.vpcs = _.get(response, 'listvpcsresponse.vpc')
+    })
   },
   inject: ['vmFetchNetworks'],
   methods: {

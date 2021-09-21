@@ -78,14 +78,16 @@
               mode="multiple"
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.zoneids.description"
               @change="handlerSelectZone">
-              <a-select-option v-for="opt in zones.opts" :key="opt.id">
-                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px" />
-                {{ opt.name || opt.description }}
+              <a-select-option v-for="opt in zones.opts" :key="opt.id" :label="opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <global-outlined v-else style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -101,15 +103,17 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               @change="handlerSelectZone"
               :placeholder="apiParams.zoneid.description"
               :loading="zones.loading">
-              <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
-                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px" />
-                {{ zone.name || zone.description }}
+              <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id" :label="zone.name || zone.description">
+                <span>
+                  <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <global-outlined v-else style="margin-right: 5px" />
+                  {{ zone.name || zone.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
