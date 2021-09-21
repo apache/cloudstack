@@ -869,7 +869,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new InvalidParameterValueException("Minsize must be at least than 1");
             }
             if (maxSize <= minSize) {
-                throw new InvalidParameterValueException("Maxsize must be greater than or equal to minsize");
+                throw new InvalidParameterValueException("Maxsize must be greater than minsize");
             }
             if (maxSize + kubernetesCluster.getControlNodeCount() > maxClusterSize) {
                 throw new InvalidParameterValueException(
