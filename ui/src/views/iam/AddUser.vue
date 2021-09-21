@@ -314,26 +314,24 @@ export default {
             message: this.$t('label.create.user'),
             description: `${this.$t('message.success.create.user')} ${params.username}`
           })
-          const users = response.createuserresponse.user.user
-          if (values.samlenable && users) {
-            for (var i = 0; i < users.length; i++) {
-              api('authorizeSamlSso', {
-                enable: values.samlenable,
-                entityid: values.samlentity,
-                userid: users[i].id
-              }).then(response => {
-                this.$notification.success({
-                  message: this.$t('label.samlenable'),
-                  description: this.$t('message.success.enable.saml.auth')
-                })
-              }).catch(error => {
-                this.$notification.error({
-                  message: this.$t('message.request.failed'),
-                  description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-                  duration: 0
-                })
+          const user = response.createuserresponse.user
+          if (values.samlenable && user) {
+            api('authorizeSamlSso', {
+              enable: values.samlenable,
+              entityid: values.samlentity,
+              userid: user.id
+            }).then(response => {
+              this.$notification.success({
+                message: this.$t('label.samlenable'),
+                description: this.$t('message.success.enable.saml.auth')
               })
-            }
+            }).catch(error => {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
+                duration: 0
+              })
+            })
           }
           this.closeAction()
         }).catch(error => {
