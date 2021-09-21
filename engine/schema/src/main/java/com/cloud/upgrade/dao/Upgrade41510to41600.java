@@ -31,6 +31,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
+import java.math.BigInteger;
+import java.util.UUID;
+import java.util.logging.Level;
 
 public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
@@ -64,6 +67,30 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        fixWrongPoolUuid(conn);
+    }
+
+    public void fixWrongPoolUuid(Connection conn) {
+        LOG.debug("Replacement of faulty pool uuids");
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT id,uuid FROM storage_pool "
+                + "WHERE removed IS NULL;"); ResultSet rs = pstmt.executeQuery()) {
+            PreparedStatement updateStmt = conn.prepareStatement("update storage_pool set uuid = ? where id = ?");
+            while (rs.next()) {
+                if (!rs.getString(2).contains("-")) {
+                    UUID poolUuid = new UUID(
+                            new BigInteger(rs.getString(2).substring(0, 16), 16).longValue(),
+                            new BigInteger(rs.getString(2).substring(16), 16).longValue()
+                    );
+                    updateStmt.setLong(2, rs.getLong(1));
+                    updateStmt.setString(1, poolUuid.toString());
+                    updateStmt.addBatch();
+                }
+            }
+            updateStmt.executeBatch();
+        } catch (SQLException ex) {
+            LOG.error("fixWrongPoolUuid:Exception while updating faulty pool uuids" + ex.getMessage());
+            throw new CloudRuntimeException("fixWrongPoolUuid:Exception while updating faulty pool uuids", ex);
+        }
     }
 
     @Override
