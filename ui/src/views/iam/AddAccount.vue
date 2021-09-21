@@ -147,7 +147,7 @@
             v-decorator="['networkdomain']"
             :placeholder="apiParams.networkdomain.description" />
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item :label="$t('label.samlenable')">
             <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
           </a-form-item>
@@ -215,12 +215,17 @@ export default {
   created () {
     this.fetchData()
   },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
+  },
   methods: {
     fetchData () {
       this.fetchDomains()
       this.fetchRoles()
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },

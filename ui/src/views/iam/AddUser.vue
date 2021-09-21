@@ -136,7 +136,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item :label="$t('label.samlenable')">
             <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
           </a-form-item>
@@ -204,6 +204,11 @@ export default {
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
     this.fetchData()
   },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
+  },
   methods: {
     fetchData () {
       this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
@@ -215,7 +220,7 @@ export default {
         this.fetchAccount()
       }
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
