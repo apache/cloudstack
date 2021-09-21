@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form :form="form" layout="vertical">
         <a-form-item :label="$t('label.name')">
@@ -30,7 +30,11 @@
                 initialValue: 'NFS'
               }]"
             @change="val => { this.provider = val }"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               :value="prov"
               v-for="(prov,idx) in providers"
@@ -48,12 +52,22 @@
                   rules: [{ required: true, message: `${$t('label.required')}`}]
                 }]"
               @change="val => { zoneSelected = val }"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 :value="zone.id"
                 v-for="(zone) in zones"
                 :key="zone.id"
-              >{{ zone.name }}</a-select-option>
+                :label="zone.name">
+                <span>
+                  <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  {{ zone.name }}
+                </span>
+              </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="$t('label.server')">
@@ -149,9 +163,9 @@
             />
           </a-form-item>
         </div>
-        <div class="actions">
+        <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -159,6 +173,7 @@
 </template>
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AddSecondryStorage',
@@ -167,6 +182,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -192,7 +210,7 @@ export default {
       this.$parent.$parent.close()
     },
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
@@ -226,6 +244,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -296,17 +315,6 @@ export default {
 
   @media (min-width: 1000px) {
     width: 35vw;
-  }
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  button {
-    &:not(:last-child) {
-      margin-right: 10px;
-    }
   }
 }
 </style>

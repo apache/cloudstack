@@ -34,6 +34,7 @@ import role from '@/config/section/role'
 import infra from '@/config/section/infra'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
+import tools from '@/config/section/tools'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
 
@@ -171,6 +172,10 @@ function generateRouterMap (section) {
     map.meta.actions = section.actions
   }
 
+  if (section.params) {
+    map.meta.params = section.params
+  }
+
   return map
 }
 
@@ -224,6 +229,7 @@ export function asyncRouterMap () {
       generateRouterMap(infra),
       generateRouterMap(offering),
       generateRouterMap(config),
+      generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
 

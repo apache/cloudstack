@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form">
+  <a-form class="form" v-ctrl-enter="handleSubmit">
     <p v-html="getMessage()"></p>
 
     <div v-if="loading" class="loading">
@@ -32,9 +32,9 @@
       @handle-search-filter="($event) => fetchData($event)" />
 
     <compute-selection
-      v-if="selectedOffering && selectedOffering.iscustomized"
-      :cpunumber-input-decorator="cpuNumberKey"
-      :cpuspeed-input-decorator="cpuSpeedKey"
+      v-if="selectedOffering && (selectedOffering.iscustomized || selectedOffering.iscustomizediops)"
+      :cpu-number-input-decorator="cpuNumberKey"
+      :cpu-speed-input-decorator="cpuSpeedKey"
       :memory-input-decorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
@@ -42,13 +42,15 @@
       :maxCpu="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
       :minMemory="getMinMemory()"
       :maxMemory="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+      :isCustomized="selectedOffering.iscustomized"
+      :isCustomizedIOps="'iscustomizediops' in selectedOffering && selectedOffering.iscustomizediops"
       @update-compute-cpunumber="updateFieldValue"
       @update-compute-cpuspeed="updateFieldValue"
       @update-compute-memory="updateFieldValue" />
 
     <div :span="24" class="action-button">
       <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-      <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
     </div>
   </a-form>
 </template>
@@ -120,14 +122,14 @@ export default {
       if (this.resource.state === 'Running') {
         return this.resource.cpunumber
       }
-      return 'serviceofferingdetails' in this.selectedOffering ? this.selectedOffering.serviceofferingdetails.mincpunumber * 1 : 1
+      return this.selectedOffering?.serviceofferingdetails?.mincpunumber * 1 || 1
     },
     getMinMemory () {
       // We can only scale up while a VM is running
       if (this.resource.state === 'Running') {
         return this.resource.memory
       }
-      return 'serviceofferingdetails' in this.selectedOffering ? this.selectedOffering.serviceofferingdetails.minmemory * 1 : 32
+      return this.selectedOffering?.serviceofferingdetails?.minmemory * 1 || 32
     },
     getMessage () {
       if (this.resource.hypervisor === 'VMware') {
@@ -151,6 +153,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.loading) return
       this.loading = true
 
       if ('cpuspeed' in this.selectedOffering && this.selectedOffering.iscustomized) {
@@ -189,15 +192,6 @@ export default {
   width: 90vw;
   @media (min-width: 700px) {
     width: 50vw;
-  }
-}
-
-.action-button {
-  margin-top: 10px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

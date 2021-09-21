@@ -146,6 +146,10 @@ public class VirtualMachineTO {
         return type;
     }
 
+    public void setType(Type type) {
+        this.type = type;
+    }
+
     public BootloaderType getBootloader() {
         return bootloader;
     }
@@ -412,5 +416,10 @@ public class VirtualMachineTO {
 
     public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
         this.deployAsIsInfo = deployAsIsInfo;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VM {id: \"%s\", name: \"%s\", uuid: \"%s\", type: \"%s\"}", id, name, uuid, type);
     }
 }

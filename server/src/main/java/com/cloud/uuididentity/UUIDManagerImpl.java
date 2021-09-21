@@ -117,12 +117,16 @@ public class UUIDManagerImpl implements UUIDManager {
         if (customId == null) {
             return null;
         }
+        if (entityType == null ) {
+            throw new InvalidParameterValueException("Unknown entity type");
+        }
+
         Identity identity = (Identity) this._entityMgr.findById(entityType, customId);
         if (identity == null) {
-            throw new InvalidParameterValueException("Unable to find UUID for id " + customId);
+            throw new InvalidParameterValueException(String.format("Unable to find UUID for id [%s] of type [%s]",
+                                                                   customId, entityType.getSimpleName()));
+
         }
         return identity.getUuid();
-
     }
-
 }

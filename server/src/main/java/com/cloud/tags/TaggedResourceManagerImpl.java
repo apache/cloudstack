@@ -17,60 +17,33 @@
 package com.cloud.tags;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.server.ResourceManagerUtil;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.LBHealthCheckPolicyVO;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.network.as.AutoScaleVmProfileVO;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LBStickinessPolicyVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.RemoteAccessVpnVO;
-import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
-import com.cloud.network.dao.Site2SiteVpnConnectionVO;
-import com.cloud.network.dao.Site2SiteVpnGatewayVO;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -78,7 +51,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.OwnedBy;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -90,53 +62,9 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.snapshot.VMSnapshotVO;
 
 public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
-
-    private static final Map<ResourceObjectType, Class<?>> s_typeMap = new HashMap<>();
-    static {
-        s_typeMap.put(ResourceObjectType.UserVm, UserVmVO.class);
-        s_typeMap.put(ResourceObjectType.Volume, VolumeVO.class);
-        s_typeMap.put(ResourceObjectType.Template, VMTemplateVO.class);
-        s_typeMap.put(ResourceObjectType.ISO, VMTemplateVO.class);
-        s_typeMap.put(ResourceObjectType.Snapshot, SnapshotVO.class);
-        s_typeMap.put(ResourceObjectType.Network, NetworkVO.class);
-        s_typeMap.put(ResourceObjectType.LoadBalancer, LoadBalancerVO.class);
-        s_typeMap.put(ResourceObjectType.PortForwardingRule, PortForwardingRuleVO.class);
-        s_typeMap.put(ResourceObjectType.FirewallRule, FirewallRuleVO.class);
-        s_typeMap.put(ResourceObjectType.SecurityGroup, SecurityGroupVO.class);
-        s_typeMap.put(ResourceObjectType.SecurityGroupRule, SecurityGroupRuleVO.class);
-        s_typeMap.put(ResourceObjectType.PublicIpAddress, IPAddressVO.class);
-        s_typeMap.put(ResourceObjectType.Project, ProjectVO.class);
-        s_typeMap.put(ResourceObjectType.Account, AccountVO.class);
-        s_typeMap.put(ResourceObjectType.Vpc, VpcVO.class);
-        s_typeMap.put(ResourceObjectType.Nic, NicVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkACL, NetworkACLItemVO.class);
-        s_typeMap.put(ResourceObjectType.StaticRoute, StaticRouteVO.class);
-        s_typeMap.put(ResourceObjectType.VMSnapshot, VMSnapshotVO.class);
-        s_typeMap.put(ResourceObjectType.RemoteAccessVpn, RemoteAccessVpnVO.class);
-        s_typeMap.put(ResourceObjectType.Zone, DataCenterVO.class);
-        s_typeMap.put(ResourceObjectType.ServiceOffering, ServiceOfferingVO.class);
-        s_typeMap.put(ResourceObjectType.Storage, StoragePoolVO.class);
-        s_typeMap.put(ResourceObjectType.PrivateGateway, RemoteAccessVpnVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkACLList, NetworkACLVO.class);
-        s_typeMap.put(ResourceObjectType.VpnGateway, Site2SiteVpnGatewayVO.class);
-        s_typeMap.put(ResourceObjectType.CustomerGateway, Site2SiteCustomerGatewayVO.class);
-        s_typeMap.put(ResourceObjectType.VpnConnection, Site2SiteVpnConnectionVO.class);
-        s_typeMap.put(ResourceObjectType.User, UserVO.class);
-        s_typeMap.put(ResourceObjectType.DiskOffering, DiskOfferingVO.class);
-        s_typeMap.put(ResourceObjectType.AutoScaleVmProfile, AutoScaleVmProfileVO.class);
-        s_typeMap.put(ResourceObjectType.AutoScaleVmGroup, AutoScaleVmGroupVO.class);
-        s_typeMap.put(ResourceObjectType.LBStickinessPolicy, LBStickinessPolicyVO.class);
-        s_typeMap.put(ResourceObjectType.LBHealthCheckPolicy, LBHealthCheckPolicyVO.class);
-        s_typeMap.put(ResourceObjectType.SnapshotPolicy, SnapshotPolicyVO.class);
-        s_typeMap.put(ResourceObjectType.NetworkOffering, NetworkOfferingVO.class);
-        s_typeMap.put(ResourceObjectType.VpcOffering, VpcOfferingVO.class);
-    }
 
     @Inject
     EntityManager _entityMgr;
@@ -148,6 +76,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     DomainManager _domainMgr;
     @Inject
     AccountDao _accountDao;
+    @Inject
+    ResourceManagerUtil resourceManagerUtil;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -164,25 +94,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return true;
     }
 
-    @Override
-    public long getResourceId(String resourceId, ResourceObjectType resourceType) {
-        Class<?> clazz = s_typeMap.get(resourceType);
-        Object entity = _entityMgr.findByUuid(clazz, resourceId);
-        if (entity != null) {
-            return ((InternalIdentity)entity).getId();
-        }
-        if (!StringUtils.isNumeric(resourceId)) {
-            throw new InvalidParameterValueException("Unable to find resource by uuid " + resourceId + " and type " + resourceType);
-        }
-        entity = _entityMgr.findById(clazz, resourceId);
-        if (entity != null) {
-            return ((InternalIdentity)entity).getId();
-        }
-        throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
-    }
-
     private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
-        Class<?> clazz = s_typeMap.get(resourceType);
+        Class<?> clazz = ResourceManagerUtilImpl.s_typeMap.get(resourceType);
 
         Object entity = _entityMgr.findById(clazz, resourceId);
         Long accountId = null;
@@ -191,7 +104,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         // if the resource type is a security group rule, get the accountId and domainId from the security group itself
         if (resourceType == ResourceObjectType.SecurityGroupRule) {
             SecurityGroupRuleVO rule = (SecurityGroupRuleVO)entity;
-            Object SecurityGroup = _entityMgr.findById(s_typeMap.get(ResourceObjectType.SecurityGroup), rule.getSecurityGroupId());
+            Object SecurityGroup = _entityMgr.findById(ResourceManagerUtilImpl.s_typeMap.get(ResourceObjectType.SecurityGroup), rule.getSecurityGroupId());
 
             accountId = ((SecurityGroupVO)SecurityGroup).getAccountId();
             domainId = ((SecurityGroupVO)SecurityGroup).getDomainId();
@@ -206,11 +119,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         // if the resource type is network acl, get the accountId and domainId from VPC following: NetworkACLItem -> NetworkACL -> VPC
         if (resourceType == ResourceObjectType.NetworkACL) {
             NetworkACLItemVO aclItem = (NetworkACLItemVO)entity;
-            Object networkACL = _entityMgr.findById(s_typeMap.get(ResourceObjectType.NetworkACLList), aclItem.getAclId());
+            Object networkACL = _entityMgr.findById(ResourceManagerUtilImpl.s_typeMap.get(ResourceObjectType.NetworkACLList), aclItem.getAclId());
             Long vpcId = ((NetworkACLVO)networkACL).getVpcId();
 
             if (vpcId != null && vpcId != 0) {
-                Object vpc = _entityMgr.findById(s_typeMap.get(ResourceObjectType.Vpc), vpcId);
+                Object vpc = _entityMgr.findById(ResourceManagerUtilImpl.s_typeMap.get(ResourceObjectType.Vpc), vpcId);
 
                 accountId = ((VpcVO)vpc).getAccountId();
                 domainId = ((VpcVO)vpc).getDomainId();
@@ -243,49 +156,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return new Pair<>(accountId, domainId);
     }
 
-    private void checkResourceAccessible(Long accountId, Long domainId, String exceptionMessage) {
-        Account caller = CallContext.current().getCallingAccount();
-        if (Objects.equals(domainId, -1))
-        {
-            throw new CloudRuntimeException("Invalid DomainId: -1");
-        }
-        if (accountId != null) {
-            _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
-        } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
-            //check permissions;
-            _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
-        } else {
-            throw new PermissionDeniedException(exceptionMessage);
-        }
-    }
-
-    @Override
-    public ResourceObjectType getResourceType(String resourceTypeStr) {
-
-        for (ResourceObjectType type : ResourceTag.ResourceObjectType.values()) {
-            if (type.toString().equalsIgnoreCase(resourceTypeStr)) {
-                return type;
-            }
-        }
-        throw new InvalidParameterValueException("Invalid resource type " + resourceTypeStr);
-    }
-
-    @Override
-    public String getUuid(String resourceId, ResourceObjectType resourceType) {
-        if (!StringUtils.isNumeric(resourceId)) {
-            return resourceId;
-        }
-
-        Class<?> clazz = s_typeMap.get(resourceType);
-
-        Object entity = _entityMgr.findById(clazz, resourceId);
-        if (entity != null && entity instanceof Identity) {
-            return ((Identity)entity).getUuid();
-        }
-
-        return resourceId;
-    }
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
@@ -303,14 +173,14 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                             throw new InvalidParameterValueException("The resource type " + resourceType + " doesn't support resource tags");
                         }
 
-                        long id = getResourceId(resourceId, resourceType);
-                        String resourceUuid = getUuid(resourceId, resourceType);
+                        long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
+                        String resourceUuid = resourceManagerUtil.getUuid(resourceId, resourceType);
 
                         Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
 
-                        checkResourceAccessible(accountId, domainId, "Account '" + caller +
+                        resourceManagerUtil.checkResourceAccessible(accountId, domainId, "Account '" + caller +
                                 "' doesn't have permissions to create tags" + " for resource '" + id + "(" + key + ")'.");
 
                         String value = tags.get(key);
@@ -335,7 +205,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     }
 
     private List<? extends ResourceTag> searchResourceTags(List<String> resourceIds, ResourceObjectType resourceType) {
-        List<String> resourceUuids = resourceIds.stream().map(resourceId -> getUuid(resourceId, resourceType)).collect(Collectors.toList());
+        List<String> resourceUuids = resourceIds.stream().map(resourceId -> resourceManagerUtil.getUuid(resourceId, resourceType)).collect(Collectors.toList());
         SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
         sb.and("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.IN);
         sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
@@ -415,5 +285,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @Override
     public List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType resourceType, long resourceId) {
         return _resourceTagDao.listBy(resourceId, resourceType);
+    }
+
+    @Override
+    public Map<String, String> getTagsFromResource(ResourceObjectType type, long resourceId) {
+        List<? extends ResourceTag> listResourceTags = listByResourceTypeAndId(type, resourceId);
+        return listResourceTags == null ? null : listResourceTags.stream().collect(Collectors.toMap(ResourceTag::getKey, ResourceTag::getValue));
     }
 }

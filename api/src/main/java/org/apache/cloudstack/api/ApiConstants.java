@@ -29,6 +29,7 @@ public class ApiConstants {
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String ASYNC_BACKUP = "asyncbackup";
+    public static final String AUTO_SELECT = "autoselect";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
@@ -36,6 +37,7 @@ public class ApiConstants {
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
+    public static final String BASE64_IMAGE = "base64image";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -96,6 +98,8 @@ public class ApiConstants {
     public static final String CUSTOMIZED_IOPS = "customizediops";
     public static final String CUSTOM_ID = "customid";
     public static final String CUSTOM_JOB_ID = "customjobid";
+    public static final String CURRENT_START_IP = "currentstartip";
+    public static final String CURRENT_END_IP = "currentendip";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -156,6 +160,7 @@ public class ApiConstants {
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
+    public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
@@ -249,6 +254,8 @@ public class ApiConstants {
     public static final String NIC = "nic";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
+    public static final String NEW_START_IP = "newstartip";
+    public static final String NEW_END_IP = "newendip";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String IS_SYSTEM_OFFERING = "issystem";
@@ -331,6 +338,7 @@ public class ApiConstants {
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
+    public static final String SHOW_RESOURCE_ICON = "showicon";
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
@@ -357,6 +365,7 @@ public class ApiConstants {
     public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
+    public static final String STORAGE_TAGS = "storagetags";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
@@ -562,6 +571,7 @@ public class ApiConstants {
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
     public static final String LIST_ALL = "listall";
+    public static final String IP_RANGES = "ipranges";
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
     public static final String IS_SOURCE_NAT = "issourcenat";
     public static final String IS_STATIC_NAT = "isstaticnat";
@@ -711,6 +721,7 @@ public class ApiConstants {
     public static final String UCS_BLADE_DN = "bladedn";
     public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
+    public static final String HEALTHCHECK_FAILED = "healthchecksfailed";
     public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
     public static final String HEALTHCHECK_INTERVAL_TIME = "intervaltime";
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
@@ -738,10 +749,12 @@ public class ApiConstants {
     public static final String IAM_GROUPS = "groups";
     public static final String ENTITY_TYPE = "entitytype";
     public static final String ENTITY_ID = "entityid";
+    public static final String ENTITY_NAME = "entityname";
     public static final String EXTERNAL_ID = "externalid";
     public static final String ACCESS_TYPE = "accesstype";
 
     public static final String RESOURCE_DETAILS = "resourcedetails";
+    public static final String RESOURCE_ICON = "icon";
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
@@ -789,7 +802,7 @@ public class ApiConstants {
             + " \"{<algorithm>}\", not including the double quotes. In this <algorithm> is the exact string\n"
             + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n" + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
 
-    public static final String HAS_ANNOTATION = "hasannotation";
+    public static final String HAS_ANNOTATIONS = "hasannotations";
     public static final String LAST_ANNOTATED = "lastannotated";
     public static final String LDAP_DOMAIN = "ldapdomain";
 
@@ -840,7 +853,10 @@ public class ApiConstants {
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
-    public static final String POOL_TYPE ="pooltype";
+    public static final String POOL_TYPE = "pooltype";
+
+    public static final String ADMINS_ONLY = "adminsonly";
+    public static final String ANNOTATION_FILTER = "annotationfilter";
 
     public enum BootType {
         UEFI, BIOS;

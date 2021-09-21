@@ -32,12 +32,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -53,6 +56,7 @@ import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -134,7 +138,11 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPairVO;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.SSHKeyPairDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -198,6 +206,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected AccountManager accountManager;
     @Inject
+    protected UserDao userDao;
+    @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject
     protected UserVmJoinDao userVmJoinDao;
@@ -225,6 +235,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected ResourceManager resourceManager;
     @Inject
     protected FirewallRulesDao firewallRulesDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -640,11 +652,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             }
         }
+        response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
+                AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
         response.setVirtualMachines(vmResponses);
         return response;
     }
 
+    private void validateEndpointUrl() {
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
+        if (csUrl == null || csUrl.contains("localhost")) {
+            String error = String.format("Global setting %s has to be set to the Management Server's API end point",
+                ApiServiceConfiguration.ApiServletPath.key());
+            throw new InvalidParameterValueException(error);
+        }
+    }
+
     private void validateKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        validateEndpointUrl();
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long kubernetesVersionId = cmd.getKubernetesVersionId();
@@ -927,6 +951,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
         // Validate parameters
+        validateEndpointUrl();
+
         final Long kubernetesClusterId = cmd.getId();
         final Long upgradeVersionId = cmd.getKubernetesVersionId();
         if (kubernetesClusterId == null || kubernetesClusterId < 1L) {
@@ -1093,11 +1119,37 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         startWorker = ComponentContext.inject(startWorker);
         if (onCreate) {
             // Start for Kubernetes cluster in 'Created' state
+            Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
+            String[] keys = getServiceUserKeys(owner);
+            startWorker.setKeys(keys);
             return startWorker.startKubernetesClusterOnCreate();
         } else {
             // Start for Kubernetes cluster in 'Stopped' state. Resources are already provisioned, just need to be started
             return startWorker.startStoppedKubernetesCluster();
         }
+    }
+
+    private String[] getServiceUserKeys(Account owner) {
+        if (owner == null) {
+            owner = CallContext.current().getCallingAccount();
+        }
+        String username = owner.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
+        UserAccount kubeadmin = accountService.getActiveUserAccount(username, owner.getDomainId());
+        String[] keys = null;
+        if (kubeadmin == null) {
+            User kube = userDao.persist(new UserVO(owner.getAccountId(), username, UUID.randomUUID().toString(), owner.getAccountName(),
+                KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
+            keys = accountService.createApiKeyAndSecretKey(kube.getId());
+        } else {
+            String apiKey = kubeadmin.getApiKey();
+            String secretKey = kubeadmin.getSecretKey();
+            if (Strings.isNullOrEmpty(apiKey) || Strings.isNullOrEmpty(secretKey)) {
+                keys = accountService.createApiKeyAndSecretKey(kubeadmin.getId());
+            } else {
+                keys = new String[]{apiKey, secretKey};
+            }
+        }
+        return keys;
     }
 
     @Override
@@ -1240,9 +1292,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         validateKubernetesClusterUpgradeParameters(cmd);
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
+        Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
+        String[] keys = getServiceUserKeys(owner);
         KubernetesClusterUpgradeWorker upgradeWorker =
                 new KubernetesClusterUpgradeWorker(kubernetesClusterDao.findById(cmd.getId()),
-                        kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId()), this);
+                        kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId()), this, keys);
         upgradeWorker = ComponentContext.inject(upgradeWorker);
         return upgradeWorker.upgradeCluster();
     }

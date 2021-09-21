@@ -819,7 +819,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             final List<String> ipList = new ArrayList<String>();
             for (final Site2SiteVpnConnectionVO conn : conns) {
-                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected
+                    && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                     continue;
                 }
                 final Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
@@ -855,7 +856,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         throw new CloudRuntimeException("Unable to acquire lock for site to site vpn connection id " + conn.getId());
                     }
                     try {
-                        if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                        if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                             continue;
                         }
                         final Site2SiteVpnConnection.State oldState = conn.getState();
@@ -1459,7 +1460,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return null;
         }
 
-        String controlIP = getRouterControlIP(router);
+        String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
         if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
             final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(performFreshChecks, false);
             command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
@@ -1491,7 +1492,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return null;
         }
 
-        String controlIP = getRouterControlIP(router);
+        String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
         if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
             final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(false, true);
             command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
@@ -1601,7 +1602,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private SetMonitorServiceCommand createMonitorServiceCommand(DomainRouterVO router, List<MonitorServiceTO> services,
                                                                  boolean reconfigure, boolean deleteFromProcessedCache) {
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(services);
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
@@ -1633,7 +1634,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return false;
         }
 
-        String controlIP = getRouterControlIP(router);
+        String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
         if (StringUtils.isBlank(controlIP) || controlIP.equals("0.0.0.0")) {
             s_logger.debug("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
             return false;
@@ -1844,7 +1845,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (!Boolean.parseBoolean(serviceMonitoringFlag)) {
                     continue;
                 }
-                String controlIP = getRouterControlIP(router);
+                String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
 
                 if (controlIP != null && !controlIP.equals("0.0.0.0")) {
                     OpRouterMonitorServiceVO opRouterMonitorServiceVO = _opRouterMonitorServiceDao.findById(router.getId());
@@ -1913,29 +1914,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         } catch (final Exception e) {
             s_logger.warn("Error while collecting alerts from router", e);
         }
-    }
-
-    private String getRouterControlIP(DomainRouterVO router){
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        String controlIP = null;
-
-        if(router.getHypervisorType() == HypervisorType.VMware  && dcVo.getNetworkType() == NetworkType.Basic ){
-
-            final List<NicVO> nics = _nicDao.listByVmId(router.getId());
-            for (final NicVO nic : nics) {
-                final NetworkVO nc = _networkDao.findById(nic.getNetworkId());
-                if (nc.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
-                    controlIP = nic.getIPv4Address();
-                    break;
-                }
-            }
-            s_logger.debug("Vmware with Basic network selected Guest NIC ip as control IP " + controlIP );
-        }else{
-            controlIP = _routerControlHelper.getRouterControlIp(router.getId());
-        }
-
-        s_logger.debug("IP of control NIC " + controlIP );
-        return controlIP;
     }
 
     @Override

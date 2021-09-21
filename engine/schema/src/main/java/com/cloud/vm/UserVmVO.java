@@ -38,7 +38,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "iso_id", nullable = true, length = 17)
     private Long isoId = null;
 
-    @Column(name = "user_data", updatable = true, nullable = true, length = 32768)
+    @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
@@ -124,5 +124,10 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     public boolean isUpdateParameters() {
         return updateParameters;
+    }
+
+    @Override
+    public String getName() {
+        return instanceName;
     }
 }

@@ -30,7 +30,7 @@ import javax.persistence.Table;
 import com.cloud.utils.db.Encrypt;
 
 @Entity
-@Table(name = ("vpn_users"))
+@Table(name = "vpn_users")
 public class VpnUserVO implements VpnUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -129,5 +129,10 @@ public class VpnUserVO implements VpnUser {
     @Override
     public Class<?> getEntityType() {
         return VpnUser.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 }

@@ -47,7 +47,6 @@
           :visible="showFormAction"
           :closable="true"
           :maskClosable="false"
-          :cancelText="$t('label.cancel')"
           style="top: 20px;"
           @cancel="onCloseAction"
           :confirmLoading="actionLoading"
@@ -64,12 +63,11 @@
         :title="$t(currentAction.label)"
         :visible="showFormAction"
         :confirmLoading="actionLoading"
+        :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
-        style="top: 20px;"
-        @ok="handleSubmit"
         @cancel="onCloseAction"
+        v-ctrl-enter="handleSubmit"
+        style="top: 20px;"
         centered
       >
         <a-form
@@ -114,7 +112,12 @@
                   }]
                 }]"
                 :loading="field.loading"
-                :placeholder="field.description">
+                :placeholder="field.description"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option
                   v-for="(opt, idx) in field.opts"
                   :key="idx">{{ opt.name || opt.description }}</a-select-option>
@@ -134,6 +137,11 @@
                 :placeholder="field.description" />
             </span>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-modal>
     </div>
@@ -1156,11 +1164,11 @@ export default {
       this.nsp = nsp
     },
     async handleSubmit () {
+      if (this.actionLoading) return
       if (this.currentAction.confirm) {
         await this.executeConfirmAction()
         return
       }
-
       await this.form.validateFields(async (err, values) => {
         if (err) {
           return
@@ -1362,13 +1370,7 @@ export default {
             if (obj.includes('response') || obj.includes(apiName)) {
               for (const res in json[obj]) {
                 if (res === 'jobid') {
-                  this.$store.dispatch('AddAsyncJob', {
-                    title: this.$t(this.currentAction.label),
-                    jobid: json[obj][res],
-                    description: this.$t(this.nsp.name),
-                    status: 'progress'
-                  })
-                  this.parentPollActionCompletion(json[obj][res], this.currentAction)
+                  this.parentPollActionCompletion(json[obj][res], this.currentAction, this.$t(this.nsp.name))
                   hasJobId = true
                   break
                 }

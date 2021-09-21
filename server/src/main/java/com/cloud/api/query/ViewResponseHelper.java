@@ -242,14 +242,7 @@ public class ViewResponseHelper {
         Hashtable<Long, HostResponse> vrDataList = new Hashtable<Long, HostResponse>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
-            HostResponse vrData = vrDataList.get(vr.getId());
-            if (vrData == null) {
-                // first time encountering this vm
-                vrData = ApiDBUtils.newHostResponse(vr, details);
-            } else {
-                // update tags
-                vrData = ApiDBUtils.fillHostDetails(vrData, vr);
-            }
+            HostResponse vrData = ApiDBUtils.newHostResponse(vr, details);
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostResponse>(vrDataList.values());
@@ -259,14 +252,7 @@ public class ViewResponseHelper {
         Hashtable<Long, HostForMigrationResponse> vrDataList = new Hashtable<Long, HostForMigrationResponse>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
-            HostForMigrationResponse vrData = vrDataList.get(vr.getId());
-            if (vrData == null) {
-                // first time encountering this vm
-                vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
-            } else {
-                // update tags
-                vrData = ApiDBUtils.fillHostForMigrationDetails(vrData, vr);
-            }
+            HostForMigrationResponse vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostForMigrationResponse>(vrDataList.values());
@@ -574,10 +560,10 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, DataCenterJoinVO... dcs) {
+    public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, Boolean showResourceImage, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
         for (DataCenterJoinVO vt : dcs){
-            respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities));
+            respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities, showResourceImage));
         }
         return respList;
     }

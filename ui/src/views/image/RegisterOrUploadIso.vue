@@ -24,6 +24,7 @@
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
+        v-ctrl-enter="handleSubmit"
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
@@ -87,12 +88,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id">
-              {{ opt.name || opt.description }}
+            <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -115,12 +120,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -150,7 +159,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -161,6 +170,7 @@
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterIso',
@@ -173,6 +183,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -193,11 +206,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.registerIso || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('registerIso')
   },
   created () {
     this.zones = []
@@ -221,6 +230,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
 
       this.zoneLoading = true
       if (store.getters.userInfo.roletype === this.rootAdmin) {
@@ -302,6 +312,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -380,14 +391,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

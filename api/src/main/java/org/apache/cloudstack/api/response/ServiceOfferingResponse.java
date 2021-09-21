@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.ServiceOffering;
@@ -28,7 +28,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ServiceOffering.class)
-public class ServiceOfferingResponse extends BaseResponse {
+public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the id of the service offering")
     private String id;
@@ -76,7 +76,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
-    @SerializedName("tags")
+    @SerializedName("storagetags")
     @Param(description = "the tags for the service offering")
     private String tags;
 

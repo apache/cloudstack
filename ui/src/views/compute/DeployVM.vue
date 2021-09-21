@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
+            v-ctrl-enter="handleSubmit"
             :form="form"
             @submit="handleSubmit"
             layout="vertical"
@@ -31,18 +32,57 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="this.$t('label.zoneid')">
+                      <div v-if="zones.length <= 8">
+                        <a-row type="flex" :gutter="5" justify="start">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-decorator="['zoneid', {
+                                initialValue: selectedZone,
+                                rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
+                              @change="onSelectZoneId(zoneItem.id)">
+                              <a-col :span="8">
+                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                  <a-radio :value="zoneItem.id">
+                                    <div>
+                                      <img
+                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                        :src="getImg(zoneItem.icon.base64image)"
+                                        style="marginTop: -30px; marginLeft: 60px"
+                                        width="36px"
+                                        height="36px" />
+                                      <a-icon v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}" type="global"/>
+                                    </div>
+                                  </a-radio>
+                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
+                                </a-card-grid>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
                       <a-select
+                        v-else
                         v-decorator="['zoneid', {
-                          rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
+                          rules: [{ required: true, message: `${$t('message.error.select')}` }]
                         }]"
                         showSearch
                         optionFilterProp="children"
-                        :filterOption="filterOption"
-                        :options="zoneSelectOptions"
+                        :filterOption="(input, option) => {
+                          return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         autoFocus
-                      ></a-select>
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
+                          <span>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <a-icon v-else style="margin-right: 5px" type="global" />
+                            {{ zone1.name }}
+                          </span>
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
@@ -107,7 +147,7 @@
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
-                            :checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            :default-checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
                             :disabled="rootDiskSizeFixed > 0 || template.deployasis"
                             @change="val => { this.showRootDiskSizeChanger = val }"
                             style="margin-left: 10px;"/>
@@ -117,6 +157,7 @@
                           v-show="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
+                          :isCustomized="true"
                           :minDiskSize="dataPreFill.minrootdisksize"
                           @update-disk-size="updateFieldValue"
                           style="margin-top: 10px;"/>
@@ -140,7 +181,10 @@
                               rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                             }]"
                             :options="hypervisorSelectOptions"
-                            @change="value => this.hypervisor = value" />
+                            @change="value => this.hypervisor = value"
+                            showSearch
+                            optionFilterProp="children"
+                            :filterOption="filterOption" />
                         </a-form-item>
                       </p>
                     </a-card>
@@ -162,12 +206,7 @@
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <a-form-item v-if="zoneSelected && templateConfigurationExists">
-                      <span slot="label">
-                        {{ $t('label.configuration') }}
-                        <a-tooltip :title="$t('message.ovf.configurations')">
-                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                        </a-tooltip>
-                      </span>
+                      <tooltip-label slot="label" :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
                       <a-select
                         showSearch
                         optionFilterProp="children"
@@ -202,10 +241,10 @@
                       @handle-search-filter="($event) => handleSearchFilter('serviceOfferings', $event)"
                     ></compute-offering-selection>
                     <compute-selection
-                      v-if="serviceOffering && serviceOffering.iscustomized"
-                      cpunumber-input-decorator="cpunumber"
-                      cpuspeed-input-decorator="cpuspeed"
-                      memory-input-decorator="memory"
+                      v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
+                      cpuNumberInputDecorator="cpunumber"
+                      cpuSpeedInputDecorator="cpuspeed"
+                      memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
@@ -213,6 +252,10 @@
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
                       :maxMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+                      :isCustomized="serviceOffering.iscustomized"
+                      :isCustomizedIOps="'iscustomizediops' in serviceOffering && serviceOffering.iscustomizediops"
+                      @handler-error="handlerError"
+                      @update-iops-value="updateIOPSValue"
                       @update-compute-cpunumber="updateFieldValue"
                       @update-compute-cpuspeed="updateFieldValue"
                       @update-compute-memory="updateFieldValue" />
@@ -260,14 +303,19 @@
                       :loading="loading.diskOfferings"
                       :preFillContent="dataPreFill"
                       :isIsoSelected="tabKey==='isoid'"
+                      @on-selected-disk-size="onSelectDiskSize"
                       @select-disk-offering-item="($event) => updateDiskOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
                     <disk-size-selection
-                      v-if="diskOffering && diskOffering.iscustomized"
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
-                      @update-disk-size="updateFieldValue" />
+                      :diskSelected="diskSelected"
+                      :isCustomized="diskOffering.iscustomized"
+                      @handler-error="handlerError"
+                      @update-disk-size="updateFieldValue"
+                      @update-iops-value="updateIOPSValue"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-decorator="['size']"/>
                     </a-form-item>
@@ -285,12 +333,7 @@
                         v-for="(nic, nicIndex) in templateNics"
                         :key="nicIndex"
                         :v-bind="nic.name" >
-                        <span slot="label">
-                          {{ nic.elementName + ' - ' + nic.name }}
-                          <a-tooltip :title="nic.networkDescription">
-                            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                          </a-tooltip>
-                        </span>
+                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
                         <a-select
                           showSearch
                           optionFilterProp="children"
@@ -377,12 +420,7 @@
                         v-for="(property, propertyIndex) in props"
                         :key="propertyIndex"
                         :v-bind="property.key" >
-                        <span slot="label" style="text-transform: capitalize">
-                          {{ property.label }}
-                          <a-tooltip :title="property.description">
-                            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                          </a-tooltip>
-                        </span>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
@@ -477,17 +515,18 @@
                 <template slot="description" v-if="zoneSelected">
                   <span>
                     {{ $t('label.isadvanced') }}
-                    <a-switch @change="val => { this.showDetails = val }" :checked="this.showDetails" style="margin-left: 10px"/>
+                    <a-switch @change="val => { showDetails = val }" :checked="showDetails" style="margin-left: 10px"/>
                   </span>
                   <div style="margin-top: 15px" v-show="this.showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
+                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
-                          v-decorator="['boottype']"
+                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
                           @change="fetchBootModes"
-                        >
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
@@ -495,7 +534,10 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode']">
+                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -510,12 +552,7 @@
                       </a-switch>
                     </a-form-item>
                     <a-form-item>
-                      <span slot="label">
-                        {{ $t('label.dynamicscalingenabled') }}
-                        <a-tooltip :title="$t('label.dynamicscalingenabled.tooltip')">
-                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                        </a-tooltip>
-                      </span>
+                      <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       <a-form-item>
                         <a-switch
                           v-decorator="['dynamicscalingenabled']"
@@ -564,6 +601,9 @@
                       <a-select
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')">
@@ -585,9 +625,7 @@
                         v-for="(license, licenseIndex) in templateLicenses"
                         :key="licenseIndex"
                         :v-bind="license.id">
-                        <span slot="label" style="text-transform: capitalize">
-                          {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
-                        </span>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
                         <a-textarea
                           :value="license.text"
                           :auto-size="{ minRows: 3, maxRows: 8 }"
@@ -615,14 +653,27 @@
               </a-step>
             </a-steps>
             <div class="card-footer">
+              <a-form-item>
+                <a-switch
+                  class="form-item-hidden"
+                  v-decorator="['stayonpage']"
+                ></a-switch>
+              </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
               </a-button>
-              <a-button type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
                 {{ this.$t('label.launch.vm') }}
-              </a-button>
+                <a-icon slot="icon" type="down" />
+                <a-menu type="primary" slot="overlay" @click="handleSubmitAndStay" theme="dark">
+                  <a-menu-item type="primary" key="1">
+                    <a-icon type="rocket" />
+                    {{ $t('label.launch.vm.and.stay') }}
+                  </a-menu-item>
+                </a-menu>
+              </a-dropdown-button>
             </div>
           </a-form>
         </a-card>
@@ -645,6 +696,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -656,6 +708,7 @@ import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Wizard',
@@ -671,7 +724,9 @@ export default {
     InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
-    SecurityGroupSelection
+    SecurityGroupSelection,
+    ResourceIcon,
+    TooltipLabel
   },
   props: {
     visible: {
@@ -793,7 +848,15 @@ export default {
       showDetails: false,
       showRootDiskSizeChanger: false,
       securitygroupids: [],
-      rootDiskSizeFixed: 0
+      rootDiskSizeFixed: 0,
+      error: false,
+      diskSelected: {},
+      diskIOpsMin: 0,
+      diskIOpsMax: 0,
+      minIops: 0,
+      maxIops: 0,
+      zones: [],
+      selectedZone: ''
     }
   },
   computed: {
@@ -878,7 +941,8 @@ export default {
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
             page: 1,
             pageSize: 10,
-            keyword: undefined
+            keyword: undefined,
+            showIcon: true
           }
         },
         pods: {
@@ -997,6 +1061,12 @@ export default {
     },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+    },
+    isCustomizedDiskIOPS () {
+      return this.diskSelected?.iscustomizediops || false
+    },
+    isCustomizedIOPS () {
+      return this.serviceOffering?.iscustomizediops || false
     }
   },
   watch: {
@@ -1076,6 +1146,7 @@ export default {
       }
 
       if (this.iso) {
+        this.vm.isoid = this.iso.id
         this.vm.templateid = this.iso.id
         this.vm.templatename = this.iso.displaytext
         this.vm.ostypeid = this.iso.ostypeid
@@ -1200,6 +1271,7 @@ export default {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
     fetchData () {
+      this.fetchZones()
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1221,6 +1293,9 @@ export default {
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
+    },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
       this.options.zones = await this.fetchZones()
@@ -1235,39 +1310,21 @@ export default {
       await this.fetchAllTemplates()
     },
     fetchBootTypes () {
-      const bootTypes = []
-
-      bootTypes.push({
-        id: 'BIOS',
-        description: 'BIOS'
-      })
-      bootTypes.push({
-        id: 'UEFI',
-        description: 'UEFI'
-      })
-
-      this.options.bootTypes = bootTypes
+      this.options.bootTypes = [
+        { id: 'BIOS', description: 'BIOS' },
+        { id: 'UEFI', description: 'UEFI' }
+      ]
       this.$forceUpdate()
     },
     fetchBootModes (bootType) {
-      const bootModes = []
-
+      const bootModes = [
+        { id: 'LEGACY', description: 'LEGACY' }
+      ]
       if (bootType === 'UEFI') {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
-        bootModes.push({
-          id: 'SECURE',
-          description: 'SECURE'
-        })
-      } else {
-        bootModes.push({
-          id: 'LEGACY',
-          description: 'LEGACY'
-        })
+        bootModes.unshift(
+          { id: 'SECURE', description: 'SECURE' }
+        )
       }
-
       this.options.bootModes = bootModes
       this.$forceUpdate()
     },
@@ -1407,9 +1464,19 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
+    handleSubmitAndStay (e) {
+      this.form.setFieldsValue({
+        stayonpage: true
+      })
+      this.handleSubmit(e.domEvent)
+      this.form.setFieldsValue({
+        stayonpage: false
+      })
+    },
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
+      if (this.loading.deploy) return
       this.form.validateFields(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
@@ -1447,12 +1514,19 @@ export default {
           })
           return
         }
+        if (this.error) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
+          })
+          return
+        }
 
         this.loading.deploy = true
 
         let networkIds = []
 
-        const deployVmData = {}
+        let deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
         deployVmData.podid = values.podid
@@ -1498,6 +1572,10 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
+        if (this.isCustomizedIOPS) {
+          deployVmData['details[0].minIops'] = this.minIops
+          deployVmData['details[0].maxIops'] = this.maxIops
+        }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
           if (values.multidiskoffering) {
@@ -1515,6 +1593,10 @@ export default {
           if (values.size) {
             deployVmData.size = values.size
           }
+        }
+        if (this.isCustomizedDiskIOPS) {
+          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
+          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
@@ -1594,11 +1676,16 @@ export default {
         const description = values.name || ''
         const password = this.$t('label.password')
 
-        api('deployVirtualMachine', deployVmData).then(response => {
+        deployVmData = Object.fromEntries(
+          Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
+
+        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: description,
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
@@ -1611,29 +1698,26 @@ export default {
                 }
                 eventBus.$emit('vm-refresh-data')
               },
-              errorMethod: () => {
-                eventBus.$emit('vm-refresh-data')
-              },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
               catchMethod: () => {
                 eventBus.$emit('vm-refresh-data')
+              },
+              action: {
+                isFetchData: false
               }
-            })
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
-              description: description,
-              status: 'progress'
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM
           new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
             eventBus.$emit('vm-refresh-data')
           })
-          this.$router.back()
+          if (!values.stayonpage) {
+            this.$router.back()
+          }
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
           this.loading.deploy = false
         })
       })
@@ -1642,9 +1726,9 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        api(param.list, { listall: true }).then(json => {
-          const zones = json.listzonesresponse.zone || []
-          resolve(zones)
+        api(param.list, { listall: true, showicon: true }).then(json => {
+          this.zones = json.listzonesresponse.zone || []
+          resolve(this.zones)
         }).catch(function (error) {
           console.log(error.stack)
         }).finally(() => {
@@ -1724,6 +1808,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -1743,6 +1828,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
@@ -1796,9 +1882,10 @@ export default {
       })
     },
     filterOption (input, option) {
-      return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
-      )
+      console.log(option)
+      // return (
+      //   option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      // )
     },
     onSelectZoneId (value) {
       this.dataPreFill = {}
@@ -1807,7 +1894,9 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.selectedZone = this.zoneId
       this.form.setFieldsValue({
+        zoneid: this.zoneId,
         clusterid: undefined,
         podid: undefined,
         hostid: undefined,
@@ -2012,9 +2101,22 @@ export default {
         }
       }
       if (offering && offering.rootdisksize > 0) {
-        this.rootDiskSizeFixed = offering.rootdisksize / (1024 * 1024 * 1024.0).toFixed(2)
+        this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
+    },
+    handlerError (error) {
+      this.error = error
+    },
+    onSelectDiskSize (rowSelected) {
+      this.diskSelected = rowSelected
+    },
+    updateIOPSValue (input, value) {
+      this[input] = value
+    },
+    onBootTypeChange (value) {
+      this.fetchBootModes(value)
+      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
     }
   }
 }

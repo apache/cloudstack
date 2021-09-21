@@ -23,17 +23,17 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.storageid') }}
-            <a-tooltip :title="apiParams.storageid.description" v-if="!(apiParams.hostid && apiParams.hostid.required === false)">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
           <a-select
             :loading="loading"
             v-decorator="['storageid', {
               rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]">
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
               {{ storagePool.name || storagePool.id }}
             </a-select-option>
@@ -51,9 +51,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'MigrateVMStorage',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -174,13 +178,9 @@ export default {
         } else {
           jobId = response.migratevirtualmachine.jobid
         }
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress'
-        })
         this.$pollJob({
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
+          description: this.resource.name,
           jobId: jobId,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {

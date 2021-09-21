@@ -17,23 +17,43 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form">
+    <div class="form" v-ctrl-enter="handleSubmitForm">
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
+        <a-select
+          v-model="zoneId"
+          @change="fetchPods"
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
-            :key="zone.id">
-            {{ zone.name }}
+            :key="zone.id"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </div>
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.podname') }}</div>
-        <a-select v-model="podId" @change="fetchClusters">
+        <a-select
+          v-model="podId"
+          @change="fetchClusters"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
@@ -45,7 +65,14 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.clustername') }}</div>
-        <a-select v-model="clusterId" @change="handleChangeCluster">
+        <a-select
+          v-model="clusterId"
+          @change="handleChangeCluster"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="cluster in clustersList"
             :value="cluster.id"
@@ -95,7 +122,11 @@
           mode="tags"
           :placeholder="placeholder.hosttags"
           v-model="selectedTags"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
         </a-select>
       </div>
@@ -114,9 +145,9 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </div>
@@ -126,11 +157,13 @@
 <script>
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'HostAdd',
   components: {
-    DedicateDomain
+    DedicateDomain,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -183,7 +216,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones').then(response => {
+      api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id || null
         this.fetchPods()
@@ -248,6 +281,7 @@ export default {
       this.showDedicated = !this.showDedicated
     },
     handleSubmitForm () {
+      if (this.loading) return
       const requiredFields = document.querySelectorAll('.required-field')
 
       requiredFields.forEach(field => {
@@ -315,15 +349,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatehostresponse.jobid,
+          title: this.$t('message.host.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.host.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.host.dedicated'),
-              jobid: response.dedicatehostresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.host.failed'),
           errorMethod: () => {
@@ -365,15 +395,6 @@ export default {
       width: 85vw;
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
   }

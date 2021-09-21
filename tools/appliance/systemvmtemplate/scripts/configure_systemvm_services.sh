@@ -65,7 +65,7 @@ function install_cloud_scripts() {
     /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly/*
 
   chmod +x /root/health_checks/*
-  chmod -x /etc/systemd/system/*
+  chmod -x /etc/systemd/system/* || true
 
   systemctl daemon-reload
   systemctl enable cloud-early-config
@@ -108,7 +108,7 @@ function configure_services() {
   systemctl disable haproxy
   systemctl disable keepalived
   systemctl disable radvd
-  systemctl disable strongswan
+  systemctl disable strongswan-starter
   systemctl disable x11-common
   systemctl disable xl2tpd
   systemctl disable vgauth

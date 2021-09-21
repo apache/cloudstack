@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.host.Status;
@@ -29,7 +29,7 @@ import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
-public class SystemVmResponse extends BaseResponse {
+public class SystemVmResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the ID of the system VM")
     private String id;

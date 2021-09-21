@@ -31,7 +31,7 @@ import com.cloud.utils.db.GenericDao;
 
 
 @Entity
-@Table(name = ("s2s_vpn_gateway"))
+@Table(name = "s2s_vpn_gateway")
 public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -133,5 +133,10 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Override
     public Class<?> getEntityType() {
         return Site2SiteVpnGateway.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 }

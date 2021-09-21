@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitData">
     <div v-if="loading" class="loading">
       <a-icon type="loading"></a-icon>
     </div>
@@ -27,7 +27,12 @@
         v-model="selectedOperation"
         :defaultValue="$t('label.add')"
         @change="fetchData"
-        autoFocus>
+        autoFocus
+        showSearch
+        optionFilterProp="children"
+        :filterOption="(input, option) => {
+          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+        }" >
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
         <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
@@ -40,7 +45,15 @@
           <span class="required">*</span>
           {{ $t('label.sharewith') }}
         </p>
-        <a-select v-model="selectedShareWith" :defaultValue="$t('label.account')" @change="fetchData">
+        <a-select
+          v-model="selectedShareWith"
+          :defaultValue="$t('label.account')"
+          @change="fetchData"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -57,9 +70,18 @@
               placeholder="Select Accounts"
               :value="selectedAccounts"
               @change="handleChange"
-              style="width: 100%">
-              <a-select-option v-for="account in accountsList" :key="account.name">
-                {{ account.name }}
+              style="width: 100%"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option v-for="account in accountsList" :key="account.name" :label="account.name">
+                <span>
+                  <resource-icon v-if="account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="team" style="margin-right: 5px" />
+                  {{ account.name }}
+                </span>
               </a-select-option>
             </a-select>
           </div>
@@ -79,26 +101,33 @@
             :placeholder="$t('label.select.projects')"
             :value="selectedProjects"
             @change="handleChange"
-            style="width: 100%">
-            <a-select-option v-for="project in projectsList" :key="project.name">
-              {{ project.name }}
+            style="width: 100%"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="project in projectsList" :key="project.name" :label="project.name">
+              <span>
+                <resource-icon v-if="project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="project" style="margin-right: 5px" />
+                {{ project.name }}
+              </span>
             </a-select-option>
           </a-select>
         </div>
       </template>
     </template>
-    <div class="actions">
-      <a-button @click="closeModal">
-        {{ $t('label.cancel') }}
-      </a-button>
-      <a-button type="primary" @click="submitData">
-        {{ $t('label.ok') }}
-      </a-button>
+
+    <div :span="24" class="action-button">
+      <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" ref="submit" @click="submitData">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
 </template>
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'UpdateTemplateIsoPermissions',
@@ -107,6 +136,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -168,7 +200,8 @@ export default {
     fetchAccounts () {
       this.loading = true
       api('listAccounts', {
-        domainid: this.resource.domainid
+        domainid: this.resource.domainid,
+        showicon: true
       }).then(response => {
         this.accounts = response.listaccountsresponse.account.filter(account => account.name !== this.resource.account)
       }).finally(e => {
@@ -178,6 +211,7 @@ export default {
     fetchProjects () {
       api('listProjects', {
         details: 'min',
+        showicon: true,
         listall: true
       }).then(response => {
         this.projects = response.listprojectsresponse.project
@@ -230,6 +264,7 @@ export default {
       this.$parent.$parent.close()
     },
     submitData () {
+      if (this.loading) return
       let variableKey = ''
       let variableValue = ''
       if (this.selectedShareWith === this.$t('label.account')) {
@@ -291,16 +326,6 @@ export default {
       margin-bottom: 5px;
     }
 
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
-      }
-    }
   }
 
   .required {

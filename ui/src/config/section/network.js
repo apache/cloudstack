@@ -57,6 +57,10 @@ export default {
         name: 'guest.ip.range',
         component: () => import('@/views/network/GuestIpRanges.vue'),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -88,7 +92,10 @@ export default {
           message: 'message.restart.network',
           dataView: true,
           args: ['cleanup'],
-          show: (record) => record.type !== 'L2'
+          show: (record) => record.type !== 'L2',
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup } }) }
         },
         {
           api: 'replaceNetworkACLList',
@@ -114,7 +121,10 @@ export default {
           icon: 'delete',
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
-          dataView: true
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -174,14 +184,20 @@ export default {
               fields.push('makeredundant')
             }
             return fields
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
         },
         {
           api: 'deleteVPC',
           icon: 'delete',
           label: 'label.remove.vpc',
           message: 'message.remove.vpc',
-          dataView: true
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -257,7 +273,10 @@ export default {
       }, {
         name: 'firewall',
         component: () => import('@/views/network/FirewallRules.vue'),
-        networkServiceFilter: networkService => networkService.filter(x => x.name === 'Firewall').length > 0
+        networkServiceFilter: networkService => networkService.filter(x => x.name === 'Firewall').length > 0,
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       },
       {
         name: 'portforwarding',
@@ -271,6 +290,10 @@ export default {
         name: 'vpn',
         component: () => import('@/views/network/VpnDetails.vue'),
         show: (record) => { return record.issourcenat }
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -305,7 +328,10 @@ export default {
           message: 'message.action.release.ip',
           docHelp: 'adminguide/networking_and_traffic.html#releasing-an-ip-address-alloted-to-a-vpc',
           dataView: true,
-          show: (record) => { return !record.issourcenat }
+          show: (record) => { return !record.issourcenat },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -583,6 +609,16 @@ export default {
             account: {
               value: (record) => { return record.account }
             }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                username: data[0].username, account: data[0].account, domainid: data[0].domainid
+              }
+            })
           }
         }
       ]
@@ -595,6 +631,17 @@ export default {
       columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
       searchFilters: ['keyword', 'domainid', 'account'],
+      resourceType: 'VPNCustomerGateway',
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [
         {
           api: 'createVpnCustomerGateway',
@@ -624,7 +671,10 @@ export default {
           label: 'label.delete.vpn.customer.gateway',
           message: 'message.delete.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
-          dataView: true
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

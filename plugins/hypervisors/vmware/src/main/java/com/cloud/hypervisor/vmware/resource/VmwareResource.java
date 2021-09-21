@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.hypervisor.vmware.mo.NetworkMO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -94,6 +95,8 @@ import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
@@ -101,12 +104,12 @@ import com.cloud.agent.api.GetUnmanagedInstancesCommand;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmIpAddressCommand;
-import com.cloud.agent.api.GetVmVncTicketCommand;
-import com.cloud.agent.api.GetVmVncTicketAnswer;
 import com.cloud.agent.api.GetVmNetworkStatsAnswer;
 import com.cloud.agent.api.GetVmNetworkStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVmVncTicketAnswer;
+import com.cloud.agent.api.GetVmVncTicketCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
@@ -259,6 +262,7 @@ import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
@@ -296,6 +300,8 @@ import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.GuestNicInfo;
 import com.vmware.vim25.HostCapability;
+import com.vmware.vim25.HostConfigInfo;
+import com.vmware.vim25.HostFileSystemMountInfo;
 import com.vmware.vim25.HostHostBusAdapter;
 import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
@@ -505,6 +511,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((ModifyTargetsCommand) cmd);
             } else if (clz == ModifyStoragePoolCommand.class) {
                 answer = execute((ModifyStoragePoolCommand) cmd);
+            } else if (clz == GetStoragePoolCapabilitiesCommand.class) {
+                answer = execute((GetStoragePoolCapabilitiesCommand) cmd);
             } else if (clz == DeleteStoragePoolCommand.class) {
                 answer = execute((DeleteStoragePoolCommand) cmd);
             } else if (clz == CopyVolumeCommand.class) {
@@ -693,6 +701,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 PrimaryDataStoreTO dest = (PrimaryDataStoreTO) destDataStore;
                 if (dest.isFullCloneFlag() != null) {
                     paramsCopy.put(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG, dest.isFullCloneFlag().booleanValue());
+                }
+                if (dest.getDiskProvisioningStrictnessFlag() != null) {
+                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.DISK_PROVISIONING_STRICTNESS, dest.getDiskProvisioningStrictnessFlag().booleanValue());
                 }
             }
         }
@@ -1966,7 +1977,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
-
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
                     getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
 
@@ -1983,15 +1993,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Check for hotadd settings
-            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
-
+            vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm());
             String hostApiVersion = ((HostMO) hyperHost).getHostAboutInfo().getApiVersion();
             if (numCoresPerSocket > 1 && hostApiVersion.compareTo("5.0") < 0) {
                 s_logger.warn("Dynamic scaling of CPU is not supported for Virtual Machines with multi-core vCPUs in case of ESXi hosts 4.1 and prior. Hence CpuHotAdd will not be"
                         + " enabled for Virtual Machine: " + vmInternalCSName);
                 vmConfigSpec.setCpuHotAddEnabled(false);
             } else {
-                vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
+                vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm());
+            }
+
+            if(!vmMo.isMemoryHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
+                s_logger.warn("hotadd of memory is not supported, dynamic scaling feature can not be applied to vm: " + vmInternalCSName);
+            }
+
+            if(!vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
+                s_logger.warn("hotadd of cpu is not supported, dynamic scaling feature can not be applied to vm: " + vmInternalCSName);
             }
 
             configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
@@ -2621,7 +2638,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             s_logger.debug("Mapping spec disks information to cloned VM disks for VM " + vmInternalCSName);
             if (vmMo != null && ArrayUtils.isNotEmpty(specDisks)) {
-                List<VirtualDisk> vmDisks = vmMo.getVirtualDisks();
+                List<VirtualDisk> vmDisks = vmMo.getVirtualDisksOrderedByKey();
+
                 List<VirtualDisk> rootDisks = new ArrayList<>();
                 List<DiskTO> sortedRootDisksFromSpec = Arrays.asList(sortVolumesByDeviceId(specDisks))
                         .stream()
@@ -2960,6 +2978,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
         if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveMemory.key()).equalsIgnoreCase("true")) {
+            if(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION) != null){
+                float reservedMemory = (vmSpec.getMaxRam() * Float.parseFloat(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION)));
+                return (int) (reservedMemory / ResourceType.bytesToMiB);
+            }
             return (int) (vmSpec.getMinRam() / ResourceType.bytesToMiB);
         }
         return 0;
@@ -3939,8 +3961,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             final ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
             VimPortType service = getServiceContext().getService();
 
-            final int intervalSeconds = 300;
-            final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), intervalSeconds);
+            Integer windowInterval = getVmwareWindowTimeInterval();
+            final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), windowInterval);
             final XMLGregorianCalendar endTime = VmwareHelper.getXMLGregorianCalendar(new Date(), 0);
 
             PerfCounterInfo diskReadIOPerfCounterInfo = null;
@@ -3996,45 +4018,50 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     if (perfMetricsIds.size() > 0) {
-                        final PerfQuerySpec qSpec = new PerfQuerySpec();
-                        qSpec.setEntity(vmMo.getMor());
-                        qSpec.setFormat("normal");
-                        qSpec.setIntervalId(intervalSeconds);
-                        qSpec.setStartTime(startTime);
-                        qSpec.setEndTime(endTime);
-                        qSpec.getMetricId().addAll(perfMetricsIds);
+                        try {
+                            final PerfQuerySpec qSpec = new PerfQuerySpec();
+                            qSpec.setEntity(vmMo.getMor());
+                            qSpec.setFormat("normal");
+                            qSpec.setIntervalId(windowInterval);
+                            qSpec.setStartTime(startTime);
+                            qSpec.setEndTime(endTime);
+                            qSpec.getMetricId().addAll(perfMetricsIds);
 
-                        for (final PerfEntityMetricBase perfValue : service.queryPerf(perfMgr, Collections.singletonList(qSpec))) {
-                            if (!(perfValue instanceof PerfEntityMetric)) {
-                                continue;
-                            }
-                            final List<PerfMetricSeries> values = ((PerfEntityMetric) perfValue).getValue();
-                            if (values == null || values.isEmpty()) {
-                                continue;
-                            }
-                            for (final PerfMetricSeries value : values) {
-                                if (!(value instanceof PerfMetricIntSeries) || !value.getId().getInstance().equals(diskBusName)) {
+                            for (final PerfEntityMetricBase perfValue: service.queryPerf(perfMgr, Collections.singletonList(qSpec))) {
+                                if (!(perfValue instanceof PerfEntityMetric)) {
                                     continue;
                                 }
-                                final List<Long> perfStats = ((PerfMetricIntSeries) value).getValue();
-                                if (perfStats.size() > 0) {
-                                    long sum = 0;
-                                    for (long val : perfStats) {
-                                        sum += val;
+                                final List<PerfMetricSeries> values = ((PerfEntityMetric) perfValue).getValue();
+                                if (values == null || values.isEmpty()) {
+                                    continue;
+                                }
+                                for (final PerfMetricSeries value : values) {
+                                    if (!(value instanceof PerfMetricIntSeries) || !value.getId().getInstance().equals(diskBusName)) {
+                                        continue;
                                     }
-                                    long avg = sum / perfStats.size();
-                                    if (value.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
-                                        readReq = avg;
-                                    } else if (value.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
-                                        writeReq = avg;
-                                    } else if (value.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
-                                        readBytes = avg * 1024;
-                                    } else if (value.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
-                                        writeBytes = avg * 1024;
+                                    final List<Long> perfStats = ((PerfMetricIntSeries) value).getValue();
+                                    if (perfStats.size() > 0) {
+                                        long sum = 0;
+                                        for (long val : perfStats) {
+                                            sum += val;
+                                        }
+                                        long avg = sum / perfStats.size();
+                                        if (value.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
+                                            readReq = avg;
+                                        } else if (value.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
+                                            writeReq = avg;
+                                        } else if (value.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
+                                            readBytes = avg * 1024;
+                                        } else if (value.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
+                                            writeBytes = avg * 1024;
+                                        }
                                     }
                                 }
                             }
+                        } catch (Exception e) {
+                            s_logger.error(String.format("Unable to execute PerfQuerySpec due to: [%s]. The window interval is enabled in vCenter?", VmwareHelper.getExceptionMessage(e)), e);
                         }
+
                     }
                     diskStats.add(new VmDiskStatsEntry(vmName, VmwareHelper.getDiskDeviceFileName(disk), writeReq, readReq, writeBytes, readBytes));
                 }
@@ -5045,6 +5072,63 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    protected Answer execute(GetStoragePoolCapabilitiesCommand cmd) {
+
+        try {
+
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            HostMO host = (HostMO) hyperHost;
+
+            StorageFilerTO pool = cmd.getPool();
+
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+
+            if (morDatastore == null) {
+                morDatastore = hyperHost.mountDatastore((pool.getType() == StoragePoolType.VMFS || pool.getType() == StoragePoolType.PreSetup || pool.getType() == StoragePoolType.DatastoreCluster), pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""), true);
+            }
+
+            assert (morDatastore != null);
+
+            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+
+            GetStoragePoolCapabilitiesAnswer answer = new GetStoragePoolCapabilitiesAnswer(cmd);
+
+            boolean hardwareAccelerationSupportForDataStore = getHardwareAccelerationSupportForDataStore(host.getMor(), dsMo.getName());
+            Map<String, String> poolDetails = answer.getPoolDetails();
+            poolDetails.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), String.valueOf(hardwareAccelerationSupportForDataStore));
+            answer.setPoolDetails(poolDetails);
+            answer.setResult(true);
+
+            return answer;
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+
+                invalidateServiceContext();
+            }
+
+            String msg = "GetStoragePoolCapabilitiesCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+
+            s_logger.error(msg, e);
+            GetStoragePoolCapabilitiesAnswer answer = new GetStoragePoolCapabilitiesAnswer(cmd);
+            answer.setResult(false);
+            answer.setDetails(msg);
+            return answer;
+        }
+    }
+
+    private boolean getHardwareAccelerationSupportForDataStore(ManagedObjectReference host, String dataStoreName) throws Exception {
+        HostConfigInfo config = getServiceContext().getVimClient().getDynamicProperty(host, "config");
+        List<HostFileSystemMountInfo> mountInfoList = config.getFileSystemVolume().getMountInfo();
+        for (HostFileSystemMountInfo hostFileSystemMountInfo: mountInfoList) {
+            if ( hostFileSystemMountInfo.getVolume().getName().equals(dataStoreName) ) {
+                return hostFileSystemMountInfo.getVStorageSupport().equals("vStorageSupported");
+            }
+        }
+        return false;
+    }
+
     private void handleTargets(boolean add, ModifyTargetsCommand.TargetTypeToRemove targetTypeToRemove, boolean isRemoveAsync,
                                List<Map<String, String>> targets, List<HostMO> hosts) {
         if (targets != null && targets.size() > 0) {
@@ -5115,7 +5199,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String storeUrl = cmd.getStoreUrl();
             if (storeUrl == null) {
-                if (!cmd.getIsoPath().equalsIgnoreCase("vmware-tools.iso")) {
+                if (!cmd.getIsoPath().equalsIgnoreCase(TemplateManager.VMWARE_TOOLS_ISO)) {
                     String msg = "ISO store root url is not found in AttachIsoCommand";
                     s_logger.error(msg);
                     throw new Exception(msg);
@@ -5748,17 +5832,54 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    public void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
-        // we will no longer cleanup VLAN networks in order to support native VMware HA
-        /*
-         * assert(netDetails.getName() != null); try { synchronized(this) { NetworkMO networkMo = new
-         * NetworkMO(hostMo.getContext(), netDetails.getNetworkMor()); ManagedObjectReference[] vms =
-         * networkMo.getVMsOnNetwork(); if(vms == null || vms.length == 0) { if(s_logger.isInfoEnabled()) {
-         * s_logger.info("Cleanup network as it is currently not in use: " + netDetails.getName()); }
-         *
-         * hostMo.deletePortGroup(netDetails.getName()); } } } catch(Throwable e) {
-         * s_logger.warn("Unable to cleanup network due to exception, skip for next time"); }
-         */
+    public void cleanupNetwork(DatacenterMO dcMO, NetworkDetails netDetails) {
+        if (!VmwareManager.s_vmwareCleanupPortGroups.value()){
+            return;
+        }
+
+        try {
+            synchronized(this) {
+                if (!areVMsOnNetwork(dcMO, netDetails)) {
+                    cleanupPortGroup(dcMO, netDetails.getName());
+                }
+            }
+        } catch(Throwable e) {
+            s_logger.warn("Unable to cleanup network due to exception: " + e.getMessage(), e);
+        }
+    }
+
+    private void cleanupPortGroup(DatacenterMO dcMO, String portGroupName) throws Exception {
+        if (StringUtils.isBlank(portGroupName)) {
+            s_logger.debug("Unspecified network port group, couldn't cleanup");
+            return;
+        }
+
+        List<HostMO> hosts = dcMO.getAllHostsOnDatacenter();
+        if (!CollectionUtils.isEmpty(hosts)) {
+            for (HostMO host : hosts) {
+                host.deletePortGroup(portGroupName);
+            }
+        }
+    }
+
+    private boolean areVMsOnNetwork(DatacenterMO dcMO, NetworkDetails netDetails) throws Exception {
+        if (netDetails == null || netDetails.getName() == null) {
+            throw new CloudRuntimeException("Unspecified network details / port group, couldn't check VMs on network port group");
+        }
+
+        List<HostMO> hosts = dcMO.getAllHostsOnDatacenter();
+        if (!CollectionUtils.isEmpty(hosts)) {
+            for (HostMO host : hosts) {
+                NetworkMO networkMo = new NetworkMO(host.getContext(), netDetails.getNetworkMor());
+                List<ManagedObjectReference> vms = networkMo.getVMsOnNetwork();
+                if (!CollectionUtils.isEmpty(vms)) {
+                    s_logger.debug("Network port group: " + netDetails.getName() + " is in use");
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -5860,9 +5981,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 if (recycle) {
                                     s_logger.info("Recycle pending worker VM: " + vmMo.getName());
 
+                                    vmMo.cancelPendingTasks();
                                     vmMo.powerOff();
-                                    vmMo.detachAllDisks();
-                                    vmMo.destroy();
+                                    vmMo.detachAllDisksAndDestroy();
                                 }
                             }
                         }
@@ -6323,8 +6444,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         PerfCounterInfo diskReadKbsPerfCounterInfo = null;
         PerfCounterInfo diskWriteKbsPerfCounterInfo = null;
 
-        final int intervalSeconds = 300;
-        final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), intervalSeconds);
+        Integer windowInterval = getVmwareWindowTimeInterval();
+        final XMLGregorianCalendar startTime = VmwareHelper.getXMLGregorianCalendar(new Date(), windowInterval);
         final XMLGregorianCalendar endTime = VmwareHelper.getXMLGregorianCalendar(new Date(), 0);
 
         List<PerfCounterInfo> cInfo = getServiceContext().getVimClient().getDynamicProperty(perfMgr, "perfCounter");
@@ -6446,48 +6567,52 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     if (perfMetricsIds.size() > 0) {
-                        final PerfQuerySpec qSpec = new PerfQuerySpec();
-                        qSpec.setEntity(vmMor);
-                        qSpec.setFormat("normal");
-                        qSpec.setIntervalId(intervalSeconds);
-                        qSpec.setStartTime(startTime);
-                        qSpec.setEndTime(endTime);
-                        qSpec.getMetricId().addAll(perfMetricsIds);
-                        final List<PerfEntityMetricBase> perfValues = service.queryPerf(perfMgr, Collections.singletonList(qSpec));
-                        for (final PerfEntityMetricBase perfValue : perfValues) {
-                            if (!(perfValue instanceof PerfEntityMetric)) {
-                                continue;
-                            }
-                            final List<PerfMetricSeries> seriesList = ((PerfEntityMetric) perfValue).getValue();
-                            for (final PerfMetricSeries series : seriesList) {
-                                if (!(series instanceof PerfMetricIntSeries)) {
+                        try {
+                            final PerfQuerySpec qSpec = new PerfQuerySpec();
+                            qSpec.setEntity(vmMor);
+                            qSpec.setFormat("normal");
+                            qSpec.setIntervalId(windowInterval);
+                            qSpec.setStartTime(startTime);
+                            qSpec.setEndTime(endTime);
+                            qSpec.getMetricId().addAll(perfMetricsIds);
+                            final List<PerfEntityMetricBase> perfValues = service.queryPerf(perfMgr, Collections.singletonList(qSpec));
+                            for (final PerfEntityMetricBase perfValue : perfValues) {
+                                if (!(perfValue instanceof PerfEntityMetric)) {
                                     continue;
                                 }
-                                final List<Long> values = ((PerfMetricIntSeries) series).getValue();
-                                double sum = 0;
-                                for (final Long value : values) {
-                                    sum += value;
-                                }
-                                double avg = sum / values.size();
-                                if (series.getId().getCounterId() == rxPerfCounterInfo.getKey()) {
-                                    networkReadKBs = avg;
-                                }
-                                if (series.getId().getCounterId() == txPerfCounterInfo.getKey()) {
-                                    networkWriteKBs = avg;
-                                }
-                                if (series.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
-                                    diskReadIops += avg;
-                                }
-                                if (series.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
-                                    diskWriteIops += avg;
-                                }
-                                if (series.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
-                                    diskReadKbs = avg;
-                                }
-                                if (series.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
-                                    diskWriteKbs = avg;
+                                final List<PerfMetricSeries> seriesList = ((PerfEntityMetric) perfValue).getValue();
+                                for (final PerfMetricSeries series : seriesList) {
+                                    if (!(series instanceof PerfMetricIntSeries)) {
+                                        continue;
+                                    }
+                                    final List<Long> values = ((PerfMetricIntSeries) series).getValue();
+                                    double sum = 0;
+                                    for (final Long value : values) {
+                                        sum += value;
+                                    }
+                                    double avg = sum / values.size();
+                                    if (series.getId().getCounterId() == rxPerfCounterInfo.getKey()) {
+                                        networkReadKBs = avg;
+                                    }
+                                    if (series.getId().getCounterId() == txPerfCounterInfo.getKey()) {
+                                        networkWriteKBs = avg;
+                                    }
+                                    if (series.getId().getCounterId() == diskReadIOPerfCounterInfo.getKey()) {
+                                        diskReadIops += avg;
+                                    }
+                                    if (series.getId().getCounterId() == diskWriteIOPerfCounterInfo.getKey()) {
+                                        diskWriteIops += avg;
+                                    }
+                                    if (series.getId().getCounterId() == diskReadKbsPerfCounterInfo.getKey()) {
+                                        diskReadKbs = avg;
+                                    }
+                                    if (series.getId().getCounterId() == diskWriteKbsPerfCounterInfo.getKey()) {
+                                        diskWriteKbs = avg;
+                                    }
                                 }
                             }
+                        } catch (Exception e) {
+                            s_logger.error(String.format("Unable to execute PerfQuerySpec due to: [%s]. The window interval is enabled in vCenter?", VmwareHelper.getExceptionMessage(e)), e);
                         }
                     }
 
@@ -7203,6 +7328,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             instance = new UnmanagedInstanceTO();
             instance.setName(vmMo.getVmName());
+            instance.setInternalCSName(vmMo.getInternalCSName());
             instance.setCpuCores(vmMo.getConfigSummary().getNumCpu());
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
             instance.setCpuSpeed(vmMo.getConfigSummary().getCpuReservation());
@@ -7337,7 +7463,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (targetHyperHost != null) {
                 ManagedObjectReference morTargetHostDc = targetHyperHost.getHyperHostDatacenter();
                 if (!morSourceHostDc.getValue().equalsIgnoreCase(morTargetHostDc.getValue())) {
-                    String msg = "VM " + vmName + " cannot be migrated between different datacenter";
+                    String msg = String.format("VM: %s cannot be migrated between different datacenter", vmName);
                     throw new CloudRuntimeException(msg);
                 }
             }
@@ -7345,12 +7471,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // find VM through source host (VM is not at the target host yet)
             vmMo = sourceHyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist on host: " + sourceHyperHost.getHyperHostName();
+                String msg = String.format("VM: %s does not exist on host: %s", vmName, sourceHyperHost.getHyperHostName());
                 s_logger.warn(msg);
                 // find VM through source host (VM is not at the target host yet)
                 vmMo = dcMo.findVm(vmName);
                 if (vmMo == null) {
-                    msg = "VM " + vmName + " does not exist on datacenter: " + dcMo.getName();
+                    msg = String.format("VM: %s does not exist on datacenter: %s", vmName, dcMo.getName());
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
@@ -7364,11 +7490,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (StringUtils.isNotBlank(poolUuid)) {
                 VmwareHypervisorHost dsHost = targetHyperHost == null ? sourceHyperHost : targetHyperHost;
                 ManagedObjectReference morDatastore = null;
-                String msg;
                 morDatastore = getTargetDatastoreMOReference(poolUuid, dsHost);
                 if (morDatastore == null) {
-                    msg = "Unable to find the target datastore: " + poolUuid + " on host: " + dsHost.getHyperHostName() +
-                            " to execute migration";
+                    String msg = String.format("Unable to find the target datastore: %s on host: %s to execute migration", poolUuid, dsHost.getHyperHostName());
                     s_logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
@@ -7384,7 +7508,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                     ManagedObjectReference morVolumeDatastore = getTargetDatastoreMOReference(filerTo.getUuid(), dsHost);
                     if (morVolumeDatastore == null) {
-                        String msg = "Unable to find the target datastore: " + filerTo.getUuid() + " in datacenter: " + dcMo.getName() + " to execute migration";
+                        String msg = String.format("Unable to find the target datastore: %s in datacenter: %s to execute migration", filerTo.getUuid(), dcMo.getName());
                         s_logger.error(msg);
                         throw new CloudRuntimeException(msg);
                     }
@@ -7445,8 +7569,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
                 if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl));
                 }
             }
 
@@ -7455,7 +7578,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!vmMo.changeDatastore(relocateSpec)) {
                     throw new Exception("Change datastore operation failed during storage migration");
                 } else {
-                    s_logger.debug("Successfully migrated storage of VM " + vmName + " to target datastore(s)");
+                    s_logger.debug(String.format("Successfully migrated storage of VM: %s to target datastore(s)", vmName));
                 }
                 // Migrate VM to target host.
                 if (targetHyperHost != null) {
@@ -7463,7 +7586,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (!vmMo.migrate(morPool, targetHyperHost.getMor())) {
                         throw new Exception("VM migration to target host failed during storage migration");
                     } else {
-                        s_logger.debug("Successfully migrated VM " + vmName + " from " + sourceHyperHost.getHyperHostName() + " to " + targetHyperHost.getHyperHostName());
+                        s_logger.debug(String.format("Successfully migrated VM: %s from host %s to %s", vmName , sourceHyperHost.getHyperHostName(), targetHyperHost.getHyperHostName()));
                     }
                 }
             } else {
@@ -7475,9 +7598,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!vmMo.changeDatastore(relocateSpec)) {
                     throw new Exception("Change datastore operation failed during storage migration");
                 } else {
-                    s_logger.debug("Successfully migrated VM " + vmName +
-                            (hostInTargetCluster != null ? " from " + sourceHyperHost.getHyperHostName() + " to " + targetHyperHost.getHyperHostName() + " and " : " with ") +
-                            "its storage to target datastore(s)");
+                    String msg = String.format("Successfully migrated VM: %s with its storage to target datastore(s)", vmName);
+                    if (targetHyperHost != null) {
+                        msg = String.format("%s from host %s to %s", msg, sourceHyperHost.getHyperHostName(), targetHyperHost.getHyperHostName());
+                    }
+                    s_logger.debug(msg);
                 }
             }
 
@@ -7486,7 +7611,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (!vmMo.consolidateVmDisks()) {
                 s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
             } else {
-                s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+                s_logger.debug(String.format("Successfully consolidated disks of VM: %s", vmName));
             }
 
             if (MapUtils.isNotEmpty(volumeDeviceKey)) {
@@ -7501,7 +7626,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             VolumeObjectTO newVol = new VolumeObjectTO();
                             newVol.setDataStoreUuid(entry.second().getUuid());
                             String newPath = vmMo.getVmdkFileBaseName(disk);
-                            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetHyperHost, entry.second().getUuid());
+                            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetHyperHost != null ? targetHyperHost : sourceHyperHost, entry.second().getUuid());
                             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
                             VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, dsMo.getName());
                             newVol.setId(volumeId);
@@ -7611,5 +7736,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
         }
+    }
+
+    private Integer getVmwareWindowTimeInterval() {
+        Integer windowInterval = VmwareManager.VMWARE_STATS_TIME_WINDOW.value();
+        if (windowInterval == null || windowInterval < 20) {
+            s_logger.error(String.format("The window interval can't be [%s]. Therefore we will use the default value of [%s] seconds.", windowInterval, VmwareManager.VMWARE_STATS_TIME_WINDOW.defaultValue()));
+            windowInterval = Integer.valueOf(VmwareManager.VMWARE_STATS_TIME_WINDOW.defaultValue());
+        }
+        return windowInterval;
     }
 }

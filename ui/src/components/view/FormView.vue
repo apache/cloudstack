@@ -21,10 +21,7 @@
     :visible="showForm"
     :closable="true"
     :confirmLoading="currentAction.loading"
-    :okText="$t('label.ok')"
-    :cancelText="$t('label.cancel')"
     style="top: 20px;"
-    @ok="handleSubmit"
     @cancel="close"
     centered
   >
@@ -55,8 +52,11 @@
                 rules: [{ required: field.required, message: `${this.$t('message.error.select')}` }]
               }]"
               :placeholder="field.description"
-
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>

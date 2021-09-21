@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,6 +52,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
@@ -124,6 +128,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
@@ -163,8 +168,6 @@ import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process to
@@ -222,8 +225,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
 
-    private String xenServer70plusGuestToolsName = "guest-tools.iso";
-    private String xenServerBefore70GuestToolsName = "xs-tools.iso";
+    public static final String XS_TOOLS_ISO_AFTER_70 = "guest-tools.iso";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
@@ -1438,6 +1440,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
+        try {
+            setVmBootDetails(vm, conn, vmSpec.getBootType(), vmSpec.getBootMode());
+        } catch (final XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+        }
         return vm;
     }
 
@@ -1784,6 +1791,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.getProductVersion());
+            if (isUefiSupported(_host.getProductVersion())) {
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));
@@ -1940,6 +1950,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.info("Appending user extra configuration settings to VM");
             ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
+    }
+
+    protected void setVmBootDetails(final VM vm, final Connection conn, String bootType, String bootMode) throws XenAPIException, XmlRpcException {
+        if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
+            bootType = ApiConstants.BootType.BIOS.toString();
+        }
+        Boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
+                ApiConstants.BootMode.SECURE.toString().equals(bootMode);
+        final Map<String, String> bootParams = vm.getHVMBootParams(conn);
+        bootParams.replace("firmware", bootType.toLowerCase());
+        vm.setHVMBootParams(conn, bootParams);
+        final Map<String, String> platform = vm.getPlatform(conn);
+        platform.put("secureboot", isSecure.toString());
+        vm.setPlatform(conn, platform);
     }
 
     /**
@@ -2666,11 +2690,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * Retrieve the actual ISO 'name-label' to be used.
      * We based our decision on XenServer version.
      * <ul>
-     *  <li> for XenServer 7.0+, we use {@value #xenServer70plusGuestToolsName};
-     *  <li> for versions before 7.0, we use {@value #xenServerBefore70GuestToolsName}.
+     *  <li> for XenServer 7.0+, we use {@value #XS_TOOLS_ISO_AFTER_70};
+     *  <li> for versions before 7.0, we use {@value TemplateManager#XS_TOOLS_ISO}.
      * </ul>
      *
-     * For XCP we always use {@value #xenServerBefore70GuestToolsName}.
      */
     protected String getActualIsoTemplate(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.getUuid());
@@ -2680,9 +2703,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String[] items = xenVersion.split("\\.");
 
         if ((xenBrand.equals("XenServer") || xenBrand.equals("XCP-ng")) && Integer.parseInt(items[0]) >= 7) {
-            return xenServer70plusGuestToolsName;
+            return XS_TOOLS_ISO_AFTER_70;
         }
-        return xenServerBefore70GuestToolsName;
+        return TemplateManager.XS_TOOLS_ISO;
     }
 
     public String getLabel() {

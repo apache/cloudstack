@@ -23,6 +23,7 @@
       v-html="$t(description)">
     </a-card>
     <a-form
+      v-ctrl-enter="handleSubmit"
       class="form-content"
       :form="form"
       @submit="handleSubmit">
@@ -46,7 +47,11 @@
           }]"
           :allowClear="true"
           :autoFocus="index === 0"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="option in field.options"
             :key="option.id"
@@ -103,7 +108,7 @@
         @click="handleBack">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button class="button-next" type="primary" @click="handleSubmit">
+      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
     </div>
