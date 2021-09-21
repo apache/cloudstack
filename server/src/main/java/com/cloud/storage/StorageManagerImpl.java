@@ -1836,41 +1836,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         handleRemoveChildStoragePoolFromDatastoreCluster(childDatastoreUUIDs);
     }
 
-    /**
-     * fixed mismatching between db uuids and and custom
-     * attribute uuids
-     *
-     * To different formats of uuids exists
-     * 1. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-     * 2. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-     * @param uuid of existing pool
-     * @return existing pull or null otherwise
-     */
     private StoragePoolVO getExistingPoolByUuid(String uuid){
-        StoragePoolVO storagePool = _storagePoolDao.findByUuid(uuid);
-        if(storagePool != null){
-            return storagePool;
-        }
-
-        //this case is unlikely (DB uuid without separators), but safety first
-        if(uuid.contains("-")){
-            uuid = uuid.replaceAll("-", "");
-            storagePool = _storagePoolDao.findByUuid(uuid);
-            if(storagePool != null){
-                return storagePool;
-            }
-        }
-
-        //transform uuid in the valid format with separators
-        UUID poolUuid;
-        poolUuid = new UUID(
+        if(!uuid.contains("-")){
+            UUID poolUuid = new UUID(
                 new BigInteger(uuid.substring(0, 16), 16).longValue(),
                 new BigInteger(uuid.substring(16), 16).longValue()
-        );
-
-        return _storagePoolDao.findByUuid(poolUuid.toString());
+            );
+            uuid = poolUuid.toString();
+        }
+        return _storagePoolDao.findByUuid(uuid);
     }
-
 
     private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
