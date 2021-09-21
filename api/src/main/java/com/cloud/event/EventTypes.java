@@ -328,6 +328,7 @@ public class EventTypes {
 
     public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
+    public static final String EVENT_MANAGEMENT_IP_RANGE_UPDATE = "MANAGEMENT.IP.RANGE.UPDATE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";

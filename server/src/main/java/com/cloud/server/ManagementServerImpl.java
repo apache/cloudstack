@@ -148,6 +148,7 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
@@ -2174,7 +2175,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
-        buildParameters(sb, cmd);
+        buildParameters(sb, cmd, vlanType == VlanType.VirtualNetwork ? true : isAllocated);
 
         SearchCriteria<IPAddressVO> sc = sb.create();
         setParameters(sc, cmd, vlanType);
@@ -2236,7 +2237,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         if (freeAddrIds.size() > 0) {
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
-            buildParameters(sb2, cmd);
+            buildParameters(sb2, cmd, false);
             sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
@@ -2244,6 +2245,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc2.setParameters("ids", freeAddrIds.toArray());
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
+        Collections.sort(addrs, Comparator.comparing(IPAddressVO::getAddress));
         List<? extends IpAddress> wPagination = com.cloud.utils.StringUtils.applyPagination(addrs, cmd.getStartIndex(), cmd.getPageSizeVal());
         if (wPagination != null) {
             return new Pair<List<? extends IpAddress>, Integer>(wPagination, addrs.size());
@@ -2251,11 +2253,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(addrs, addrs.size());
     }
 
-    private void buildParameters(final SearchBuilder<IPAddressVO> sb, final ListPublicIpAddressesCmd cmd) {
+    private void buildParameters(final SearchBuilder<IPAddressVO> sb, final ListPublicIpAddressesCmd cmd, final Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final String address = cmd.getIpAddress();
         final Boolean forLoadBalancing = cmd.isForLoadBalancing();
-        Boolean isAllocated = cmd.isAllocatedOnly();
         final Map<String, String> tags = cmd.getTags();
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -3052,6 +3053,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateRegionCmd.class);
         cmdList.add(ListAlertsCmd.class);
         cmdList.add(ListCapacityCmd.class);
+        cmdList.add(UpdatePodManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadCustomCertificateCmd.class);
         cmdList.add(ConfigureVirtualRouterElementCmd.class);
         cmdList.add(CreateVirtualRouterElementCmd.class);

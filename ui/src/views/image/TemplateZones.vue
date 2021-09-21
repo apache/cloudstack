@@ -127,13 +127,13 @@
               :loading="zoneLoading"
               autoFocus>
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
-                <span>
+                <div>
                   <span v-if="zone.icon && zone.icon.base64image">
                     <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                   </span>
                   <a-icon v-else type="global" style="margin-right: 5px" />
                   {{ zone.name }}
-                </span>
+                </div>
               </a-select-option>
             </a-select>
           </a-form-item>
