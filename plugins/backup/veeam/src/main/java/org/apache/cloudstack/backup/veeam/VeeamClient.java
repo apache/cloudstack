@@ -646,7 +646,7 @@ public class VeeamClient {
             if (block.isEmpty()) {
                 continue;
             }
-            LOG.debug(String.format("Found restore points from [backupName: %s, vmInternalName: %s] with is: [%s].", backupName, vmInternalName, block));
+            LOG.debug(String.format("Found restore points from [backupName: %s, vmInternalName: %s] which is: [%s].", backupName, vmInternalName, block));
             final String[] parts = block.split("\r\n");
             restorePoints.add(getRestorePointFromBlock(parts));
         }
