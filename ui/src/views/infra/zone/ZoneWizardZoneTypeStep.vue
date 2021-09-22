@@ -118,7 +118,7 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : (this.$config.basicZoneEnabled ? 'Basic' : 'Advanced')
+      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : 'Advanced'
     },
     securityGroupsEnabled () {
       return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
