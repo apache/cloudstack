@@ -40,6 +40,7 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -234,6 +235,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
@@ -447,6 +449,45 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     private ResourceIconDao resourceIconDao;
 
+    private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+        SearchCriteria<ServiceOfferingJoinVO> sc1 = _srvOfferingJoinDao.createSearchCriteria();
+        sc1.addAnd("cpu", Op.GTEQ, cpu);
+        sc.addOr("cpu", Op.SC, sc1);
+        SearchCriteria<ServiceOfferingJoinVO> sc2 = _srvOfferingJoinDao.createSearchCriteria();
+        sc2.addAnd("cpu", Op.NULL);
+        sc2.addAnd("maxCpu", Op.NULL);
+        sc.addOr("cpu", Op.SC, sc2);
+        SearchCriteria<ServiceOfferingJoinVO> sc3 = _srvOfferingJoinDao.createSearchCriteria();
+        sc3.addAnd("cpu", Op.NULL);
+        sc3.addAnd("maxCpu", Op.GTEQ, cpu);
+        sc.addOr("cpu", Op.SC, sc3);
+        return sc;
+    }
+
+    private SearchCriteria<ServiceOfferingJoinVO> getMinimumMemoryServiceOfferingJoinSearchCriteria(int memory) {
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+        SearchCriteria<ServiceOfferingJoinVO> sc1 = _srvOfferingJoinDao.createSearchCriteria();
+        sc1.addAnd("ramSize", Op.GTEQ, memory);
+        sc.addOr("ramSize", Op.SC, sc1);
+        SearchCriteria<ServiceOfferingJoinVO> sc2 = _srvOfferingJoinDao.createSearchCriteria();
+        sc2.addAnd("ramSize", Op.NULL);
+        sc2.addAnd("maxMemory", Op.NULL);
+        sc.addOr("ramSize", Op.SC, sc2);
+        SearchCriteria<ServiceOfferingJoinVO> sc3 = _srvOfferingJoinDao.createSearchCriteria();
+        sc3.addAnd("ramSize", Op.NULL);
+        sc3.addAnd("maxMemory", Op.GTEQ, memory);
+        sc.addOr("ramSize", Op.SC, sc3);
+        return sc;
+    }
+
+    private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuSpeedServiceOfferingJoinSearchCriteria(int speed) {
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+        sc.addOr("speed", Op.GTEQ, speed);
+        sc.addOr("speed", Op.NULL);
+        return sc;
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -454,7 +495,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      * com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack
      * .api.command.admin.user.ListUsersCmd)
      */
-
     @Override
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
@@ -2994,9 +3034,28 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             // 2.In case vm is running return only offerings greater than equal to current offering compute and offering's dynamic scalability should match
             if (vmInstance.getState() == VirtualMachine.State.Running) {
-                sc.addAnd("cpu", Op.GTEQ, currentVmOffering.getCpu());
-                sc.addAnd("speed", Op.GTEQ, currentVmOffering.getSpeed());
-                sc.addAnd("ramSize", Op.GTEQ, currentVmOffering.getRamSize());
+                Integer vmCpu = currentVmOffering.getCpu();
+                Integer vmMemory = currentVmOffering.getRamSize();
+                Integer vmSpeed = currentVmOffering.getSpeed();
+                if ((vmCpu == null || vmMemory == null || vmSpeed == null) && VirtualMachine.Type.User.equals(vmInstance.getType())) {
+                    UserVmVO userVmVO = _userVmDao.findById(vmId);
+                    _userVmDao.loadDetails(userVmVO);
+                    Map<String, String> details = userVmVO.getDetails();
+                    vmCpu = NumbersUtil.parseInt(details.get(ApiConstants.CPU_NUMBER), 0);
+                    if (vmSpeed == null) {
+                        vmSpeed = NumbersUtil.parseInt(details.get(ApiConstants.CPU_SPEED), 0);
+                    }
+                    vmMemory = NumbersUtil.parseInt(details.get(ApiConstants.MEMORY), 0);
+                }
+                if (vmCpu != null && vmCpu > 0) {
+                    sc.addAnd("cpu", Op.SC, getMinimumCpuServiceOfferingJoinSearchCriteria(vmCpu));
+                }
+                if (vmSpeed != null && vmSpeed > 0) {
+                    sc.addAnd("speed", Op.SC, getMinimumCpuSpeedServiceOfferingJoinSearchCriteria(vmSpeed));
+                }
+                if (vmMemory != null && vmMemory > 0) {
+                    sc.addAnd("ramSize", Op.SC, getMinimumMemoryServiceOfferingJoinSearchCriteria(vmMemory));
+                }
                 sc.addAnd("dynamicScalingEnabled", Op.EQ, currentVmOffering.isDynamicScalingEnabled());
             }
         }
