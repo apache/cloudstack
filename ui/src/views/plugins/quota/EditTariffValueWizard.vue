@@ -78,7 +78,7 @@ export default {
       pattern: 'YYYY-MM-DD'
     }
   },
-  inject: ['parentEditTariffAction', 'parentFetchData'],
+  inject: ['parentFetchData'],
   created () {
     this.initForm()
   },
@@ -94,7 +94,7 @@ export default {
       })
     },
     onClose () {
-      this.parentEditTariffAction(false)
+      this.$emit('edit-tariff-action', false)
     },
     submitTariff (e) {
       e.preventDefault()

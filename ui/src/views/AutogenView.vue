@@ -386,7 +386,8 @@
         :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
-        @refresh="fetchData" />
+        @refresh="fetchData"
+        @edit-tariff-action="closeAction"/>
       <a-pagination
         class="row-element"
         style="margin-top: 10px"

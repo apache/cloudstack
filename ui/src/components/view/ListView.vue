@@ -430,7 +430,7 @@ export default {
       default: () => []
     }
   },
-  inject: ['parentFetchData', 'parentToggleLoading', 'parentEditTariffAction'],
+  inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
       selectedRowKeys: [],
@@ -649,7 +649,7 @@ export default {
       this.updateOrder(data)
     },
     editTariffValue (record) {
-      this.parentEditTariffAction(true, record)
+      this.$emit('edit-tariff-action', true, record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {
