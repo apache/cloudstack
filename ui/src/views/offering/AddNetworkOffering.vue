@@ -168,7 +168,7 @@
             </a-form-item>
             <a-form-item>
               <tooltip-label slot="label" :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
-              <span v-if="macLearningValue === 'true'">
+              <span v-if="macLearningValue !== ''">
                 <a-alert type="warning">
                   <span slot="message" v-html="$t('message.network.offering.mac.learning.warning')" />
                 </a-alert>
