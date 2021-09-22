@@ -165,15 +165,18 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="network in addNetworkData.allNetworks"
               :key="network.id"
-              :value="network.id">
-              <resource-icon v-if="network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="apartment" style="margin-right: 5px" />
-              {{ network.name }}
+              :value="network.id"
+              :label="network.name">
+              <span>
+                <resource-icon v-if="network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="apartment" style="margin-right: 5px" />
+                {{ network.name }}
+              </span>
             </a-select-option>
           </a-select>
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>

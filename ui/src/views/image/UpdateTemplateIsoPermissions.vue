@@ -74,12 +74,14 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="account in accountsList" :key="account.name">
-                <resource-icon v-if="account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="team" style="margin-right: 5px" />
-                {{ account.name }}
+              <a-select-option v-for="account in accountsList" :key="account.name" :label="account.name">
+                <span>
+                  <resource-icon v-if="account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="team" style="margin-right: 5px" />
+                  {{ account.name }}
+                </span>
               </a-select-option>
             </a-select>
           </div>
@@ -103,12 +105,14 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="project in projectsList" :key="project.name">
-              <resource-icon v-if="project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="project" style="margin-right: 5px" />
-              {{ project.name }}
+            <a-select-option v-for="project in projectsList" :key="project.name" :label="project.name">
+              <span>
+                <resource-icon v-if="project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="project" style="margin-right: 5px" />
+                {{ project.name }}
+              </span>
             </a-select-option>
           </a-select>
         </div>

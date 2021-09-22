@@ -31,14 +31,6 @@
               initialValue: zoneType
             }]
           }]">
-          <a-card :gutter="12" class="card-item" v-if="$config.basicZoneEnabled">
-            <a-col :md="6" :lg="6">
-              <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
-            </a-col>
-            <a-col :md="18" :lg="18">
-              <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
-            </a-col>
-          </a-card>
           <a-card :gutter="12" class="card-item">
             <a-col :md="6" :lg="6">
               <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
@@ -66,6 +58,14 @@
             </a-col>
             <a-col :md="18" :lg="18" style="margin-top: 15px;">
               <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
+            </a-col>
+          </a-card>
+          <a-card :gutter="12" class="card-item" v-if="$config.basicZoneEnabled">
+            <a-col :md="6" :lg="6">
+              <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
+            </a-col>
+            <a-col :md="18" :lg="18">
+              <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
             </a-col>
           </a-card>
         </a-radio-group>
@@ -118,7 +118,7 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : (this.$config.basicZoneEnabled ? 'Basic' : 'Advanced')
+      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : 'Advanced'
     },
     securityGroupsEnabled () {
       return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)

@@ -104,12 +104,14 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">
-                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="block" style="margin-right: 5px" />
-                {{ domain.path || domain.name || domain.description }}
+              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id" :label="domain.path || domain.name || domain.description">
+                <span>
+                  <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="block" style="margin-right: 5px" />
+                  {{ domain.path || domain.name || domain.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -122,15 +124,17 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="account in accounts"
                 :key="account.id"
                 :value="account.name">
-                <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="team" style="margin-right: 5px" />
-                {{ account.name }}
+                <span>
+                  <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="team" style="margin-right: 5px" />
+                  {{ account.name }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -143,15 +147,18 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="project in projects"
                 :key="project.id"
-                :value="project.id">
-                <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="project" style="margin-right: 5px" />
-                {{ project.name }}
+                :value="project.id"
+                :label="project.name">
+                <span>
+                  <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="project" style="margin-right: 5px" />
+                  {{ project.name }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
