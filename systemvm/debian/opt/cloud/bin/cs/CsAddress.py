@@ -504,7 +504,7 @@ class CsIP:
                             self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
                                             (self.address["network"], address["network"], address["device"])])
                 # Accept packet from private gateway if VPC VR is used as gateway
-                self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" %
+                self.fw.append(["filter", "front", "-A FORWARD -s %s ! -d %s -j ACCEPT" %
                                 (self.address['network'], self.address['network'])])
 
         if self.get_type() in ["public"]:
