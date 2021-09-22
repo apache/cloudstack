@@ -2898,7 +2898,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
         if (cmd.getBootIntoSetup() != null) {
-            additonalParams = new HashMap<>();
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoSetup.getName()));
             }
