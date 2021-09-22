@@ -238,42 +238,35 @@
     </a-modal>
 
     <a-modal
-      v-model="updateIpRangeModal"
+      :visible="updateIpRangeModal"
       :title="$t('label.update.ip.range')"
       v-if="selectedItem"
       :maskClosable="false"
       :footer="null"
-      v-ctrl-enter="handleUpdateIpRange"
       @cancel="updateIpRangeModal = false">
       <a-form
-        :form="form"
-        @submit="handleAddIpRange"
+        :ref="updRangeRef"
+        :model="formUpdRange"
+        :rules="updRangeRules"
+        @finish="handleAddIpRange"
+        v-ctrl-enter="handleAddIpRange"
         layout="vertical"
         class="form"
       >
-        <a-form-item :label="$t('label.startip')" class="form__item">
-          <a-input
-            autoFocus
-            v-decorator="['startip', { initialValue: selectedItem.startip || '', rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
+        <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
+          <a-input v-focus="true" v-model:value="form.startip"></a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.endip')" class="form__item">
-          <a-input
-            v-decorator="['endip', { initialValue: selectedItem.endip || '', rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
+        <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
+          <a-input v-model:value="form.endip"></a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.gateway')" class="form__item">
-          <a-input
-            v-decorator="['gateway', { initialValue: selectedItem.gateway || '', rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
+        <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
+          <a-input v-model:value="form.gateway"></a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.netmask')" class="form__item">
-          <a-input
-            v-decorator="['netmask', { initialValue: selectedItem.netmask || '', rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
+        <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
+          <a-input v-model:value="form.netmask"></a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.system.vms')" class="form__item">
-          <a-switch v-decorator="['forsystemvms', { initialValue: selectedItem.forsystemvms }]"></a-switch>
+        <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
+          <a-switch v-model:checked="form.forsystemvms"></a-switch>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -398,6 +391,17 @@ export default {
         startip: [{ required: true, message: this.$t('label.required') }],
         endip: [{ required: true, message: this.$t('label.required') }]
       })
+      this.initFormUpdateRange()
+    },
+    initFormUpdateRange () {
+      this.updRangeRef = ref()
+      this.formUpdRange = reactive({})
+      this.updRangeRules = reactive({
+        startip: [{ required: true, message: this.$t('label.required') }],
+        endip: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('label.required') }],
+        netmask: [{ required: true, message: this.$t('label.required') }]
+      })
     },
     fetchData () {
       this.componentLoading = true
@@ -504,6 +508,12 @@ export default {
     handleUpdateIpRangeModal (item) {
       this.selectedItem = item
       this.updateIpRangeModal = true
+
+      this.formUpdRange.startip = this.selectedItem?.startip || ''
+      this.formUpdRange.endip = this.selectedItem?.endip || ''
+      this.formUpdRange.gateway = this.selectedItem?.gateway || ''
+      this.formUpdRange.netmask = this.selectedItem?.netmask || ''
+      this.formUpdRange.forsystemvms = this.selectedItem?.forsystemvms || false
     },
     handleDeleteIpRange (id) {
       this.componentLoading = true
@@ -561,8 +571,8 @@ export default {
     },
     handleUpdateIpRange (e) {
       if (this.componentLoading) return
-      this.form.validateFields((error, values) => {
-        if (error) return
+      this.updRangeRef.value.validate().then(() => {
+        const values = toRaw(this.formUpdRange)
 
         this.componentLoading = true
         this.updateIpRangeModal = false
