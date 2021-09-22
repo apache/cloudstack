@@ -158,7 +158,7 @@
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description" />
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item :label="$t('label.samlenable')" ref="samlenable" name="samlenable">
             <a-switch v-model:checked="form.samlenable" />
           </a-form-item>
@@ -175,7 +175,7 @@
               :filterOption="(input, option) => {
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }">
-              <a-select-option v-for="(idp, idx) in idps" :key="idx">
+              <a-select-option v-for="idp in idps" :key="idp.id">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
@@ -224,6 +224,11 @@ export default {
     this.initForm()
     this.fetchData()
   },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -246,7 +251,7 @@ export default {
       this.fetchDomains()
       this.fetchRoles()
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
@@ -366,7 +371,7 @@ export default {
                 userid: users[i].id
               }).then(response => {
                 this.$notification.success({
-                  message: this.$t('samlenable'),
+                  message: this.$t('label.samlenable'),
                   description: this.$t('message.success.enable.saml.auth')
                 })
               }).catch(error => {

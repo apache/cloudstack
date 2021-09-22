@@ -147,7 +147,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item name="samlenable" ref="samlenable" :label="$t('label.samlenable')">
             <a-switch v-model:checked="form.samlenable" />
           </a-form-item>
@@ -163,7 +163,7 @@
               :filterOption="(input, option) => {
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(idp, idx) in idps" :key="idx">
+              <a-select-option v-for="idp in idps" :key="idp.id">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
@@ -214,6 +214,11 @@ export default {
     this.initForm()
     this.fetchData()
   },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -242,7 +247,7 @@ export default {
         this.fetchAccount()
       }
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
@@ -339,26 +344,24 @@ export default {
             message: this.$t('label.create.user'),
             description: `${this.$t('message.success.create.user')} ${params.username}`
           })
-          const users = response.createuserresponse.user.user
-          if (values.samlenable && users) {
-            for (var i = 0; i < users.length; i++) {
-              api('authorizeSamlSso', {
-                enable: values.samlenable,
-                entityid: values.samlentity,
-                userid: users[i].id
-              }).then(response => {
-                this.$notification.success({
-                  message: this.$t('label.samlenable'),
-                  description: this.$t('message.success.enable.saml.auth')
-                })
-              }).catch(error => {
-                this.$notification.error({
-                  message: this.$t('message.request.failed'),
-                  description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-                  duration: 0
-                })
+          const user = response.createuserresponse.user
+          if (values.samlenable && user) {
+            api('authorizeSamlSso', {
+              enable: values.samlenable,
+              entityid: values.samlentity,
+              userid: user.id
+            }).then(response => {
+              this.$notification.success({
+                message: this.$t('label.samlenable'),
+                description: this.$t('message.success.enable.saml.auth')
               })
-            }
+            }).catch(error => {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
+                duration: 0
+              })
+            })
           }
           this.closeAction()
         }).catch(error => {
