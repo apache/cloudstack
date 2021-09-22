@@ -119,7 +119,7 @@ export default {
             }
             this.parentFetchData()
           }
-
+          this.$message.success(`${this.$t('message.setting.updated')} ${this.resource.description}`)
           this.onClose()
         }).catch(error => {
           this.$notification.error({
