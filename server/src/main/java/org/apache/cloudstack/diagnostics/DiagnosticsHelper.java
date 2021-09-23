@@ -29,12 +29,19 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 
+import com.cloud.utils.script.Script;
+import org.apache.cloudstack.storage.NfsMountManager;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.script.Script2;
+import org.joda.time.Duration;
+
+import javax.inject.Inject;
 
 public class DiagnosticsHelper {
+    @Inject
+    private static NfsMountManager mountManager;
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsHelper.class);
 
     public static void setDirFilePermissions(Path path) throws java.io.IOException {
@@ -53,11 +60,17 @@ public class DiagnosticsHelper {
 
     public static void umountSecondaryStorage(String mountPoint) {
         if (StringUtils.isNotBlank(mountPoint)) {
-            Script2 umountCmd = new Script2("/bin/bash", LOGGER);
+            Script umountCmd = new Script(true, "umount",  Duration.ZERO, LOGGER);
             umountCmd.add("-c");
-            String cmdLine = String.format("umount %s", mountPoint);
-            umountCmd.add(cmdLine);
-            umountCmd.execute();
+            umountCmd.add(mountPoint);
+            String result = umountCmd.execute();
+            if (result == null) {
+                try {
+                    FileUtils.deleteDirectory(new File(mountPoint));
+                } catch (IOException e) {
+                    LOGGER.error(String.format("Failed to deleted NFS store mounted at %s", mountPoint));
+                }
+            }
         }
     }
 

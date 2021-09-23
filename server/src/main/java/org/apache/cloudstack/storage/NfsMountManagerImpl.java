@@ -63,7 +63,14 @@ public class NfsMountManagerImpl implements NfsMountManager {
     public String getMountPoint(String storageUrl, String nfsVersion) {
         String mountPoint = storageMounts.get(storageUrl);
         if (mountPoint != null) {
-            return mountPoint;
+            File mountFile = new File(mountPoint);
+            if (!mountFile.exists()) {
+                storageMounts.remove(storageUrl);
+                mountPoint = null;
+            }
+            if (mountPoint != null) {
+                return mountPoint;
+            }
         }
 
         URI uri;
