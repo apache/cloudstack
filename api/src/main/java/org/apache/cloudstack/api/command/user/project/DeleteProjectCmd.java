@@ -48,7 +48,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be deleted")
     private Long id;
 
-    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, description = "true if all project resources have to be cleaned up, false otherwise")
+    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, since = "4.16.0", description = "true if all project resources have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
     /////////////////////////////////////////////////////
