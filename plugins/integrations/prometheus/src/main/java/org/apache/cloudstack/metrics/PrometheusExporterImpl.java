@@ -60,7 +60,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -536,7 +536,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         @Override
         public String toMetricsString() {
-            if (! Strings.isNullOrEmpty(hosttags)) {
+            if (StringUtils.isNotEmpty(hosttags)) {
                 name = "cloudstack_hosts_total_by_tag";
                 return String.format("%s{zone=\"%s\",filter=\"%s\",tags=\"%s\"} %d", name, zoneName, state, hosttags, total);
             }
@@ -573,7 +573,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             if (StringUtils.isAllEmpty(hostName, ip)) {
-                if (Strings.isNullOrEmpty(hosttags)) {
+                if (StringUtils.isEmpty(hosttags)) {
                     return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, filter, core);
                 } else {
                     name = "cloudstack_host_vms_cores_total_by_tag";
@@ -613,7 +613,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             if (StringUtils.isAllEmpty(hostName, ip)) {
-                if (Strings.isNullOrEmpty(hosttags)) {
+                if (StringUtils.isEmpty(hosttags)) {
                     return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, mhertz);
                 } else {
                     name = "cloudstack_host_cpu_usage_mhz_total_by_tag";
@@ -653,7 +653,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             if (StringUtils.isAllEmpty(hostName, ip)) {
-                if (Strings.isNullOrEmpty(hosttags)) {
+                if (StringUtils.isEmpty(hosttags)) {
                     return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, miBytes);
                 } else {
                     name = "cloudstack_host_memory_usage_mibs_total_by_tag";
