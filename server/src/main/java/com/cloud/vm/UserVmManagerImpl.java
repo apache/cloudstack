@@ -2586,10 +2586,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyVmLimits(UserVmVO vmInstance, Map<String, String> details) {
-        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            return;
-        }
-
         Account owner = _accountDao.findById(vmInstance.getAccountId());
         if (owner == null) {
             throw new InvalidParameterValueException("The owner of " + vmInstance + " does not exist: " + vmInstance.getAccountId());
@@ -2605,6 +2601,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(newCpu));
             customParameters.put(VmDetailConstants.MEMORY, String.valueOf(newMemory));
             validateCustomParameters(svcOffering, customParameters);
+        }
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            return;
         }
         long currentCpu = currentServiceOffering.getCpu();
         long currentMemory = currentServiceOffering.getRamSize();
