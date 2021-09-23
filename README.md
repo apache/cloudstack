@@ -143,5 +143,5 @@ The following provides more details on the included cryptographic software:
 * CloudStack makes use of JaSypt cryptographic libraries.
 * CloudStack has a system requirement of MySQL, and uses native database encryption functionality.
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
-* CloudStack can optionally interacts with and controls OpenSwan-based VPNs.
+* CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.

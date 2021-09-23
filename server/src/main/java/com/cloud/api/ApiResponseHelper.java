@@ -20,6 +20,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
@@ -2166,6 +2167,27 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    private void createCapabilityResponse(List<CapabilityResponse> capabilityResponses,
+                                          String name,
+                                          String value,
+                                          boolean canChoose,
+                                          String objectName) {
+        CapabilityResponse capabilityResponse = new CapabilityResponse();
+        capabilityResponse.setName(name);
+        capabilityResponse.setValue(value);
+        capabilityResponse.setCanChoose(canChoose);
+        capabilityResponse.setObjectName(objectName);
+
+        capabilityResponses.add(capabilityResponse);
+    }
+
+    private void createCapabilityResponse(List<CapabilityResponse> capabilityResponses,
+                                          String name,
+                                          String value,
+                                          boolean canChoose) {
+        createCapabilityResponse(capabilityResponses, name, value, canChoose, null);
+    }
+
     @Override
     public NetworkResponse createNetworkResponse(ResponseView view, Network network) {
         // need to get network profile in order to retrieve dns information from
@@ -2299,6 +2321,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns2(profile.getDns2());
         // populate capability
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId(), network.getDataCenterId());
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(network.getNetworkOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
             for (Map.Entry<Service, Map<Capability, String>>entry : serviceCapabilitiesMap.entrySet()) {
@@ -2311,20 +2334,58 @@ public class ApiResponseHelper implements ResponseGenerator {
                 serviceResponse.setName(service.getName());
 
                 // set list of capabilities for the service
-                List<CapabilityResponse> capabilityResponses = new ArrayList<CapabilityResponse>();
+                List<CapabilityResponse> capabilityResponses = new ArrayList<>();
                 Map<Capability, String> serviceCapabilities = entry.getValue();
                 if (serviceCapabilities != null) {
                     for (Map.Entry<Capability,String> ser_cap_entries : serviceCapabilities.entrySet()) {
                         Capability capability = ser_cap_entries.getKey();
-                        CapabilityResponse capabilityResponse = new CapabilityResponse();
                         String capabilityValue = ser_cap_entries.getValue();
-                        capabilityResponse.setName(capability.getName());
-                        capabilityResponse.setValue(capabilityValue);
-                        capabilityResponse.setObjectName("capability");
-                        capabilityResponses.add(capabilityResponse);
+                        if (Service.Lb == service && capability.getName().equals(Capability.SupportedLBIsolation.getName())) {
+                             capabilityValue = networkOffering.isDedicatedLB() ? "dedicated" : "shared";
+                        }
+
+                        Set<String> capabilitySet = new HashSet<>(Arrays.asList(Capability.SupportedLBIsolation.getName(),
+                                Capability.SupportedSourceNatTypes.getName(),
+                                Capability.RedundantRouter.getName()));
+                        boolean canChoose = capabilitySet.contains(capability.getName());
+
+                        createCapabilityResponse(capabilityResponses, capability.getName(),
+                                capabilityValue, canChoose, "capability");
                     }
-                    serviceResponse.setCapabilities(capabilityResponses);
                 }
+
+                if (Service.SourceNat == service) {
+                    // overwrite
+                    capabilityResponses = new ArrayList<>();
+                    createCapabilityResponse(capabilityResponses, Capability.SupportedSourceNatTypes.getName(),
+                            networkOffering.isSharedSourceNat() ? "perzone" : "peraccount", true);
+
+                    createCapabilityResponse(capabilityResponses, Capability.RedundantRouter.getName(),
+                            networkOffering.isRedundantRouter() ? "true" : "false", true);
+                } else if (service == Service.StaticNat) {
+                    createCapabilityResponse(capabilityResponses, Capability.ElasticIp.getName(),
+                            networkOffering.isElasticIp() ? "true" : "false", false);
+
+                    createCapabilityResponse(capabilityResponses, Capability.AssociatePublicIP.getName(),
+                            networkOffering.isAssociatePublicIP() ? "true" : "false", false);
+                } else if (Service.Lb == service) {
+                    createCapabilityResponse(capabilityResponses, Capability.ElasticLb.getName(),
+                            networkOffering.isElasticLb() ? "true" : "false", false);
+
+                    createCapabilityResponse(capabilityResponses, Capability.InlineMode.getName(),
+                            networkOffering.isInline() ? "true" : "false", false);
+                }
+                serviceResponse.setCapabilities(capabilityResponses);
+
+                List<ProviderResponse> providers = new ArrayList<>();
+                for (Provider provider : serviceProviderMap.get(service)) {
+                    if (provider != null) {
+                        ProviderResponse providerRsp = new ProviderResponse();
+                        providerRsp.setName(provider.getName());
+                        providers.add(providerRsp);
+                    }
+                }
+                serviceResponse.setProviders(providers);
 
                 serviceResponse.setObjectName("service");
                 serviceResponses.add(serviceResponse);
