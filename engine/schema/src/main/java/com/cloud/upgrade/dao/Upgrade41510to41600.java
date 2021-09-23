@@ -33,7 +33,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import java.math.BigInteger;
 import java.util.UUID;
-import java.util.logging.Level;
+
 
 public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
