@@ -88,8 +88,9 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
             }
             updateStmt.executeBatch();
         } catch (SQLException ex) {
-            LOG.error("fixWrongPoolUuid:Exception while updating faulty pool uuids" + ex.getMessage());
-            throw new CloudRuntimeException("fixWrongPoolUuid:Exception while updating faulty pool uuids", ex);
+            String errorMsg = "fixWrongPoolUuid:Exception while updating faulty pool uuids";
+            LOG.error(errorMsg + ex.getMessage());
+            throw new CloudRuntimeException(errorMsg, ex);
         }
     }
 
