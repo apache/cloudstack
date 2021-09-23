@@ -92,7 +92,9 @@ public class KVMHostInfo {
                     cpuInfoMaxFreqFileName), e);
                 String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
                 String result = Script.runSimpleBashScript(command);
-                return Long.parseLong(result) * 1000;
+                long speed = (long) (Float.parseFloat(result) * 1000);
+                LOGGER.info(String.format("Got [%d] speed from lscpu", speed));
+                return speed;
             } catch (NullPointerException | NumberFormatException ex) {
                 LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s] and lscpu. Using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), ex);
                 return nodeInfo.mhz;
