@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -433,14 +434,14 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         PreparedStatement pstmt;
 
         StringBuilder allocatedSql = new StringBuilder(LIST_ALLOCATED_CAPACITY_GROUP_BY_CAPACITY_AND_ZONE);
-        if (hostTag != null && ! hostTag.isEmpty()) {
+        if (StringUtils.isNotEmpty(hostTag)) {
             allocatedSql.append(LEFT_JOIN_VM_TEMPLATE);
         }
         allocatedSql.append(WHERE_STATE_IS_NOT_DESTRUCTIVE);
         if (zoneId != null) {
             allocatedSql.append(" AND vi.data_center_id = ?");
         }
-        if (hostTag != null && ! hostTag.isEmpty()) {
+        if (StringUtils.isNotEmpty(hostTag)) {
             allocatedSql.append(" AND (vm_template.template_tag = '").append(hostTag).append("'");
             allocatedSql.append(" OR service_offering.host_tag = '").append(hostTag).append("')");
         }
