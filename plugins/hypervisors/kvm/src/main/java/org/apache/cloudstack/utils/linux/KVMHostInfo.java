@@ -18,6 +18,8 @@ package org.apache.cloudstack.utils.linux;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.utils.script.Script;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -85,8 +87,16 @@ public class KVMHostInfo {
             LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
             return cpuInfoMaxFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), e);
-            return nodeInfo.mhz;
+            try {
+                LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Trying to fetch it from lscpu",
+                    cpuInfoMaxFreqFileName), e);
+                String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+                String result = Script.runSimpleBashScript(command);
+                return Long.parseLong(result) * 1000;
+            } catch (NullPointerException | NumberFormatException ex) {
+                LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s] and lscpu. Using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), ex);
+                return nodeInfo.mhz;
+            }
         }
     }
 
