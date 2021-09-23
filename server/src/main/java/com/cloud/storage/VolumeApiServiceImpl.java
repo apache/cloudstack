@@ -33,8 +33,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -101,6 +99,8 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -176,6 +176,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkAttachVolume;
@@ -288,6 +289,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private StorageUtil storageUtil;
     @Inject
     public TaggedResourceService taggedResourceService;
+    @Inject
+    VirtualMachineManager virtualMachineManager;
 
     protected Gson _gson;
 
@@ -1416,7 +1419,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!_snapshotMgr.canOperateOnVolume(volume)) {
             throw new InvalidParameterValueException("There are snapshot operations in progress on the volume, unable to delete it");
         }
-        if (volume.getInstanceId() != null && volume.getState() != Volume.State.Expunged) {
+        if (volume.getInstanceId() != null && _vmInstanceDao.findById(volume.getInstanceId()) != null && volume.getState() != Volume.State.Expunged) {
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
         }
         if (volume.getState() == Volume.State.UploadOp) {
@@ -1460,12 +1463,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If the volume is not in the primary storage, we do nothing here.
      */
     protected void expungeVolumesInPrimaryStorageIfNeeded(VolumeVO volume) throws InterruptedException, ExecutionException {
-        VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
-        if (volOnPrimary != null) {
-            s_logger.info("Expunging volume " + volume.getId() + " from primary data store");
-            AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
-            future.get();
-        }
+        expungeVolumesInPrimaryOrSecondary(volume, DataStoreRole.Primary);
     }
 
     /**
@@ -1473,16 +1471,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If it is, we will execute an asynchronous call to delete it there. Then, we decrement the {@link ResourceType#secondary_storage} for the account that owns the volume.
      */
     protected void expungeVolumesInSecondaryStorageIfNeeded(VolumeVO volume) throws InterruptedException, ExecutionException {
-        VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
-        if (volOnSecondary != null) {
-            s_logger.info("Expunging volume " + volume.getId() + " from secondary data store");
-            AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
-            future2.get();
-
-            _resourceLimitMgr.decrementResourceCount(volOnSecondary.getAccountId(), ResourceType.secondary_storage, volOnSecondary.getSize());
-        }
+        expungeVolumesInPrimaryOrSecondary(volume, DataStoreRole.Image);
     }
 
+    private void expungeVolumesInPrimaryOrSecondary(VolumeVO volume, DataStoreRole role) throws InterruptedException, ExecutionException {
+        VolumeInfo volOnStorage = volFactory.getVolume(volume.getId(), role);
+        if (volOnStorage != null) {
+            s_logger.info("Expunging volume " + volume.getId() + " from " + role + " data store");
+            AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnStorage);
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                String msg = "Failed to expunge the volume " + volume + " in " + role + " data store";
+                s_logger.warn(msg);
+                String details = "";
+                if (result.getResult() != null && !result.getResult().isEmpty()) {
+                    details = msg + " : " + result.getResult();
+                }
+                throw new CloudRuntimeException(details);
+            }
+            if (DataStoreRole.Image.equals(role)) {
+                _resourceLimitMgr.decrementResourceCount(volOnStorage.getAccountId(), ResourceType.secondary_storage, volOnStorage.getSize());
+            }
+        }
+    }
     /**
      * Clean volumes cache entries (if they exist).
      */
@@ -1581,6 +1592,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         try {
+            _volsDao.detachVolume(volume.getId());
             stateTransitTo(volume, Volume.Event.RecoverRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to recover volume" + volume.getId(), e);
@@ -1857,8 +1869,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
-    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume,
+                               String customId, long entityOwnerId, String chainInfo, String name) {
+
         Account caller = CallContext.current().getCallingAccount();
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
+            if (path != null || state != null || storageId != null || displayVolume != null || customId != null || chainInfo != null) {
+                throw new InvalidParameterValueException("The domain admin and normal user are not allowed to update volume except volume name");
+            }
+        }
+
         VolumeVO volume = _volsDao.findById(volumeId);
 
         if (volume == null) {
@@ -1901,6 +1921,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (customId != null) {
             volume.setUuid(customId);
+        }
+
+        if (name != null) {
+            volume.setName(name);
         }
 
         updateDisplay(volume, displayVolume);
@@ -3205,31 +3229,40 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return "clustered file systems";
     }
 
+    private HostVO getHostForVmVolumeAttach(UserVmVO vm, StoragePoolVO volumeToAttachStoragePool) {
+        HostVO host = null;
+        Pair<Long, Long> clusterAndHostId =  virtualMachineManager.findClusterAndHostIdForVm(vm.getId());
+        Long hostId = clusterAndHostId.second();
+        Long clusterId = clusterAndHostId.first();
+        if (hostId == null && clusterId != null &&
+                State.Stopped.equals(vm.getState()) &&
+                volumeToAttachStoragePool != null &&
+                !ScopeType.HOST.equals(volumeToAttachStoragePool.getScope())) {
+            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(clusterId);
+            if (!hosts.isEmpty()) {
+                host = hosts.get(0);
+            }
+        }
+        if (host == null && hostId != null) {
+            host = _hostDao.findById(hostId);
+        }
+        return host;
+    }
+
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId) {
         String errorMsg = "Failed to attach volume " + volumeToAttach.getName() + " to VM " + vm.getHostName();
         boolean sendCommand = vm.getState() == State.Running;
         AttachAnswer answer = null;
-        Long hostId = vm.getHostId();
-
-        if (hostId == null) {
-            hostId = vm.getLastHostId();
-
-            HostVO host = _hostDao.findById(hostId);
-
-            if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
-                sendCommand = true;
-            }
+        StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
+        HostVO host = getHostForVmVolumeAttach(vm, volumeToAttachStoragePool);
+        Long hostId = host == null ? null : host.getId();
+        if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
+            sendCommand = true;
         }
 
-        HostVO host = null;
-        StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
-
-        if (hostId != null) {
-            host = _hostDao.findById(hostId);
-
-            if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumeToAttachStoragePool != null && volumeToAttachStoragePool.isManaged()) {
-                sendCommand = true;
-            }
+        if (host != null && host.getHypervisorType() == HypervisorType.XenServer &&
+                volumeToAttachStoragePool != null && volumeToAttachStoragePool.isManaged()) {
+            sendCommand = true;
         }
 
         if (volumeToAttachStoragePool != null) {

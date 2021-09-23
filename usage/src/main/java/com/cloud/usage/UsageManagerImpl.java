@@ -669,7 +669,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     if (userStats != null) {
                         for (UserStatisticsVO userStat : userStats) {
                             if (userStat.getDeviceId() != null) {
-                                String hostKey = userStat.getDataCenterId() + "-" + userStat.getAccountId() + "-Host-" + userStat.getDeviceId();
+                                String hostKey = userStat.getDataCenterId() + "-" + userStat.getAccountId() + "-Host-" + userStat.getDeviceId() + "-Network-" + userStat.getNetworkId();
                                 UserStatisticsVO hostAggregatedStat = aggregatedStats.get(hostKey);
                                 if (hostAggregatedStat == null) {
                                     hostAggregatedStat =

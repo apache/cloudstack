@@ -27,11 +27,15 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.user.AccountManager;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.response.GpuResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.VgpuResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
@@ -69,6 +73,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     private final SearchBuilder<HostJoinVO> hostSearch;
 
@@ -266,6 +274,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobId(host.getJobUuid());
             hostResponse.setJobStatus(host.getJobStatus());
         }
+        hostResponse.setHasAnnotation(annotationDao.hasAnnotations(host.getUuid(), AnnotationService.EntityType.HOST.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         hostResponse.setAnnotation(host.getAnnotation());
         hostResponse.setLastAnnotated(host.getLastAnnotated ());
         hostResponse.setUsername(host.getUsername());

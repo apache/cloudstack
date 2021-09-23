@@ -90,7 +90,12 @@
                       required: true,
                       message: `${this.$t('message.error.select')}`
                     }]
-                  }]" >
+                  }]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
                     {{ opt.name || opt.description }}
                   </a-select-option>
@@ -105,7 +110,12 @@
                       required: true,
                       message: `${this.$t('message.error.select')}`
                     }]
-                  }]">
+                  }]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
                   </a-select-option>
@@ -130,14 +140,18 @@
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.timezone')">
                 <a-select
-                  showSearch
                   v-decorator="['timezone', {
                     rules: [{
                       required: true,
                       message: `${this.$t('message.error.select')}`
                     }]
                   }]"
-                  :loading="fetching">
+                  :loading="fetching"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                     {{ opt.name || opt.description }}
                   </a-select-option>
@@ -161,13 +175,17 @@
                 @keyup.enter="handleInputConfirm"
                 compact>
                 <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" :placeholder="$t('label.key')" />
-                <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                <a-input
+                  class="tag-disabled-input"
+                  style=" width: 30px; border-left: 0; pointer-events: none; text-align: center"
+                  placeholder="="
+                  disabled />
                 <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
                 <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
                 <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
               </a-input-group>
             </div>
-            <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
+            <a-tag v-else @click="showInput" class="btn-add-tag" style="borderStyle: dashed;">
               <a-icon type="plus" /> {{ $t('label.new.tag') }}
             </a-tag>
           </div>
@@ -424,7 +442,6 @@ export default {
 
 .tagsTitle {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
 }
 </style>

@@ -48,6 +48,7 @@ const options = {
     '@border-radius-base',
     '@box-shadow-base'
   ],
+  lessUrl: 'js/less.min.js',
   indexFileName: 'index.html',
   publicPath: '.',
   generateOnce: false

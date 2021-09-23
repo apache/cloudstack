@@ -22,7 +22,7 @@
       :placeholder="$t('label.search')"
       v-model="filter"
       @search="handleSearch" />
-    <a-button type="primary" @click="showCreateForm = true" style="float: right; margin-right: 5px; z-index: 8">
+    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8">
       {{ $t('label.create.network') }}
     </a-button>
     <a-table
@@ -34,6 +34,15 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }"
     >
+      <template slot="name" slot-scope="text, item">
+        <resource-icon
+          v-if="item.icon"
+          :image="item.icon.base64image"
+          size="1x"
+          style="margin-right: 5px"/>
+        <a-icon slot="name" v-else type="apartment" style="margin-right: 5px" />
+        {{ item.name }}
+      </template>
       <a-list
         slot="expandedRowRender"
         slot-scope="record"
@@ -91,11 +100,13 @@ import _ from 'lodash'
 import { api } from '@/api'
 import store from '@/store'
 import CreateNetwork from '@/views/network/CreateNetwork'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'NetworkSelection',
   components: {
-    CreateNetwork
+    CreateNetwork,
+    ResourceIcon
   },
   props: {
     items: {
@@ -139,7 +150,8 @@ export default {
         page: 1,
         pageSize: 10,
         keyword: null
-      }
+      },
+      networksBeforeCreate: null
     }
   },
   computed: {
@@ -157,6 +169,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.networks'),
+          scopedSlots: { customRender: 'name' },
           width: '40%'
         },
         {
@@ -222,14 +235,43 @@ export default {
           }
         }
       }
+    },
+    items () {
+      if (this.items && this.items.length > 0 &&
+        this.networksBeforeCreate) {
+        var user = this.$store.getters.userInfo
+        for (var network of this.items) {
+          if (user.account !== network.account ||
+            user.domainid !== network.domainid ||
+            (new Date()).getTime() - Date.parse(network.created) > 30000) {
+            continue
+          }
+          var networkFoundInNewList = false
+          for (var oldNetwork of this.networksBeforeCreate) {
+            if (oldNetwork.id === network.id) {
+              networkFoundInNewList = true
+              break
+            }
+          }
+          if (!networkFoundInNewList) {
+            this.selectedRowKeys.push(network.id)
+            this.$emit('select-network-item', this.selectedRowKeys)
+            break
+          }
+        }
+        this.networksBeforeCreate = null
+      }
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
   created () {
+    this.vpcs = []
+    const projectId = store?.getters?.project?.id || null
+    if (!projectId) return
     api('listVPCs', {
-      projectid: store.getters.project.id
+      projectid: projectId
     }).then((response) => {
       this.vpcs = _.get(response, 'listvpcsresponse.vpc')
     })
@@ -289,6 +331,10 @@ export default {
           resolve(error)
         })
       })
+    },
+    onCreateNetworkClick () {
+      this.networksBeforeCreate = this.items
+      this.showCreateForm = true
     }
   }
 }

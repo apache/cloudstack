@@ -45,9 +45,7 @@
         <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
           {{ $toLocaleDate(resource[item]) }}
         </div>
-        <div v-else>
-          {{ resource[item] }}
-        </div>
+        <div v-else>{{ resource[item] }}</div>
       </div>
     </a-list-item>
     <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">

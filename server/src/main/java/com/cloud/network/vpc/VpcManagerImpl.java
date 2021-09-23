@@ -40,6 +40,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
@@ -51,6 +53,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -221,6 +224,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DomainRouterDao _routerDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -658,9 +663,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long startIndex = cmd.getStartIndex();
         final Long pageSizeVal = cmd.getPageSizeVal();
         final Long zoneId = cmd.getZoneId();
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = isAscending == null ? Boolean.TRUE : isAscending;
-        final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "sortKey", isAscending, null, null);
+        final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
+        searchFilter.addOrderBy(VpcOfferingJoinVO.class, "id", true);
         final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -1695,6 +1699,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 _networkAclMgr.deleteNetworkACL(networkAcl);
             }
         }
+
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VPC.name(), vpc.getUuid());
         return success;
     }
 

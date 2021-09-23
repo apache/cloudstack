@@ -29,7 +29,15 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
+          <a-select
+            v-model="newRule.protocol"
+            style="width: 100%;"
+            @change="resetRulePorts"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
             <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
@@ -77,7 +85,7 @@
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="startport" slot-scope="record">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
@@ -208,7 +216,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -283,6 +290,10 @@ export default {
       for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true

@@ -19,6 +19,9 @@ package org.apache.cloudstack.api.command.admin.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -58,6 +61,10 @@ public class ListDomainChildrenCmd extends BaseListCmd {
                description = "If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for domains")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,6 +83,10 @@ public class ListDomainChildrenCmd extends BaseListCmd {
 
     public boolean isRecursive() {
         return recursive == null ? false : recursive;
+    }
+
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
     }
 
     /////////////////////////////////////////////////////
@@ -100,6 +111,20 @@ public class ListDomainChildrenCmd extends BaseListCmd {
 
         response.setResponses(domainResponses, result.second());
         response.setResponseName(getCommandName());
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateDomainResponse(response.getResponses());
+        }
         this.setResponseObject(response);
+    }
+
+    private void updateDomainResponse(List<DomainResponse> response) {
+        for (DomainResponse domainResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Domain, domainResponse.getId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            domainResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }
