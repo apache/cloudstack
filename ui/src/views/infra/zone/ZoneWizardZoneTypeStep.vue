@@ -22,6 +22,7 @@
       :ref="formRef"
       :model="form"
       :rules="rules"
+      @finish="handleSubmit"
       v-ctrl-enter="handleSubmit">
       <a-form-item name="zoneType" ref="zoneType">
         <a-radio-group v-model:value="form.zoneType">
@@ -44,20 +45,16 @@
                 v-bind="formItemLayout">
                 <a-switch
                   class="card-form-item"
-                  v-bind="formItemLayout">
-                  <a-switch
-                    class="card-form-item"
-                    v-model:checked="form.securityGroupsEnabled"
-                    :disabled="!isAdvancedZone"
-                    v-focus="true"
-                  />
-                </a-form-item>
-                <span>{{ $t('label.menu.security.groups') }}</span>
-              </a-col>
-              <a-col :md="18" :lg="18" style="margin-top: 15px;">
-                <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
-              </a-col>
-            </a-row>
+                  v-model:checked="form.securityGroupsEnabled"
+                  :disabled="!isAdvancedZone"
+                  v-focus="true"
+                />
+              </a-form-item>
+              <span>{{ $t('label.menu.security.groups') }}</span>
+            </a-col>
+            <a-col :md="18" :lg="18" style="margin-top: 15px;">
+              <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
+            </a-col>
           </a-card>
           <a-card :gutter="12" class="card-item" v-if="$config.basicZoneEnabled">
             <a-col :md="6" :lg="6">
