@@ -38,6 +38,8 @@
             </a-col>
             <a-col :md="6" :lg="6" style="margin-top: 15px">
               <a-form-item
+                name="securityGroupsEnabled"
+                ref="securityGroupsEnabled"
                 class="card-form-item"
                 v-bind="formItemLayout">
                 <a-switch
