@@ -437,7 +437,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             allocatedSql.append(LEFT_JOIN_VM_TEMPLATE);
         }
         allocatedSql.append(WHERE_STATE_IS_NOT_DESTRUCTIVE);
-        if (zoneId != null){
+        if (zoneId != null) {
             allocatedSql.append(" AND vi.data_center_id = ?");
         }
         if (hostTag != null && ! hostTag.isEmpty()) {
@@ -449,7 +449,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         try {
             // add allocated capacity of zone in result
             pstmt = txn.prepareAutoCloseStatement(allocatedSql.toString());
-            if (zoneId != null){
+            if (zoneId != null) {
                 pstmt.setLong(1, zoneId);
             }
             ResultSet rs = pstmt.executeQuery();
