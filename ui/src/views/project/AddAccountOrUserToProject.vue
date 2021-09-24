@@ -33,7 +33,7 @@
             <a-input
               v-model:value="form.account"
               :placeholder="apiParams.addAccountToProject.account.description"
-              autoFocus />
+              v-focus="true" />
           </a-form-item>
           <a-form-item name="" ref="">
             <template #label>
@@ -105,7 +105,7 @@
             <a-input
               v-model:value="form.username"
               :placeholder="apiParams.addUserToProject.username.description"
-              autoFocus />
+              v-focus="true" />
           </a-form-item>
           <a-form-item name="email" ref="email">
             <template #label>

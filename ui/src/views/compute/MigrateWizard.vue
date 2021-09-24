@@ -22,7 +22,7 @@
       v-model:value="searchQuery"
       style="margin-bottom: 10px;"
       @search="fetchData"
-      autoFocus />
+      v-focus="true" />
     <a-table
       size="small"
       style="overflow-y: auto"

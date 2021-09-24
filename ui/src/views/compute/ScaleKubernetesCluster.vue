@@ -35,7 +35,7 @@
           <a-input
             v-model:value="form.size"
             :placeholder="apiParams.size.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
           <template #label>

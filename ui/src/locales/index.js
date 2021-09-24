@@ -14,7 +14,8 @@ export const i18n = createI18n({
 
 export function loadLanguageAsync (lang) {
   if (!lang) {
-    lang = vueProps.$localStorage ? vueProps.$localStorage.get('LOCALE') || 'en' : 'en'
+    const locale = vueProps.$localStorage.get('LOCALE')
+    lang = (!locale || typeof locale === 'object') ? 'en' : locale
   }
   if (loadedLanguage.includes(lang)) {
     return Promise.resolve(setLanguage(lang))

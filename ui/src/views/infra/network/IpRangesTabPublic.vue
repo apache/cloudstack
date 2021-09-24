@@ -59,7 +59,8 @@
             tooltipPlacement="bottom"
             :tooltip="$t('label.update.ip.range')"
             icon="edit-outlined"
-            type="danger"
+            type="primary"
+            :danger="true"
             @onClick="() => handleUpdateIpRangeModal(record)"
             :disabled="!('updateVlanIpRange' in $store.getters.apis)" />
           <tooltip-button

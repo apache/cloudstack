@@ -25,7 +25,7 @@
           </template>
           <a-select
             v-model:value="form.scope"
-            autoFocus
+            v-focus="true"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
