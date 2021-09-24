@@ -15,8 +15,11 @@ docker pull cloudstack/simulator
 docker run --name simulator -p 8080:5050 -d cloudstack/simulator
 ```
 
+Access CloudStack UI
+```
 Open your browser at http://localhost:8080/
 Default login is admin:password
+```
 
 Deploy a datacenter:
 ```
