@@ -604,13 +604,13 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.logger.debug("network.gc.wait is ==> %s" % gc_wait)
         self.logger.debug("network.gc.interval is ==> %s" % gc_interval)
 
-        total_sleep = 120
+        total_sleep = 360
         if gc_wait and gc_interval:
-            total_sleep = int(gc_wait[0].value) + int(gc_interval[0].value)
+            total_sleep = max(int(gc_wait[0].value), int(gc_interval[0].value)) * 2 + 60
         else:
-            self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 2 minutes.")
+            self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 6 minutes.")
 
-        time.sleep(total_sleep * 3)
+        time.sleep(total_sleep)
 
         # Router will be in FAULT state, i.e. keepalived is stopped
         self.check_routers_state(status_to_check="FAULT", expected_count=2)
