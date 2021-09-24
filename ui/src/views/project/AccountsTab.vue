@@ -156,11 +156,14 @@ export default {
   },
   inject: ['parentFetchData'],
   watch: {
-    resource (newItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   methods: {

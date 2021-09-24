@@ -26,7 +26,7 @@
         layout="vertical">
 
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
-          <a-switch v-model:checked="form.ispublic" />
+          <a-switch v-model:checked="form.ispublic" v-focus="true" />
         </a-form-item>
 
         <a-form-item name="domainid" ref="domainid" :label="$t('label.domainid')" v-if="!form.ispublic">

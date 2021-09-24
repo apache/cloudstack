@@ -151,8 +151,11 @@ export default {
         this.fetchData()
       }
     },
-    resource (newData, oldData) {
-      this.project = newData
+    resource: {
+      deep: true,
+      handler (newData, oldData) {
+        this.project = newData
+      }
     },
     '$i18n.global.locale' (to, from) {
       if (to !== from) {

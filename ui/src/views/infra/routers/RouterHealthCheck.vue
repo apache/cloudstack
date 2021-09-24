@@ -128,8 +128,11 @@ export default {
     this.apiParams = this.$getApiParams('getRouterHealthCheckResults')
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.updateResource(newItem)
+    resource: {
+      deep: true,
+      handler (newItem) {
+        this.updateResource(newItem)
+      }
     }
   },
   created () {

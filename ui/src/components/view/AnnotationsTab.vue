@@ -145,11 +145,14 @@ export default {
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.resourceType = this.$route.meta.resourceType
-      this.annotationType = this.generateAnnotationType()
-      if (this.annotationType) {
-        this.getAnnotations()
+    resource: {
+      deep: true,
+      handler () {
+        this.resourceType = this.$route.meta.resourceType
+        this.annotationType = this.generateAnnotationType()
+        if (this.annotationType) {
+          this.getAnnotations()
+        }
       }
     }
   },

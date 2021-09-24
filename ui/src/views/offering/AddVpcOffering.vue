@@ -73,7 +73,7 @@
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
-        <a-form-item name="domainid" ref="domainid" v-if="!isPublic">
+        <a-form-item name="domainid" ref="domainid" v-if="!form.ispublic">
           <template #label>
             <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>

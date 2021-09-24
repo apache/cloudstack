@@ -143,14 +143,17 @@ export default {
         this.selectedRowKeys = [newValue]
       }
     },
-    items (newData, oldData) {
-      if (newData && newData.length > 0) {
-        this.dataItems = newData
-        this.initForm()
-        const keyEx = this.dataItems.filter((item) => this.selectedRowKeys.includes(item.id))
-        if (!keyEx || keyEx.length === 0) {
-          this.selectedRowKeys = [this.dataItems[0].id]
-          this.$emit('select-default-network-item', this.dataItems[0].id)
+    items: {
+      deep: true,
+      handler (newData) {
+        if (newData && newData.length > 0) {
+          this.dataItems = newData
+          this.initForm()
+          const keyEx = this.dataItems.filter((item) => this.selectedRowKeys.includes(item.id))
+          if (!keyEx || keyEx.length === 0) {
+            this.selectedRowKeys = [this.dataItems[0].id]
+            this.$emit('select-default-network-item', this.dataItems[0].id)
+          }
         }
       }
     }

@@ -147,10 +147,13 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function () {
-      this.fetchData(() => {
-        this.resetNewFields()
-      })
+    resource: {
+      deep: true,
+      handler () {
+        this.fetchData(() => {
+          this.resetNewFields()
+        })
+      }
     }
   },
   methods: {
@@ -179,9 +182,10 @@ export default {
       })
     },
     updateApis () {
-      this.apis = Object.keys(this.$store.getters.apis).sort((a, b) => a.localeCompare(b))
+      this.apis = Object.keys(this.$store.getters.apis)
+        .sort((a, b) => a.localeCompare(b))
       var apisSupported = this.rules?.map(rule => rule.rule) || []
-      this.apis = this.apis.filter(api => !apisSupported.includes(api))
+      this.apis = this.apis.filter(api => !apisSupported.includes(api.value)).map(value => { return { value: value } })
     },
     changeOrder () {
       this.updateTable = true

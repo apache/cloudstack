@@ -50,9 +50,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
+          this.fetchData()
+        }
       }
     }
   },

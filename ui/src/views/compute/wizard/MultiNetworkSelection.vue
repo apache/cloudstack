@@ -156,9 +156,12 @@ export default {
     }
   },
   watch: {
-    items () {
-      this.selectedRowKeys = []
-      this.fetchNetworks()
+    items: {
+      deep: true,
+      handler () {
+        this.selectedRowKeys = []
+        this.fetchNetworks()
+      }
     },
     zoneId () {
       this.fetchNetworks()

@@ -254,8 +254,11 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      this.fetchData()
+    resource: {
+      deep: true,
+      handler () {
+        this.fetchData()
+      }
     }
   },
   beforeCreate () {

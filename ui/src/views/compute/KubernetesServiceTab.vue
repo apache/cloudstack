@@ -215,13 +215,16 @@ export default {
     this.handleFetchData()
   },
   watch: {
-    resource (newData, oldData) {
-      if (newData && newData !== oldData) {
-        this.handleFetchData()
-        if (this.resource.ipaddress) {
-          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
-        } else {
-          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+    resource: {
+      deep: true,
+      handler (newData, oldData) {
+        if (newData && newData !== oldData) {
+          this.handleFetchData()
+          if (this.resource.ipaddress) {
+            this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
+          } else {
+            this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+          }
         }
       }
     },

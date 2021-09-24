@@ -32,9 +32,9 @@
           <template #expandedRowRender="{ record }">
             <ProjectRolePermissionTab class="table" :resource="resource" :role="record"/>
           </template>
-          <template #name="{ record }"> {{ record }} </template>
+          <template #name="{ record }"> {{ record.name }} </template>
           <template #description="{ record }">
-            {{ record }}
+            {{ record.description }}
           </template>
           <template #action="{ record }">
             <tooltip-button
@@ -163,16 +163,20 @@ export default {
         slots: { customRender: 'action' }
       }
     ]
+    this.initForm()
   },
   mounted () {
     this.fetchData()
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   methods: {

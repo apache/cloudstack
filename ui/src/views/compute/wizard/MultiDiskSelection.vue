@@ -154,9 +154,12 @@ export default {
     }
   },
   watch: {
-    items (newData, oldData) {
-      this.selectedRowKeys = []
-      this.fetchDiskOfferings()
+    items: {
+      deep: true,
+      handler () {
+        this.selectedRowKeys = []
+        this.fetchDiskOfferings()
+      }
     },
     zoneId (newData) {
       this.fetchDiskOfferings()

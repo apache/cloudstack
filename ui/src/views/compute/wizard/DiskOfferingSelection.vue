@@ -163,9 +163,12 @@ export default {
         this.selectedRowKeys = [newValue]
       }
     },
-    items (newData, oldData) {
-      this.initDataItem()
-      this.dataItems = this.dataItems.concat(newData)
+    items: {
+      deep: true,
+      handler (newData) {
+        this.initDataItem()
+        this.dataItems = this.dataItems.concat(newData)
+      }
     },
     loading () {
       if (!this.loading) {

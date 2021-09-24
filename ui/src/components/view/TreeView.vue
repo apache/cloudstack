@@ -177,14 +177,31 @@ export default {
         }
       }
     },
-    treeSelected () {
-      if (Object.keys(this.treeSelected).length === 0) {
-        return
-      }
+    treeSelected: {
+      deep: true,
+      handler () {
+        if (Object.keys(this.treeSelected).length === 0) {
+          return
+        }
 
-      if (Object.keys(this.resource).length > 0) {
-        this.selectedTreeKey = this.resource.key
-        this.$emit('change-resource', this.resource)
+        if (Object.keys(this.resource).length > 0) {
+          this.selectedTreeKey = this.resource.key
+          this.$emit('change-resource', this.resource)
+
+          // set default expand
+          if (this.defaultSelected.length > 1) {
+            const arrSelected = this.defaultSelected
+            this.defaultSelected = []
+            this.defaultSelected.push(arrSelected[0])
+          }
+
+          return
+        }
+
+        this.resource = this.treeSelected
+        this.resource = this.createResourceData(this.resource)
+        this.selectedTreeKey = this.treeSelected.key
+        this.defaultSelected.push(this.selectedTreeKey)
 
         // set default expand
         if (this.defaultSelected.length > 1) {
@@ -192,33 +209,22 @@ export default {
           this.defaultSelected = []
           this.defaultSelected.push(arrSelected[0])
         }
-
-        return
-      }
-
-      this.resource = this.treeSelected
-      this.resource = this.createResourceData(this.resource)
-      this.selectedTreeKey = this.treeSelected.key
-      this.defaultSelected.push(this.selectedTreeKey)
-
-      // set default expand
-      if (this.defaultSelected.length > 1) {
-        const arrSelected = this.defaultSelected
-        this.defaultSelected = []
-        this.defaultSelected.push(arrSelected[0])
       }
     },
-    treeVerticalData () {
-      if (!this.treeStore.isExpand) {
-        return
-      }
-      if (this.treeStore.expands && this.treeStore.expands.length > 0) {
-        for (const expandKey of this.treeStore.expands) {
-          if (this.arrExpand.includes(expandKey)) {
-            continue
+    treeVerticalData: {
+      deep: true,
+      handler () {
+        if (!this.treeStore.isExpand) {
+          return
+        }
+        if (this.treeStore.expands && this.treeStore.expands.length > 0) {
+          for (const expandKey of this.treeStore.expands) {
+            if (this.arrExpand.includes(expandKey)) {
+              continue
+            }
+            const keyVisible = this.treeVerticalData.findIndex(item => item.key === expandKey)
+            if (keyVisible > -1) this.arrExpand.push(expandKey)
           }
-          const keyVisible = this.treeVerticalData.findIndex(item => item.key === expandKey)
-          if (keyVisible > -1) this.arrExpand.push(expandKey)
         }
       }
     }

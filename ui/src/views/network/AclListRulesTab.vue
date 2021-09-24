@@ -39,67 +39,70 @@
         @change="changeOrder"
         handle=".drag-handle"
         animation="200"
-        ghostClass="drag-ghost">
-        <transition-group type="transition">
-          <div v-for="acl in acls" :key="acl.id" class="list__item">
+        ghostClass="drag-ghost"
+        tag="transition-group"
+        :component-data="{type: 'transition'}"
+        item-key="id">
+        <template #item="{element}">
+          <div class="list__item">
             <div class="drag-handle">
               <drag-outlined />
             </div>
             <div class="list__container">
               <div class="list__col">
                 <div class="list__label">{{ $t('label.rule.number') }}</div>
-                <div>{{ acl.number }}</div>
+                <div>{{ element.number }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.cidrlist') }}</div>
-                <div>{{ acl.cidrlist }}</div>
+                <div>{{ element.cidrlist }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.action') }}</div>
-                <div>{{ acl.action }}</div>
+                <div>{{ element.action }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.protocol') }}</div>
-                <div>{{ acl.protocol }}</div>
+                <div>{{ element.protocol }}</div>
               </div>
-              <div class="list__col" v-if="acl.startport">
+              <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ acl.startport }}</div>
               </div>
-              <div class="list__col" v-if="acl.endport">
+              <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
-                <div>{{ acl.endport }}</div>
+                <div>{{ element.endport }}</div>
               </div>
-              <div class="list__col" v-if="acl.icmpcode">
+              <div class="list__col" v-if="element.icmpcode">
                 <div class="list__label">{{ $t('label.icmpcode') }}</div>
-                <div>{{ acl.icmpcode }}</div>
+                <div>{{ element.icmpcode }}</div>
               </div>
-              <div class="list__col" v-if="acl.icmptype">
+              <div class="list__col" v-if="element.icmptype">
                 <div class="list__label">{{ $t('label.icmptype') }}</div>
-                <div>{{ acl.icmptype }}</div>
+                <div>{{ element.icmptype }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.traffictype') }}</div>
-                <div>{{ acl.traffictype }}</div>
+                <div>{{ element.traffictype }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.description') }}</div>
-                <div>{{ acl.reason }}</div>
+                <div>{{ element.reason }}</div>
               </div>
             </div>
             <div class="list__actions">
-              <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(acl)" />
-              <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(acl)" />
+              <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(element)" />
+              <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(element)" />
               <tooltip-button
                 :tooltip="$t('label.delete')"
                 icon="delete-outlined"
                 type="primary"
                 :danger="true"
                 :disabled="!('deleteNetworkACL' in $store.getters.apis)"
-                @onClick="() => handleDeleteRule(acl.id)" />
+                @onClick="() => handleDeleteRule(element.id)" />
             </div>
           </div>
-        </transition-group>
+        </template>
       </draggable>
     </div>
 

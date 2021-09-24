@@ -42,7 +42,7 @@
             ref="keyElm"
             :filterOption="filterOption"
             v-model:value="newKey"
-            :options="Object.keys(detailOptions)"
+            :options="detailKeys"
             :placeholder="$t('label.name')"
             @change="e => onAddInputChange(e, 'newKey')" />
           <a-input
@@ -130,6 +130,7 @@ export default {
     return {
       details: [],
       detailOptions: {},
+      detailKeys: [],
       showAddDetail: false,
       disableSettings: false,
       newKey: '',
@@ -141,8 +142,11 @@ export default {
     }
   },
   watch: {
-    resource: function (newItem) {
-      this.updateResource(newItem)
+    resource: {
+      deep: true,
+      handler (newItem) {
+        this.updateResource(newItem)
+      }
     }
   },
   created () {
@@ -151,7 +155,7 @@ export default {
   methods: {
     filterOption (input, option) {
       return (
-        option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     updateResource (resource) {
@@ -166,12 +170,20 @@ export default {
         })
       }
       api('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
-        this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
+        const detailOptions = json.listdetailoptionsresponse.detailoptions.details
+        this.createDetailOptions(detailOptions)
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
       api('listTemplates', { templatefilter: 'all', id: this.resource.templateid }).then(json => {
         this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
+    },
+    createDetailOptions (detailOptions) {
+      Object.keys(detailOptions).forEach(key => {
+        detailOptions[key] = detailOptions[key].map(value => { return { value: value } })
+      })
+      this.detailOptions = detailOptions
+      this.detailKeys = Object.keys(detailOptions).map(key => { return { value: key } })
     },
     filterOrReadOnlyDetails () {
       for (var i = 0; i < this.details.length; i++) {
@@ -191,16 +203,13 @@ export default {
     showEditDetail (index) {
       this.details[index].edit = true
       this.details[index].originalValue = this.details[index].value
-      this.$set(this.details, index, this.details[index])
     },
     hideEditDetail (index) {
       this.details[index].edit = false
       this.details[index].value = this.details[index].originalValue
-      this.$set(this.details, index, this.details[index])
     },
     handleInputChange (val, index) {
       this.details[index].value = val
-      this.$set(this.details, index, this.details[index])
     },
     onAddInputChange (val, obj) {
       this.error = false

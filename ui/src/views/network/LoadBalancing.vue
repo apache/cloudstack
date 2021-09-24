@@ -645,11 +645,14 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   methods: {
@@ -723,7 +726,7 @@ export default {
           lbvmips: true,
           id: rule.id
         }).then(response => {
-          this.$set(rule, 'ruleInstances', response.listloadbalancerruleinstancesresponse.lbrulevmidip)
+          rule.ruleInstances = response.listloadbalancerruleinstancesresponse.lbrulevmidip
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

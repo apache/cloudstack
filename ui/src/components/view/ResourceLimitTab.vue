@@ -77,14 +77,18 @@ export default {
     this.rules = reactive({})
   },
   created () {
+    this.dataResource = this.resource
     this.fetchData()
   },
   watch: {
-    resource (newData, oldData) {
-      if (!newData || !newData.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newData) {
+        if (!newData || !newData.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   methods: {

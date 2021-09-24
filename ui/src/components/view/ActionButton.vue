@@ -136,11 +136,14 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.handleShowBadge()
       }
-      this.handleShowBadge()
     }
   },
   methods: {

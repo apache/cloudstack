@@ -112,13 +112,16 @@ export default {
         this.fetchData()
       }
     },
-    resource (newValue, oldValue) {
-      if (Object.keys(newValue).length > 0 &&
-        newValue.id &&
-        this.tab === 'certificate'
-      ) {
-        this.quickview = false
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newValue) {
+        if (Object.keys(newValue).length > 0 &&
+          newValue.id &&
+          this.tab === 'certificate'
+        ) {
+          this.quickview = false
+          this.fetchData()
+        }
       }
     }
   },

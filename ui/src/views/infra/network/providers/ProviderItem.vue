@@ -103,8 +103,11 @@ export default {
   },
   inject: ['provideSetNsp', 'provideExecuteAction'],
   watch: {
-    nsp () {
-      this.fetchData()
+    nsp: {
+      deep: true,
+      handler () {
+        this.fetchData()
+      }
     }
   },
   created () {

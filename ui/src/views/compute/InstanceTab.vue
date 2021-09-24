@@ -23,7 +23,7 @@
       :animated="false"
       @change="handleChangeTab">
       <a-tab-pane :tab="$t('label.details')" key="details">
-        <DetailsTab :resource="resource" :loading="loading" />
+        <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
         <usb-outlined />
@@ -115,8 +115,8 @@
       <a-tab-pane :tab="$t('label.vm.snapshots')" key="vmsnapshots" v-if="'listVMSnapshot' in $store.getters.apis">
         <ListResourceTable
           apiName="listVMSnapshot"
-          :resource="resource"
-          :params="{virtualmachineid: this.resource.id}"
+          :resource="dataResource"
+          :params="{virtualmachineid: dataResource.id}"
           :columns="['displayname', 'state', 'type', 'created']"
           :routerlinks="(record) => { return { displayname: '/vmsnapshot/' + record.id } }"/>
       </a-tab-pane>
@@ -124,20 +124,20 @@
         <ListResourceTable
           apiName="listBackups"
           :resource="resource"
-          :params="{virtualmachineid: this.resource.id}"
+          :params="{virtualmachineid: dataResource.id}"
           :columns="['id', 'status', 'type', 'created']"
           :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="resource.securitygroup && this.resource.securitygroup.length > 0">
+      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0">
         <ListResourceTable
-          :items="resource.securitygroup"
+          :items="dataResource.securitygroup"
           :columns="['name', 'description']"
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
-        <DetailSettings :resource="resource" :loading="loading" />
+        <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
@@ -383,17 +383,23 @@ export default {
         loading: false,
         opts: []
       },
-      annotations: []
+      annotations: [],
+      dataResource: {}
     }
   },
   created () {
-    this.vm = this.resource
+    this.dataResource = this.resource
+    this.vm = this.dataResource
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.vm = newItem
-      this.fetchData()
+    resource: {
+      deep: true,
+      handler () {
+        this.dataResource = this.resource
+        this.vm = this.dataResource
+        this.fetchData()
+      }
     },
     $route: function (newItem, oldItem) {
       this.setCurrentTab()
@@ -431,9 +437,9 @@ export default {
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
         }
-        this.$set(this.resource, 'volumes', this.volumes)
+        this.dataResource.volumes = this.volumes
       })
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+      api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }

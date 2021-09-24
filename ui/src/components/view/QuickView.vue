@@ -60,8 +60,11 @@ export default {
     }
   },
   watch: {
-    actions (item) {
-      this.actionsExist = this.doActionsExist()
+    actions: {
+      deep: true,
+      handler () {
+        this.actionsExist = this.doActionsExist()
+      }
     }
   },
   data () {

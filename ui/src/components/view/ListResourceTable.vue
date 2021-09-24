@@ -128,14 +128,20 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (newItem !== oldItem) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem !== oldItem) {
+          this.fetchData()
+        }
       }
     },
-    items (newItem, oldItem) {
-      if (newItem) {
-        this.dataSource = newItem
+    items: {
+      deep: true,
+      handler (newItem) {
+        if (newItem) {
+          this.dataSource = newItem
+        }
       }
     },
     '$i18n.global.locale' (to, from) {

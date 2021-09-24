@@ -125,9 +125,12 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem.id) return
-      this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem.id) return
+        this.fetchData()
+      }
     }
   },
   methods: {

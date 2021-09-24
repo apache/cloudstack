@@ -82,9 +82,12 @@ export default {
     }
   },
   watch: {
-    resource () {
-      if ('id' in this.resource) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler () {
+        if ('id' in this.resource) {
+          this.fetchData()
+        }
       }
     }
   },

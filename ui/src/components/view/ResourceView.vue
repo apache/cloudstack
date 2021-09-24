@@ -100,17 +100,20 @@ export default {
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (newItem.id === oldItem.id) return
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem.id === oldItem.id) return
 
-      if (this.resource.associatednetworkid) {
-        api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
-          if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
-            this.networkService = response.listnetworksresponse.network[0]
-          } else {
-            this.networkService = {}
-          }
-        })
+        if (this.resource.associatednetworkid) {
+          api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
+            if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
+              this.networkService = response.listnetworksresponse.network[0]
+            } else {
+              this.networkService = {}
+            }
+          })
+        }
       }
     },
     $route: function (newItem, oldItem) {

@@ -144,10 +144,13 @@ export default {
   },
   inject: ['refreshSchedule'],
   watch: {
-    dataSource (newData, oldData) {
-      this.dataSchedules = []
-      if (newData && Object.keys(newData).length > 0) {
-        this.dataSchedules.push(newData)
+    dataSource: {
+      deep: true,
+      handler (newData) {
+        this.dataSchedules = []
+        if (newData && Object.keys(newData).length > 0) {
+          this.dataSchedules.push(newData)
+        }
       }
     }
   },

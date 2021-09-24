@@ -154,8 +154,11 @@ export default {
     this.dataSchedules = this.dataSource
   },
   watch: {
-    dataSource (newData, oldData) {
-      this.dataSchedules = newData
+    dataSource: {
+      deep: true,
+      handler (newData) {
+        this.dataSchedules = newData
+      }
     }
   },
   methods: {

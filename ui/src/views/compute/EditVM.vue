@@ -80,7 +80,7 @@
         <a-auto-complete
           v-model:value="form.group"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :options="groups.opts" />
       </a-form-item>
@@ -161,8 +161,8 @@ export default {
       params.isrecursive = true
       var apiName = 'listServiceOfferings'
       api(apiName, params).then(json => {
-        const offerings = json.listserviceofferingsresponse.serviceoffering
-        this.serviceOffering = offerings[0]
+        const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
+        this.serviceOffering = offerings[0] || {}
       })
     },
     fetchTemplateData () {
@@ -214,7 +214,7 @@ export default {
       api('listInstanceGroups', params).then(json => {
         const groups = json.listinstancegroupsresponse.instancegroup || []
         groups.forEach(x => {
-          this.groups.opts.push(x.name)
+          this.groups.opts.push({ id: x.name, value: x.name })
         })
       }).catch(error => {
         this.$notifyError(error)
