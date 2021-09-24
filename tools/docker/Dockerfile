@@ -17,7 +17,7 @@
 #
 # CloudStack-simulator build
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
 LABEL Vendor="Apache.org" License="ApacheV2" Version="4.16.0.0-SNAPSHOT"
@@ -28,16 +28,19 @@ RUN apt-get -y update && apt-get install -y \
     genisoimage \
     libffi-dev \
     libssl-dev \
+    curl \
+    gcc-10 \
     git \
     sudo \
     ipmitool \
     iproute2 \
     maven \
     openjdk-11-jdk \
-    python-dev \
-    python-setuptools \
-    python-pip \
-    python-mysql.connector \
+    python3-dev \
+    python-is-python3 \
+    python3-setuptools \
+    python3-pip \
+    python3-mysql.connector \
     supervisor
 
 RUN apt-get install -qqy mysql-server && \
@@ -45,7 +48,7 @@ RUN apt-get install -qqy mysql-server && \
     mkdir /var/run/mysqld; \
     chown mysql /var/run/mysqld
 
-RUN echo '''sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"''' >> /etc/mysql/mysql.conf.d/mysqld.cnf
+RUN echo '''sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"''' >> /etc/mysql/mysql.conf.d/mysqld.cnf
 
 COPY tools/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . ./root
@@ -60,10 +63,16 @@ RUN find /var/lib/mysql -type f -exec touch {} \; && \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
     MARVIN_FILE=`find /root/tools/marvin/dist/ -name "Marvin*.tar.gz"`; \
-    pip install $MARVIN_FILE
+    rm -rf /usr/bin/x86_64-linux-gnu-gcc && \
+    ln -s /usr/bin/gcc-10 /usr/bin/x86_64-linux-gnu-gcc; \
+    pip3 install $MARVIN_FILE
+
+RUN curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -; \
+    apt-get install -y nodejs; \
+    cd ui && npm rebuild node-sass && npm install
 
 VOLUME /var/lib/mysql
 
-EXPOSE 8080 8096
+EXPOSE 8080 8096 5050
 
 CMD ["/usr/bin/supervisord"]
