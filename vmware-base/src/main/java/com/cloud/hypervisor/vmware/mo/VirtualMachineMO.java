@@ -751,30 +751,32 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Pair<VirtualDisk, String> volumeDeviceInfo)
+    public boolean createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, VirtualDisk requiredDisk)
             throws Exception {
 
         assert (morFolder != null);
         assert (morResourcePool != null);
-        assert (morDs != null);
-        VirtualDisk requiredDisk = volumeDeviceInfo.first();
 
         VirtualMachineRelocateSpec rSpec = new VirtualMachineRelocateSpec();
-        List<VirtualMachineRelocateSpecDiskLocator> diskLocator = new ArrayList<VirtualMachineRelocateSpecDiskLocator>(1);
-        VirtualMachineRelocateSpecDiskLocator loc = new VirtualMachineRelocateSpecDiskLocator();
-        loc.setDatastore(morDs);
-        loc.setDiskId(requiredDisk.getKey());
-        loc.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
-        diskLocator.add(loc);
 
-        rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
-        rSpec.getDisk().addAll(diskLocator);
+        VirtualDisk[] vmDisks = getAllDiskDevice();
+        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        for (VirtualDisk disk : vmDisks) {
+            if (requiredDisk.getKey() != disk.getKey()) {
+                VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+                virtualDeviceConfigSpec.setDevice(disk);
+                virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+                vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
+            }
+        }
         rSpec.setPool(morResourcePool);
 
         VirtualMachineCloneSpec cloneSpec = new VirtualMachineCloneSpec();
         cloneSpec.setPowerOn(false);
         cloneSpec.setTemplate(false);
         cloneSpec.setLocation(rSpec);
+        cloneSpec.setMemory(false);
+        cloneSpec.setConfig(vmConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
 
