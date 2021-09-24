@@ -576,6 +576,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -783,7 +784,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DataCenterDao _dcDao;
     @Inject
-    private VlanDao _vlanDao;
+    protected VlanDao _vlanDao;
     @Inject
     private AccountVlanMapDao _accountVlanMapDao;
     @Inject
@@ -2177,9 +2178,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean isRecursive = null;
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
+
+        Account caller = getCaller();
         if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
-            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
-                    null);
+            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
@@ -2273,7 +2275,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
-        sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
+        sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.IN);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
         sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
@@ -2367,7 +2369,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("address", address);
         }
 
-        if (vlan != null) {
+        if (vlan == null && zone != null) {
+            sc.setParameters("vlanDbId", retrieveAvailableVlanDbIdsForAccount(zone, caller).toArray());
+        } else if (vlan != null){
             sc.setParameters("vlanDbId", vlan);
         }
 
@@ -2388,6 +2392,72 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         sc.setParameters( "forsystemvms", false);
+    }
+
+    /**
+     * Retrieves a list of dedicated VLANs for the account and zone wide non dedicated VLANS, if {@link IpAddressManager#UseSystemPublicIps} is <b>true</b> for the account.<br/>
+     * If the lists is empty, then it will return a list with a single value (-1), meaning that the account does not have access to any VLAN. This is needed because if we do not
+     * set a value to the vlanDbId parameter in the API <b>listPublicIPAddresses</b>, it will retrieve all the VLANs for the zone, even the dedicated to another accounts.
+     */
+    protected List<Long> retrieveAvailableVlanDbIdsForAccount(Long zoneId, Account caller) {
+        List<Long> vlanDbIdsToRetrieve = new ArrayList<>();
+        List<VlanVO> availableVlans = new ArrayList<>();
+
+        String accountDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(caller, "accountName", "uuid");
+        long accountId = caller.getId();
+
+        availableVlans.addAll(retrieveZoneWideNonDedicatedVlans(accountId, accountDescription, zoneId));
+        availableVlans.addAll(retrieveDedicatedVlans(accountId, accountDescription));
+
+        for (VlanVO availableVlan: availableVlans) {
+            vlanDbIdsToRetrieve.add(availableVlan.getId());
+        }
+
+        if (CollectionUtils.isEmpty(vlanDbIdsToRetrieve)) {
+            s_logger.debug(String.format("There are no VLANs available for account [%s].", accountDescription));
+            vlanDbIdsToRetrieve.add(-1l);
+        }
+
+        return vlanDbIdsToRetrieve;
+    }
+
+    /**
+     * Returns zone wide non dedicated VLANs, if {@link IpAddressManager#UseSystemPublicIps} is <b>true</b> for the account.
+     */
+    protected List<VlanVO> retrieveZoneWideNonDedicatedVlans(long accountId, String accountDescription, long zoneId) {
+        List<VlanVO> zoneWideNonDedicatedVlans = new ArrayList<>();
+
+        if (!getUseSystemPublicIpsValueIn(accountId)) {
+            s_logger.trace(String.format("Account [%s] does not have access to system public IPs. Not retrieving zone wide non-dedicated VLANs.", accountDescription));
+            return zoneWideNonDedicatedVlans;
+        }
+
+        s_logger.trace(String.format("Listing non-dedicated VLANs on zone [%s] for account [%s].", zoneId, accountDescription));
+        zoneWideNonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(zoneId);
+
+        s_logger.debug(String.format("Listed [%s] non-dedicated VLANs on zone [%s] for account [%s]. Non-dedicated VLANs: [%s].", zoneWideNonDedicatedVlans.size(), zoneId,
+                accountDescription, ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(zoneWideNonDedicatedVlans, "id", "vlanTag", "ipRange")));
+
+        return zoneWideNonDedicatedVlans;
+    }
+
+    /**
+     * Returns dedicated VLANs for account.
+     */
+    protected List<VlanVO> retrieveDedicatedVlans(long accountId, String accountDescription) {
+        List<VlanVO> dedicatedVlans = new ArrayList<>();
+
+        s_logger.trace(String.format("Listing dedicated VLANs for account [%s].", accountDescription));
+        dedicatedVlans = _vlanDao.listDedicatedVlans(accountId);
+
+        s_logger.debug(String.format("Listed [%s] dedicated VLANs for account [%s]. Dedicated VLANs: [%s].", dedicatedVlans.size(), accountDescription,
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(dedicatedVlans, "id", "vlanTag", "ipRange")));
+
+        return dedicatedVlans;
+    }
+
+    protected Boolean getUseSystemPublicIpsValueIn(long accountId) {
+        return IpAddressManager.UseSystemPublicIps.valueIn(accountId);
     }
 
     @Override
