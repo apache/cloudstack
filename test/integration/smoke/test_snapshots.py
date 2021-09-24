@@ -97,6 +97,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                     mode=cls.services["mode"]
                 )
 
+            cls._cleanup.append(cls.virtual_machine_with_disk)
             cls._cleanup.append(cls.service_offering)
             cls._cleanup.append(cls.account)
             cls._cleanup.append(cls.disk_offering)
@@ -250,8 +251,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             zoneid=self.zone.id
         )
         assert isinstance(clusters,list) and len(clusters)>0
-
-        self.cleanup.append(self.virtual_machine_with_disk)
 
         # Attach created volume to vm, then detach it to be able to migrate it
         self.virtual_machine_with_disk.stop(self.apiclient)
