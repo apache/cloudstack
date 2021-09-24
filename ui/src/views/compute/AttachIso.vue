@@ -28,7 +28,12 @@
               initialValue: this.selectedIso,
               rules: [{ required: true, message: `${this.$t('label.required')}`}]
             }]"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>

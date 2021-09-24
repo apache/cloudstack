@@ -256,8 +256,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
     /**
      * Minimum VMware hosts supported version is 6.0
      */
-    protected String getMinimumSupportedHypervisorVersionForHardwareVersion(String hardwareVersion) {
-        // From https://kb.vmware.com/s/article/1003746 and https://kb.vmware.com/s/article/2007240
+    protected String mapHardwareVersionToHypervisorVersion(String hardwareVersion) {
         String hypervisorVersion = "default";
         if (StringUtils.isBlank(hardwareVersion)) {
             return hypervisorVersion;
@@ -276,6 +275,34 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             LOGGER.error("Cannot parse hardware version " + hwVersion + " to integer. Using default hypervisor version", e);
         }
         return hypervisorVersion;
+    }
+
+    /**
+     * Retrieve the minimal hypervisor version for a single or multiple hardware version(s) in the parameter
+     */
+    protected String getMinimumSupportedHypervisorVersionForHardwareVersion(String hardwareVersion) {
+        // From https://kb.vmware.com/s/article/1003746 and https://kb.vmware.com/s/article/2007240
+        String hypervisorVersion = "default";
+        if (StringUtils.isBlank(hardwareVersion)) {
+            return hypervisorVersion;
+        }
+        if (hardwareVersion.contains(" ")) {
+            String[] versions = hardwareVersion.split(" ");
+            String minVersion = null;
+            for (String version : versions) {
+                String hvVersion = mapHardwareVersionToHypervisorVersion(version);
+                if (minVersion == null) {
+                    minVersion = hvVersion;
+                } else if (hvVersion.equalsIgnoreCase("default")) {
+                    return minVersion;
+                } else if (hvVersion.compareTo(minVersion) < 0) {
+                    minVersion = hvVersion;
+                }
+            }
+            return minVersion;
+        } else {
+            return mapHardwareVersionToHypervisorVersion(hardwareVersion);
+        }
     }
 
     @Override

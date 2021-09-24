@@ -16,6 +16,55 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -120,51 +169,6 @@ import com.google.common.base.Strings;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.rmi.RemoteException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -266,6 +270,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     public VmwareManagerImpl() {
         _storageMgr = new VmwareStorageManagerImpl(this);
+    }
+
+    private boolean isSystemVmIsoCopyNeeded(File srcIso, File destIso) {
+        if (!destIso.exists()) {
+            return true;
+        }
+        boolean copyNeeded = false;
+        try {
+            String srcIsoMd5 = DigestUtils.md5Hex(new FileInputStream(srcIso));
+            String destIsoMd5 = DigestUtils.md5Hex(new FileInputStream(destIso));
+            copyNeeded = !StringUtils.equals(srcIsoMd5, destIsoMd5);
+            if (copyNeeded) {
+                s_logger.debug(String.format("MD5 checksum: %s for source ISO: %s is different from MD5 checksum: %s from destination ISO: %s", srcIsoMd5, srcIso.getAbsolutePath(), destIsoMd5, destIso.getAbsolutePath()));
+            }
+        } catch (IOException e) {
+            s_logger.debug(String.format("Unable to compare MD5 checksum for systemvm.iso at source: %s and destination: %s", srcIso.getAbsolutePath(), destIso.getAbsolutePath()), e);
+        }
+        return copyNeeded;
     }
 
     @Override
@@ -706,7 +728,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
                     File srcIso = getSystemVMPatchIsoFile();
                     File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
-                    if (!destIso.exists()) {
+                    if (isSystemVmIsoCopyNeeded(srcIso, destIso)) {
                         s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
                         _configServer.updateKeyPairs();
 

@@ -37,8 +37,8 @@ export default {
   },
   data () {
     return {
-      tariffAction: false,
-      tariffResource: {}
+      tariffAction: this.tariffAction,
+      tariffResource: this.tariffResource
     }
   },
   provide: function () {
@@ -54,6 +54,7 @@ export default {
     showTariffAction (showAction, resource) {
       this.tariffAction = showAction
       this.tariffResource = resource
+      this.loading = false
     }
   }
 }

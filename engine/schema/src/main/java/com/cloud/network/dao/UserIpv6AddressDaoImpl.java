@@ -19,6 +19,7 @@ package com.cloud.network.dao;
 import java.util.List;
 
 
+import com.cloud.network.IpAddress;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -43,6 +44,7 @@ public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Lo
         AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), Op.EQ);
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("physicalNetworkId", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -66,6 +68,14 @@ public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Lo
     public List<UserIpv6AddressVO> listByVlanId(long vlanId) {
         SearchCriteria<UserIpv6AddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("vlan", vlanId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<UserIpv6AddressVO> listByVlanIdAndState(long vlanId, IpAddress.State state) {
+        SearchCriteria<UserIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vlan", vlanId);
+        sc.setParameters("state", state);
         return listBy(sc);
     }
 

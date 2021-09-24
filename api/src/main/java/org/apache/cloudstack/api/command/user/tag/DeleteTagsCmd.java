@@ -66,7 +66,7 @@ public class DeleteTagsCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public ResourceObjectType getResourceType() {
-        return _taggedResourceService.getResourceType(resourceType);
+        return resourceManagerUtil.getResourceType(resourceType);
     }
 
     public Map<String, String> getTags() {

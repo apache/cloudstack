@@ -21,7 +21,7 @@ import java.util.Date;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
@@ -29,7 +29,7 @@ import com.cloud.vm.InstanceGroup;
 
 @SuppressWarnings("unused")
 @EntityReference(value = InstanceGroup.class)
-public class InstanceGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
+public class InstanceGroupResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the instance group")

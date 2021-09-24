@@ -1345,6 +1345,9 @@ export default {
         }
         path += '/' + this.prefillContent.primaryStorageVmfsDatastore?.value || ''
         url = this.vmfsURL('dummy', path)
+      } else if (protocol === 'Linstor') {
+        url = this.linstorURL(server)
+        params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup.value
       } else {
         let iqn = this.prefillContent.primaryStorageTargetIQN?.value || ''
         if (iqn.substring(0, 1) !== '/') {
@@ -2122,6 +2125,15 @@ export default {
         url = 'vmfs://' + server + path
       } else {
         url = server + path
+      }
+      return url
+    },
+    linstorURL (server) {
+      var url
+      if (server.indexOf('://') === -1) {
+        url = 'http://' + server
+      } else {
+        url = server
       }
       return url
     },

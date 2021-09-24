@@ -14,20 +14,59 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import store from '@/store'
 
 export default {
   name: 'tools',
   title: 'label.tools',
   icon: 'tool',
-  permission: ['listInfrastructure'],
   children: [
+    {
+      name: 'comment',
+      title: 'label.comments',
+      icon: 'message',
+      docHelp: 'adminguide/events.html',
+      permission: ['listAnnotations'],
+      columns: () => {
+        const cols = ['entityid', 'entitytype', 'annotation', 'created', 'username']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          cols.push('adminsonly')
+        }
+        return cols
+      },
+      searchFilters: ['entitytype', 'keyword'],
+      params: () => { return { annotationfilter: 'self' } },
+      filters: () => {
+        const filters = ['self', 'all']
+        return filters
+      },
+      actions: [
+        {
+          api: 'removeAnnotation',
+          icon: 'delete',
+          label: 'label.remove.annotation',
+          message: 'message.remove.annotation',
+          dataView: false,
+          groupAction: true,
+          popup: true,
+          groupShow: (selectedItems, storegetters) => {
+            if (['Admin'].includes(store.getters.userInfo.roletype)) {
+              return true
+            }
+            // Display only if the selected items are comments created by the user
+            return selectedItems.filter(x => { return x.username !== store.getters.userInfo.username }).length === 0
+          },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
     {
       name: 'manageinstances',
       title: 'label.action.import.export.instances',
       icon: 'interaction',
       docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
       resourceType: 'UserVm',
-      permission: ['listUnmanagedInstances'],
+      permission: ['listInfrastructure', 'listUnmanagedInstances'],
       component: () => import('@/views/tools/ManageInstances.vue')
     }
   ]

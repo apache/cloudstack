@@ -44,9 +44,13 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DomainVlanMapVO;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
@@ -144,6 +148,7 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
@@ -177,6 +182,9 @@ import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.DeleteResourceIconCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.UploadResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
@@ -255,6 +263,7 @@ import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AddNicToVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
@@ -544,6 +553,7 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -881,6 +891,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private NetworkModel _networkMgr;
     @Inject
     private VpcDao _vpcDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    private DomainVlanMapDao _domainVlanMapDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1886,6 +1900,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb.join("accountVlanMapSearch", accountVlanMapSearch, sb.entity().getId(), accountVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (domainId != null) {
+            DomainVO domain = ApiDBUtils.findDomainById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain with id " + domainId);
+            }
+            final SearchBuilder<DomainVlanMapVO> domainVlanMapSearch = _domainVlanMapDao.createSearchBuilder();
+            domainVlanMapSearch.and("domainId", domainVlanMapSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+            sb.join("domainVlanMapSearch", domainVlanMapSearch, sb.entity().getId(), domainVlanMapSearch.entity().getVlanDbId(), JoinType.INNER);
+        }
+
         if (podId != null) {
             final SearchBuilder<PodVlanMapVO> podVlanMapSearch = _podVlanMapDao.createSearchBuilder();
             podVlanMapSearch.and("podId", podVlanMapSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -1928,6 +1952,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
             if (physicalNetworkId != null) {
                 sc.setParameters("physicalNetworkId", physicalNetworkId);
+            }
+
+            if (domainId != null) {
+                sc.setJoinParameters("domainVlanMapSearch", "domainId", domainId);
             }
         }
 
@@ -2147,7 +2175,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
-        buildParameters(sb, cmd);
+        buildParameters(sb, cmd, vlanType == VlanType.VirtualNetwork ? true : isAllocated);
 
         SearchCriteria<IPAddressVO> sc = sb.create();
         setParameters(sc, cmd, vlanType);
@@ -2209,7 +2237,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         if (freeAddrIds.size() > 0) {
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
-            buildParameters(sb2, cmd);
+            buildParameters(sb2, cmd, false);
             sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
@@ -2217,6 +2245,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc2.setParameters("ids", freeAddrIds.toArray());
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
+        Collections.sort(addrs, Comparator.comparing(IPAddressVO::getAddress));
         List<? extends IpAddress> wPagination = com.cloud.utils.StringUtils.applyPagination(addrs, cmd.getStartIndex(), cmd.getPageSizeVal());
         if (wPagination != null) {
             return new Pair<List<? extends IpAddress>, Integer>(wPagination, addrs.size());
@@ -2224,11 +2253,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(addrs, addrs.size());
     }
 
-    private void buildParameters(final SearchBuilder<IPAddressVO> sb, final ListPublicIpAddressesCmd cmd) {
+    private void buildParameters(final SearchBuilder<IPAddressVO> sb, final ListPublicIpAddressesCmd cmd, final Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final String address = cmd.getIpAddress();
         final Boolean forLoadBalancing = cmd.isForLoadBalancing();
-        Boolean isAllocated = cmd.isAllocatedOnly();
         final Map<String, String> tags = cmd.getTags();
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -3025,6 +3053,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateRegionCmd.class);
         cmdList.add(ListAlertsCmd.class);
         cmdList.add(ListCapacityCmd.class);
+        cmdList.add(UpdatePodManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadCustomCertificateCmd.class);
         cmdList.add(ConfigureVirtualRouterElementCmd.class);
         cmdList.add(CreateVirtualRouterElementCmd.class);
@@ -3079,6 +3108,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RegisterCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
+        cmdList.add(UpdateVlanIpRangeCmd.class);
         cmdList.add(DeleteVlanIpRangeCmd.class);
         cmdList.add(ListVlanIpRangesCmd.class);
         cmdList.add(DedicatePublicIpRangeCmd.class);
@@ -3441,6 +3471,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
         cmdList.add(MigrateSecondaryStorageDataCmd.class);
+        cmdList.add(UploadResourceIconCmd.class);
+        cmdList.add(DeleteResourceIconCmd.class);
+        cmdList.add(ListResourceIconCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3902,6 +3935,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
         capabilities.put("kubernetesClusterExperimentalFeaturesEnabled", kubernetesClusterExperimentalFeaturesEnabled);
+        capabilities.put(ApiServiceConfiguration.DefaultUIPageSize.key(), ApiServiceConfiguration.DefaultUIPageSize.value());
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
@@ -4097,6 +4131,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(domainUuid, "domainId");
             throw ex;
         }
+        annotationDao.removeByEntityType(AnnotationService.EntityType.SSH_KEYPAIR.name(), s.getUuid());
 
         return _sshKeyPairDao.deleteByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
     }

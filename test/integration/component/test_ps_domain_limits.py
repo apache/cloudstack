@@ -89,12 +89,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMultipleChildDomain, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -106,22 +101,16 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.apiclient,
                 self.services["disk_offering"]
             )
+            self.cleanup.append(self.disk_offering)
             self.assertNotEqual(self.disk_offering, None,
                                 "Disk offering is None")
-            self.cleanup.append(self.disk_offering)
         except Exception as e:
             self.tearDown()
             self.skipTest("Failure while creating disk offering: %s" % e)
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-            pass
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMultipleChildDomain, self).tearDown()
 
     def updateDomainResourceLimits(self, parentdomainlimit, subdomainlimit):
         """Update primary storage limits of the parent domain and its
@@ -151,41 +140,39 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.apiclient,
                 services=self.services["domain"],
                 parentdomainid=self.domain.id)
+            self.cleanup.append(self.parent_domain)
             self.parentd_admin = Account.create(
                 self.apiclient,
                 self.services["account"],
                 admin=True,
                 domainid=self.parent_domain.id)
+            self.cleanup.append(self.parentd_admin)
 
             # Create sub-domains and their admin accounts
             self.cdomain_1 = Domain.create(
                 self.apiclient,
                 services=self.services["domain"],
                 parentdomainid=self.parent_domain.id)
+            self.cleanup.append(self.cdomain_1)
             self.cdomain_2 = Domain.create(
                 self.apiclient,
                 services=self.services["domain"],
                 parentdomainid=self.parent_domain.id)
+            self.cleanup.append(self.cdomain_2)
 
             self.cadmin_1 = Account.create(
                 self.apiclient,
                 self.services["account"],
                 admin=True,
                 domainid=self.cdomain_1.id)
+            self.cleanup.append(self.cadmin_1)
 
             self.cadmin_2 = Account.create(
                 self.apiclient,
                 self.services["account"],
                 admin=True,
                 domainid=self.cdomain_2.id)
-
-            # Cleanup the resources created at end of test
-            self.cleanup.append(self.cadmin_1)
             self.cleanup.append(self.cadmin_2)
-            self.cleanup.append(self.cdomain_1)
-            self.cleanup.append(self.cdomain_2)
-            self.cleanup.append(self.parentd_admin)
-            self.cleanup.append(self.parent_domain)
 
             users = {
                 self.cdomain_1: self.cadmin_1,
@@ -221,7 +208,6 @@ class TestMultipleChildDomain(cloudstackTestCase):
            quantity
         4. After step 7, resource count in parent domain should be 0"""
 
-        # Setting up account and domain hierarchy
         result = self.setupAccounts()
         self.assertEqual(
             result[0],
@@ -233,9 +219,10 @@ class TestMultipleChildDomain(cloudstackTestCase):
         disksize = 10
         subdomainlimit = (templatesize + disksize)
 
+        maxlimit = subdomainlimit * 3 - 1
         result = self.updateDomainResourceLimits(
-            ((subdomainlimit * 3) - 1),
-            subdomainlimit)
+            int(maxlimit),
+            int(subdomainlimit))
         self.assertEqual(
             result[0],
             PASS,
@@ -279,13 +266,14 @@ class TestMultipleChildDomain(cloudstackTestCase):
             "Failed to create api client for account: %s" %
             self.cadmin_2.name)
 
-        VirtualMachine.create(
+        vm_1 = VirtualMachine.create(
             api_client_cadmin_1,
             self.services["virtual_machine"],
             accountid=self.cadmin_1.name,
             domainid=self.cadmin_1.domainid,
             diskofferingid=disk_offering_custom.id,
             serviceofferingid=self.service_offering.id)
+        self.cleanup.append(vm_1)
 
         self.initialResourceCount = (templatesize + disksize)
         result = isDomainResourceCountEqualToExpectedCount(
@@ -302,22 +290,25 @@ class TestMultipleChildDomain(cloudstackTestCase):
             domainid=self.cadmin_2.domainid,
             diskofferingid=disk_offering_custom.id,
             serviceofferingid=self.service_offering.id)
+        self.cleanup.append(vm_2)
 
         # Now the VMs in two child domains have exhausted the primary storage limit
         # of parent domain, hence VM creation in parent domain with custom disk offering
         # should fail
         with self.assertRaises(Exception):
-            VirtualMachine.create(
+            vm_faulty = VirtualMachine.create(
                 api_client_admin,
                 self.services["virtual_machine"],
                 accountid=self.parentd_admin.name,
                 domainid=self.parentd_admin.domainid,
                 diskofferingid=disk_offering_custom.id,
                 serviceofferingid=self.service_offering.id)
+            self.cleanup.append(vm_faulty) # should not happen
 
-        # Deleting user account
+        # Deleting user account and remove it's resources from the cleanup list
         self.cadmin_1.delete(self.apiclient)
         self.cleanup.remove(self.cadmin_1)
+        self.cleanup.remove(vm_1)
 
         expectedCount = self.initialResourceCount
         result = isDomainResourceCountEqualToExpectedCount(
@@ -328,6 +319,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         try:
             vm_2.delete(self.apiclient)
+            self.cleanup.remove(vm_2)
         except Exception as e:
             self.fail("Failed to delete instance: %s" % e)
 
@@ -387,6 +379,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     domainid=self.account.domainid,
                     diskofferingid=self.disk_offering.id,
                     serviceofferingid=self.service_offering.id)
+                self.cleanup.append(vm)
 
                 expectedCount = templatesize + self.disk_offering.disksize
                 result = isDomainResourceCountEqualToExpectedCount(
@@ -400,7 +393,6 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 disk_offering_10_GB = DiskOffering.create(
                     self.apiclient,
                     services=self.services["disk_offering"])
-
                 self.cleanup.append(disk_offering_10_GB)
 
                 volume = Volume.create(
@@ -410,11 +402,13 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     account=self.account.name,
                     domainid=self.account.domainid,
                     diskofferingid=disk_offering_10_GB.id)
+                self.cleanup.append(volume)  # we get an exception in the next few lines
 
                 volumeSize = (volume.size / (1024 ** 3))
                 expectedCount += volumeSize
 
                 vm.attach_volume(apiclient, volume=volume)
+                self.cleanup.remove(volume)  # we can't cleanup an attached volume
                 result = isDomainResourceCountEqualToExpectedCount(
                     self.apiclient, self.domain.id,
                     expectedCount, RESOURCE_PRIMARY_STORAGE)
@@ -475,7 +469,9 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     accountid=self.account.name,
                     domainid=self.account.domainid,
                     diskofferingid=self.disk_offering.id,
-                    serviceofferingid=self.service_offering.id)
+                    serviceofferingid=self.service_offering.id,
+                    startvm=False)
+                self.cleanup.append(vm)
 
                 expectedCount = templatesize + self.disk_offering.disksize
                 result = isDomainResourceCountEqualToExpectedCount(
@@ -488,14 +484,12 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 disk_offering_15_GB = DiskOffering.create(
                     self.apiclient,
                     services=self.services["disk_offering"])
-
                 self.cleanup.append(disk_offering_15_GB)
 
                 volume2size = self.services["disk_offering"]["disksize"] = 20
                 disk_offering_20_GB = DiskOffering.create(
                     self.apiclient,
                     services=self.services["disk_offering"])
-
                 self.cleanup.append(disk_offering_20_GB)
 
                 volume_1 = Volume.create(
@@ -505,6 +499,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     account=self.account.name,
                     domainid=self.account.domainid,
                     diskofferingid=disk_offering_15_GB.id)
+                self.cleanup.append(volume_1)
 
                 volume_2 = Volume.create(
                     apiclient,
@@ -513,9 +508,12 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     account=self.account.name,
                     domainid=self.account.domainid,
                     diskofferingid=disk_offering_20_GB.id)
+                self.cleanup.append(volume_2)
 
                 vm.attach_volume(apiclient, volume=volume_1)
+                self.cleanup.remove(volume_1)
                 vm.attach_volume(apiclient, volume=volume_2)
+                self.cleanup.remove(volume_2)
 
                 expectedCount += volume1size + volume2size
                 result = isDomainResourceCountEqualToExpectedCount(
@@ -537,7 +535,8 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failure: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_04_create_template_snapshot(self):
         """Test create snapshot and templates from volume
 
@@ -584,6 +583,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     domainid=self.account.domainid,
                     diskofferingid=self.disk_offering.id,
                     serviceofferingid=self.service_offering.id)
+                self.cleanup.append(vm)
 
                 templatesize = (self.template.size / (1024 ** 3))
 
@@ -603,6 +603,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     vm.id)
                 self.assertEqual(response[0], PASS, response[1])
                 snapshot = response[1]
+                self.cleanup.append(snapshot)
 
                 response = snapshot.validateState(
                     apiclient,
@@ -617,8 +618,10 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     services=self.services["volume"],
                     account=self.account.name,
                     domainid=self.account.domainid)
+                self.cleanup.append(volume)
                 volumeSize = (volume.size / (1024 ** 3))
                 vm.attach_volume(apiclient, volume)
+                self.cleanup.remove(volume)
                 expectedCount = initialResourceCount + (volumeSize)
                 result = isDomainResourceCountEqualToExpectedCount(
                     self.apiclient, self.domain.id,
@@ -673,6 +676,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 domainid=self.cadmin_1.domainid,
                 diskofferingid=self.disk_offering.id,
                 serviceofferingid=self.service_offering.id)
+            self.cleanup.append(vm_1)
 
             templatesize = (self.template.size / (1024 ** 3))
 
@@ -736,6 +740,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     domainid=self.account.domainid,
                     diskofferingid=self.disk_offering.id,
                     serviceofferingid=self.service_offering.id)
+                self.cleanup.append(vm_1)
 
                 templatesize = (self.template.size / (1024 ** 3))
 
@@ -747,6 +752,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.assertTrue(result[2], "Resource count does not match")
 
                 vm_1.delete(self.apiclient, expunge=False)
+                self.cleanup.remove(vm_1)
 
                 result = isDomainResourceCountEqualToExpectedCount(
                     self.apiclient, self.account.domainid,
@@ -755,6 +761,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.assertTrue(result[2], "Resource count does not match")
 
                 vm_1.recover(self.apiclient)
+                self.cleanup.append(vm_1)
 
                 result = isDomainResourceCountEqualToExpectedCount(
                     self.apiclient, self.account.domainid,

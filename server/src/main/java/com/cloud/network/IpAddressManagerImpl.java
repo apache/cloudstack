@@ -32,6 +32,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -293,6 +295,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     DataCenterIpAddressDao _privateIPAddressDao;
     @Inject
     HostPodDao _hpDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
@@ -713,6 +717,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 _ipAddressDao.unassignIpAddress(ip.getId());
             }
         }
+
+        annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
 
         if (success) {
             if (ip.isPortable()) {

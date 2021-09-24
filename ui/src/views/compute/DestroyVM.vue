@@ -35,7 +35,12 @@
             :placeholder="$t('label.delete.volumes')"
             mode="multiple"
             :loading="loading"
-            :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
+            :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="volume in volumes" :key="volume.id">
               {{ volume.name }}
             </a-select-option>

@@ -118,6 +118,12 @@
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
         <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="resource"
+          :items="annotations">
+        </AnnotationsTab>
+      </a-tab-pane>
     </a-tabs>
   </a-spin>
 </template>
@@ -130,6 +136,7 @@ import FirewallRules from '@/views/network/FirewallRules'
 import PortForwarding from '@/views/network/PortForwarding'
 import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -138,7 +145,8 @@ export default {
     FirewallRules,
     PortForwarding,
     LoadBalancing,
-    Status
+    Status,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
   props: {
@@ -167,7 +175,8 @@ export default {
       network: {},
       publicIpAddress: {},
       currentTab: 'details',
-      cksSshStartingPort: 2222
+      cksSshStartingPort: 2222,
+      annotations: []
     }
   },
   created () {
@@ -261,6 +270,19 @@ export default {
       this.fetchKubernetesVersion()
       this.fetchInstances()
       this.fetchPublicIpAddress()
+      this.fetchComments()
+    },
+    fetchComments () {
+      this.clusterConfigLoading = true
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.clusterConfigLoading = false
+      })
     },
     fetchKubernetesClusterConfig () {
       this.clusterConfigLoading = true

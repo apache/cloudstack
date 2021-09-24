@@ -42,7 +42,7 @@ public interface StorageLayer extends Manager {
      */
     long getSize(String path);
 
-    File createUniqDir();
+    File createUniqDir() throws IOException;
 
     /**
      * Is this path a directory?

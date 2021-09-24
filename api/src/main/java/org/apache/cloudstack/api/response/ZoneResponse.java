@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.DataCenter;
@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = DataCenter.class)
-public class ZoneResponse extends BaseResponse {
+public class ZoneResponse extends BaseResponseWithAnnotations implements SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "Zone id")
     private String id;
@@ -124,6 +124,10 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.RESOURCE_DETAILS)
     @Param(description = "Meta data associated with the zone (key/value pairs)", since = "4.3.0")
     private Map<String, String> resourceDetails;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse resourceIconResponse;
 
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -314,5 +318,14 @@ public class ZoneResponse extends BaseResponse {
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse resourceIconResponse) {
+        this.resourceIconResponse = resourceIconResponse;
+    }
+
+    public ResourceIconResponse getResourceIconResponse() {
+        return resourceIconResponse;
     }
 }

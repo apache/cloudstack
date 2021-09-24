@@ -57,7 +57,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
         final String vmInstanceName = command.getInstanceName();
         final boolean shrinkOk = command.getShrinkOk();
         final StorageFilerTO spool = command.getPool();
-        final String notifyOnlyType = "NOTIFYONLY";
+        final String notifyOnlyType = LibvirtComputingResource.RESIZE_NOTIFY_ONLY;
 
         if ( currentSize == newSize) {
             // nothing to do
@@ -73,19 +73,20 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             final String path = vol.getPath();
             String type = notifyOnlyType;
 
-            if (pool.getType() != StoragePoolType.RBD) {
+            if (pool.getType() != StoragePoolType.RBD && pool.getType() != StoragePoolType.Linstor) {
                 type = libvirtComputingResource.getResizeScriptType(pool, vol);
                 if (type.equals("QCOW2") && shrinkOk) {
                     return new ResizeVolumeAnswer(command, false, "Unable to shrink volumes of type " + type);
                 }
             } else {
-                s_logger.debug("Volume " + path + " is on a RBD storage pool. No need to query for additional information.");
+                s_logger.debug("Volume " + path + " is on a RBD/Linstor storage pool. No need to query for additional information.");
             }
 
             s_logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
 
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via Bash script */
-            if (pool.getType() != StoragePoolType.CLVM && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
+            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.Linstor &&
+                    vol.getFormat() != PhysicalDiskFormat.QCOW2) {
                 s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
                     final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();

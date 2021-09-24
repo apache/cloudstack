@@ -37,7 +37,7 @@
         :count="actionBadge[action.api] ? actionBadge[action.api].badgeNum : 0"
         v-if="action.api in $store.getters.apis &&
           action.showBadge && (
-            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
+            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.groupShow(selectedItems, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
@@ -57,7 +57,7 @@
       <a-button
         v-if="action.api in $store.getters.apis &&
           !action.showBadge && (
-            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
+            (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.groupShow(selectedItems, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
@@ -111,6 +111,12 @@ export default {
       default: false
     },
     selectedRowKeys: {
+      type: Array,
+      default () {
+        return []
+      }
+    },
+    selectedItems: {
       type: Array,
       default () {
         return []

@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -204,6 +206,14 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updatePodIpRange(org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd)
+     */
+    public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#editPod(org.apache.cloudstack.api.commands.UpdatePodCmd)
      */
     @Override
@@ -254,6 +264,17 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
         ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updateVlanAndPublicIpRange(org.apache.cloudstack.api
+     * .commands.UpdateVlanIpRangeCmd)
+     */
+    @Override
+    public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException, ResourceAllocationException{
         // TODO Auto-generated method stub
         return null;
     }

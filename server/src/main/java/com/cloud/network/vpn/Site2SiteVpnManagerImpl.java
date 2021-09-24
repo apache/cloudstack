@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -103,6 +105,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     VpcManager _vpcMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    private AnnotationDao annotationDao;
 
     String _name;
     int _connLimit;
@@ -387,6 +391,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (vpnConnections != null && vpnConnections.size() != 0) {
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway with id " + id + " because there is still related VPN connections!");
         }
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(), gw.getUuid());
         _customerGatewayDao.remove(id);
         return true;
     }
@@ -605,13 +610,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _accountMgr.checkAccess(caller, null, false, conn);
 
-        if (conn.getState() == State.Pending) {
-            conn.setState(State.Disconnected);
-        }
-        if (conn.getState() == State.Connected || conn.getState() == State.Error
-            || conn.getState() == State.Disconnected || conn.getState() == State.Connecting) {
-            stopVpnConnection(id);
-        }
+        // Set vpn state to disconnected
+        conn.setState(State.Disconnected);
+        _vpnConnectionDao.persist(conn);
+
+        // Stop and start the connection again
+        stopVpnConnection(id);
         startVpnConnection(id);
         conn = _vpnConnectionDao.findById(id);
         return conn;
