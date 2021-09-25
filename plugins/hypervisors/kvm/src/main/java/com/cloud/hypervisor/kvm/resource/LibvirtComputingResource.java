@@ -2427,7 +2427,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         devices.addDevice(createChannelDef(vmTO));
         devices.addDevice(createWatchDogDef());
-        devices.addDevice(createVideoDef());
+        devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
         devices.addDevice(createTabletInputDef());
@@ -2488,7 +2488,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ConsoleDef(PTY, null, null, (short)0);
     }
 
-    protected VideoDef createVideoDef() {
+    protected VideoDef createVideoDef(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        if (details != null) {
+            if (details.containsKey(VideoDef.VIDEO_MODEL)) {
+                _videoHw = details.get(VideoDef.VIDEO_MODEL);
+            }
+            if (details.containsKey(VideoDef.VIDEO_RAM)) {
+                String value = details.get(VideoDef.VIDEO_RAM);
+                _videoRam = NumbersUtil.parseInt(value, 0);
+            }
+        }
         return new VideoDef(_videoHw, _videoRam);
     }
 

@@ -1613,6 +1613,10 @@ public class LibvirtVMDef {
     }
 
     public static class VideoDef {
+
+        public static final String VIDEO_MODEL = "video.hardware";
+        public static final String VIDEO_RAM = "video.ram";
+
         private String _videoModel;
         private int _videoRam;
 
