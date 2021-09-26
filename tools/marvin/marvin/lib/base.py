@@ -4100,6 +4100,7 @@ class Project:
 
         cmd = deleteProject.deleteProjectCmd()
         cmd.id = self.id
+        cmd.cleanup = True
         apiclient.deleteProject(cmd)
 
     def update(self, apiclient, **kwargs):
