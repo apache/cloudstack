@@ -148,7 +148,14 @@ export default {
       },
       groupAction: true,
       popup: true,
-      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+      args: (record, store) => {
+        const fields = []
+        if (store.apis.deleteProject.params.filter(x => x.name === 'cleanup').length > 0) {
+          fields.push('cleanup')
+        }
+        return fields
+      }
     }
   ]
 }
