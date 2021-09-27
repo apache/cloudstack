@@ -36,7 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateBackupOfferingCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(UpdateBackupOfferingCmd.class.getName());
-    private static final String RESPONSE_NAME = "updatebackupofferingresponse";
+    private static final String APINAME = "updateBackupOffering";
 
     @Inject
     private BackupManager backupManager;
@@ -91,7 +91,7 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return RESPONSE_NAME;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
