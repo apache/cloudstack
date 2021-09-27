@@ -50,6 +50,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -114,8 +116,11 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -536,6 +541,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupManager backupManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    protected CommandSetupHelper commandSetupHelper;
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper nwHelper;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -618,7 +628,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void resourceCountIncrement(long accountId, Boolean displayVm, Long cpu, Long memory) {
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm, displayVm);
             _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.cpu, displayVm, cpu);
             _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.memory, displayVm, memory);
@@ -626,7 +636,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void resourceCountDecrement(long accountId, Boolean displayVm, Long cpu, Long memory) {
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm, displayVm);
             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, displayVm, cpu);
             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, displayVm, memory);
@@ -740,6 +750,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
+    }
+
+    private void addVmUefiBootOptionsToParams(Map<VirtualMachineProfile.Param, Object> params, String bootType, String bootMode) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Adding boot options (%s, %s, %s) into the param map for VM start as UEFI detail(%s=%s) found for the VM",
+                    VirtualMachineProfile.Param.UefiFlag.getName(),
+                    VirtualMachineProfile.Param.BootType.getName(),
+                    VirtualMachineProfile.Param.BootMode.getName(),
+                    bootType,
+                    bootMode));
+        }
+        params.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
+        params.put(VirtualMachineProfile.Param.BootType, bootType);
+        params.put(VirtualMachineProfile.Param.BootMode, bootMode);
     }
 
     @Override
@@ -1103,7 +1127,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentMemory = currentServiceOffering.getRamSize();
 
         Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             if (newCpu > currentCpu) {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
             }
@@ -1120,7 +1144,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             if (newCpu > currentCpu) {
                 _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
             } else if (currentCpu > newCpu) {
@@ -1224,7 +1248,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentMemory = currentServiceOffering.getRamSize();
 
         Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             if (newCpu > currentCpu) {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
             }
@@ -1260,7 +1284,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             if (newCpu > currentCpu) {
                 _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
             } else if (currentCpu > newCpu) {
@@ -2169,7 +2193,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // First check that the maximum number of UserVMs, CPU and Memory limit for the given
                 // accountId will not be exceeded
-                if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+                if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                     resourceLimitCheck(account, vm.isDisplayVm(), new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
                 }
 
@@ -2575,6 +2599,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    private void verifyVmLimits(UserVmVO vmInstance, Map<String, String> details) {
+        Account owner = _accountDao.findById(vmInstance.getAccountId());
+        if (owner == null) {
+            throw new InvalidParameterValueException("The owner of " + vmInstance + " does not exist: " + vmInstance.getAccountId());
+        }
+
+        long newCpu = NumberUtils.toLong(details.get(VmDetailConstants.CPU_NUMBER));
+        long newMemory = NumberUtils.toLong(details.get(VmDetailConstants.MEMORY));
+        ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vmInstance.getServiceOfferingId());
+        boolean isDynamic = currentServiceOffering.isDynamic();
+        if (isDynamic) {
+            Map<String, String> customParameters = new HashMap<>();
+            customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(newCpu));
+            customParameters.put(VmDetailConstants.MEMORY, String.valueOf(newMemory));
+            validateCustomParameters(svcOffering, customParameters);
+        }
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            return;
+        }
+        long currentCpu = currentServiceOffering.getCpu();
+        long currentMemory = currentServiceOffering.getRamSize();
+
+        try {
+            if (newCpu > currentCpu) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
+            }
+            if (newMemory > currentMemory) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
+            }
+        } catch (ResourceAllocationException e) {
+            s_logger.error(String.format("Failed to updated VM due to: %s", e.getLocalizedMessage()));
+            throw new InvalidParameterValueException(e.getLocalizedMessage());
+        }
+
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, newCpu - currentCpu);
+        } else if (newCpu > 0 && currentCpu > newCpu){
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, currentCpu - newCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, newMemory - currentMemory);
+        } else if (newMemory > 0 && currentMemory > newMemory){
+            _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, currentMemory - newMemory);
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_UPDATE, eventDescription = "updating Vm")
     public UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -2648,6 +2719,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     }
                 }
+
+                verifyVmLimits(vmInstance, details);
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
@@ -2670,9 +2743,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Resource limit changes
         ServiceOffering offering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         if (isDisplayVm) {
-            resourceCountIncrement(vmInstance.getAccountId(), true, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceCountIncrement(vmInstance.getAccountId(), true, Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         } else {
-            resourceCountDecrement(vmInstance.getAccountId(), true, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceCountDecrement(vmInstance.getAccountId(), true, Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
 
         // Usage
@@ -2903,15 +2976,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName, instanceName);
 
         if (updateUserdata) {
-            boolean result = updateUserDataInternal(_vmDao.findById(id));
-            if (result) {
-                s_logger.debug("User data successfully updated for vm id=" + id);
-            } else {
-                throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
-            }
+            updateUserData(vm);
+        }
+
+        if (State.Running == vm.getState()) {
+            updateDns(vm, hostName);
         }
 
         return _vmDao.findById(id);
+    }
+
+    private void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
+        boolean result = updateUserDataInternal(vm);
+        if (result) {
+            s_logger.debug(String.format("User data successfully updated for vm id:  %s", vm.getId()));
+        } else {
+            throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
+        }
+    }
+
+    private void updateDns(UserVmVO vm, String hostName) throws ResourceUnavailableException, InsufficientCapacityException {
+        if (!StringUtils.isEmpty(hostName)) {
+            vm.setHostName(hostName);
+            try {
+                List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
+                for (NicVO nic : nicVOs) {
+                    List<DomainRouterVO> routers = _routerDao.findByNetwork(nic.getNetworkId());
+                    for (DomainRouterVO router : routers) {
+                        if (router.getState() != State.Running) {
+                            s_logger.warn(String.format("Unable to update DNS for VM %s, as virtual router: %s is not in the right state: %s ", vm, router.getName(), router.getState()));
+                            continue;
+                        }
+                        Commands commands = new Commands(Command.OnError.Stop);
+                        commandSetupHelper.createDhcpEntryCommand(router, vm, nic, false, commands);
+                        if (!nwHelper.sendCommandsToRouter(router, commands)) {
+                            throw new CloudRuntimeException(String.format("Unable to send commands to virtual router: %s", router.getHostId()));
+                        }
+                        Answer answer = commands.getAnswer("dhcp");
+                        if (answer == null || !answer.getResult()) {
+                            throw new CloudRuntimeException("Failed to update hostname");
+                        }
+                        updateUserData(vm);
+                    }
+                }
+            } catch (CloudRuntimeException e) {
+                throw new CloudRuntimeException(String.format("Failed to update hostname of VM %s to %s", vm.getInstanceName(), vm.getHostName()));
+            }
+        }
     }
 
     private boolean updateUserDataInternal(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -2956,16 +3067,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        Map<VirtualMachineProfile.Param, Object> additonalParams = null;
+        Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
         if (cmd.getBootIntoSetup() != null) {
-            if (additonalParams == null) {
-                additonalParams = new HashMap<>();
-            }
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoSetup.getName()));
             }
-
             additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
+        }
+        UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getId(), ApiConstants.BootType.UEFI.toString());
+        if (uefiDetail != null) {
+            addVmUefiBootOptionsToParams(additonalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
@@ -3700,7 +3811,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
@@ -4540,23 +4651,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long podId = null;
         Long clusterId = null;
         Long hostId = cmd.getHostId();
-        Map<VirtualMachineProfile.Param, Object> additonalParams =  new HashMap<>();
+        Map<VirtualMachineProfile.Param, Object> additionalParams =  new HashMap<>();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
+        Map<String, String> details = cmd.getDetails();
         if (cmd instanceof DeployVMCmdByAdmin) {
             DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
             podId = adminCmd.getPodId();
             clusterId = adminCmd.getClusterId();
         }
-        if (MapUtils.isNotEmpty(cmd.getDetails()) && cmd.getDetails().containsKey(ApiConstants.BootType.UEFI.toString())) {
-            Map<String, String> map = cmd.getDetails();
-            additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
-            additonalParams.put(VirtualMachineProfile.Param.BootType, ApiConstants.BootType.UEFI.toString());
-            additonalParams.put(VirtualMachineProfile.Param.BootMode, map.get(ApiConstants.BootType.UEFI.toString()));
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ApiConstants.BootType.UEFI.toString())) {
+            addVmUefiBootOptionsToParams(additionalParams, ApiConstants.BootType.UEFI.toString(), details.get(ApiConstants.BootType.UEFI.toString()));
         }
         if (cmd.getBootIntoSetup() != null) {
-            additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
+            additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
         }
-        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
+        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, cmd.getDeploymentPlanner());
     }
 
     private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap
@@ -4927,12 +5036,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (owner.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
-        if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             // check if account/domain is with in resource limits to start a new vm
             ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-            resourceLimitCheck(owner, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceLimitCheck(owner, vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
-
         // check if vm is security group enabled
         if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty()
                 && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkModel.canAddDefaultSecurityGroup()) {
@@ -6625,7 +6733,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         removeInstanceFromInstanceGroup(cmd.getVmId());
 
         // VV 2: check if account/domain is with in resource limits to create a new vm
-        if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(newAccount, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
@@ -6683,7 +6791,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 //update resource count of new account
-                if (! VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+                if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                     resourceCountIncrement(newAccount.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
                 }
 

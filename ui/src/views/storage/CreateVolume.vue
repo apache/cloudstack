@@ -43,13 +43,18 @@
           showSearch
           optionFilterProp="children"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(zone, index) in zones"
             :value="zone.id"
-            :key="index">
-            {{ zone.name }}
+            :key="index"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px"/>
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -135,11 +140,13 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVolume',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -163,7 +170,7 @@ export default {
   methods: {
     fetchData () {
       this.loading = true
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.selectedZoneId = this.zones[0].id || ''
         this.fetchDiskOfferings(this.selectedZoneId)

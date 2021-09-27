@@ -99,12 +99,16 @@
                   mode="multiple"
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :placeholder="apiParams.zoneids.description"
                   @change="handlerSelectZone">
-                  <a-select-option v-for="opt in zones.opts" :key="opt.id">
-                    {{ opt.name || opt.description }}
+                  <a-select-option v-for="opt in zones.opts" :key="opt.id" :label="opt.name || opt.description">
+                    <span>
+                      <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else type="global" style="margin-right: 5px" />
+                      {{ opt.name || opt.description }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -131,13 +135,17 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   @change="handlerSelectZone"
                   :placeholder="apiParams.zoneid.description"
                   :loading="zones.loading">
-                  <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
-                    {{ zone.name || zone.description }}
+                  <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id" :label="zone.name || zone.description">
+                    <span>
+                      <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else type="global" style="margin-right: 5px" />
+                      {{ zone.name || zone.description }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -394,6 +402,7 @@
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -406,6 +415,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -522,7 +534,7 @@ export default {
       const params = {}
       let listZones = []
       params.listAll = true
-
+      params.showicon = true
       this.allowed = false
 
       if (store.getters.userInfo.roletype === this.rootAdmin && this.currentForm === 'Create') {

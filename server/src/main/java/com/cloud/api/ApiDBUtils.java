@@ -27,6 +27,9 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.resource.icon.dao.ResourceIconDao;
+import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -55,6 +58,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -258,6 +262,7 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -418,6 +423,7 @@ public class ApiDBUtils {
     static AutoScaleVmGroupDao s_asVmGroupDao;
     static CounterDao s_counterDao;
     static ResourceTagJoinDao s_tagJoinDao;
+    static ResourceIconDao s_resourceIconDao;
     static EventJoinDao s_eventJoinDao;
     static InstanceGroupJoinDao s_vmGroupJoinDao;
     static UserAccountJoinDao s_userAccountJoinDao;
@@ -462,6 +468,7 @@ public class ApiDBUtils {
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
     static NicDao s_nicDao;
+    static ResourceManagerUtil s_resourceManagerUtil;
 
     @Inject
     private ManagementServer ms;
@@ -708,6 +715,10 @@ public class ApiDBUtils {
     private BackupScheduleDao backupScheduleDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private ResourceIconDao resourceIconDao;
+    @Inject
+    private ResourceManagerUtil resourceManagerUtil;
 
     @PostConstruct
     void init() {
@@ -834,6 +845,8 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_resourceIconDao = resourceIconDao;
+        s_resourceManagerUtil = resourceManagerUtil;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1231,7 +1244,10 @@ public class ApiDBUtils {
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.PowerFlex || pool.getPoolType() == StoragePoolType.CLVM) {
+                if(pool.getPoolType() == StoragePoolType.RBD ||
+                    pool.getPoolType() == StoragePoolType.PowerFlex ||
+                    pool.getPoolType() == StoragePoolType.CLVM ||
+                    pool.getPoolType() == StoragePoolType.Linstor) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -1484,7 +1500,7 @@ public class ApiDBUtils {
     }
 
     public static String getUuid(String resourceId, ResourceObjectType resourceType) {
-        return s_taggedResourceService.getUuid(resourceId, resourceType);
+        return s_resourceManagerUtil.getUuid(resourceId, resourceType);
     }
 
     public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
@@ -1800,6 +1816,10 @@ public class ApiDBUtils {
         return s_tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
     }
 
+    public static ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIcon) {
+        return s_resourceIconDao.newResourceIconResponse(resourceIcon);
+    }
+
     public static ResourceTagJoinVO newResourceTagView(ResourceTag sg) {
         return s_tagJoinDao.newResourceTagView(sg);
     }
@@ -2001,8 +2021,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
-        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities, Boolean showResourceImage) {
+        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
@@ -2079,6 +2099,10 @@ public class ApiDBUtils {
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
+    }
+
+    public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
+        return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
     public static BackupResponse newBackupResponse(Backup backup) {

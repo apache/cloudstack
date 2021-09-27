@@ -350,7 +350,7 @@ export default {
           placeHolder: 'message.error.server',
           required: true,
           display: {
-            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB']
+            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor']
           }
         },
         {
@@ -487,6 +487,15 @@ export default {
           required: true,
           display: {
             primaryStorageProtocol: 'vmfs'
+          }
+        },
+        {
+          title: 'label.resourcegroup',
+          key: 'primaryStorageLinstorResourceGroup',
+          placeHolder: 'message.error.linstor.resourcegroup',
+          required: true,
+          display: {
+            primaryStorageProtocol: 'Linstor'
           }
         },
         {
@@ -825,6 +834,10 @@ export default {
         protocols.push({
           id: 'gluster',
           description: 'Gluster'
+        })
+        protocols.push({
+          id: 'Linstor',
+          description: 'Linstor'
         })
       } else if (hypervisor === 'XenServer') {
         protocols.push({
