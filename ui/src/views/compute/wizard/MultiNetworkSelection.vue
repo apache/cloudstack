@@ -52,7 +52,7 @@
           {{ $t('label.no.matching.network') }}
         </span>
       </template>
-      <template #ipaddress="{text, record}">
+      <template #ipaddress="{record}">
         <check-box-input-pair
           layout="vertical"
           :resourceKey="record.id"
