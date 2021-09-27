@@ -171,7 +171,7 @@
     </span>
     <template slot="state" slot-scope="text, record">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
-      <status v-else :text="text ? text : ''" displayText />
+      <status v-else :text="text ? text : ''" displayText style="min-width: 80px" />
     </template>
     <template slot="allocationstate" slot-scope="text">
       <status :text="text ? text : ''" displayText />
