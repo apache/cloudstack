@@ -121,9 +121,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         int total = 0;
         int up = 0;
         int down = 0;
-        Map<String, Integer> total_hosts = new HashMap<>();
-        Map<String, Integer> up_hosts = new HashMap<>();
-        Map<String, Integer> down_hosts = new HashMap<>();
+        Map<String, Integer> totalHosts = new HashMap<>();
+        Map<String, Integer> upHosts = new HashMap<>();
+        Map<String, Integer> downHosts = new HashMap<>();
 
         for (final HostVO host : hostDao.listAll()) {
             if (host == null || host.getType() != Host.Type.Routing || host.getDataCenterId() != dcId) {
@@ -144,18 +144,18 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
             String hosttags = StringUtils.join(hostTags, ",");
             for (String tag : hostTags) {
-                Integer current = total_hosts.get(tag) != null ? total_hosts.get(tag) : 0;
-                total_hosts.put(tag, current + 1);
+                Integer current = totalHosts.get(tag) != null ? totalHosts.get(tag) : 0;
+                totalHosts.put(tag, current + 1);
             }
             if (host.getStatus() == Status.Up) {
                 for (String tag : hostTags) {
-                    Integer current = up_hosts.get(tag) != null ? up_hosts.get(tag) : 0;
-                    up_hosts.put(tag, current + 1);
+                    Integer current = upHosts.get(tag) != null ? upHosts.get(tag) : 0;
+                    upHosts.put(tag, current + 1);
                 }
             } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
                 for (String tag : hostTags) {
-                    Integer current = down_hosts.get(tag) != null ? down_hosts.get(tag) : 0;
-                    down_hosts.put(tag, current + 1);
+                    Integer current = downHosts.get(tag) != null ? downHosts.get(tag) : 0;
+                    downHosts.put(tag, current + 1);
                 }
             }
 
@@ -219,22 +219,22 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, up, null));
         metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, down, null));
         metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total, null));
-        for (Map.Entry<String, Integer> entry : total_hosts.entrySet()) {
+        for (Map.Entry<String, Integer> entry : totalHosts.entrySet()) {
             String tag = entry.getKey();
             Integer count = entry.getValue();
             metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, count, tag));
-            if (up_hosts.get(tag) != null) {
-                metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, up_hosts.get(tag), tag));
+            if (upHosts.get(tag) != null) {
+                metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, upHosts.get(tag), tag));
             } else {
                 metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, 0, tag));
             }
-            if (down_hosts.get(tag) != null) {
-                metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, down_hosts.get(tag), tag));
+            if (downHosts.get(tag) != null) {
+                metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, downHosts.get(tag), tag));
             } else {
                 metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, 0, tag));
             }
         }
-        for (Map.Entry<String, Integer> entry : total_hosts.entrySet()) {
+        for (Map.Entry<String, Integer> entry : totalHosts.entrySet()) {
             String tag = entry.getKey();
             Ternary<Long, Long, Long> allocatedCapacityByTag = capacityDao.findCapacityByZoneAndHostTag(dcId, tag);
             metricsList.add(new ItemVMCore(zoneName, zoneUuid, null, null, null, ALLOCATED, allocatedCapacityByTag.first(), 0, tag));
