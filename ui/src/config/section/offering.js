@@ -42,6 +42,17 @@ export default {
         }
         return fields
       },
+      resourceType: 'ServiceOffering',
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -137,6 +148,17 @@ export default {
         }
         return fields
       },
+      resourceType: 'DiskOffering',
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       related: [{
         name: 'volume',
         title: 'label.volumes',
@@ -214,6 +236,17 @@ export default {
       params: { isrecursive: 'true' },
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
+      resourceType: 'NetworkOffering',
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [{
         api: 'createNetworkOffering',
         icon: 'plus',

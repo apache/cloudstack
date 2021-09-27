@@ -46,7 +46,12 @@
                 initialValue: (server.apiHost || '') + server.apiBase
               }
             ]"
-            @change="onChangeServer">
+            @change="onChangeServer"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
               <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
               {{ item.name }}
@@ -113,7 +118,12 @@
                 initialValue: (server.apiHost || '') + server.apiBase
               }
             ]"
-            @change="onChangeServer">
+            @change="onChangeServer"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
               <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
               {{ item.name }}
@@ -121,7 +131,13 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <a-select v-decorator="['idp', { initialValue: selectedIdp } ]">
+          <a-select
+            v-decorator="['idp', { initialValue: selectedIdp } ]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
               {{ idp.orgName }}
             </a-select-option>

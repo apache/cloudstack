@@ -49,13 +49,17 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description"
             @change="val => { this.handleZoneChange(this.zones[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -242,12 +246,14 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateKubernetesCluster',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {},
   data () {
@@ -306,6 +312,7 @@ export default {
     fetchZoneData () {
       const params = {}
       this.zoneLoading = true
+      params.showicon = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         this.zones = this.zones.concat(listZones)

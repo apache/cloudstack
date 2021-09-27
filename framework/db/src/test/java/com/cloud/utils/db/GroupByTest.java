@@ -30,8 +30,19 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.any;
+
 
 public class GroupByTest {
+
+    public static GroupBy<SearchBaseExtension, String, String> mockGroupBy1(final SearchBaseExtension builder) {
+        GroupBy<SearchBaseExtension, String, String> mockInstance = spy(new GroupBy(builder));
+        mockInstance._builder = builder;
+        doNothing().when(mockInstance).init(any(SearchBaseExtension.class));
+        return mockInstance;
+    }
 
     protected static final String EXPECTED_QUERY = "BASE GROUP BY FIRST(TEST_TABLE.TEST_COLUMN), MAX(TEST_TABLE.TEST_COLUMN) HAVING COUNT(TEST_TABLE2.TEST_COLUMN2) > ? ";
     protected static final DbTestDao dao = new DbTestDao();
@@ -42,7 +53,8 @@ public class GroupByTest {
     public void testToSql() {
         // Prepare
         final StringBuilder sb = new StringBuilder("BASE");
-        final GroupByExtension groupBy = new GroupByExtension(new SearchBaseExtension(String.class, String.class));
+        // Construct mock object
+        final GroupBy<SearchBaseExtension, String, String> groupBy = GroupByTest.mockGroupBy1(new SearchBaseExtension(String.class, String.class));
 
         final Attribute att = new Attribute("TEST_TABLE", "TEST_COLUMN");
         final Attribute att2 = new Attribute("TEST_TABLE2", "TEST_COLUMN2");
@@ -100,17 +112,6 @@ public class GroupByTest {
 
 }
 
-class GroupByExtension extends GroupBy<SearchBaseExtension, String, String> {
-
-    public GroupByExtension(final SearchBaseExtension builder) {
-        super(builder);
-        _builder = builder;
-    }
-
-    @Override
-    protected void init(final SearchBaseExtension builder) {
-    }
-}
 
 class SearchBaseExtension extends SearchBase<SearchBaseExtension, String, String>{
 

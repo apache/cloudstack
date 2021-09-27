@@ -27,7 +27,12 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="roleLoading"
             :placeholder="apiParams.roleid.description"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
@@ -103,9 +108,18 @@
             v-decorator="['domainid', {
               initialValue: selectedDomain,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
-            :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.path || domain.name || domain.description }}
+            :placeholder="apiParams.domainid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
+              <span>
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px"/>
+                {{ domain.path || domain.name || domain.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -116,10 +130,14 @@
         <a-form-item>
           <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
-            showSearch
             v-decorator="['timezone']"
             :loading="timeZoneLoading"
-            :placeholder="apiParams.timezone.description">
+            :placeholder="apiParams.timezone.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -131,7 +149,7 @@
             v-decorator="['networkdomain']"
             :placeholder="apiParams.networkdomain.description" />
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item :label="$t('label.samlenable')">
             <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
           </a-form-item>
@@ -141,8 +159,13 @@
               v-decorator="['samlentity', {
                 initialValue: selectedIdp,
               }]"
-              :loading="idpLoading">
-              <a-select-option v-for="(idp, idx) in idps" :key="idx">
+              :loading="idpLoading"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option v-for="idp in idps" :key="idp.id">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
@@ -160,12 +183,14 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountForm',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
@@ -192,12 +217,17 @@ export default {
   created () {
     this.fetchData()
   },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
+  },
   methods: {
     fetchData () {
       this.fetchDomains()
       this.fetchRoles()
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
@@ -230,6 +260,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
@@ -318,7 +349,7 @@ export default {
                 userid: users[i].id
               }).then(response => {
                 this.$notification.success({
-                  message: this.$t('samlenable'),
+                  message: this.$t('label.samlenable'),
                   description: this.$t('message.success.enable.saml.auth')
                 })
               }).catch(error => {
