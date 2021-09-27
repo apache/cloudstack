@@ -1204,7 +1204,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DiskOfferingVO newRootDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
 
-        List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vmInstance.getId());
+        List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmInstance.getId());
 
         for (final VolumeVO rootVolumeOfVm : vols) {
             DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
@@ -1276,7 +1276,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void resizeRootVolumeOfVmWithNewOffering(VMInstanceVO vmInstance, ServiceOfferingVO newServiceOffering)
             throws ResourceAllocationException {
         DiskOfferingVO newROOTDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
-        List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vmInstance.getId());
+        List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmInstance.getId());
 
         for (final VolumeVO rootVolumeOfVm : vols) {
             rootVolumeOfVm.setDiskOfferingId(newROOTDiskOffering.getId());
