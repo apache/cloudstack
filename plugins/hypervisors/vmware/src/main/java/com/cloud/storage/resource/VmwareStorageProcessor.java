@@ -1244,9 +1244,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VirtualDisk requiredDisk = volumeDeviceInfo.first();
             vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, requiredDisk);
             clonedVm = dcMo.findVm(templateUniqueName);
-
-            checkIfVMHasOnlyRequiredDisk(clonedVm, requiredDisk);
-
             clonedVm.tagAsWorkerVM();
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
@@ -1839,7 +1836,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
-                checkIfVMHasOnlyRequiredDisk(clonedVm, requiredDisk);
                 clonedVm.tagAsWorkerVM();
                 vmMo = clonedVm;
             }
@@ -1851,19 +1847,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 s_logger.debug(String.format("Destroying cloned VM: %s with its disks", clonedVm.getName()));
                 clonedVm.destroy();
             }
-        }
-    }
-
-    private void checkIfVMHasOnlyRequiredDisk(VirtualMachineMO clonedVm, VirtualDisk requiredDisk) throws Exception {
-
-        s_logger.info(String.format("Checking if Cloned VM %s is created only with required Disk, if not detach the remaining disks", clonedVm.getName()));
-        VirtualDisk[] vmDisks = clonedVm.getAllDiskDevice();
-        if (vmDisks.length != 1) {
-            String baseName = VmwareHelper.getDiskDeviceFileName(requiredDisk);
-            s_logger.info(String.format("Detaching all disks for the cloned VM: %s except disk with base name: %s, key=%d", clonedVm.getName(), baseName, requiredDisk.getKey()));
-            clonedVm.detachAllDisksExcept(VmwareHelper.getDiskDeviceFileName(requiredDisk), null);
-        } else {
-            s_logger.info(String.format("Cloned VM %s is created only with required Disk", clonedVm.getName()));
         }
     }
 
