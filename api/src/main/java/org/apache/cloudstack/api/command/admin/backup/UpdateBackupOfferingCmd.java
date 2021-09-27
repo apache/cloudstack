@@ -33,7 +33,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class,
+requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateBackupOfferingCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(UpdateBackupOfferingCmd.class.getName());
     private static final String APINAME = "updateBackupOffering";
