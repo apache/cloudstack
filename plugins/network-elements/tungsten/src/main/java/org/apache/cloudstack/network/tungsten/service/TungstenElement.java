@@ -493,7 +493,7 @@ public class TungstenElement extends AdapterBase
                     TungstenGuestNetworkIpAddressVO guestNetworkIpAddressVO =
                         tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(
                         network.getId(), ipAddressVO.getAddress().addr());
-                    tungstenGuestNetworkIpAddressDao.remove(guestNetworkIpAddressVO.getId());
+                    return tungstenGuestNetworkIpAddressDao.remove(guestNetworkIpAddressVO.getId());
                 }
             }
         }
@@ -945,10 +945,6 @@ public class TungstenElement extends AdapterBase
                     return false;
                 }
 
-                TungstenRule tungstenRule = convertFirewallRule(firewallRule);
-                List<TungstenRule> tungstenRuleList = new ArrayList<>();
-                tungstenRuleList.add(tungstenRule);
-
                 if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
                     networkUuid = network.getUuid();
@@ -960,6 +956,10 @@ public class TungstenElement extends AdapterBase
                 }
 
                 if (firewallRule.getState() == FirewallRule.State.Add) {
+                    TungstenRule tungstenRule = convertFirewallRule(firewallRule);
+                    List<TungstenRule> tungstenRuleList = new ArrayList<>();
+                    tungstenRuleList.add(tungstenRule);
+
                     TungstenCommand createTungstenNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
                         policyName, tungstenProjectFqn, tungstenRuleList);
                     TungstenAnswer createNetworkPolicyAnswer = tungstenFabricUtils.sendTungstenCommand(
@@ -1096,9 +1096,9 @@ public class TungstenElement extends AdapterBase
         VirtualMachine.State newState = transition.getToState();
         VirtualMachine.Event event = transition.getEvent();
         if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            tungstenService.addTungstenVmSecurityGroup((VMInstanceVO) vo);
+            return tungstenService.addTungstenVmSecurityGroup((VMInstanceVO) vo);
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            tungstenService.removeTungstenVmSecurityGroup((VMInstanceVO) vo);
+            return tungstenService.removeTungstenVmSecurityGroup((VMInstanceVO) vo);
         }
 
         return true;

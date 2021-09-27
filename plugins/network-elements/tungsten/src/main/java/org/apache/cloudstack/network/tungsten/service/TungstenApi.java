@@ -485,11 +485,7 @@ public class TungstenApi {
                 floatingIpPool.setParent(virtualNetwork);
                 Status status = apiConnector.create(floatingIpPool);
                 status.ifFailure(errorHandler);
-                if (status.isSuccess()) {
-                    return apiConnector.findById(FloatingIpPool.class, floatingIpPool.getUuid());
-                } else {
-                    return null;
-                }
+                return apiConnector.findById(FloatingIpPool.class, floatingIpPool.getUuid());
             } else {
                 return floatingIpPool;
             }
@@ -513,11 +509,7 @@ public class TungstenApi {
                 floatingIp.setAddress(publicIp);
                 Status status = apiConnector.create(floatingIp);
                 status.ifFailure(errorHandler);
-                if (status.isSuccess()) {
-                    return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
-                } else {
-                    return null;
-                }
+                return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
             } else {
                 return floatingIp;
             }
@@ -608,11 +600,7 @@ public class TungstenApi {
 
                 Status status = apiConnector.create(networkPolicy);
                 status.ifFailure(errorHandler);
-                if (status.isSuccess()) {
-                    return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
-                } else {
-                    return null;
-                }
+                return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
             } else {
                 PolicyEntriesType policyEntriesType = networkPolicy.getEntries();
                 if (policyEntriesType == null) {
@@ -624,11 +612,7 @@ public class TungstenApi {
 
                 Status status = apiConnector.update(networkPolicy);
                 status.ifFailure(errorHandler);
-                if (status.isSuccess()) {
-                    return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
-                } else {
-                    return null;
-                }
+                return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
             }
         } catch (IOException e) {
             return null;
@@ -675,7 +659,6 @@ public class TungstenApi {
 
     public ApiObjectBase createTungstenDomain(String domainName, String domainUuid) {
         try {
-
             Domain domain = (Domain) apiConnector.findById(Domain.class, domainUuid);
             if (domain != null)
                 return domain;
@@ -692,7 +675,6 @@ public class TungstenApi {
                 tungstenDefaultProject.setDisplayName(TUNGSTEN_DEFAULT_PROJECT);
                 tungstenDefaultProject.setName(TUNGSTEN_DEFAULT_PROJECT);
                 tungstenDefaultProject.setParent(tungstenDomain);
-                apiConnector.create(tungstenDefaultProject);
                 Status defaultProjectStatus = apiConnector.create(tungstenDefaultProject);
                 defaultProjectStatus.ifFailure(errorHandler);
             }
@@ -1133,7 +1115,7 @@ public class TungstenApi {
             boolean clear = false;
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
             if (virtualNetwork == null) {
-                return false;
+                return true;
             }
 
             List<ObjectReference<VnSubnetsType>> objectReferenceList = virtualNetwork.getNetworkIpam();

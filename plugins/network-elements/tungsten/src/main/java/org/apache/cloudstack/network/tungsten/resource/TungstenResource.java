@@ -2468,7 +2468,7 @@ public class TungstenResource implements ServerResource {
         }
 
         List<ObjectReference<ApiPropertyBase>> vmiList = logicalRouter.getVirtualMachineInterface();
-        if (vmiList != null) {
+        if (vmiList != null && vmiList.size() > 0) {
             return new TungstenAnswer(cmd, false, "Tungsten-Fabric logical router is connected by network");
         }
 

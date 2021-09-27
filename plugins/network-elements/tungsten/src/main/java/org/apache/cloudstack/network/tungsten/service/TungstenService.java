@@ -46,7 +46,7 @@ public interface TungstenService {
 
     boolean createPublicNetwork(long zoneId);
 
-    boolean addPublicNetworkSubnet(Vlan vlan);
+    boolean addPublicNetworkSubnet(VlanVO vlanVO);
 
     boolean removePublicNetworkSubnet(VlanVO vlanVO);
 
@@ -218,7 +218,7 @@ public interface TungstenService {
 
     boolean removeTungstenVmSecurityGroup(VMInstanceVO vm);
 
-    void allocateDnsIpAddress(Network network, Pod pod, String subnetName);
+    boolean allocateDnsIpAddress(Network network, Pod pod, String subnetName);
 
     void deallocateDnsIpAddress(Network network, Pod pod, String subnetName);
 

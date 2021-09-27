@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.guru;
+package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -46,6 +46,7 @@ import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.TungstenProviderDao;
+import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.offering.NetworkOffering;
@@ -79,8 +80,6 @@ import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterComm
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
-import org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils;
-import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -242,7 +241,9 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
                     throw new CloudRuntimeException("can not create Tungsten-Fabric network");
                 }
 
-                tungstenService.allocateDnsIpAddress(network, null, TungstenUtils.getSubnetName(network.getId()));
+                if (!tungstenService.allocateDnsIpAddress(network, null, TungstenUtils.getSubnetName(network.getId()))) {
+                    throw new CloudRuntimeException("can not allocate Tungsten-Fabric Dns Ip Address");
+                }
 
                 // create logical router with public network
                 TungstenAnswer createLogicalRouterAnswer = createTungstenLogicalRouter(network, tungstenProjectFqn,

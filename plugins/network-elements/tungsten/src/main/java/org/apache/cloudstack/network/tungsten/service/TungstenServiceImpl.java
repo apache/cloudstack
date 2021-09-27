@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -51,7 +52,6 @@ import com.cloud.network.dao.LoadBalancerCertMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
 import com.cloud.network.dao.TungstenProviderDao;
@@ -118,9 +118,9 @@ import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
@@ -247,59 +247,59 @@ import javax.inject.Inject;
 public class TungstenServiceImpl extends ManagerBase implements TungstenService {
     private static final Logger s_logger = Logger.getLogger(TungstenServiceImpl.class);
     @Inject
-    private MessageBus messageBus;
+    protected MessageBus messageBus;
     @Inject
-    private ProjectDao projectDao;
+    protected ProjectDao projectDao;
     @Inject
-    private AccountDao accountDao;
+    protected AccountDao accountDao;
     @Inject
-    private NetworkDao networkDao;
+    protected NetworkDao networkDao;
     @Inject
-    private ConfigurationDao configDao;
+    protected ConfigurationDao configDao;
     @Inject
-    private IPAddressDao ipAddressDao;
+    protected IPAddressDao ipAddressDao;
     @Inject
-    private EntityManager entityMgr;
+    protected EntityManager entityMgr;
     @Inject
     protected NetworkModel networkModel;
     @Inject
-    private DomainDao domainDao;
+    protected DomainDao domainDao;
     @Inject
-    private LoadBalancerCertMapDao lbCertMapDao;
+    protected LoadBalancerCertMapDao lbCertMapDao;
     @Inject
-    private FirewallRulesDao fwRulesDao;
+    protected FirewallRulesDao fwRulesDao;
     @Inject
-    private TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
+    protected TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
     @Inject
-    private TungstenProviderDao tungstenProviderDao;
+    protected TungstenProviderDao tungstenProviderDao;
     @Inject
-    private TungstenFabricUtils tungstenFabricUtils;
+    protected TungstenFabricUtils tungstenFabricUtils;
     @Inject
-    private AgentManager agentMgr;
+    protected AgentManager agentMgr;
     @Inject
-    private HostDao hostDao;
+    protected HostDao hostDao;
     @Inject
-    private NetworkDetailsDao networkDetailsDao;
+    protected NetworkDetailsDao networkDetailsDao;
     @Inject
-    private SecurityGroupDao securityGroupDao;
+    protected SecurityGroupDao securityGroupDao;
     @Inject
-    private NicDao nicDao;
+    protected NicDao nicDao;
     @Inject
-    private TungstenSecurityGroupRuleDao tungstenSecurityGroupRuleDao;
+    protected TungstenSecurityGroupRuleDao tungstenSecurityGroupRuleDao;
     @Inject
-    private SecurityGroupVMMapDao securityGroupVMMapDao;
+    protected SecurityGroupVMMapDao securityGroupVMMapDao;
     @Inject
-    private SecurityGroupRuleDao securityGroupRuleDao;
+    protected SecurityGroupRuleDao securityGroupRuleDao;
     @Inject
-    private SecurityGroupManager securityGroupManager;
+    protected SecurityGroupManager securityGroupManager;
     @Inject
-    private NicSecondaryIpDao nicSecIpDao;
+    protected NicSecondaryIpDao nicSecIpDao;
     @Inject
-    private DataCenterIpAddressDao dataCenterIpAddressDao;
+    protected DataCenterIpAddressDao dataCenterIpAddressDao;
     @Inject
-    private DataCenterDao dataCenterDao;
+    protected DataCenterDao dataCenterDao;
     @Inject
-    private IpAddressManager ipAddressManager;
+    protected IpAddressManager ipAddressManager;
 
     @Override
     public boolean start() {
@@ -652,8 +652,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     }
 
     private boolean deleteTungstenFloatingIp(long zoneId, IpAddress ipAddress) {
-        List<NetworkVO> publicNetworkVOList = networkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-        NetworkVO publicNetwork = publicNetworkVOList.get(0);
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
         TungstenCommand deleteTungstenFloatingIpCommand = new DeleteTungstenFloatingIpCommand(publicNetwork.getUuid(),
             TungstenUtils.getFloatingIpPoolName(zoneId), TungstenUtils.getFloatingIpName(ipAddress.getId()));
         TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(deleteTungstenFloatingIpCommand,
@@ -748,12 +747,20 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
         // change default tungsten security group
         TungstenCommand updateTungstenDefaultSecurityGroupCommand = new UpdateTungstenDefaultSecurityGroupCommand(null);
-        tungstenFabricUtils.sendTungstenCommand(updateTungstenDefaultSecurityGroupCommand, zoneId);
+        TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = tungstenFabricUtils.sendTungstenCommand(updateTungstenDefaultSecurityGroupCommand, zoneId);
+
+        if (!updateTungstenDefaultSecurityGroupAnswer.getResult()) {
+            return false;
+        }
 
         // change default forwarding mode
         TungstenCommand updateTungstenGlobalVrouterConfigCommand = new UpdateTungstenVrouterConfigCommand(
             TungstenUtils.getDefaultForwardingMode());
-        tungstenFabricUtils.sendTungstenCommand(updateTungstenGlobalVrouterConfigCommand, zoneId);
+        TungstenAnswer updateTungstenGlobalVrouterConfigAnswer = tungstenFabricUtils.sendTungstenCommand(updateTungstenGlobalVrouterConfigCommand, zoneId);
+
+        if (!updateTungstenGlobalVrouterConfigAnswer.getResult()) {
+            return false;
+        }
 
         VirtualNetwork managementVirtualNetwork = (VirtualNetwork) createTungstenNetworkAnswer.getApiObjectBase();
         List<TungstenRule> tungstenManagementRuleList = new ArrayList<>();
@@ -805,14 +812,16 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             TungstenCommand addTungstenNetworkSubnetCommand = new AddTungstenNetworkSubnetCommand(
                 managementNetwork.getUuid(), pod.getCidrAddress(), pod.getCidrSize(), null, true, "0.0.0.0", startIp,
                 endIp, true, pod.getUuid());
-            TungstenAnswer createTungstenNetworkAnswer = tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer addTungstenNetworkSubnetAnswer = tungstenFabricUtils.sendTungstenCommand(
                 addTungstenNetworkSubnetCommand, pod.getDataCenterId());
 
-            if (!createTungstenNetworkAnswer.getResult()) {
+            if (!addTungstenNetworkSubnetAnswer.getResult()) {
                 return false;
             }
 
-            allocateDnsIpAddress(managementNetwork, pod, pod.getUuid());
+            if (!allocateDnsIpAddress(managementNetwork, pod, pod.getUuid())) {
+                return false;
+            }
         }
 
         return true;
@@ -848,8 +857,8 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         }
 
         TungstenCommand deleteTungstenNetworkCommand = new DeleteTungstenNetworkCommand(managementNetwork.getUuid());
-        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkCommand, zoneId);
-        return tungstenAnswer.getResult();
+        TungstenAnswer deleteTungstenNetworkAnswer = tungstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkCommand, zoneId);
+        return deleteTungstenNetworkAnswer.getResult();
     }
 
     @Override
@@ -902,13 +911,13 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
         NetworkDetailVO networkDetailVO = new NetworkDetailVO(publicNetwork.getId(), "vrf",
             TungstenUtils.getVrfNetworkName(createPublicNetworkAnswer.getApiObjectBase().getQualifiedName()), false);
-        networkDetailsDao.persist(networkDetailVO);
+        NetworkDetailVO persisted = networkDetailsDao.persist(networkDetailVO);
 
-        return true;
+        return persisted != null;
     }
 
     @Override
-    public boolean addPublicNetworkSubnet(Vlan pubVlanVO) {
+    public boolean addPublicNetworkSubnet(VlanVO pubVlanVO) {
         long zoneId = pubVlanVO.getDataCenterId();
         Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
 
@@ -936,7 +945,9 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         addTungstenDefaultNetworkPolicy(zoneId, null, TungstenUtils.getDefaultPublicSubnetPolicyName(pubVlanVO.getId()),
             publicNetwork.getUuid(), tungstenRuleList, 99, 0);
 
-        allocateDnsIpAddress(publicNetwork, null, pubVlanVO.getUuid());
+        if (!allocateDnsIpAddress(publicNetwork, null, pubVlanVO.getUuid())) {
+            return false;
+        }
 
         return true;
     }
@@ -992,7 +1003,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     }
 
     @Override
-    public void allocateDnsIpAddress(Network network, Pod pod, String subnetName) {
+    public boolean allocateDnsIpAddress(Network network, Pod pod, String subnetName) {
         long zoneId = network.getDataCenterId();
         TungstenCommand getTungstenNetworkDnsCommand = new GetTungstenNetworkDnsCommand(network.getUuid(), subnetName);
         TungstenAnswer getTungstenNetworkDnsAnswer = tungstenFabricUtils.sendTungstenCommand(
@@ -1005,14 +1016,14 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                     network.getTrafficType() == Networks.TrafficType.Guest
                         && network.getGuestType() == Network.GuestType.Shared)) {
                     if (ipAddressDao.findByIpAndDcId(zoneId, ip) != null) {
-                        ipAddressDao.mark(zoneId, new Ip(ip));
+                        return ipAddressDao.mark(zoneId, new Ip(ip));
                     }
                 }
 
                 if (network.getTrafficType() == Networks.TrafficType.Management && pod != null) {
                     long podId = pod.getId();
                     if (dataCenterIpAddressDao.listByPodIdDcIdIpAddress(podId, zoneId, ip).size() > 0) {
-                        dataCenterIpAddressDao.mark(zoneId, podId, getTungstenNetworkDnsAnswer.getDetails());
+                        return dataCenterIpAddressDao.mark(zoneId, podId, getTungstenNetworkDnsAnswer.getDetails());
                     }
                 }
 
@@ -1020,10 +1031,12 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                     && network.getGuestType() == Network.GuestType.Isolated) {
                     TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO =
                         new TungstenGuestNetworkIpAddressVO(network.getId(), new Ip(ip));
-                    tungstenGuestNetworkIpAddressDao.persist(tungstenGuestNetworkIpAddressVO);
+                    return tungstenGuestNetworkIpAddressDao.persist(tungstenGuestNetworkIpAddressVO) != null;
                 }
             }
         }
+
+        return true;
     }
 
     @Override
@@ -1079,7 +1092,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         return true;
     }
 
-    public boolean deleteTungstenDomain(DomainVO domain) {
+    private boolean deleteTungstenDomain(DomainVO domain) {
         for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
             TungstenCommand deleteTungstenDomainCommand = new DeleteTungstenDomainCommand(domain.getUuid());
             TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(deleteTungstenDomainCommand,
@@ -1091,7 +1104,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         return true;
     }
 
-    public boolean createTungstenProject(Project project) {
+    private boolean createTungstenProject(Project project) {
         String domainName;
         String domainUuid;
         Domain domain = domainDao.findById(project.getDomainId());
@@ -1118,14 +1131,17 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                 TungstenCommand updateTungstenDefaultSecurityGroupCommand =
                     new UpdateTungstenDefaultSecurityGroupCommand(
                     buildProjectFqnName(domain.getId(), project.getUuid()));
-                tungstenFabricUtils.sendTungstenCommand(updateTungstenDefaultSecurityGroupCommand,
-                    tungstenProvider.getZoneId());
+                TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = tungstenFabricUtils.sendTungstenCommand(
+                    updateTungstenDefaultSecurityGroupCommand, tungstenProvider.getZoneId());
+                if (!updateTungstenDefaultSecurityGroupAnswer.getResult()) {
+                    return false;
+                }
             }
         }
         return true;
     }
 
-    public boolean deleteTungstenProject(Project project) {
+    private boolean deleteTungstenProject(Project project) {
         for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
             TungstenCommand deleteTungstenProjectCommand = new DeleteTungstenProjectCommand(project.getUuid());
             TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(deleteTungstenProjectCommand,
@@ -1137,21 +1153,27 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         return true;
     }
 
-    public void syncTungstenDbWithCloudstackProjectsAndDomains() {
+    public boolean syncTungstenDbWithCloudstackProjectsAndDomains() {
         List<DomainVO> cloudstackDomains = domainDao.listAll();
         List<ProjectVO> cloudstackProjects = projectDao.listAll();
 
         if (cloudstackDomains != null) {
             for (DomainVO domain : cloudstackDomains) {
-                createTungstenDomain(domain);
+                if (!createTungstenDomain(domain)) {
+                    return false;
+                }
             }
         }
 
         if (cloudstackProjects != null) {
             for (ProjectVO project : cloudstackProjects) {
-                createTungstenProject(project);
+                if (!createTungstenProject(project)) {
+                    return false;
+                }
             }
         }
+
+        return true;
     }
 
     @Override
@@ -1206,7 +1228,10 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                 new UpdateTungstenLoadbalancerStatsCommand(
                 getTungstenLoadBalancerAnswer.getApiObjectBase().getUuid(), lbStatsPort, lbStatsUri, lbStatsAuth);
             for (HostVO host : hostList) {
-                agentMgr.easySend(host.getId(), updateTungstenLoadbalancerStatsCommand);
+                Answer answer = agentMgr.easySend(host.getId(), updateTungstenLoadbalancerStatsCommand);
+                if (answer == null || !answer.getResult()) {
+                    return false;
+                }
             }
         }
 
@@ -1231,7 +1256,10 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                     certVO.getCertificate(), certVO.getKey(),
                     tungstenGuestNetworkIpAddressVO.getGuestIpAddress().addr(), String.valueOf(NetUtils.HTTPS_PORT));
                 for (HostVO host : hostList) {
-                    agentMgr.easySend(host.getId(), updateTungstenLoadbalancerSslCommand);
+                    Answer answer = agentMgr.easySend(host.getId(), updateTungstenLoadbalancerSslCommand);
+                    if (answer == null || !answer.getResult()) {
+                        return false;
+                    }
                 }
             }
         }
@@ -1612,7 +1640,6 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     public boolean removeTungstenNicSecondaryIpAddress(NicSecondaryIpVO nicSecondaryIpVO) {
         Network network = entityMgr.findById(Network.class, nicSecondaryIpVO.getNetworkId());
         DataCenter dataCenter = entityMgr.findById(DataCenter.class, network.getDataCenterId());
-        Nic nic = entityMgr.findById(Nic.class, nicSecondaryIpVO.getNicId());
 
         TungstenCommand removeTungstenSecondaryIpAddressCommand = new RemoveTungstenSecondaryIpAddressCommand(
             TungstenUtils.getSecondaryInstanceIpName(nicSecondaryIpVO.getId()));
@@ -1649,7 +1676,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         return true;
     }
 
-    public void checkTungstenSecurityGroups(List<SecurityGroupVO> securityGroups) {
+    private void checkTungstenSecurityGroups(List<SecurityGroupVO> securityGroups) {
         for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
             for (SecurityGroupVO securityGroup : securityGroups) {
                 TungstenCommand getTungstenSecurityGroupCommand = new GetTungstenSecurityGroupCommand(
@@ -2215,13 +2242,18 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                             Command setupTungstenVRouterCommand = new SetupTungstenVRouterCommand("create",
                                 TungstenUtils.getSgVgwName(network.getId()), network.getCidr(), NetUtils.ALL_IP4_CIDRS,
                                 persistNetworkDetail.getValue());
-                            agentMgr.easySend(host.getId(), setupTungstenVRouterCommand);
+                            Answer answer = agentMgr.easySend(host.getId(), setupTungstenVRouterCommand);
+                            if (answer == null || !answer.getResult()) {
+                                return false;
+                            }
                         }
                     }
                 }
             }
 
-            allocateDnsIpAddress(network, null, TungstenUtils.getIPV4SubnetName(network.getId()));
+            if (!allocateDnsIpAddress(network, null, TungstenUtils.getIPV4SubnetName(network.getId()))) {
+                return false;
+            }
         }
 
         if (vlan.getIp6Gateway() != null) {
@@ -2319,7 +2351,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
         // remove vmi security group
         Nic nic = nicDao.findDefaultNicForVM(vm.getId());
-        if (nic != null && nic.getBroadcastUri() == Networks.BroadcastDomainType.Tungsten.toUri("tf")) {
+        if (nic != null && nic.getBroadcastUri().equals(Networks.BroadcastDomainType.Tungsten.toUri("tf"))) {
             List<String> securityGroupUuidList = new ArrayList<>();
             for (SecurityGroupVO securityGroupVO : securityGroupVOList) {
                 securityGroupUuidList.add(securityGroupVO.getUuid());
@@ -2631,20 +2663,6 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
         if (network != null) {
             return network.getUuid();
-        }
-
-        return null;
-    }
-
-    private String getNicUuid(Long nicId) {
-        if (nicId == null) {
-            return null;
-        }
-
-        Nic nic = nicDao.findById(nicId);
-
-        if (nic != null) {
-            return nic.getUuid();
         }
 
         return null;

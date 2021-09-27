@@ -16,6 +16,14 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.service;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.Mockito.when;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -23,9 +31,11 @@ import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.TungstenProvider;
 import com.cloud.network.dao.TungstenProviderDao;
+import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricProviderCmd;
 import org.junit.Before;
@@ -34,12 +44,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Mockito.when;
+import java.util.Arrays;
+import java.util.List;
 
 public class TungstenProviderServiceTest {
 
@@ -102,5 +108,26 @@ public class TungstenProviderServiceTest {
             e.printStackTrace();
             fail("Failed to add Tungsten-Fabric provider due to internal error.");
         }
+    }
+
+    @Test
+    public void listTungstenProviderWithZoneIdTest() {
+        TungstenProviderVO tungstenProviderVO = Mockito.mock(TungstenProviderVO.class);
+
+        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
+
+        List<BaseResponse> baseResponseList = tungstenProviderService.listTungstenProvider(1L);
+        assertEquals(1, baseResponseList.size());
+    }
+
+    @Test
+    public void listTungstenProviderWithoutZoneIdTest() {
+        TungstenProviderVO tungstenProviderVO1 = Mockito.mock(TungstenProviderVO.class);
+        TungstenProviderVO tungstenProviderVO2 = Mockito.mock(TungstenProviderVO.class);
+
+        when(tungstenProviderDao.listAll()).thenReturn(Arrays.asList(tungstenProviderVO1, tungstenProviderVO2));
+
+        List<BaseResponse> baseResponseList = tungstenProviderService.listTungstenProvider(null);
+        assertEquals(2, baseResponseList.size());
     }
 }
