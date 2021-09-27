@@ -724,6 +724,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    private void addVmUefiBootOptionsToParams(Map<VirtualMachineProfile.Param, Object> params, String bootType, String bootMode) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Adding boot options (%s, %s, %s) into the param map for VM start as UEFI detail(%s=%s) found for the VM",
+                    VirtualMachineProfile.Param.UefiFlag.getName(),
+                    VirtualMachineProfile.Param.BootType.getName(),
+                    VirtualMachineProfile.Param.BootMode.getName(),
+                    bootType,
+                    bootMode));
+        }
+        params.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
+        params.put(VirtualMachineProfile.Param.BootType, bootType);
+        params.put(VirtualMachineProfile.Param.BootMode, bootMode);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_RESETPASSWORD, eventDescription = "resetting Vm password", async = true)
     public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -2882,16 +2896,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        Map<VirtualMachineProfile.Param, Object> additonalParams = null;
+        Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
         if (cmd.getBootIntoSetup() != null) {
-            if (additonalParams == null) {
-                additonalParams = new HashMap<>();
-            }
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("Adding %s into the param map", VirtualMachineProfile.Param.BootIntoSetup.getName()));
             }
-
             additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
+        }
+        UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getId(), ApiConstants.BootType.UEFI.toString());
+        if (uefiDetail != null) {
+            addVmUefiBootOptionsToParams(additonalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
@@ -4434,23 +4448,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long podId = null;
         Long clusterId = null;
         Long hostId = cmd.getHostId();
-        Map<VirtualMachineProfile.Param, Object> additonalParams =  new HashMap<>();
+        Map<VirtualMachineProfile.Param, Object> additionalParams =  new HashMap<>();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
+        Map<String, String> details = cmd.getDetails();
         if (cmd instanceof DeployVMCmdByAdmin) {
             DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
             podId = adminCmd.getPodId();
             clusterId = adminCmd.getClusterId();
         }
-        if (MapUtils.isNotEmpty(cmd.getDetails()) && cmd.getDetails().containsKey(ApiConstants.BootType.UEFI.toString())) {
-            Map<String, String> map = cmd.getDetails();
-            additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
-            additonalParams.put(VirtualMachineProfile.Param.BootType, ApiConstants.BootType.UEFI.toString());
-            additonalParams.put(VirtualMachineProfile.Param.BootMode, map.get(ApiConstants.BootType.UEFI.toString()));
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ApiConstants.BootType.UEFI.toString())) {
+            addVmUefiBootOptionsToParams(additionalParams, ApiConstants.BootType.UEFI.toString(), details.get(ApiConstants.BootType.UEFI.toString()));
         }
         if (cmd.getBootIntoSetup() != null) {
-            additonalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
+            additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
         }
-        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
+        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, cmd.getDeploymentPlanner());
     }
 
     private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap
