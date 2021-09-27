@@ -602,7 +602,7 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).name !== '404'"
-            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
+            :to="{ path: '/' + item.name, query: { [item.param] : (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }}">
             <a-button style="margin-right: 10px">
               <template #icon>
                 <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
@@ -768,8 +768,9 @@ export default {
     },
     resource: {
       deep: true,
-      handler () {
-        this.newResource = this.resource
+      handler (newData, oldData) {
+        if (newData === oldData) return
+        this.newResource = newData
         this.resourceType = this.$route.meta.resourceType
         this.showKeys = false
         this.setData()
@@ -1125,7 +1126,7 @@ export default {
 
 .upload-icon {
   position: absolute;
-  top: 70px;
+  top: 65px;
   opacity: 0.75;
   left: 70px;
   font-size: 0.75em;

@@ -266,12 +266,12 @@
           :dataSource="vpnConnections"
           :pagination="false"
           :rowKey="record => record.id">
-          <template #publicip="text, record">
+          <template #publicip="{text, record}">
             <router-link :to="{ path: '/s2svpnconn/' + record.id }">
               {{ text }}
             </router-link>
           </template>
-          <template #state="text">
+          <template #state="{text}">
             <status :text="text ? text : ''" displayText />
           </template>
         </a-table>

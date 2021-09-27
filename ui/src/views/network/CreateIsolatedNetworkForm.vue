@@ -278,18 +278,13 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
-      this.rules = reactive({})
-
-      this.rules.name = [{ required: true, message: this.$t('message.error.name') }]
-      this.rules.displaytext = [{ required: true, message: this.$t('message.error.display.text') }]
-      this.rules.zoneid = [{ type: 'number', required: true, message: this.$t('message.error.select') }]
-      this.rules.networkofferingid = [{ type: 'number', required: true, message: this.$t('message.error.select') }]
-      if (!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan) {
-        this.rules.vlanid = [{ required: true, message: this.$t('message.please.enter.value') }]
-      }
-      if (!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.forvpc) {
-        this.rules.vpcid = [{ required: true, message: this.$t('message.error.select') }]
-      }
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }],
+        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
+        zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        vpcid: [{ required: true, message: this.$t('message.error.select') }]
+      })
     },
     fetchData () {
       this.fetchDomainData()

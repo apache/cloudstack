@@ -71,6 +71,7 @@
         @cancel="onCloseAction"
         style="top: 20px;"
         centered
+        :footer="null"
       >
         <a-form
           :ref="formRef"

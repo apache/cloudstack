@@ -1085,13 +1085,26 @@ export default {
           this.vm.clustername = cluster.name
         }
 
+        const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
+        if (host) {
+          this.vm.hostid = host.id
+          this.vm.hostname = host.name
+        }
+
+        if (this.diskSize) {
+          this.vm.disksizetotalgb = this.diskSize
+        }
+
         if (this.networks) {
           this.vm.networks = this.networks
           this.vm.defaultnetworkid = this.defaultnetworkid
         }
 
-        if (this.diskSize) {
-          this.vm.disksizetotalgb = this.diskSize
+        if (this.template) {
+          this.vm.templateid = this.template.id
+          this.vm.templatename = this.template.displaytext
+          this.vm.ostypeid = this.template.ostypeid
+          this.vm.ostypename = this.template.ostypename
         }
 
         if (this.iso) {
@@ -1103,51 +1116,34 @@ export default {
           if (this.hypervisor) {
             this.vm.hypervisor = this.hypervisor
           }
+        }
 
-          if (this.template) {
-            this.vm.templateid = this.template.id
-            this.vm.templatename = this.template.displaytext
-            this.vm.ostypeid = this.template.ostypeid
-            this.vm.ostypename = this.template.ostypename
+        if (this.serviceOffering) {
+          this.vm.serviceofferingid = this.serviceOffering.id
+          this.vm.serviceofferingname = this.serviceOffering.displaytext
+          if (this.serviceOffering.cpunumber) {
+            this.vm.cpunumber = this.serviceOffering.cpunumber
           }
+          if (this.serviceOffering.cpuspeed) {
+            this.vm.cpuspeed = this.serviceOffering.cpuspeed
+          }
+          if (this.serviceOffering.memory) {
+            this.vm.memory = this.serviceOffering.memory
+          }
+        }
 
-          if (this.iso) {
-            this.vm.templateid = this.iso.id
-            this.vm.templatename = this.iso.displaytext
-            this.vm.ostypeid = this.iso.ostypeid
-            this.vm.ostypename = this.iso.ostypename
-            if (this.hypervisor) {
-              this.vm.hypervisor = this.hypervisor
-            }
-          }
+        if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
+          this.vm.diskofferingid = ''
+          this.vm.diskofferingname = ''
+          this.vm.diskofferingsize = ''
+        } else if (this.diskOffering) {
+          this.vm.diskofferingid = this.diskOffering.id
+          this.vm.diskofferingname = this.diskOffering.displaytext
+          this.vm.diskofferingsize = this.diskOffering.disksize
+        }
 
-          if (this.serviceOffering) {
-            this.vm.serviceofferingid = this.serviceOffering.id
-            this.vm.serviceofferingname = this.serviceOffering.displaytext
-            if (this.serviceOffering.cpunumber) {
-              this.vm.cpunumber = this.serviceOffering.cpunumber
-            }
-            if (this.serviceOffering.cpuspeed) {
-              this.vm.cpuspeed = this.serviceOffering.cpuspeed
-            }
-            if (this.serviceOffering.memory) {
-              this.vm.memory = this.serviceOffering.memory
-            }
-          }
-
-          if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
-            this.vm.diskofferingid = ''
-            this.vm.diskofferingname = ''
-            this.vm.diskofferingsize = ''
-          } else if (this.diskOffering) {
-            this.vm.diskofferingid = this.diskOffering.id
-            this.vm.diskofferingname = this.diskOffering.displaytext
-            this.vm.diskofferingsize = this.diskOffering.disksize
-          }
-
-          if (this.affinityGroups) {
-            this.vm.affinitygroup = this.affinityGroups
-          }
+        if (this.affinityGroups) {
+          this.vm.affinitygroup = this.affinityGroups
         }
       }
     }
@@ -1178,13 +1174,12 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
-      this.rules = reactive({})
+      this.rules = reactive({
+        zoneid: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }]
+      })
 
-      this.rules.zoneid = [{ required: true, message: `${this.$t('message.error.select')}` }]
       if (this.zoneSelected) {
-        if (this.tabKey === !'templateid') {
-          this.rules.hypervisor = [{ required: true, message: `${this.$t('message.error.select')}` }]
-        }
         this.form.startvm = true
       }
 

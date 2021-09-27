@@ -15,10 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { createApp } from 'vue'
+import { createApp, h } from 'vue'
 import App from './App.vue'
 
-const app = createApp(App)
+const app = createApp({
+  render: () => h(App)
+})
 const vueProps = app.config.globalProperties
 
 app.config.productionTip = false

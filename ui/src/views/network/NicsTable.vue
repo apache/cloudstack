@@ -60,13 +60,13 @@
         </template>
       </a-descriptions>
     </template>
-    <template #networkname="text, item">
-      <resource-icon v-if="!networkIconLoading && networkicon[item.id]" :image="networkicon[item.id]" size="1x" style="margin-right: 5px"/>
+    <template #networkname="{ text, record }">
+      <resource-icon v-if="!networkIconLoading && networkicon[record.id]" :image="networkicon[record.id]" size="1x" style="margin-right: 5px"/>
       <apartment-outlined v-else style="margin-right: 5px" />
-      <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
+      <router-link :to="{ path: '/guestnetwork/' + record.networkid }">
         {{ text }}
       </router-link>
-      <a-tag v-if="item.isdefault">
+      <a-tag v-if="record.isdefault">
         {{ $t('label.default') }}
       </a-tag>
     </template>

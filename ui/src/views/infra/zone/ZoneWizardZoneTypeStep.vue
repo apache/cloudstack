@@ -26,43 +26,49 @@
       v-ctrl-enter="handleSubmit">
       <a-form-item name="zoneType" ref="zoneType">
         <a-radio-group v-model:value="form.zoneType">
-          <a-card :gutter="12" class="card-item">
-            <a-col :md="6" :lg="6">
-              <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
-              <span style="margin-top: 20px;" class="card-form-item" v-else>
-                <setting-outlined style="margin-right: 10px" />
-                {{ $t('label.advanced') }}
-              </span>
-            </a-col>
-            <a-col :md="18" :lg="18">
-              <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Advanced) }}</a-card>
-            </a-col>
-            <a-col :md="6" :lg="6" style="margin-top: 15px">
-              <a-form-item
-                name="securityGroupsEnabled"
-                ref="securityGroupsEnabled"
-                class="card-form-item"
-                v-bind="formItemLayout">
-                <a-switch
+          <a-card class="card-item">
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6">
+                <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
+                <span style="margin-top: 20px;" class="card-form-item" v-else>
+                  <setting-outlined style="margin-right: 10px" />
+                  {{ $t('label.advanced') }}
+                </span>
+              </a-col>
+              <a-col :md="18" :lg="18">
+                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Advanced) }}</a-card>
+              </a-col>
+            </a-row>
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6" style="margin-top: 15px">
+                <a-form-item
+                  name="securityGroupsEnabled"
+                  ref="securityGroupsEnabled"
                   class="card-form-item"
-                  v-model:checked="form.securityGroupsEnabled"
-                  :disabled="!isAdvancedZone"
-                  v-focus="true"
-                />
-              </a-form-item>
-              <span>{{ $t('label.menu.security.groups') }}</span>
-            </a-col>
-            <a-col :md="18" :lg="18" style="margin-top: 15px;">
-              <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
-            </a-col>
+                  v-bind="formItemLayout">
+                  <a-switch
+                    class="card-form-item"
+                    v-model:checked="form.securityGroupsEnabled"
+                    :disabled="!isAdvancedZone"
+                    v-focus="true"
+                  />
+                </a-form-item>
+                <span>{{ $t('label.menu.security.groups') }}</span>
+              </a-col>
+              <a-col :md="18" :lg="18" style="margin-top: 15px;">
+                <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
+              </a-col>
+            </a-row>
           </a-card>
-          <a-card :gutter="12" class="card-item" v-if="$config.basicZoneEnabled">
-            <a-col :md="6" :lg="6">
-              <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
-            </a-col>
-            <a-col :md="18" :lg="18">
-              <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
-            </a-col>
+          <a-card class="card-item" v-if="$config.basicZoneEnabled">
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6">
+                <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
+              </a-col>
+              <a-col :md="18" :lg="18">
+                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
+              </a-col>
+            </a-row>
           </a-card>
         </a-radio-group>
       </a-form-item>

@@ -411,22 +411,19 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
-      this.rules = reactive({})
-
-      this.form.scope = 'all'
-      this.form.isolatedpvlantype = 'none'
-
-      this.rules.name = [{ required: true, message: this.$t('message.error.name') }]
-      this.rules.displaytext = [{ required: true, message: this.$t('message.error.display.text') }]
-      this.rules.zoneid = [{ type: 'number', required: true, message: this.$t('message.error.select') }]
-      this.rules.vlanid = [{ required: true, message: this.$t('message.please.enter.value') }]
-      this.rules.networkofferingid = [{ type: 'number', required: true, message: this.$t('message.error.select') }]
-      if (this.scopeType !== 'all') {
-        this.rules.domainid = [{ required: true, message: this.$t('message.error.select') }]
-      } else if (this.scopeType === 'project') {
-        this.rules.projectid = [{ required: true, message: this.$t('message.error.select') }]
-      }
+      this.form = reactive({
+        scope: 'all',
+        isolatedpvlantype: 'none'
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }],
+        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
+        zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        vlanid: [{ required: true, message: this.$t('message.please.enter.value') }],
+        networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        projectid: [{ required: true, message: this.$t('message.error.select') }]
+      })
     },
     fetchData () {
       if (this.isObjectEmpty(this.zone)) {

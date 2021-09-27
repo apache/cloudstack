@@ -296,11 +296,10 @@ export default {
         noderootdisksize: [{ type: 'number', validator: this.validateNumber }],
         size: [
           {
-            type: 'number',
             required: true,
             message: this.$t('message.error.size.for.cluster')
           },
-          { validator: this.validateNumber }
+          { type: 'number', validator: this.validateNumber }
         ],
         dockerregistryusername: [{ required: true, message: this.$t('label.required') }],
         dockerregistrypassword: [{ required: true, message: this.$t('label.required') }],

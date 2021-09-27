@@ -104,7 +104,7 @@
           {{ returnStickinessLabel(record.id) }}
         </a-button>
       </template>
-      <template #add="record">
+      <template #add="{record}">
         <a-button type="primary" icon="plus-outlined" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
           {{ $t('label.add') }}
         </a-button>
@@ -131,7 +131,7 @@
           </div>
         </div>
       </template>
-      <template #actions="record">
+      <template #actions="{record}">
         <div class="actions">
           <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
           <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />

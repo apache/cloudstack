@@ -175,18 +175,18 @@
       >
         <a-form-item name="podid" ref="podid" :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
           <a-select
-            v-focus="true"
             v-model:value="form.podid"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            }"
+            v-focus="true">
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
-          <a-input v-focus="true" v-model:value="form.gateway" />
+          <a-input v-model:value="form.gateway" />
         </a-form-item>
         <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
           <a-input v-model:value="form.netmask" />
@@ -370,7 +370,6 @@ export default {
         dataIndex: 'podname'
       })
     }
-    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -382,7 +381,7 @@ export default {
     }
   },
   methods: {
-    initForm () {
+    initAddIpRangeForm () {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
@@ -392,7 +391,6 @@ export default {
         startip: [{ required: true, message: this.$t('label.required') }],
         endip: [{ required: true, message: this.$t('label.required') }]
       })
-      this.initFormUpdateRange()
     },
     initFormUpdateRange () {
       this.updRangeRef = ref()
@@ -504,9 +502,11 @@ export default {
       this.showAccountFields = false
     },
     handleOpenAddIpRangeModal () {
+      this.initAddIpRangeForm()
       this.addIpRangeModal = true
     },
     handleUpdateIpRangeModal (item) {
+      this.initFormUpdateRange()
       this.selectedItem = item
       this.updateIpRangeModal = true
 

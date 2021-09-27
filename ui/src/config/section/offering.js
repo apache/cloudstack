@@ -172,7 +172,7 @@ export default {
         docHelp: 'adminguide/service_offerings.html#creating-a-new-disk-offering',
         listView: true,
         popup: true,
-        component: () => import('@/views/offering/AddDiskOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/AddDiskOffering.vue')))
       }, {
         api: 'updateDiskOffering',
         icon: 'edit-outlined',

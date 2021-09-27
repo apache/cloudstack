@@ -124,25 +124,27 @@
       width="450px">
       <a-spin :spinning="acquireLoading" v-ctrl-enter="acquireIpAddress">
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
-        <a-form-item :label="$t('label.ipaddress')">
-          <a-select
-            v-focus="true"
-            style="width: 100%;"
-            v-model:value="acquireIp"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="ip in listPublicIpAddress"
-              :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <div :span="24" class="action-button">
-          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-          <a-button ref="submit" type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
-        </div>
+        <a-form layout="vertical" style="margin-top: 10px">
+          <a-form-item :label="$t('label.ipaddress')">
+            <a-select
+              v-focus="true"
+              style="width: 100%;"
+              v-model:value="acquireIp"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option
+                v-for="ip in listPublicIpAddress"
+                :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+            <a-button ref="submit" type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
       </a-spin>
     </a-modal>
     <bulk-action-view

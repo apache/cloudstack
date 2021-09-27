@@ -329,14 +329,15 @@ export default {
         provisioningtype: 'thin',
         customdisksize: true,
         writecachetype: 'none',
+        qostype: '',
         ispublic: this.isPublic
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         disksize: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
-          { validator: this.validateNumber }
+          { required: true, message: this.$t('message.error.required.input') },
+          { type: 'number', validator: this.validateNumber }
         ],
         diskbytesreadrate: [{ type: 'number', validator: this.validateNumber }],
         diskbyteswriterate: [{ type: 'number', validator: this.validateNumber }],

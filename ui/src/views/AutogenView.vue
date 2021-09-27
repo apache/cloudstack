@@ -211,6 +211,8 @@
             layout="vertical" >
             <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
               <a-form-item
+                :name="field.name"
+                :ref="field.name"
                 :v-bind="field.name"
                 v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
               >

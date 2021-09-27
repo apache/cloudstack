@@ -225,7 +225,6 @@ export default {
     }
   },
   created () {
-    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -249,7 +248,6 @@ export default {
       })
     },
     fetchData () {
-      this.formRef.value.resetFields()
       this.formLoading = true
       api('listDedicatedGuestVlanRanges', {
         physicalnetworkid: this.resource.id,
@@ -400,6 +398,7 @@ export default {
     handleOpenModal () {
       this.modal = true
       this.formLoading = true
+      this.initForm()
       this.fetchDomains()
     },
     handleChangePage (page, pageSize) {

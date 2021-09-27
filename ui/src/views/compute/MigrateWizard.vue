@@ -58,7 +58,7 @@
       <template #requiresstoragemigration="{ record }">
         {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
       </template>
-      <template #select="record">
+      <template #select="{record}">
         <a-radio
           class="host-item__radio"
           @click="selectedHost = record"

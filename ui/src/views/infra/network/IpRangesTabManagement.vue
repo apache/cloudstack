@@ -197,7 +197,6 @@ export default {
     }
   },
   created () {
-    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -257,6 +256,7 @@ export default {
       })
     },
     handleOpenAddIpRangeModal () {
+      this.initForm()
       this.addIpRangeModal = true
       setTimeout(() => {
         if (this.items.length > 0) {

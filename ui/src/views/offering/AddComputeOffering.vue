@@ -199,8 +199,7 @@
         <a-form-item name="qostype" ref="qostype" :label="$t('label.qostype')">
           <a-radio-group
             v-model:value="form.qostype"
-            buttonStyle="solid"
-            @change="selected => { handleQosTypeChange(selected.target.value) }">
+            buttonStyle="solid">
             <a-radio-button value="">
               {{ $t('label.none') }}
             </a-radio-button>
@@ -477,9 +476,11 @@ export default {
     return {
       isSystem: false,
       naturalNumberRule: {
+        type: 'number',
         validator: this.validateNumber
       },
       wholeNumberRule: {
+        type: 'number',
         validator: async (rule, value) => {
           if (value && (isNaN(value) || value < 0)) {
             return Promise.reject(this.$t('message.error.number'))
@@ -491,7 +492,6 @@ export default {
       provisioningType: 'thin',
       cacheMode: 'none',
       offeringType: 'fixed',
-      qosType: '',
       isCustomizedDiskIops: false,
       isPublic: true,
       domains: [],
@@ -552,6 +552,9 @@ export default {
         storagetype: 'shared',
         provisioningtype: 'thin',
         cachemode: 'none',
+        qostype: '',
+        pcidevice: '',
+        vgputype: '',
         offeringtype: 'fixed',
         ispublic: this.isPublic
       })
@@ -559,31 +562,31 @@ export default {
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         cpunumber: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         cpuspeed: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.wholeNumberRule
         ],
         mincpunumber: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         maxcpunumber: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         memory: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         minmemory: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         maxmemory: [
-          { type: 'number', required: true, message: this.$t('message.error.required.input') },
+          { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         networkrate: [{ type: 'number', validator: this.validateNumber }],

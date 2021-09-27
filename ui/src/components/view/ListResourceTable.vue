@@ -38,15 +38,15 @@
       <template
         v-for="(column, index) in Object.keys(routerlinks({}))"
         :key="index"
-        #[column]="{ text, item }" >
-        <router-link :set="routerlink = routerlinks(item)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
+        #[column]="{ text, record }" >
+        <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
       </template>
 
-      <template #state="text">
+      <template #state="{text}">
         <status :text="text ? text : ''" />{{ text }}
       </template>
 
-      <template #status="text">
+      <template #status="{text}">
         <status :text="text ? text : ''" />{{ text }}
       </template>
 

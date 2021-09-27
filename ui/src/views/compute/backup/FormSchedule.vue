@@ -52,16 +52,13 @@
             </a-col>
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='hourly'">
               <a-form-item :label="$t('label.time')" ref="time" name="time">
-                <a-tooltip
-                  placement="right"
-                  :title="$t('label.minute.past.hour')">
-                  <a-input-number
-                    style="width: 100%"
-                    v-model:value="form.time"
-                    :min="1"
-                    :max="59"
-                    v-focus="true" />
-                </a-tooltip>
+                <a-input-number
+                  style="width: 100%"
+                  v-model:value="form.time"
+                  :placeholder="$t('label.minute.past.hour')"
+                  :min="1"
+                  :max="59"
+                  v-focus="true" />
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12" v-if="['daily', 'weekly', 'monthly'].includes(form.intervaltype)">

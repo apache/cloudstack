@@ -39,20 +39,20 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="text, item">
+          <template #name="{ text, record }">
             <hdd-outlined />
-            <router-link :to="{ path: '/volume/' + item.id }">
+            <router-link :to="{ path: '/volume/' + record.id }">
               {{ text }}
             </router-link>
-            <a-tag v-if="item.provisioningtype">
-              {{ item.provisioningtype }}
+            <a-tag v-if="record.provisioningtype">
+              {{ record.provisioningtype }}
             </a-tag>
           </template>
-          <template #state="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" />{{ text }}
           </template>
-          <template #size="text, item">
-            {{ parseFloat(item.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+          <template #size="{ record }">
+            {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
           </template>
         </a-table>
       </a-tab-pane>
@@ -395,10 +395,12 @@ export default {
   watch: {
     resource: {
       deep: true,
-      handler () {
-        this.dataResource = this.resource
-        this.vm = this.dataResource
-        this.fetchData()
+      handler (newData, oldData) {
+        if (newData !== oldData) {
+          this.dataResource = newData
+          this.vm = this.dataResource
+          this.fetchData()
+        }
       }
     },
     $route: function (newItem, oldItem) {

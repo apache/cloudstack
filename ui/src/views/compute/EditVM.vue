@@ -167,7 +167,6 @@ export default {
     },
     fetchTemplateData () {
       const params = {}
-      console.log('templateid ' + this.resource.templateid)
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'

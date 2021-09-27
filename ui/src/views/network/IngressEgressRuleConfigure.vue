@@ -102,11 +102,11 @@
           {{ record.account }} - {{ record.securitygroupname }}
         </div>
       </template>
-      <template #startport="text, record">
+      <template #startport="{text, record}">
         <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
         <div v-else>{{ text }}</div>
       </template>
-      <template #endport="text, record">
+      <template #endport="{text, record}">
         <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
         <div v-else>{{ text }}</div>
       </template>

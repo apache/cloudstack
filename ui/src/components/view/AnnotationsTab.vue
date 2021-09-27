@@ -88,8 +88,9 @@
       <a-comment v-if="'addAnnotation' in $store.getters.apis">
         <template #avatar>
           <a-avatar
-            icon="edit"
-            @click="showNotesInput = true" />
+            @click="showNotesInput = true">
+            <template #icon><edit-outlined /></template>
+          </a-avatar>
         </template>
         <template #content>
           <div v-ctrl-enter="saveNote">
