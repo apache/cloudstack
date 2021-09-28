@@ -479,6 +479,33 @@ public class KubernetesClusterActionWorker {
         }
     }
 
+    protected boolean taintControlNodes() {
+        StringBuilder commands = new StringBuilder();
+        List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
+        for(KubernetesClusterVmMapVO vmMap :vmMapVOList) {
+            if(!vmMap.isControlNode()) {
+                continue;
+            }
+            String name = userVmDao.findById(vmMap.getVmId()).getName();
+            String command = String.format("sudo /opt/bin/kubectl annotate node %s cluster-autoscaler.kubernetes.io/scale-down-disabled=true ; ", name);
+            commands.append(command);
+        }
+        try {
+            File pkFile = getManagementServerSshPublicKeyFile();
+            Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+            publicIpAddress = publicIpSshPort.first();
+            sshPort = publicIpSshPort.second();
+
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+            pkFile, null, commands.toString(), 10000, 10000, 60000);
+            return result.first();
+        } catch (Exception e) {
+            String msg = String.format("Failed to taint control nodes on : %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logMessage(Level.ERROR, msg, e);
+            return false;
+        }
+    }
+
     protected boolean deployProvider() {
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
