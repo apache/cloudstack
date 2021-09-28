@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -994,7 +995,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (domainDetailVO != null) {
                     _domainDetailsDao.remove(domainDetailVO.getId());
                 }
-                optionalValue = Optional.ofNullable(configKey.valueInDomain(id));
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 

@@ -64,16 +64,12 @@
             v-if="editableValueKey === index"
             iconType="check-circle"
             iconTwoToneColor="#52c41a" />
-            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-          <a-tooltip placement="bottom">
-            <template slot="title">{{ $t('label.reset.config.value') }}</template>
-            <a-button
-              shape="circle"
-              :disabled="!('updateConfiguration' in $store.getters.apis)"
-              v-if="editableValueKey !== index"
-              icon="reload"
-              @click="resetConfig(item)" />
-          </a-tooltip>
+          <tooltip-button
+            :tooltip="$t('label.reset.config.value')"
+            @click="resetConfig(item)"
+            v-if="editableValueKey !== index"
+            icon="reload"
+            :disabled="!('updateConfiguration' in $store.getters.apis)" />
         </div>
       </a-list-item>
     </a-list>
