@@ -340,7 +340,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             BigDecimal quotaUsgage;
             BigDecimal onehourcostpergb;
             BigDecimal noofgbinuse;
-            onehourcostpergb = tariff.getCurrencyValue().multiply(aggregationRatio);
+            onehourcostpergb = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             noofgbinuse = new BigDecimal(usageRecord.getSize()).divide(s_gb, 8, RoundingMode.HALF_EVEN);
             quotaUsgage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostpergb).multiply(noofgbinuse);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), usageRecord.getUsageType(),
@@ -368,7 +368,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_NUMBER, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0 && serviceoffering.getCpu() != null) {
             BigDecimal cpu = new BigDecimal(serviceoffering.getCpu());
-            onehourcostpercpu = tariff.getCurrencyValue().multiply(aggregationRatio);
+            onehourcostpercpu = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             cpuquotausgage = rawusage.multiply(onehourcostpercpu).multiply(cpu);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.CPU_NUMBER,
                     cpuquotausgage, usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -377,8 +377,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_CLOCK_RATE, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0 && serviceoffering.getSpeed() != null) {
-            BigDecimal speed = new BigDecimal(serviceoffering.getSpeed() / 100.00);
-            onehourcostper100mhz = tariff.getCurrencyValue().multiply(aggregationRatio);
+            BigDecimal speed = new BigDecimal(serviceoffering.getSpeed()*serviceoffering.getCpu() / 100.00);
+            onehourcostper100mhz = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             speedquotausage = rawusage.multiply(onehourcostper100mhz).multiply(speed);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.CPU_CLOCK_RATE,
                     speedquotausage, usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -388,7 +388,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.MEMORY, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0 && serviceoffering.getRamSize() != null) {
             BigDecimal memory = new BigDecimal(serviceoffering.getRamSize());
-            onehourcostper1mb = tariff.getCurrencyValue().multiply(aggregationRatio);
+            onehourcostper1mb = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             memoryquotausage = rawusage.multiply(onehourcostper1mb).multiply(memory);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.MEMORY, memoryquotausage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -397,7 +397,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.RUNNING_VM, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
-            onehourcostforvmusage = tariff.getCurrencyValue().multiply(aggregationRatio);
+            onehourcostforvmusage = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             vmusage = rawusage.multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.RUNNING_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -416,7 +416,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
             BigDecimal vmusage;
             BigDecimal onehourcostforvmusage;
-            onehourcostforvmusage = tariff.getCurrencyValue().multiply(aggregationRatio);
+            onehourcostforvmusage = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             vmusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.ALLOCATED_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -434,7 +434,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
             BigDecimal ruleusage;
             BigDecimal onehourcost;
-            onehourcost = tariff.getCurrencyValue().multiply(aggregationRatio);
+            onehourcost = tariff.getCurrencyValue().divide(s_hoursInMonth, 8, RoundingMode.HALF_DOWN);
             ruleusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), ruleType, ruleusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
