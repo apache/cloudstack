@@ -18,7 +18,10 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackAPI import listZones, deleteTemplate, updateConfiguration
+from marvin.cloudstackAPI import (listZones,
+                                  deleteTemplate,
+                                  listConfigurations,
+                                  updateConfiguration)
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account,
                              Domain,
@@ -62,6 +65,7 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
             cls.apiclient,
             services=cls.services["acl"]["domain1"],
             parentdomainid=cls.domain.id)
+        cls._cleanup.append(cls.domain1)
 
         # Create account1
         cls.account1 = Account.create(
@@ -69,12 +73,14 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
             cls.services["acl"]["accountD1"],
             domainid=cls.domain1.id
         )
+        cls._cleanup.append(cls.account1)
 
         # Create new sub-domain
         cls.sub_domain = Domain.create(
             cls.apiclient,
             services=cls.services["acl"]["domain11"],
             parentdomainid=cls.domain1.id)
+        cls._cleanup.append(cls.sub_domain)
 
         # Create account for sub-domain
         cls.sub_account = Account.create(
@@ -82,12 +88,14 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
             cls.services["acl"]["accountD11"],
             domainid=cls.sub_domain.id
         )
+        cls._cleanup.append(cls.sub_account)
 
         # Create new domain2
         cls.domain2 = Domain.create(
             cls.apiclient,
             services=cls.services["acl"]["domain2"],
             parentdomainid=cls.domain.id)
+        cls._cleanup.append(cls.domain2)
 
         # Create account2
         cls.account2 = Account.create(
@@ -95,6 +103,7 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
             cls.services["acl"]["accountD2"],
             domainid=cls.domain2.id
         )
+        cls._cleanup.append(cls.account2)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
@@ -108,6 +117,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
                                                   zoneid=cls.zone.id,
                                                   domainid=cls.domain.id,
                                                   hypervisor=cls.hypervisor.lower())
+            cls.root_template.download(cls.apiclient)
+            cls._cleanup.append(cls.root_template)
             cls.services["test_templates"]["kvm"]["name"] = cls.account1.name
             cls.template1 = Template.register(cls.apiclient,
                                               cls.services["test_templates"]["kvm"],
@@ -115,6 +126,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
                                               account=cls.account1.name,
                                               domainid=cls.domain1.id,
                                               hypervisor=cls.hypervisor.lower())
+            cls.template1.download(cls.apiclient)
+            cls._cleanup.append(cls.template1)
             cls.services["test_templates"]["kvm"]["name"] = cls.sub_account.name
             cls.sub_template = Template.register(cls.apiclient,
                                                  cls.services["test_templates"]["kvm"],
@@ -122,40 +135,39 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
                                                  account=cls.sub_account.name,
                                                  domainid=cls.sub_domain.id,
                                                  hypervisor=cls.hypervisor.lower())
-            cls.services["test_templates"]["kvm"]["name"] = cls.account2.name
+            cls.sub_template.download(cls.apiclient)
+            cls._cleanup.append(cls.sub_template)
             cls.template2 = Template.register(cls.apiclient,
                                               cls.services["test_templates"]["kvm"],
                                               zoneid=cls.zone.id,
                                               account=cls.account2.name,
                                               domainid=cls.domain2.id,
                                               hypervisor=cls.hypervisor.lower())
-
-            cls._cleanup.append(cls.root_template)
-            cls._cleanup.append(cls.template1)
+            cls.template2.download(cls.apiclient)
             cls._cleanup.append(cls.template2)
-            cls._cleanup.append(cls.sub_template)
         else:
             return
 
-        cls._cleanup.append(cls.account1)
-        cls._cleanup.append(cls.account2)
-        cls._cleanup.append(cls.sub_account)
-        cls._cleanup.append(cls.sub_domain)
-        cls._cleanup.append(cls.domain1)
-        cls._cleanup.append(cls.domain2)
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestTemplateAccessAcrossDomains,
-                cls).getClsTestClient().getApiClient()
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
+        super(TestTemplateAccessAcrossDomains, cls).tearDownClass()
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.domain1_config = self.get_restrict_template_configuration(self.domain1.id)
+        self.domain2_config = self.get_restrict_template_configuration(self.domain2.id)
+        self.sub_domain_config = self.get_restrict_template_configuration(self.sub_domain.id)
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            self.update_restrict_template_configuration(self.domain1.id, self.domain1_config)
+            self.update_restrict_template_configuration(self.domain2.id, self.domain2_config)
+            self.update_restrict_template_configuration(self.sub_domain.id, self.sub_domain_config)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
         return
 
     @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
@@ -173,7 +185,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         """
 
         # Step 1
-        self.update_configuration("true")
+        self.update_restrict_template_configuration(self.domain1.id, "true")
+        self.update_restrict_template_configuration(self.domain2.id, "true")
 
         self.validate_uploaded_template(self.apiclient, self.template1.id)
 
@@ -208,7 +221,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         """
 
         # Step 1
-        self.update_configuration("false")
+        self.update_restrict_template_configuration(self.domain1.id, "false")
+        self.update_restrict_template_configuration(self.domain2.id, "false")
 
         # Step 2
         self.validate_template_ownership(self.template2, self.domain1, self.domain2, True)
@@ -223,7 +237,7 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
 
         # Step 5
         # Deploy new virtual machine using template
-        virtual_machine = VirtualMachine.create(
+        self.virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
             templateid=self.template2.id,
@@ -231,9 +245,10 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
             domainid=self.account1.domainid,
             serviceofferingid=self.service_offering.id,
         )
+        self.cleanup.append(self.virtual_machine)
         self.debug("creating an instance with template ID: %s" % self.template2.id)
         vm_response = VirtualMachine.list(self.apiclient,
-                                          id=virtual_machine.id,
+                                          id=self.virtual_machine.id,
                                           account=self.account1.name,
                                           domainid=self.account1.domainid)
         self.assertEqual(
@@ -269,7 +284,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         """
 
         # Step 1
-        self.update_configuration("true")
+        self.update_restrict_template_configuration(self.domain1.id, "true")
+        self.update_restrict_template_configuration(self.domain2.id, "true")
         # Make sure child domains can still access parent domain templates
         self.validate_uploaded_template(self.apiclient, self.root_template.id)
 
@@ -295,7 +311,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         """
 
         # Step 1
-        self.update_configuration("true")
+        self.update_restrict_template_configuration(self.domain1.id, "true")
+        self.update_restrict_template_configuration(self.domain2.id, "true")
 
         # Step 2
         self.template2.updatePermissions(self.apiclient,
@@ -330,7 +347,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         self.validate_template_ownership(self.template2, self.domain, self.domain2, True)
 
         # Step 5
-        self.update_configuration("false")
+        self.update_restrict_template_configuration(self.domain1.id, "false")
+        self.update_restrict_template_configuration(self.domain2.id, "false")
 
         # Step 6
         self.validate_template_ownership(self.template2, self.domain1, self.domain2, False)
@@ -350,7 +368,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         5. Set global setting restrict.public.access.to.templates to false
         6. Repeat the steps 3 and 4
         """
-        self.update_configuration("true")
+        self.update_restrict_template_configuration(self.domain1.id, "true")
+        self.update_restrict_template_configuration(self.domain2.id, "true")
         self.root_template.updatePermissions(self.apiclient,
                                              ispublic="False")
 
@@ -379,7 +398,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         # Only ROOT domain can access non public templates of child domain
         self.validate_template_ownership(self.root_template, self.domain2, self.domain, False)
 
-        self.update_configuration("false")
+        self.update_restrict_template_configuration(self.domain1.id, "false")
+        self.update_restrict_template_configuration(self.domain2.id, "false")
         self.validate_template_ownership(self.root_template, self.domain1, self.domain2, False)
         self.validate_template_ownership(self.root_template, self.domain2, self.domain2, False)
 
@@ -399,7 +419,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         self.root_template.updatePermissions(self.apiclient,
                                              ispublic="True")
         # Step 1
-        self.update_configuration("true")
+        self.update_restrict_template_configuration(self.domain1.id, "true")
+        self.update_restrict_template_configuration(self.domain2.id, "true")
         # Make sure child domains can still access parent domain templates
         self.validate_uploaded_template(self.apiclient, self.sub_template.id)
 
@@ -429,7 +450,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         """
 
         # Step 1
-        self.update_configuration("false")
+        self.update_restrict_template_configuration(self.domain1.id, "false")
+        self.update_restrict_template_configuration(self.domain2.id, "false")
         # Make sure child domains can still access parent domain templates
         self.validate_uploaded_template(self.apiclient, self.sub_template.id)
 
@@ -461,7 +483,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         """
 
         # Step 1
-        self.update_configuration("true")
+        self.update_restrict_template_configuration(self.domain1.id, "true")
+        self.update_restrict_template_configuration(self.domain2.id, "true")
 
         # Step 2
         self.template1.updatePermissions(self.apiclient,
@@ -499,7 +522,8 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         self.validate_template_ownership(self.template1, self.domain, self.domain1, True)
 
         # Step 5
-        self.update_configuration("false")
+        self.update_restrict_template_configuration(self.domain1.id, "false")
+        self.update_restrict_template_configuration(self.domain2.id, "false")
 
         # Step 6
         self.validate_template_ownership(self.template1, self.domain2, self.domain1, False)
@@ -580,13 +604,24 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
                                         "not be accessible by domain %s"
                                         % (template.name, nonowner.name, owner.name))
 
-    def update_configuration(self, value):
+    def get_restrict_template_configuration(self, domain_id):
         """
-        Function to update the global setting "restrict.public.access.to.templates"
-        :param value:
-        :return:
+        Function to get the global setting "restrict.public.access.to.templates" for domain
+        """
+        list_configurations_cmd = listConfigurations.listConfigurationsCmd()
+        list_configurations_cmd.name = "restrict.public.template.access.to.domain"
+        list_configurations_cmd.scopename = "domain"
+        list_configurations_cmd.scopeid = domain_id
+        response = self.apiclient.listConfigurations(list_configurations_cmd)
+        return response[0].value
+
+    def update_restrict_template_configuration(self, domain_id, value):
+        """
+        Function to update the global setting "restrict.public.access.to.templates" for domain
         """
         update_configuration_cmd = updateConfiguration.updateConfigurationCmd()
         update_configuration_cmd.name = "restrict.public.template.access.to.domain"
         update_configuration_cmd.value = value
+        update_configuration_cmd.scopename = "domain"
+        update_configuration_cmd.scopeid = domain_id
         return self.apiclient.updateConfiguration(update_configuration_cmd)
