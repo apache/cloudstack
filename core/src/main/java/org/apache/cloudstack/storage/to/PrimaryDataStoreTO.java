@@ -19,12 +19,13 @@
 
 package org.apache.cloudstack.storage.to;
 
+import java.util.Map;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-
-import java.util.Map;
 
 public class PrimaryDataStoreTO implements DataStoreTO {
     public static final String MANAGED = PrimaryDataStore.MANAGED;
@@ -51,6 +52,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private Map<String, String> details;
     private static final String pathSeparator = "/";
     private Boolean fullCloneFlag;
+    private Boolean diskProvisioningStrictnessFlag;
     private final boolean isManaged;
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
@@ -161,5 +163,13 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     public boolean isManaged() {
         return isManaged;
+    }
+
+    public Boolean getDiskProvisioningStrictnessFlag() {
+        return diskProvisioningStrictnessFlag;
+    }
+
+    public void setDiskProvisioningStrictnessFlag(Boolean diskProvisioningStrictnessFlag) {
+        this.diskProvisioningStrictnessFlag = diskProvisioningStrictnessFlag;
     }
 }

@@ -185,6 +185,11 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
         return ResourceTag.class;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
     public void setId(long id) {
         this.id = id;
     }

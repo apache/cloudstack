@@ -55,6 +55,7 @@ import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.libvirt.LibvirtException;
 
 @ResourceWrapper(handles =  CreatePrivateTemplateFromVolumeCommand.class)
 public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends CommandWrapper<CreatePrivateTemplateFromVolumeCommand, Answer, LibvirtComputingResource> {
@@ -120,7 +121,7 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                 final QemuImg q = new QemuImg(0);
                 try {
                     q.convert(srcFile, destFile);
-                } catch (final QemuImgException e) {
+                } catch (final QemuImgException | LibvirtException e) {
                     s_logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
                             e.getMessage());
                 }

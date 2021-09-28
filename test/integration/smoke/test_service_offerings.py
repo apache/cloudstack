@@ -414,6 +414,8 @@ class TestServiceOfferings(cloudstackTestCase):
         # Generate new name & displaytext from random data
         random_displaytext = random_gen()
         random_name = random_gen()
+        random_tag = random_gen()
+        random_hosttag = random_gen()
 
         self.debug("Updating service offering with ID: %s" %
                    self.service_offering_1.id)
@@ -423,6 +425,8 @@ class TestServiceOfferings(cloudstackTestCase):
         cmd.id = self.service_offering_1.id
         cmd.displaytext = random_displaytext
         cmd.name = random_name
+        cmd.storagetags = random_tag
+        cmd.hosttags = random_hosttag
         self.apiclient.updateServiceOffering(cmd)
 
         list_service_response = list_service_offering(
@@ -452,6 +456,17 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check server name in updateServiceOffering"
         )
 
+        self.assertEqual(
+            list_service_response[0].storagetags,
+            random_tag,
+            "Check storage tags in updateServiceOffering"
+        )
+
+        self.assertEqual(
+            list_service_response[0].hosttags,
+            random_hosttag,
+            "Check host tags in updateServiceOffering"
+        )
         return
 
     @attr(
@@ -502,6 +517,29 @@ class TestServiceOfferings(cloudstackTestCase):
             self.skipTest("Skipping this test for {} due to bug CS-38153".format(self.hypervisor))
         try:
             self.medium_virtual_machine.stop(self.apiclient)
+
+            timeout = self.services["timeout"]
+
+            while True:
+                time.sleep(self.services["sleep"])
+
+                # Ensure that VM is in stopped state
+                list_vm_response = list_virtual_machines(
+                    self.apiclient,
+                    id=self.medium_virtual_machine.id
+                )
+
+                if isinstance(list_vm_response, list):
+                    vm = list_vm_response[0]
+                    if vm.state == 'Stopped':
+                        self.debug("VM state: %s" % vm.state)
+                        break
+
+                if timeout == 0:
+                    raise Exception(
+                        "Failed to stop VM (ID: %s) in change service offering" % vm.id)
+
+                timeout = timeout - 1
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 

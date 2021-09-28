@@ -24,9 +24,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 
 /**
  *
@@ -77,13 +77,20 @@ public interface SnapshotManager extends Configurable {
 
     boolean canOperateOnVolume(Volume volume);
 
+    boolean backedUpSnapshotsExistsForVolume(Volume volume);
+
     void cleanupSnapshotsByVolume(Long volumeId);
 
     Answer sendToPool(Volume vol, Command cmd);
 
     SnapshotVO getParentSnapshot(VolumeInfo volume);
 
-    Snapshot backupSnapshot(Long snapshotId);
-
     SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException;
+
+    /**
+     * Copy the snapshot policies from a volume to another.
+     * @param srcVolume source volume.
+     * @param destVolume destination volume.
+     */
+    void copySnapshotPoliciesBetweenVolumes(VolumeVO srcVolume, VolumeVO destVolume);
 }

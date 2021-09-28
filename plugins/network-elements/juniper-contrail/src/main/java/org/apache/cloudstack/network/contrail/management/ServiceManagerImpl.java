@@ -79,7 +79,7 @@ public class ServiceManagerImpl implements ServiceManager {
     ContrailManager _manager;
 
     /**
-     * In the case of service instance the master object is in the contrail API server. This object stores the
+     * In the case of service instance the primary object is in the contrail API server. This object stores the
      * service instance parameters in the database.
      *
      * @param owner     Used to determine the project.

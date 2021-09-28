@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -28,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {KubernetesCluster.class})
-public class KubernetesClusterResponse extends BaseResponse implements ControlledEntityResponse {
+public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the Kubernetes cluster")
     private String id;
@@ -101,9 +101,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "keypair details")
     private String keypair;
 
+    @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.MASTER_NODES)
-    @Param(description = "the master nodes count for the Kubernetes cluster")
+    @Param(description = "the master nodes count for the Kubernetes cluster. This parameter is deprecated, please use 'controlnodes' parameter.")
     private Long masterNodes;
+
+    @SerializedName(ApiConstants.CONTROL_NODES)
+    @Param(description = "the control nodes count for the Kubernetes cluster")
+    private Long controlNodes;
 
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "the size (worker nodes count) of the Kubernetes cluster")
@@ -267,6 +272,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setMasterNodes(Long masterNodes) {
         this.masterNodes = masterNodes;
+    }
+
+    public Long getControlNodes() {
+        return controlNodes;
+    }
+
+    public void setControlNodes(Long controlNodes) {
+        this.controlNodes = controlNodes;
     }
 
     public Long getClusterSize() {

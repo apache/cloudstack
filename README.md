@@ -1,6 +1,6 @@
-# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=master)](https://travis-ci.org/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
+# Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
 
-![Apache CloudStack](tools/logo/acsxmas.jpg)
+![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
@@ -58,8 +58,9 @@ via Github pull requests.
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
 * [Release notes](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
-* API [documentation](http://cloudstack.apache.org/docs/api)
+* API [documentation](https://cloudstack.apache.org/api.html)
 * How to [contribute](CONTRIBUTING.md)
+* Check the [YouTube channel](https://www.youtube.com/ApacheCloudStack) for presentations, interviews, and more
 
 ## Getting Involved and Contributing
 
@@ -81,11 +82,7 @@ Mailing lists:
 - [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
-IRC, join us on irc.freenode.net on:
-- `#cloudstack`: General Apache CloudStack conversation and end user support
-- `#cloudstack-dev`: Development discussions
-
-Report and/or check bugs on [JIRA](https://issues.apache.org/jira/browse/CLOUDSTACK) and check our
+Report and/or check bugs on [Github](https://github.com/apache/cloudstack/issues) and check our
 developer [page](http://cloudstack.apache.org/developers.html) for contributing code.
 
 ## News and Events
@@ -146,5 +143,5 @@ The following provides more details on the included cryptographic software:
 * CloudStack makes use of JaSypt cryptographic libraries.
 * CloudStack has a system requirement of MySQL, and uses native database encryption functionality.
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
-* CloudStack can optionally interacts with and controls OpenSwan-based VPNs.
+* CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.

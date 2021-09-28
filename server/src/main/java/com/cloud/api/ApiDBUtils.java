@@ -27,6 +27,9 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.resource.icon.dao.ResourceIconDao;
+import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -55,6 +58,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -258,6 +262,7 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -311,11 +316,13 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -325,6 +332,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -415,6 +423,7 @@ public class ApiDBUtils {
     static AutoScaleVmGroupDao s_asVmGroupDao;
     static CounterDao s_counterDao;
     static ResourceTagJoinDao s_tagJoinDao;
+    static ResourceIconDao s_resourceIconDao;
     static EventJoinDao s_eventJoinDao;
     static InstanceGroupJoinDao s_vmGroupJoinDao;
     static UserAccountJoinDao s_userAccountJoinDao;
@@ -458,6 +467,8 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static NicDao s_nicDao;
+    static ResourceManagerUtil s_resourceManagerUtil;
 
     @Inject
     private ManagementServer ms;
@@ -702,6 +713,12 @@ public class ApiDBUtils {
     private BackupOfferingDao backupOfferingDao;
     @Inject
     private BackupScheduleDao backupScheduleDao;
+    @Inject
+    private NicDao nicDao;
+    @Inject
+    private ResourceIconDao resourceIconDao;
+    @Inject
+    private ResourceManagerUtil resourceManagerUtil;
 
     @PostConstruct
     void init() {
@@ -811,6 +828,7 @@ public class ApiDBUtils {
         s_hostDetailsDao = hostDetailsDao;
         s_clusterDetailsDao = clusterDetailsDao;
         s_vmSnapshotDao = vmSnapshotDao;
+        s_nicDao = nicDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
@@ -827,6 +845,8 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_resourceIconDao = resourceIconDao;
+        s_resourceManagerUtil = resourceManagerUtil;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1111,6 +1131,10 @@ public class ApiDBUtils {
         return s_serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId);
     }
 
+    public static ServiceOffering findServiceOfferingByUuid(String serviceOfferingUuid) {
+        return s_serviceOfferingDao.findByUuidIncludingRemoved(serviceOfferingUuid);
+    }
+
     public static ServiceOfferingDetailsVO findServiceOfferingDetail(long serviceOfferingId, String key) {
         return s_serviceOfferingDetailsDao.findDetail(serviceOfferingId, key);
     }
@@ -1208,7 +1232,7 @@ public class ApiDBUtils {
                 type = HypervisorType.Hyperv;
             }
         } if (format == ImageFormat.RAW) {
-            // Currently, KVM only suppoorts RBD images of type RAW.
+            // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
             // rather than RBD. This block of code can (hopefuly) by checking to
@@ -1220,7 +1244,10 @@ public class ApiDBUtils {
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.CLVM) {
+                if(pool.getPoolType() == StoragePoolType.RBD ||
+                    pool.getPoolType() == StoragePoolType.PowerFlex ||
+                    pool.getPoolType() == StoragePoolType.CLVM ||
+                    pool.getPoolType() == StoragePoolType.Linstor) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -1473,7 +1500,7 @@ public class ApiDBUtils {
     }
 
     public static String getUuid(String resourceId, ResourceObjectType resourceType) {
-        return s_taggedResourceService.getUuid(resourceId, resourceType);
+        return s_resourceManagerUtil.getUuid(resourceId, resourceType);
     }
 
     public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
@@ -1736,7 +1763,17 @@ public class ApiDBUtils {
     ///////////////////////////////////////////////////////////////////////
 
     public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
-        return s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+        DomainRouterResponse response = s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+        if (StringUtils.isBlank(response.getHypervisor())) {
+            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vr.getId());
+            if (vm.getLastHostId() != null) {
+                HostVO lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (lastHost != null) {
+                    response.setHypervisor(lastHost.getHypervisorType().toString());
+                }
+            }
+        }
+        return  response;
     }
 
     public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr) {
@@ -1777,6 +1814,10 @@ public class ApiDBUtils {
 
     public static ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO vsg, boolean keyValueOnly) {
         return s_tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
+    }
+
+    public static ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIcon) {
+        return s_resourceIconDao.newResourceIconResponse(resourceIcon);
     }
 
     public static ResourceTagJoinVO newResourceTagView(ResourceTag sg) {
@@ -1870,16 +1911,8 @@ public class ApiDBUtils {
         return s_hostJoinDao.newHostResponse(vr, details);
     }
 
-    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr) {
-        return s_hostJoinDao.setHostResponse(vrData, vr);
-    }
-
     public static HostForMigrationResponse newHostForMigrationResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
         return s_hostJoinDao.newHostForMigrationResponse(vr, details);
-    }
-
-    public static HostForMigrationResponse fillHostForMigrationDetails(HostForMigrationResponse vrData, HostJoinVO vr) {
-        return s_hostJoinDao.setHostForMigrationResponse(vrData, vr);
     }
 
     public static List<HostJoinVO> newHostView(Host vr) {
@@ -1988,8 +2021,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
-        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities, Boolean showResourceImage) {
+        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
@@ -2068,6 +2101,10 @@ public class ApiDBUtils {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
 
+    public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
+        return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
+    }
+
     public static BackupResponse newBackupResponse(Backup backup) {
         return s_backupDao.newBackupResponse(backup);
     }
@@ -2078,5 +2115,13 @@ public class ApiDBUtils {
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
         return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    }
+
+    public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 }

@@ -380,8 +380,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 try {
                     if (workerVm != null) {
                         // detach volume and destroy worker vm
-                        workerVm.detachAllDisks();
-                        workerVm.destroy();
+                        workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
                     s_logger.warn("Failed to destroy worker VM: " + workerVMName);
@@ -647,7 +646,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
+            String vmxFormattedVirtualHardwareVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(vmMo.getVirtualHardwareVersion());
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmxFormattedVirtualHardwareVersion);
             clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
             if (clonedVm == null) {
                 String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
@@ -669,8 +669,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroy();
             }
 
             vmMo.removeSnapshot(templateUniqueName, false);
@@ -922,8 +921,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             clonedVm.detachAllDisks();
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
@@ -965,7 +963,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             if (clonedWorkerVMNeeded) {
                 // 4 MB is the minimum requirement for VM memory in VMware
-                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
+                String vmxFormattedVirtualHardwareVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(vmMo.getVirtualHardwareVersion());
+                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmxFormattedVirtualHardwareVersion);
                 clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
                 if (clonedVm == null) {
                     String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
@@ -978,8 +977,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+                clonedVm.detachAllDisksAndDestroy();
             }
         }
     }
@@ -1035,8 +1033,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
             if (workerVm != null) {
                 //detach volume and destroy worker vm
-                workerVm.detachAllDisks();
-                workerVm.destroy();
+                workerVm.detachAllDisksAndDestroy();
             }
         }
     }

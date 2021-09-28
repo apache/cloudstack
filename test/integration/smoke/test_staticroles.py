@@ -86,7 +86,7 @@ class TestStaticRoles(cloudstackTestCase):
 
         self.roleApiMap = {} # role to list of apis allowed
         octetKey = {'Admin':1, 'DomainAdmin':4, 'User':8}
-        for role in octetKey.keys():
+        for role in list(octetKey.keys()):
             for api in sorted(apiMap.keys()):
                 if (octetKey[role] & int(apiMap[api])) > 0:
                     if role not in self.roleApiMap:
@@ -125,8 +125,8 @@ class TestStaticRoles(cloudstackTestCase):
             )
             self.cleanup.append(account)
             userApiClient = self.testClient.getUserApiClient(UserName=account.name, DomainName=account.domain, type=accountType)
-            allowedApis = map(lambda x: x.name, userApiClient.listApis(listApis.listApisCmd()))
-            allApis = map(lambda x: x.name, self.apiclient.listApis(listApis.listApisCmd()))
+            allowedApis = [x.name for x in userApiClient.listApis(listApis.listApisCmd())]
+            allApis = [x.name for x in self.apiclient.listApis(listApis.listApisCmd())]
             for api in self.roleApiMap[role]:
                 if api not in allApis:
                     continue

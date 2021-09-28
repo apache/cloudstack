@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.ServiceOffering;
@@ -28,7 +28,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ServiceOffering.class)
-public class ServiceOfferingResponse extends BaseResponse {
+public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the id of the service offering")
     private String id;
@@ -76,7 +76,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
-    @SerializedName("tags")
+    @SerializedName("storagetags")
     @Param(description = "the tags for the service offering")
     private String tags;
 
@@ -203,6 +203,10 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROOT_DISK_SIZE)
     @Param(description = "Root disk size in GB", since = "4.15")
     private Long rootDiskSize;
+
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
+    private Boolean dynamicScalingEnabled;
 
     public ServiceOfferingResponse() {
     }
@@ -457,7 +461,6 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setIscutomized(boolean iscutomized) {
         this.isCustomized = iscutomized;
-
     }
 
     public void setCacheMode(String cacheMode) {
@@ -474,5 +477,13 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setRootDiskSize(Long rootDiskSize) {
         this.rootDiskSize = rootDiskSize;
+    }
+
+    public Boolean getDynamicScalingEnabled() {
+        return dynamicScalingEnabled;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

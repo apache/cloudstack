@@ -44,7 +44,7 @@ vagrant up
 
 	*** Note: ***
 	
-	Personally I prefer to use the 4.3 codebase rather than master. If you wish to do the same:	
+	Personally I prefer to use the 4.3 codebase rather than main. If you wish to do the same:	
 
 	```
 	git reset --hard 0810029

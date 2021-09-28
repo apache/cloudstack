@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +47,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
@@ -102,6 +105,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     VpcManager _vpcMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    private AnnotationDao annotationDao;
 
     String _name;
     int _connLimit;
@@ -229,10 +234,20 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
 
+        Boolean splitConnections = cmd.getSplitConnections();
+        if (splitConnections == null) {
+            splitConnections = false;
+        }
+
+        String ikeVersion = cmd.getIkeVersion();
+        if (ikeVersion == null) {
+            ikeVersion = "ike";
+        }
+
         checkCustomerGatewayCidrList(peerCidrList);
 
         Site2SiteCustomerGatewayVO gw =
-            new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, peerCidrList, ipsecPsk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd, encap);
+            new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, peerCidrList, ipsecPsk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd, encap, splitConnections, ikeVersion);
         _customerGatewayDao.persist(gw);
         return gw;
     }
@@ -336,7 +351,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 if (conn.isPassive()) {
                     conn.setState(State.Disconnected);
                 } else {
-                    conn.setState(State.Connected);
+                    conn.setState(State.Connecting);
                 }
                 _vpnConnectionDao.persist(conn);
                 return conn;
@@ -376,6 +391,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (vpnConnections != null && vpnConnections.size() != 0) {
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway with id " + id + " because there is still related VPN connections!");
         }
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(), gw.getUuid());
         _customerGatewayDao.remove(id);
         return true;
     }
@@ -419,14 +435,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _accountMgr.checkAccess(caller, null, false, gw);
 
-        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
-        if (conns != null) {
-            for (Site2SiteVpnConnection conn : conns) {
-                if (conn.getState() != State.Error) {
-                    throw new InvalidParameterValueException("Unable to update customer gateway with connections in non-Error state!");
-                }
-            }
-        }
         String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
 
@@ -476,6 +484,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             encap = false;
         }
 
+        Boolean splitConnections = cmd.getSplitConnections();
+
+        String ikeVersion = cmd.getIkeVersion();
+
         checkCustomerGatewayCidrList(guestCidrList);
 
         long accountId = gw.getAccountId();
@@ -494,8 +506,45 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         gw.setEspLifetime(espLifetime);
         gw.setDpd(dpd);
         gw.setEncap(encap);
+        gw.setSplitConnections(splitConnections);
+        if (ikeVersion != null) {
+            gw.setIkeVersion(ikeVersion);
+        }
         _customerGatewayDao.persist(gw);
+
+        setupVpnConnection(caller, id);
+
         return gw;
+    }
+
+    private void setupVpnConnection(Account caller, Long vpnCustomerGwIp) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(vpnCustomerGwIp);
+        if (conns != null) {
+            for (Site2SiteVpnConnection conn : conns) {
+                try {
+                    _accountMgr.checkAccess(caller, null, false, conn);
+                } catch (PermissionDeniedException e) {
+                    // Just don't restart this connection, as the user has no rights to it
+                    // Maybe should issue a notification to the system?
+                    s_logger.info("Site2SiteVpnManager:updateCustomerGateway() Not resetting VPN connection " + conn.getId() + " as user lacks permission");
+                    continue;
+                }
+
+                if (conn.getState() == State.Pending) {
+                    // Vpn connection cannot be reset when the state is Pending
+                    continue;
+                }
+                try {
+                    if (conn.getState() == State.Connected || conn.getState() == State.Connecting || conn.getState() == State.Error) {
+                        stopVpnConnection(conn.getId());
+                    }
+                    startVpnConnection(conn.getId());
+                } catch (ResourceUnavailableException e) {
+                    // Should never get here, as we are looping on the actual connections, but we must handle it regardless
+                    s_logger.warn("Failed to update VPN connection");
+                }
+            }
+        }
     }
 
     @Override
@@ -561,12 +610,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _accountMgr.checkAccess(caller, null, false, conn);
 
-        if (conn.getState() == State.Pending) {
-            conn.setState(State.Disconnected);
-        }
-        if (conn.getState() == State.Connected || conn.getState() == State.Error || conn.getState() == State.Disconnected) {
-            stopVpnConnection(id);
-        }
+        // Set vpn state to disconnected
+        conn.setState(State.Disconnected);
+        _vpnConnectionDao.persist(conn);
+
+        // Stop and start the connection again
+        stopVpnConnection(id);
         startVpnConnection(id);
         conn = _vpnConnectionDao.findById(id);
         return conn;
@@ -751,7 +800,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 throw new CloudRuntimeException("Unable to acquire lock on " + conn);
             }
             try {
-                if (conn.getState() == Site2SiteVpnConnection.State.Connected) {
+                if (conn.getState() == Site2SiteVpnConnection.State.Connected || conn.getState() == Site2SiteVpnConnection.State.Connecting) {
                     conn.setState(Site2SiteVpnConnection.State.Disconnected);
                     _vpnConnectionDao.persist(conn);
                 }

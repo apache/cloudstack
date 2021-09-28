@@ -944,9 +944,11 @@ public class CommandSetupHelper {
         final Long espLifetime = gw.getEspLifetime();
         final Boolean dpd = gw.getDpd();
         final Boolean encap = gw.getEncap();
+        final Boolean splitConnections = gw.getSplitConnections();
+        final String ikeVersion = gw.getIkeVersion();
 
         final Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr, peerGatewayIp, peerGuestCidrList, ikePolicy,
-                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap);
+                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap, splitConnections, ikeVersion);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -1008,8 +1010,17 @@ public class CommandSetupHelper {
         final boolean setupDns = dnsProvided || dhcpProvided;
 
         if (setupDns) {
-            defaultDns1 = guestNic.getIPv4Dns1();
-            defaultDns2 = guestNic.getIPv4Dns2();
+            final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+            if (guestNic.getIPv4Dns1() != null) {
+                defaultDns1 = guestNic.getIPv4Dns1();
+            } else {
+                defaultDns1 = dcVo.getDns1();
+            }
+            if (guestNic.getIPv4Dns2() != null) {
+                defaultDns2 = guestNic.getIPv4Dns2();
+            } else {
+                defaultDns2 = dcVo.getDns2();
+            }
         }
 
         final Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());

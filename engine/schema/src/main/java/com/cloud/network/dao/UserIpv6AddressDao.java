@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.IpAddress;
 import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -25,6 +26,8 @@ public interface UserIpv6AddressDao extends GenericDao<UserIpv6AddressVO, Long> 
     List<UserIpv6AddressVO> listByAccount(long accountId);
 
     List<UserIpv6AddressVO> listByVlanId(long vlanId);
+
+    List<UserIpv6AddressVO> listByVlanIdAndState(long vlanId, IpAddress.State state);
 
     List<UserIpv6AddressVO> listByDcId(long dcId);
 

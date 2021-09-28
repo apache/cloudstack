@@ -63,7 +63,7 @@ class TestNetworks_1(cloudstackTestCase):
                 cls.api_client,
                 cls.test_data["network_offering_vlan"],
             )
-            # Enable Network offering
+            cls._cleanup.append(cls.network_offering)
             cls.network_offering.update(cls.api_client, state='Enabled')
             cls.test_data["network_without_acl"][
                 "networkoffering"] = cls.network_offering.id
@@ -71,12 +71,14 @@ class TestNetworks_1(cloudstackTestCase):
                 cls.api_client,
                 cls.test_data["service_offerings"]["tiny"]
             )
-            # Creating Disk offering, Service Offering and Account
+            cls._cleanup.append(cls.service_offering)
+
             cls.account = Account.create(
                 cls.api_client,
                 cls.test_data["account"],
                 domainid=cls.domain.id
             )
+            cls._cleanup.append(cls.account)
             # Getting authentication for user in newly created Account
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(
@@ -89,9 +91,6 @@ class TestNetworks_1(cloudstackTestCase):
                 cls.account.domainid
             )
             cls._cleanup.append(cls.account_network)
-            cls._cleanup.append(cls.account)
-            cls._cleanup.append(cls.service_offering)
-            cls._cleanup.append(cls.network_offering)
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
@@ -103,16 +102,11 @@ class TestNetworks_1(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        # Clean up, terminate the created volumes
-        cleanup_resources(self.apiClient, self.cleanup)
-        return
+        super(TestNetworks_1, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestNetworks_1, cls).tearDownClass()
 
     def __verify_values(self, expected_vals, actual_vals):
         """
@@ -132,7 +126,7 @@ class TestNetworks_1(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -168,7 +162,7 @@ class TestNetworks_1(cloudstackTestCase):
             id=self.zone.id
         )
         status = validateList(list_zones)
-        self.assertEquals(PASS, status[0], "No Zones found for a given id")
+        self.assertEqual(PASS, status[0], "No Zones found for a given id")
         self.test_data["network_without_acl"]["zoneid"] = list_zones[0].id
         # Listing the networks for a user
         list_networks_before = Network.list(
@@ -226,7 +220,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"],
             type="Isolated")
         status = validateList(list_networks_after)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
         self.assertEqual(
             len(list_networks_after),
@@ -242,7 +236,7 @@ class TestNetworks_1(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_page1)
-        self.assertEquals(PASS, status[0], "No networks found at page 1")
+        self.assertEqual(PASS, status[0], "No networks found at page 1")
         self.assertEqual(
             len(list_networks_page1),
             self.test_data["pagesize"],
@@ -257,7 +251,7 @@ class TestNetworks_1(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_page2)
-        self.assertEquals(PASS, status[0], "No networks found at page 2")
+        self.assertEqual(PASS, status[0], "No networks found at page 2")
         self.assertEqual(
             len(list_networks_page2),
             1,
@@ -267,7 +261,7 @@ class TestNetworks_1(cloudstackTestCase):
         network_page2 = list_networks_page2[0]
         for i in range(0, len(list_networks_page1)):
             network_page1 = list_networks_page1[i]
-            self.assertNotEquals(
+            self.assertNotEqual(
                 network_page2.id,
                 network_page1.id,
                 "Network listed in page 2 is also listed in page 1"
@@ -289,9 +283,9 @@ class TestNetworks_1(cloudstackTestCase):
             self.apiClient,
             self.test_data["network_offering_without_sourcenat"],
         )
+        self.cleanup.append(network_offering_without_sourcenat)
         if network_offering_without_sourcenat is None:
             self.fail("Creation of network offering without sourcenat failed")
-        self.cleanup.append(network_offering_without_sourcenat)
         # Enable network offering
         network_offering_without_sourcenat.update(
             self.apiClient,
@@ -341,7 +335,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # verify no vpc is present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(FAIL, status[0], "VPCs found for newly created user")
+        self.assertEqual(FAIL, status[0], "VPCs found for newly created user")
         for i in range(0, (self.test_data["pagesize"] + 1)):
             vpc_1 = VPC.create(
                 self.userapiclient,
@@ -354,13 +348,13 @@ class TestNetworks_1(cloudstackTestCase):
             # verify vpc is created and not none
             self.assertIsNotNone(vpc_1, "VPC is not created")
             # Verify VPC name with test data
-            self.assertNotEquals(
+            self.assertNotEqual(
                 -1,
                 vpc_1.name.find(self.test_data["vpc"]["name"]),
                 "VPC name not matched"
             )
             # verify zone with test data
-            self.assertEquals(
+            self.assertEqual(
                 self.zone.id,
                 vpc_1.zoneid,
                 "Zone is not matching in the vpc created"
@@ -370,7 +364,7 @@ class TestNetworks_1(cloudstackTestCase):
             self.userapiclient,
             listall=self.test_data["listall"])
         status = validateList(vpc_count_after)
-        self.assertEquals(PASS, status[0], "VPC list count is null")
+        self.assertEqual(PASS, status[0], "VPC list count is null")
         self.assertEqual(
             len(vpc_count_after),
             (self.test_data["pagesize"] + 1),
@@ -384,7 +378,7 @@ class TestNetworks_1(cloudstackTestCase):
             pagesize=self.test_data["pagesize"]
         )
         status = validateList(list_vpcs_page1)
-        self.assertEquals(PASS, status[0], "No vpcs found in Page 1")
+        self.assertEqual(PASS, status[0], "No vpcs found in Page 1")
         self.assertEqual(
             len(list_vpcs_page1),
             self.test_data["pagesize"],
@@ -398,7 +392,7 @@ class TestNetworks_1(cloudstackTestCase):
             pagesize=self.test_data["pagesize"]
         )
         status = validateList(list_vpcs_page2)
-        self.assertEquals(PASS, status[0], "No vpc found in Page 2")
+        self.assertEqual(PASS, status[0], "No vpc found in Page 2")
         self.assertEqual(
             1,
             len(list_vpcs_page2),
@@ -410,7 +404,7 @@ class TestNetworks_1(cloudstackTestCase):
         # is not present in page1
         for i in range(0, len(list_vpcs_page1)):
             vpc_page1 = list_vpcs_page1[i]
-            self.assertNotEquals(
+            self.assertNotEqual(
                 vpc_page2.id,
                 vpc_page1.id,
                 "VPC listed in page 2 is also listed in page 1"
@@ -456,7 +450,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # No VPCs should be present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(FAIL, status[0], "VPCs found for newly created user")
+        self.assertEqual(FAIL, status[0], "VPCs found for newly created user")
         vpc_count_before = 0
         vpc_1 = VPC.create(
             self.userapiclient,
@@ -472,15 +466,16 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"]
         )
         status = validateList(vpc_list)
-        self.assertEquals(PASS, status[0], "VPC is not created")
-        self.assertEquals(
+        self.assertEqual(PASS, status[0], "VPC is not created")
+        self.assertEqual(
             vpc_count_before + 1,
             len(vpc_list),
             "VPC is not created"
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_05_list_network_offerings_with_and_without_vpc(self):
         """
         @Desc: Test list network offerings for vpc true and false parameters
@@ -500,7 +495,7 @@ class TestNetworks_1(cloudstackTestCase):
         network_offering_before_count = NetworkOffering.list(
             self.userapiclient)
         status = validateList(network_offering_before_count)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present")
@@ -515,7 +510,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_before_count)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = true")
@@ -530,7 +525,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_false_before_count)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = false")
@@ -539,21 +534,21 @@ class TestNetworks_1(cloudstackTestCase):
             self.apiClient,
             self.test_data["network_offering_vlan"],
         )
+        self.cleanup.append(network_offering)
         self.assertIsNotNone(
             network_offering,
             "Network offering is not created")
         # Enable Network offering
         network_offering.update(self.apiClient, state='Enabled')
-        self.cleanup.append(network_offering)
         # List network offering
         network_offering_after_count = NetworkOffering.list(self.userapiclient)
         status = validateList(network_offering_after_count)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Offering list results in null")
         # Verify that count is incremented by 1
-        self.assertEquals(
+        self.assertEqual(
             len(network_offering_before_count) + 1,
             len(network_offering_after_count),
             "Network offering is not created"
@@ -569,12 +564,12 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_after_count)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Offering list results in null")
         # Verify that its count is same as step 1
-        self.assertEquals(
+        self.assertEqual(
             len(network_offering_vpc_true_before_count),
             len(network_offering_vpc_true_after_count),
             "Default Network offering is created with vpc as true"
@@ -590,19 +585,20 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_false_after_count)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Offering list results in null")
         # Verify that its count is same as step 3
-        self.assertEquals(
+        self.assertEqual(
             len(network_offering_vpc_false_before_count) + 1,
             len(network_offering_vpc_false_after_count),
             "Default Network offering is not created with vpc as false"
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_06_create_network_in_vpc(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -632,7 +628,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # No VPCs should be present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(FAIL, status[0], "VPCs found for newly created user")
+        self.assertEqual(FAIL, status[0], "VPCs found for newly created user")
         vpc_count_before = 0
         vpc_1 = VPC.create(
             self.userapiclient,
@@ -641,14 +637,15 @@ class TestNetworks_1(cloudstackTestCase):
             zoneid=self.zone.id,
         )
         self.assertIsNotNone(vpc_1, "VPC is not created")
+        self.cleanup.append(vpc_1)
         # List VPCs
         vpc_list = VPC.list(
             self.userapiclient,
             listall=self.test_data["listall"]
         )
         status = validateList(vpc_list)
-        self.assertEquals(PASS, status[0], "VPC is not created")
-        self.assertEquals(
+        self.assertEqual(PASS, status[0], "VPC is not created")
+        self.assertEqual(
             vpc_count_before + 1,
             len(vpc_list),
             "VPC is not created"
@@ -673,7 +670,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = true")
@@ -702,7 +699,6 @@ class TestNetworks_1(cloudstackTestCase):
                 "Network is not created"
             )
             self.cleanup.append(network_created)
-            self.cleanup.append(vpc_1)
             # Creating expected and actual values dictionaries
             expected_dict = {
                 "id": self.test_data["network_without_acl"]["zoneid"],
@@ -733,7 +729,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"],
             type="Isolated")
         status = validateList(list_networks_after)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
         self.assertEqual(
             2,
@@ -746,7 +742,7 @@ class TestNetworks_1(cloudstackTestCase):
                                             type="Isolated"
                                             )
         status = validateList(list_networks_in_vpc)
-        self.assertEquals(PASS, status[0], "No networks found in vpc")
+        self.assertEqual(PASS, status[0], "No networks found in vpc")
         # Asserting for the length of the networks
         self.assertEqual(
             1,
@@ -760,7 +756,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # verify no vpc is present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(PASS, status[0], "VPCs not found.")
+        self.assertEqual(PASS, status[0], "VPCs not found.")
         # verify vpc name matches for newly created vpc name and vpc list name
         self.assertEqual(
             vpc_1.name,
@@ -769,7 +765,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_07_create_delete_network(self):
         """
         @Desc: Test delete network
@@ -799,7 +796,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_false_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = false")
@@ -845,7 +842,7 @@ class TestNetworks_1(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_after)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
         self.assertEqual(
             2,
@@ -861,21 +858,22 @@ class TestNetworks_1(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_after_delete)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         self.assertEqual(
             1,
             len(list_networks_after_delete),
             "Number of networks created is not matching expected"
         )
         # Verify deleted network is not present
-        self.assertNotEquals(
+        self.assertNotEqual(
             network_created.id,
             list_networks_after_delete[0].id,
             "Deleted network present"
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_08_update_network(self):
         """
         @Desc: Test update network
@@ -894,7 +892,7 @@ class TestNetworks_1(cloudstackTestCase):
         self.assertIsNotNone(
             list_networks_before,
             "Network create failed at class level")
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_networks_before),
             "More than 1 network created at class level"
@@ -910,7 +908,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_false_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = false")
@@ -949,7 +947,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"],
             type="Isolated")
         status = validateList(list_networks_after)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
         self.assertEqual(
             2,
@@ -969,7 +967,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"],
             type="Isolated")
         status = validateList(list_networks_after_update)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         self.assertEqual(
             2,
             len(list_networks_after_update),
@@ -1056,7 +1054,7 @@ class TestNetworks_1(cloudstackTestCase):
             networkid=list_networks_before[0].id
         )
         status = validateList(list_instances_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of instances after creation failed"
@@ -1076,7 +1074,7 @@ class TestNetworks_1(cloudstackTestCase):
             networkid=list_networks_before[0].id
         )
         status = validateList(list_instances_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of instances in page1 failed"
@@ -1096,7 +1094,7 @@ class TestNetworks_1(cloudstackTestCase):
             networkid=list_networks_before[0].id
         )
         status = validateList(list_instances_page2)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of instances in page2 failed"
@@ -1126,7 +1124,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_10_list_networks_in_vpc(self):
         """
         @Desc: Test list networks in vpc and verify VPC name
@@ -1155,7 +1154,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # No VPCs should be present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(FAIL, status[0], "VPCs found for newly created user")
+        self.assertEqual(FAIL, status[0], "VPCs found for newly created user")
         vpc_count_before = 0
         vpc_1 = VPC.create(
             self.userapiclient,
@@ -1164,14 +1163,15 @@ class TestNetworks_1(cloudstackTestCase):
             zoneid=self.zone.id,
         )
         self.assertIsNotNone(vpc_1, "VPC is not created")
+        self.cleanup.append(vpc_1)
         # List VPCs
         vpc_list = VPC.list(
             self.userapiclient,
             listall=self.test_data["listall"]
         )
         status = validateList(vpc_list)
-        self.assertEquals(PASS, status[0], "VPC is not created")
-        self.assertEquals(
+        self.assertEqual(PASS, status[0], "VPC is not created")
+        self.assertEqual(
             vpc_count_before + 1,
             len(vpc_list),
             "VPC is not created"
@@ -1196,7 +1196,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = true")
@@ -1215,7 +1215,6 @@ class TestNetworks_1(cloudstackTestCase):
                 "Network is not created"
             )
             self.cleanup.append(network_created)
-            self.cleanup.append(vpc_1)
             # Creating expected and actual values dictionaries
             expected_dict = {
                 "id": self.test_data["network_without_acl"]["zoneid"],
@@ -1246,7 +1245,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"],
             type="Isolated")
         status = validateList(list_networks_after)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
         self.assertEqual(
             2,
@@ -1261,7 +1260,7 @@ class TestNetworks_1(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_in_vpc)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Verify network name matches for newly created network name and name
         # from network list
         self.assertEqual(
@@ -1271,7 +1270,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_11_update_vpc(self):
         """
         @Desc: Test create vpc with network domain as parameter
@@ -1298,7 +1298,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # verify no vpc is present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(FAIL, status[0], "VPCs found for newly created user")
+        self.assertEqual(FAIL, status[0], "VPCs found for newly created user")
         vpc_1 = VPC.create(
             self.userapiclient,
             self.test_data["vpc"],
@@ -1309,13 +1309,13 @@ class TestNetworks_1(cloudstackTestCase):
         self.cleanup.append(vpc_1)
         # verify vpc is created and not none
         # Verify VPC name with test data
-        self.assertNotEquals(
+        self.assertNotEqual(
             -1,
             vpc_1.name.find(self.test_data["vpc"]["name"]),
             "VPC name not matched"
         )
         # verify zone with test data
-        self.assertEquals(
+        self.assertEqual(
             self.zone.id,
             vpc_1.zoneid,
             "Zone is not matching in the vpc created"
@@ -1325,7 +1325,7 @@ class TestNetworks_1(cloudstackTestCase):
             self.userapiclient,
             listall=self.test_data["listall"])
         status = validateList(vpc_count_after)
-        self.assertEquals(PASS, status[0], "VPC list count is null")
+        self.assertEqual(PASS, status[0], "VPC list count is null")
         self.assertEqual(
             1,
             len(vpc_count_after),
@@ -1344,7 +1344,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"]
         )
         status = validateList(list_vpcs_after_update)
-        self.assertEquals(PASS, status[0], "No vpcs found using list call")
+        self.assertEqual(PASS, status[0], "No vpcs found using list call")
         self.assertEqual(
             1,
             len(list_vpcs_after_update),
@@ -1370,7 +1370,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # was tags=["advanced"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_12_list_create_delete_networkACL(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -1403,7 +1404,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         # No VPCs should be present for newly created user
         status = validateList(vpc_list)
-        self.assertEquals(FAIL, status[0], "VPCs found for newly created user")
+        self.assertEqual(FAIL, status[0], "VPCs found for newly created user")
         vpc_count_before = 0
         vpc_1 = VPC.create(
             self.userapiclient,
@@ -1411,6 +1412,7 @@ class TestNetworks_1(cloudstackTestCase):
             vpcofferingid=vpc_offs.id,
             zoneid=self.zone.id,
         )
+        self.cleanup.append(vpc_1)
         self.assertIsNotNone(vpc_1, "VPC is not created")
         # List VPCs
         vpc_list = VPC.list(
@@ -1418,8 +1420,8 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"]
         )
         status = validateList(vpc_list)
-        self.assertEquals(PASS, status[0], "VPC is not created")
-        self.assertEquals(
+        self.assertEqual(PASS, status[0], "VPC is not created")
+        self.assertEqual(
             vpc_count_before + 1,
             len(vpc_list),
             "VPC is not created"
@@ -1445,7 +1447,7 @@ class TestNetworks_1(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = true")
@@ -1470,7 +1472,6 @@ class TestNetworks_1(cloudstackTestCase):
                 accountid=self.account.name,
             )
             self.cleanup.append(network_created)
-            self.cleanup.append(vpc_1)
             self.assertIsNotNone(
                 network_created,
                 "Network is not created"
@@ -1505,7 +1506,7 @@ class TestNetworks_1(cloudstackTestCase):
             listall=self.test_data["listall"],
             type="Isolated")
         status = validateList(list_networks_after)
-        self.assertEquals(PASS, status[0], "No networks found using list call")
+        self.assertEqual(PASS, status[0], "No networks found using list call")
         # Asserting for the length of the networks
         self.assertEqual(
             2,
@@ -1518,7 +1519,7 @@ class TestNetworks_1(cloudstackTestCase):
                                             type="Isolated"
                                             )
         status = validateList(list_networks_in_vpc)
-        self.assertEquals(PASS, status[0], "No networks found in vpc")
+        self.assertEqual(PASS, status[0], "No networks found in vpc")
         # Asserting for the length of the networks
         self.assertEqual(
             1,
@@ -1554,7 +1555,7 @@ class TestNetworks_1(cloudstackTestCase):
             networkid=network_created.id
         )
         status = validateList(list_network_acl)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "No networks acls found after creating")
@@ -1603,12 +1604,13 @@ class TestNetworks_2(cloudstackTestCase):
                 cls.test_data["account"],
                 domainid=cls.domain.id
             )
+            cls._cleanup.append(cls.account)
+
             # Getting authentication for user in newly created Account
             cls.user = cls.account.user[0]
             cls.userapiclient = cls.testClient.getUserApiClient(
                 cls.user.username,
                 cls.domain.name)
-            cls._cleanup.append(cls.account)
 
             cls.vpc_offering = VpcOffering.create(cls.api_client,
                                                   cls.test_data["vpc_offering"]
@@ -1626,16 +1628,11 @@ class TestNetworks_2(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        # Clean up, terminate the created volumes
-        cleanup_resources(self.apiClient, self.cleanup)
-        return
+        super(TestNetworks_2, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestNetworks_2, cls).tearDownClass()
 
     def __verify_values(self, expected_vals, actual_vals):
         """
@@ -1654,7 +1651,7 @@ class TestNetworks_2(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -1703,13 +1700,13 @@ class TestNetworks_2(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -1721,13 +1718,13 @@ class TestNetworks_2(cloudstackTestCase):
             listall=self.test_data["listall"]
         )
         status = validateList(list_vpc_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_byid),
             "list VPC not equal as expected"
@@ -1829,13 +1826,13 @@ class TestNetworks_2(cloudstackTestCase):
         # ipaddress for network
         list_public_ipaddress_after = PublicIPAddress.list(self.userapiclient)
         status = validateList(list_public_ipaddress_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list Public IPAddress not as expected"
         )
         # Verifying the list public ipaddress size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_public_ipaddress_after),
             "list Public IPAddress not equal as expected"
@@ -1847,13 +1844,13 @@ class TestNetworks_2(cloudstackTestCase):
             listall=self.test_data["listall"]
         )
         status = validateList(list_public_ipaddress_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list public ipaddress not as expected"
         )
         # Verifying the list public ipaddress size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_public_ipaddress_byid),
             "list public ipaddress not equal as expected"
@@ -1966,8 +1963,8 @@ class TestNetworks_2(cloudstackTestCase):
         )
         # Verifying PrivateGateways are listed
         status = validateList(list_private_gateways_after)
-        self.assertEquals(PASS, status[0], "Private Gateway Creation Failed")
-        self.assertEquals(
+        self.assertEqual(PASS, status[0], "Private Gateway Creation Failed")
+        self.assertEqual(
             1,
             len(list_private_gateways_after),
             "list Private Gateway not equal as expected"
@@ -1979,13 +1976,13 @@ class TestNetworks_2(cloudstackTestCase):
             vpcid=vpc_created.id
         )
         status = validateList(list_privategateway_byvpcid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list private gateway not as expected"
         )
         # Verifying the list private gateway size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_privategateway_byvpcid),
             "list private gateway not equal as expected"
@@ -2089,13 +2086,13 @@ class TestNetworks_2(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Creation Failed"
         )
         # Verifying network list count is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_networks_after),
             "Network Creation Failed"
@@ -2131,13 +2128,13 @@ class TestNetworks_2(cloudstackTestCase):
             networkid=network.id
         )
         status = validateList(list_egressfirewallrule_bynetworkid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list EgressFirewall Rule not as expected"
         )
         # Verifying the list EgressFirewall Rule size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_egressfirewallrule_bynetworkid),
             "list EgressFirewall Rule not equal as expected"
@@ -2212,21 +2209,21 @@ class TestNetworks_2(cloudstackTestCase):
             self.zone.id
         )
         self.assertIsNotNone(vpc_created, "VPC Creation Failed")
+        self.cleanup.append(vpc_created)
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
         )
-        self.cleanup.append(vpc_created)
         # Restarting VPC
         vpc_restarted = VPC.restart(vpc_created, self.userapiclient)
         # Verifying restart function resturns true
@@ -2238,13 +2235,13 @@ class TestNetworks_2(cloudstackTestCase):
             listall=self.test_data["listall"]
         )
         status = validateList(list_vpc_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_byid),
             "list VPC not equal as expected"
@@ -2291,13 +2288,13 @@ class TestNetworks_2(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -2329,13 +2326,13 @@ class TestNetworks_2(cloudstackTestCase):
             vpcid=vpc_created.id
         )
         status = validateList(list_vpngateway_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "List VPN Gateway not equal as expected"
         )
         # Verifying that list size is  1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpngateway_after
                 ),
@@ -2367,7 +2364,8 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_19_create_list_reset_delete_vpnconnections(self):
         """
         @Desc: Test to List Create Reset and Delete VPN Customer
@@ -2410,13 +2408,13 @@ class TestNetworks_2(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -2448,13 +2446,13 @@ class TestNetworks_2(cloudstackTestCase):
             vpcid=vpc_created.id
         )
         status = validateList(list_vpngateway_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "List VPN Gateway not equal as expected"
         )
         # Verifying that list size is  1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpngateway_after
                 ),
@@ -2491,13 +2489,13 @@ class TestNetworks_2(cloudstackTestCase):
             listall=self.test_data["listall"],
         )
         status = validateList(list_vpncustomergateways_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VPN Customer Gateway list failed"
         )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpncustomergateways_after),
             "Failed to list VPN Customer Gateways"
@@ -2530,13 +2528,13 @@ class TestNetworks_2(cloudstackTestCase):
             vpcid=vpc_created.id
         )
         status = validateList(list_vpn_connection_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPN Connection not as expected"
         )
         # Verifying the list vpn connection size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpn_connection_after),
             "list VPC Connection equal as expected"
@@ -2553,13 +2551,13 @@ class TestNetworks_2(cloudstackTestCase):
             vpcid=vpc_created.id
         )
         status = validateList(list_vpn_connection_after_reset)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPN Connection not as expected"
         )
         # Verifying the list vpn connection size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpn_connection_after_reset),
             "list VPN Connection not equal as expected"
@@ -2664,7 +2662,7 @@ class TestNetworks_2(cloudstackTestCase):
             "Failed to list network acl list")
         # Verfying list is not none
         status = validateList(list_networkacl)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list network acl list"
@@ -2711,8 +2709,8 @@ class TestNetworks_2(cloudstackTestCase):
         )
         # Verifying PrivateGateways are listed
         status = validateList(list_private_gateways_after)
-        self.assertEquals(PASS, status[0], "Failed to list Private Gateway")
-        self.assertEquals(
+        self.assertEqual(PASS, status[0], "Failed to list Private Gateway")
+        self.assertEqual(
             1,
             len(list_private_gateways_after),
             "list Private Gateway not equal as expected"

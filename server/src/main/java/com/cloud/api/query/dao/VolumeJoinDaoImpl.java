@@ -21,8 +21,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -34,7 +37,6 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.AccountManager;
@@ -55,6 +57,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     private VmDiskStatisticsDao vmDiskStatsDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -135,9 +139,6 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setState(volume.getState().toString());
         }
         if (volume.getState() == Volume.State.UploadOp) {
-            // com.cloud.storage.VolumeHostVO volumeHostRef =
-            // ApiDBUtils.findVolumeHostRef(volume.getId(),
-            // volume.getDataCenterId());
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
@@ -145,7 +146,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                 volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
-                if (volume.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                if (volume.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                     if (volume.getDownloadPercent() == 100) {
                         volumeStatus = "Checking Volume";
                     } else {
@@ -154,14 +155,14 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                     volResponse.setState("Uploading");
                 } else {
                     volumeStatus = volume.getErrorString();
-                    if (volume.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED) {
+                    if (volume.getDownloadState() == Status.NOT_DOWNLOADED) {
                         volResponse.setState("UploadNotStarted");
                     } else {
                         volResponse.setState("UploadError");
                     }
                 }
                 volResponse.setStatus(volumeStatus);
-            } else if (volume.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+            } else if (volume.getDownloadState() == Status.DOWNLOADED) {
                 volResponse.setStatus("Upload Complete");
                 volResponse.setState("Uploaded");
             } else {
@@ -176,22 +177,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         // populate owner.
         ApiResponseHelper.populateOwner(volResponse, volume);
 
-        // DiskOfferingVO diskOffering =
-        // ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
         if (volume.getDiskOfferingId() > 0) {
-            boolean isServiceOffering = false;
-            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                isServiceOffering = true;
-            } else {
-                // can't rely on the fact that the volume is the datadisk as it might have been created as a root, and
-                // then detached later
-                long offeringId = volume.getDiskOfferingId();
-                if (ApiDBUtils.findDiskOfferingById(offeringId) == null) {
-                    isServiceOffering = true;
-                }
-            }
-
-            if (isServiceOffering) {
+            if (ApiDBUtils.findServiceOfferingByUuid(volume.getDiskOfferingUuid()) != null) {
                 volResponse.setServiceOfferingId(volume.getDiskOfferingUuid());
                 volResponse.setServiceOfferingName(volume.getDiskOfferingName());
                 volResponse.setServiceOfferingDisplayText(volume.getDiskOfferingDisplayText());
@@ -254,6 +241,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             addTagInformation(volume, volResponse);
         }
 
+        volResponse.setHasAnnotation(annotationDao.hasAnnotations(volume.getUuid(), AnnotationService.EntityType.VOLUME.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+
         volResponse.setExtractable(isExtractable);
         volResponse.setDisplayVolume(volume.isDisplayVolume());
         volResponse.setChainInfo(volume.getChainInfo());
@@ -281,6 +271,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         long tag_id = vol.getTagId();
         if (tag_id > 0) {
             addTagInformation(vol, volData);
+        }
+        if (volData.hasAnnotation() == null) {
+            volData.setHasAnnotation(annotationDao.hasAnnotations(vol.getUuid(), AnnotationService.EntityType.VOLUME.name(),
+                    _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
         return volData;
     }

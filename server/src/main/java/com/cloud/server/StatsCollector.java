@@ -51,6 +51,7 @@ import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
@@ -70,6 +71,7 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.Vlan.VlanType;
@@ -110,6 +112,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
@@ -144,6 +147,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -218,6 +222,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<String>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
+    private static final ConfigKey<Boolean> VM_STATS_INCREMENT_METRICS_IN_MEMORY = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.increment.metrics.in.memory", "true",
+            "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed and stored in memory. "
+            + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
 
     private static StatsCollector s_instance = null;
 
@@ -294,8 +301,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private long storageStatsInterval = -1L;
     private long volumeStatsInterval = -1L;
     private long autoScaleStatsInterval = -1L;
-
-    private double _imageStoreCapacityThreshold = 0.90;
 
     private String externalStatsPrefix = "";
     String externalStatsHost = null;
@@ -687,18 +692,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 return;
             }
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
-            s_logger.trace("Running VM disk stats ...");
-            try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("VmDiskStatsTask is running...");
+            s_logger.debug("VmDiskStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
-                        List<HostVO> hosts = _hostDao.search(sc, null);
+            SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+            sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
+            List<HostVO> hosts = _hostDao.search(sc, null);
 
-                        for (HostVO host : hosts) {
+            for (HostVO host : hosts) {
+                try {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
@@ -709,7 +713,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                             HashMap<Long, List<VmDiskStatsEntry>> vmDiskStatsById = _userVmMgr.getVmDiskStatistics(host.getId(), host.getName(), vmIds);
                             if (vmDiskStatsById == null)
-                                continue;
+                                return;
 
                             Set<Long> vmIdSet = vmDiskStatsById.keySet();
                             for (Long vmId : vmIdSet) {
@@ -796,10 +800,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 }
                             }
                         }
-                    }
-                });
-            } catch (Exception e) {
-                s_logger.warn("Error while collecting vm disk stats from hosts", e);
+                    });
+                } catch (Exception e) {
+                    s_logger.warn(String.format("Error while collecting vm disk stats from host %s : ", host.getName()), e);
+                }
             }
         }
     }
@@ -815,16 +819,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 return;
             }
             // collect the vm network statistics(total) from hypervisor
-            try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("VmNetworkStatsTask is running...");
+            s_logger.debug("VmNetworkStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        List<HostVO> hosts = _hostDao.search(sc, null);
+            SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+            List<HostVO> hosts = _hostDao.search(sc, null);
 
-                        for (HostVO host : hosts) {
+            for (HostVO host : hosts) {
+                try {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
@@ -835,7 +839,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                             HashMap<Long, List<VmNetworkStatsEntry>> vmNetworkStatsById = _userVmMgr.getVmNetworkStatistics(host.getId(), host.getName(), vmIds);
                             if (vmNetworkStatsById == null)
-                                continue;
+                                return;
 
                             Set<Long> vmIdSet = vmNetworkStatsById.keySet();
                             for (Long vmId : vmIdSet) {
@@ -915,10 +919,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 }
                             }
                         }
-                    }
-                });
-            } catch (Exception e) {
-                s_logger.warn("Error while collecting vm network stats from hosts", e);
+                    });
+                } catch (Exception e) {
+                    s_logger.warn(String.format("Error while collecting vm network stats from host %s : ", host.getName()), e);
+                }
             }
         }
     }
@@ -932,7 +936,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
-                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA) {
+                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA && (volume.getFormat() != ImageFormat.RAW || pool.getPoolType() != Storage.StoragePoolType.PowerFlex)) {
                             s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
@@ -1021,14 +1025,22 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         if (answer != null && answer.getResult()) {
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
+                            boolean poolNeedsUpdating = false;
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
-                            if (pool.getCapacityBytes() != ((StorageStats)answer).getCapacityBytes() ||
-                                    pool.getUsedBytes() != ((StorageStats)answer).getByteUsed()) {
-                                pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
-                                if (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
-                                    pool.setUsedBytes(((StorageStats) answer).getByteUsed());
-                                    pool.setUpdateTime(new Date());
+                            if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
+                                if (((StorageStats)answer).getCapacityBytes() > 0) {
+                                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                    poolNeedsUpdating = true;
+                                } else {
+                                    s_logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
                                 }
+                            }
+                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
+                                pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                                poolNeedsUpdating = true;
+                            }
+                            if (poolNeedsUpdating) {
+                                pool.setUpdateTime(new Date());
                                 _storagePoolDao.update(pool.getId(), pool);
                             }
                         }
@@ -1367,10 +1379,28 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (!_storageStats.keySet().contains(imageStore.getId())) { // Stats not available for this store yet, can be a new store. Better to assume it has enough capacity?
             return true;
         }
-        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
-        if (imageStoreStats != null && (imageStoreStats.getByteUsed() / (imageStoreStats.getCapacityBytes() * 1.0)) <= _imageStoreCapacityThreshold) {
+
+        long imageStoreId = imageStore.getId();
+        StorageStats imageStoreStats = _storageStats.get(imageStoreId);
+
+        if (imageStoreStats == null) {
+            s_logger.debug(String.format("Stats for image store [%s] not found.", imageStoreId));
+            return false;
+        }
+
+        double totalCapacity = imageStoreStats.getCapacityBytes();
+        double usedCapacity = imageStoreStats.getByteUsed();
+        double threshold = getImageStoreCapacityThreshold();
+        String readableTotalCapacity = FileUtils.byteCountToDisplaySize((long) totalCapacity);
+        String readableUsedCapacity = FileUtils.byteCountToDisplaySize((long) usedCapacity);
+
+        s_logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+
+        if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
+
+        s_logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
         return false;
     }
 
@@ -1434,11 +1464,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private void storeVirtualMachineStatsInMemory(VmStatsEntry statsForCurrentIteration) {
         VmStatsEntry statsInMemory = (VmStatsEntry)_VmStats.get(statsForCurrentIteration.getVmId());
 
-        if (statsInMemory == null) {
-            //no stats exist for this vm, directly persist
+        boolean vmStatsIncrementMetrics = BooleanUtils.toBoolean(VM_STATS_INCREMENT_METRICS_IN_MEMORY.value());
+        if (statsInMemory == null || !vmStatsIncrementMetrics) {
             _VmStats.put(statsForCurrentIteration.getVmId(), statsForCurrentIteration);
         } else {
-            //update each field
+            s_logger.debug(String.format("Increment saved values of NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs, DiskWriteIOs, with current metrics for VM with ID [%s]. "
+                    + "To change this process, check value of 'vm.stats.increment.metrics.in.memory' configuration.", statsForCurrentIteration.getVmId()));
             statsInMemory.setCPUUtilization(statsForCurrentIteration.getCPUUtilization());
             statsInMemory.setNumCPUs(statsForCurrentIteration.getNumCPUs());
             statsInMemory.setNetworkReadKBs(statsInMemory.getNetworkReadKBs() + statsForCurrentIteration.getNetworkReadKBs());
@@ -1599,10 +1630,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri};
+        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri, VM_STATS_INCREMENT_METRICS_IN_MEMORY};
     }
 
     public double getImageStoreCapacityThreshold() {
-        return _imageStoreCapacityThreshold;
+        return CapacityManager.SecondaryStorageCapacityThreshold.value();
     }
 }

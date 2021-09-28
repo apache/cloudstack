@@ -28,6 +28,8 @@ public interface TemplateInfo extends DataObject, VirtualMachineTemplate {
 
     boolean isDirectDownload();
 
+    boolean canBeDeletedFromDataStore();
+
     boolean isDeployAsIs();
 
     String getDeployAsIsConfiguration();

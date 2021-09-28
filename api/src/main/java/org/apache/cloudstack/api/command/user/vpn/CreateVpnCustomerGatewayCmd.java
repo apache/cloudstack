@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -92,6 +93,14 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
             description = "create site-to-site VPN customer gateway for the project", since = "4.6")
     private Long projectId;
 
+    @Parameter(name = ApiConstants.SPLIT_CONNECTIONS, type = CommandType.BOOLEAN, required = false, description = "For IKEv2, whether to split multiple right subnet cidrs into multiple connection statements.",
+            since = "4.15.1")
+    private Boolean splitConnections;
+
+    @Parameter(name = ApiConstants.IKE_VERSION, type = CommandType.STRING, required = false, description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. " +
+            "Connections marked with 'ike' will use 'ikev2' when initiating, but accept any protocol version when responding. Defaults to ike", validations = {ApiArgValidator.NotNullOrEmpty}, since = "4.15.1")
+    private String ikeVersion;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -144,6 +153,14 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     public Long getProjectId() {
         return projectId;
+    }
+
+    public Boolean getSplitConnections() {
+        return splitConnections;
+    }
+
+    public String getIkeVersion() {
+        return ikeVersion;
     }
 
     /////////////////////////////////////////////////////

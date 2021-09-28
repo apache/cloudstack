@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.15.0.0-SNAPSHOT</version>
+        <version>4.16.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -37,7 +37,7 @@
             <artifactId>log4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.trilead</groupId>
+            <groupId>org.jenkins-ci</groupId>
             <artifactId>trilead-ssh2</artifactId>
         </dependency>
         <dependency>

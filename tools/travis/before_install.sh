@@ -83,8 +83,26 @@ fi
 
 sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev python-openssl build-essential --no-install-recommends > /dev/null
 
+sudo apt-get -y install python3 python3-pip
+sudo apt-get -y install python3-dev # in order to be able to pip3 install pycrypto
+# for now we need both:
+sudo apt-get -y install python2
+sudo apt-get -y install python2-dev # in order to be able to pip3 install pycrypto
+sudo apt-get -y install python2-pip
+
+echo -e "\nPython 3 version: "
+python3 --version
+echo -e "\nPython 2 version: "
+python2 --version
+
 echo -e "\nIPMI version"
 ipmitool -V
+
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+echo -e "\nNode version"
+npm version
 
 echo "<settings>
   <mirrors>
@@ -97,11 +115,18 @@ echo "<settings>
   </mirrors>
 </settings>" > ~/.m2/settings.xml
 
+echo -e "\nChecking PIP Version: "
+python3 -m pip --version
+echo -e "\nUpgrading PIP if necessary: "
+python3 -m pip install --upgrade pip
+python3 -m pip --version
+
 echo -e "\nInstalling some python packages: "
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
+  python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
+  python2 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid >> /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;

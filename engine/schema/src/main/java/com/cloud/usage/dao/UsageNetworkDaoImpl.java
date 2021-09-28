@@ -68,7 +68,7 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
                 long aggBytesSent = rs.getLong(9);
                 long eventTimeMillis = rs.getLong(10);
                 if (hostId != 0) {
-                    returnMap.put(zoneId + "-" + accountId + "-Host-" + hostId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent,
+                    returnMap.put(zoneId + "-" + accountId + "-Host-" + hostId + "-Network-" + networkId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent,
                         bytesReceived, aggBytesReceived, aggBytesSent, eventTimeMillis));
                 } else {
                     returnMap.put(zoneId + "-" + accountId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent, bytesReceived,

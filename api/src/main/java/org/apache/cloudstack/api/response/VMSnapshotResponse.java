@@ -21,11 +21,11 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.google.gson.annotations.SerializedName;
@@ -57,9 +57,17 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     @Param(description = "the Zone ID of the vm snapshot")
     private String zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the Zone name of the vm snapshot", since = "4.15.1")
+    private String zoneName;
+
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "the vm ID of the vm snapshot")
-    private String virtualMachineid;
+    private String virtualMachineId;
+
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
+    @Param(description = "the vm name of the vm snapshot", since = "4.15.1")
+    private String virtualMachineName;
 
     @SerializedName("parent")
     @Param(description = "the parent ID of the vm snapshot")
@@ -154,12 +162,28 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
         this.zoneId = zoneId;
     }
 
-    public String getVirtualMachineid() {
-        return virtualMachineid;
+    public String getZoneName() {
+        return zoneName;
     }
 
-    public void setVirtualMachineid(String virtualMachineid) {
-        this.virtualMachineid = virtualMachineid;
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
+    }
+
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
+
+    public void setVirtualMachineName(String virtualMachineName) {
+        this.virtualMachineName = virtualMachineName;
     }
 
     public void setName(String name) {

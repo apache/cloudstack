@@ -38,7 +38,7 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 @WebSocket
 public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
-    private ConsoleProxyNoVncClient viewer;
+    private ConsoleProxyNoVncClient viewer = null;
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVNCHandler.class);
 
     public ConsoleProxyNoVNCHandler() {
@@ -87,6 +87,8 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String hypervHost = queryMap.get("hypervHost");
         String username = queryMap.get("username");
         String password = queryMap.get("password");
+        String sourceIP = queryMap.get("sourceIP");
+        String websocketUrl = queryMap.get("websocketUrl");
 
         if (tag == null)
             tag = "";
@@ -113,6 +115,10 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             }
         }
 
+        if (! checkSessionSourceIp(session, sourceIP)) {
+            return;
+        }
+
         try {
             ConsoleProxyClientParam param = new ConsoleProxyClientParam();
             param.setClientHostAddress(host);
@@ -126,16 +132,35 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setHypervHost(hypervHost);
             param.setUsername(username);
             param.setPassword(password);
+            param.setWebsocketUrl(websocketUrl);
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
         } catch (Exception e) {
             s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
             return;
+        } finally {
+            if (viewer == null) {
+                session.disconnect();
+            }
         }
+    }
+
+    private boolean checkSessionSourceIp(final Session session, final String sourceIP) throws IOException {
+        // Verify source IP
+        String sessionSourceIP = session.getRemoteAddress().getAddress().getHostAddress();
+        s_logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
+        if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || ! sessionSourceIP.equals(sourceIP))) {
+            s_logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
+            session.disconnect();
+            return false;
+        }
+        return true;
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) throws IOException, InterruptedException {
-        ConsoleProxy.removeViewer(viewer);
+        if (viewer != null) {
+            ConsoleProxy.removeViewer(viewer);
+        }
     }
 
     @OnWebSocketFrame

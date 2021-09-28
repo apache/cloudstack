@@ -61,4 +61,5 @@
     <bean id="vMTemplateZoneDaoImpl" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl" />
     <bean id="indirectAgentLBImpl" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
     <bean id="VsphereStoragePolicyDaoImpl" class="com.cloud.dc.dao.VsphereStoragePolicyDaoImpl" />
+    <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
 </beans>

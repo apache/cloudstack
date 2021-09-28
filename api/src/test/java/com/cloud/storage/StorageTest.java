@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.storage.Storage.StoragePoolType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.cloud.storage.Storage.StoragePoolType;
 
 public class StorageTest {
     @Before
@@ -37,6 +38,7 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.LVM.isShared());
         Assert.assertTrue(StoragePoolType.CLVM.isShared());
         Assert.assertTrue(StoragePoolType.RBD.isShared());
+        Assert.assertTrue(StoragePoolType.PowerFlex.isShared());
         Assert.assertTrue(StoragePoolType.SharedMountPoint.isShared());
         Assert.assertTrue(StoragePoolType.VMFS.isShared());
         Assert.assertTrue(StoragePoolType.PreSetup.isShared());
@@ -46,6 +48,7 @@ public class StorageTest {
         Assert.assertTrue(StoragePoolType.Gluster.isShared());
         Assert.assertTrue(StoragePoolType.ManagedNFS.isShared());
         Assert.assertTrue(StoragePoolType.DatastoreCluster.isShared());
+        Assert.assertTrue(StoragePoolType.Linstor.isShared());
     }
 
     @Test
@@ -59,6 +62,7 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.LVM.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.CLVM.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.RBD.supportsOverProvisioning());
+        Assert.assertTrue(StoragePoolType.PowerFlex.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.SharedMountPoint.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.VMFS.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.PreSetup.supportsOverProvisioning());
@@ -68,5 +72,6 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.Gluster.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.ManagedNFS.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
+        Assert.assertTrue(StoragePoolType.Linstor.supportsOverProvisioning());
     }
 }

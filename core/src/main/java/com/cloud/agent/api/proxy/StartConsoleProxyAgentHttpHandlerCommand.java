@@ -31,6 +31,8 @@ public class StartConsoleProxyAgentHttpHandlerCommand extends Command {
     @LogLevel(Log4jLevel.Off)
     private String encryptorPassword;
 
+    private Boolean isSourceIpCheckEnabled;
+
     public StartConsoleProxyAgentHttpHandlerCommand() {
         super();
     }
@@ -67,5 +69,13 @@ public class StartConsoleProxyAgentHttpHandlerCommand extends Command {
 
     public void setEncryptorPassword(String encryptorPassword) {
         this.encryptorPassword = encryptorPassword;
+    }
+
+    public Boolean isSourceIpCheckEnabled() {
+        return isSourceIpCheckEnabled;
+    }
+
+    public void setIsSourceIpCheckEnabled(Boolean isSourceIpCheckEnabled) {
+        this.isSourceIpCheckEnabled = isSourceIpCheckEnabled;
     }
 }
