@@ -294,6 +294,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     protected Gson _gson;
 
+    private static final List<HypervisorType> SupportedHypervisorsForVolResize = Arrays.asList(HypervisorType.KVM, HypervisorType.XenServer,
+            HypervisorType.VMware, HypervisorType.Any, HypervisorType.None);
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
     private List<HypervisorType> supportingDefaultHV;
@@ -965,9 +967,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Only works for KVM/XenServer/VMware (or "Any") for now, and volumes with 'None' since they're just allocated in DB */
 
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
-        List<HypervisorType> supportedHypervisors = Arrays.asList(HypervisorType.KVM, HypervisorType.XenServer,
-                HypervisorType.VMware, HypervisorType.Any, HypervisorType.None);
-        if (!supportedHypervisors.contains(hypervisorType)) {
+        if (!SupportedHypervisorsForVolResize.contains(hypervisorType)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
         }
 
