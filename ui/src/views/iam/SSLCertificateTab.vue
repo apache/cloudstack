@@ -28,7 +28,7 @@
           :pagination="false"
           v-if="!quickview"
         >
-          <template #action="{ text, record }" class="cert-button-action">
+          <template #action="{ record }" class="cert-button-action">
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="$t('label.quickview')"

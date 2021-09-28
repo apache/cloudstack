@@ -87,9 +87,6 @@
         <template #label>
           <tooltip-label :title="$t('label.ikeversion')" :tooltip="apiParams.ikeversion.description"/>
         </template>
-        <a-input
-          v-model:value="form.ipsecpsk"
-          :placeholder="apiParams.ipsecpsk.description" />
         <a-select
           v-model:value="form.ikeversion"
           showSearch
@@ -288,7 +285,7 @@ export default {
       })
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     handleSubmit (e) {
       e.preventDefault()

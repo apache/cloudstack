@@ -99,7 +99,7 @@
       <a-divider />
 
       <div :span="24" class="action-button">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
         <a-button @click="handleSubmit" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
@@ -202,7 +202,7 @@ export default {
           }
           this.loading = false
           this.parentFetchData()
-          this.$parent.$parent.close()
+          this.$emit('close-action')
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,

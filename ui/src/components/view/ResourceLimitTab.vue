@@ -28,7 +28,7 @@
         <a-form-item
           v-if="item.resourcetypename !== 'project'"
           :v-bind="item.resourcetypename"
-          :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
+          :label="$t('label.max' + (item.resourcetypename ? item.resourcetypename.replace('_', '') : ''))">
           <a-input-number
             :disabled="!('updateResourceLimit' in $store.getters.apis)"
             style="width: 100%;"

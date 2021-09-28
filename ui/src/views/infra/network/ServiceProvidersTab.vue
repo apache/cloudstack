@@ -1324,7 +1324,6 @@ export default {
                 continue
               }
               field.opts = json[obj][res]
-              this.$forceUpdate()
               break
             }
             break

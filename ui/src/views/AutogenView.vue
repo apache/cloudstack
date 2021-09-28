@@ -166,7 +166,7 @@
           <span v-if="currentAction.message">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
-                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                v-if="['delete-outlined', 'DeleteOutlined', 'poweroff-outlined', 'PoweroffOutlined'].includes(currentAction.icon)"
                 type="error">
                 <template #message>
                   <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
@@ -983,7 +983,9 @@ export default {
       this.getFirstIndexFocus()
 
       this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
+        this.setRules(param)
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
           param.type = 'string'
         }
@@ -992,7 +994,7 @@ export default {
         }
       }
       this.actionLoading = false
-      if (action.dataView && ['copy-outlined', 'edit-outlined', 'share-alt-outlined'].includes(action.icon)) {
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
         this.fillEditFormFieldValues()
       }
     },
@@ -1073,7 +1075,6 @@ export default {
             break
           }
         }
-        this.$forceUpdate()
       }).catch(function (error) {
         console.log(error)
         param.loading = false
@@ -1358,7 +1359,7 @@ export default {
       })
     },
     shouldNavigateBack (action) {
-      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
+      return ((['delete-outlined', 'DeleteOutlined'].includes(action.icon) || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)

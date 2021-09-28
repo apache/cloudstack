@@ -196,7 +196,6 @@ export default {
           description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
         })
       }
-      this.$forceUpdate()
     },
     executeApi (apiName, params) {
       return new Promise((resolve, reject) => {

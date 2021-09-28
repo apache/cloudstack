@@ -172,7 +172,7 @@ export default {
         isFirstIndexSet = true
       }
     })
-    if (this.action.dataView && this.action.icon === 'edit') {
+    if (this.action.dataView && ['edit-outlined', 'EditOutlined'].includes(this.action.icon)) {
       this.fillEditFormFieldValues()
     }
   },

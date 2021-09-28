@@ -26,7 +26,6 @@
         <a-button
           type="dashed"
           style="width: 100%"
-          icon="plus-outlined"
           :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
           @click="onShowAddDetail">
           <template #icon><plus-outlined /></template>
@@ -70,14 +69,28 @@
             {{ item.name }}
           </template>
           <template #description style="word-break: break-all">
-            <span v-if="item.edit" style="display: flex">
+            <div v-if="item.edit" style="display: flex">
               <a-auto-complete
                 style="width: 100%"
                 v-model:value="item.value"
                 :options="detailOptions[item.name]"
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />
-            </span>
+              <tooltip-button
+                buttonClass="edit-button"
+                :tooltip="$t('label.cancel')"
+                @onClick="hideEditDetail(index)"
+                v-if="item.edit"
+                iconType="close-circle-two-tone"
+                iconTwoToneColor="#f5222d" />
+              <tooltip-button
+                buttonClass="edit-button"
+                :tooltip="$t('label.ok')"
+                @onClick="updateDetail(index)"
+                v-if="item.edit"
+                iconType="check-circle-two-tone"
+                iconTwoToneColor="#52c41a" />
+            </div>
             <span v-else>{{ item.value }}</span>
           </template>
         </a-list-item-meta>
@@ -85,8 +98,6 @@
           <div
             v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
               'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
-            <tooltip-button :tooltip="$t('label.cancel')" @onClick="hideEditDetail(index)" v-if="item.edit" iconType="close-circle-two-tone" iconTwoToneColor="#f5222d" />
-            <tooltip-button :tooltip="$t('label.ok')" @onClick="updateDetail(index)" v-if="item.edit" iconType="check-circle-two-tone" iconTwoToneColor="#52c41a" />
             <tooltip-button
               :tooltip="$t('label.edit')"
               icon="edit-outlined"
@@ -305,5 +316,9 @@ export default {
 
 .detail-button {
   width: 30px;
+}
+
+:deep(.edit-button) {
+  margin-left: 5px;
 }
 </style>

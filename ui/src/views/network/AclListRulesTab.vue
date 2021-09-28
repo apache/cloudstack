@@ -117,19 +117,19 @@
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
-        <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags" v-ctrl-enter="handleAddTag">
+        <a-form :ref="formRef" :model="form" :rules="tagRules" class="add-tags" v-ctrl-enter="handleAddTag">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item ref="key" name="key">
               <a-input
                 v-focus="true"
-                v-model:value="newTagsForm.key" />
+                v-model:value="form.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item  ref="value" name="value">
-              <a-input v-model:value="newTagsForm.value" />
+              <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
           <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
@@ -157,7 +157,7 @@
       :footer="null"
       :visible="ruleModalVisible"
       @cancel="ruleModalVisible = false">
-      <a-form :ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" @finish="handleRuleModalForm" v-ctrl-enter="handleRuleModalForm">
+      <a-form :ref="formRef" :model="form" :rules="rules" @finish="handleRuleModalForm" v-ctrl-enter="handleRuleModalForm">
         <a-form-item :label="$t('label.number')" ref="number" name="number">
           <a-input-number v-focus="true" style="width: 100%" v-model:value="form.number" />
         </a-form-item>
@@ -193,14 +193,14 @@
         </a-form-item>
 
         <a-form-item
-          v-if="ruleForm.protocol === 'protocolnumber'"
+          v-if="form.protocol === 'protocolnumber'"
           :label="$t('label.protocolnumber')"
           ref="protocolnumber"
           name="protocolnumber">
           <a-input v-model:value="form.protocolnumber" />
         </a-form-item>
 
-        <div v-if="['icmp', 'protocolnumber'].includes(ruleForm.protocol)">
+        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
             <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
           </a-form-item>
@@ -209,7 +209,7 @@
           </a-form-item>
         </div>
 
-        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(ruleForm.protocol)">
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol)">
           <a-form-item :label="$t('label.startport')" ref="startport" name="startport">
             <a-input-number style="width: 100%" v-model:value="form.startport" />
           </a-form-item>
@@ -294,17 +294,9 @@ export default {
   },
   methods: {
     initForm () {
-      this.tagRef = ref()
-      this.ruleFormRef = ref()
-      this.newTagsForm = reactive({})
-      this.ruleForm = reactive({})
-      this.tagRules = reactive({
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
-      })
-      this.ruleFormRules = reactive({
-        protocolnumber: [{ required: true, message: this.$t('label.required') }]
-      })
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
     },
     csv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
       let result = null
@@ -361,8 +353,12 @@ export default {
       })
     },
     openTagsModal (acl) {
+      this.initForm()
+      this.rules = {
+        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+      }
       this.selectedAcl = acl
-      this.newTagsForm.resetFields()
       this.fetchTags(this.selectedAcl)
       this.tagsModalVisible = true
     },
@@ -404,8 +400,8 @@ export default {
       if (this.tagsLoading) return
       this.tagsLoading = true
 
-      this.tagRef.value.validate().then(() => {
-        const values = toRaw(this.newTagsForm)
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -444,20 +440,21 @@ export default {
     },
     openEditRuleModal (acl) {
       const self = this
+      this.initForm()
+      this.rules = { protocolnumber: [{ required: true, message: this.$t('label.required') }] }
       this.ruleModalTitle = this.$t('label.edit.rule')
       this.ruleFormMode = 'edit'
-      this.ruleFormRef.value.resetFields()
       this.ruleModalVisible = true
       this.selectedAcl = acl
       setTimeout(() => {
-        self.ruleForm.number = acl.number
-        self.ruleForm.cidrlist = acl.cidrlist
-        self.ruleForm.action = acl.action
-        self.ruleForm.protocol = acl.protocol
-        self.ruleForm.startport = acl.startport
-        self.ruleForm.endport = acl.endport
-        self.ruleForm.traffictype = acl.traffictype
-        self.ruleForm.reason = acl.reason
+        self.form.number = acl.number
+        self.form.cidrlist = acl.cidrlist
+        self.form.action = acl.action
+        self.form.protocol = acl.protocol
+        self.form.startport = acl.startport
+        self.form.endport = acl.endport
+        self.form.traffictype = acl.traffictype
+        self.form.reason = acl.reason
       }, 200)
     },
     getDataFromForm (values) {
@@ -487,8 +484,8 @@ export default {
       return data
     },
     handleEditRule () {
-      this.ruleFormRef.value.validate().then(() => {
-        const values = toRaw(this.ruleForm)
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.fetchLoading = true
         this.ruleModalVisible = false
 
@@ -565,16 +562,17 @@ export default {
       this.ruleModalTitle = this.$t('label.add.rule')
       this.ruleModalVisible = true
       this.ruleFormMode = 'add'
-      this.ruleFormRef.value.resetFields()
+      this.initForm()
+      this.rules = { protocolnumber: [{ required: true, message: this.$t('label.required') }] }
       setTimeout(() => {
-        this.ruleForm.action = 'allow'
-        this.ruleForm.protocol = 'tcp'
-        this.ruleForm.traffictype = 'ingress'
+        this.form.action = 'allow'
+        this.form.protocol = 'tcp'
+        this.form.traffictype = 'ingress'
       }, 200)
     },
     handleAddRule (e) {
-      this.ruleFormRef.value.validate().then(() => {
-        const values = toRaw(this.ruleForm)
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.fetchLoading = true
         this.ruleModalVisible = false
 

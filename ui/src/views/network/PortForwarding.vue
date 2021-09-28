@@ -156,9 +156,9 @@
       </span>
 
       <a-form
-        :ref="newTagsRef"
-        :model="newTagsForm"
-        :rules="newTagsRules"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         class="add-tags"
         @finish="handleAddTag"
         v-ctrl-enter="handleAddTag">
@@ -177,7 +177,7 @@
           </a-form-item>
         </div>
 
-        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button style="margin-bottom: 5px;" type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider />
@@ -460,9 +460,9 @@ export default {
   },
   methods: {
     initForm () {
-      this.newTagsRef = ref()
-      this.newTagsForm = reactive({})
-      this.newTagsRules = reactive({
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
         key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
         value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
       })
@@ -487,7 +487,6 @@ export default {
         if (this.tiers.data && this.tiers.data.length > 0) {
           this.selectedTier = this.tiers.data[0].id
         }
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.tiers.loading = false })
@@ -637,7 +636,7 @@ export default {
       this.newRule.virtualmachineid = null
     },
     resetTagInputs () {
-      this.newTagsRef.value.resetFields()
+      this.formRef.value.resetFields()
     },
     closeModal () {
       this.selectedRule = null
@@ -651,11 +650,11 @@ export default {
       this.resetTagInputs()
     },
     openTagsModal (id) {
+      this.initForm()
       this.tagsModalLoading = true
       this.selectedRule = id
       this.tagsModalVisible = true
       this.tags = []
-      this.resetTagInputs()
       api('listTags', {
         resourceId: id,
         resourceType: 'PortForwardingRule',
@@ -673,8 +672,8 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsRef.value.validate().then(() => {
-        const values = toRaw(this.newTagsForm)
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.tagsModalLoading = false
 
         api('createTags', {

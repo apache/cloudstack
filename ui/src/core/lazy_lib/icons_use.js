@@ -29,6 +29,7 @@ import {
   BellOutlined,
   BlockOutlined,
   BranchesOutlined,
+  BookOutlined,
   BuildOutlined,
   BulbOutlined,
   CalendarOutlined,
@@ -57,6 +58,7 @@ import {
   DeleteTwoTone,
   DeploymentUnitOutlined,
   DesktopOutlined,
+  DisconnectOutlined,
   DoubleLeftOutlined,
   DoubleRightOutlined,
   DownOutlined,
@@ -76,6 +78,7 @@ import {
   FolderOutlined,
   ForkOutlined,
   FormOutlined,
+  ForwardOutlined,
   FullscreenOutlined,
   GatewayOutlined,
   GithubOutlined,
@@ -134,6 +137,7 @@ import {
   StopOutlined,
   SwapOutlined,
   SyncOutlined,
+  TagOutlined,
   TeamOutlined,
   ThunderboltOutlined,
   ToolOutlined,
@@ -160,6 +164,7 @@ export default {
     app.component('BellOutlined', BellOutlined)
     app.component('BlockOutlined', BlockOutlined)
     app.component('BranchesOutlined', BranchesOutlined)
+    app.component('BookOutlined', BookOutlined)
     app.component('BuildOutlined', BuildOutlined)
     app.component('BulbOutlined', BulbOutlined)
     app.component('CalendarOutlined', CalendarOutlined)
@@ -188,6 +193,7 @@ export default {
     app.component('DeleteTwoTone', DeleteTwoTone)
     app.component('DeploymentUnitOutlined', DeploymentUnitOutlined)
     app.component('DesktopOutlined', DesktopOutlined)
+    app.component('DisconnectOutlined', DisconnectOutlined)
     app.component('DoubleLeftOutlined', DoubleLeftOutlined)
     app.component('DoubleRightOutlined', DoubleRightOutlined)
     app.component('DownOutlined', DownOutlined)
@@ -207,6 +213,7 @@ export default {
     app.component('FolderOutlined', FolderOutlined)
     app.component('ForkOutlined', ForkOutlined)
     app.component('FormOutlined', FormOutlined)
+    app.component('ForwardOutlined', ForwardOutlined)
     app.component('FullscreenOutlined', FullscreenOutlined)
     app.component('GatewayOutlined', GatewayOutlined)
     app.component('GithubOutlined', GithubOutlined)
@@ -265,6 +272,7 @@ export default {
     app.component('StopOutlined', StopOutlined)
     app.component('SwapOutlined', SwapOutlined)
     app.component('SyncOutlined', SyncOutlined)
+    app.component('TagOutlined', TagOutlined)
     app.component('TeamOutlined', TeamOutlined)
     app.component('ThunderboltOutlined', ThunderboltOutlined)
     app.component('ToolOutlined', ToolOutlined)

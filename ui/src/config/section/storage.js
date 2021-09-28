@@ -128,7 +128,7 @@ export default {
         },
         {
           api: 'updateVolume',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
           args: ['name'],

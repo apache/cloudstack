@@ -30,7 +30,7 @@ export default {
       permission: ['quotaSummary'],
       columns: ['account', 'domain', 'state', 'currency', 'balance', 'quota'],
       details: ['account', 'domain', 'state', 'currency', 'balance', 'quota', 'startdate', 'enddate'],
-      component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaSummary.vue'))),
+      component: shallowRef(() => import('@/views/plugins/quota/QuotaSummary.vue')),
       tabs: [
         {
           name: 'details',
@@ -72,7 +72,7 @@ export default {
       permission: ['quotaTariffList'],
       columns: ['usageName', 'description', 'usageUnit', 'tariffValue', 'tariffActions'],
       details: ['usageName', 'description', 'usageUnit', 'tariffValue'],
-      component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaTariff.vue')))
+      component: shallowRef(() => import('@/views/plugins/quota/QuotaTariff.vue'))
     },
     {
       name: 'quotaemailtemplate',

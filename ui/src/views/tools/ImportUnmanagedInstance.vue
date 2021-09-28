@@ -541,7 +541,6 @@ export default {
           if (Object.keys(responseItem).length === 0) {
             this.rowCount[name] = 0
             this.options[name] = []
-            this.$forceUpdate()
             return
           }
           if (!responseKey.includes('response')) {
@@ -554,8 +553,6 @@ export default {
             }
             param.opts = response
             this.options[name] = response
-
-            this.$forceUpdate()
           })
         })
       }).catch(function (error) {

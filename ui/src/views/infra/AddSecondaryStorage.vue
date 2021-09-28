@@ -154,7 +154,7 @@ export default {
       this.listZones()
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     listZones () {
       api('listZones', { showicon: true }).then(json => {

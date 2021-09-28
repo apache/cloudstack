@@ -47,24 +47,23 @@
       :footer="null"
       :closable="true"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
+      @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
-      <div v-else>
-        <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags">
+      <div v-else v-ctrl-enter="handleAddTag">
+        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item name="key" ref="key">
               <a-input
                 v-focus="true"
-                v-model:value="newTagsForm.key" />
+                v-model:value="form.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item name="value" ref="value">
-              <a-input v-model:value="newTagsForm.value" />
+              <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
           <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="handleAddTag">{{ $t('label.add') }}</a-button>
@@ -131,11 +130,11 @@ export default {
   },
   methods: {
     initForm () {
-      this.tagRef = ref()
-      this.newTagsForm = reactive({
+      this.formRef = ref()
+      this.form = reactive({
         start: true
       })
-      this.tagRules = reactive({
+      this.rules = reactive({
         key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
         value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
       })
@@ -267,8 +266,8 @@ export default {
       if (this.tagsLoading) return
       this.tagsLoading = true
 
-      this.tagRef.value.validate().then(() => {
-        const values = toRaw(this.newTagsForm)
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         api('createTags', {
           'tags[0].key': values.key,

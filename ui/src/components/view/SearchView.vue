@@ -335,7 +335,6 @@ export default {
             this.fields[clusterIndex].opts = cluster[0].data
           }
         }
-        this.$forceUpdate()
       }).finally(() => {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false

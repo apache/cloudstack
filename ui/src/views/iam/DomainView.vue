@@ -280,7 +280,6 @@ export default {
                 continue
               }
               param.opts = json[obj][res]
-              this.$forceUpdate()
               break
             }
             break

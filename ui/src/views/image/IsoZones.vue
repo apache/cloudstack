@@ -101,12 +101,13 @@
       :confirmLoading="copyLoading"
       @cancel="onCloseCopyForm"
       centered>
-      <a-spin :spinning="copyLoading" @finish="handleCopyIsoSubmit">
+      <a-spin :spinning="copyLoading">
         <a-form
           :ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical">
+          layout="vertical"
+          @finish="handleCopyIsoSubmit"
           v-ctrl-enter="handleCopyIsoSubmit">
           <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select

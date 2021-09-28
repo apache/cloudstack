@@ -265,7 +265,7 @@ export default {
       })
     },
     handleClose () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     handleTiers () {
       this.tiersSelect = true

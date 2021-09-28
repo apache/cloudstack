@@ -152,7 +152,7 @@ export default {
         this.$notification.success({
           message: this.$t('message.success.change.affinity.group')
         })
-        this.$parent.$parent.close()
+        this.$emit('close-action')
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)

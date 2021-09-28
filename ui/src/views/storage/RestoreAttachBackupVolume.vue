@@ -118,7 +118,6 @@ export default {
       this.virtualMachineOptions.loading = true
       api('listVirtualMachines', { zoneid: this.resource.zoneid }).then(json => {
         this.virtualMachineOptions.opts = json.listvirtualmachinesresponse.virtualmachine || []
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -141,7 +140,6 @@ export default {
         }
       })
       this.volumeOptions.loading = false
-      this.$forceUpdate()
     },
     handleSubmit (e) {
       e.preventDefault()

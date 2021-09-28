@@ -261,7 +261,7 @@ export default {
       }
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     submitData () {
       if (this.loading) return

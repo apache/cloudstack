@@ -85,7 +85,6 @@ export const pollJobPlugin = {
 
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       api('queryAsyncJobResult', { jobId }).then(json => {
-        if (!this.$t) this.$t = i18n.global.t
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', jobId, resourceId)
         if (result.jobstatus === 1) {
@@ -168,7 +167,6 @@ export const pollJobPlugin = {
           }, 3000)
         }
       }).catch(e => {
-        if (!this.$t) this.$t = i18n.global.t
         console.error(`${catchMessage} - ${e}`)
         notification.error({
           message: i18n.global.t('label.error'),
@@ -299,5 +297,11 @@ export const apiMetaUtilPlugin = {
       }
       return apiParams
     }
+  }
+}
+
+export const localesPlugin = {
+  install (app) {
+    app.config.globalProperties.$t = i18n.global.t
   }
 }

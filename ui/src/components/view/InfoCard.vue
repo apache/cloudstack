@@ -602,7 +602,7 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).name !== '404'"
-            :to="{ path: '/' + item.name, query: { [item.param] : (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }}">
+            :to="{ path: '/' + item.name, query: getRouterQuery(item)}">
             <a-button style="margin-right: 10px">
               <template #icon>
                 <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
@@ -790,12 +790,12 @@ export default {
       this.getIcons()
     }
   },
-  async created () {
+  created () {
     this.setData()
     eventBus.on('handle-close', (showModal) => {
       this.showUploadModal(showModal)
     })
-    await this.getIcons()
+    this.getIcons()
   },
   computed: {
     name () {
@@ -1007,6 +1007,21 @@ export default {
     setResourceOsType (name) {
       this.newResource.ostypename = name
       this.$emit('change-resource', this.newResource)
+    },
+    getRouterQuery (item) {
+      const query = {}
+      if (item.value) {
+        query[item.param] = this.resource[item.value]
+      } else {
+        if (item.param === 'account') {
+          query[item.param] = this.resource.name
+          query.domainid = this.resource.domainid
+        } else {
+          query[item.param] = this.resource.id
+        }
+      }
+
+      return query
     }
   }
 }

@@ -25,7 +25,16 @@ import './core/lazy_use'
 import extensions from './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin } from './utils/plugins'
+import {
+  pollJobPlugin,
+  notifierPlugin,
+  toLocaleDatePlugin,
+  configUtilPlugin,
+  apiMetaUtilPlugin,
+  showIconPlugin,
+  resourceTypePlugin,
+  localesPlugin
+} from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
 
@@ -37,6 +46,7 @@ vueApp.use(configUtilPlugin)
 vueApp.use(apiMetaUtilPlugin)
 vueApp.use(showIconPlugin)
 vueApp.use(resourceTypePlugin)
+vueApp.use(localesPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 

@@ -174,7 +174,7 @@ export default {
             catchMessage: this.$t('error.fetching.async.job.result')
           })
         }
-        this.$parent.$parent.close()
+        this.$emit('close-action')
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)

@@ -77,7 +77,7 @@ export default {
       actions: [
         {
           api: 'archiveAlerts',
-          icon: 'BookOutlined',
+          icon: 'book-outlined',
           label: 'label.archive.alerts',
           message: 'message.confirm.archive.selected.alerts',
           docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',

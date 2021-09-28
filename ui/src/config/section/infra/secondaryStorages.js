@@ -60,7 +60,7 @@ export default {
       label: 'label.add.secondary.storage',
       listView: true,
       popup: true,
-      component: () => shallowRef(defineAsyncComponent(import('@/views/infra/AddSecondaryStorage.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AddSecondaryStorage.vue')))
     },
     {
       api: 'migrateSecondaryStorageData',

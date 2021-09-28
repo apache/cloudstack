@@ -156,7 +156,8 @@ export default {
   watch: {
     items: {
       deep: true,
-      handler () {
+      handler (newItem, oldItem) {
+        if (newItem === oldItem) return
         this.selectedRowKeys = []
         this.fetchDiskOfferings()
       }

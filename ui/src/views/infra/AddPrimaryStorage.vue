@@ -653,7 +653,7 @@ export default {
       }
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     linstorURL (server) {
       var url

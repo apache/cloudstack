@@ -32,7 +32,7 @@ export default {
   actions: [
     {
       api: 'archiveEvents',
-      icon: 'BookOutlined',
+      icon: 'book-outlined',
       label: 'label.archive.events',
       message: 'message.confirm.archive.selected.events',
       docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',

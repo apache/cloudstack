@@ -36,7 +36,7 @@
         {{ $t('label.action.bulk.release.public.ip.address') }}
       </a-button>
       <div v-if="$route.path.startsWith('/vpc')">
-        {{ $t('label.select.tier"') + ':' }}
+        {{ $t('label.select.tier') + ':' }}
         <a-select
           v-focus="true"
           style="width: 40%; margin-left: 15px;margin-bottom: 15px"

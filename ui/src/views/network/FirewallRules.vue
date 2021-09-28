@@ -127,7 +127,13 @@
       :afterClose="closeModal"
       :maskClosable="false"
       @cancel="tagsModalVisible = false">
-      <a-form :ref="newTagsRef" :model="newTagsForm" :rules="newTagsRules" @finish="handleAddTag" v-ctrl-enter="handleAddTag">
+      <a-form
+        layout="vertical"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleAddTag"
+        v-ctrl-enter="handleAddTag">
         <div class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
@@ -144,6 +150,7 @@
             </a-form-item>
           </div>
           <a-button
+            style="margin-bottom: 5px;"
             ref="submit"
             type="primary"
             :disabled="!('createTags' in $store.getters.apis)"
@@ -284,9 +291,9 @@ export default {
   },
   methods: {
     initForm () {
-      this.newTagsRef = ref()
-      this.newTagsForm = reactive({})
-      this.newTagsRules = reactive({
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
         key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
         value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
       })
@@ -435,14 +442,14 @@ export default {
     closeModal () {
       this.selectedRule = null
       this.tagsModalVisible = false
-      this.newTag.key = null
-      this.newTag.value = null
+      this.form.key = null
+      this.form.value = null
       this.showConfirmationAction = false
     },
     openTagsModal (id) {
+      this.initForm()
       this.selectedRule = id
       this.tagsModalVisible = true
-      this.newTagsRef.value.resetFields()
 
       api('listTags', {
         resourceId: id,
@@ -459,8 +466,8 @@ export default {
       e.preventDefault()
       if (this.addTagLoading) return
 
-      this.newTagsRef.value.validate().then(() => {
-        const values = toRaw(this.newTagsForm)
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.addTagLoading = true
         api('createTags', {

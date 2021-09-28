@@ -329,7 +329,7 @@ export default {
           this.dedicateHost(host.id)
         }
         this.parentFetchData()
-        this.$parent.$parent.close()
+        this.$emit('close-action')
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,

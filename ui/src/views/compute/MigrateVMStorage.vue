@@ -190,19 +190,19 @@ export default {
           jobId: jobId,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
-            this.$parent.$parent.close()
+            this.$emit('close-action')
           },
           errorMessage: this.$t('message.migrating.failed'),
           errorMethod: () => {
-            this.$parent.$parent.close()
+            this.$emit('close-action')
           },
           loadingMessage: `${this.$t('message.migrating.processing')} ${this.resource.name}`,
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            this.$parent.$parent.close()
+            this.$emit('close-action')
           }
         })
-        this.$parent.$parent.close()
+        this.$emit('close-action')
       }).catch(error => {
         console.error(error)
         this.$message.error(`${this.$t('message.migrating.vm.to.storage.failed')} ${storageId}`)
