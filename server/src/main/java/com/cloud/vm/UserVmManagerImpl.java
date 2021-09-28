@@ -95,8 +95,12 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -532,6 +536,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
+    private DataStoreProviderManager _dataStoreProviderMgr;
     private StorageManager storageManager;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
@@ -2108,9 +2113,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
                 Answer answer = null;
 
-                if (poolType == StoragePoolType.PowerFlex) {
+                DataStoreProvider storeProvider = _dataStoreProviderMgr
+                        .getDataStoreProvider(storagePool.getStorageProviderName());
+                DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+                if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver) storeDriver).canProvideVolumeStats()) {
                     // Get volume stats from the pool directly instead of sending cmd to host
-                    // Added support for ScaleIO/PowerFlex pool only
                     answer = storageManager.getVolumeStats(storagePool, cmd);
                 } else {
                     if (timeout > 0) {
