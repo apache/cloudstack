@@ -141,7 +141,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         return true;
     }
 
-    protected RecreateHostAllocator() {
+    public RecreateHostAllocator() {
         super();
     }
 }

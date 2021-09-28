@@ -4,6 +4,14 @@ package com.cloud.conf.meta_inf.cloudstack.server_network;
 import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.network.element.SecurityGroupElement;
 import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.guru.ControlNetworkGuru;
+import com.cloud.network.guru.DirectNetworkGuru;
+import com.cloud.network.guru.DirectPodBasedNetworkGuru;
+import com.cloud.network.guru.ExternalGuestNetworkGuru;
+import com.cloud.network.guru.PodBasedNetworkGuru;
+import com.cloud.network.guru.PrivateNetworkGuru;
+import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.guru.StorageNetworkGuru;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,29 +25,29 @@ public class SpringServerNetworkContext {
 
 
     @Bean("PodBasedNetworkGuru")
-    public com.cloud.network.guru.PodBasedNetworkGuru PodBasedNetworkGuru() {
-        com.cloud.network.guru.PodBasedNetworkGuru bean = new com.cloud.network.guru.PodBasedNetworkGuru();
+    public PodBasedNetworkGuru PodBasedNetworkGuru() {
+        PodBasedNetworkGuru bean = new PodBasedNetworkGuru();
         bean.setName("PodBasedNetworkGuru");
         return bean;
     }
 
     @Bean("ControlNetworkGuru")
-    public com.cloud.network.guru.ControlNetworkGuru ControlNetworkGuru() {
-        com.cloud.network.guru.ControlNetworkGuru bean = new com.cloud.network.guru.ControlNetworkGuru();
+    public ControlNetworkGuru ControlNetworkGuru() {
+        ControlNetworkGuru bean = new ControlNetworkGuru();
         bean.setName("ControlNetworkGuru");
         return bean;
     }
 
     @Bean("StorageNetworkGuru")
-    public com.cloud.network.guru.StorageNetworkGuru StorageNetworkGuru() {
-        com.cloud.network.guru.StorageNetworkGuru bean = new com.cloud.network.guru.StorageNetworkGuru();
+    public StorageNetworkGuru StorageNetworkGuru() {
+        StorageNetworkGuru bean = new StorageNetworkGuru();
         bean.setName("StorageNetworkGuru");
         return bean;
     }
 
     @Bean("PrivateNetworkGuru")
-    public com.cloud.network.guru.PrivateNetworkGuru PrivateNetworkGuru() {
-        com.cloud.network.guru.PrivateNetworkGuru bean = new com.cloud.network.guru.PrivateNetworkGuru();
+    public PrivateNetworkGuru PrivateNetworkGuru() {
+        PrivateNetworkGuru bean = new PrivateNetworkGuru();
         bean.setName("PrivateNetworkGuru");
         return bean;
     }
@@ -52,29 +60,29 @@ public class SpringServerNetworkContext {
     }
 
     @Bean("ExternalGuestNetworkGuru")
-    public com.cloud.network.guru.ExternalGuestNetworkGuru ExternalGuestNetworkGuru() {
-        com.cloud.network.guru.ExternalGuestNetworkGuru bean = new com.cloud.network.guru.ExternalGuestNetworkGuru();
+    public ExternalGuestNetworkGuru ExternalGuestNetworkGuru() {
+        ExternalGuestNetworkGuru bean = new ExternalGuestNetworkGuru();
         bean.setName("ExternalGuestNetworkGuru");
         return bean;
     }
 
     @Bean("DirectNetworkGuru")
-    public com.cloud.network.guru.DirectNetworkGuru DirectNetworkGuru() {
-        com.cloud.network.guru.DirectNetworkGuru bean = new com.cloud.network.guru.DirectNetworkGuru();
+    public DirectNetworkGuru DirectNetworkGuru() {
+        DirectNetworkGuru bean = new DirectNetworkGuru();
         bean.setName("DirectNetworkGuru");
         return bean;
     }
 
     @Bean("PublicNetworkGuru")
-    public com.cloud.network.guru.PublicNetworkGuru PublicNetworkGuru() {
-        com.cloud.network.guru.PublicNetworkGuru bean = new com.cloud.network.guru.PublicNetworkGuru();
+    public PublicNetworkGuru PublicNetworkGuru() {
+        PublicNetworkGuru bean = new PublicNetworkGuru();
         bean.setName("PublicNetworkGuru");
         return bean;
     }
 
     @Bean("DirectPodBasedNetworkGuru")
-    public com.cloud.network.guru.DirectPodBasedNetworkGuru DirectPodBasedNetworkGuru() {
-        com.cloud.network.guru.DirectPodBasedNetworkGuru bean = new com.cloud.network.guru.DirectPodBasedNetworkGuru();
+    public DirectPodBasedNetworkGuru DirectPodBasedNetworkGuru() {
+        DirectPodBasedNetworkGuru bean = new DirectPodBasedNetworkGuru();
         bean.setName("DirectPodBasedNetworkGuru");
         return bean;
     }

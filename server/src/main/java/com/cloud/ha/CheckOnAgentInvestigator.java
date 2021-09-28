@@ -36,7 +36,7 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
     @Inject
     AgentManager _agentMgr;
 
-    protected CheckOnAgentInvestigator() {
+    public CheckOnAgentInvestigator() {
     }
 
     @Override

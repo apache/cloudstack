@@ -98,7 +98,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     private AccountService accountService;
 
     public static final Logger s_logger = Logger.getLogger(DomainChecker.class.getName());
-    protected DomainChecker() {
+
+    public DomainChecker() {
         super();
     }
 

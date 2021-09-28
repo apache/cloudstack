@@ -104,7 +104,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         return config;
     }
 
-    protected ControlNetworkGuru() {
+    public ControlNetworkGuru() {
         super();
     }
 

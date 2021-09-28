@@ -51,7 +51,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Inject
     NetworkDao _nwDao;
 
-    protected StorageNetworkGuru() {
+    public StorageNetworkGuru() {
         super();
     }
 

@@ -1,6 +1,8 @@
 
 package com.cloud.conf.meta_inf.cloudstack.server_compute;
 
+import com.cloud.hypervisor.KVMGuru;
+import com.cloud.hypervisor.LXCGuru;
 import org.apache.cloudstack.vm.UnmanagedVMsManagerImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,8 +17,8 @@ public class SpringServerComputeContext {
 
 
     @Bean("LXCGuru")
-    public com.cloud.hypervisor.LXCGuru LXCGuru() {
-        com.cloud.hypervisor.LXCGuru bean = new com.cloud.hypervisor.LXCGuru();
+    public LXCGuru LXCGuru() {
+        LXCGuru bean = new LXCGuru();
         bean.setName("LXCGuru");
         return bean;
     }
@@ -27,8 +29,8 @@ public class SpringServerComputeContext {
     }
 
     @Bean("KVMGuru")
-    public com.cloud.hypervisor.KVMGuru KVMGuru() {
-        com.cloud.hypervisor.KVMGuru bean = new com.cloud.hypervisor.KVMGuru();
+    public KVMGuru KVMGuru() {
+        KVMGuru bean = new KVMGuru();
         bean.setName("KVMGuru");
         return bean;
     }

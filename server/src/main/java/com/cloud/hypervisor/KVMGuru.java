@@ -70,7 +70,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         return HypervisorType.KVM;
     }
 
-    protected KVMGuru() {
+    public KVMGuru() {
         super();
     }
 

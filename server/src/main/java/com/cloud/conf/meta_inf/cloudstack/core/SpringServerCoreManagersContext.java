@@ -1,14 +1,17 @@
-
 package com.cloud.conf.meta_inf.cloudstack.core;
 
 import com.cloud.alert.AlertManagerImpl;
+import com.cloud.api.ApiAsyncJobDispatcher;
 import com.cloud.api.query.QueryManagerImpl;
+import com.cloud.api.query.dao.AffinityGroupJoinDaoImpl;
 import com.cloud.capacity.CapacityManagerImpl;
+import com.cloud.deploy.dao.PlannerHostReservationDaoImpl;
 import com.cloud.metadata.ResourceMetaDataManagerImpl;
 import com.cloud.network.ExternalDeviceUsageManagerImpl;
 import com.cloud.network.ExternalNetworkDeviceManagerImpl;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Ipv6AddressManagerImpl;
+import com.cloud.network.NetworkMigrationManagerImpl;
 import com.cloud.network.NetworkUsageManagerImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
 import com.cloud.network.as.AutoScaleManagerImpl;
@@ -70,7 +73,6 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Generated Java based configuration
- * 
  */
 @Configuration
 public class SpringServerCoreManagersContext {
@@ -82,8 +84,8 @@ public class SpringServerCoreManagersContext {
     }
 
     @Bean("ApiAsyncJobDispatcher")
-    public com.cloud.api.ApiAsyncJobDispatcher ApiAsyncJobDispatcher() {
-        com.cloud.api.ApiAsyncJobDispatcher bean = new com.cloud.api.ApiAsyncJobDispatcher();
+    public ApiAsyncJobDispatcher ApiAsyncJobDispatcher() {
+        ApiAsyncJobDispatcher bean = new ApiAsyncJobDispatcher();
         bean.setName("ApiAsyncJobDispatcher");
         return bean;
     }
@@ -104,8 +106,8 @@ public class SpringServerCoreManagersContext {
     }
 
     @Bean("NetworkMigrationManagerImpl")
-    public com.cloud.network.NetworkMigrationManagerImpl NetworkMigrationManagerImpl() {
-        return new com.cloud.network.NetworkMigrationManagerImpl();
+    public NetworkMigrationManagerImpl NetworkMigrationManagerImpl() {
+        return new NetworkMigrationManagerImpl();
     }
 
     @Bean("oCFS2ManagerImpl")
@@ -149,8 +151,8 @@ public class SpringServerCoreManagersContext {
     }
 
     @Bean("AffinityGroupJoinDaoImpl")
-    public com.cloud.api.query.dao.AffinityGroupJoinDaoImpl AffinityGroupJoinDaoImpl() {
-        return new com.cloud.api.query.dao.AffinityGroupJoinDaoImpl();
+    public AffinityGroupJoinDaoImpl AffinityGroupJoinDaoImpl() {
+        return new AffinityGroupJoinDaoImpl();
     }
 
     @Bean("autoScaleManagerImpl")
@@ -164,8 +166,8 @@ public class SpringServerCoreManagersContext {
     }
 
     @Bean("PlannerHostReservationDaoImpl")
-    public com.cloud.deploy.dao.PlannerHostReservationDaoImpl PlannerHostReservationDaoImpl() {
-        return new com.cloud.deploy.dao.PlannerHostReservationDaoImpl();
+    public PlannerHostReservationDaoImpl PlannerHostReservationDaoImpl() {
+        return new PlannerHostReservationDaoImpl();
     }
 
     @Bean("resourceMetaDataManagerImpl")
@@ -310,8 +312,8 @@ public class SpringServerCoreManagersContext {
 
     @Bean("snapshotSchedulerImpl")
     public SnapshotSchedulerImpl snapshotSchedulerImpl(
-        @Qualifier("ApiAsyncJobDispatcher")
-        com.cloud.api.ApiAsyncJobDispatcher ApiAsyncJobDispatcher) {
+            @Qualifier("ApiAsyncJobDispatcher")
+                    ApiAsyncJobDispatcher ApiAsyncJobDispatcher) {
         SnapshotSchedulerImpl bean = new SnapshotSchedulerImpl();
         bean.setAsyncJobDispatcher(ApiAsyncJobDispatcher);
         return bean;

@@ -44,7 +44,7 @@ import org.springframework.context.annotation.Import;
     SpringServerAlertAdapterBackendContext.class,
     SpringServerStorageContext.class
 })
-public class AkvMainConfiguration {
+public class MainConfiguration {
 
 
 }

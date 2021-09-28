@@ -1,6 +1,8 @@
 
 package com.cloud.conf.meta_inf.cloudstack.server_discoverer;
 
+import com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer;
+import com.cloud.hypervisor.kvm.discoverer.LxcServerDiscoverer;
 import com.cloud.resource.DummyHostDiscoverer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,15 +24,15 @@ public class SpringServerDiscovererContext {
     }
 
     @Bean("KvmServerDiscoverer")
-    public com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer KvmServerDiscoverer() {
-        com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer bean = new com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer();
+    public KvmServerDiscoverer KvmServerDiscoverer() {
+        KvmServerDiscoverer bean = new KvmServerDiscoverer();
         bean.setName("KVM Agent");
         return bean;
     }
 
     @Bean("LxcServerDiscoverer")
-    public com.cloud.hypervisor.kvm.discoverer.LxcServerDiscoverer LxcServerDiscoverer() {
-        com.cloud.hypervisor.kvm.discoverer.LxcServerDiscoverer bean = new com.cloud.hypervisor.kvm.discoverer.LxcServerDiscoverer();
+    public LxcServerDiscoverer LxcServerDiscoverer() {
+        LxcServerDiscoverer bean = new LxcServerDiscoverer();
         bean.setName("Lxc Discover");
         return bean;
     }

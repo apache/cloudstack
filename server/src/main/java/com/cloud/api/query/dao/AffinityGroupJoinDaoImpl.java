@@ -43,7 +43,7 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
 
     private final SearchBuilder<AffinityGroupJoinVO> agIdSearch;
 
-    protected AffinityGroupJoinDaoImpl() {
+    public AffinityGroupJoinDaoImpl() {
 
         agSearch = createSearchBuilder();
         agSearch.and("idIN", agSearch.entity().getId(), SearchCriteria.Op.IN);

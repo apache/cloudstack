@@ -1,4 +1,3 @@
-
 package com.cloud.conf.meta_inf.cloudstack.core;
 
 import com.cloud.agent.manager.authn.impl.BasicAgentAuthManager;
@@ -14,6 +13,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.AlertGenerator;
 import com.cloud.hypervisor.CloudZonesStartupProcessor;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelperImpl;
+import com.cloud.network.ExternalIpAddressAllocator;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.springframework.context.annotation.Bean;
@@ -22,15 +22,14 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Generated Java based configuration
- * 
  */
 @Configuration
 public class SpringServerCoreMiscContext {
 
 
     @Bean("ExternalIpAddressAllocator")
-    public com.cloud.network.ExternalIpAddressAllocator ExternalIpAddressAllocator() {
-        com.cloud.network.ExternalIpAddressAllocator bean = new com.cloud.network.ExternalIpAddressAllocator();
+    public ExternalIpAddressAllocator ExternalIpAddressAllocator() {
+        ExternalIpAddressAllocator bean = new ExternalIpAddressAllocator();
         bean.setName("Basic");
         return bean;
     }

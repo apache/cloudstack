@@ -108,7 +108,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
     }
 
-    protected PublicNetworkGuru() {
+    public PublicNetworkGuru() {
         super();
     }
 

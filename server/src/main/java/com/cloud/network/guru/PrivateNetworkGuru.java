@@ -66,7 +66,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
-    protected PrivateNetworkGuru() {
+    public PrivateNetworkGuru() {
         super();
     }
 

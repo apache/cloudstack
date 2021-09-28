@@ -43,7 +43,7 @@ public class LXCGuru extends HypervisorGuruBase implements HypervisorGuru {
         return HypervisorType.LXC;
     }
 
-    protected LXCGuru() {
+    public LXCGuru() {
         super();
     }
 

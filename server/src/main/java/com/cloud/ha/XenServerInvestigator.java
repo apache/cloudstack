@@ -44,7 +44,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
     @Inject
     ResourceManager _resourceMgr;
 
-    protected XenServerInvestigator() {
+    public XenServerInvestigator() {
     }
 
     @Override
