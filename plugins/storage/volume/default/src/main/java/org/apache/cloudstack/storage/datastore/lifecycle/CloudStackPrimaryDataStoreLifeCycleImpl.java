@@ -244,7 +244,24 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 port = 0;
             }
             parameters.setType(StoragePoolType.RBD);
-            parameters.setHost(storageHost);
+            if (storageHost == null) {
+                String urlSplit = url.substring(url.lastIndexOf("@")+1);
+                String urlHost = urlSplit.substring(0, urlSplit.indexOf("/"));
+                if (urlHost != null) {
+                    String[] array = urlHost.split(",");
+                    if (array != null) {
+                        if (array.length < 6) {
+                            parameters.setHost(urlHost);
+                        } else {
+                            throw new InvalidParameterValueException("RADOS monitor can support up to 5.");
+                        }
+                    } else {
+                        throw new InvalidParameterValueException("Please input a valid RADOS monitor.");
+                    }
+                }
+            } else {
+                parameters.setHost(storageHost);
+            }
             parameters.setPort(port);
             parameters.setPath(hostPath.replaceFirst("/", ""));
             parameters.setUserInfo(userInfo);
