@@ -247,7 +247,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             if (storageHost == null) {
                 String urlSplit = url.substring(url.lastIndexOf("@")+1);
                 String urlHost = urlSplit.substring(0, urlSplit.indexOf("/"));
-                String urlSplit2 = url.substring(url.lastIndexOf("//")+1);
+                String urlSplit2 = url.substring(url.lastIndexOf("//")+2);
                 String urlUserInfo = urlSplit2.substring(0, urlSplit2.indexOf("@"));
                 if (urlHost != null) {
                     String[] array = urlHost.split(",");
@@ -359,6 +359,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             uuid = UUID.randomUUID().toString();
         } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
+        } else if (scheme.equalsIgnoreCase("rbd")) {
+            uuid = UUID.nameUUIDFromBytes((parameters.getHost() + hostPath).getBytes()).toString();
         } else {
             uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
         }
