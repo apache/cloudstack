@@ -486,7 +486,7 @@ public class KubernetesClusterActionWorker {
             if(!vmMap.isControlNode()) {
                 continue;
             }
-            String name = userVmDao.findById(vmMap.getVmId()).getDisplayName();
+            String name = userVmDao.findById(vmMap.getVmId()).getDisplayName().toLowerCase();
             String command = String.format("sudo /opt/bin/kubectl annotate node %s cluster-autoscaler.kubernetes.io/scale-down-disabled=true ; ", name);
             commands.append(command);
         }
