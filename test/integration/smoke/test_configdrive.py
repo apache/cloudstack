@@ -60,6 +60,7 @@ import tempfile
 import time
 from contextlib import contextmanager
 from nose.plugins.attrib import attr
+from retry import retry
 
 VPC_SERVICES = 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns'
 ISO_SERVICES = 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns'
@@ -635,7 +636,7 @@ class ConfigDriveUtils:
         """
         ssh.execute("umount -d %s" % mount_path)
         # Give the VM time to unlock the iso device
-        time.sleep(2)
+        time.sleep(0.5)
         # Verify umount
         result = ssh.execute("ls %s" % mount_path)
         self.assertTrue(len(result) == 0,
@@ -1089,10 +1090,8 @@ class ConfigDriveUtils:
 
         vm.details = vm_new_ssh.details
 
-        # reset SSH key also resets the password.
-        self._decrypt_password(vm)
-
-        vm.password_test = ConfigDriveUtils.PasswordTest(vm=vm)
+        # reset SSH key also remove the password (see https://github.com/apache/cloudstack/pull/4819)
+        vm.password_test = ConfigDriveUtils.PasswordTest(expect_pw=False)
         vm.key_pair = self.keypair
 
         if public_ip:
@@ -1732,8 +1731,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.api_client.restartVPC(cmd)
         self.debug("Restarted VPC with ID - %s" % vpc.id)
 
-    # was tags=["advanced", "isonw"]
-    @attr(tags=["TODO"], required_hardware="true")
+    @attr(tags=["advanced", "isonw"], required_hardware="true")
     def test_configdrive_isolated_network(self):
         """Test Configdrive as provider for isolated Networks
            to provide userdata and password reset functionality
@@ -2500,6 +2498,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # =====================================================================
         self.debug("+++ Scenario: "
                    "validate updated userdata after migrate")
+        time.sleep(30)
         host = self.migrate_VM(vm)
         vm.hostname = host.name
         self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
