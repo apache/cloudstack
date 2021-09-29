@@ -5622,9 +5622,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("number of add nic jobs for vm %s are %d", vm, pendingWorkJobs.size()));
+            }
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("no add nic jobs for vm %s yet", vm));
+            }
 
             workJob = new VmWorkJobVO(context.getContextId());
 
