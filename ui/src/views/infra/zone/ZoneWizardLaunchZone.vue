@@ -1338,16 +1338,21 @@ export default {
         const rbdid = this.prefillContent.primaryStorageRADOSUser?.value || ''
         const rbdsecret = this.prefillContent.primaryStorageRADOSSecret?.value || ''
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
-      } else if (protocol === 'vmfs') {
-        let path = this.prefillContent.primaryStorageVmfsDatacenter?.value || ''
-        if (path.substring(0, 1) !== '/') {
-          path = '/' + path
-        }
-        path += '/' + this.prefillContent.primaryStorageVmfsDatastore?.value || ''
-        url = this.vmfsURL('dummy', path)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)
         params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup.value
+      } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
+        let path = this.prefillContent.primaryStorageVmfsDatacenter.value
+        if (path.substring(0, 1) !== '/') {
+          path = '/' + path
+        }
+        path += '/' + this.prefillContent.primaryStorageVmfsDatastore.value
+        if (protocol === 'vmfs') {
+          url = this.vmfsURL('dummy', path)
+        }
+        if (protocol === 'datastorecluster') {
+          url = this.datastoreclusterURL('dummy', path)
+        }
       } else {
         let iqn = this.prefillContent.primaryStorageTargetIQN?.value || ''
         if (iqn.substring(0, 1) !== '/') {
@@ -2134,6 +2139,15 @@ export default {
         url = 'http://' + server
       } else {
         url = server
+      }
+      return url
+    },
+    datastoreclusterURL (server, path) {
+      var url
+      if (server.indexOf('://') === -1) {
+        url = 'datastorecluster://' + server + path
+      } else {
+        url = server + path
       }
       return url
     },

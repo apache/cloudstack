@@ -333,281 +333,281 @@ describe('Views > compute > MigrateWizard.vue', () => {
     })
 
     describe('submitForm()', () => {
-      // it('check api is called when selectedHost.requiresStorageMotion is true and isUserVm=true', async (done) => {
-      //   const mockData = {
-      //     migratevirtualmachineresponse: {
-      //       jobid: 'test-job-id'
-      //     },
-      //     queryasyncjobresultresponse: {
-      //       jobstatus: 1,
-      //       jobresult: {
-      //         name: 'test-name-value'
-      //       }
-      //     }
-      //   }
-      //   mockAxios.mockResolvedValue(mockData)
-      //
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter1',
-      //     path: '/test-router-1',
-      //     meta: {
-      //       name: 'vm'
-      //     }
-      //   }])
-      //   wrapper = factory({
-      //     router: router,
-      //     props: {
-      //       resource: {
-      //         id: 'test-resource-id',
-      //         name: 'test-resource-name'
-      //       }
-      //     },
-      //     data: {
-      //       selectedHost: {
-      //         requiresStorageMotion: true,
-      //         id: 'test-host-id',
-      //         name: 'test-host-name'
-      //       }
-      //     }
-      //   })
-      //   router.push({ name: 'testRouter1' })
-      //   wrapper.vm.loading = false
-      //   await wrapper.vm.$nextTick()
-      //   await wrapper.vm.submitForm()
-      //
-      //   setTimeout(() => {
-      //     expect(mockAxios).toHaveBeenCalled()
-      //     expect(mockAxios).toHaveBeenCalledWith({
-      //       url: '/',
-      //       method: 'GET',
-      //       data: new URLSearchParams(),
-      //       params: {
-      //         command: 'migrateVirtualMachineWithVolume',
-      //         hostid: 'test-host-id',
-      //         virtualmachineid: 'test-resource-id',
-      //         response: 'json'
-      //       }
-      //     })
-      //
-      //     done()
-      //   })
-      // })
-      //
-      // it('check api is called when selectedHost.requiresStorageMotion is false and isUserVm=true', async (done) => {
-      //   const mockData = {
-      //     migratevirtualmachineresponse: {
-      //       jobid: 'test-job-id'
-      //     },
-      //     queryasyncjobresultresponse: {
-      //       jobstatus: 1,
-      //       jobresult: {
-      //         name: 'test-name-value'
-      //       }
-      //     }
-      //   }
-      //   mockAxios.mockResolvedValue(mockData)
-      //
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter2',
-      //     path: '/test-router-2',
-      //     meta: {
-      //       name: 'vm'
-      //     }
-      //   }])
-      //   wrapper = factory({
-      //     props: {
-      //       resource: {
-      //         id: 'test-resource-id',
-      //         name: 'test-resource-name'
-      //       }
-      //     },
-      //     data: {
-      //       selectedHost: {
-      //         requiresStorageMotion: false,
-      //         id: 'test-host-id',
-      //         name: 'test-host-name'
-      //       }
-      //     }
-      //   })
-      //
-      //   router.push({ name: 'testRouter2' })
-      //   wrapper.vm.loading = false
-      //   await wrapper.vm.$nextTick()
-      //   await wrapper.vm.submitForm()
-      //
-      //   setTimeout(() => {
-      //     expect(mockAxios).toHaveBeenCalled()
-      //     expect(mockAxios).toHaveBeenCalledWith({
-      //       url: '/',
-      //       method: 'GET',
-      //       data: new URLSearchParams(),
-      //       params: {
-      //         command: 'migrateVirtualMachine',
-      //         hostid: 'test-host-id',
-      //         virtualmachineid: 'test-resource-id',
-      //         response: 'json'
-      //       }
-      //     })
-      //
-      //     done()
-      //   })
-      // })
-      //
-      // it('check api is called when isUserVm=false', async (done) => {
-      //   const mockData = {
-      //     migratevirtualmachineresponse: {
-      //       jobid: 'test-job-id'
-      //     },
-      //     queryasyncjobresultresponse: {
-      //       jobstatus: 1,
-      //       jobresult: {
-      //         name: 'test-name-value'
-      //       }
-      //     }
-      //   }
-      //   mockAxios.mockResolvedValue(mockData)
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter3',
-      //     path: '/test-router-3',
-      //     meta: {
-      //       name: 'test'
-      //     }
-      //   }])
-      //   wrapper = factory({
-      //     router: router,
-      //     props: {
-      //       resource: {
-      //         id: 'test-resource-id',
-      //         name: 'test-resource-name'
-      //       }
-      //     },
-      //     data: {
-      //       selectedHost: {
-      //         requiresStorageMotion: true,
-      //         id: 'test-host-id',
-      //         name: 'test-host-name'
-      //       }
-      //     }
-      //   })
-      //   router.push({ name: 'testRouter3' })
-      //   wrapper.vm.loading = false
-      //   await wrapper.vm.$nextTick()
-      //   await wrapper.vm.submitForm()
-      //
-      //   setTimeout(() => {
-      //     expect(mockAxios).toHaveBeenCalled()
-      //     expect(mockAxios).toHaveBeenCalledWith({
-      //       url: '/',
-      //       method: 'GET',
-      //       data: new URLSearchParams(),
-      //       params: {
-      //         command: 'migrateSystemVm',
-      //         hostid: 'test-host-id',
-      //         virtualmachineid: 'test-resource-id',
-      //         response: 'json'
-      //       }
-      //     })
-      //
-      //     done()
-      //   })
-      // })
-      //
-      // it('check $pollJob have successMethod() is called with requiresStorageMotion is true', async (done) => {
-      //   const mockData = {
-      //     migratevirtualmachinewithvolumeresponse: {
-      //       jobid: 'test-job-id-case-1'
-      //     },
-      //     queryasyncjobresultresponse: {
-      //       jobstatus: 1,
-      //       jobresult: {
-      //         name: 'test-name-value'
-      //       }
-      //     }
-      //   }
-      //   mockAxios.mockResolvedValue(mockData)
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter4',
-      //     path: '/test-router-4',
-      //     meta: {
-      //       name: 'vm'
-      //     }
-      //   }])
-      //   wrapper = factory({
-      //     router: router,
-      //     props: {
-      //       resource: {
-      //         id: 'test-resource-id',
-      //         name: 'test-resource-name'
-      //       }
-      //     },
-      //     data: {
-      //       selectedHost: {
-      //         requiresStorageMotion: true,
-      //         id: 'test-host-id',
-      //         name: 'test-host-name'
-      //       }
-      //     }
-      //   })
-      //   router.push({ name: 'testRouter4' })
-      //   wrapper.vm.loading = false
-      //   await wrapper.vm.$nextTick()
-      //   await wrapper.vm.submitForm()
-      //
-      //   setTimeout(() => {
-      //     expect(mocks.$pollJob).toHaveBeenCalled()
-      //     expect(wrapper.emitted()['close-action'][0]).toEqual([])
-      //
-      //     done()
-      //   })
-      // })
-      //
-      // it('check $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
-      //   const mockData = {
-      //     migratevirtualmachineresponse: {
-      //       jobid: 'test-job-id-case-2'
-      //     },
-      //     queryasyncjobresultresponse: {
-      //       jobstatus: 1,
-      //       jobresult: {
-      //         name: 'test-name-value'
-      //       }
-      //     }
-      //   }
-      //   mockAxios.mockResolvedValue(mockData)
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter5',
-      //     path: '/test-router-5',
-      //     meta: {
-      //       name: 'vm'
-      //     }
-      //   }])
-      //   wrapper = factory({
-      //     router: router,
-      //     props: {
-      //       resource: {
-      //         id: 'test-resource-id',
-      //         name: 'test-resource-name'
-      //       }
-      //     },
-      //     data: {
-      //       selectedHost: {
-      //         requiresStorageMotion: false,
-      //         id: 'test-host-id',
-      //         name: 'test-host-name'
-      //       }
-      //     }
-      //   })
-      //   router.push({ name: 'testRouter5' })
-      //   wrapper.vm.loading = false
-      //   await wrapper.vm.$nextTick()
-      //   await wrapper.vm.submitForm()
-      //
-      //   setTimeout(() => {
-      //     expect(mocks.$pollJob).toHaveBeenCalled()
-      //     expect(wrapper.emitted()['close-action'][0]).toEqual([])
-      //     done()
-      //   })
-      // })
+      it('check api is called when selectedHost.requiresStorageMotion is true and isUserVm=true', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+
+        router = common.createMockRouter([{
+          name: 'testRouter1',
+          path: '/test-router-1',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter1' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'migrateVirtualMachineWithVolume',
+              hostid: 'test-host-id',
+              virtualmachineid: 'test-resource-id',
+              response: 'json'
+            }
+          })
+
+          done()
+        })
+      })
+
+      it('check api is called when selectedHost.requiresStorageMotion is false and isUserVm=true', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+
+        router = common.createMockRouter([{
+          name: 'testRouter2',
+          path: '/test-router-2',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: false,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+
+        router.push({ name: 'testRouter2' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'migrateVirtualMachine',
+              hostid: 'test-host-id',
+              virtualmachineid: 'test-resource-id',
+              response: 'json'
+            }
+          })
+
+          done()
+        })
+      })
+
+      it('check api is called when isUserVm=false', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter3',
+          path: '/test-router-3',
+          meta: {
+            name: 'test'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter3' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mockAxios).toHaveBeenCalled()
+          expect(mockAxios).toHaveBeenCalledWith({
+            url: '/',
+            method: 'GET',
+            data: new URLSearchParams(),
+            params: {
+              command: 'migrateSystemVm',
+              hostid: 'test-host-id',
+              virtualmachineid: 'test-resource-id',
+              response: 'json'
+            }
+          })
+
+          done()
+        })
+      })
+
+      it('check $pollJob have successMethod() is called with requiresStorageMotion is true', async (done) => {
+        const mockData = {
+          migratevirtualmachinewithvolumeresponse: {
+            jobid: 'test-job-id-case-1'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter4',
+          path: '/test-router-4',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: true,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter4' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mocks.$pollJob).toHaveBeenCalled()
+          expect(wrapper.emitted()['close-action'][0]).toEqual([])
+
+          done()
+        })
+      })
+
+      it('check $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
+        const mockData = {
+          migratevirtualmachineresponse: {
+            jobid: 'test-job-id-case-2'
+          },
+          queryasyncjobresultresponse: {
+            jobstatus: 1,
+            jobresult: {
+              name: 'test-name-value'
+            }
+          }
+        }
+        mockAxios.mockResolvedValue(mockData)
+        router = common.createMockRouter([{
+          name: 'testRouter5',
+          path: '/test-router-5',
+          meta: {
+            name: 'vm'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          props: {
+            resource: {
+              id: 'test-resource-id',
+              name: 'test-resource-name'
+            }
+          },
+          data: {
+            selectedHost: {
+              requiresStorageMotion: false,
+              id: 'test-host-id',
+              name: 'test-host-name'
+            }
+          }
+        })
+        router.push({ name: 'testRouter5' })
+        wrapper.vm.loading = false
+        await wrapper.vm.$nextTick()
+        await wrapper.vm.submitForm()
+
+        setTimeout(() => {
+          expect(mocks.$pollJob).toHaveBeenCalled()
+          expect(wrapper.emitted()['close-action'][0]).toEqual([])
+          done()
+        })
+      })
 
       it('check $pollJob have successMethod() is called with isUserVm is false', async (done) => {
         const mockData = {
