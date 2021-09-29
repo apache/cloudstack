@@ -407,7 +407,8 @@
         :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData" />
+        @refresh="this.fetchData"
+        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
         style="margin-top: 10px"
@@ -832,7 +833,6 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
 
       if (this.$showIcon()) {
         params.showIcon = true
@@ -1102,7 +1102,6 @@ export default {
       }).catch(function (error) {
         console.log(error)
         param.loading = false
-      }).then(function () {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
