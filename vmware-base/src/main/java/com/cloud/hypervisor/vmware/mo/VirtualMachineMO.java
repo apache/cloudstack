@@ -801,7 +801,7 @@ public class VirtualMachineMO extends BaseMO {
         VirtualMachineMO clonedVm = dcMo.findVm(vmName);
         VirtualDisk[] vmDisks = clonedVm.getAllDiskDevice();
         s_logger.debug(String.format("Checking if VM %s is created only with required Disk, if not detach the remaining disks", vmName));
-        if (vmDisks.length == 1) {
+        if (vmDisks.length == 1 && vmDisks[0].getKey() == requiredDisk.getKey()) {
             s_logger.debug(String.format("VM %s is created only with required Disk", vmName));
             return;
         }
