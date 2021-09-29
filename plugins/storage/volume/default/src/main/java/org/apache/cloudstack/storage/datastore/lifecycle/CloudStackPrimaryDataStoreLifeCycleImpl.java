@@ -247,11 +247,14 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             if (storageHost == null) {
                 String urlSplit = url.substring(url.lastIndexOf("@")+1);
                 String urlHost = urlSplit.substring(0, urlSplit.indexOf("/"));
+                String urlSplit2 = url.substring(url.lastIndexOf("//")+1);
+                String urlUserInfo = urlSplit2.substring(0, urlSplit2.indexOf("@"));
                 if (urlHost != null) {
                     String[] array = urlHost.split(",");
                     if (array != null) {
                         if (array.length < 6) {
                             parameters.setHost(urlHost);
+                            parameters.setUserInfo(urlUserInfo);
                         } else {
                             throw new InvalidParameterValueException("RADOS monitor can support up to 5.");
                         }
@@ -261,10 +264,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 }
             } else {
                 parameters.setHost(storageHost);
+                parameters.setUserInfo(userInfo);
             }
             parameters.setPort(port);
             parameters.setPath(hostPath.replaceFirst("/", ""));
-            parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             if (HypervisorType.VMware.equals(hypervisorType)) {
                 validateVcenterDetails(zoneId, podId, clusterId,storageHost);
