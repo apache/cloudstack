@@ -1004,7 +1004,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters("offerings", "accountId", accountId);
         sc.setJoinParameters("offerings", "type", VirtualMachine.Type.DomainRouter); // domain routers
 
-        if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
         } else {
             sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
@@ -1077,7 +1077,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters("offerings", "type", VirtualMachine.Type.DomainRouter); // domain routers
         sc.setJoinParameters("offerings", "displayVm", 1);
 
-        if (VirtualMachineManager.ResoureCountRunningVMsonly.value()) {
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
         } else {
             sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
