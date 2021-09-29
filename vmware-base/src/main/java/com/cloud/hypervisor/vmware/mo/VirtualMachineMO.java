@@ -751,17 +751,23 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, VirtualDisk requiredDisk)
+    public VirtualMachineMO createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, VirtualDisk requiredDisk)
             throws Exception {
 
         assert (morFolder != null);
         assert (morResourcePool != null);
+        VirtualMachineRuntimeInfo runtimeInfo = getRuntimeInfo();
+        HostMO hostMo = new HostMO(_context, runtimeInfo.getHost());
+        DatacenterMO dcMo = new DatacenterMO(_context, hostMo.getHyperHostDatacenter());
+        DatastoreMO dsMo = new DatastoreMO(_context, morResourcePool);
 
         VirtualMachineRelocateSpec rSpec = new VirtualMachineRelocateSpec();
 
         VirtualDisk[] vmDisks = getAllDiskDevice();
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        s_logger.debug(String.format("Removing the disks other than the required disk with key %s to the cloned VM", requiredDisk.getKey()));
         for (VirtualDisk disk : vmDisks) {
+            s_logger.debug(String.format("Original disk with key %s found in the VM %s", disk.getKey(), getName()));
             if (requiredDisk.getKey() != disk.getKey()) {
                 VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
                 virtualDeviceConfigSpec.setDevice(disk);
@@ -783,25 +789,27 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (result) {
             _context.waitForTaskProgressDone(morTask);
+            VirtualMachineMO clonedVm = dcMo.findVm(cloneName);
+            if (clonedVm == null) {
+                s_logger.error(String.format("Failed to clone VM %s", cloneName));
+                return null;
+            }
             s_logger.debug(String.format("Cloned VM: %s as %s", getName(), cloneName));
-            makeSureVMHasOnlyRequiredDisk(cloneName, requiredDisk);
-            return true;
+            clonedVm.tagAsWorkerVM();
+            makeSureVMHasOnlyRequiredDisk(clonedVm, requiredDisk, dsMo, dcMo);
+            return clonedVm;
         } else {
             s_logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            makeSureVMHasOnlyRequiredDisk(cloneName, requiredDisk);
-            return false;
+            return null;
         }
     }
 
-    private void makeSureVMHasOnlyRequiredDisk(String vmName, VirtualDisk requiredDisk) throws Exception {
-        VirtualMachineRuntimeInfo runtimeInfo = getRuntimeInfo();
-        HostMO hostMo = new HostMO(_context, runtimeInfo.getHost());
-        DatacenterMO dcMo = new DatacenterMO(_context, hostMo.getHyperHostDatacenter());
+    private void makeSureVMHasOnlyRequiredDisk(VirtualMachineMO clonedVm, VirtualDisk requiredDisk, DatastoreMO dsMo, DatacenterMO dcMo) throws Exception {
 
-        VirtualMachineMO clonedVm = dcMo.findVm(vmName);
+        String vmName = clonedVm.getName();
         VirtualDisk[] vmDisks = clonedVm.getAllDiskDevice();
         s_logger.debug(String.format("Checking if VM %s is created only with required Disk, if not detach the remaining disks", vmName));
-        if (vmDisks.length == 1 && vmDisks[0].getKey() == requiredDisk.getKey()) {
+        if (vmDisks.length == 1) {
             s_logger.debug(String.format("VM %s is created only with required Disk", vmName));
             return;
         }
@@ -815,13 +823,15 @@ public class VirtualMachineMO extends BaseMO {
         }
         if (requiredCloneDisk == null) {
             s_logger.error(String.format("Failed to identify required disk in VM %s", vmName));
-            return;
+            throw new CloudRuntimeException(String.format("VM %s is not created with required disk", vmName));
         }
 
         String baseName = VmwareHelper.getDiskDeviceFileName(requiredCloneDisk);
         s_logger.debug(String.format("Detaching all disks for the VM: %s except disk with base name: %s, key=%d", vmName, baseName, requiredCloneDisk.getKey()));
-        clonedVm.detachAllDisksExcept(baseName, null);
-
+        List<String> detachedDisks = clonedVm.detachAllDisksExcept(baseName, null);
+        for (String diskPath : detachedDisks) {
+            dsMo.deleteFile(diskPath, dcMo.getMor(), true, null);
+        }
     }
 
     public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Storage.ProvisioningType diskProvisioningType)

@@ -1242,9 +1242,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
             VirtualDisk requiredDisk = volumeDeviceInfo.first();
-            vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, requiredDisk);
-            clonedVm = dcMo.findVm(templateUniqueName);
-            clonedVm.tagAsWorkerVM();
+            clonedVm = vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, requiredDisk);
+            if (clonedVm == null) {
+                throw new Exception(String.format("Failed to clone VM with name %s during create template from volume operation", templateUniqueName));
+            }
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
             // Get VMDK filename
@@ -1829,14 +1830,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                 VirtualDisk requiredDisk = volumeDeviceInfo.first();
-                vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, requiredDisk);
-                clonedVm = dcMo.findVm(exportName);
+                clonedVm = vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, requiredDisk);
                 if (clonedVm == null) {
-                    String msg = "Failed to clone VM. volume path: " + volumePath;
-                    s_logger.error(msg);
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to clone VM with name %s during export volume operation", exportName));
                 }
-                clonedVm.tagAsWorkerVM();
                 vmMo = clonedVm;
             }
             vmMo.exportVm(exportPath, exportName, false, false);
