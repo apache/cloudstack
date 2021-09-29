@@ -190,9 +190,9 @@ import com.cloud.vm.VmDetailConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 
-import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_DOWNTIME;
-import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_PAUSE_AFTER;
-import static com.cloud.configuration.ConfigurationManagerImpl.KVM_VM_MIGRATE_SPEED;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_DOWNTIME_STRING;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_PAUSE_AFTER_STRING;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_SPEED_STRING;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -675,17 +675,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param params
      */
     public void setLiveMigrateFlags(final Map<String, String> params) {
-        if (params.get(KVM_VM_MIGRATE_SPEED) != null) {
-            _migrateSpeed = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_SPEED), -1);
-            if (_migrateSpeed == -1) {
-                _migrateSpeed = getDefaultMigrateSpeed();
-            }
+        if (params.get(KVM_VM_MIGRATE_SPEED_STRING) != null) {
+            _migrateSpeed = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_SPEED_STRING), getDefaultMigrateSpeed());
         }
-        if (params.get(KVM_VM_MIGRATE_DOWNTIME) != null) {
-            _migrateDowntime = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_DOWNTIME), -1);
+        if (params.get(KVM_VM_MIGRATE_DOWNTIME_STRING) != null) {
+            _migrateDowntime = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_DOWNTIME_STRING), -1);
         }
-        if (params.get(KVM_VM_MIGRATE_PAUSE_AFTER) != null) {
-            _migratePauseAfter = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_PAUSE_AFTER), -1);
+        if (params.get(KVM_VM_MIGRATE_PAUSE_AFTER_STRING) != null) {
+            _migratePauseAfter = NumbersUtil.parseInt(params.get(KVM_VM_MIGRATE_PAUSE_AFTER_STRING), -1);
         }
     }
 

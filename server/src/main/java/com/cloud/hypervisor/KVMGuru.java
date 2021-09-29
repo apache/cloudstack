@@ -37,6 +37,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.commons.collections.MapUtils;
@@ -50,7 +52,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
+public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     @Inject
     GuestOSDao _guestOsDao;
     @Inject
@@ -64,6 +66,18 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     ServiceOfferingDao serviceOfferingDao;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
+
+    public static final String KVM_VM_MIGRATE_SPEED_STRING = "kvm.vm.migrate.speed";
+    public static final String KVM_VM_MIGRATE_DOWNTIME_STRING = "kvm.vm.migrate.downtime";
+    public static final String KVM_VM_MIGRATE_PAUSE_AFTER_STRING = "kvm.vm.migrate.pauseafter";
+
+    public static final ConfigKey<Integer> KVM_VM_MIGRATE_SPEED = new ConfigKey<>("Advanced", Integer.class, KVM_VM_MIGRATE_SPEED_STRING, "-1",
+            "set the vm migrate speed (in MiB/s) on KVM. By default, it will try to guess the speed of the guest network (in MBps).", true, ConfigKey.Scope.Cluster);
+    public static final ConfigKey<Integer> KVM_VM_MIGRATE_DOWNTIME = new ConfigKey<>("Advanced", Integer.class, KVM_VM_MIGRATE_DOWNTIME_STRING, "-1",
+            "Sets maximum tolerable time in milliseconds for which the domain is allowed to be paused at the end of live migration on KVM.", true, ConfigKey.Scope.Cluster);
+    public static final ConfigKey<Integer> KVM_VM_MIGRATE_PAUSE_AFTER = new ConfigKey<>("Advanced", Integer.class, KVM_VM_MIGRATE_PAUSE_AFTER_STRING, "-1",
+            "Set an upper limit in milliseconds for how long live migration on KVM should wait, at which point VM is paused and migration will finish quickly.  Less than 1 means disabled.",
+            true, ConfigKey.Scope.Cluster);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -301,6 +315,11 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Override
     public Map<String, String> getClusterSettings(long vmId) {
         return null;
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {KVM_VM_MIGRATE_SPEED, KVM_VM_MIGRATE_DOWNTIME, KVM_VM_MIGRATE_PAUSE_AFTER};
     }
 
 }

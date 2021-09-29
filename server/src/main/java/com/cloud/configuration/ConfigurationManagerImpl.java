@@ -272,6 +272,13 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_DOWNTIME;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_DOWNTIME_STRING;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_PAUSE_AFTER;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_PAUSE_AFTER_STRING;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_SPEED;
+import static com.cloud.hypervisor.KVMGuru.KVM_VM_MIGRATE_SPEED_STRING;
+
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
@@ -430,9 +437,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
     public static final String ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT = "router.aggregation.command.each.timeout";
-    public static final String KVM_VM_MIGRATE_SPEED = "kvm.vm.migrate.speed";
-    public static final String KVM_VM_MIGRATE_DOWNTIME = "kvm.vm.migrate.downtime";
-    public static final String KVM_VM_MIGRATE_PAUSE_AFTER = "kvm.vm.migrate.pauseafter";
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -467,12 +471,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
     public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
             "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
-    protected final ConfigKey<Integer> KvmVmMigrateSpeed = new ConfigKey<>("Advanced", Integer.class, KVM_VM_MIGRATE_SPEED, "-1",
-            "set the vm migrate speed (in MiB/s) on KVM. By default, it will try to guess the speed of the guest network (in MBps).", true);
-    protected final ConfigKey<Integer> KvmVmMigrateDowntime = new ConfigKey<>("Advanced", Integer.class, KVM_VM_MIGRATE_DOWNTIME, "-1",
-            "Sets maximum tolerable time in milliseconds for which the domain is allowed to be paused at the end of live migration on KVM.", true);
-    protected final ConfigKey<Integer> KvmVmMigratePauseAfter = new ConfigKey<>("Advanced", Integer.class, KVM_VM_MIGRATE_PAUSE_AFTER, "-1",
-            "Set an upper limit in milliseconds for how long live migration on KVM should wait, at which point VM is paused and migration will finish quickly.  Less than 1 means disabled.", true);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -559,9 +557,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private void initMessageBusListener() {
         Map<String, ConfigKey> configKeyMap = new HashMap<>();
-        configKeyMap.put(KVM_VM_MIGRATE_SPEED, KvmVmMigrateSpeed);
-        configKeyMap.put(KVM_VM_MIGRATE_DOWNTIME, KvmVmMigrateDowntime);
-        configKeyMap.put(KVM_VM_MIGRATE_PAUSE_AFTER, KvmVmMigratePauseAfter);
+        configKeyMap.put(KVM_VM_MIGRATE_SPEED_STRING, KVM_VM_MIGRATE_SPEED);
+        configKeyMap.put(KVM_VM_MIGRATE_DOWNTIME_STRING, KVM_VM_MIGRATE_DOWNTIME);
+        configKeyMap.put(KVM_VM_MIGRATE_PAUSE_AFTER_STRING, KVM_VM_MIGRATE_PAUSE_AFTER);
         messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (serverAddress, subject, args) -> {
             String globalSettingUpdated = (String) args;
             if (Strings.isNullOrEmpty(globalSettingUpdated)) {
@@ -576,9 +574,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                 params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                 _agentManager.propagateChangeToAgents(params);
-            } else if (globalSettingUpdated.equals(KvmVmMigrateSpeed.key()) ||
-                        globalSettingUpdated.equals(KvmVmMigrateDowntime.key()) ||
-                        globalSettingUpdated.equals(KvmVmMigratePauseAfter.key())) {
+            } else if (globalSettingUpdated.equals(KVM_VM_MIGRATE_SPEED.key()) ||
+                        globalSettingUpdated.equals(KVM_VM_MIGRATE_DOWNTIME.key()) ||
+                        globalSettingUpdated.equals(KVM_VM_MIGRATE_PAUSE_AFTER.key())) {
                 ConfigKey configKey = configKeyMap.get(globalSettingUpdated);
                 Map<String, String> params = new HashMap<String, String>();
                 params.put(configKey.key(), configKey.value().toString());
@@ -7327,7 +7325,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
-                KvmVmMigrateSpeed, KvmVmMigrateDowntime, KvmVmMigratePauseAfter};
+                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
+                KVM_VM_MIGRATE_SPEED, KVM_VM_MIGRATE_DOWNTIME, KVM_VM_MIGRATE_PAUSE_AFTER};
     };
 
     static class ParamCountPair {
