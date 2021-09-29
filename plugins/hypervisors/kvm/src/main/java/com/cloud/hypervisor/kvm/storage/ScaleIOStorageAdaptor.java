@@ -272,8 +272,9 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             qemu.convert(srcFile, destFile);
             LOGGER.debug("Succesfully converted source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
-            destDisk = null;
+            String errMsg = "Failed to convert/copy from " + srcFile.getFileName() + " to " + destFile.getFileName() + ", due to: " + e.getMessage();
+            LOGGER.error(errMsg, e);
+            throw new CloudRuntimeException(errMsg);
         }
 
         return destDisk;
