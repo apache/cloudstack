@@ -326,7 +326,7 @@ setup_common() {
     cidrs=(${MGMTNET//,/ })
     for cidr in ${cidrs[@]}
     do
-      ip route add $cidr dev eth1
+      ip route add $cidr via $LOCAL_GW dev eth1
     done
   fi
 
