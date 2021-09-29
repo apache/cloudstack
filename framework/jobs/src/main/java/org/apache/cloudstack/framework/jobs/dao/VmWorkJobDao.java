@@ -32,6 +32,8 @@ public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
 
     List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd);
 
+    List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd, String secondaryKey);
+
     void updateStep(long workJobId, Step step);
 
     void expungeCompletedWorkJobs(Date cutDate);
