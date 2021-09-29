@@ -600,6 +600,7 @@ export default {
     if ('projectid' in this.$route.query) {
       this.switchProject(this.$route.query.projectid)
     }
+    this.setModalWidthByScreen()
   },
   beforeRouteUpdate (to, from, next) {
     this.currentPath = this.$route.fullPath
@@ -951,6 +952,8 @@ export default {
       } else {
         this.modalWidth = '30vw'
       }
+
+      this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
       const self = this
@@ -1524,13 +1527,18 @@ export default {
       } else {
         callback()
       }
+    },
+    setModalWidthByScreen () {
+      const screenWidth = window.innerWidth
+      if (screenWidth <= 768) {
+        this.modalWidth = '450px'
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
