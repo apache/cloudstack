@@ -129,8 +129,10 @@ class CsDhcp(CsDataBag):
             else:
                 listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
-            if self.config.is_vpc():
+            if self.config.is_vpc() or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
+            elif self.config.is_dhcp():
+                self.add_host(ip, "%s data-server" % CsHelper.get_hostname())
             idx += 1
 
         # Listen Address
@@ -166,8 +168,6 @@ class CsDhcp(CsDataBag):
         self.add_host("::1", "localhost ip6-localhost ip6-loopback")
         self.add_host("ff02::1", "ip6-allnodes")
         self.add_host("ff02::2", "ip6-allrouters")
-        if self.config.is_router() or self.config.is_dhcp():
-            self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
     def write_hosts(self):
         file = CsFile("/etc/hosts")
