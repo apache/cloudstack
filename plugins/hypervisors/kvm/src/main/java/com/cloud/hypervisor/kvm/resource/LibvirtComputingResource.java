@@ -1806,7 +1806,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public synchronized boolean configureTunnelNetwork(final long networkId,
+    public synchronized boolean configureTunnelNetwork(final Long networkId,
                                                        final long hostId, final String nwName) {
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
