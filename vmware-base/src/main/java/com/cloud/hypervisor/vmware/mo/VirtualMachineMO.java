@@ -801,24 +801,27 @@ public class VirtualMachineMO extends BaseMO {
         VirtualMachineMO clonedVm = dcMo.findVm(vmName);
         VirtualDisk[] vmDisks = clonedVm.getAllDiskDevice();
         s_logger.debug(String.format("Checking if VM %s is created only with required Disk, if not detach the remaining disks", vmName));
-        if (vmDisks.length != 1) {
-            VirtualDisk requiredCloneDisk = null;
-            for (VirtualDisk vmDisk: vmDisks) {
-                if (vmDisk.getKey() == requiredDisk.getKey()) {
-                    requiredCloneDisk = vmDisk;
-                    break;
-                }
-            }
-            if (requiredCloneDisk != null) {
-                String baseName = VmwareHelper.getDiskDeviceFileName(requiredCloneDisk);
-                s_logger.debug(String.format("Detaching all disks for the VM: %s except disk with base name: %s, key=%d", vmName, baseName, requiredCloneDisk.getKey()));
-                clonedVm.detachAllDisksExcept(baseName, null);
-            } else {
-                s_logger.error(String.format("Failed to identify required disk in VM %s", vmName));
-            }
-        } else {
+        if (vmDisks.length == 1) {
             s_logger.debug(String.format("VM %s is created only with required Disk", vmName));
+            return;
         }
+
+        VirtualDisk requiredCloneDisk = null;
+        for (VirtualDisk vmDisk: vmDisks) {
+            if (vmDisk.getKey() == requiredDisk.getKey()) {
+                requiredCloneDisk = vmDisk;
+                break;
+            }
+        }
+        if (requiredCloneDisk == null) {
+            s_logger.error(String.format("Failed to identify required disk in VM %s", vmName));
+            return;
+        }
+
+        String baseName = VmwareHelper.getDiskDeviceFileName(requiredCloneDisk);
+        s_logger.debug(String.format("Detaching all disks for the VM: %s except disk with base name: %s, key=%d", vmName, baseName, requiredCloneDisk.getKey()));
+        clonedVm.detachAllDisksExcept(baseName, null);
+
     }
 
     public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Storage.ProvisioningType diskProvisioningType)
