@@ -65,7 +65,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDispatcher;
@@ -1069,9 +1068,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         LOG.debug(String.format("Trying to update Backup Offering [id: %s, name: %s, description: %s] to [name: %s, description: %s].",
                 backupOfferingVO.getUuid(), backupOfferingVO.getName(), backupOfferingVO.getDescription(), name, description));
-        if (StringUtils.isAllEmpty(name, description)) {
-            throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there is no change in name or description.", backupOfferingVO.getId()));
-        }
 
         BackupOfferingVO offering = backupOfferingDao.createForUpdate(id);
         List<String> fields = new ArrayList<>();

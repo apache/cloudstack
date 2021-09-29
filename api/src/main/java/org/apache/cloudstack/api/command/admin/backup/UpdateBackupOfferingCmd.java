@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -75,6 +76,10 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
     @Override
     public void execute() {
         try {
+            if (StringUtils.isAllEmpty(name, description)) {
+                throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there is no change in name or description.", id));
+            }
+
             BackupOffering result = backupManager.updateBackupOffering(this);
 
             if (result == null) {
