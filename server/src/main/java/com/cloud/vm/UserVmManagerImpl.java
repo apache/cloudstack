@@ -1282,8 +1282,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 rootVolumeOfVm.setDiskOfferingId(newRootDiskOffering.getId());
                 _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
             }
-
-            _volumeService.resizeVolume(resizeVolumeCmd);
+            HypervisorType hypervisorType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
+            if (HypervisorType.Simulator != hypervisorType) {
+                _volumeService.resizeVolume(resizeVolumeCmd);
+            } else if (newRootDiskOffering.getDiskSize() > 0 && currentRootDiskOffering.getDiskSize() != newRootDiskOffering.getDiskSize()) {
+                throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
+            }
         }
 
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
