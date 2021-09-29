@@ -76,7 +76,6 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -90,12 +89,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.google.gson.Gson;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String _nfsVersion;
-    private final Gson gson = GsonHelper.getGsonLogger();
 
 
     @Override
@@ -305,8 +302,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     @Override
     @Deprecated
     public Answer execute(VmwareHostService hostService, BackupSnapshotCommand cmd) {
-        s_logger.debug(String.format("Received BackupSnapshotCommand: [%s].", gson.toJson(cmd)));
-
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();

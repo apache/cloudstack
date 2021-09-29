@@ -97,9 +97,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         try {
             Answer answer;
             NDC.push(getCommandLogTitle(cmd));
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Executing " + _gson.toJson(cmd));
+            logCommand(cmd);
 
             if (cmd instanceof PrimaryStorageDownloadCommand) {
                 answer = execute((PrimaryStorageDownloadCommand)cmd);
@@ -143,6 +141,14 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 s_logger.debug("Done executing " + _gson.toJson(cmd));
             recycleServiceContext();
             NDC.pop();
+        }
+    }
+
+    private void logCommand(Command cmd) {
+        try {
+            s_logger.debug(String.format("Executing command: [%s].", _gson.toJson(cmd)));
+        } catch (Exception e) {
+            s_logger.debug(String.format("Executing command: [%s].", cmd.getClass().getSimpleName()));
         }
     }
 
