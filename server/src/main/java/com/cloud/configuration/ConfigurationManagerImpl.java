@@ -798,8 +798,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
-        final Long accountId = cmd.getAccountId();
         final Long imageStoreId = cmd.getImageStoreId();
+        Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
@@ -810,6 +810,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (_accountMgr.isDomainAdmin(caller.getId())) {
             if (accountId == null && domainId == null) {
                 domainId = caller.getDomainId();
+            }
+        } else if (_accountMgr.isNormalUser(caller.getId())) {
+            if (accountId == null) {
+                accountId = caller.getAccountId();
             }
         }
 
@@ -850,7 +854,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
-            _accountMgr.checkAccess(caller, _domainDao.findById(account.getDomainId()));
+            _accountMgr.checkAccess(caller, null, true, account);
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;

@@ -1973,8 +1973,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
-        final Long accountId = cmd.getAccountId();
         final Long imageStoreId = cmd.getImageStoreId();
+        Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         String scope = null;
         Long id = null;
@@ -1984,6 +1984,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (_accountMgr.isDomainAdmin(caller.getId())) {
             if (accountId == null && domainId == null) {
                 domainId = caller.getDomainId();
+            }
+        } else if (_accountMgr.isNormalUser(caller.getId())) {
+            if (accountId == null) {
+                accountId = caller.getAccountId();
             }
         }
 
@@ -1999,7 +2003,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
-            _accountMgr.checkAccess(caller, _domainDao.findById(account.getDomainId()));
+            _accountMgr.checkAccess(caller, null, true, account);
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
