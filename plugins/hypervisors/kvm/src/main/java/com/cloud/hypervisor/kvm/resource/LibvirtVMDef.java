@@ -1628,9 +1628,13 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder videoBuilder = new StringBuilder();
-            if (_videoModel != null && !_videoModel.isEmpty() && _videoRam != 0){
+            if (_videoModel != null && !_videoModel.isEmpty()){
                 videoBuilder.append("<video>\n");
-                videoBuilder.append("<model type='" + _videoModel + "' vram='" + _videoRam + "'/>\n");
+                if (_videoRam != 0) {
+                    videoBuilder.append("<model type='" + _videoModel + "' vram='" + _videoRam + "'/>\n");
+                } else {
+                    videoBuilder.append("<model type='" + _videoModel + "'/>\n");
+                }
                 videoBuilder.append("</video>\n");
                 return videoBuilder.toString();
             }
