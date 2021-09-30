@@ -5385,7 +5385,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<Volume, StoragePool> volumeStorageMap = dest.getStorageForDisks();
         if (volumeStorageMap != null) {
             for (Volume vol : volumeStorageMap.keySet()) {
-                checkConcurrentJobsPerDatastoreThreshhold(volumeStorageMap.get(vol));
+                checkConcurrentJobsPerDatastoreThreshold(volumeStorageMap.get(vol));
             }
         }
 
@@ -5550,7 +5550,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
     }
 
-    private void checkConcurrentJobsPerDatastoreThreshhold(final StoragePool destPool) {
+    private void checkConcurrentJobsPerDatastoreThreshold(final StoragePool destPool) {
         final Long threshold = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
         if (threshold != null && threshold > 0) {
             long count = _jobMgr.countPendingJobs("\"storageid\":\"" + destPool.getUuid() + "\"", MigrateVMCmd.class.getName(), MigrateVolumeCmd.class.getName(), MigrateVolumeCmdByAdmin.class.getName());
@@ -5571,7 +5571,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Set<Long> uniquePoolIds = new HashSet<>(poolIds);
         for (Long poolId : uniquePoolIds) {
             StoragePoolVO pool = _storagePoolDao.findById(poolId);
-            checkConcurrentJobsPerDatastoreThreshhold(pool);
+            checkConcurrentJobsPerDatastoreThreshold(pool);
         }
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -5625,7 +5625,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (pendingWorkJobs.size() > 0) {
                 s_logger.warn(String.format("number of jobs to add net %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
             }
-            workJob = fetchOrCreateVmWorkJobToAddNetwokr(vm, network, requested, context, user, account, pendingWorkJobs);
+            workJob = fetchOrCreateVmWorkJobToAddNetwork(vm, network, requested, context, user, account, pendingWorkJobs);
         } else {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("no jobs to add network %s for vm %s yet", network, vm));
@@ -5638,7 +5638,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
     }
 
-    private VmWorkJobVO fetchOrCreateVmWorkJobToAddNetwokr(
+    private VmWorkJobVO fetchOrCreateVmWorkJobToAddNetwork(
             VirtualMachine vm,
             Network network,
             NicProfile requested,
