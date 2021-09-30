@@ -2490,16 +2490,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected VideoDef createVideoDef(VirtualMachineTO vmTO) {
         Map<String, String> details = vmTO.getDetails();
+        String videoHw = _videoHw;
+        int videoRam = _videoRam;
         if (details != null) {
             if (details.containsKey(VideoDef.VIDEO_MODEL)) {
-                _videoHw = details.get(VideoDef.VIDEO_MODEL);
+                videoHw = details.get(VideoDef.VIDEO_MODEL);
             }
             if (details.containsKey(VideoDef.VIDEO_RAM)) {
                 String value = details.get(VideoDef.VIDEO_RAM);
-                _videoRam = NumbersUtil.parseInt(value, 0);
+                videoRam = NumbersUtil.parseInt(value, 0);
             }
         }
-        return new VideoDef(_videoHw, _videoRam);
+        return new VideoDef(videoHw, videoRam);
     }
 
     protected RngDef createRngDef() {
