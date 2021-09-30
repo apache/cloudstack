@@ -4836,7 +4836,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = true;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -4889,7 +4889,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -4929,7 +4929,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4947,7 +4947,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = true;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -4976,7 +4976,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -5024,7 +5024,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);

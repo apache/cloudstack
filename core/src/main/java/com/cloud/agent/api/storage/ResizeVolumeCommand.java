@@ -38,7 +38,7 @@ public class ResizeVolumeCommand extends Command {
     protected ResizeVolumeCommand() {
     }
 
-    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance) {
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance, String chainInfo) {
         this.path = path;
         this.pool = pool;
         this.currentSize = currentSize;
@@ -46,6 +46,7 @@ public class ResizeVolumeCommand extends Command {
         this.shrinkOk = shrinkOk;
         this.vmInstance = vmInstance;
         this.managed = false;
+        this.chainInfo = chainInfo;
     }
 
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance, String chainInfo) {
@@ -55,7 +56,7 @@ public class ResizeVolumeCommand extends Command {
 
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
                                boolean isManaged, String iScsiName) {
-        this(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        this(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         this.iScsiName = iScsiName;
         this.managed = isManaged;
