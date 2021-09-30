@@ -4021,10 +4021,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    /**
+     * duplicated in {@see UserVmManagerImpl} for a {@see UserVmVO}
+     */
+    private void checkIfNetExistsForVM(VirtualMachine virtualMachine, Network network) {
+        List<NicVO> allNics = _nicsDao.listByVmId(virtualMachine.getId());
+        for (NicVO nic : allNics) {
+            if (nic.getNetworkId() == network.getId()) {
+                throw new CloudRuntimeException("A NIC already exists for VM:" + virtualMachine.getInstanceName() + " in network: " + network.getUuid());
+            }
+        }
+    }
+
     private NicProfile orchestrateAddVmToNetwork(final VirtualMachine vm, final Network network, final NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
         final CallContext cctx = CallContext.current();
 
+        checkIfNetExistsForVM(vm, network);
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
         final VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         final ReservationContext context = new ReservationContextImpl(null, null, cctx.getCallingUser(), cctx.getCallingAccount());
