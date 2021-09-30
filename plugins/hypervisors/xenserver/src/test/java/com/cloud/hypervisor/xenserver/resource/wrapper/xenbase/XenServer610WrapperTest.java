@@ -486,7 +486,7 @@ public class XenServer610WrapperTest {
         final Map<String, String> other = new HashMap<String, String>();
         other.put("live", "true");
 
-        final MigrateVolumeCommand createStorageCommand = new MigrateVolumeCommand(volumeId, volumePath, pool, timeout, null);
+        final MigrateVolumeCommand createStorageCommand = new MigrateVolumeCommand(volumeId, volumePath, pool, timeout);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

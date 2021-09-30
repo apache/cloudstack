@@ -42,18 +42,25 @@ public class MigrateVolumeCommand extends Command {
     private Map<String, String> srcDetails;
     private Map<String, String> destDetails;
 
-    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, int timeout, String chainInfo) {
+    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, int timeout) {
         this.volumeId = volumeId;
         this.volumePath = volumePath;
         this.pool = new StorageFilerTO(pool);
-        this.chainInfo = chainInfo;
+        this.setWait(timeout);
+    }
+
+    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName, Volume.Type volumeType, int timeout) {
+        this(volumeId, volumePath, pool, timeout);
+        this.attachedVmName = attachedVmName;
+        this.volumeType = volumeType;
         this.setWait(timeout);
     }
 
     public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName, Volume.Type volumeType, int timeout, String chainInfo) {
-        this(volumeId, volumePath, pool, timeout, chainInfo);
+        this(volumeId, volumePath, pool, timeout);
         this.attachedVmName = attachedVmName;
         this.volumeType = volumeType;
+        this.chainInfo = chainInfo;
         this.setWait(timeout);
     }
 
