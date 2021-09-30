@@ -58,8 +58,8 @@ public class VmWorkJobVO extends AsyncJobVO {
     @Column(name = "vm_instance_id")
     long vmInstanceId;
 
-    @Column(name = "secondary_key")
-    String secondaryKey;
+    @Column(name = "secondary_object")
+    String secondaryObjectIdentifier;
 
     protected VmWorkJobVO() {
     }
@@ -93,11 +93,11 @@ public class VmWorkJobVO extends AsyncJobVO {
         this.vmInstanceId = vmInstanceId;
     }
 
-    public String getSecondaryKey() {
-        return secondaryKey;
+    public String getSecondaryObjectIdentifier() {
+        return secondaryObjectIdentifier;
     }
 
-    public void setSecondaryKey(String secondaryKey) {
-        this.secondaryKey = secondaryKey;
+    public void setSecondaryObjectIdentifier(String secondaryObjectIdentifier) {
+        this.secondaryObjectIdentifier = secondaryObjectIdentifier;
     }
 }

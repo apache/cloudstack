@@ -5622,13 +5622,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("number of add nic jobs for vm %s are %d", vm, pendingWorkJobs.size()));
+            if (pendingWorkJobs.size() > 0) {
+                s_logger.warn(String.format("number of jobs to add net %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
             }
             workJob = fetchOrCreateVmWorkJobToAddNetwokr(vm, network, requested, context, user, account, pendingWorkJobs);
         } else {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("no add-nic jobs for vm %s yet", vm));
+                s_logger.trace(String.format("no jobs to add network %s for vm %s yet", network, vm));
             }
 
             workJob = createVmWorkJobToAddNetwork(vm, network, requested, context, user, account);
@@ -5648,7 +5648,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             List<VmWorkJobVO> pendingWorkJobs) {
         VmWorkJobVO workJob = null;
         for (VmWorkJobVO job : pendingWorkJobs) {
-            if (network.getUuid().equals(job.getSecondaryKey())) {
+            if (network.getUuid().equals(job.getSecondaryObjectIdentifier())) {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("a similar job found for vm %s", vm));
                 }
@@ -5679,7 +5679,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         workJob.setVmType(VirtualMachine.Type.Instance);
         workJob.setVmInstanceId(vm.getId());
         workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-        workJob.setSecondaryKey(network.getUuid());
+        workJob.setSecondaryObjectIdentifier(network.getUuid());
 
         // save work context info (there are some duplications)
         final VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),

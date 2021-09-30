@@ -67,7 +67,7 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         PendingWorkJobByCommandSearch.and("jobStatus", PendingWorkJobByCommandSearch.entity().getStatus(), Op.EQ);
         PendingWorkJobByCommandSearch.and("vmType", PendingWorkJobByCommandSearch.entity().getVmType(), Op.EQ);
         PendingWorkJobByCommandSearch.and("vmInstanceId", PendingWorkJobByCommandSearch.entity().getVmInstanceId(), Op.EQ);
-        PendingWorkJobByCommandSearch.and("secondaryKey", PendingWorkJobByCommandSearch.entity().getSecondaryKey(), Op.EQ);
+        PendingWorkJobByCommandSearch.and("secondaryObjectIdentifier", PendingWorkJobByCommandSearch.entity().getSecondaryObjectIdentifier(), Op.EQ);
         PendingWorkJobByCommandSearch.and("step", PendingWorkJobByCommandSearch.entity().getStep(), Op.NEQ);
         PendingWorkJobByCommandSearch.and("cmd", PendingWorkJobByCommandSearch.entity().getCmd(), Op.EQ);
         PendingWorkJobByCommandSearch.done();
@@ -121,13 +121,13 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     }
 
     @Override
-    public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd, String secondaryKey) {
+    public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd, String secondaryObjectIdentifier) {
 
         SearchCriteria<VmWorkJobVO> sc = PendingWorkJobByCommandSearch.create();
         sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
         sc.setParameters("vmType", type);
         sc.setParameters("vmInstanceId", instanceId);
-        sc.setParameters("secondaryKey", secondaryKey);
+        sc.setParameters("secondaryObjectIdentifier", secondaryObjectIdentifier);
         sc.setParameters("cmd", jobCmd);
 
         Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
