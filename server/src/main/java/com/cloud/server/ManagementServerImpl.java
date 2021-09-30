@@ -2003,7 +2003,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
-            _accountMgr.checkAccess(caller, null, true, account);
+            _accountMgr.checkAccess(caller, null, false, account);
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
