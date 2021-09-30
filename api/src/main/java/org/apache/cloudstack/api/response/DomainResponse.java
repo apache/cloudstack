@@ -26,6 +26,7 @@ import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 
 import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value = Domain.class)
 public class DomainResponse extends BaseResponseWithAnnotations implements ResourceLimitAndCountResponse, SetResourceIconResponse {
@@ -178,6 +179,10 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
+
+    @SerializedName(ApiConstants.DOMAIN_DETAILS)
+    @Param(description = "details for the domain")
+    private Map<String, String> details;
 
     public String getId() {
         return this.id;
@@ -437,5 +442,9 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

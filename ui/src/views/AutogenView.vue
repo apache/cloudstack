@@ -407,7 +407,8 @@
         :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData" />
+        @refresh="this.fetchData"
+        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
         style="margin-top: 10px"
@@ -600,6 +601,7 @@ export default {
     if ('projectid' in this.$route.query) {
       this.switchProject(this.$route.query.projectid)
     }
+    this.setModalWidthByScreen()
   },
   beforeRouteUpdate (to, from, next) {
     this.currentPath = this.$route.fullPath
@@ -831,7 +833,6 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
 
       if (this.$showIcon()) {
         params.showIcon = true
@@ -951,6 +952,8 @@ export default {
       } else {
         this.modalWidth = '30vw'
       }
+
+      this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
       const self = this
@@ -1099,7 +1102,6 @@ export default {
       }).catch(function (error) {
         console.log(error)
         param.loading = false
-      }).then(function () {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
@@ -1524,13 +1526,18 @@ export default {
       } else {
         callback()
       }
+    },
+    setModalWidthByScreen () {
+      const screenWidth = window.innerWidth
+      if (screenWidth <= 768) {
+        this.modalWidth = '450px'
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
