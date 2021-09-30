@@ -17,13 +17,17 @@
 
 <template>
   <div class="form" v-ctrl-enter="submitForm">
+    <a-alert type="warning">
+      <span slot="message" v-html="$t('message.migrate.instance.to.host')" />
+    </a-alert>
     <a-input-search
+      class="top-spaced"
       :placeholder="$t('label.search')"
       v-model="searchQuery"
-      style="margin-bottom: 10px;"
       @search="fetchData"
       autoFocus />
     <a-table
+      class="top-spaced"
       size="small"
       style="overflow-y: auto"
       :loading="loading"
@@ -86,6 +90,32 @@
       </template>
     </a-pagination>
 
+    <a-form-item v-if="isUserVm">
+      <tooltip-label slot="label" :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
+      <a-switch v-decorator="['migratewithstorage']" @change="handleMigrateWithStorageChange" />
+    </a-form-item>
+    <a-form v-if="migrateWithStorage">
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.volume.to.storage.pool.map')" :tooltip="$t('message.volume.to.storage.pool.map')" />
+        <div scroll-to="last-child">
+          <a-list itemLayout="horizontal" :dataSource="vmVolumes">
+            <a-list-item slot="renderItem" slot-scope="item">
+              <check-box-select-pair
+                v-decorator="['volume.'+item.name, {}]"
+                :resourceKey="item.id"
+                :checkBoxLabel="item.name +' (' + toGB(item.size) + ' GB)'"
+                :checkBoxDecorator="'volume.' + item.name"
+                :selectOptions="storagePools"
+                :selectDecorator="item.name + '.pool'"
+                @handle-checkselectpair-change="handleVolumePoolChange"/>
+            </a-list-item>
+          </a-list>
+        </div>
+      </a-form-item>
+    </a-form>
+
+    <a-divider />
+
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
       <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">
         {{ $t('label.ok') }}
@@ -97,9 +127,15 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
+import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
   name: 'VMMigrateWizard',
+  components: {
+    TooltipLabel,
+    CheckBoxSelectPair
+  },
   props: {
     resource: {
       type: Object,
@@ -152,13 +188,24 @@ export default {
           title: this.$t('label.select'),
           scopedSlots: { customRender: 'select' }
         }
-      ]
+      ],
+      migrateWithStorage: false,
+      vmVolumes: [],
+      storagePools: []
     }
   },
   created () {
     this.fetchData()
   },
+  computed: {
+    isUserVm () {
+      return this.$route.meta.name === 'vm'
+    }
+  },
   methods: {
+    arrayHasItems (array) {
+      return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
+    },
     fetchData () {
       this.loading = true
       api('findHostsForMigration', {
@@ -187,17 +234,13 @@ export default {
     submitForm () {
       if (this.loading) return
       this.loading = true
-      var isUserVm = true
-      if (this.$route.meta.name !== 'vm') {
-        isUserVm = false
-      }
-      var migrateApi = isUserVm
+      var migrateApi = this.isUserVm
         ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
         : 'migrateSystemVm'
       var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
       api(migrateApi, migrateParams).then(response => {
-        const jobid = isUserVm
+        const jobid = this.isUserVm
           ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
           : response.migratesystemvmresponse.jobid
         this.$pollJob({
@@ -238,6 +281,49 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleMigrateWithStorageChange (checked) {
+      this.migrateWithStorage = checked
+      if (this.migrateWithStorage) {
+        this.fetchVolumes()
+      }
+    },
+    fetchVolumes () {
+      this.loading = true
+      api('listVolumes', {
+        listAll: true,
+        virtualmachineid: this.resource.id
+      }).then(response => {
+        var volumes = response.listvolumesresponse.volume
+        if (volumes && volumes.length > 0) {
+          this.vmVolumes = volumes
+        }
+      }).finally(() => {
+        if (this.vmVolumes) {
+          this.fetchPools()
+        }
+      })
+    },
+    fetchPools () {
+      this.loading = true
+      var params = {
+        zoneid: this.resource.zoneid
+      }
+      if (this.selectedHost) {
+        params.clusterid = this.selectedHost.clusterid
+      }
+      api('listStoragePools', params).then(response => {
+        if (this.arrayHasItems(response.liststoragepoolsresponse.storagepool)) {
+          this.storagePools = response.liststoragepoolsresponse.storagepool
+        }
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    handleVolumePoolChange (v1, v2, v3) {
+    },
+    toGB (value) {
+      return (value / (1024 * 1024 * 1024)).toFixed(2)
     }
   },
   filters: {
@@ -306,6 +392,10 @@ export default {
       align-items: center;
     }
 
+  }
+
+  .top-spaced {
+    margin-top: 20px;
   }
 
   .pagination {

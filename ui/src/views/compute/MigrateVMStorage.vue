@@ -17,13 +17,17 @@
 
 <template>
   <div class="form-layout">
+    <a-alert type="warning">
+      <span slot="message" v-html="$t('message.migrate.instance.to.ps')" />
+    </a-alert>
     <a-input-search
+      class="top-spaced"
       :placeholder="$t('label.search')"
       v-model="searchQuery"
-      style="margin-bottom: 10px;"
-      @search="fetchData"
+      @search="fetchPools"
       autoFocus />
     <a-table
+      class="top-spaced"
       size="small"
       style="overflow-y: auto"
       :loading="loading"
@@ -44,7 +48,7 @@
       </template>
     </a-table>
     <a-pagination
-      class="pagination"
+      class="top-spaced"
       size="small"
       :current="page"
       :pageSize="pageSize"
@@ -58,6 +62,31 @@
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
+    <a-form-item>
+      <tooltip-label slot="label" :title="$t('label.per.volume')" :tooltip="$t('message.per.volume.migration')"/>
+      <a-switch v-decorator="['pervolume']" @change="handlePerVolumeChange" />
+    </a-form-item>
+    <a-form v-if="perVolume">
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.volume.to.storage.pool.map')" :tooltip="$t('message.volume.to.storage.pool.map')"/>
+        <div scroll-to="last-child">
+          <a-list itemLayout="horizontal" :dataSource="secondaryVolumes">
+            <a-list-item slot="renderItem" slot-scope="item">
+              <check-box-select-pair
+                v-decorator="['volume.'+item.name, {}]"
+                :resourceKey="item.id"
+                :checkBoxLabel="item.name +' (' + toGB(item.size) + ' GB)'"
+                :checkBoxDecorator="'volume.' + item.name"
+                :selectOptions="secondaryVolumePools"
+                :selectDecorator="item.name + '.pool'"
+                @handle-checkselectpair-change="handleVolumePoolChange"/>
+            </a-list-item>
+          </a-list>
+        </div>
+      </a-form-item>
+    </a-form>
+
+    <a-divider />
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
       <a-button type="primary" :disabled="!selectedPool.id" @click="submitForm">
@@ -70,11 +99,13 @@
 <script>
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
   name: 'MigrateVMStorage',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    CheckBoxSelectPair
   },
   props: {
     resource: {
@@ -91,18 +122,22 @@ export default {
       pageSize: 10,
       storagePools: [],
       selectedPool: {},
+      rootVolume: null,
+      secondaryVolumes: [],
+      secondaryVolumePools: [],
+      perVolume: false,
       columns: [
         {
           title: this.$t('label.name'),
           dataIndex: 'name'
         },
         {
-          title: this.$t('label.podid'),
-          dataIndex: 'podname'
-        },
-        {
           title: this.$t('label.clusterid'),
           dataIndex: 'clustername'
+        },
+        {
+          title: this.$t('label.podid'),
+          dataIndex: 'podname'
         },
         {
           title: this.$t('label.disksizeallocated'),
@@ -149,6 +184,31 @@ export default {
   },
   methods: {
     fetchData () {
+      this.fetchVolumes()
+    },
+    fetchVolumes () {
+      this.loading = true
+      this.rootVolume = null
+      api('listVolumes', {
+        listAll: true,
+        virtualmachineid: this.resource.id
+      }).then(response => {
+        var volumes = response.listvolumesresponse.volume
+        if (volumes && volumes.length > 0) {
+          var rootVolumes = volumes.filter(item => item.type === 'ROOT')
+          if (rootVolumes && rootVolumes.length > 0) {
+            this.rootVolume = rootVolumes[0]
+            this.secondaryVolumes = volumes.filter(item => item.id !== this.rootVolume.id)
+          }
+        }
+      }).finally(() => {
+        if (this.rootVolume != null) {
+          this.fetchPools()
+          this.fetchSecondaryVolumePools()
+        }
+      })
+    },
+    fetchPools () {
       this.loading = true
       api('listStoragePools', {
         zoneid: this.resource.zoneid,
@@ -160,6 +220,18 @@ export default {
           this.storagePools = response.liststoragepoolsresponse.storagepool
         }
         this.totalCount = response.liststoragepoolsresponse.count
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchSecondaryVolumePools () {
+      this.loading = true
+      api('listStoragePools', {
+        zoneid: this.resource.zoneid
+      }).then(response => {
+        if (this.arrayHasItems(response.liststoragepoolsresponse.storagepool)) {
+          this.secondaryVolumePools = response.liststoragepoolsresponse.storagepool
+        }
       }).finally(() => {
         this.loading = false
       })
@@ -176,12 +248,20 @@ export default {
     handleChangePage (page, pageSize) {
       this.page = page
       this.pageSize = pageSize
-      this.fetchData()
+      this.fetchPools()
     },
     handleChangePageSize (currentPage, pageSize) {
       this.page = currentPage
       this.pageSize = pageSize
-      this.fetchData()
+      this.fetchPools()
+    },
+    handlePerVolumeChange (checked) {
+      this.perVolume = checked
+      if (this.perVolume) {
+        this.fetchSecondaryVolumePools()
+      }
+    },
+    handleVolumePoolChange (v1, v2, v3) {
     },
     submitForm () {
       this.loading = true
@@ -192,24 +272,11 @@ export default {
       var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
       if (isUserVm && this.apiParams.hostid && this.apiParams.hostid.required === false) {
         migrateApi = 'migrateVirtualMachineWithVolume'
-        var rootVolume = null
-        api('listVolumes', {
-          listAll: true,
-          virtualmachineid: this.resource.id
-        }).then(response => {
-          var volumes = response.listvolumesresponse.volume
-          if (volumes && volumes.length > 0) {
-            volumes = volumes.filter(item => item.type === 'ROOT')
-            if (volumes && volumes.length > 0) {
-              rootVolume = volumes[0]
-            }
-            if (rootVolume == null) {
-              this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
-              this.closeAction()
-            }
-            this.migrateVm(migrateApi, this.selectedPool.id, rootVolume.id)
-          }
-        })
+        if (this.rootVolume == null) {
+          this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
+          this.closeAction()
+        }
+        this.migrateVm(migrateApi, this.selectedPool.id, this.rootVolume.id)
         return
       }
       this.migrateVm(migrateApi, this.selectedPool.id, null)
@@ -261,6 +328,9 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    toGB (value) {
+      return (value / (1024 * 1024 * 1024)).toFixed(2)
     }
   },
   filters: {
@@ -273,14 +343,14 @@ export default {
 
 <style scoped lang="less">
   .form-layout {
-    width: 75vw;
+    width: 80vw;
 
-    @media (min-width: 700px) {
-      width: 650px;
+    @media (min-width: 800px) {
+      width: 600px;
     }
   }
 
-  .pagination {
+  .top-spaced {
     margin-top: 20px;
   }
 

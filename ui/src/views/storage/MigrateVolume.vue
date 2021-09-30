@@ -18,24 +18,66 @@
 <template>
   <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
     <div class="modal-form">
-      <div v-if="storagePools.length > 0">
-        <a-alert type="warning">
-          <span slot="message" v-html="$t('message.migrate.volume')" />
-        </a-alert>
-        <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
-        <a-select
-          v-model="selectedStoragePool"
-          style="width: 100%;"
-          :autoFocus="storagePools.length > 0"
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
-            {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
-          </a-select-option>
-        </a-select>
+      <a-alert class="top-spaced" type="warning">
+        <span slot="message" v-html="$t('message.migrate.volume')" />
+      </a-alert>
+      <a-input-search
+        class="top-spaced"
+        :placeholder="$t('label.search')"
+        v-model="searchQuery"
+        style="margin-bottom: 10px;"
+        @search="fetchStoragePools"
+        autoFocus />
+      <a-table
+        size="small"
+        style="overflow-y: auto"
+        :loading="loading"
+        :columns="columns"
+        :dataSource="storagePools"
+        :pagination="false"
+        :rowKey="record => record.id">
+        <div slot="suitability" slot-scope="record">
+          <a-icon
+            class="host-item__suitability-icon"
+            type="check-circle"
+            theme="twoTone"
+            twoToneColor="#52c41a"
+            v-if="record.suitableformigration" />
+          <a-icon
+            class="host-item__suitability-icon"
+            type="close-circle"
+            theme="twoTone"
+            twoToneColor="#f5222d"
+            v-else />
+        </div>
+        <div slot="disksizeallocated" slot-scope="record">
+          {{ record.disksizeallocated | byteToGigabyte }} GB
+        </div>
+        <div slot="disksizetotal" slot-scope="record">
+          {{ record.disksizetotal | byteToGigabyte }} GB
+        </div>
+        <template slot="select" slot-scope="record">
+          <a-radio
+            @click="selectedStoragePool = record"
+            :checked="record.id === selectedStoragePool.id"></a-radio>
+        </template>
+      </a-table>
+      <a-pagination
+        class="top-spaced"
+        size="small"
+        :current="page"
+        :pageSize="pageSize"
+        :total="totalCount"
+        :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+        :pageSizeOptions="['10', '20', '40', '80', '100']"
+        @change="handleChangePage"
+        @showSizeChange="handleChangePageSize"
+        showSizeChanger>
+        <template slot="buildOptionText" slot-scope="props">
+          <span>{{ props.value }} / {{ $t('label.page') }}</span>
+        </template>
+      </a-pagination>
+      <div class="top-spaced" v-if="storagePools.length > 0">
         <template v-if="this.resource.virtualmachineid">
           <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
             {{ $t('label.usenewdiskoffering') }}
@@ -60,6 +102,18 @@
         </template>
       </div>
     </div>
+
+    <a-divider />
+
+    <div class="actions">
+      <a-button @click="closeModal">
+        {{ $t('label.cancel') }}
+      </a-button>
+      <a-button type="primary" ref="submit" @click="submitMigrateVolume">
+        {{ $t('label.ok') }}
+      </a-button>
+    </div>
+
   </div>
 </template>
 
@@ -77,25 +131,33 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      loading: true,
+      loading: false,
+      storagePools: [],
       searchQuery: '',
       totalCount: 0,
       page: 1,
       pageSize: 10,
-      storagePools: [],
-      selectedPool: {},
+      selectedStoragePool: null,
+      diskOfferings: [],
+      replaceDiskOffering: false,
+      selectedDiskOffering: null,
+      isSubmitted: false,
       columns: [
         {
           title: this.$t('label.name'),
           dataIndex: 'name'
         },
         {
-          title: this.$t('label.podid'),
-          dataIndex: 'podname'
+          title: this.$t('label.suitability'),
+          scopedSlots: { customRender: 'suitability' }
         },
         {
           title: this.$t('label.clusterid'),
           dataIndex: 'clustername'
+        },
+        {
+          title: this.$t('label.podid'),
+          dataIndex: 'podname'
         },
         {
           title: this.$t('label.disksizeallocated'),
@@ -109,61 +171,30 @@ export default {
           title: this.$t('label.select'),
           scopedSlots: { customRender: 'select' }
         }
-      ],
-      diskOfferings: [],
-      replaceDiskOffering: false,
-      selectedDiskOffering: null,
-      isSubmitted: false
+      ]
     }
   },
   created () {
-    if (this.resource.virtualmachineid) {
-      this.columns.splice(1, 0,
-        {
-          title: this.$t('label.suitability'),
-          scopedSlots: { customRender: 'suitability' }
-        }
-      )
-    }
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },
   methods: {
     fetchStoragePools () {
-      if (this.resource.virtualmachineid) {
-        this.loading = true
-        api('findStoragePoolsForMigration', {
-          id: this.resource.id,
-          keyword: this.searchQuery,
-          page: this.page,
-          pagesize: this.pageSize
-        }).then(response => {
-          this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
-          if (Array.isArray(this.storagePools) && this.storagePools.length) {
-            this.selectedPool = this.storagePools[0].id || ''
-          }
-        }).catch(error => {
-          this.$notifyError(error)
-          this.closeModal()
-        }).finally(() => {
-          this.loading = false
-        })
-      } else {
-        api('listStoragePools', {
-          zoneid: this.resource.zoneid
-        }).then(response => {
-          this.storagePools = response.liststoragepoolsresponse.storagepool || []
-          this.storagePools = this.storagePools.filter(pool => { return pool.id !== this.resource.storageid })
-          if (Array.isArray(this.storagePools) && this.storagePools.length) {
-            this.selectedPool = this.storagePools[0].id || ''
-          }
-        }).catch(error => {
-          this.$notifyError(error)
-          this.closeModal()
-        }).finally(() => {
-          this.loading = false
-        })
-      }
+      api('findStoragePoolsForMigration', {
+        id: this.resource.id,
+        keyword: this.searchQuery,
+        page: this.page,
+        pagesize: this.pageSize
+      }).then(response => {
+        this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
+        if (Array.isArray(this.storagePools) && this.storagePools.length) {
+          this.selectedStoragePool = this.storagePools[0].id || ''
+        }
+        this.totalCount = response.findstoragepoolsformigrationresponse.count
+      }).catch(error => {
+        this.$notifyError(error)
+        this.closeModal()
+      })
     },
     fetchDiskOfferings () {
       api('listDiskOfferings', {
@@ -176,6 +207,9 @@ export default {
         this.closeModal()
       })
     },
+    closeModal () {
+      this.$parent.$parent.close()
+    },
     handleChangePage (page, pageSize) {
       this.page = page
       this.pageSize = pageSize
@@ -186,9 +220,6 @@ export default {
       this.pageSize = pageSize
       this.fetchStoragePools()
     },
-    closeModal () {
-      this.$parent.$parent.close()
-    },
     submitMigrateVolume () {
       if (this.isSubmitted) return
       if (this.storagePools.length === 0) {
@@ -198,7 +229,7 @@ export default {
       this.isSubmitted = true
       api('migrateVolume', {
         livemigrate: this.resource.vmstate === 'Running',
-        storageid: this.selectedPool.id,
+        storageid: this.selectedStoragePool,
         volumeid: this.resource.id,
         newdiskofferingid: this.replaceDiskOffering ? this.selectedDiskOffering : null
       }).then(response => {
@@ -232,15 +263,15 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .migrate-volume-container {
-    width: 85vw;
+  .form-layout {
+    width: 80vw;
 
     @media (min-width: 800px) {
-      width: 750px;
+      width: 600px;
     }
   }
 
-  .pagination {
+  .top-spaced {
     margin-top: 20px;
   }
 
