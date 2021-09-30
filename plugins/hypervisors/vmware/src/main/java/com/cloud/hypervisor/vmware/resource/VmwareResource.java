@@ -775,9 +775,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmName = cmd.getInstanceName();
         long newSize = cmd.getNewSize() / ResourceType.bytesToKiB;
         long oldSize = cmd.getCurrentSize() / ResourceType.bytesToKiB;
+        boolean managed = cmd.isManaged();
+        String poolUUID = cmd.getPoolUuid();
+        String chainInfo = cmd.getChainInfo();
         boolean useWorkerVm = false;
 
-        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
         VirtualMachineMO vmMo = null;
 
         String vmdkDataStorePath = null;
@@ -852,26 +856,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            // OfflineVmwareMigration: 5. ignore/replace the rest of the try-block; It is the functional bit
-            Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(path);
 
-            if (vdisk == null) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("resize volume done (failed)");
-                }
-
-                throw new Exception("No such disk device: " + path);
-            }
-
-            // IDE virtual disk cannot be re-sized if VM is running
-            if (vdisk.second() != null && vdisk.second().contains("ide")) {
-                throw new Exception("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. " +
-                        "Please re-try when virtual disk is attached to a VM using a SCSI controller.");
-            }
-
-            if (cmd.isManaged()) {
-                VmwareContext context = getServiceContext();
-
+            if (managed) {
                 ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
                 ClusterMO clusterMO = new ClusterMO(context, morCluster);
 
@@ -890,6 +876,53 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
 
                 _storageProcessor.expandDatastore(hostDatastoreSystem, dsMo);
+            }
+
+            boolean datastoreChangeObserved = false;
+            boolean volumePathChangeObserved = false;
+
+            if (cmd.getContextParam(DiskTO.PROTOCOL_TYPE) != null && cmd.getContextParam(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, path, chainInfo, managed, cmd.get_iScsiName(), poolUUID, hyperHost, context);
+                if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                    String[] diskChain = matchingExistingDisk.getDiskChain();
+                    DatastoreFile file = new DatastoreFile(diskChain[0]);
+                    if (!file.getFileBaseName().equalsIgnoreCase(path)) {
+                        if (s_logger.isInfoEnabled())
+                            s_logger.info("Detected disk-chain top file change on volume: " + path + " -> " + file.getFileBaseName());
+                        path = file.getFileBaseName();
+                        volumePathChangeObserved = true;
+                        chainInfo = _gson.toJson(matchingExistingDisk);
+                    }
+                    DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
+                    DatastoreMO diskDatastoreMofromVM = new DatastoreMO(context, dcMo.findDatastore(file.getDatastoreName()));
+                    if (diskDatastoreMofromVM != null) {
+                        String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                        if (!actualPoolUuid.equalsIgnoreCase(poolUUID)) {
+                            s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", path, actualPoolUuid));
+                            datastoreChangeObserved = true;
+                            poolUUID = actualPoolUuid;
+                            chainInfo = _gson.toJson(matchingExistingDisk);
+                        }
+                    }
+                }
+            }
+
+            // OfflineVmwareMigration: 5. ignore/replace the rest of the try-block; It is the functional bit
+            Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(path);
+
+            if (vdisk == null) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("resize volume done (failed)");
+                }
+
+                throw new Exception("No such disk device: " + path);
+            }
+
+            // IDE virtual disk cannot be re-sized if VM is running
+            if (vdisk.second() != null && vdisk.second().contains("ide")) {
+                throw new Exception("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. " +
+                        "Please re-try when virtual disk is attached to a VM using a SCSI controller.");
             }
 
             if (vdisk.second() != null && !vdisk.second().toLowerCase().startsWith("scsi")) {
@@ -922,7 +955,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Failed to configure VM to resize disk. vmName: " + vmName);
             }
 
-            return new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
+            ResizeVolumeAnswer answer = new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
+            if (datastoreChangeObserved) {
+                answer.setContextParam("datastoreName", poolUUID);
+                answer.setContextParam("chainInfo", chainInfo);
+            }
+
+            if (volumePathChangeObserved) {
+                answer.setContextParam("volumePath", path);
+                answer.setContextParam("chainInfo", chainInfo);
+            }
+            return answer;
         } catch (Exception e) {
             s_logger.error("Unable to resize volume", e);
 
@@ -1473,7 +1516,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // restore allocation mask in case of exceptions
             String nicMasksStr = vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK);
             int nicMasks = Integer.parseInt(nicMasksStr);
-            nicMasks &= ~(1 << nicIndex);
+            nicMasks &= ~(1 <<   nicIndex);
             vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
 
             throw e;
@@ -3254,68 +3297,70 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             nicIndex++;
         }
     }
+    private VirtualMachineDiskInfo getMatchingExistingDiskWithVolumeDetails(VirtualMachineDiskInfoBuilder diskInfoBuilder, String volumePath,
+                                                                             String chainInfo, boolean isManaged, String iScsiName, String datastoreUUID,
+                                                                             VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+        String dsName = null;
+        String diskBackingFileBaseName = null;
 
-    private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol, VmwareHypervisorHost hyperHost, VmwareContext context)
-            throws Exception {
-        if (diskInfoBuilder != null) {
-            VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
+        if (isManaged) {
+            // if the storage is managed, iScsiName should not be null
+            dsName = VmwareResource.getDatastoreName(iScsiName);
+            diskBackingFileBaseName = new DatastoreFile(volumePath).getFileBaseName();
+        } else {
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, datastoreUUID);
+            DatastoreMO dsMo = new DatastoreMO(context, morDs);
+            dsName = dsMo.getName();
+            diskBackingFileBaseName = volumePath;
+        }
 
-            String dsName = null;
-            String diskBackingFileBaseName = null;
-
-            Map<String, String> details = vol.getDetails();
-            boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-
-            if (isManaged) {
-                String iScsiName = details.get(DiskTO.IQN);
-
-                // if the storage is managed, iScsiName should not be null
-                dsName = VmwareResource.getDatastoreName(iScsiName);
-
-                diskBackingFileBaseName = new DatastoreFile(volume.getPath()).getFileBaseName();
-            } else {
-                ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
-                DatastoreMO dsMo = new DatastoreMO(context, morDs);
-
-                dsName = dsMo.getName();
-
-                diskBackingFileBaseName = volume.getPath();
-            }
-
-            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
-            if (diskInfo != null) {
-                s_logger.info("Found existing disk info from volume path: " + volume.getPath());
-                return diskInfo;
-            } else {
-                String chainInfo = volume.getChainInfo();
-                if (chainInfo != null) {
-                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
-                    if (infoInChain != null) {
-                        String[] disks = infoInChain.getDiskChain();
-                        if (disks.length > 0) {
-                            for (String diskPath : disks) {
-                                DatastoreFile file = new DatastoreFile(diskPath);
-                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
-                                if (diskInfo != null) {
-                                    s_logger.info("Found existing disk from chain info: " + diskPath);
-                                    return diskInfo;
-                                }
-                            }
-                        }
-
-                        if (diskInfo == null) {
-                            diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(infoInChain.getDiskDeviceBusName());
+        VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
+        if (diskInfo != null) {
+            s_logger.info("Found existing disk info from volume path: " + volumePath);
+            return diskInfo;
+        } else {
+            if (chainInfo != null) {
+                VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                if (infoInChain != null) {
+                    String[] disks = infoInChain.getDiskChain();
+                    if (disks.length > 0) {
+                        for (String diskPath : disks) {
+                            DatastoreFile file = new DatastoreFile(diskPath);
+                            diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
                             if (diskInfo != null) {
-                                s_logger.info("Found existing disk from from chain device bus information: " + infoInChain.getDiskDeviceBusName());
+                                s_logger.info("Found existing disk from chain info: " + diskPath);
                                 return diskInfo;
                             }
+                        }
+                    }
+
+                    if (diskInfo == null) {
+                        diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(infoInChain.getDiskDeviceBusName());
+                        if (diskInfo != null) {
+                            s_logger.info("Found existing disk from from chain device bus information: " + infoInChain.getDiskDeviceBusName());
+                            return diskInfo;
                         }
                     }
                 }
             }
         }
-
         return null;
+    }
+
+    private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol, VmwareHypervisorHost hyperHost, VmwareContext context)
+            throws Exception {
+        if (diskInfoBuilder != null) {
+            VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
+            String chainInfo = volume.getChainInfo();
+            Map<String, String> details = vol.getDetails();
+            boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            String iScsiName = details.get(DiskTO.IQN);
+            String datastoreUUID = volume.getDataStore().getUuid();
+
+            return getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volume.getPath(), chainInfo, isManaged, iScsiName, datastoreUUID, hyperHost, context);
+        } else {
+            return null;
+        }
     }
 
     private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo, boolean deployAsIs) throws Exception {
@@ -4791,7 +4836,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     // OfflineVmwareMigration: refactor to be able to handle a detached volume
     private Answer execute(MigrateVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
+        String chainInfo = cmd.getChainInfo();
         StorageFilerTO poolTo = cmd.getPool();
+        VolumeObjectTO volumeObjectTO = (VolumeObjectTO)cmd.getSrcData();
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
@@ -4838,6 +4885,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             DatastoreMO targetDsMo = new DatastoreMO(srcHyperHost.getContext(), morDs);
+            if (cmd.getContextParam(DiskTO.PROTOCOL_TYPE) != null && cmd.getContextParam(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                VmwareContext context = getServiceContext();
+                VmwareHypervisorHost hyperHost = getHyperHost(context);
+                VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volumePath, chainInfo, false, null, poolTo.getUuid(), hyperHost, context);
+                if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                    String[] diskChain = matchingExistingDisk.getDiskChain();
+                    DatastoreFile file = new DatastoreFile(diskChain[0]);
+                    if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
+                        if (s_logger.isInfoEnabled())
+                            s_logger.info("Detected disk-chain top file change on volume: " + volumePath + " -> " + file.getFileBaseName());
+                        volumePath = file.getFileBaseName();
+                    }
+                }
+            }
+
             String fullVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(targetDsMo, vmName, volumePath + VMDK_EXTENSION);
             Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volumePath, VMDK_EXTENSION));
             String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
@@ -4892,7 +4955,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
             }
             VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, targetDsMo.getName()));
+            chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, targetDsMo.getName()));
             MigrateVolumeAnswer answer = new MigrateVolumeAnswer(cmd, true, null, volumePath);
             answer.setVolumeChainInfo(chainInfo);
             return answer;
