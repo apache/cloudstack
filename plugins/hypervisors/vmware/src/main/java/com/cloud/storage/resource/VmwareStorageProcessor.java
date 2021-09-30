@@ -188,7 +188,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public ResignatureAnswer resignature(ResignatureCommand cmd) {
-        s_logger.debug(String.format("Executing resource command %s: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
         final Map<String, String> details = cmd.getDetails();
 
         String scsiNaaDeviceId = details.get(DiskTO.SCSI_NAA_DEVICE_ID);
@@ -573,8 +572,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Copy Template From Primary Storage: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         DataTO srcData = cmd.getSrcTO();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO srcStore = srcData.getDataStore();
@@ -785,8 +782,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Clone Volume From Base Template: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         DataTO srcData = cmd.getSrcTO();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
@@ -1035,8 +1030,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Copy Volume From Image Cache to Primary: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
         VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -1127,8 +1120,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Copy Volume From Primary To Secondary: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         VolumeObjectTO srcVolume = (VolumeObjectTO)cmd.getSrcTO();
         VolumeObjectTO destVolume = (VolumeObjectTO)cmd.getDestTO();
         String vmName = srcVolume.getVmName();
@@ -1261,8 +1252,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Create Template From Volume: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getSrcTO();
         TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
         DataStoreTO imageStore = template.getDataStore();
@@ -1830,8 +1819,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer backupSnapshot(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Backup Snapshot: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
         DataStoreTO primaryStore = srcSnapshot.getDataStore();
         SnapshotObjectTO destSnapshot = (SnapshotObjectTO)cmd.getDestTO();
@@ -2526,10 +2513,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer deleteVolume(DeleteCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DeleteCommand: " + _gson.toJson(cmd));
-        }
-
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
@@ -3703,8 +3686,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createVolumeFromSnapshot(CopyCommand cmd) {
-        s_logger.debug(String.format("Executing command %s to Create Volume From Snapshot: [%s].", cmd.getClass().getSimpleName(), _gson.toJson(cmd)));
-
         DataTO srcData = cmd.getSrcTO();
         SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
