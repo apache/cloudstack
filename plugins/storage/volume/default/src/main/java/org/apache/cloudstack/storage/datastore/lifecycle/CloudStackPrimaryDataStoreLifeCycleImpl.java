@@ -139,7 +139,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
         URI uri = null;
+        boolean multi = false;
         try {
+            String urlType = url.substring(0, 3);
+            if (urlType.equals("rbd") && url.contains(",")) {
+                multi = true;
+                url = url.replaceAll(",", "/");
+            }
             uri = new URI(UriUtils.encodeURIComponent(url));
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
@@ -162,9 +168,17 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
             } else if (uri.getScheme().equalsIgnoreCase("rbd")) {
+                String uriHost = uri.getHost();
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
+                }
+                if (multi) {
+                    String multiHost = uriHost + (uriPath.substring(0, uriPath.lastIndexOf("/")).replaceAll("/", ","));
+                    String[] hostArr = multiHost.split(",");
+                    if (hostArr.length > 5) {
+                        throw new InvalidParameterValueException("RADOS monitor can support up to 5.");
+                    }
                 }
             } else if (uri.getScheme().equalsIgnoreCase("gluster")) {
                 String uriHost = uri.getHost();
@@ -243,29 +257,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             if (port == -1) {
                 port = 0;
             }
-            parameters.setType(StoragePoolType.RBD);
-            if (storageHost == null) {
-                String urlSplit = url.substring(url.lastIndexOf("@")+1);
-                String urlHost = urlSplit.substring(0, urlSplit.indexOf("/"));
-                String urlSplit2 = url.substring(url.lastIndexOf("//")+2);
-                String urlUserInfo = urlSplit2.substring(0, urlSplit2.indexOf("@"));
-                if (urlHost != null) {
-                    String[] array = urlHost.split(",");
-                    if (array != null) {
-                        if (array.length < 6) {
-                            parameters.setHost(urlHost);
-                            parameters.setUserInfo(urlUserInfo);
-                        } else {
-                            throw new InvalidParameterValueException("RADOS monitor can support up to 5.");
-                        }
-                    } else {
-                        throw new InvalidParameterValueException("Please input a valid RADOS monitor.");
-                    }
-                }
-            } else {
-                parameters.setHost(storageHost);
-                parameters.setUserInfo(userInfo);
+            if (multi) {
+                storageHost = storageHost + (hostPath.substring(0, hostPath.lastIndexOf("/")).replaceAll("/", ","));
+                hostPath = hostPath.substring(hostPath.lastIndexOf("/")+1);
             }
+            parameters.setType(StoragePoolType.RBD);
+            parameters.setHost(storageHost);
+            parameters.setUserInfo(userInfo);
             parameters.setPort(port);
             parameters.setPath(hostPath.replaceFirst("/", ""));
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
@@ -359,8 +357,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             uuid = UUID.randomUUID().toString();
         } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
-        } else if (scheme.equalsIgnoreCase("rbd")) {
-            uuid = UUID.nameUUIDFromBytes((parameters.getHost() + hostPath).getBytes()).toString();
         } else {
             uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
         }
