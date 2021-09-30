@@ -66,7 +66,7 @@ public class MemStat {
     public long getCache() {
         return _memStats.get(CACHE_KEY);
     }
-    
+
     public long getBuffer() {
         return _memStats.get(BUFFER_KEY);
     }
