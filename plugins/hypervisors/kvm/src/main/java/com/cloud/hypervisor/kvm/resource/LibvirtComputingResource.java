@@ -2493,11 +2493,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String videoHw = _videoHw;
         int videoRam = _videoRam;
         if (details != null) {
-            if (details.containsKey(VideoDef.VIDEO_MODEL)) {
-                videoHw = details.get(VideoDef.VIDEO_MODEL);
+            if (details.containsKey(VmDetailConstants.VIDEO_HARDWARE)) {
+                videoHw = details.get(VmDetailConstants.VIDEO_HARDWARE);
             }
-            if (details.containsKey(VideoDef.VIDEO_RAM)) {
-                String value = details.get(VideoDef.VIDEO_RAM);
+            if (details.containsKey(VmDetailConstants.VIDEO_RAM)) {
+                String value = details.get(VmDetailConstants.VIDEO_RAM);
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
