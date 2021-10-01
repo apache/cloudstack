@@ -100,4 +100,17 @@ public class VmWorkJobVO extends AsyncJobVO {
     public void setSecondaryObjectIdentifier(String secondaryObjectIdentifier) {
         this.secondaryObjectIdentifier = secondaryObjectIdentifier;
     }
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("VmWorkJobVO : {").
+                append(", step: ").append(getStep()).
+                append(", vmType: ").append(getVmType()).
+                append(", vmInstanceId: ").append(getVmInstanceId()).
+                append(", secondaryObjectIdentifier: ").append(getSecondaryObjectIdentifier()).
+                append(super.toString()).
+                append("}");
+        return sb.toString();
+    }
+
 }

@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -5635,7 +5636,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-            if (pendingWorkJobs.size() > 0) {
+            if (pendingWorkJobs.size() > 1) {
                 s_logger.warn(String.format("number of jobs to add net %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
             }
             workJob = fetchOrCreateVmWorkJobToAddNetwork(vm, network, requested, context, user, account, pendingWorkJobs);
@@ -5663,7 +5664,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         for (VmWorkJobVO job : pendingWorkJobs) {
             if (network.getUuid().equals(job.getSecondaryObjectIdentifier())) {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("a similar job found for vm %s", vm));
+                    s_logger.trace(String.format("a similar job found for vm %s: job: %s", vm.getUuid(), job));
                 }
                 workJob = job;
             }
@@ -5699,7 +5700,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network.getId(), requested);
         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+        try {
+            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+        } catch (EntityExistsException e) {
+            String msg = String.format("A job to add a nic for network %s to vm %s already exists", network.getUuid(), vm.getUuid());
+            s_logger.info(msg,e);
+            throw new CloudRuntimeException(msg,e);
+        }
         return workJob;
     }
 
