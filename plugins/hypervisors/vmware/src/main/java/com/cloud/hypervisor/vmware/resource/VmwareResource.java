@@ -881,7 +881,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             boolean datastoreChangeObserved = false;
             boolean volumePathChangeObserved = false;
 
-            if (cmd.getContextParam(DiskTO.PROTOCOL_TYPE) != null && cmd.getContextParam(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+            if (cmd.getContextParam(DiskTO.PROTOCOL_TYPE) != null && cmd.getContextParam(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase(Storage.StoragePoolType.DatastoreCluster.toString())) {
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, path, chainInfo, managed, cmd.get_iScsiName(), poolUUID, hyperHost, context);
                 if (diskInfoBuilder != null && matchingExistingDisk != null) {
@@ -957,7 +957,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             ResizeVolumeAnswer answer = new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
             if (datastoreChangeObserved) {
-                answer.setContextParam("datastoreName", poolUUID);
+                answer.setContextParam("datastoreUUID", poolUUID);
                 answer.setContextParam("chainInfo", chainInfo);
             }
 
@@ -1954,7 +1954,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 s_logger.error(msg);
                                 throw new Exception(msg);
                             }
-                        if (rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                        if (rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && rootDisk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase(Storage.StoragePoolType.DatastoreCluster.toString())) {
                             if (diskInfoBuilder != null) {
                                 DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, rootDisk, diskDatastores);
                                 if (diskDatastoreMofromVM != null) {

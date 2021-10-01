@@ -425,13 +425,13 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 vol.update();
 
                 VolumeVO volumeVO = volumeDao.findById(vol.getId());
-                String datastoreName = answer.getContextParam("datastoreName");
-                if (datastoreName != null) {
-                    StoragePoolVO storagePoolVO = primaryStoreDao.findByUuid(datastoreName);
+                String datastoreUUID = answer.getContextParam("datastoreUUID");
+                if (datastoreUUID != null) {
+                    StoragePoolVO storagePoolVO = primaryStoreDao.findByUuid(datastoreUUID);
                     if (storagePoolVO != null) {
                         volumeVO.setPoolId(storagePoolVO.getId());
                     } else {
-                        s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreName, vol.getId()));
+                        s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreUUID, vol.getId()));
                     }
                 }
 
