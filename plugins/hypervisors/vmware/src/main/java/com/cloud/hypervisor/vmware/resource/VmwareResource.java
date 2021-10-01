@@ -793,24 +793,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (newSize == oldSize) {
                 return new ResizeVolumeAnswer(cmd, true, "success", newSize * ResourceType.bytesToKiB);
             }
-            /*
-            // FR41 this is yet to fix
-            ManagedObjectReference morDS1 = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
-            DatastoreMO dsMo1 = new DatastoreMO(hyperHost.getContext(), morDS1);
-            vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo1, path + VMDK_EXTENSION);
-            DatastoreFile dsFile1 = new DatastoreFile(vmdkDataStorePath);
-
-            s_logger.debug("vDiskid does not exist for volume " + vmdkDataStorePath + " registering the disk now");
-            VirtualStorageObjectManagerMO vStorageObjectManagerMO = new VirtualStorageObjectManagerMO(getServiceContext());
-            try {
-                VStorageObject vStorageObject = vStorageObjectManagerMO.registerVirtualDisk(dsFile1, null, dsMo1.getOwnerDatacenter().second());
-                VStorageObjectConfigInfo diskConfigInfo = vStorageObject.getConfig();
-                ID vdiskId = diskConfigInfo.getId();
-            } catch (Throwable e) {
-                if (e instanceof AlreadyExistsFaultMsg) {
-
-                }
-            }*/
 
             if (vmName.equalsIgnoreCase("none")) {
                 // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
