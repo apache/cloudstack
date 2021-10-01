@@ -82,18 +82,19 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      */
     @Override
     protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        if (super.internalCanHandle(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE
-                && canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
-            Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
-            for (VolumeInfo volumeInfo : volumeInfoSet) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-                if (!supportStoragePoolType(storagePoolVO.getPoolType())) {
-                    return StrategyPriority.CANT_HANDLE;
-                }
-            }
-            return StrategyPriority.HYPERVISOR;
+        if (super.internalCanHandle(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE
+                || canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE) {
+            return StrategyPriority.CANT_HANDLE;
         }
-        return StrategyPriority.CANT_HANDLE;
+
+        Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
+        for (VolumeInfo volumeInfo : volumeInfoSet) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+            if (!supportStoragePoolType(storagePoolVO.getPoolType())) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+        return StrategyPriority.HYPERVISOR;
     }
 
     /**
