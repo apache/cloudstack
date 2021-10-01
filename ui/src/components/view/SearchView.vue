@@ -64,7 +64,7 @@
                 </a-select>
                 <a-switch
                   v-if="field.type==='switch'"
-                  v-decorator="[field.name]" />
+                  v-decorator="[field.name,{ valuePropName: 'checked' }]" />
                 <a-input
                   v-if="field.type==='input'"
                   v-decorator="[field.name, {
