@@ -4025,7 +4025,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      * duplicated in {@see UserVmManagerImpl} for a {@see UserVmVO}
      */
-    private void checkIfNetExistsForVM(VirtualMachine virtualMachine, Network network) {
+    private void checkIfNetworkExistsForVM(VirtualMachine virtualMachine, Network network) {
         List<NicVO> allNics = _nicsDao.listByVmId(virtualMachine.getId());
         for (NicVO nic : allNics) {
             if (nic.getNetworkId() == network.getId()) {
@@ -4038,7 +4038,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     InsufficientCapacityException {
         final CallContext cctx = CallContext.current();
 
-        checkIfNetExistsForVM(vm, network);
+        checkIfNetworkExistsForVM(vm, network);
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
         final VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         final ReservationContext context = new ReservationContextImpl(null, null, cctx.getCallingUser(), cctx.getCallingAccount());
@@ -5637,9 +5637,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
             if (pendingWorkJobs.size() > 1) {
-                s_logger.warn(String.format("number of jobs to add net %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
+                s_logger.warn(String.format("The number of jobs to add network %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
             }
-            workJob = fetchOrCreateVmWorkJobToAddNetwork(vm, network, requested, context, user, account, pendingWorkJobs);
+            workJob = pendingWorkJobs.get(0);
         } else {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("no jobs to add network %s for vm %s yet", network, vm));
@@ -5650,29 +5650,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
-    }
-
-    private VmWorkJobVO fetchOrCreateVmWorkJobToAddNetwork(
-            VirtualMachine vm,
-            Network network,
-            NicProfile requested,
-            CallContext context,
-            User user,
-            Account account,
-            List<VmWorkJobVO> pendingWorkJobs) {
-        VmWorkJobVO workJob = null;
-        for (VmWorkJobVO job : pendingWorkJobs) {
-            if (network.getUuid().equals(job.getSecondaryObjectIdentifier())) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("a similar job found for vm %s: job: %s", vm.getUuid(), job));
-                }
-                workJob = job;
-            }
-        }
-        if (workJob == null) {
-            workJob = createVmWorkJobToAddNetwork(vm, network, requested, context, user, account);
-        }
-        return workJob;
     }
 
     private VmWorkJobVO createVmWorkJobToAddNetwork(
