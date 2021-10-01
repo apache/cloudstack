@@ -312,7 +312,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
         if (snapshotInfo == null) {
-            throw new CloudRuntimeException("snapshot:" + snapshotId + " not exist in data store");
+            snapshotInfo = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+            if (snapshotInfo == null) {
+                throw new CloudRuntimeException(String.format("snapshot [%s] does not exists in data store", snapshotId));
+            }
         }
 
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
