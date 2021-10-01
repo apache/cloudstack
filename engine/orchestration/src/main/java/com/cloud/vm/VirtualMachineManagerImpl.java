@@ -5702,10 +5702,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         try {
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
-        } catch (EntityExistsException e) {
-            String msg = String.format("A job to add a nic for network %s to vm %s already exists", network.getUuid(), vm.getUuid());
-            s_logger.info(msg,e);
-            throw new CloudRuntimeException(msg,e);
+        } catch (CloudRuntimeException e) {
+            if (e.getCause() instanceof EntityExistsException) {
+                String msg = String.format("A job to add a nic for network %s to vm %s already exists", network.getUuid(), vm.getUuid());
+                s_logger.warn(msg, e);
+            }
+            throw e;
         }
         return workJob;
     }
