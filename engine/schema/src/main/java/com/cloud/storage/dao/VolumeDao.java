@@ -94,6 +94,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findReadyRootVolumesByInstance(long instanceId);
 
+    List<VolumeVO> findReadyAndAllocatedRootVolumesByInstance(long instanceId);
+
     List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 
     List<Long> listZoneWidePoolIdsByVolumeCount(long dcId, long accountId);
