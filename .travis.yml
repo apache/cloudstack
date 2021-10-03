@@ -88,6 +88,7 @@ env:
              smoke/test_portable_publicip
              smoke/test_portforwardingrules
              smoke/test_privategw_acl
+             smoke/test_privategw_acl_ovs_gre
              smoke/test_projects
              smoke/test_public_ip_range"
 

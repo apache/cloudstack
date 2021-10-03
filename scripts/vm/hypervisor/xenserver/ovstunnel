@@ -106,9 +106,16 @@ def setup_ovs_bridge(session, args):
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
                                 "param-key=ovs-host-setup"])
-        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:ovs-host-setup=%s" % conf_hosts])
+        host_found = False
+        if conf_hosts:
+            setup_hosts = conf_hosts.split(",")
+            for host in setup_hosts:
+                if host == cs_host_id:
+                    host_found = True
+        if not host_found:
+            conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+            lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                       "other-config:ovs-host-setup=%s" % conf_hosts])
 
         # BLOCK IPv6 - Flow spec changes with ovs version
         # Temporarily no need BLOCK IPv6
@@ -161,9 +168,16 @@ def setup_ovs_bridge_for_distributed_routing(session, args):
                                 "uuid=%s" % xs_nw_uuid,
                                 "param-name=other-config",
                                 "param-key=ovs-host-setup"])
-        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:ovs-host-setup=%s" % conf_hosts])
+        host_found = False
+        if conf_hosts:
+            setup_hosts = conf_hosts.split(",")
+            for host in setup_hosts:
+                if host == cs_host_id:
+                    host_found = True
+        if not host_found:
+            conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+            lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
+                       "other-config:ovs-host-setup=%s" % conf_hosts])
 
         # first clear the default rule (rule for 'NORMAL' processing which makes a bridge simple L2 learn & flood switch)
         lib.del_flows(bridge, table=0)
