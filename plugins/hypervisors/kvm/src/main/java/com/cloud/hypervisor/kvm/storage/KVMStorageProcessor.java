@@ -1991,8 +1991,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             try {
                 storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
             } catch (Exception e) {
-                s_logger.debug("Failed to copy disk from src: " + volume.getPath() + " to dest: " +  destVolumeName);
-                throw new CloudRuntimeException(e.toString());
+                String errMsg = "Failed to copy volume: " + srcVol.getName() + " to dest storage: " +  destPrimaryStore.getName() + ", due to " + e.toString();
+                s_logger.error(errMsg, e);
+                throw new CloudRuntimeException(errMsg);
             } finally {
                 if (srcPrimaryStore.isManaged()) {
                     storagePoolMgr.disconnectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
