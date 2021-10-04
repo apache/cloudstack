@@ -525,17 +525,9 @@ public class HypervisorHostHelper {
     }
 
     /**
-     * @param ethPortProfileName
-     * @param namePrefix
-     * @param hostMo
-     * @param vlanId
-     * @param networkRateMbps
-     * @param networkRateMulticastMbps
-     * @param timeOutMs
-     * @param vSwitchType
-     * @param numPorts
-     * @param details
-     * @return
+     * Prepares network (for non-standard virtual switch) for the VM NIC based on the parameters.
+     * Can create a new portgroup or update an existing.
+     * @return Pair of network's ManagedObjectReference and name
      * @throws Exception
      */
 
@@ -1416,10 +1408,10 @@ public class HypervisorHostHelper {
             return false;
         }
 
-        if (secPolicyInSpec != null && securityPolicy != null
+        if (secPolicyInSpec != null
                 && ((securityPolicy.isAllowPromiscuous() != null && !securityPolicy.isAllowPromiscuous().equals(secPolicyInSpec.isAllowPromiscuous()))
                     || (securityPolicy.isForgedTransmits() != null && !securityPolicy.isForgedTransmits().equals(secPolicyInSpec.isForgedTransmits()))
-                    || (securityPolicy.isMacChanges() != null && securityPolicy.isMacChanges().equals(secPolicyInSpec.isMacChanges())))) {
+                    || (securityPolicy.isMacChanges() != null && !securityPolicy.isMacChanges().equals(secPolicyInSpec.isMacChanges())))) {
             return false;
         }
 

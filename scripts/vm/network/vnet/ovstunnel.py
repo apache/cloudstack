@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -37,7 +37,7 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
     res = lib.check_switch()
     if res != "SUCCESS":
         #return "FAILURE:%s" % res
-	return 'false'
+        return 'false'
 
     logging.debug("About to manually create the bridge:%s" % bridge)
     #set gre_key to bridge
@@ -50,23 +50,23 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
     logging.debug("Bridge has been manually created:%s" % res)
     if res:
 #        result = "FAILURE:%s" % res
-	result = 'false'
+        result = 'false'
     else:
         # Verify the bridge actually exists, with the gre_key properly set
         res = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge",
                                           bridge, "other_config:gre_key"])
-        if key in res:
+        if key in str(res):
 #            result = "SUCCESS:%s" % bridge
             result = 'true'
         else:
 #            result = "FAILURE:%s" % res
             result = 'false'
 
-	lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs-tun-network=True"])
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs-tun-network=True"])
 	#get list of hosts using this bridge
         conf_hosts = lib.do_cmd([lib.VSCTL_PATH, "get","bridge", bridge,"other_config:ovs-host-setup"])
 	#add cs_host_id to list of hosts using this bridge
-        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+        conf_hosts = cs_host_id + (conf_hosts and ',%s' % eval(conf_hosts) or '')
         lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
                    "other_config:ovs-host-setup=%s" % conf_hosts])
 
@@ -92,7 +92,7 @@ def setup_ovs_bridge_for_distributed_routing(bridge, cs_host_id):
 
         res = lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs_vpc_distributed_vr_network=True"])
         conf_hosts = lib.do_cmd([lib.VSCTL_PATH, "get","bridge", bridge,"other:ovs-host-setup"])
-        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+        conf_hosts = cs_host_id + (conf_hosts and ',%s' % eval(conf_hosts) or '')
         lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
                    "other_config:ovs-host-setup=%s" % conf_hosts])
 
@@ -162,7 +162,7 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
     wait = [lib.VSCTL_PATH, "--timeout=30", "wait-until", "bridge",
                     bridge, "--", "get", "bridge", bridge, "name"]
     res = lib.do_cmd(wait)
-    if bridge not in res:
+    if bridge not in str(res):
         logging.debug("WARNING:Can't find bridge %s for creating " +
                                   "tunnel!" % bridge)
 #        return "FAILURE:NO_BRIDGE"
@@ -185,7 +185,7 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
         # Expecting python-style list as output
         iface_list = []
         if len(res) > 2:
-            iface_list = res.strip()[1:-1].split(',')
+            iface_list = res.strip()[1:-1].split(b',')
         if len(iface_list) != 1:
             logging.debug("WARNING: Unexpected output while verifying " +
                                       "port %s on bridge %s" % (name, bridge))
@@ -202,7 +202,7 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
         key_validation = lib.do_cmd(verify_interface_key)
         ip_validation = lib.do_cmd(verify_interface_ip)
 
-        if not key in key_validation or not remote_ip in ip_validation:
+        if not key in str(key_validation) or not remote_ip in str(ip_validation):
             logging.debug("WARNING: Unexpected output while verifying " +
                           "interface %s on bridge %s" % (name, bridge))
 #            return "FAILURE:VERIFY_INTERFACE_FAILED"
@@ -213,12 +213,18 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
                                           iface_uuid, "ofport"]
         tun_ofport = lib.do_cmd(cmd_tun_ofport)
         # Ensure no trailing LF
-        if tun_ofport.endswith('\n'):
+        if tun_ofport.endswith(b'\n'):
             tun_ofport = tun_ofport[:-1]
 
-        ovs_tunnel_network = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other_config:is-ovs-tun-network"])
-        ovs_vpc_distributed_vr_network = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge,
-                                                     "other_config:is-ovs_vpc_distributed_vr_network"])
+        try:
+            ovs_tunnel_network = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge, "other_config:is-ovs-tun-network"])
+        except:
+            ovs_tunnel_network = 'False'
+        try:
+            ovs_vpc_distributed_vr_network = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge", bridge,
+                                                         "other_config:is-ovs_vpc_distributed_vr_network"])
+        except:
+            ovs_vpc_distributed_vr_network = 'False'
 
         if ovs_tunnel_network == 'True':
             # add flow entryies for dropping broadcast coming in from gre tunnel
