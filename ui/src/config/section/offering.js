@@ -220,7 +220,6 @@ export default {
         icon: 'edit',
         label: 'label.edit',
         dataView: true,
-        groupAction: true,
         popup: true,
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
         args: ['name', 'description']
