@@ -537,6 +537,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
     private DataStoreProviderManager _dataStoreProviderMgr;
+    @Inject
     private StorageManager storageManager;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
