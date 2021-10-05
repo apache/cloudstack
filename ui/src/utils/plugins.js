@@ -22,8 +22,6 @@ import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 
-let countNotify = 0
-
 export const pollJobPlugin = {
   install (Vue) {
     Vue.prototype.$pollJob = function (options) {
@@ -134,6 +132,7 @@ export const pollJobPlugin = {
             desc = `(${name}) ${desc}`
           }
           if (!bulkAction) {
+            let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
@@ -177,6 +176,7 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
+        let countNotify = store.getters.countNotify
         countNotify++
         store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
@@ -219,6 +219,7 @@ export const notifierPlugin = {
           }
         }
       }
+      let countNotify = store.getters.countNotify
       countNotify++
       store.commit('SET_COUNT_NOTIFY', countNotify)
       notification.error({
@@ -234,6 +235,7 @@ export const notifierPlugin = {
     }
 
     Vue.prototype.$showNotification = function (config) {
+      let countNotify = store.getters.countNotify
       countNotify++
       store.commit('SET_COUNT_NOTIFY', countNotify)
       const defaultConfig = {
