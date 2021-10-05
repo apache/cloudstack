@@ -17,7 +17,9 @@
 
 <template>
   <div>
-    <autogen-view ref="autogenview" />
+    <autogen-view
+      ref="autogenview"
+      @edit-tariff-action="showTariffAction" />
     <edit-tariff-value-wizard
       v-if="tariffAction"
       :showAction="tariffAction"

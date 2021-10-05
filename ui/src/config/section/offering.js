@@ -207,7 +207,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
       columns: ['name', 'description', 'zonename'],
-      details: ['name', 'id', 'description', 'externalid', 'zone', 'created'],
+      details: ['name', 'id', 'description', 'externalid', 'zone', 'allowuserdrivenbackups', 'created'],
       actions: [{
         api: 'importBackupOffering',
         icon: 'plus-outlined',
@@ -216,6 +216,14 @@ export default {
         listView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
+      }, {
+        api: 'updateBackupOffering',
+        icon: 'edit',
+        label: 'label.edit',
+        dataView: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+        args: ['name', 'description']
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',

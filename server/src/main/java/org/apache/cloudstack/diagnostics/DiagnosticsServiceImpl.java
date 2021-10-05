@@ -18,7 +18,6 @@
 package org.apache.cloudstack.diagnostics;
 
 import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.getTimeDifference;
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.umountSecondaryStorage;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.RouterDefaultSupportedFiles;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.SystemVMDefaultSupportedFiles;
 
@@ -352,8 +351,6 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
             LOGGER.error(msg, e);
             return new Pair<>(false, msg);
-        } finally {
-            umountSecondaryStorage(mountPoint);
         }
 
         return new Pair<>(success, "File copied to secondary storage successfully");
@@ -481,17 +478,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         private void cleanupOldDiagnosticFiles(DataStore store) {
             String mountPoint = null;
-            try {
-                mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
-                if (StringUtils.isNotBlank(mountPoint)) {
-                    File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
-                    if (directory.isDirectory()) {
-                        deleteOldDiagnosticsFiles(directory, store.getName());
-                    }
-                }
-            } finally {
-                if (StringUtils.isNotBlank(mountPoint)) {
-                    umountSecondaryStorage(mountPoint);
+            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+            if (StringUtils.isNotBlank(mountPoint)) {
+                File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
+                if (directory.isDirectory()) {
+                    deleteOldDiagnosticsFiles(directory, store.getName());
                 }
             }
         }
