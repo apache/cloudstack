@@ -1807,8 +1807,6 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void exportVm(String exportDir, String exportName, boolean packToOva, boolean leaveOvaFileOnly) throws Exception {
-        s_logger.debug(String.format("Exporting volume to export path [%s], with VM config [%s].", exportDir, GSON.toJson(this)));
-
         ManagedObjectReference morOvf = _context.getServiceContent().getOvfManager();
 
         VirtualMachineRuntimeInfo runtimeInfo = getRuntimeInfo();
