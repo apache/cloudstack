@@ -234,6 +234,8 @@ export const notifierPlugin = {
     }
 
     Vue.prototype.$showNotification = function (config) {
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
       const defaultConfig = {
         top: '65px',
         onClose: () => {
@@ -257,8 +259,6 @@ export const notifierPlugin = {
           notification.warning(config)
           break
       }
-      countNotify++
-      store.commit('SET_COUNT_NOTIFY', countNotify)
     }
   }
 }
