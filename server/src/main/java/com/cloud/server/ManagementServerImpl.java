@@ -2179,7 +2179,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
-        Account caller = getCaller();
         if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
             final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
@@ -2370,7 +2369,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (vlan == null && zone != null) {
-            sc.setParameters("vlanDbId", retrieveAvailableVlanDbIdsForAccount(zone, caller).toArray());
+            sc.setParameters("vlanDbId", retrieveAvailableVlanDbIdsForAccount(zone).toArray());
         } else if (vlan != null){
             sc.setParameters("vlanDbId", vlan);
         }
@@ -2399,11 +2398,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * If the lists is empty, then it will return a list with a single value (-1), meaning that the account does not have access to any VLAN. This is needed because if we do not
      * set a value to the vlanDbId parameter in the API <b>listPublicIPAddresses</b>, it will retrieve all the VLANs for the zone, even the dedicated to another accounts.
      */
-    protected List<Long> retrieveAvailableVlanDbIdsForAccount(Long zoneId, Account caller) {
+    protected List<Long> retrieveAvailableVlanDbIdsForAccount(Long zoneId) {
         List<Long> vlanDbIdsToRetrieve = new ArrayList<>();
         List<VlanVO> availableVlans = new ArrayList<>();
 
-        String accountDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(caller, "accountName", "uuid");
+        Account caller = getCaller();
+        String accountDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(caller, "accountName", "uuid");
         long accountId = caller.getId();
 
         availableVlans.addAll(retrieveZoneWideNonDedicatedVlans(accountId, accountDescription, zoneId));
@@ -2436,7 +2436,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         zoneWideNonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(zoneId);
 
         s_logger.debug(String.format("Listed [%s] non-dedicated VLANs on zone [%s] for account [%s]. Non-dedicated VLANs: [%s].", zoneWideNonDedicatedVlans.size(), zoneId,
-                accountDescription, ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(zoneWideNonDedicatedVlans, "id", "vlanTag", "ipRange")));
+                accountDescription, ReflectionToStringBuilderUtils.reflectOnlySelectedFields(zoneWideNonDedicatedVlans, "id", "vlanTag", "ipRange")));
 
         return zoneWideNonDedicatedVlans;
     }
@@ -2451,7 +2451,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         dedicatedVlans = _vlanDao.listDedicatedVlans(accountId);
 
         s_logger.debug(String.format("Listed [%s] dedicated VLANs for account [%s]. Dedicated VLANs: [%s].", dedicatedVlans.size(), accountDescription,
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(dedicatedVlans, "id", "vlanTag", "ipRange")));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(dedicatedVlans, "id", "vlanTag", "ipRange")));
 
         return dedicatedVlans;
     }
