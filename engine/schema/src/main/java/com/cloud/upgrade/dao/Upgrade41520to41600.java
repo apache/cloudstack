@@ -74,10 +74,9 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void fixWrongPoolUuid(Connection conn) {
         LOG.debug("Replacement of faulty pool uuids");
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT id,uuid FROM storage_pool "
-                + "WHERE removed IS NULL;"); ResultSet rs = pstmt.executeQuery()) {
+                + "WHERE uuid NOT LIKE \"%-%-%-%\" AND removed IS NULL;"); ResultSet rs = pstmt.executeQuery()) {
             PreparedStatement updateStmt = conn.prepareStatement("update storage_pool set uuid = ? where id = ?");
             while (rs.next()) {
-                if (!rs.getString(2).contains("-")) {
                     UUID poolUuid = new UUID(
                             new BigInteger(rs.getString(2).substring(0, 16), 16).longValue(),
                             new BigInteger(rs.getString(2).substring(16), 16).longValue()
@@ -85,7 +84,6 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     updateStmt.setLong(2, rs.getLong(1));
                     updateStmt.setString(1, poolUuid.toString());
                     updateStmt.addBatch();
-                }
             }
             updateStmt.executeBatch();
         } catch (SQLException ex) {
