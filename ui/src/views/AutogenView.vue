@@ -22,14 +22,14 @@
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
             <breadcrumb :resource="resource">
-              <span slot="end">
+              <template #end>
                 <a-button
                   :loading="loading"
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
-                  icon="reload"
                   @click="fetchData({ irefresh: true })">
+                  <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
                 <a-switch
@@ -40,7 +40,7 @@
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-tooltip placement="right">
-                  <template slot="title">
+                  <template #title>
                     {{ $t('label.filterby') }}
                   </template>
                   <a-select
@@ -52,21 +52,27 @@
                     style="min-width: 100px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
-                    optionFilterProp="children"
+                    optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
-                    <a-icon slot="suffixIcon" type="filter" />
-                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                    <template #suffixIcon><filter-outlined /></template>
+                    <a-select-option
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      key="all"
+                      :label="$t('label.all')">
                       {{ $t('label.all') }}
                     </a-select-option>
-                    <a-select-option v-for="filter in filters" :key="filter">
+                    <a-select-option
+                      v-for="filter in filters"
+                      :key="filter"
+                      :label="$t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter)">
                       {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
-                      <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
+                      <clock-circle-outlined v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
-              </span>
+              </template>
             </breadcrumb>
           </a-col>
           <a-col
@@ -96,7 +102,7 @@
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0)">
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -109,25 +115,27 @@
           centered
           width="auto"
         >
-          <span slot="title">
-            {{ $t(currentAction.label) }}
+          <template #title>
+            <span v-if="currentAction.label">{{ $t(currentAction.label) }}</span>
             <a
               v-if="currentAction.docHelp || $route.meta.docHelp"
               style="margin-left: 5px"
               :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
               target="_blank">
-              <a-icon type="question-circle-o"></a-icon>
+              <question-circle-outlined />
             </a>
-          </span>
-          <component
-            :is="currentAction.component"
-            :resource="resource"
-            :loading="loading"
-            :action="{currentAction}"
-            v-bind="{currentAction}"
-            @refresh-data="fetchData"
-            @poll-action="pollActionCompletion"
-            @close-action="closeAction"/>
+          </template>
+          <keep-alive>
+            <component
+              :is="currentAction.component"
+              :resource="resource"
+              :loading="loading"
+              :action="{currentAction}"
+              v-bind="{currentAction}"
+              @refresh-data="fetchData"
+              @poll-action="pollActionCompletion"
+              @close-action="closeAction"/>
+          </keep-alive>
         </a-modal>
       </keep-alive>
       <a-modal
@@ -142,37 +150,42 @@
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         @cancel="closeAction"
-        v-ctrl-enter="handleSubmit"
         centered
       >
-        <span slot="title">
-          {{ $t(currentAction.label) }}
+        <template #title>
+          <span v-if="currentAction.label">{{ $t(currentAction.label) }}</span>
           <a
             v-if="currentAction.docHelp || $route.meta.docHelp"
             style="margin-left: 5px"
             :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
             target="_blank">
-            <a-icon type="question-circle-o"></a-icon>
+            <question-circle-outlined />
           </a>
-        </span>
-        <a-spin :spinning="actionLoading">
+        </template>
+        <a-spin :spinning="actionLoading" v-ctrl-enter="handleSubmit">
           <span v-if="currentAction.message">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
-                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                v-if="['delete-outlined', 'DeleteOutlined', 'poweroff-outlined', 'PoweroffOutlined'].includes(currentAction.icon)"
                 type="error">
-                <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
-                <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                <span slot="message" v-html="$t(currentAction.message)" />
+                <template #message>
+                  <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
+                  <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                  <span v-html="$t(currentAction.message)" />
+                </template>
               </a-alert>
               <a-alert v-else type="warning">
-                <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                <span slot="message" v-html="$t(currentAction.message)" />
+                <template #message>
+                  <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                  <span v-html="$t(currentAction.message)" />
+                </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
-                <span slot="message" v-html="$t(currentAction.message)" />
+                <template #message>
+                  <span v-html="$t(currentAction.message)" />
+                </template>
               </a-alert>
             </div>
             <div v-if="selectedRowKeys.length > 0">
@@ -191,39 +204,38 @@
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
-            :form="form"
-            @submit="handleSubmit"
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
+            @finish="handleSubmit"
             layout="vertical" >
-            <a-form-item
-              v-for="(field, fieldIndex) in currentAction.paramFields"
-              :key="fieldIndex"
-              :v-bind="field.name"
-              v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
-            >
-              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
+            <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
+              <a-form-item
+                :name="field.name"
+                :ref="field.name"
+                :v-bind="field.name"
+                v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
+              >
+                <template #label>
+                  <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                </template>
 
-              <span v-if="field.type==='boolean'">
                 <a-switch
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                  }]"
-                  v-model="formModel[field.name]"
+                  v-if="field.type==='boolean'"
+                  v-model:checked="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 />
-              </span>
-              <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
                 <a-select
+                  v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options"
                   :loading="field.loading"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
@@ -231,43 +243,35 @@
                     {{ opt }}
                   </a-select-option>
                 </a-select>
-              </span>
-              <span
-                v-else-if="field.name==='keypair' ||
-                  (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))">
                 <a-select
+                  v-else-if="field.name==='keypair' ||
+                    (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))"
                   showSearch
-                  optionFilterProp="children"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
-              </span>
-              <span
-                v-else-if="field.type==='uuid'">
                 <a-select
+                  v-else-if="field.type==='uuid'"
                   showSearch
-                  optionFilterProp="children"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
@@ -282,104 +286,81 @@
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="global" style="margin-right: 5px" />
+                        <global-outlined v-else style="margin-right: 5px" />
                       </span>
                       <span v-if="(field.name.startsWith('project'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="project" style="margin-right: 5px" />
+                        <project-outlined v-else style="margin-right: 5px" />
                       </span>
                       <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                        <user-outlined v-else style="margin-right: 5px"/>
                       </span>
                       <span v-if="(field.name.startsWith('network'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                        <apartment-outlined v-else style="margin-right: 5px"/>
                       </span>
                       <span v-if="(field.name.startsWith('domain'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                        <block-outlined v-else style="margin-right: 5px"/>
                       </span>
                       {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                     </div>
                   </a-select-option>
                 </a-select>
-              </span>
-              <span v-else-if="field.type==='list'">
                 <a-select
+                  v-else-if="field.type==='list'"
                   :loading="field.loading"
                   mode="multiple"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
-              </span>
-              <span v-else-if="field.type==='long'">
                 <a-input-number
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-else-if="field.type==='long'"
+                  v-focus="fieldIndex === firstIndex"
                   style="width: 100%;"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
                 />
-              </span>
-              <span v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'">
                 <a-input-password
-                  v-decorator="[field.name, {
-                    rules: [
-                      {
-                        required: field.required,
-                        message: `${$t('message.error.required.input')}`
-                      },
-                      {
-                        validator: validateTwoPassword
-                      }
-                    ]
-                  }]"
+                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
                   @blur="($event) => handleConfirmBlur($event, field.name)"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 />
-              </span>
-              <span v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'">
                 <a-textarea
+                  v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'"
                   rows="2"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 />
-              </span>
-              <span v-else>
                 <a-input
-                  :autoFocus="fieldIndex === firstIndex"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                  }]"
+                  v-else
+                  v-focus="fieldIndex === firstIndex"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description" />
-              </span>
-            </a-form-item>
+              </a-form-item>
+            </div>
 
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -422,7 +403,7 @@
         @showSizeChange="changePageSize"
         showSizeChanger
         showQuickJumper>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -437,6 +418,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
@@ -444,8 +426,6 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
-import ChartCard from '@/components/widgets/ChartCard'
-import Status from '@/components/widgets/Status'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
@@ -459,10 +439,8 @@ export default {
   name: 'Resource',
   components: {
     Breadcrumb,
-    ChartCard,
     ResourceView,
     ListView,
-    Status,
     ActionButton,
     SearchView,
     BulkActionProgress,
@@ -509,38 +487,37 @@ export default {
       searchFilters: [],
       searchParams: {},
       actions: [],
-      formModel: {},
       confirmDirty: false,
       firstIndex: 0,
       modalWidth: '30vw',
       promises: []
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
-  beforeDestroy () {
-    eventBus.$off('vm-refresh-data')
-    eventBus.$off('async-job-complete')
-    eventBus.$off('exec-action')
+  beforeUnmount () {
+    eventBus.off('vm-refresh-data')
+    eventBus.off('async-job-complete')
+    eventBus.off('exec-action')
   },
   mounted () {
-    eventBus.$on('exec-action', (action, isGroupAction) => {
+    eventBus.on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
     })
   },
   created () {
-    eventBus.$on('vm-refresh-data', () => {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
+    eventBus.on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
         this.fetchData()
       }
     })
-    eventBus.$on('refresh-icon', () => {
+    eventBus.on('refresh-icon', () => {
       if (this.$showIcon()) {
         this.fetchData()
       }
     })
-    eventBus.$on('async-job-complete', (action) => {
+    eventBus.on('async-job-complete', (action) => {
       if (this.$route.path.includes('/vm/')) {
         if (action && 'api' in action && ['destroyVirtualMachine'].includes(action.api)) {
           return
@@ -557,7 +534,7 @@ export default {
       }
       this.fetchData()
     })
-    eventBus.$on('update-bulk-job-status', (items, action) => {
+    eventBus.on('update-bulk-job-status', (items, action) => {
       for (const item of items) {
         this.$store.getters.headerNotices.map(function (j) {
           if (j.jobid === item.jobid) {
@@ -567,7 +544,7 @@ export default {
       }
     })
 
-    eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
+    eventBus.on('update-resource-state', (selectedItems, resource, state, jobid) => {
       if (selectedItems.length === 0) {
         return
       }
@@ -695,7 +672,7 @@ export default {
         this.items = []
       }
       if (!this.routeName) {
-        this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
+        this.routeName = this.$route.matched[this.$route.matched.length - 1].meta.name
       }
       this.apiName = ''
       this.actions = []
@@ -806,7 +783,7 @@ export default {
         this.columns.push({
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          scopedSlots: { customRender: key },
+          slots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
       }
@@ -957,8 +934,9 @@ export default {
     },
     execAction (action, isGroupAction) {
       const self = this
-      this.form = this.$form.createForm(this)
-      this.formModel = {}
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         this.$router.push({ name: action.api })
         return
@@ -1008,7 +986,9 @@ export default {
       this.getFirstIndexFocus()
 
       this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
+        this.setRules(param)
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
           param.type = 'string'
         }
@@ -1017,7 +997,7 @@ export default {
         }
       }
       this.actionLoading = false
-      if (action.dataView && ['copy', 'edit', 'share-alt'].includes(action.icon)) {
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
         this.fillEditFormFieldValues()
       }
     },
@@ -1105,7 +1085,6 @@ export default {
             break
           }
         }
-        this.$forceUpdate()
       }).catch(function (error) {
         console.log(error)
         param.loading = false
@@ -1123,7 +1102,7 @@ export default {
           name: resourceName,
           successMethod: result => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+              eventBus.emit('update-resource-state', this.selectedItems, resource, 'success')
             }
             if (action.response) {
               const description = action.response(result.jobresult)
@@ -1139,7 +1118,7 @@ export default {
           },
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
+              eventBus.emit('update-resource-state', this.selectedItems, resource, 'failed')
             }
             resolve(true)
           },
@@ -1153,7 +1132,6 @@ export default {
       })
     },
     fillEditFormFieldValues () {
-      const form = this.form
       this.currentAction.paramFields.map(field => {
         let fieldValue = null
         let fieldName = null
@@ -1164,13 +1142,12 @@ export default {
         }
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
-          form.getFieldDecorator(field.name, { initialValue: fieldValue })
-          this.formModel[field.name] = fieldValue
+          this.form[field.name] = fieldValue
         }
       })
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -1198,29 +1175,28 @@ export default {
           this.modalInfo.title = this.currentAction.label
           this.modalInfo.docHelp = this.currentAction.docHelp
         }
-        this.form.validateFields((err, values) => {
-          if (!err) {
-            this.actionLoading = true
-            const itemsNameMap = {}
-            this.items.map(x => {
-              itemsNameMap[x.id] = x.name || x.displaytext || x.id
-            })
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
-            for (const params of paramsList) {
-              var resourceName = itemsNameMap[params.id || params.vmsnapshotid || params.username || params.name]
-              // Using a method for this since it's an async call and don't want wrong prarms to be passed
-              this.promises.push(this.callGroupApi(params, resourceName))
-            }
-            this.$message.info({
-              content: this.$t(this.currentAction.label),
-              key: this.currentAction.label,
-              duration: 3
-            })
-            Promise.all(this.promises).finally(() => {
-              this.actionLoading = false
-              this.fetchData()
-            })
+        this.formRef.value.validate().then(() => {
+          const values = toRaw(this.form)
+          this.actionLoading = true
+          const itemsNameMap = {}
+          this.items.map(x => {
+            itemsNameMap[x.id] = x.name || x.displaytext || x.id
+          })
+          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+          for (const params of paramsList) {
+            var resourceName = itemsNameMap[params.id]
+            // Using a method for this since it's an async call and don't want wrong prarms to be passed
+            this.promises.push(this.callGroupApi(params, resourceName))
           }
+          this.$message.info({
+            content: this.$t(this.currentAction.label),
+            key: this.currentAction.label,
+            duration: 3
+          })
+          Promise.all(this.promises).finally(() => {
+            this.actionLoading = false
+            this.fetchData()
+          })
         })
       } else {
         this.execSubmit(e)
@@ -1238,7 +1214,7 @@ export default {
           }
           if (this.selectedItems.length !== 0) {
             this.$notifyError(error)
-            eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+            eventBus.emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
           }
         })
       })
@@ -1257,7 +1233,7 @@ export default {
               jobId = response[obj].jobid
             } else {
               if (this.selectedItems.length > 0) {
-                eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+                eventBus.emit('update-resource-state', this.selectedItems, resource, 'success')
                 if (resource) {
                   this.selectedItems.filter(item => item === resource)
                 }
@@ -1284,7 +1260,7 @@ export default {
           this.$store.dispatch('UpdateConfiguration')
         }
         if (jobId) {
-          eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          eventBus.emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
           resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
         }
         resolve(false)
@@ -1292,10 +1268,8 @@ export default {
     },
     execSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         const action = this.currentAction
         if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
@@ -1386,7 +1360,7 @@ export default {
           }
 
           console.log(error)
-          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+          eventBus.emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false
@@ -1394,7 +1368,7 @@ export default {
       })
     },
     shouldNavigateBack (action) {
-      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
+      return ((['delete-outlined', 'DeleteOutlined'].includes(action.icon) || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
@@ -1425,8 +1399,8 @@ export default {
         query.annotationfilter = filter
       }
       query.filter = filter
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = this.pageSize.toString()
       this.$router.push({ query })
     },
     onSearch (opts) {
@@ -1507,32 +1481,97 @@ export default {
       const value = e.target.value
       this.confirmDirty = this.confirmDirty || !!value
     },
-    validateTwoPassword (rule, value, callback) {
+    async validateTwoPassword (rule, value) {
       if (!value || value.length === 0) {
-        callback()
+        return Promise.resolve()
       } else if (rule.field === 'confirmpassword') {
-        const form = this.form
         const messageConfirm = this.$t('message.validate.equalto')
-        const passwordVal = form.getFieldValue('password')
+        const passwordVal = this.form.password
         if (passwordVal && passwordVal !== value) {
-          callback(messageConfirm)
+          return Promise.reject(messageConfirm)
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else if (rule.field === 'password') {
-        const form = this.form
-        const confirmPasswordVal = form.getFieldValue('confirmpassword')
+        const confirmPasswordVal = this.form.confirmpassword
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
-          callback()
+          return Promise.resolve()
         } else if (value && this.confirmDirty) {
-          form.validateFields(['confirmpassword'], { force: true })
-          callback()
+          this.formRef.value.validateFields('confirmpassword')
+          return Promise.resolve()
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else {
-        callback()
+        return Promise.resolve()
       }
+    },
+    setRules (field) {
+      let rule = {}
+
+      if (!field || Object.keys(field).length === 0) {
+        return
+      }
+
+      if (!this.rules[field.name]) {
+        this.rules[field.name] = []
+      }
+
+      switch (true) {
+        case (field.type === 'boolean'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+        case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.name === 'keypair' || (field.name === 'account' && !['addAccountToProject', 'createAccount'].includes(this.currentAction.api))):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'uuid'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'list'):
+          rule.type = 'array'
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'long'):
+          rule.type = 'number'
+          rule.required = field.required
+          rule.message = this.$t('message.validate.number')
+          this.rules[field.name].push(rule)
+          break
+        case (field.name === 'password' || field.name === 'currentpassword' || field.name === 'confirmpassword'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+
+          rule = {}
+          rule.validator = this.validateTwoPassword
+          this.rules[field.name].push(rule)
+          break
+        case (field.name === 'certificate' || field.name === 'privatekey' || field.name === 'certchain'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+        default:
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+      }
+
+      rule = {}
     },
     setModalWidthByScreen () {
       const screenWidth = window.innerWidth
