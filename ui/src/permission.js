@@ -82,6 +82,7 @@ router.beforeEach((to, from, next) => {
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
+              top: '65px',
               message: 'Error',
               description: i18n.t('message.error.discovering.feature'),
               duration: 0,

@@ -136,6 +136,7 @@ export const pollJobPlugin = {
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
+              top: '65px',
               message: errMessage,
               description: desc,
               key: jobId,
@@ -180,6 +181,7 @@ export const pollJobPlugin = {
         countNotify++
         store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
+          top: '65px',
           message: i18n.t('label.error'),
           description: catchMessage,
           duration: 0,
@@ -223,6 +225,7 @@ export const notifierPlugin = {
       countNotify++
       store.commit('SET_COUNT_NOTIFY', countNotify)
       notification.error({
+        top: '65px',
         message: msg,
         description: desc,
         duration: 0,
