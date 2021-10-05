@@ -174,7 +174,8 @@ export default {
         const role = json.createroleresponse.role
         if (role) {
           this.$emit('refresh-data')
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: 'Create Role',
             description: 'Sucessfully created role ' + params.name
           })

@@ -410,13 +410,15 @@ export default {
                 this.authorizeUsersForSamlSSO(users, entityId)
               }
             } else if (apiName === 'importLdapUsers' && response.ldapuserresponse && values.samlEnable) {
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.error.enable.saml')
               })
             } else {
               if (apiName === 'ldapCreateAccount') {
-                this.$notification.success({
+                this.$showNotification({
+                  type: 'success',
                   message: this.$t('label.add.ldap.account'),
                   description: response.createaccountresponse.account.name
                 })

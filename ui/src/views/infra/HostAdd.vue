@@ -331,7 +331,8 @@ export default {
         this.parentFetchData()
         this.$parent.$parent.close()
       }).catch(error => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.addhostresponse.errortext,
           duration: 0
@@ -366,7 +367,8 @@ export default {
           }
         })
       }).catch(error => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0

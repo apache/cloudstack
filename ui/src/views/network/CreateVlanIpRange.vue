@@ -248,13 +248,15 @@ export default {
 
         api('createVlanIpRange', params)
           .then(() => {
-            this.$notification.success({
+            this.$showNotification({
+              type: 'success',
               message: this.$t('message.success.add.iprange')
             })
             this.closeAction()
             this.$emit('refresh-data')
           }).catch(error => {
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: `${this.$t('label.error')} ${error.response.status}`,
               description: error.response.data.createvlaniprangeresponse
                 ? error.response.data.createvlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,

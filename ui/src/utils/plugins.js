@@ -22,6 +22,8 @@ import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 
+let countNotify = 0
+
 export const pollJobPlugin = {
   install (Vue) {
     Vue.prototype.$pollJob = function (options) {
@@ -132,11 +134,18 @@ export const pollJobPlugin = {
             desc = `(${name}) ${desc}`
           }
           if (!bulkAction) {
+            countNotify++
+            store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
               message: errMessage,
               description: desc,
               key: jobId,
-              duration: 0
+              duration: 0,
+              onClose: () => {
+                let countNotify = store.getters.countNotify
+                countNotify > 0 ? countNotify-- : countNotify = 0
+                store.commit('SET_COUNT_NOTIFY', countNotify)
+              }
             })
           }
           store.dispatch('AddHeaderNotice', {
@@ -168,10 +177,17 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
           message: i18n.t('label.error'),
           description: catchMessage,
-          duration: 0
+          duration: 0,
+          onClose: () => {
+            let countNotify = store.getters.countNotify
+            countNotify > 0 ? countNotify-- : countNotify = 0
+            store.commit('SET_COUNT_NOTIFY', countNotify)
+          }
         })
         catchMethod && catchMethod()
       })
@@ -203,11 +219,46 @@ export const notifierPlugin = {
           }
         }
       }
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
       notification.error({
         message: msg,
         description: desc,
-        duration: 0
+        duration: 0,
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
       })
+    }
+
+    Vue.prototype.$showNotification = function (config) {
+      const defaultConfig = {
+        top: '65px',
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
+      }
+      config = Object.assign({}, defaultConfig, config)
+      switch (config.type) {
+        case 'info':
+          notification.info(config)
+          break
+        case 'error':
+          notification.error(config)
+          break
+        case 'success':
+          notification.success(config)
+          break
+        case 'warning':
+          notification.warning(config)
+          break
+      }
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
     }
   }
 }

@@ -18,6 +18,10 @@
 <template>
   <div class="user-menu">
 
+    <a-tooltip v-if="countNotify > 0" title="Clear all notification" class="action button-clear-notification" @click="clearAllNotify">
+      <a-icon type="bell" class="bell-icon" />
+      <a-icon type="stop" class="clear-icon" />
+    </a-tooltip>
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <label class="user-menu-server-info action" v-if="$config.multipleServer">
@@ -84,7 +88,8 @@ export default {
   },
   data () {
     return {
-      image: ''
+      image: '',
+      countNotify: 0
     }
   },
   created () {
@@ -92,6 +97,12 @@ export default {
     eventBus.$on('refresh-header', () => {
       this.getIcon()
     })
+    this.$store.watch(
+      (state, getters) => getters.countNotify,
+      (newValue, oldValue) => {
+        this.countNotify = newValue
+      }
+    )
   },
   watch: {
     image () {
@@ -137,6 +148,10 @@ export default {
           description: err.message
         })
       })
+    },
+    clearAllNotify () {
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
+      this.$notification.destroy()
     }
   }
 }
@@ -166,6 +181,21 @@ export default {
     .anticon {
       margin-right: 5px;
     }
+  }
+}
+
+.button-clear-notification {
+  position: relative;
+
+  .bell-icon {
+    position: absolute;
+    left: 18px;
+    font-size: 12px;
+  }
+
+  .clear-icon {
+    font-size: 20px;
+    padding: 4px;
   }
 }
 </style>

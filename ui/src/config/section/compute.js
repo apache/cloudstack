@@ -152,7 +152,8 @@ export default {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
               const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
+              obj.$showNotification({
+                type: 'success',
                 message: `${obj.$t('label.reinstall.vm')}: ` + name,
                 description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
                 duration: 0
@@ -361,7 +362,8 @@ export default {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
               const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
+              obj.$showNotification({
+                type: 'success',
                 message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
                 description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
                 duration: 0

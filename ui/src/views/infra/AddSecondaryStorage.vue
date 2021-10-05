@@ -293,7 +293,8 @@ export default {
 
         this.loading = true
         api('addImageStore', data).then(json => {
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.add.secondary.storage'),
             description: this.$t('label.add.secondary.storage')
           })

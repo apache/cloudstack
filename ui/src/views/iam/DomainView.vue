@@ -187,7 +187,8 @@ export default {
           return
         }
 
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('message.request.failed'),
           description: error.response.headers['x-description'],
           duration: 0

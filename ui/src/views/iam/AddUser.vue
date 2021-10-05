@@ -238,7 +238,8 @@ export default {
         this.domainsList = response.listdomainsresponse.domain || []
         this.selectedDomain = this.domainsList[0].id || ''
       }).catch(error => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext
         })
@@ -252,7 +253,8 @@ export default {
       api('listAccounts', { listAll: true, showicon: true }).then(response => {
         this.accountList = response.listaccountsresponse.account || []
       }).catch(error => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext
         })
@@ -319,7 +321,8 @@ export default {
 
         api('createUser', {}, 'POST', params).then(response => {
           this.$emit('refresh-data')
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.create.user'),
             description: `${this.$t('message.success.create.user')} ${params.username}`
           })
@@ -330,12 +333,14 @@ export default {
               entityid: values.samlentity,
               userid: user.id
             }).then(response => {
-              this.$notification.success({
+              this.$showNotification({
+                type: 'success',
                 message: this.$t('label.samlenable'),
                 description: this.$t('message.success.enable.saml.auth')
               })
             }).catch(error => {
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
                 duration: 0
@@ -344,7 +349,8 @@ export default {
           }
           this.closeAction()
         }).catch(error => {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
             duration: 0

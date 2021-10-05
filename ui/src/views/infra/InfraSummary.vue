@@ -241,12 +241,14 @@ export default {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1 && this.maxCerts === count) {
           this.$message.success(`${this.$t('label.certificate.upload')}: ${result.jobresult.customcertificate.message}`)
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.certificate.upload'),
             description: result.jobresult.customcertificate.message || this.$t('message.success.certificate.upload')
           })
         } else if (result.jobstatus === 2) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('label.certificate.upload.failed'),
             description: result.jobresult.errortext || this.$t('label.certificate.upload.failed.description'),
             duration: 0

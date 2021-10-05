@@ -254,7 +254,8 @@ export default {
         this.items = response.listdedicatedguestvlanrangesresponse.dedicatedguestvlanrange || []
         this.totalCount = response.listdedicatedguestvlanrangesresponse.count || 0
       }).catch(error => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0

@@ -220,7 +220,8 @@ export default {
         })
         this.$emit('close-action')
       }).catch(error => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('message.request.failed'),
           description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
           duration: 0
