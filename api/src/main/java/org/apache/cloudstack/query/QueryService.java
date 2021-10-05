@@ -112,7 +112,7 @@ public interface QueryService {
             "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
 
     static final ConfigKey<Boolean> RestrictPublicTemplatesOfOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "restrict.public.templates.of.other.domains", "false",
-            "If true, other domains' public templates will not be visible in this domain.", true, ConfigKey.Scope.Domain);
+            "If true, the public templates of other domains will not be visible in this domain.", true, ConfigKey.Scope.Domain);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 

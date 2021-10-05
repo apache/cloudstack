@@ -3636,7 +3636,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
-        boolean restrictPublicTemplatesToDomain = QueryService.RestrictPublicTemplatesOfOtherDomains.valueIn(caller.getDomainId());
+        boolean restrictPublicTemplatesOfOtherDomains = QueryService.RestrictPublicTemplatesOfOtherDomains.valueIn(caller.getDomainId());
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
@@ -3677,7 +3677,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             DomainVO domain = null;
             if (!permittedAccounts.isEmpty()) {
                 domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
-            } else if (restrictPublicTemplatesToDomain && domainId != null) {
+            } else if (restrictPublicTemplatesOfOtherDomains && domainId != null) {
                 domain = _domainDao.findById(domainId);
             } else {
                 domain = _domainDao.findById(Domain.ROOT_DOMAIN);
@@ -3706,7 +3706,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
                     DomainVO domainTreeNode = domain;
 
-                    if(! restrictPublicTemplatesToDomain) {
+                    if(! restrictPublicTemplatesOfOtherDomains) {
                         domainTreeNode = getDomainOf(templateFilter, account);
                     }
                     relatedDomainIds.add(domainTreeNode.getId());
@@ -3716,13 +3716,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     }
 
                     boolean isAdmin = _accountMgr.isAdmin(account.getId());
-                    if(! restrictPublicTemplatesToDomain) {
+                    if(! restrictPublicTemplatesOfOtherDomains) {
                         relatedDomainIds.addAll(getChildDomainIds(isAdmin, templateFilter, domainTreeNode));
                     } else if (isAdmin) {
                         relatedDomainIds.addAll(getChildDomainIds(isAdmin, templateFilter, domain));
                     }
                 }
-            } else if (restrictPublicTemplatesToDomain && domainId != null) {
+            } else if (restrictPublicTemplatesOfOtherDomains && domainId != null) {
                 // templatefilter=all or domainid is passed, called by root admin/domain admin
                 DomainVO domainTreeNode = domain;
                 relatedDomainIds.add(domainTreeNode.getId());
@@ -3757,7 +3757,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             } else if (templateFilter == TemplateFilter.executable) {
                 SearchCriteria<TemplateJoinVO> scc2 = _templateJoinDao.createSearchCriteria();
                 scc2.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
-                if (restrictPublicTemplatesToDomain) {
+                if (restrictPublicTemplatesOfOtherDomains) {
                     SearchCriteria<TemplateJoinVO> scc3 = _templateJoinDao.createSearchCriteria();
                     scc3.addOr("domainId", SearchCriteria.Op.IN, relatedDomainIds.toArray());
                     scc3.addOr("domainId", SearchCriteria.Op.NULL);

@@ -48,8 +48,6 @@ public interface TemplateManager {
     static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
             "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
 
-
-
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 
