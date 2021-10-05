@@ -104,7 +104,7 @@ def do_cmd(cmd):
                       "%s (stderr output:%s)" % (ret_code, err))
         raise PluginError(err)
     output = proc.stdout.read()
-    if output.endswith('\n'):
+    if output.endswith(b'\n'):
         output = output[:-1]
     return output
 

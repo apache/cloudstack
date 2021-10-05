@@ -321,12 +321,6 @@
               :placeholder="this.$t('label.routeripv6')"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
-            <a-input
-              v-decorator="['endipv6', {}]"
-              :placeholder="this.$t('label.endipv6')"/>
-          </a-form-item>
-          <a-form-item>
             <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
             <a-input
               v-decorator="['networkdomain', {}]"

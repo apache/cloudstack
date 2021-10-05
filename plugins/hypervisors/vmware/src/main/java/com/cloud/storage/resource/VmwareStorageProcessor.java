@@ -1241,10 +1241,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-            vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
-            clonedVm = dcMo.findVm(templateUniqueName);
-
-            clonedVm.tagAsWorkerVM();
+            VirtualDisk requiredDisk = volumeDeviceInfo.first();
+            clonedVm = vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, requiredDisk);
+            if (clonedVm == null) {
+                throw new Exception(String.format("Failed to clone VM with name %s during create template from volume operation", templateUniqueName));
+            }
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
             // Get VMDK filename
@@ -1828,14 +1829,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 // 4 MB is the minimum requirement for VM memory in VMware
                 DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-                vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
-                clonedVm = dcMo.findVm(exportName);
+                VirtualDisk requiredDisk = volumeDeviceInfo.first();
+                clonedVm = vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, requiredDisk);
                 if (clonedVm == null) {
-                    String msg = "Failed to clone VM. volume path: " + volumePath;
-                    s_logger.error(msg);
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to clone VM with name %s during export volume operation", exportName));
                 }
-                clonedVm.tagAsWorkerVM();
                 vmMo = clonedVm;
             }
             vmMo.exportVm(exportPath, exportName, false, false);

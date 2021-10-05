@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.network;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -38,7 +41,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.Network.PVlanType;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -92,11 +94,14 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.Network.PVlanType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -187,6 +192,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -195,14 +201,14 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -327,6 +333,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     AccountService _accountService;
     @Inject
     NetworkAccountDao _networkAccountDao;
+    @Inject
+    VirtualMachineManager vmManager;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -2144,6 +2152,38 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return vms.isEmpty();
     }
 
+    private void replugNicsForUpdatedNetwork(NetworkVO network) throws ResourceUnavailableException, InsufficientCapacityException {
+        List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+        Network updatedNetwork = getNetwork(network.getId());
+        for (NicVO nic : nics) {
+            long vmId = nic.getInstanceId();
+            VMInstanceVO vm = _vmDao.findById(vmId);
+            if (vm == null) {
+                s_logger.error(String.format("Cannot replug NIC: %s as VM for it is not found with ID: %d", nic, vmId));
+                continue;
+            }
+            if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not on VMware", nic, vm));
+                continue;
+            }
+            if (!VirtualMachine.Type.User.equals(vm.getType())) {
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not a user VM", nic, vm));
+                continue;
+            }
+            if (!VirtualMachine.State.Running.equals(vm.getState())) {
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not in running state", nic, vm));
+                continue;
+            }
+            Host host = _hostDao.findById(vm.getHostId());
+            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(),
+                    _networkModel.getNetworkRate(network.getId(), vm.getId()),
+                    _networkModel.isSecurityGroupSupportedInNetwork(updatedNetwork),
+                    _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+            vmManager.replugNic(updatedNetwork, vmManager.toNicTO(nicProfile, vm.getHypervisorType()), vmManager.toVmTO(vmProfile), host);
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
@@ -2544,6 +2584,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     e.addProxyObject(network.getUuid(), "networkId");
                                     throw e;
                                 }
+                            }
+                            if (networkOfferingChanged) {
+                                replugNicsForUpdatedNetwork(network);
                             }
                         }
 

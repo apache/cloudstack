@@ -477,7 +477,7 @@ export default {
           placeHolder: 'message.error.vcenter.datacenter',
           required: true,
           display: {
-            primaryStorageProtocol: 'vmfs'
+            primaryStorageProtocol: ['vmfs', 'datastorecluster']
           }
         },
         {
@@ -486,7 +486,7 @@ export default {
           placeHolder: 'message.error.vcenter.datastore',
           required: true,
           display: {
-            primaryStorageProtocol: 'vmfs'
+            primaryStorageProtocol: ['vmfs', 'datastorecluster']
           }
         },
         {
@@ -860,6 +860,10 @@ export default {
         protocols.push({
           id: 'vmfs',
           description: 'vmfs'
+        })
+        protocols.push({
+          id: 'datastorecluster',
+          description: 'datastorecluster'
         })
       } else if (hypervisor === 'Hyperv') {
         protocols.push({

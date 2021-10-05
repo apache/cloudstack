@@ -1639,7 +1639,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
-            if (vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO && vmProfile.getServiceOffering().getTagsArray().length != 0) {
+            if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
+                    && vmProfile.getServiceOffering().getTagsArray().length != 0) {
                 diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
             }
 

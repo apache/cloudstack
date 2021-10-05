@@ -1806,7 +1806,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public synchronized boolean configureTunnelNetwork(final long networkId,
+    public synchronized boolean configureTunnelNetwork(final Long networkId,
                                                        final long hostId, final String nwName) {
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
@@ -2427,7 +2427,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         devices.addDevice(createChannelDef(vmTO));
         devices.addDevice(createWatchDogDef());
-        devices.addDevice(createVideoDef());
+        devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
         devices.addDevice(createTabletInputDef());
@@ -2488,8 +2488,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ConsoleDef(PTY, null, null, (short)0);
     }
 
-    protected VideoDef createVideoDef() {
-        return new VideoDef(_videoHw, _videoRam);
+    protected VideoDef createVideoDef(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        String videoHw = _videoHw;
+        int videoRam = _videoRam;
+        if (details != null) {
+            if (details.containsKey(VmDetailConstants.VIDEO_HARDWARE)) {
+                videoHw = details.get(VmDetailConstants.VIDEO_HARDWARE);
+            }
+            if (details.containsKey(VmDetailConstants.VIDEO_RAM)) {
+                String value = details.get(VmDetailConstants.VIDEO_RAM);
+                videoRam = NumbersUtil.parseInt(value, videoRam);
+            }
+        }
+        return new VideoDef(videoHw, videoRam);
     }
 
     protected RngDef createRngDef() {

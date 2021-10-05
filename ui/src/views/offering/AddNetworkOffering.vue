@@ -108,60 +108,91 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.promiscuousmode')">
-          <a-radio-group
-            v-decorator="['promiscuousmode', {
-              initialValue: promiscuousMode
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handlePromiscuousModeChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.macaddresschanges')">
-          <a-radio-group
-            v-decorator="['macaddresschanges', {
-              initialValue: macAddressChanges
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handleMacAddressChangesChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.forgedtransmits')">
-          <a-radio-group
-            v-decorator="['forgedtransmits', {
-              initialValue: forgedTransmits
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
+        <a-row :gutter="12">
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.promiscuousmode')" :tooltip="$t('message.network.offering.promiscuous.mode')"/>
+              <a-radio-group
+                v-decorator="['promiscuousmode', {
+                  initialValue: ''
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.macaddresschanges')" :tooltip="$t('message.network.offering.mac.address.changes')"/>
+              <a-radio-group
+                v-decorator="['macaddresschanges', {
+                  initialValue: ''
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
+              <a-radio-group
+                v-decorator="['forgedtransmits', {
+                  initialValue: ''
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
+              <span v-if="macLearningValue !== ''">
+                <a-alert type="warning">
+                  <span slot="message" v-html="$t('message.network.offering.mac.learning.warning')" />
+                </a-alert>
+                <br/>
+              </span>
+              <a-radio-group
+                v-decorator="['maclearning', {
+                  initialValue: macLearningValue
+                }]"
+                buttonStyle="solid"
+                @change="e => { macLearningValue = e.target.value }">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item v-if="guestType !== 'l2'">
           <tooltip-label slot="label" :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
@@ -418,12 +449,10 @@ export default {
       hasAdvanceZone: false,
       requiredNetworkOfferingExists: false,
       guestType: 'isolated',
-      promiscuousMode: '',
-      macAddressChanges: '',
-      forgedTransmits: '',
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
+      macLearningValue: '',
       supportedServices: [],
       supportedServiceLoading: false,
       isVirtualRouterForAtLeastOneService: false,
@@ -501,15 +530,6 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
-    },
-    handlePromiscuousModeChange (val) {
-      this.promiscuousMode = val
-    },
-    handleMacAddressChangesChange (val) {
-      this.macAddressChanges = val
-    },
-    handleForgedTransmitsChange (val) {
-      this.forgedTransmits = val
     },
     fetchSupportedServiceData () {
       const params = {}
@@ -697,7 +717,8 @@ export default {
         var self = this
         var selectedServices = null
         var keys = Object.keys(values)
-        var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'isolation', 'supportspublicaccess']
+        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
           if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
@@ -840,14 +861,10 @@ export default {
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
           params.egressdefaultpolicy = false
         }
-        if (values.promiscuousmode) {
-          params['details[0].promiscuousMode'] = values.promiscuousmode
-        }
-        if (values.macaddresschanges) {
-          params['details[0].macaddresschanges'] = values.macaddresschanges
-        }
-        if (values.forgedtransmits) {
-          params['details[0].forgedtransmits'] = values.forgedtransmits
+        for (const key of detailsKey) {
+          if (values[key]) {
+            params['details[0].' + key] = values[key]
+          }
         }
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
