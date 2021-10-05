@@ -168,7 +168,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
                         }
                     }
-                } else if (QueryService.RestrictPublicTemplateAccessToDomain.valueIn(caller.getDomainId()) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) { // public template can be used by other accounts in the same domain or in sub-domains, and domain admin of parent domains
+                } else if (QueryService.RestrictPublicTemplatesOfOtherDomains.valueIn(caller.getDomainId()) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) { // public template can be used by other accounts in the same domain or in sub-domains, and domain admin of parent domains
                     if (caller.getDomainId() != owner.getDomainId() && !_domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
                         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                             throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);

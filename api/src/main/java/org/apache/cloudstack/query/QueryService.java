@@ -90,8 +90,6 @@ import com.cloud.exception.PermissionDeniedException;
  */
 public interface QueryService {
 
-    static final String RestrictPublicTemplateAccessToDomainCK = "restrict.public.template.access.to.domain";
-
     // Config keys
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
@@ -113,8 +111,8 @@ public interface QueryService {
             "allow.user.view.all.domain.accounts", "false",
             "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
 
-    static final ConfigKey<Boolean> RestrictPublicTemplateAccessToDomain = new ConfigKey<>("Advanced", Boolean.class, RestrictPublicTemplateAccessToDomainCK, "false",
-            "If true, other domains public templates will not visible in this domain.", true, ConfigKey.Scope.Domain);
+    static final ConfigKey<Boolean> RestrictPublicTemplatesOfOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "restrict.public.templates.of.other.domains", "false",
+            "If true, other domains' public templates will not be visible in this domain.", true, ConfigKey.Scope.Domain);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 

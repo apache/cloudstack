@@ -3636,7 +3636,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
-        boolean restrictPublicTemplatesToDomain = QueryService.RestrictPublicTemplateAccessToDomain.valueIn(caller.getDomainId());
+        boolean restrictPublicTemplatesToDomain = QueryService.RestrictPublicTemplatesOfOtherDomains.valueIn(caller.getDomainId());
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
@@ -4407,6 +4407,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
-                AllowUserViewAllDomainAccounts, RestrictPublicTemplateAccessToDomain};
+                AllowUserViewAllDomainAccounts, RestrictPublicTemplatesOfOtherDomains};
     }
 }
