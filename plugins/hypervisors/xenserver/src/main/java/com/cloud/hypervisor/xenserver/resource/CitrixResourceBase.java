@@ -1442,7 +1442,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         try {
             String bootMode = org.apache.commons.lang3.StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
-            setVmBootDetails(vm, conn, bootMode == null ? null : ApiConstants.BootType.UEFI.toString(), bootMode);
+            String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
+            setVmBootDetails(vm, conn, bootType, bootMode);
         } catch (final XenAPIException | XmlRpcException e) {
             throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
         }
@@ -1954,9 +1955,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected void setVmBootDetails(final VM vm, final Connection conn, String bootType, String bootMode) throws XenAPIException, XmlRpcException {
-        if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
-            bootType = ApiConstants.BootType.BIOS.toString();
-        }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Setting boottype=%s and bootmode=%s for VM: %s", bootType, bootMode, vm.getUuid(conn)));
         }
