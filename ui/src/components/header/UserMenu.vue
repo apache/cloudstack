@@ -18,7 +18,7 @@
 <template>
   <div class="user-menu">
 
-    <a-tooltip v-if="countNotify > 0" title="Clear all notification" class="action button-clear-notification" @click="clearAllNotify">
+    <a-tooltip v-if="countNotify > 0" :title="$t('label.clear.all.notify')" class="action button-clear-notification" @click="clearAllNotify">
       <a-icon type="bell" class="bell-icon" />
       <a-icon type="stop" class="clear-icon" />
     </a-tooltip>
