@@ -669,7 +669,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
-            injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
+            copyPrivateKeyToHosts(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         } catch (CloudRuntimeException e) {
             if (!devel) {
                 throw new CloudRuntimeException(e.getMessage());
@@ -738,8 +738,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
     }
 
-    protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
-        s_logger.info("Trying to inject public and private keys into systemvm iso");
+    protected void copyPrivateKeyToHosts(String publicKeyPath, String privKeyPath) {
+        s_logger.info("Trying to copy private keys to hosts");
         String injectScript = getInjectScript();
         String scriptPath = Script.findScript("", injectScript);
         String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
@@ -757,15 +757,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
         if (isOnWindows()) {
             scriptPath = scriptPath.replaceAll("\\\\" ,"/" );
-            systemVmIsoPath = systemVmIsoPath.replaceAll("\\\\" ,"/" );
-            publicKeyPath = publicKeyPath.replaceAll("\\\\" ,"/" );
             privKeyPath = privKeyPath.replaceAll("\\\\" ,"/" );
         }
-        command.add(scriptPath);
-        command.add(publicKeyPath);
-        command.add(privKeyPath);
-        command.add(systemVmIsoPath);
 
+        command.add(scriptPath);
+        command.add(privKeyPath);
         final String result = command.execute();
         s_logger.info("The script injectkeys.sh was run with result : " + result);
         if (result != null) {

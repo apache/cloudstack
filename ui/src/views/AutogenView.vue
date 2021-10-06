@@ -760,7 +760,7 @@ export default {
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
-            this.columnKeys = columns()
+            this.columnKeys = columns(this.$store.getters)
           } else {
             this.columnKeys = columns
           }

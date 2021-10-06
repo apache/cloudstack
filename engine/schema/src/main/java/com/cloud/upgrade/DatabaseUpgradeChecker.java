@@ -274,8 +274,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
 
-        updateSystemVmTemplates(upgrades);
-
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
@@ -346,6 +344,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.close();
             }
         }
+        updateSystemVmTemplates(upgrades);
     }
 
     @Override
@@ -366,7 +365,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     return;
                 }
 
+                SystemVmTemplateRegistration.parseMetadataFile();
                 final CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
+                SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(currentVersion.getMajorRelease()) + "." + String.valueOf(currentVersion.getMinorRelease());
+                SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(currentVersion.getPatchRelease());
+
                 s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
 
                 if (dbVersion.compareTo(currentVersion) > 0) {

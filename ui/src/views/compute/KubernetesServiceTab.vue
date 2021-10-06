@@ -93,8 +93,8 @@
         <a-table
           class="table"
           size="small"
-          :columns="this.vmColumns"
-          :dataSource="this.virtualmachines"
+          :columns="vmColumns"
+          :dataSource="virtualmachines"
           :rowKey="item => item.id"
           :pagination="false"
         >
@@ -106,6 +106,26 @@
           </template>
           <template slot="port" slot-scope="text, record, index">
             {{ cksSshStartingPort + index }}
+          </template>
+          <template slot="action" slot-scope="text, record">
+            <a-tooltip placement="bottom" >
+              <template slot="title">
+                {{ $t('label.action.delete.node') }}
+              </template>
+              <a-popconfirm
+                :title="$t('message.action.delete.node')"
+                @confirm="deleteNode(record)"
+                :okText="$t('label.yes')"
+                :cancelText="$t('label.no')"
+                :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
+              >
+                <a-button
+                  type="danger"
+                  icon="delete"
+                  shape="circle"
+                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled" />
+              </a-popconfirm>
+            </a-tooltip>
           </template>
         </a-table>
       </a-tab-pane>
@@ -149,6 +169,7 @@ export default {
     AnnotationsTab
   },
   mixins: [mixinDevice],
+  inject: ['parentFetchData'],
   props: {
     resource: {
       type: Object,
@@ -230,6 +251,14 @@ export default {
     }
   },
   mounted () {
+    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+      this.vmColumns.push({
+        title: this.$t('label.action'),
+        dataIndex: 'action',
+        scopedSlots: { customRender: 'action' }
+      })
+    }
+    this.handleFetchData()
     this.setCurrentTab()
   },
   methods: {
@@ -381,6 +410,35 @@ export default {
         elem.click()
         document.body.removeChild(elem)
       }
+    },
+    deleteNode (node) {
+      const params = {
+        id: this.resource.id,
+        nodeids: node.id
+      }
+      api('scaleKubernetesCluster', params).then(json => {
+        const jobId = json.scalekubernetesclusterresponse.jobid
+        console.log(jobId)
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.action.delete.node'),
+          jobid: jobId,
+          description: node.name,
+          status: 'progress'
+        })
+        this.$pollJob({
+          jobId,
+          loadingMessage: `${this.$t('message.deleting.node')} ${node.name}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          successMessage: `${this.$t('message.success.delete.node')} ${node.name}`,
+          successMethod: () => {
+            this.parentFetchData()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.parentFetchData()
+      })
     }
   }
 }
