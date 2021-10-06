@@ -1988,14 +1988,20 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
-            storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+            try {
+                storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+            } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
+                String errMsg = String.format("Failed to copy volume: %s to dest storage: %s, due to %s", srcVol.getName(), destPrimaryStore.getName(), e.toString());
+                s_logger.debug(errMsg, e);
+                throw new CloudRuntimeException(errMsg);
+            } finally {
+                if (srcPrimaryStore.isManaged()) {
+                    storagePoolMgr.disconnectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
+                }
 
-            if (srcPrimaryStore.isManaged()) {
-                storagePoolMgr.disconnectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
-            }
-
-            if (destPrimaryStore.isManaged()) {
-                storagePoolMgr.disconnectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath);
+                if (destPrimaryStore.isManaged()) {
+                    storagePoolMgr.disconnectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath);
+                }
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();

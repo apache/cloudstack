@@ -26,6 +26,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -408,7 +410,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
         ResizeVolumeCommand resizeCmd =
                 new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(), resizeParameter.newSize, resizeParameter.shrinkOk,
-                        resizeParameter.instanceName);
+                        resizeParameter.instanceName, vol.getChainInfo());
+        if (pool.getParent() != 0) {
+            resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+        }
         CreateCmdResult result = new CreateCmdResult(null, null);
         try {
             ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, resizeParameter.hosts, resizeCmd);
@@ -418,6 +423,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
                 vol.setSize(finalSize);
                 vol.update();
+
+                updateVolumePathDetails(vol, answer);
             } else if (answer != null) {
                 result.setResult(answer.getDetails());
             } else {
@@ -431,6 +438,31 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         }
 
         callback.complete(result);
+    }
+
+    private void updateVolumePathDetails(VolumeObject vol, ResizeVolumeAnswer answer) {
+        VolumeVO volumeVO = volumeDao.findById(vol.getId());
+        String datastoreUUID = answer.getContextParam("datastoreUUID");
+        if (datastoreUUID != null) {
+            StoragePoolVO storagePoolVO = primaryStoreDao.findByUuid(datastoreUUID);
+            if (storagePoolVO != null) {
+                volumeVO.setPoolId(storagePoolVO.getId());
+            } else {
+                s_logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreUUID, vol.getId()));
+            }
+        }
+
+        String volumePath = answer.getContextParam("volumePath");
+        if (volumePath != null) {
+            volumeVO.setPath(volumePath);
+        }
+
+        String chainInfo = answer.getContextParam("chainInfo");
+        if (chainInfo != null) {
+            volumeVO.setChainInfo(chainInfo);
+        }
+
+        volumeDao.update(volumeVO.getId(), volumeVO);
     }
 
     @Override

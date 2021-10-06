@@ -1144,8 +1144,8 @@ def get_free_vlan(apiclient, zoneid):
     usedVlanIds = []
 
     if isinstance(networks, list) and len(networks) > 0:
-        usedVlanIds = [int(nw.vlan)
-                       for nw in networks if (nw.vlan and str(nw.vlan).lower() != "untagged")]
+        usedVlanIds = [int(nw.broadcasturi.split("//")[-1])
+                       for nw in networks if (nw.broadcasturi and nw.broadcasturi.lower() != "vlan://untagged")]
 
     ipranges = list_vlan_ipranges(apiclient, zoneid=zoneid)
     if isinstance(ipranges, list) and len(ipranges) > 0:

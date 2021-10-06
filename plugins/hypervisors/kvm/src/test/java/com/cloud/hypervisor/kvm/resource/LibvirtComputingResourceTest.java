@@ -627,7 +627,7 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy._videoRam = 200;
         libvirtComputingResourceSpy._videoHw = "vGPU";
 
-        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef();
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
         assertXpath(domainDoc, "/video/model/@type", "vGPU");
         assertXpath(domainDoc, "/video/model/@vram", "200");

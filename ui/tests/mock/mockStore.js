@@ -46,7 +46,8 @@ const mockStore = {
       getters: {
         apis: () => mockStore.state.user.apis,
         userInfo: () => mockStore.state.user.info,
-        headerNotices: () => mockStore.state.user.headerNotices
+        headerNotices: () => mockStore.state.user.headerNotices,
+        defaultListViewPageSize: () => mockStore.state.user.defaultListViewPageSize
       },
       actions,
       mutations

@@ -556,7 +556,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
             try {
                 nicProfile = _networkMgr.prepareNic(vmProfile, dest, context, nicProfile.getId(), networkInNewPhysicalNet);
-                 _itMgr.replugNic(networkInNewPhysicalNet, _itMgr.toNicTO(nicProfile, host.getHypervisorType()), _itMgr.toVmTO(vmProfile), context, dest);
+                 _itMgr.replugNic(networkInNewPhysicalNet, _itMgr.toNicTO(nicProfile, host.getHypervisorType()), _itMgr.toVmTO(vmProfile), dest.getHost());
             } catch (ResourceUnavailableException | InsufficientCapacityException e) {
                 throw new CloudRuntimeException("Migration of Nic failed", e);
             }

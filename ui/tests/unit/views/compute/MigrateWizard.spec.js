@@ -611,7 +611,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('check $pollJob have successMethod() is called with isUserVm is false', async (done) => {
         const mockData = {
-          migratevirtualmachineresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id-case-2'
           },
           queryasyncjobresultresponse: {
@@ -660,7 +660,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('check $pollJob have errorMethod() is called', async (done) => {
         const mockData = {
-          migratevirtualmachinewithvolumeresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id-case-3'
           },
           queryasyncjobresultresponse: {
@@ -700,7 +700,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('check $pollJob have catchMethod() is called', async (done) => {
         const mockData = {
-          migratevirtualmachinewithvolumeresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id-case-4'
           }
         }

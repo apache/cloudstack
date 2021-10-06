@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProviderOfferingsCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
+import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.AssignVirtualMachineToBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -767,6 +769,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ImportBackupOfferingCmd.class);
         cmdList.add(ListBackupOfferingsCmd.class);
         cmdList.add(DeleteBackupOfferingCmd.class);
+        cmdList.add(UpdateBackupOfferingCmd.class);
         // Assignment
         cmdList.add(AssignVirtualMachineToBackupOfferingCmd.class);
         cmdList.add(RemoveVirtualMachineFromBackupOfferingCmd.class);
@@ -1050,4 +1053,42 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             return BackupSyncPollingInterval.value() * 1000L;
         }
     }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_EDIT, eventDescription = "updating backup offering")
+    public BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd) {
+        Long id = updateBackupOfferingCmd.getId();
+        String name = updateBackupOfferingCmd.getName();
+        String description = updateBackupOfferingCmd.getDescription();
+
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(id);
+        if (backupOfferingVO == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find Backup Offering with id: [%s].", id));
+        }
+
+        LOG.debug(String.format("Trying to update Backup Offering [id: %s, name: %s, description: %s] to [name: %s, description: %s].",
+                backupOfferingVO.getUuid(), backupOfferingVO.getName(), backupOfferingVO.getDescription(), name, description));
+
+        BackupOfferingVO offering = backupOfferingDao.createForUpdate(id);
+        List<String> fields = new ArrayList<>();
+        if (name != null) {
+            offering.setName(name);
+            fields.add("name: " + name);
+        }
+
+        if (description != null) {
+            offering.setDescription(description);
+            fields.add("description: " + description);
+        }
+
+        if (!backupOfferingDao.update(id, offering)) {
+            LOG.warn(String.format("Couldn't update Backup offering [id: %s] with [%s].", id, String.join(", ", fields)));
+        }
+
+        BackupOfferingVO response = backupOfferingDao.findById(id);
+        CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "externalId")));
+        return response;
+    }
+
 }
