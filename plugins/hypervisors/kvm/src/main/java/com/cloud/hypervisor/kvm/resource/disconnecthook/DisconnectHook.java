@@ -18,7 +18,7 @@
 //
 package com.cloud.hypervisor.kvm.resource.disconnecthook;
 
-/*
+/**
 DisconnectHooks can be used to cleanup/cancel long running commands when
 connection to the management server is interrupted (which results in job
 failure). Agent CommandWrappers can register a hook with the
