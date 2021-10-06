@@ -18,10 +18,6 @@
 <template>
   <div class="user-menu">
 
-    <a-tooltip v-if="countNotify > 0" :title="$t('label.clear.all.notify')" class="action button-clear-notification" @click="clearAllNotify">
-      <a-icon type="bell" class="bell-icon" />
-      <a-icon type="stop" class="clear-icon" />
-    </a-tooltip>
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <label class="user-menu-server-info action" v-if="$config.multipleServer">
@@ -181,21 +177,6 @@ export default {
     .anticon {
       margin-right: 5px;
     }
-  }
-}
-
-.button-clear-notification {
-  position: relative;
-
-  .bell-icon {
-    position: absolute;
-    left: 18px;
-    font-size: 12px;
-  }
-
-  .clear-icon {
-    font-size: 20px;
-    padding: 4px;
   }
 }
 </style>
