@@ -173,10 +173,11 @@ public class ManagementServerImplTest {
         Mockito.doReturn(expectedResult.get(1)).when(vlanVoMock2).getId();
         Mockito.doReturn(1l).when(accountMock).getId();
 
+        Mockito.doReturn(accountMock).when(managementServerImplSpy).getCaller();
         Mockito.doReturn(Arrays.asList(vlanVoMock1)).when(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.doReturn(Arrays.asList(vlanVoMock2)).when(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
 
-        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l, accountMock);
+        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l);
 
         Mockito.verify(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
@@ -189,10 +190,11 @@ public class ManagementServerImplTest {
         Mockito.doReturn(expectedResult.get(0)).when(vlanVoMock1).getId();
         Mockito.doReturn(1l).when(accountMock).getId();
 
+        Mockito.doReturn(accountMock).when(managementServerImplSpy).getCaller();
         Mockito.doReturn(Arrays.asList(vlanVoMock1)).when(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.doReturn(new ArrayList<>()).when(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
 
-        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l, accountMock);
+        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l);
 
         Mockito.verify(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
@@ -205,10 +207,12 @@ public class ManagementServerImplTest {
         Mockito.doReturn(expectedResult.get(0)).when(vlanVoMock2).getId();
         Mockito.doReturn(1l).when(accountMock).getId();
 
+
+        Mockito.doReturn(accountMock).when(managementServerImplSpy).getCaller();
         Mockito.doReturn(new ArrayList<>()).when(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.doReturn(Arrays.asList(vlanVoMock2)).when(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
 
-        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l, accountMock);
+        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l);
 
         Mockito.verify(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
@@ -220,10 +224,11 @@ public class ManagementServerImplTest {
         List<Long> expectedResult = Arrays.asList(-1l);
         Mockito.doReturn(1l).when(accountMock).getId();
 
+        Mockito.doReturn(accountMock).when(managementServerImplSpy).getCaller();
         Mockito.doReturn(new ArrayList<>()).when(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.doReturn(new ArrayList<>()).when(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
 
-        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l, accountMock);
+        List<Long> result = managementServerImplSpy.retrieveAvailableVlanDbIdsForAccount(1l);
 
         Mockito.verify(managementServerImplSpy).retrieveZoneWideNonDedicatedVlans(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(managementServerImplSpy).retrieveDedicatedVlans(Mockito.anyLong(), Mockito.anyString());
