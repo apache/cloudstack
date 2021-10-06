@@ -295,7 +295,7 @@
           <a-form-item v-if="isVirtualRouterForAtLeastOneService" name="routeripv6" ref="routeripv6">
             <template #label>
               <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
-            <template>
+            </template>
             <a-input
               v-model:value="form.routeripv6"
               :placeholder="apiParams.routeripv6.description"/>

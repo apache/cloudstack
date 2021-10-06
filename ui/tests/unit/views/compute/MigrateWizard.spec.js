@@ -476,7 +476,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('$pollJob have successMethod() should be called with requiresStorageMotion is false', async (done) => {
         const mockData = {
-          migratesystemvmresponse: {
+          migratevirtualmachineresponse: {
             jobid: 'test-job-id-case-2'
           },
           queryasyncjobresultresponse: {
@@ -512,7 +512,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('$pollJob have errorMethod() should be called', async (done) => {
         const mockData = {
-          migratesystemvmresponse: {
+          migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-3'
           },
           queryasyncjobresultresponse: {
@@ -548,7 +548,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('$pollJob have catchMethod() should be called', async (done) => {
         const mockData = {
-          migratesystemvmresponse: {
+          migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-4'
           }
         }
