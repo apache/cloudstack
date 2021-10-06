@@ -144,7 +144,7 @@
         </a-form-item>
         <a-form-item name="forgedtransmits" ref="forgedtransmits">
           <template #label>
-            <tooltip-label slot="label" :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
+            <tooltip-label :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
           </template>
           <a-radio-group
             v-model:value="form.forgedtransmits"

@@ -48,7 +48,9 @@
           </template>
           <span v-if="networkOffering.id && networkOffering.id !== resource.networkofferingid">
             <a-alert type="warning">
-              <span slot="message" v-html="$t('message.network.offering.change.warning')" />
+              <template #message>
+                <span v-html="$t('message.network.offering.change.warning')" />
+              </template>
             </a-alert>
             <br/>
           </span>
