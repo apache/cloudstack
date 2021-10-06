@@ -534,6 +534,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (jobResult != null) {
                 if (jobResult instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof CloudRuntimeException)
+                    throw (CloudRuntimeException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
@@ -570,8 +572,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             VMSnapshot snapshot = strategy.takeVMSnapshot(vmSnapshot);
             return snapshot;
         } catch (Exception e) {
-            s_logger.debug("Failed to create vm snapshot: " + vmSnapshotId, e);
-            throw new CloudRuntimeException("Failed to create vm snapshot: " + vmSnapshotId, e);
+            String errMsg = String.format("Failed to create vm snapshot: [%s] due to: %s", vmSnapshotId, e.getMessage());
+            s_logger.debug(errMsg, e);
+            throw new CloudRuntimeException(errMsg, e);
         }
     }
 
@@ -639,6 +642,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (jobResult != null) {
                 if (jobResult instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof CloudRuntimeException)
+                    throw (CloudRuntimeException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
@@ -766,6 +771,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                     throw (InsufficientCapacityException)jobResult;
                 else if (jobResult instanceof ResourceUnavailableException)
                     throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof CloudRuntimeException)
+                    throw (CloudRuntimeException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }

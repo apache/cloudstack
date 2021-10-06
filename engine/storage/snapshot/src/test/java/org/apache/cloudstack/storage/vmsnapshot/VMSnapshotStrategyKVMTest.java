@@ -71,7 +71,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
@@ -181,24 +180,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
 
         info =  vmStrategy.createDiskSnapshot(vmSnapshot, forRollback, vol);
         assertNotNull(info);
-    }
-
-    @Test
-    public void testBackupDiskSnapshot() {
-        VolumeInfo vo = Mockito.mock(VolumeInfo.class);
-        Long id = 1L;
-        CreateSnapshotPayload payload = Mockito.mock(CreateSnapshotPayload.class);
-        SnapshotInfo info = Mockito.mock(SnapshotInfo.class);
-        List<SnapshotInfo> rollback = new ArrayList<>();
-        rollback.add(info);
-        SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
-        when(vo.getpayload()).thenReturn(payload);
-        when(payload.getSnapshotId()).thenReturn(id);
-        when( _snapshotDataFactory.getSnapshot(id, vo.getDataStore())).thenReturn(info);
-        when(_storageStrategyFactory.getSnapshotStrategy(info, SnapshotOperation.TAKE)).thenReturn(strategy);
-        when(strategy.backupSnapshot(any())).thenReturn(info);
-
-        vmStrategy.backupSnapshot(info, rollback);
     }
 
     @Test

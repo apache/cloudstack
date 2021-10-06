@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VMSnapshotTO;
@@ -104,6 +105,13 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
         if (volumeTOs == null) {
             throw new CloudRuntimeException("Failed to get the volumes for the vm snapshot: " + vmSnapshot.getUuid());
+        }
+
+        if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
+            List<VMSnapshotDetailsVO> vmDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), "SnapshotGroupId" );
+            if (CollectionUtils.isEmpty(vmDetails)) {
+                return StrategyPriority.CANT_HANDLE;
+            }
         }
 
         if (volumeTOs != null && !volumeTOs.isEmpty()) {

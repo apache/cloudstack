@@ -286,6 +286,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("No such snapshot");
         }
 
+        if (Type.GROUP.name().equals(snapshot.getTypeDescription())) {
+            throw new InvalidParameterValueException(String.format("The snapshot [%s] is part of a [%s] snapshots and cannot be reverted separately", snapshotId, snapshot.getTypeDescription()));
+        }
         VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("The volume is not in Ready state.");
@@ -302,7 +305,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             // If target VM has associated VM snapshots then don't allow to revert from snapshot
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
-            if (vmSnapshots.size() > 0 && !snapshot.getState().equals(Snapshot.State.BackedUpForVM)) {
+            if (vmSnapshots.size() > 0 && !Type.GROUP.name().equals(snapshot.getTypeDescription())) {
                 throw new InvalidParameterValueException("Unable to revert snapshot for VM, please remove VM snapshots before reverting VM from snapshot");
             }
         }
@@ -572,6 +575,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
+        if (Type.GROUP.name().equals(snapshotCheck.getTypeDescription())) {
+            throw new InvalidParameterValueException(String.format("The snapshot [%s] is part of a [%s] snapshots and cannot be deleted separately", snapshotId, snapshotCheck.getTypeDescription()));
+        }
+
         if (snapshotCheck.getState() == Snapshot.State.Destroyed) {
             throw new InvalidParameterValueException("Snapshot with id: " + snapshotId + " is already destroyed");
         }
@@ -672,7 +679,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
-        sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
+        sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
@@ -744,7 +751,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             sc.setParameters("snapshotTypeEQ", type.ordinal());
         } else {
             // Show only MANUAL and RECURRING snapshot types
-            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
+            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal(), Snapshot.Type.GROUP.ordinal());
         }
 
         Pair<List<SnapshotVO>, Integer> result = _snapshotDao.searchAndCount(sc, searchFilter);
@@ -1349,6 +1356,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
         if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
+            return DataStoreRole.Primary;
+        } else if (snapshot.getsnapshotType() == Type.GROUP.ordinal()) {
             return DataStoreRole.Primary;
         }
 
