@@ -123,7 +123,7 @@ public class DisconnectHooksTest {
     public void addAndRunHooksOneWithTimeout() {
         // test that hook stops running when we exceed timeout
         long timeout = 500;
-        TestHook hook1 = new TestHook(timeout, timeout + 10);
+        TestHook hook1 = new TestHook(timeout, timeout + 100);
         TestHook hook2 = new TestHook();
         libvirtComputingResource.addDisconnectHook(hook1);
         libvirtComputingResource.addDisconnectHook(hook2);
@@ -146,8 +146,8 @@ public class DisconnectHooksTest {
         // test that hooks stop running when we exceed timeout
         // test for parallel timeout rather than additive
         long timeout = 500;
-        TestHook hook1 = new TestHook(timeout, timeout + 10);
-        TestHook hook2 = new TestHook(timeout, timeout + 10);
+        TestHook hook1 = new TestHook(timeout, timeout + 100);
+        TestHook hook2 = new TestHook(timeout, timeout + 100);
         libvirtComputingResource.addDisconnectHook(hook1);
         libvirtComputingResource.addDisconnectHook(hook2);
         libvirtComputingResource.disconnected();
