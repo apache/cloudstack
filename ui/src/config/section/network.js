@@ -16,6 +16,7 @@
 // under the License.
 
 import store from '@/store'
+import tungsten from '@/assets/icons/tungsten.svg?inline'
 
 export default {
   name: 'network',
@@ -57,6 +58,9 @@ export default {
         name: 'guest.ip.range',
         component: () => import('@/views/network/GuestIpRanges.vue'),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
+      }, {
+        name: 'tungsten.router.table',
+        component: () => import('@/views/network/tungsten/TungstenNetworkRouterTable.vue')
       },
       {
         name: 'comments',
@@ -670,6 +674,147 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'tungstenfabric',
+      title: 'label.tungsten.fabric',
+      icon: tungsten,
+      permission: ['listTungstenFabricProviders'],
+      columns: [
+        {
+          field: 'name',
+          customTitle: 'tungsten.fabric.provider'
+        },
+        'zonename'
+      ],
+      tabs: [
+        {
+          name: 'tungsten.fabric',
+          component: () => import('@/views/network/tungsten/TungstenFabric.vue')
+        },
+        {
+          name: 'tungsten.fabric.routing',
+          component: () => import('@/views/network/tungsten/TungstenFabricRouting.vue')
+        }
+      ]
+    },
+    {
+      name: 'tungstennetworkroutertable',
+      title: 'label.tungsten.network.router.table',
+      icon: tungsten,
+      hidden: true,
+      permission: ['listTungstenFabricNetworkRouteTable'],
+      details: ['uuid', 'name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'tungsten.static.routes',
+          component: () => import('@/views/network/tungsten/TungstenNetworkStaticRoute.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'addTungstenFabricNetworkStaticRoute',
+          icon: 'plus',
+          label: 'label.add.tungsten.network.static.route',
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/network/tungsten/AddTungstenNetworkStaticRoute.vue')
+        },
+        {
+          api: 'removeTungstenFabricNetworkRouteTable',
+          icon: 'delete',
+          label: 'label.remove.network.route.table',
+          message: 'label.confirm.remove.network.route.table',
+          dataView: true
+        }
+      ]
+    },
+    {
+      name: 'tungsteninterfaceroutertable',
+      title: 'label.tungsten.interface.router.table',
+      icon: tungsten,
+      hidden: true,
+      permission: ['listTungstenFabricInterfaceRouteTable'],
+      details: ['uuid', 'name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'tungsten.static.routes',
+          component: () => import('@/views/network/tungsten/TungstenInterfaceStaticRoute.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'addTungstenFabricInterfaceStaticRoute',
+          icon: 'plus',
+          label: 'label.add.tungsten.interface.static.route',
+          dataView: true,
+          popup: true,
+          component: () => import('@/views/network/tungsten/AddTungstenInterfaceStaticRoute.vue')
+        },
+        {
+          api: 'removeTungstenFabricInterfaceRouteTable',
+          icon: 'delete',
+          label: 'label.remove.interface.route.table',
+          message: 'label.confirm.remove.interface.route.table',
+          dataView: true
+        }
+      ]
+    },
+    {
+      name: 'tungstenpolicy',
+      title: 'label.network.policy',
+      icon: tungsten,
+      hidden: true,
+      permission: ['listTungstenFabricPolicy'],
+      details: ['name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'rule',
+          component: () => import('@/views/network/tungsten/TungstenFabricPolicyRule.vue')
+        },
+        {
+          name: 'tag',
+          component: () => import('@/views/network/tungsten/TungstenFabricPolicyTag.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'applyTungstenFabricPolicy',
+          icon: 'form',
+          label: 'label.apply.tungsten.network.policy',
+          dataView: true,
+          args: ['networkuuid', 'majorsequence', 'minorsequence']
+        },
+        {
+          api: 'removeTungstenFabricPolicy',
+          icon: 'close',
+          label: 'label.remove.tungsten.network.policy',
+          dataView: true,
+          args: ['networkuuid']
+        },
+        {
+          api: 'deleteTungstenFabricPolicy',
+          icon: 'delete',
+          label: 'label.delete.tungsten.policy',
+          message: 'label.confirm.delete.tungsten.policy',
+          dataView: true,
+          mapping: {
+            policyuuid: (record) => record.uuid
+          }
         }
       ]
     }

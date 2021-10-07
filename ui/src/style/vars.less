@@ -120,6 +120,22 @@ a {
   color: @primary-color;
 }
 
+.custom-icon path {
+  fill: @navigation-text-color;
+}
+
+.ant-menu-light {
+  .ant-menu-item:hover > a,
+  .ant-menu-submenu-title:hover > a,
+  .ant-menu-submenu-title:hover,
+  .ant-menu-item:hover,
+  .ant-menu-submenu-title:hover {
+    .custom-icon path {
+      fill: @primary-color;
+    }
+  }
+}
+
 .ant-menu-vertical .ant-menu-item,
 .ant-menu-vertical-left .ant-menu-item,
 .ant-menu-vertical-right .ant-menu-item,
@@ -206,6 +222,7 @@ a {
 
     .custom-icon path {
       color: @primary-color;
+      fill: @primary-color;
     }
   }
 
@@ -238,6 +255,7 @@ a {
 
   .custom-icon path {
     color: @primary-color;
+    fill: @primary-color;
   }
 }
 
