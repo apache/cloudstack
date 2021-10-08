@@ -2947,8 +2947,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * For each one of the volumes we will map it to a storage pool that is available via the target host.
      * An exception is thrown if we cannot find a storage pool that is accessible in the target host to migrate the volume to.
      */
-    protected void createStoragePoolMappingsForVolumes(VirtualMachineProfile profile, DataCenterDeployment plan, Map<Volume, StoragePool> volumeToPoolObjectMap, List<Volume> allVolumes) {
-        for (Volume volume : allVolumes) {
+    protected void createStoragePoolMappingsForVolumes(VirtualMachineProfile profile, DataCenterDeployment plan, Map<Volume, StoragePool> volumeToPoolObjectMap, List<Volume> volumesNotMapped) {
+        for (Volume volume : volumesNotMapped) {
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
             Host targetHost = null;
@@ -2958,10 +2958,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(plan.getClusterId(), currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, plan, volumeToPoolObjectMap, volume, currentPool);
-            } else {
+            } else if (shouldMapVolume(profile, volume, currentPool)){
                 volumeToPoolObjectMap.put(volume, currentPool);
             }
         }
+    }
+
+    /**
+     * Returns true if it should map the volume for a storage pool to migrate.
+     * <br><br>
+     * Some context: VMware migration workflow requires all volumes to be mapped (even if volume stays on its current pool);
+     *  however, this is not necessary/desirable for the KVM flow.
+     */
+    protected boolean shouldMapVolume(VirtualMachineProfile profile, Volume volume, StoragePoolVO currentPool) {
+        boolean isManaged = currentPool.isManaged();
+        boolean isNotKvm = HypervisorType.KVM != profile.getHypervisorType();
+        boolean isNotDatadisk = Type.DATADISK != volume.getVolumeType();
+        return isNotKvm || isNotDatadisk || isManaged;
     }
 
     /**
