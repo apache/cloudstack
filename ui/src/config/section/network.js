@@ -61,6 +61,10 @@ export default {
       }, {
         name: 'tungsten.router.table',
         component: () => import('@/views/network/tungsten/TungstenNetworkRouterTable.vue')
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -75,15 +79,10 @@ export default {
         {
           api: 'updateNetwork',
           icon: 'edit',
-          label: 'label.edit',
+          label: 'label.update.network',
           dataView: true,
-          args: (record) => {
-            var fields = ['name', 'displaytext', 'guestvmcidr']
-            if (record.type === 'Isolated') {
-              fields.push(...['networkofferingid', 'networkdomain'])
-            }
-            return fields
-          }
+          popup: true,
+          component: () => import('@/views/network/UpdateNetwork.vue')
         },
         {
           api: 'restartNetwork',
@@ -290,6 +289,10 @@ export default {
         name: 'vpn',
         component: () => import('@/views/network/VpnDetails.vue'),
         show: (record) => { return record.issourcenat }
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -627,6 +630,17 @@ export default {
       columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
       searchFilters: ['keyword', 'domainid', 'account'],
+      resourceType: 'VPNCustomerGateway',
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [
         {
           api: 'createVpnCustomerGateway',

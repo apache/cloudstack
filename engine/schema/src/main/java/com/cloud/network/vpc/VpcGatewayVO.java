@@ -221,6 +221,11 @@ public class VpcGatewayVO implements VpcGateway {
         return VpcGateway.class;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
     public void setVpcId(Long vpcId) {
         this.vpcId = vpcId;
     }

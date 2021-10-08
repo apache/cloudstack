@@ -33,8 +33,8 @@
 
     <compute-selection
       v-if="selectedOffering && (selectedOffering.iscustomized || selectedOffering.iscustomizediops)"
-      :cpunumber-input-decorator="cpuNumberKey"
-      :cpuspeed-input-decorator="cpuSpeedKey"
+      :cpu-number-input-decorator="cpuNumberKey"
+      :cpu-speed-input-decorator="cpuSpeedKey"
       :memory-input-decorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"

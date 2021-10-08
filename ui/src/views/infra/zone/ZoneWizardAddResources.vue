@@ -350,7 +350,7 @@ export default {
           placeHolder: 'message.error.server',
           required: true,
           display: {
-            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB']
+            primaryStorageProtocol: ['nfs', 'iscsi', 'gluster', 'SMB', 'Linstor']
           }
         },
         {
@@ -477,7 +477,7 @@ export default {
           placeHolder: 'message.error.vcenter.datacenter',
           required: true,
           display: {
-            primaryStorageProtocol: 'vmfs'
+            primaryStorageProtocol: ['vmfs', 'datastorecluster']
           }
         },
         {
@@ -486,7 +486,16 @@ export default {
           placeHolder: 'message.error.vcenter.datastore',
           required: true,
           display: {
-            primaryStorageProtocol: 'vmfs'
+            primaryStorageProtocol: ['vmfs', 'datastorecluster']
+          }
+        },
+        {
+          title: 'label.resourcegroup',
+          key: 'primaryStorageLinstorResourceGroup',
+          placeHolder: 'message.error.linstor.resourcegroup',
+          required: true,
+          display: {
+            primaryStorageProtocol: 'Linstor'
           }
         },
         {
@@ -826,6 +835,10 @@ export default {
           id: 'gluster',
           description: 'Gluster'
         })
+        protocols.push({
+          id: 'Linstor',
+          description: 'Linstor'
+        })
       } else if (hypervisor === 'XenServer') {
         protocols.push({
           id: 'nfs',
@@ -847,6 +860,10 @@ export default {
         protocols.push({
           id: 'vmfs',
           description: 'vmfs'
+        })
+        protocols.push({
+          id: 'datastorecluster',
+          description: 'datastorecluster'
         })
       } else if (hypervisor === 'Hyperv') {
         protocols.push({

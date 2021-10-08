@@ -32,18 +32,57 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="this.$t('label.zoneid')">
+                      <div v-if="zones.length <= 8">
+                        <a-row type="flex" :gutter="5" justify="start">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-decorator="['zoneid', {
+                                initialValue: selectedZone,
+                                rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
+                              @change="onSelectZoneId(zoneItem.id)">
+                              <a-col :span="8">
+                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                  <a-radio :value="zoneItem.id">
+                                    <div>
+                                      <img
+                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                        :src="getImg(zoneItem.icon.base64image)"
+                                        style="marginTop: -30px; marginLeft: 60px"
+                                        width="36px"
+                                        height="36px" />
+                                      <a-icon v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}" type="global"/>
+                                    </div>
+                                  </a-radio>
+                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
+                                </a-card-grid>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
                       <a-select
+                        v-else
                         v-decorator="['zoneid', {
-                          rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
+                          rules: [{ required: true, message: `${$t('message.error.select')}` }]
                         }]"
                         showSearch
                         optionFilterProp="children"
-                        :filterOption="filterOption"
-                        :options="zoneSelectOptions"
+                        :filterOption="(input, option) => {
+                          return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         autoFocus
-                      ></a-select>
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
+                          <span>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <a-icon v-else style="margin-right: 5px" type="global" />
+                            {{ zone1.name }}
+                          </span>
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
@@ -142,7 +181,10 @@
                               rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                             }]"
                             :options="hypervisorSelectOptions"
-                            @change="value => this.hypervisor = value" />
+                            @change="value => this.hypervisor = value"
+                            showSearch
+                            optionFilterProp="children"
+                            :filterOption="filterOption" />
                         </a-form-item>
                       </p>
                     </a-card>
@@ -481,7 +523,10 @@
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
                           v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
-                          @change="onBootTypeChange">
+                          @change="fetchBootModes"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
@@ -489,7 +534,10 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]">
+                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -553,6 +601,9 @@
                       <a-select
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')">
@@ -645,6 +696,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -673,6 +725,7 @@ export default {
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
+    ResourceIcon,
     TooltipLabel
   },
   props: {
@@ -801,7 +854,9 @@ export default {
       diskIOpsMin: 0,
       diskIOpsMax: 0,
       minIops: 0,
-      maxIops: 0
+      maxIops: 0,
+      zones: [],
+      selectedZone: ''
     }
   },
   computed: {
@@ -886,7 +941,8 @@ export default {
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
             page: 1,
             pageSize: 10,
-            keyword: undefined
+            keyword: undefined,
+            showIcon: true
           }
         },
         pods: {
@@ -1090,6 +1146,7 @@ export default {
       }
 
       if (this.iso) {
+        this.vm.isoid = this.iso.id
         this.vm.templateid = this.iso.id
         this.vm.templatename = this.iso.displaytext
         this.vm.ostypeid = this.iso.ostypeid
@@ -1214,6 +1271,7 @@ export default {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
     fetchData () {
+      this.fetchZones()
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1234,6 +1292,9 @@ export default {
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1465,7 +1526,7 @@ export default {
 
         let networkIds = []
 
-        const deployVmData = {}
+        let deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
         deployVmData.podid = values.podid
@@ -1615,7 +1676,10 @@ export default {
         const description = values.name || ''
         const password = this.$t('label.password')
 
-        api('deployVirtualMachine', deployVmData).then(response => {
+        deployVmData = Object.fromEntries(
+          Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
+
+        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -1662,9 +1726,9 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        api(param.list, { listall: true }).then(json => {
-          const zones = json.listzonesresponse.zone || []
-          resolve(zones)
+        api(param.list, { listall: true, showicon: true }).then(json => {
+          this.zones = json.listzonesresponse.zone || []
+          resolve(this.zones)
         }).catch(function (error) {
           console.log(error.stack)
         }).finally(() => {
@@ -1744,6 +1808,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -1763,6 +1828,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
@@ -1816,9 +1882,10 @@ export default {
       })
     },
     filterOption (input, option) {
-      return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
-      )
+      console.log(option)
+      // return (
+      //   option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      // )
     },
     onSelectZoneId (value) {
       this.dataPreFill = {}
@@ -1827,7 +1894,9 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.selectedZone = this.zoneId
       this.form.setFieldsValue({
+        zoneid: this.zoneId,
         clusterid: undefined,
         podid: undefined,
         hostid: undefined,

@@ -34,17 +34,15 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.StringUtils;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -116,6 +114,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -1014,24 +1013,34 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         //              or on NULL from network.throttling.rate
         // For others: Use network rate from their network offering,
         //              or on NULL from network.throttling.rate setting at zone > global level
-        // http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/service_offerings.html#network-throttling
+        // http://docs.cloudstack.apache.org/en/latest/adminguide/service_offerings.html#network-throttling
         if (vm != null) {
-            if (vm.getType() == Type.User) {
-                final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
-                if (nic != null && nic.isDefaultNic()) {
-                    return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
-                }
-            }
-            if (vm.getType() == Type.DomainRouter && (network.getTrafficType() == TrafficType.Public || network.getTrafficType() == TrafficType.Guest)) {
-                for (final Nic nic: _nicDao.listByVmId(vmId)) {
-                    final NetworkVO nw = _networksDao.findById(nic.getNetworkId());
-                    if (nw.getTrafficType() == TrafficType.Guest) {
-                        return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
+            switch (vm.getType()) {
+                case User:
+                    final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+                    if (nic != null && nic.isDefaultNic()) {
+                        return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
                     }
-                }
-            }
-            if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
-                return -1;
+                    break;
+                case DomainRouter:
+                    if (TrafficType.Guest.equals(network.getTrafficType())) {
+                        final Nic routerNic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+                        if (routerNic != null) {
+                            return _configMgr.getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
+                        }
+                    } else if (TrafficType.Public.equals(network.getTrafficType())) {
+                        List<NicVO> routerNics = _nicDao.listByVmId(vmId);
+                        for (final Nic routerNic : routerNics) {
+                            final NetworkVO nw = _networksDao.findById(routerNic.getNetworkId());
+                            if (TrafficType.Guest.equals(nw.getTrafficType())) {
+                                return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
+                            }
+                        }
+                    }
+                    break;
+                case ConsoleProxy:
+                case SecondaryStorageVm:
+                    return -1;
             }
         }
         if (ntwkOff != null) {

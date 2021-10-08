@@ -1,0 +1,172 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Usage: e.g. failed $? "this is an error"
+set -x
+
+failed() {
+  local returnval=$1
+  local returnmsg=$2
+
+  # check for an message, if there is no one dont print anything
+  if [[ -z $returnmsg ]]; then
+    :
+  else
+    echo -e $returnmsg
+  fi
+  if [[ $returnval -eq 0 ]]; then
+    return 0
+  else
+    echo "Installation failed"
+    exit $returnval
+  fi
+}
+
+# check if first parameter is not a dash (-) then print the usage block
+if [[ ! $@ =~ ^\-.+ ]]; then
+	usage
+	exit 0
+fi
+
+OPTERR=0
+while getopts 'h:f:d:u::'# OPTION
+do
+  case $OPTION in
+  u)    uflag=1
+        uuid="$OPTARG"
+        ;;
+  f)    fflag=1
+        tmpltimg="$OPTARG"
+        ;;
+  h)    hyper="$OPTARG"
+        ;;
+  d)    destdir="$OPTARG"
+        ;;
+  ?)    usage
+        exit 0
+        ;;
+  *)    usage
+        exit 0
+        ;;
+  esac
+done
+
+if [[ "$hyper" == "kvm" ]]; then
+    ext="qcow2"
+    qemuimgcmd=$(which qemu-img)
+  elif [[ "$hyper" == "xenserver" ]]; then
+    ext="vhd"
+  elif [[ "$hyper" == "vmware" ]]; then
+    ext="ova"
+  elif [[ "$hyper" == "lxc" ]]; then
+    ext="qcow2"
+  elif [[ "$hyper" == "hyperv" ]]; then
+    ext="vhd"
+  elif [[ "$hyper" == "ovm3" ]]; then
+    ext="raw"
+  else
+    failed 2 "Please add a correct hypervisor name like: kvm|vmware|xenserver|hyperv|ovm3"
+fi
+
+
+localfile=$uuid.$ext
+
+
+sudo mkdir -p $destdir
+if [[ $? -ne 0 ]]; then
+  failed 2 "Failed to write to destdir $destdir -- is it mounted?\n"
+fi
+
+if [[ -f $destdir/template.properties ]]; then
+  failed 2 "Data already exists at destination $destdir"
+fi
+
+destfiles=$(find $destdir -name \*.$ext)
+if [[ "$destfiles" != "" ]]; then
+  failed 2 "Data already exists at destination $destdir"
+fi
+
+tmpfolder=/tmp/cloud/templates/
+mkdir -p $tmpfolder
+tmplfile=$tmpfolder/$localfile
+
+sudo touch $tmplfile
+if [[ $? -ne 0 ]]; then
+  failed 2 "Failed to create temporary file in directory $tmpfolder -- is it read-only or full?\n"
+fi
+
+destcap=$(df -P $destdir | awk '{print $4}' | tail -1 )
+[ $destcap -lt $DISKSPACE ] && echo "Insufficient free disk space for target folder $destdir: avail=${destcap}k req=${DISKSPACE}k" && failed 4
+
+localcap=$(df -P $tmpfolder | awk '{print $4}' | tail -1 )
+[ $localcap -lt $DISKSPACE ] && echo "Insufficient free disk space for local temporary folder $tmpfolder: avail=${localcap}k req=${DISKSPACE}k" && failed 4
+
+
+if [[ "$fflag" == "1" ]]; then
+  sudo cp $tmpltimg $tmplfile
+  if [[ $? -ne 0 ]]; then
+    failed 2 "Failed to create temporary file in directory $tmpfolder -- is it read-only or full?\n"
+  fi
+fi
+
+installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d "SystemVM Template ( $hyper )" -n $localfile -t $destdir/ -f $tmplfile -u -v -c)
+
+if [[ $? -ne 0 ]]; then
+  failed 2 "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
+fi
+
+tmpdestdir=$tmpfolder
+
+if [ "$ext" == "ova" ]
+then
+  tar xvf $tmpdestdir/$localfile -C $tmpdestdir &> /dev/null
+  sudo cp $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $destdir/
+  rm -rf $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $tmpdestdir/*.ova
+else
+  rm -rf $tmpdestdir/*.tmp
+fi
+
+
+tmpltfile=$destdir/$localfile
+tmpltsize=$(ls -l $tmpltfile | awk -F" " '{print $5}')
+if [[ "$ext" == "qcow2" ]]; then
+  vrtmpltsize=$($qemuimgcmd info $tmpltfile | grep -i 'virtual size' | sed -ne 's/.*(\([0-9]*\).*/\1/p' | xargs)
+else
+  vrtmpltsize=$tmpltsize
+fi
+
+templateId=${destdir##*/}
+sudo touch $destdir/template.properties
+echo "$ext=true" >> $tmpdestdir/template.properties
+echo "id=$templateId" >> $tmpdestdir/template.properties
+echo "public=true" >> $tmpdestdir/template.properties
+echo "$ext.filename=$localfile" >> $tmpdestdir/template.properties
+echo "uniquename=routing-$templateId" >> $tmpdestdir/template.properties
+echo "$ext.virtualsize=$vrtmpltsize" >> $tmpdestdir/template.properties
+echo "virtualsize=$vrtmpltsize" >> $tmpdestdir/template.properties
+echo "$ext.size=$tmpltsize" >> $tmpdestdir/template.properties
+
+sudo cp $tmpdestdir/template.properties $destdir/template.properties
+if [ -f "$tmpdestdir/template.properties" ]
+then
+    rm -rf $tmpdestdir/template.properties
+fi
+
+echo "Successfully installed system VM template $tmpltimg and template.properties to $destdir"
+exit 0

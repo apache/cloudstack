@@ -23,6 +23,9 @@
       :form="form"
       v-ctrl-enter="handleSubmit"
       @submit="handleSubmit">
+      <a-alert style="margin-bottom: 5px" type="warning" show-icon>
+        <span slot="message" v-html="$t('message.restart.vm.to.update.settings')" />
+      </a-alert>
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
@@ -177,11 +180,16 @@ export default {
     fetchInstaceGroups () {
       this.groups.loading = true
       this.groups.opts = []
-      api('listInstanceGroups', {
-        account: this.$store.getters.userInfo.account,
+      const params = {
         domainid: this.$store.getters.userInfo.domainid,
         listall: true
-      }).then(json => {
+      }
+      if (this.$store.getters.project && this.$store.getters.project.id) {
+        params.projectid = this.$store.getters.project.id
+      } else {
+        params.account = this.$store.getters.userInfo.account
+      }
+      api('listInstanceGroups', params).then(json => {
         const groups = json.listinstancegroupsresponse.instancegroup || []
         groups.forEach(x => {
           this.groups.opts.push(x.name)
