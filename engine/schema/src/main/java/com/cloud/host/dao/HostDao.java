@@ -97,6 +97,12 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByType(Type type);
 
+    /**
+     * Finds a host by ip address, excludes removed hosts.
+     *
+     * @param ip The ip address to match on
+     * @return One matched host
+     */
     HostVO findByIp(String ip);
 
     /**
