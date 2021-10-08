@@ -1015,7 +1015,8 @@ test_data = {
             "ostype": "Other Linux (64-bit)",
             "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
             "requireshvm": "True",
-            "ispublic": "True"
+            "ispublic": "True",
+            "deployasis": "True"
         }
     },
     "test_ovf_templates": [
