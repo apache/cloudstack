@@ -48,12 +48,19 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be deleted")
     private Long id;
 
+    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, since = "4.16.0", description = "true if all project resources have to be cleaned up, false otherwise")
+    private Boolean cleanup;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long geId() {
         return id;
+    }
+
+    public Boolean isCleanup() {
+        return cleanup;
     }
 
     @Override
@@ -68,7 +75,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Project Id: " + id);
-        boolean result = _projectService.deleteProject(id);
+        boolean result = _projectService.deleteProject(id, isCleanup());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

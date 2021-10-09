@@ -51,6 +51,7 @@ import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostOpaqueNetworkInfo;
 import com.vmware.vim25.HostPortGroup;
+import com.vmware.vim25.HostPortGroupPort;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostRuntimeInfo;
 import com.vmware.vim25.HostSystemConnectionState;
@@ -128,6 +129,43 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
 
         return null;
+    }
+
+    public List<HostPortGroupSpec> getHostPortGroupSpecs() throws Exception {
+        HostNetworkInfo hostNetInfo = getHostNetworkInfo();
+        if (hostNetInfo == null) {
+            return null;
+        }
+
+        List<HostPortGroup> portGroups = hostNetInfo.getPortgroup();
+        if (CollectionUtils.isEmpty(portGroups)) {
+            return null;
+        }
+
+        List<HostPortGroupSpec> portGroupSpecs = new ArrayList<HostPortGroupSpec>();
+        for (HostPortGroup portGroup : portGroups) {
+            if (!isVMKernelPort(portGroup)) {
+                portGroupSpecs.add(portGroup.getSpec());
+            }
+        }
+
+        return portGroupSpecs;
+    }
+
+    private boolean isVMKernelPort(HostPortGroup portGroup) {
+        assert (portGroup != null);
+        List<HostPortGroupPort> ports = portGroup.getPort();
+        if (CollectionUtils.isEmpty(ports)) {
+            return false;
+        }
+
+        for (HostPortGroupPort port : ports) {
+            if (port.getType().equalsIgnoreCase("host")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -1154,6 +1192,41 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
         return networkName;
+    }
+
+    public void createPortGroup(HostPortGroupSpec spec) throws Exception {
+        if (spec == null) {
+            return;
+        }
+
+        synchronized (_mor.getValue().intern()) {
+            HostNetworkSystemMO hostNetMo = getHostNetworkSystemMO();
+            if (hostNetMo == null) {
+                return;
+            }
+
+            ManagedObjectReference morNetwork = getNetworkMor(spec.getName());
+            if (morNetwork == null) {
+                hostNetMo.addPortGroup(spec);
+            }
+        }
+    }
+
+    public void copyPortGroupsFromHost(HostMO srcHost) throws Exception {
+        if (srcHost == null) {
+            return;
+        }
+
+        List<HostPortGroupSpec> portGroupSpecs = srcHost.getHostPortGroupSpecs();
+        if (CollectionUtils.isEmpty(portGroupSpecs)) {
+            s_logger.debug("No port groups in the host: " + srcHost.getName());
+            return;
+        }
+
+        for (HostPortGroupSpec spec : portGroupSpecs) {
+            s_logger.debug("Creating port group: " + spec.getName() + " in the host: " + getName());
+            createPortGroup(spec);
+        }
     }
 
     public void createPortGroup(HostVirtualSwitch vSwitch, String portGroupName, Integer vlanId,

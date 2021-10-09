@@ -218,6 +218,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     buf.append(" localgw=").append(dest.getPod().getGateway());
                 }
             }
+            String msPublicKey = _configDao.getValue("ssh.publickey");
+            buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
         }
 
         if (controlNic == null) {

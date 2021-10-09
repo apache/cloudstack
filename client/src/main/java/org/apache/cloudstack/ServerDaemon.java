@@ -19,12 +19,15 @@
 package org.apache.cloudstack;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.Properties;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.server.ServerProperties;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.eclipse.jetty.jmx.MBeanContainer;
@@ -116,7 +119,8 @@ public class ServerDaemon implements Daemon {
         LOG.info("Server configuration file found: " + confFile.getAbsolutePath());
 
         try {
-            final Properties properties = PropertiesUtil.loadFromFile(confFile);
+            InputStream is = new FileInputStream(confFile);
+            final Properties properties = ServerProperties.getServerProperties(is);
             if (properties == null) {
                 return;
             }
@@ -132,7 +136,7 @@ public class ServerDaemon implements Daemon {
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
         } catch (final IOException e) {
-            LOG.warn("Failed to load configuration from server.properties file", e);
+            LOG.warn("Failed to read configuration from server.properties file", e);
         } finally {
             // make sure that at least HTTP is enabled if both of them are set to false (misconfiguration)
             if (!httpEnable && !httpsEnable) {

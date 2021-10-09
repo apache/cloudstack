@@ -243,7 +243,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         try {
             Document ovfDoc = null;
             ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFileName));
-            NodeList diskElements = ovfDoc.getElementsByTagName("Disk");
+            NodeList diskElements = new OVFHelper().getElementsByTagNameAndPrefix(ovfDoc, "Disk", "ovf");
             for (int i = 0; i < diskElements.getLength(); i++) {
                 Element disk = (Element)diskElements.item(i);
                 long diskSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
@@ -254,40 +254,6 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return virtualSize;
         } catch (InternalErrorException | IOException | NumberFormatException | ParserConfigurationException | SAXException e) {
             String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
-            LOGGER.error(msg);
-            throw new InternalErrorException(msg);
-        }
-    }
-
-    public Pair<Long, Long> getDiskDetails(String ovfFilePath, String diskName) throws InternalErrorException {
-        long virtualSize = 0;
-        long fileSize = 0;
-        String fileId = null;
-        try {
-            Document ovfDoc = null;
-            ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFilePath));
-            NodeList disks = ovfDoc.getElementsByTagName("Disk");
-            NodeList files = ovfDoc.getElementsByTagName("File");
-            for (int j = 0; j < files.getLength(); j++) {
-                Element file = (Element)files.item(j);
-                if (file.getAttribute("ovf:href").equals(diskName)) {
-                    fileSize = Long.parseLong(file.getAttribute("ovf:size"));
-                    fileId = file.getAttribute("ovf:id");
-                    break;
-                }
-            }
-            for (int i = 0; i < disks.getLength(); i++) {
-                Element disk = (Element)disks.item(i);
-                if (disk.getAttribute("ovf:fileRef").equals(fileId)) {
-                    virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
-                    String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-                    virtualSize = OVFHelper.getDiskVirtualSize(virtualSize, allocationUnits, ovfFilePath);
-                    break;
-                }
-            }
-            return new Pair<Long, Long>(virtualSize, fileSize);
-        } catch (InternalErrorException | IOException | NumberFormatException | ParserConfigurationException | SAXException e) {
-            String msg = "getDiskDetails: Unable to parse OVF XML document " + ovfFilePath + " to get the virtual disk " + diskName + " size due to " + e;
             LOGGER.error(msg);
             throw new InternalErrorException(msg);
         }

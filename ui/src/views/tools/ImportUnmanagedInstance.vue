@@ -55,12 +55,19 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  :options="domainSelectOptions"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"
-                  @change="val => { this.selectedDomainId = val }" />
+                  @change="val => { this.selectedDomainId = val }">
+                  <a-select-option v-for="dom in domainSelectOptions" :key="dom.value" :label="dom.label">
+                    <span>
+                      <resource-icon v-if="dom.icon" :image="dom.icon" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else-if="dom.value !== null" style="margin-right: 5px" type="block" />
+                      {{ dom.label }}
+                    </span>
+                  </a-select-option>
+                </a-select>
               </a-form-item>
               <a-form-item v-if="selectedDomainId">
                 <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
@@ -75,11 +82,18 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  :options="projectSelectOptions"
                   :loading="optionsLoading.projects"
-                  :placeholder="apiParams.projectid.description" />
+                  :placeholder="apiParams.projectid.description">
+                  <a-select-option v-for="proj in projectSelectOptions" :key="proj.value" :label="proj.label">
+                    <span>
+                      <resource-icon v-if="proj.icon" :image="proj.icon" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else-if="proj.value !== null" style="margin-right: 5px" type="project" />
+                      {{ proj.label }}
+                    </span>
+                  </a-select-option>
+                </a-select>
               </a-form-item>
               <a-form-item>
                 <tooltip-label slot="label" :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
@@ -106,11 +120,18 @@
                         showSearch
                         optionFilterProp="children"
                         :filterOption="(input, option) => {
-                          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
-                        :options="templateSelectOptions"
                         :loading="optionsLoading.templates"
-                        :placeholder="apiParams.templateid.description" />
+                        :placeholder="apiParams.templateid.description">
+                        <a-select-option v-for="temp in templateSelectOptions" :key="temp.value" :label="temp.label">
+                          <span>
+                            <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
+                            <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
+                            {{ temp.label }}
+                          </span>
+                        </a-select-option>
+                      </a-select>
                     </a-col>
                   </a-row>
                 </a-radio-group>
@@ -227,6 +248,8 @@ import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelec
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
 import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ImportUnmanagedInstances',
@@ -236,7 +259,9 @@ export default {
     ComputeOfferingSelection,
     ComputeSelection,
     MultiDiskSelection,
-    MultiNetworkSelection
+    MultiNetworkSelection,
+    OsLogo,
+    ResourceIcon
   },
   props: {
     cluster: {
@@ -312,7 +337,8 @@ export default {
           isLoad: true,
           field: 'domainid',
           options: {
-            details: 'min'
+            details: 'min',
+            showicon: true
           }
         },
         projects: {
@@ -320,7 +346,8 @@ export default {
           isLoad: true,
           field: 'projectid',
           options: {
-            details: 'min'
+            details: 'min',
+            showicon: true
           }
         },
         templates: {
@@ -328,7 +355,8 @@ export default {
           isLoad: true,
           options: {
             templatefilter: 'all',
-            hypervisor: this.cluster.hypervisortype
+            hypervisor: this.cluster.hypervisortype,
+            showicon: true
           },
           field: 'templateid'
         }
@@ -344,7 +372,8 @@ export default {
       var domains = this.options.domains.map((domain) => {
         return {
           label: domain.path || domain.name,
-          value: domain.id
+          value: domain.id,
+          icon: domain?.icon?.base64image || ''
         }
       })
       domains.unshift({
@@ -357,7 +386,8 @@ export default {
       var projects = this.options.projects.map((project) => {
         return {
           label: project.name,
-          value: project.id
+          value: project.id,
+          icon: project?.icon?.base64image || ''
         }
       })
       projects.unshift({
@@ -370,7 +400,10 @@ export default {
       return this.options.templates.map((template) => {
         return {
           label: template.name,
-          value: template.id
+          value: template.id,
+          icon: template?.icon?.base64image || '',
+          ostypeid: template.ostypeid,
+          ostypename: template.ostypename
         }
       })
     },

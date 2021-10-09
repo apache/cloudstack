@@ -85,7 +85,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                                                              + "GROUP BY host_id "
                                                              + "HAVING tag_count = %s ";
     private static final String SEPARATOR = ",";
-    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
+    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join ( %s ) AS selected_hosts ON host.id = selected_hosts.host_id";
     private static final String GET_HOSTS_OF_ACTIVE_VMS = "select h.id " +
             "from vm_instance vm " +
             "join host h on (vm.host_id=h.id) " +
@@ -1166,6 +1166,23 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("resourceState", ResourceState.Enabled);
 
         return listBy(sc);
+    }
+
+    @Override
+    public HostVO findOldestExistentHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+        Filter orderByFilter = new Filter(HostVO.class, "created", true, null, null);
+
+        List<HostVO> hosts = search(sc, orderByFilter, null, false);
+        if (hosts != null && hosts.size() > 0) {
+            return hosts.get(0);
+        }
+
+        return null;
     }
 
     @Override

@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,12 +30,17 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.dao.ResourceIconDao;
+import com.cloud.server.ResourceManagerUtil;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -49,6 +53,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
@@ -94,6 +99,7 @@ import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -121,7 +127,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -207,6 +212,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
@@ -218,7 +224,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -230,6 +235,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Filter;
@@ -244,7 +250,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -349,13 +354,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DiskOfferingJoinDao _diskOfferingJoinDao;
 
     @Inject
-    private DiskOfferingDetailsDao diskOfferingDetailsDao;
+    private DiskOfferingDetailsDao _diskOfferingDetailsDao;
 
     @Inject
     private ServiceOfferingJoinDao _srvOfferingJoinDao;
 
     @Inject
     private ServiceOfferingDao _srvOfferingDao;
+
+    @Inject
+    private ServiceOfferingDetailsDao _srvOfferingDetailsDao;
 
     @Inject
     private DataCenterJoinDao _dcJoinDao;
@@ -379,6 +387,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private TaggedResourceService _taggedResourceMgr;
+
+    @Inject
+    private ResourceManagerUtil resourceManagerUtil;
 
     @Inject
     private AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -434,6 +445,48 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     private VirtualMachineManager virtualMachineManager;
 
+    @Inject
+    private ResourceIconDao resourceIconDao;
+
+    private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+        SearchCriteria<ServiceOfferingJoinVO> sc1 = _srvOfferingJoinDao.createSearchCriteria();
+        sc1.addAnd("cpu", Op.GTEQ, cpu);
+        sc.addOr("cpu", Op.SC, sc1);
+        SearchCriteria<ServiceOfferingJoinVO> sc2 = _srvOfferingJoinDao.createSearchCriteria();
+        sc2.addAnd("cpu", Op.NULL);
+        sc2.addAnd("maxCpu", Op.NULL);
+        sc.addOr("cpu", Op.SC, sc2);
+        SearchCriteria<ServiceOfferingJoinVO> sc3 = _srvOfferingJoinDao.createSearchCriteria();
+        sc3.addAnd("cpu", Op.NULL);
+        sc3.addAnd("maxCpu", Op.GTEQ, cpu);
+        sc.addOr("cpu", Op.SC, sc3);
+        return sc;
+    }
+
+    private SearchCriteria<ServiceOfferingJoinVO> getMinimumMemoryServiceOfferingJoinSearchCriteria(int memory) {
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+        SearchCriteria<ServiceOfferingJoinVO> sc1 = _srvOfferingJoinDao.createSearchCriteria();
+        sc1.addAnd("ramSize", Op.GTEQ, memory);
+        sc.addOr("ramSize", Op.SC, sc1);
+        SearchCriteria<ServiceOfferingJoinVO> sc2 = _srvOfferingJoinDao.createSearchCriteria();
+        sc2.addAnd("ramSize", Op.NULL);
+        sc2.addAnd("maxMemory", Op.NULL);
+        sc.addOr("ramSize", Op.SC, sc2);
+        SearchCriteria<ServiceOfferingJoinVO> sc3 = _srvOfferingJoinDao.createSearchCriteria();
+        sc3.addAnd("ramSize", Op.NULL);
+        sc3.addAnd("maxMemory", Op.GTEQ, memory);
+        sc.addOr("ramSize", Op.SC, sc3);
+        return sc;
+    }
+
+    private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuSpeedServiceOfferingJoinSearchCriteria(int speed) {
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+        sc.addOr("speed", Op.GTEQ, speed);
+        sc.addOr("speed", Op.NULL);
+        return sc;
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -441,7 +494,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      * com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack
      * .api.command.admin.user.ListUsersCmd)
      */
-
     @Override
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
@@ -2868,75 +2920,41 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
         }
 
-        // FIXME: disk offerings should search back up the hierarchy for
-        // available disk offerings...
-        /*
-         * sb.addAnd("domainId", sb.entity().getDomainId(),
-         * SearchCriteria.Op.EQ); if (domainId != null) {
-         * SearchBuilder<DomainVO> domainSearch =
-         * _domainDao.createSearchBuilder(); domainSearch.addAnd("path",
-         * domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-         * sb.join("domainSearch", domainSearch, sb.entity().getDomainId(),
-         * domainSearch.entity().getId()); }
-         */
+        // Filter offerings that are not associated with caller's domain
+        // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
+        Account caller = CallContext.current().getCallingAccount();
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+            List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-        // FIXME: disk offerings should search back up the hierarchy for
-        // available disk offerings...
-        /*
-         * if (domainId != null) { sc.setParameters("domainId", domainId); //
-         * //DomainVO domain = _domainDao.findById((Long)domainId); // // I want
-         * to join on user_vm.domain_id = domain.id where domain.path like
-         * 'foo%' //sc.setJoinParameters("domainSearch", "path",
-         * domain.getPath() + "%"); // }
-         */
+            List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
+            SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+            if (ids != null && !ids.isEmpty()) {
+                sb.and("id", sb.entity().getId(), Op.IN);
+            }
+            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
+            sb.done();
+
+            SearchCriteria<DiskOfferingJoinVO> scc = sb.create();
+            if (ids != null && !ids.isEmpty()) {
+                scc.setParameters("id", ids.toArray());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+        }
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
-        // Remove offerings that are not associated with caller's domain
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(result.first())) {
-            ListIterator<DiskOfferingJoinVO> it = result.first().listIterator();
-            while (it.hasNext()) {
-                DiskOfferingJoinVO offering = it.next();
-                if(StringUtils.isNotEmpty(offering.getDomainId())) {
-                    boolean toRemove = true;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (isRecursive) {
-                            if (_domainDao.isChildDomain(account.getDomainId(), dId)) {
-                                toRemove = false;
-                                break;
-                            }
-                        } else {
-                            if (_domainDao.isChildDomain(dId, account.getDomainId())) {
-                                toRemove = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (toRemove) {
-                        it.remove();
-                    }
-                }
-            }
-        }
         return new Pair<>(result.first(), result.second());
     }
 
-    private List<ServiceOfferingJoinVO> filterOfferingsOnCurrentTags(List<ServiceOfferingJoinVO> offerings, ServiceOfferingVO currentVmOffering) {
-        if (currentVmOffering == null) {
-            return offerings;
+    private List<Long> findRelatedDomainIds(Domain domain, boolean isRecursive) {
+        List<Long> domainIds = _domainDao.getDomainParentIds(domain.getId())
+            .stream().collect(Collectors.toList());
+        if (isRecursive) {
+            List<Long> childrenIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            if (childrenIds != null && !childrenIds.isEmpty())
+            domainIds.addAll(childrenIds);
         }
-        List<String> currentTagsList = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getTags());
-
-        // New service offering should have all the tags of the current service offering.
-        List<ServiceOfferingJoinVO> filteredOfferings = new ArrayList<>();
-        for (ServiceOfferingJoinVO offering : offerings) {
-            List<String> newTagsList = com.cloud.utils.StringUtils.csvTagsToList(offering.getTags());
-            if (newTagsList.containsAll(currentTagsList)) {
-                filteredOfferings.add(offering);
-            }
-        }
-        return filteredOfferings;
+        return domainIds;
     }
 
     @Override
@@ -3015,9 +3033,28 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             // 2.In case vm is running return only offerings greater than equal to current offering compute and offering's dynamic scalability should match
             if (vmInstance.getState() == VirtualMachine.State.Running) {
-                sc.addAnd("cpu", Op.GTEQ, currentVmOffering.getCpu());
-                sc.addAnd("speed", Op.GTEQ, currentVmOffering.getSpeed());
-                sc.addAnd("ramSize", Op.GTEQ, currentVmOffering.getRamSize());
+                Integer vmCpu = currentVmOffering.getCpu();
+                Integer vmMemory = currentVmOffering.getRamSize();
+                Integer vmSpeed = currentVmOffering.getSpeed();
+                if ((vmCpu == null || vmMemory == null || vmSpeed == null) && VirtualMachine.Type.User.equals(vmInstance.getType())) {
+                    UserVmVO userVmVO = _userVmDao.findById(vmId);
+                    _userVmDao.loadDetails(userVmVO);
+                    Map<String, String> details = userVmVO.getDetails();
+                    vmCpu = NumbersUtil.parseInt(details.get(ApiConstants.CPU_NUMBER), 0);
+                    if (vmSpeed == null) {
+                        vmSpeed = NumbersUtil.parseInt(details.get(ApiConstants.CPU_SPEED), 0);
+                    }
+                    vmMemory = NumbersUtil.parseInt(details.get(ApiConstants.MEMORY), 0);
+                }
+                if (vmCpu != null && vmCpu > 0) {
+                    sc.addAnd("cpu", Op.SC, getMinimumCpuServiceOfferingJoinSearchCriteria(vmCpu));
+                }
+                if (vmSpeed != null && vmSpeed > 0) {
+                    sc.addAnd("speed", Op.SC, getMinimumCpuSpeedServiceOfferingJoinSearchCriteria(vmSpeed));
+                }
+                if (vmMemory != null && vmMemory > 0) {
+                    sc.addAnd("ramSize", Op.SC, getMinimumMemoryServiceOfferingJoinSearchCriteria(vmMemory));
+                }
                 sc.addAnd("dynamicScalingEnabled", Op.EQ, currentVmOffering.isDynamicScalingEnabled());
             }
         }
@@ -3110,39 +3147,60 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("cpuspeedconstraints", SearchCriteria.Op.SC, cpuSpeedSearchCriteria);
         }
 
-        Pair<List<ServiceOfferingJoinVO>, Integer> result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+        // Filter offerings that are not associated with caller's domain
+        // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+            List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-        //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
-        List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
-        // Remove offerings that are not associated with caller's domain
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(filteredOfferings)) {
-            ListIterator<ServiceOfferingJoinVO> it = filteredOfferings.listIterator();
-            while (it.hasNext()) {
-                ServiceOfferingJoinVO offering = it.next();
-                if(StringUtils.isNotEmpty(offering.getDomainId())) {
-                    boolean toRemove = true;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (isRecursive) {
-                            if (_domainDao.isChildDomain(caller.getDomainId(), dId)) {
-                                toRemove = false;
-                                break;
-                            }
-                        } else {
-                            if (_domainDao.isChildDomain(dId, caller.getDomainId())) {
-                                toRemove = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (toRemove) {
-                        it.remove();
-                    }
+            List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
+            SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+            if (ids != null && !ids.isEmpty()) {
+                sb.and("id", sb.entity().getId(), Op.IN);
+            }
+            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
+            sb.done();
+
+            SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+            if (ids != null && !ids.isEmpty()) {
+                scc.setParameters("id", ids.toArray());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+        }
+
+        if (currentVmOffering != null) {
+            List<String> storageTags = StringUtils.csvTagsToList(currentVmOffering.getTags());
+            if (!storageTags.isEmpty()) {
+                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                for(String tag : storageTags) {
+                    sb.and(tag, sb.entity().getTags(), Op.FIND_IN_SET);
                 }
+                sb.done();
+
+                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                for(String tag : storageTags) {
+                    scc.setParameters(tag, tag);
+                }
+                sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
+            }
+
+            List<String> hostTags = StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            if (!hostTags.isEmpty()) {
+                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                for(String tag : hostTags) {
+                    sb.and(tag, sb.entity().getHostTag(), Op.FIND_IN_SET);
+                }
+                sb.done();
+
+                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                for(String tag : hostTags) {
+                    scc.setParameters(tag, tag);
+                }
+                sc.addAnd("hostTags", SearchCriteria.Op.SC, scc);
             }
         }
-        return new Pair<>(filteredOfferings, result.second());
+
+        return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
@@ -3155,7 +3213,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             respView = ResponseView.Full;
         }
 
-        List<ZoneResponse> dcResponses = ViewResponseHelper.createDataCenterResponse(respView, cmd.getShowCapacities(), result.first().toArray(new DataCenterJoinVO[result.first().size()]));
+        List<ZoneResponse> dcResponses = ViewResponseHelper.createDataCenterResponse(respView, cmd.getShowCapacities(), cmd.getShowIcon(), result.first().toArray(new DataCenterJoinVO[result.first().size()]));
         response.setResponses(dcResponses, result.second());
         return response;
     }
@@ -3802,6 +3860,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new DetailOptionsResponse(options);
     }
 
+    @Override
+    public ListResponse<ResourceIconResponse> listResourceIcons(ListResourceIconCmd cmd) {
+        ListResponse<ResourceIconResponse> responses = new ListResponse<>();
+        responses.setResponses(resourceIconDao.listResourceIcons(cmd.getResourceIds(), cmd.getResourceType()));
+        return responses;
+    }
+
     private void fillVMOrTemplateDetailOptions(final Map<String, List<String>> options, final HypervisorType hypervisorType) {
         if (options == null) {
             throw new CloudRuntimeException("Invalid/null detail-options response object passed");
@@ -3813,6 +3878,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (HypervisorType.KVM.equals(hypervisorType)) {
             options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
+            options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
+            options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -4076,7 +4143,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Validation - 1.3
         if (resourceIdStr != null) {
-            resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType);
             if (resourceId == null) {
                 throw new InvalidParameterValueException("Cannot find resource with resourceId " + resourceIdStr + " and of resource type " + resourceType);
             }
@@ -4112,7 +4179,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     protected ResourceDetailResponse createResourceDetailsResponse(ResourceDetail requestedDetail, ResourceTag.ResourceObjectType resourceType) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
-        resourceDetailResponse.setResourceId(_taggedResourceMgr.getUuid(String.valueOf(requestedDetail.getResourceId()), resourceType));
+        resourceDetailResponse.setResourceId(resourceManagerUtil.getUuid(String.valueOf(requestedDetail.getResourceId()), resourceType));
         resourceDetailResponse.setName(requestedDetail.getName());
         resourceDetailResponse.setValue(requestedDetail.getValue());
         resourceDetailResponse.setForDisplay(requestedDetail.isDisplay());

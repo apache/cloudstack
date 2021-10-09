@@ -443,12 +443,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
-              {{ opt.path || opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -472,13 +476,17 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @select="val => fetchvSphereStoragePolicies(val)"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -486,7 +494,12 @@
           <tooltip-label slot="label" :title="$t('label.vmware.storage.polic')" :tooltip="apiParams.storagepolicy.description"/>
           <a-select
             v-decorator="['storagepolicy']"
-            :placeholder="apiParams.storagepolicy.description">
+            :placeholder="apiParams.storagepolicy.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="policy in storagePolicies" :key="policy.id">
               {{ policy.name || policy.id }}
             </a-select-option>
@@ -503,11 +516,13 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddServiceOffering',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -614,6 +629,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -626,6 +642,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone

@@ -100,7 +100,6 @@
 
 <script>
 import { api } from '@/api'
-import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -232,8 +231,6 @@ export default {
             successMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
             response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
-          const resourceId = this.resource.id
-          eventBus.$emit('update-job-details', jobId, resourceId)
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)

@@ -26,6 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -66,6 +68,8 @@ public class PrimaryDataStoreHelper {
     protected CapacityDao _capacityDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
         if(params == null)
@@ -251,6 +255,7 @@ public class PrimaryDataStoreHelper {
         this.dataStoreDao.update(poolVO.getId(), poolVO);
         dataStoreDao.remove(poolVO.getId());
         dataStoreDao.deletePoolTags(poolVO.getId());
+        annotationDao.removeByEntityType(AnnotationService.EntityType.PRIMARY_STORAGE.name(), poolVO.getUuid());
         deletePoolStats(poolVO.getId());
         // Delete op_host_capacity entries
         this._capacityDao.removeBy(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, null, null, null, poolVO.getId());

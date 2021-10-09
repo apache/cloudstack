@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -268,12 +269,20 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
             destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
 
-            LOGGER.debug("Starting copy from source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
+            LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
             qemu.convert(srcFile, destFile);
-            LOGGER.debug("Succesfully converted source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
+            LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
-            destDisk = null;
+            try {
+                Map<String, String> srcInfo = qemu.info(srcFile);
+                LOGGER.debug("Source disk info: " + Arrays.asList(srcInfo));
+            } catch (Exception ignored) {
+                LOGGER.warn("Unable to get info from source disk: " + disk.getName());
+            }
+
+            String errMsg = String.format("Unable to convert/copy from %s to %s, due to: %s", disk.getName(), name, ((Strings.isNullOrEmpty(e.getMessage())) ? "an unknown error" : e.getMessage()));
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg, e);
         }
 
         return destDisk;

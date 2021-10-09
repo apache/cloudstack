@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -40,11 +41,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -330,6 +336,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -461,10 +469,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public Answer sendToPool(StoragePool pool, Command cmd) throws StorageUnavailableException {
-        if (cmd instanceof GetStorageStatsCommand && pool.getPoolType() == StoragePoolType.PowerFlex) {
-            // Get stats from the pool directly instead of sending cmd to host
-            // Added support for ScaleIO/PowerFlex pool only
-            return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd);
+        if (cmd instanceof GetStorageStatsCommand) {
+            DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+            if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats()) {
+                // Get stats from the pool directly instead of sending cmd to host
+                return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd);
+            }
         }
 
         Answer[] answers = sendToPool(pool, new Commands(cmd));
@@ -475,18 +486,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private GetStorageStatsAnswer getStoragePoolStats(StoragePool pool, GetStorageStatsCommand cmd) {
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
         GetStorageStatsAnswer answer = null;
 
-        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats()) {
-            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
-            Pair<Long, Long> storageStats = primaryStoreDriver.getStorageStats(pool);
-            if (storageStats == null) {
-                answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, "Failed to get storage stats for pool: " + pool.getId());
-            } else {
-                answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, storageStats.first(), storageStats.second());
-            }
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver) storeDriver;
+        Pair<Long, Long> storageStats = primaryStoreDriver.getStorageStats(pool);
+        if (storageStats == null) {
+            answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, "Failed to get storage stats for pool: " + pool.getId());
+        } else {
+            answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, storageStats.first(), storageStats.second());
         }
 
         return answer;
@@ -494,30 +503,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public Answer getVolumeStats(StoragePool pool, Command cmd) {
-        if (!(cmd instanceof GetVolumeStatsCommand)) {
-            return null;
-        }
-
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-
-        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideVolumeStats()) {
-            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
-            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
-            GetVolumeStatsCommand getVolumeStatsCommand = (GetVolumeStatsCommand) cmd;
-            for (String volumeUuid : getVolumeStatsCommand.getVolumeUuids()) {
-                Pair<Long, Long> volumeStats = primaryStoreDriver.getVolumeStats(pool, volumeUuid);
-                if (volumeStats == null) {
-                    return new GetVolumeStatsAnswer(getVolumeStatsCommand, "Failed to get stats for volume: " + volumeUuid, null);
-                } else {
-                    VolumeStatsEntry volumeStatsEntry = new VolumeStatsEntry(volumeUuid, volumeStats.first(), volumeStats.second());
-                    statEntry.put(volumeUuid, volumeStatsEntry);
-                }
+        PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver) storeDriver;
+        HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+        GetVolumeStatsCommand getVolumeStatsCommand = (GetVolumeStatsCommand) cmd;
+        for (String volumeUuid : getVolumeStatsCommand.getVolumeUuids()) {
+            Pair<Long, Long> volumeStats = primaryStoreDriver.getVolumeStats(pool, volumeUuid);
+            if (volumeStats == null) {
+                return new GetVolumeStatsAnswer(getVolumeStatsCommand, "Failed to get stats for volume: " + volumeUuid,
+                        null);
+            } else {
+                VolumeStatsEntry volumeStatsEntry = new VolumeStatsEntry(volumeUuid, volumeStats.first(),
+                        volumeStats.second());
+                statEntry.put(volumeUuid, volumeStatsEntry);
             }
-            return new GetVolumeStatsAnswer(getVolumeStatsCommand, "", statEntry);
         }
-
-        return null;
+        return new GetVolumeStatsAnswer(getVolumeStatsCommand, "", statEntry);
     }
 
     public Long chooseHostForStoragePool(StoragePoolVO poolVO, List<Long> avoidHosts, boolean sendToVmResidesOn, Long vmId) {
@@ -2076,6 +2078,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (poolId != null) {
             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, poolId);
         }
+        sc.addAnd("parent", SearchCriteria.Op.EQ, 0L);
         if (poolId != null) {
             pools.add(_storagePoolDao.findById(poolId));
         } else {
@@ -2638,6 +2641,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return null;
     }
 
+    private String getValidTemplateName(Long zoneId, HypervisorType hType) {
+        String templateName = null;
+        switch (hType) {
+            case XenServer:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
+                break;
+            case KVM:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
+                break;
+            case VMware:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
+                break;
+            case Hyperv:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
+                break;
+            case LXC:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
+                break;
+            default:
+                break;
+        }
+        return templateName;
+    }
     @Override
     public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
@@ -2722,6 +2748,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // populate template_store_ref table
             _imageSrv.addSystemVMTemplatesToSecondary(store);
             _imageSrv.handleTemplateSync(store);
+            registerSystemVmTemplateOnFirstNfsStore(zoneId, providerName, url, store);
         }
 
         // associate builtin template with zones associated with this image store
@@ -2735,6 +2762,69 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
 
+    private void registerSystemVmTemplateOnFirstNfsStore(Long zoneId, String providerName, String url, DataStore store) {
+        if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
+                    stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
+                    // Check if it's the only/first store in the zone
+                    if (stores.size() == 0) {
+                        List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
+                        Set<HypervisorType> hypSet = new HashSet<HypervisorType>(hypervisorTypes);
+                        TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
+                        SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
+                        String filePath = null;
+                        try {
+                            filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
+                            if (filePath == null) {
+                                throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
+                            }
+                            Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                            for (HypervisorType hypervisorType : hypSet) {
+                                try {
+                                    String templateName = getValidTemplateName(zoneId, hypervisorType);
+                                    Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
+                                            new Pair<>(hypervisorType, templateName);
+                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
+                                    VMTemplateVO vmTemplateVO = null;
+                                    TemplateDataStoreVO templateVO = null;
+                                    if (templateId != null) {
+                                        vmTemplateVO = _templateDao.findById(templateId);
+                                        templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                        if (templateVO != null) {
+                                            try {
+                                                if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                                    continue;
+                                                }
+                                            } catch (Exception e) {
+                                                s_logger.error("Failed to validated if template is seeded", e);
+                                            }
+                                        }
+                                    }
+                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
+                                    if (templateVO != null && vmTemplateVO != null) {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, filePath);
+                                    } else {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
+                                    }
+                                } catch (CloudRuntimeException e) {
+                                    SystemVmTemplateRegistration.unmountStore(filePath);
+                                    s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
+                                }
+                            }
+                        } catch (Exception e) {
+                            s_logger.error("Failed to register systemVM template(s)");
+                        } finally {
+                            SystemVmTemplateRegistration.unmountStore(filePath);
+                            txn.close();
+                        }
+                    }
+                }
+            });
+        }
+    }
     @Override
     public ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException, InvalidParameterValueException {
         // check if current cloud is ready to migrate, we only support cloud with only NFS secondary storages
@@ -2925,6 +3015,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
                 _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
                 _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SECONDARY_STORAGE.name(), store.getUuid());
                 _imageStoreDao.remove(storeId);
             }
         });

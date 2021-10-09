@@ -89,31 +89,30 @@ class TestMulipleNicSupport(cloudstackTestCase):
             cls.apiclient,
             services=cls.testdata["acl"]["domain2"],
             parentdomainid=cls.domain.id)
+        cls._cleanup.append(cls.user_domain)
 
-        # Create account
         cls.account1 = Account.create(
             cls.apiclient,
             cls.testdata["acl"]["accountD2"],
             admin=True,
             domainid=cls.user_domain.id
         )
+        cls._cleanup.append(cls.account1)
 
-        # Create small service offering
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.testdata["service_offerings"]["small"]
         )
-
         cls._cleanup.append(cls.service_offering)
+
         cls.services["network"]["zoneid"] = cls.zone.id
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["network_offering"],
         )
-        # Enable Network offering
+        cls._cleanup.append(cls.network_offering)
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
-        cls._cleanup.append(cls.network_offering)
         cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
         cls.testdata["virtual_machine"]["template"] = cls.template.id
 
@@ -125,6 +124,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                 account=cls.account1.name,
                 domainid=cls.account1.domainid
             )
+            cls._cleanup.append(security_group)
 
             # Authorize Security group to SSH to VM
             ingress_rule = security_group.authorize(
@@ -149,6 +149,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             cls.testdata["shared_network_offering_sg"],
             conservemode=False
         )
+        cls._cleanup.append(cls.shared_network_offering)
 
         NetworkOffering.update(
             cls.shared_network_offering,
@@ -175,6 +176,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             accountid=cls.account1.name,
             domainid=cls.account1.domainid
         )
+        cls._cleanup.append(cls.network1)
 
         random_subnet_number = random.randrange(100, 110)
         cls.testdata["shared_network_sg"]["name"] = "Shared-Network-SG-Test-vlan" + str(random_subnet_number)
@@ -191,6 +193,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             accountid=cls.account1.name,
             domainid=cls.account1.domainid
         )
+        cls._cleanup.append(cls.network2)
 
         random_subnet_number = random.randrange(111, 120)
         cls.testdata["shared_network_sg"]["name"] = "Shared-Network-SG-Test-vlan" + str(random_subnet_number)
@@ -207,6 +210,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             accountid=cls.account1.name,
             domainid=cls.account1.domainid
         )
+        cls._cleanup.append(cls.network3)
 
         try:
             cls.virtual_machine1 = VirtualMachine.create(
@@ -219,6 +223,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                 securitygroupids=[security_group.id],
                 networkids=cls.network1.id
             )
+            cls._cleanup.append(cls.virtual_machine1)
             for nic in cls.virtual_machine1.nic:
                 if nic.isdefault:
                     cls.virtual_machine1.ssh_ip = nic.ipaddress
@@ -238,6 +243,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                 securitygroupids=[security_group.id],
                 networkids=[str(cls.network1.id), str(cls.network2.id)]
             )
+            cls._cleanup.append(cls.virtual_machine2)
             for nic in cls.virtual_machine2.nic:
                 if nic.isdefault:
                     cls.virtual_machine2.ssh_ip = nic.ipaddress
@@ -246,24 +252,10 @@ class TestMulipleNicSupport(cloudstackTestCase):
         except Exception as e:
             cls.fail("Exception while deploying virtual machine: %s" % {e})
 
-        cls._cleanup.append(cls.virtual_machine1)
-        cls._cleanup.append(cls.virtual_machine2)
-        cls._cleanup.append(cls.network1)
-        cls._cleanup.append(cls.network2)
-        cls._cleanup.append(cls.network3)
-        cls._cleanup.append(cls.shared_network_offering)
-        if cls.zone.securitygroupsenabled:
-            cls._cleanup.append(security_group)
-        cls._cleanup.append(cls.account1)
-        cls._cleanup.append(cls.user_domain)
 
     @classmethod
     def tearDownClass(self):
-        try:
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMulipleNicSupport, self).tearDownClass()
 
     def setUp(self):
         if self.skip:
@@ -273,11 +265,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMulipleNicSupport, self).tearDown()
 
     def verify_network_rules(self, vm_id):
         virtual_machine = VirtualMachine.list(
@@ -305,6 +293,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
                 host.password,
                 command)
             if len(result) > 0:
+                self.logger.debug(f"the verification of the ip tables rules returned : {result}")
                 self.fail("The iptables/ebtables rules for nic %s on vm %s on host %s are not correct" %(nic.ipaddress, vm.instancename, host.name))
 
     @attr(tags=["advancedsg"], required_hardware="false")

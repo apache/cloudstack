@@ -54,13 +54,17 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
               :placeholder="this.$t('label.zoneid')"
               @change="val => { this.handleZoneChange(this.zones[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-                {{ opt.name || opt.description }}
+              <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -71,13 +75,17 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="domainLoading"
               :placeholder="this.$t('label.domainid')"
               @change="val => { this.handleDomainChange(this.domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-                {{ opt.path || opt.name || opt.description }}
+              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else-if="optIndex !== 0" type="block" style="margin-right: 5px" />
+                  {{ opt.path || opt.name || opt.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -172,12 +180,14 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateL2NetworkForm',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     loading: {
@@ -257,6 +267,7 @@ export default {
         params.id = this.resource.zoneid
       }
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
@@ -281,6 +292,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {

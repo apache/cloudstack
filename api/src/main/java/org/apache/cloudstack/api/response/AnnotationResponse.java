@@ -43,6 +43,10 @@ public class AnnotationResponse extends BaseResponse {
     @Param(description = "the (uu)id of the entitiy to which this annotation pertains")
     private String entityUuid;
 
+    @SerializedName(ApiConstants.ENTITY_NAME)
+    @Param(description = "the name of the entitiy to which this annotation pertains")
+    private String entityName;
+
     @SerializedName(ApiConstants.ANNOTATION)
     @Param(description = "the contents of the annotation")
     private String annotation;
@@ -50,6 +54,14 @@ public class AnnotationResponse extends BaseResponse {
     @SerializedName(ApiConstants.USER_ID)
     @Param(description = "The (uu)id of the user that entered the annotation")
     private String userUuid;
+
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "The username of the user that entered the annotation")
+    private String username;
+
+    @SerializedName(ApiConstants.ADMINS_ONLY)
+    @Param(description = "True if the annotation is available for admins only")
+    private Boolean adminsOnly;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the creation timestamp for this annotation")
@@ -117,5 +129,29 @@ public class AnnotationResponse extends BaseResponse {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Boolean getAdminsOnly() {
+        return adminsOnly;
+    }
+
+    public void setAdminsOnly(Boolean adminsOnly) {
+        this.adminsOnly = adminsOnly;
+    }
+
+    public String getEntityName() {
+        return entityName;
+    }
+
+    public void setEntityName(String entityName) {
+        this.entityName = entityName;
     }
 }

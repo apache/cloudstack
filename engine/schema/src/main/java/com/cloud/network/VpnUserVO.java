@@ -130,4 +130,9 @@ public class VpnUserVO implements VpnUser {
     public Class<?> getEntityType() {
         return VpnUser.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

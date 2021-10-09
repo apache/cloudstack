@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.capacity;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -95,8 +97,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
         Configurable {
@@ -1232,13 +1232,17 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public boolean checkIfHostReachMaxGuestLimit(Host host) {
-        Long vmCount = _vmDao.countActiveByHostId(host.getId());
         HypervisorType hypervisorType = host.getHypervisorType();
+        if (hypervisorType.equals(HypervisorType.KVM)) {
+            s_logger.debug(String.format("Host {id: %s, name: %s, uuid: %s} is %s hypervisor type, no max guest limit check needed", host.getId(), host.getName(), host.getUuid(), hypervisorType));
+            return false;
+        }
+        Long vmCount = _vmDao.countActiveByHostId(host.getId());
         String hypervisorVersion = host.getHypervisorVersion();
         Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
-        if (vmCount.longValue() >= maxGuestLimit.longValue()) {
-            s_logger.info("Host name: " + host.getName() + ", hostId: " + host.getId() + " already reached max Running VMs(count includes system VMs), limit: " +
-                maxGuestLimit + ", Running VM count: " + vmCount.longValue());
+        if (vmCount >= maxGuestLimit) {
+            s_logger.info(String.format("Host {id: %s, name: %s, uuid: %s} already reached max Running VMs(count includes system VMs), limit: %d, running VM count: %s",
+                    host.getId(), host.getName(), host.getUuid(), maxGuestLimit, vmCount));
             return true;
         }
         return false;

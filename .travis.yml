@@ -64,7 +64,7 @@ env:
              smoke/test_dynamicroles
              smoke/test_global_settings
              smoke/test_guest_vlan_range
-             smoke/test_host_annotations
+             smoke/test_annotations
              smoke/test_host_maintenance
              smoke/test_hostha_simulator"
 
@@ -88,6 +88,7 @@ env:
              smoke/test_portable_publicip
              smoke/test_portforwardingrules
              smoke/test_privategw_acl
+             smoke/test_privategw_acl_ovs_gre
              smoke/test_projects
              smoke/test_public_ip_range"
 

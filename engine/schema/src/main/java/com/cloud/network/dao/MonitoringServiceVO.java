@@ -121,4 +121,9 @@ public class MonitoringServiceVO implements MonitoringService {
     public Class<?> getEntityType() {
         return MonitoringService.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

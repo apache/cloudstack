@@ -254,10 +254,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final boolean canHandle = canHandle(network.getTrafficType());
 
-        if (canHandle) {
-            storePasswordInVmDetails(vm);
-        }
-
         return canHandle;
     }
 

@@ -78,6 +78,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     @Inject
     private TemplateApiService templateService;
 
+    public static final String MINIMUN_AUTOSCALER_SUPPORTED_VERSION = "1.15.0";
+
     private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
         response.setObjectName("kubernetessupportedversion");
@@ -94,12 +96,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
         }
-        if (compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
-                KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0) {
-            response.setSupportsHA(true);
-        } else {
-            response.setSupportsHA(false);
-        }
+        response.setSupportsHA(compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
+            KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
+        response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
         TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
         if (template != null) {
             response.setIsoId(template.getUuid());
@@ -202,6 +201,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return 0;
     }
 
+    public static boolean versionSupportsAutoscaling(KubernetesSupportedVersion clusterVersion) {
+        return clusterVersion.getSemanticVersion().compareTo(MINIMUN_AUTOSCALER_SUPPORTED_VERSION) >= 0;
+    }
+
     /**
      * Returns a boolean value whether Kubernetes cluster upgrade can be carried from a given currentVersion to upgradeVersion
      * Kubernetes clusters can only be upgraded from one MINOR version to the next MINOR version, or between PATCH versions of the same MINOR.
@@ -214,9 +217,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
      */
     public static boolean canUpgradeKubernetesVersion(final String currentVersion, final String upgradeVersion) throws IllegalArgumentException {
         int versionDiff = compareSemanticVersions(upgradeVersion, currentVersion);
-        if (versionDiff == 0) {
-            throw new IllegalArgumentException(String.format("Kubernetes clusters can not be upgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
-        } else if (versionDiff < 0) {
+        if (versionDiff < 0) {
             throw new IllegalArgumentException(String.format("Kubernetes clusters can not be downgraded, current version: %s, upgrade version: %s", currentVersion, upgradeVersion));
         }
         String[] thisParts = currentVersion.split("\\.");

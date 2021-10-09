@@ -25,8 +25,11 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
@@ -36,6 +39,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
@@ -61,9 +65,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.commons.lang3.StringUtils;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
@@ -96,6 +97,25 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     public static ConfigKey<Boolean> VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum CPU speed (cpu speed/ cpu.overprovisioning.factor) will be set on the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
+
+    private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
+        if (network == null) {
+            s_logger.debug("Unable to get NIC details as the network is null");
+            return null;
+        }
+        Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+        if (details != null) {
+            details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacLearning, NetworkOrchestrationService.MacLearning.value().toString());
+        }
+        NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+        if (pvlantypeDetail != null) {
+            details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
+        }
+        return details;
+    }
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
@@ -140,6 +160,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
         }
+        to.setDetails(getNicDetails(network));
 
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
@@ -217,20 +238,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 nicProfile.setBroadcastType(BroadcastDomainType.Native);
             }
             NicTO nicTo = toNicTO(nicProfile);
-            final NetworkVO network = _networkDao.findByUuid(nicTo.getNetworkUuid());
-            if (network != null) {
-                final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
-                if (details != null) {
-                    details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
-                    details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
-                    details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
-                }
-                NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
-                if (pvlantypeDetail != null) {
-                    details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
-                }
-                nicTo.setDetails(details);
-            }
             nics[i++] = nicTo;
         }
 

@@ -277,7 +277,8 @@ class TestVPCOffering(cloudstackTestCase):
         self.validate_vpc_offering(vpc_off)
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # was tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_02_deploy_vms_in_vpc_nw(self):
         """Test deploy virtual machines in VPC networks"""
 
