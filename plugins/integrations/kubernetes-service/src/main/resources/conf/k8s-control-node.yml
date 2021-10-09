@@ -17,10 +17,14 @@
 # under the License.
 
 ---
-ssh_authorized_keys:
-  {{ k8s.ssh.pub.key }}
+users:
+  - name: core
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      {{ k8s.ssh.pub.key }}
 
-write-files:
+write_files:
   - path: /etc/conf.d/nfs
     permissions: '0644'
     content: |
@@ -42,7 +46,7 @@ write-files:
       {{ k8s_control_node.apiserver.key }}
 
   - path: /opt/bin/setup-kube-system
-    permissions: 0700
+    permissions: '0700'
     owner: root:root
     content: |
       #!/bin/bash -e
@@ -116,7 +120,7 @@ write-files:
 
         mkdir -p /opt/bin
         cd /opt/bin
-        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} /opt/bin
+        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
         chmod +x {kubeadm,kubelet,kubectl}
 
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
@@ -147,6 +151,10 @@ write-files:
         fi
         mkdir -p "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
         cp ${BINARIES_DIR}/*.yaml "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+        if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+          mkdir -p /opt/autoscaler
+          cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+        fi
         if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
           mkdir -p /opt/provider
           cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
@@ -218,7 +226,7 @@ write-files:
       done
 
   - path: /opt/bin/deploy-kube-system
-    permissions: 0700
+    permissions: '0700'
     owner: root:root
     content: |
       #!/bin/bash -e
@@ -247,52 +255,49 @@ write-files:
       if [ -d "$K8S_CONFIG_SCRIPTS_COPY_DIR" ]; then
         ### Network, dashboard configs available offline ###
         echo "Offline configs are available!"
-        kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
-        kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
+        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
         rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
       else
-        kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-        kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
+        /opt/bin/kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(/opt/bin/kubectl version | base64 | tr -d '\n')"
+        /opt/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
       fi
 
-      kubectl create rolebinding admin-binding --role=admin --user=admin || true
-      kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
-      kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
+      /opt/bin/kubectl create rolebinding admin-binding --role=admin --user=admin || true
+      /opt/bin/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
+      /opt/bin/kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
 
       sudo touch /home/core/success
       echo "true" > /home/core/success
 
-coreos:
-  units:
-    - name: docker.service
-      command: start
-      enable: true
+  - path: /etc/systemd/system/setup-kube-system.service
+    permissions: '0755'
+    owner: root:root
+    content: |
+      [Unit]
+      Requires=docker.service
+      After=docker.service
 
-    - name: setup-kube-system.service
-      command: start
-      content: |
-        [Unit]
-        Requires=docker.service
-        After=docker.service
+      [Service]
+      Type=simple
+      StartLimitInterval=0
+      ExecStart=/opt/bin/setup-kube-system
 
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        ExecStart=/opt/bin/setup-kube-system
+  - path: /etc/systemd/system/deploy-kube-system.service
+    permissions: '0755'
+    owner: root:root
+    content: |
+      [Unit]
+      After=setup-kube-system.service
 
-    - name: deploy-kube-system.service
-      command: start
-      content: |
-        [Unit]
-        After=setup-kube-system.service
+      [Service]
+      Type=simple
+      StartLimitInterval=0
+      Restart=on-failure
+      ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
+      ExecStart=/opt/bin/deploy-kube-system
 
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        Restart=on-failure
-        ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
-        ExecStart=/opt/bin/deploy-kube-system
+runcmd:
+  - [ systemctl, start, setup-kube-system ]
+  - [ systemctl, start, deploy-kube-system ]
 
-  update:
-    group: stable
-    reboot-strategy: off

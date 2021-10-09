@@ -101,22 +101,28 @@ if [ -d "$BINARIES_DIR" ]; then
     cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
   fi
 
+  # Fetch the autoscaler if present
+  if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+    mkdir -p /opt/autoscaler
+    cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+  fi
+
   tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
   tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     set +e
-    kubeadm upgrade apply ${UPGRADE_VERSION} -y
+    kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} -y
     retval=$?
     set -e
     if [ $retval -ne 0 ]; then
-      kubeadm upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
+      kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
     fi
   else
     if [ "${IS_OLD_VERSION}" == 'true' ]; then
-      kubeadm upgrade node config --kubelet-version ${UPGRADE_VERSION}
+      kubeadm --v=5 upgrade node config --kubelet-version ${UPGRADE_VERSION}
     else
-      kubeadm upgrade node
+      kubeadm --v=5 upgrade node
     fi
   fi
 
@@ -126,8 +132,8 @@ if [ -d "$BINARIES_DIR" ]; then
   systemctl restart kubelet
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
-    kubectl apply -f ${BINARIES_DIR}/network.yaml
-    kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"

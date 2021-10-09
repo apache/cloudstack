@@ -17,7 +17,7 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -173,6 +173,8 @@
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.15</cs.xstream.version>
         <org.springframework.version>5.3.3</org.springframework.version>
+        <cs.ini.version>0.5.4</cs.ini.version>
+        <cs.gmaven.version>1.12.0</cs.gmaven.version>
     </properties>
 
     <distributionManagement>
@@ -1036,10 +1038,10 @@
                         <meminitial>128m</meminitial>
                         <maxmem>512m</maxmem>
                         <compilerArgs>
-                          <arg>-XDignore.symbol.file=true</arg>
-                          <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
-                          <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
-                          <arg>--add-exports=java.base/sun.security.provider=ALL-UNNAMED</arg>
+                            <arg>-XDignore.symbol.file=true</arg>
+                            <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
+                            <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
+                            <arg>--add-exports=java.base/sun.security.provider=ALL-UNNAMED</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>

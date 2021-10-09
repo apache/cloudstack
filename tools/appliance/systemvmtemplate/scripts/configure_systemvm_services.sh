@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 10 \n \l
+ (___(_)   Debian GNU/Linux 11 \n \l
 
 EOF
 }
@@ -123,6 +123,26 @@ function configure_services() {
   systemctl disable hyperv-daemons.hv-kvp-daemon.service
   systemctl disable hyperv-daemons.hv-vss-daemon.service
   systemctl disable qemu-guest-agent
+
+  # Disable container services
+  systemctl disable containerd
+  systemctl disable docker.service
+  systemctl stop docker.service
+  systemctl disable docker.socket
+  systemctl stop docker.socket
+
+  # Disable cloud init by default
+cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+datasource_list: ['CloudStack']
+datasource:
+  CloudStack:
+    max_wait: 120
+    timeout: 50
+EOF
+
+  touch /etc/cloud/cloud-init.disabled
+  systemctl stop cloud-init
+  systemctl disable cloud-init
 
   configure_apache2
   configure_strongswan
