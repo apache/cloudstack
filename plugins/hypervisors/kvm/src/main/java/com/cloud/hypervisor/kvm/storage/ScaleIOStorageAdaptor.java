@@ -270,7 +270,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
 
             LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
-            qemu.convert(srcFile, destFile);
+            qemu.convert(srcFile, destFile, true);
             LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
             try {
