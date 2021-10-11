@@ -650,6 +650,10 @@ export default {
           })
         }
 
+        if (this.apiName === 'listVirtualMachinesMetrics' && this.items.length === 1) {
+          this.switchProject(this.items[0].projectid)
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
