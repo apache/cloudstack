@@ -24,7 +24,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;

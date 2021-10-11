@@ -68,7 +68,6 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;

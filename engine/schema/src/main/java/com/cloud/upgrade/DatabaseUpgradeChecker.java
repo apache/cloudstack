@@ -31,7 +31,7 @@ import javax.inject.Inject;
 
 import com.cloud.upgrade.dao.Upgrade41510to41520;
 import org.apache.cloudstack.utils.CloudStackVersion;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.upgrade.dao.DbUpgrade;

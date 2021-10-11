@@ -56,7 +56,6 @@ import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;

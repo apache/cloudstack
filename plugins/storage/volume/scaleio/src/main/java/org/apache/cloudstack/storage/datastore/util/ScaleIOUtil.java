@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.datastore.util;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.script.Script;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class ScaleIOUtil {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOUtil.class);
@@ -98,7 +98,7 @@ public class ScaleIOUtil {
     }
 
     public static final String getVolumePath(String volumePathWithName) {
-        if (Strings.isNullOrEmpty(volumePathWithName)) {
+        if (StringUtils.isEmpty(volumePathWithName)) {
             return volumePathWithName;
         }
 
@@ -110,7 +110,7 @@ public class ScaleIOUtil {
     }
 
     public static final String updatedPathWithVolumeName(String volumePath, String volumeName) {
-        if (Strings.isNullOrEmpty(volumePath) || Strings.isNullOrEmpty(volumeName)) {
+        if (StringUtils.isAnyEmpty(volumePath, volumeName)) {
             return volumePath;
         }
 

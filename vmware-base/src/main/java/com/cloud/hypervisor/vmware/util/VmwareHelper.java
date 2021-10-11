@@ -37,7 +37,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
@@ -739,7 +739,7 @@ public class VmwareHelper {
 
     public static HostMO getHostMOFromHostName(final VmwareContext context, final String hostName) {
         HostMO host = null;
-        if (com.cloud.utils.StringUtils.isNotBlank(hostName) && hostName.contains("@")) {
+        if (StringUtils.isNotBlank(hostName) && hostName.contains("@")) {
             String hostMorInfo = hostName.split("@")[0];
             if (hostMorInfo.contains(":")) {
                 ManagedObjectReference morHost = new ManagedObjectReference();

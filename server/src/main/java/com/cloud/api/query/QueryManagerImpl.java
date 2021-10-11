@@ -3169,7 +3169,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (currentVmOffering != null) {
-            List<String> storageTags = StringUtils.csvTagsToList(currentVmOffering.getTags());
+            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getTags());
             if (!storageTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : storageTags) {
@@ -3184,7 +3184,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
             }
 
-            List<String> hostTags = StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
             if (!hostTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : hostTags) {

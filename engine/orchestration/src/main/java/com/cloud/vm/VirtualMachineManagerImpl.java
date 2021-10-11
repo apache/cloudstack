@@ -6022,7 +6022,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         workJob.setStep(VmWorkJobVO.Step.Starting);
         workJob.setVmType(VirtualMachine.Type.Instance);
         workJob.setVmInstanceId(instanceId);
-        if(StringUtils.isNotBlank(secondaryObjectIdentifier)) {
+        if(org.apache.commons.lang3.StringUtils.isNotBlank(secondaryObjectIdentifier)) {
             workJob.setSecondaryObjectIdentifier(secondaryObjectIdentifier);
         }
         workJob.setInitMsid(ManagementServerNode.getManagementServerId());

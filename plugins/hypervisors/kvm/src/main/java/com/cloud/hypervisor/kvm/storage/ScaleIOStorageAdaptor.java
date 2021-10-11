@@ -280,7 +280,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 LOGGER.warn("Unable to get info from source disk: " + disk.getName());
             }
 
-            String errMsg = String.format("Unable to convert/copy from %s to %s, due to: %s", disk.getName(), name, ((Strings.isNullOrEmpty(e.getMessage())) ? "an unknown error" : e.getMessage()));
+            String errMsg = String.format("Unable to convert/copy from %s to %s, due to: %s", disk.getName(), name, ((StringUtils.isEmpty(e.getMessage())) ? "an unknown error" : e.getMessage()));
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }

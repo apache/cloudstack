@@ -134,7 +134,7 @@ public class KubernetesClusterUtil {
                                                                  final String namespace, String serviceName) {
         try {
             String cmd = "sudo /opt/bin/kubectl get pods --all-namespaces";
-            if (!Strings.isNullOrEmpty(namespace)) {
+            if (StringUtils.isNotEmpty(namespace)) {
                 cmd = String.format("sudo /opt/bin/kubectl get pods --namespace=%s", namespace);
             }
             Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, user,

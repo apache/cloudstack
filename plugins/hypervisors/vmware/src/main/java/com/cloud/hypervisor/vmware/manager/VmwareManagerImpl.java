@@ -165,7 +165,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.StringUtils;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;

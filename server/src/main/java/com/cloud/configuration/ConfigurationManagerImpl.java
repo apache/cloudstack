@@ -1677,11 +1677,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private void verifyIpRangeParameters(String startIP, String endIp) {
 
-        if (!Strings.isNullOrEmpty(startIP) && !NetUtils.isValidIp4(startIP)) {
+        if (StringUtils.isNotEmpty(startIP) && !NetUtils.isValidIp4(startIP)) {
             throw new InvalidParameterValueException("The current start address of the IP range " + startIP + " is not a valid IP address.");
         }
 
-        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
+        if (StringUtils.isNotEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
             throw new InvalidParameterValueException("The current end address of the IP range " + endIp + " is not a valid IP address.");
         }
 
@@ -4517,7 +4517,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         endIp = MoreObjects.firstNonNull(endIp, currentEndIP);
 
         final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-        if (Strings.isNullOrEmpty(cidr)) {
+        if (StringUtils.isEmpty(cidr)) {
             throw new InvalidParameterValueException(String.format("Invalid gateway (%s) or netmask (%s)", gateway, netmask));
         }
         final String cidrAddress = getCidrAddress(cidr);
@@ -4645,8 +4645,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             (List<IPAddressVO> listAllocatedIPs, String startIp, String endIp, Boolean forSystemVms) {
         Collections.sort(listAllocatedIPs, Comparator.comparing(IPAddressVO::getAddress));
         for (IPAddressVO allocatedIP : listAllocatedIPs) {
-            if ((!Strings.isNullOrEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(allocatedIP.getAddress().addr()))
-                    || (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(allocatedIP.getAddress().addr()))) {
+            if ((StringUtils.isNotEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(allocatedIP.getAddress().addr()))
+                    || (StringUtils.isNotEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(allocatedIP.getAddress().addr()))) {
                 throw new InvalidParameterValueException(String.format("The start IP address must be less than or equal to %s which is already in use. "
                                 + "The end IP address must be greater than or equal to %s which is already in use. "
                                 + "There are %d IPs already allocated in this range.",
@@ -4661,9 +4661,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private void checkAllocatedIpv6sAreWithinVlanRange(List<UserIpv6AddressVO> listAllocatedIPs, String startIpv6, String endIpv6) {
         Collections.sort(listAllocatedIPs, Comparator.comparing(UserIpv6AddressVO::getAddress));
         for (UserIpv6AddressVO allocatedIP : listAllocatedIPs) {
-            if ((!Strings.isNullOrEmpty(startIpv6)
+            if ((StringUtils.isNotEmpty(startIpv6)
                     && IPv6Address.fromString(startIpv6).toBigInteger().compareTo(IPv6Address.fromString(allocatedIP.getAddress()).toBigInteger()) > 0)
-                    || (!Strings.isNullOrEmpty(endIpv6)
+                    || (StringUtils.isNotEmpty(endIpv6)
                     && IPv6Address.fromString(endIpv6).toBigInteger().compareTo(IPv6Address.fromString(allocatedIP.getAddress()).toBigInteger()) < 0)) {
                 throw new InvalidParameterValueException(String.format("The start IPv6 address must be less than or equal to %s which is already in use. "
                                 + "The end IPv6 address must be greater than or equal to %s which is already in use. "
