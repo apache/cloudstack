@@ -144,7 +144,7 @@ export default {
       isSubmitted: false,
       columns: [
         {
-          title: this.$t('label.name'),
+          title: this.$t('label.storageid'),
           dataIndex: 'name'
         },
         {

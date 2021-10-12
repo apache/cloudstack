@@ -153,7 +153,7 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('label.name'),
+          title: this.$t('label.hostid'),
           dataIndex: 'name'
         },
         {

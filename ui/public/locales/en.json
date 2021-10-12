@@ -818,6 +818,7 @@
 "label.disksize": "Disk Size (in GB)",
 "label.disksizeallocated": "Disk Allocated",
 "label.disksizeallocatedgb": "Allocated",
+"label.disksizefree": "Disk Free",
 "label.disksizetotal": "Disk Total",
 "label.disksizetotalgb": "Total",
 "label.disksizeunallocatedgb": "Unallocated",

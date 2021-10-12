@@ -35,11 +35,14 @@
       :dataSource="storagePools"
       :pagination="false"
       :rowKey="record => record.id">
-      <div slot="disksizeallocated" slot-scope="record">
-        {{ record.disksizeallocated | byteToGigabyte }} GB
-      </div>
       <div slot="disksizetotal" slot-scope="record">
         {{ record.disksizetotal | byteToGigabyte }} GB
+      </div>
+      <div slot="disksizeused" slot-scope="record">
+        {{ record.disksizeused | byteToGigabyte }} GB
+      </div>
+      <div slot="disksizefree" slot-scope="record">
+        {{ (record.disksizetotal * 1 - record.disksizeused * 1) | byteToGigabyte }} GB
       </div>
       <template slot="select" slot-scope="record">
         <a-radio
@@ -128,7 +131,7 @@ export default {
       perVolume: false,
       columns: [
         {
-          title: this.$t('label.name'),
+          title: this.$t('label.storageid'),
           dataIndex: 'name'
         },
         {
@@ -140,12 +143,16 @@ export default {
           dataIndex: 'podname'
         },
         {
-          title: this.$t('label.disksizeallocated'),
-          scopedSlots: { customRender: 'disksizeallocated' }
-        },
-        {
           title: this.$t('label.disksizetotal'),
           scopedSlots: { customRender: 'disksizetotal' }
+        },
+        {
+          title: this.$t('label.disksizeused'),
+          scopedSlots: { customRender: 'disksizeused' }
+        },
+        {
+          title: this.$t('label.disksizefree'),
+          scopedSlots: { customRender: 'disksizefree' }
         },
         {
           title: this.$t('label.select'),
@@ -346,7 +353,7 @@ export default {
     width: 80vw;
 
     @media (min-width: 800px) {
-      width: 600px;
+      width: 700px;
     }
   }
 
