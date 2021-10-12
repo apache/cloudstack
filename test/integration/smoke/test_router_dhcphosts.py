@@ -178,15 +178,6 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         try:
             ssh_command = "ping -c 3 8.8.8.8"
             self.logger.debug("SSH into VM with IP: %s" % nat_rule.ipaddress)
-            fwr = EgressFireWallRule.create(protocol="ICMP",
-                                            cidrlist="0.0.0.0/0",
-                                            destcidrlist="8.8.8.8/32",
-                                            icmpcode=-1,
-                                            icmptype=-1,
-                                            networkid=self.network.id
-                                            )
-            self.cleanup.append(fwr)
-
             ssh = vm.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services[rule_label]["publicport"], retries=5)
             result = str(ssh.execute(ssh_command))
 
