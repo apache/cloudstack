@@ -80,33 +80,6 @@
                             </source>
                         </configuration>
                     </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.googlecode.maven-download-plugin</groupId>
-                <artifactId>download-maven-plugin</artifactId>
-                <version>1.6.3</version>
-                <executions>
-                    <execution>
-                        <id>download-checksums</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
-                            <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                            <skipCache>true</skipCache>
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>gmaven-plugin</artifactId>
-                <version>1.5</version>
-                <executions>
                     <execution>
                         <id>set-properties</id>
                         <phase>generate-sources</phase>
@@ -133,6 +106,26 @@
                                     }
                                 }
                             </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.6.3</version>
+                <executions>
+                    <execution>
+                        <id>download-checksums</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
+                            <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                            <skipCache>true</skipCache>
+                            <overwrite>true</overwrite>
                         </configuration>
                     </execution>
                 </executions>
