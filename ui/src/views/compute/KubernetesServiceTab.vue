@@ -107,9 +107,9 @@
           <template #port="{ text, record, index }" :name="text" :record="record">
             {{ cksSshStartingPort + index }}
           </template>
-          <template slot="action" slot-scope="text, record">
+          <template #action="{record}">
             <a-tooltip placement="bottom" >
-              <template slot="title">
+              <template #title>
                 {{ $t('label.action.delete.node') }}
               </template>
               <a-popconfirm
@@ -121,9 +121,10 @@
               >
                 <a-button
                   type="danger"
-                  icon="delete"
                   shape="circle"
-                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled" />
+                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
+                  <template #icon><delete-outlined /></template>
+                </a-button>
               </a-popconfirm>
             </a-tooltip>
           </template>
