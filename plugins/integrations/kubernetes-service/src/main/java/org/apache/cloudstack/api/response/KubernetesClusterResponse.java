@@ -146,6 +146,18 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "Public IP Address ID of the cluster")
     private String ipAddressId;
 
+    @SerializedName(ApiConstants.AUTOSCALING_ENABLED)
+    @Param(description = "Whether autoscaling is enabled for the cluster")
+    private boolean isAutoscalingEnabled;
+
+    @SerializedName(ApiConstants.MIN_SIZE)
+    @Param(description = "Minimum size of the cluster")
+    private Long minSize;
+
+    @SerializedName(ApiConstants.MAX_SIZE)
+    @Param(description = "Maximum size of the cluster")
+    private Long maxSize;
+
     public KubernetesClusterResponse() {
     }
 
@@ -352,5 +364,17 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setIpAddressId(String ipAddressId) {
         this.ipAddressId = ipAddressId;
+    }
+
+    public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {
+        this.isAutoscalingEnabled = isAutoscalingEnabled;
+    }
+
+    public void setMinSize(Long minSize) {
+        this.minSize = minSize;
+    }
+
+    public void setMaxSize(Long maxSize) {
+        this.maxSize = maxSize;
     }
 }

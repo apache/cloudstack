@@ -826,12 +826,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        value = value.trim();
-
-        if (value.isEmpty() || value.equals("null")) {
-            value = null;
-        }
-
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -869,6 +863,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
+        }
+
+        value = value.trim();
+
+        if (value.isEmpty() || value.equals("null")) {
+            value = (id == null) ? null : "";
         }
 
         final String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);

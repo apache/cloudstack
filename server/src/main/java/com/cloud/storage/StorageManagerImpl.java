@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -40,11 +41,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -2637,6 +2641,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return null;
     }
 
+    private String getValidTemplateName(Long zoneId, HypervisorType hType) {
+        String templateName = null;
+        switch (hType) {
+            case XenServer:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
+                break;
+            case KVM:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
+                break;
+            case VMware:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
+                break;
+            case Hyperv:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
+                break;
+            case LXC:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
+                break;
+            default:
+                break;
+        }
+        return templateName;
+    }
     @Override
     public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
@@ -2721,6 +2748,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // populate template_store_ref table
             _imageSrv.addSystemVMTemplatesToSecondary(store);
             _imageSrv.handleTemplateSync(store);
+            registerSystemVmTemplateOnFirstNfsStore(zoneId, providerName, url, store);
         }
 
         // associate builtin template with zones associated with this image store
@@ -2734,6 +2762,69 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
 
+    private void registerSystemVmTemplateOnFirstNfsStore(Long zoneId, String providerName, String url, DataStore store) {
+        if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
+                    stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
+                    // Check if it's the only/first store in the zone
+                    if (stores.size() == 0) {
+                        List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
+                        Set<HypervisorType> hypSet = new HashSet<HypervisorType>(hypervisorTypes);
+                        TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
+                        SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
+                        String filePath = null;
+                        try {
+                            filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
+                            if (filePath == null) {
+                                throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
+                            }
+                            Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                            for (HypervisorType hypervisorType : hypSet) {
+                                try {
+                                    String templateName = getValidTemplateName(zoneId, hypervisorType);
+                                    Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
+                                            new Pair<>(hypervisorType, templateName);
+                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
+                                    VMTemplateVO vmTemplateVO = null;
+                                    TemplateDataStoreVO templateVO = null;
+                                    if (templateId != null) {
+                                        vmTemplateVO = _templateDao.findById(templateId);
+                                        templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                        if (templateVO != null) {
+                                            try {
+                                                if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                                    continue;
+                                                }
+                                            } catch (Exception e) {
+                                                s_logger.error("Failed to validated if template is seeded", e);
+                                            }
+                                        }
+                                    }
+                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
+                                    if (templateVO != null && vmTemplateVO != null) {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, filePath);
+                                    } else {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
+                                    }
+                                } catch (CloudRuntimeException e) {
+                                    SystemVmTemplateRegistration.unmountStore(filePath);
+                                    s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
+                                }
+                            }
+                        } catch (Exception e) {
+                            s_logger.error("Failed to register systemVM template(s)");
+                        } finally {
+                            SystemVmTemplateRegistration.unmountStore(filePath);
+                            txn.close();
+                        }
+                    }
+                }
+            });
+        }
+    }
     @Override
     public ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException, InvalidParameterValueException {
         // check if current cloud is ready to migrate, we only support cloud with only NFS secondary storages

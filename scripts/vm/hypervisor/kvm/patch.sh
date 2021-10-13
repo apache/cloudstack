@@ -25,6 +25,7 @@ while getopts "n:c:h" opt; do
       name=$OPTARG
       ;;
     c )
+      bootargs=$OPTARG
       cmdline=$(echo $OPTARG | base64 -w 0)
       ;;
     h )
@@ -69,12 +70,6 @@ while [ "$(virsh qemu-agent-command $name '{"execute":"guest-sync","arguments":{
 do
     sleep 0.1
 done
-
-# Write ssh public key
-send_file $name "/root/.ssh/authorized_keys" $sshkey
-
-# Fix ssh public key permission
-virsh qemu-agent-command $name '{"execute":"guest-exec","arguments":{"path":"chmod","arg":["go-rwx","/root/.ssh/authorized_keys"]}}' > /dev/null
 
 # Write cmdline payload
 send_file $name "/var/cache/cloud/cmdline" $cmdline

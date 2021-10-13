@@ -173,6 +173,7 @@ patch_systemvm() {
 patch() {
   local PATCH_MOUNT=/media/cdrom
   local logfile="/var/log/patchsystemvm.log"
+
   if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/agent.zip ] && [ -f /var/cache/cloud/patch.required ]
   then
     echo "Patching systemvm for cloud service with mount=$PATCH_MOUNT for type=$TYPE" >> $logfile

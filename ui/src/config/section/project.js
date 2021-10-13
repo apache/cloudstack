@@ -72,6 +72,7 @@ export default {
       docHelp: 'adminguide/projects.html#accepting-a-membership-invitation',
       listView: true,
       popup: true,
+      show: (record, store) => { return store.features.projectinviterequired },
       component: shallowRef(defineAsyncComponent(() => import('@/views/project/InvitationTokenTemplate.vue')))
     },
     {
@@ -86,6 +87,7 @@ export default {
       param: {
         state: 'Pending'
       },
+      show: (record, store) => { return store.features.projectinviterequired },
       component: shallowRef(defineAsyncComponent(() => import('@/views/project/InvitationsTemplate.vue')))
     },
     {

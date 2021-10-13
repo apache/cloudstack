@@ -33,10 +33,10 @@
         <div>{{ text }}</div>
         <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
       </template>
-      <template #ipAddress="{ record, index }">
+      <template #ipAddress="{ record }">
         <a-form-item
           style="display: block"
-          v-if="record.type !== 'L2' && index === 0"
+          v-if="record.type !== 'L2'"
           :name="'ipAddress' + record.id">
           <a-input
             style="width: 150px;"

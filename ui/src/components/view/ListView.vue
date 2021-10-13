@@ -302,7 +302,11 @@
     <template #readonly="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>
-    <template #current="{ record }">
+    <template #autoscalingenabled="{record}">
+      <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
+      {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
+    </template>
+    <template #current="{record}">
       <status :text="record.current ? record.current.toString() : 'false'" />
     </template>
     <template #created="{ text }">

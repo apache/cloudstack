@@ -285,7 +285,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         controlnodes: 2,
-        size: 1
+        size: 1,
+        noderootdisksize: 8
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.kubecluster.name') }],
@@ -293,7 +294,16 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.zone.for.cluster') }],
         kubernetesversionid: [{ required: true, message: this.$t('message.error.version.for.cluster') }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.serviceoffering.for.cluster') }],
-        noderootdisksize: [{ type: 'number', validator: this.validateNumber }],
+        noderootdisksize: [
+          {
+            validator: async (rule, value) => {
+              if (value && (isNaN(value) || value < 8)) {
+                return Promise.reject(this.$t('messgae.validate.min').replace('{0}', '8GB'))
+              }
+              return Promise.resolve()
+            }
+          }
+        ],
         size: [
           {
             required: true,
