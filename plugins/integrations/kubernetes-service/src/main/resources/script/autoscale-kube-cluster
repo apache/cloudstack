@@ -76,7 +76,7 @@ if [ $ENABLE == "true" ] ; then
         exit 0
     else
         mkdir -p /opt/autoscaler
-        AUTOSCALER_URL="https://raw.githubusercontent.com/shapeblue/autoscaler/add-acs/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
+        AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
         autoscaler_conf_file="/opt/autoscaler/autoscaler_tmpl.yaml"
         curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
         if [ $? -ne 0 ]; then
