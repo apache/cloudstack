@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
@@ -40,7 +39,7 @@ import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
             description = "Restarts the network; includes 1) restarting network elements - virtual routers, DHCP servers 2) reapplying all public IPs 3) reapplying loadBalancing/portForwarding rules",
-        responseObject = IPAddressResponse.class, entityType = {Network.class},
+        responseObject = SuccessResponse.class, entityType = {Network.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
