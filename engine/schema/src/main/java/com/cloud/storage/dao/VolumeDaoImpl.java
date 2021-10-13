@@ -683,9 +683,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             srcVol.setUuid(null);
             destVol.setUuid(uuid);
             destVol.setInstanceId(instanceId);
-            // Prevent storage cleanup corner case of ROOT volume deletion
-            srcVol.setVolumeType(Type.DATADISK);
             update(srcVolId, srcVol);
+            detachVolume(srcVolId);
             update(destVolId, destVol);
             _tagsDao.updateResourceId(srcVolId, destVolId, ResourceObjectType.Volume);
         } catch (Exception e) {
