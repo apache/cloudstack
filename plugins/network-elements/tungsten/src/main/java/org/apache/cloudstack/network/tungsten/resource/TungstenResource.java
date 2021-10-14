@@ -48,9 +48,11 @@ import net.juniper.tungsten.api.types.LoadbalancerMember;
 import net.juniper.tungsten.api.types.LoadbalancerPool;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
+import net.juniper.tungsten.api.types.PolicyTermType;
 import net.juniper.tungsten.api.types.Project;
 import net.juniper.tungsten.api.types.RouteTable;
 import net.juniper.tungsten.api.types.RouteType;
+import net.juniper.tungsten.api.types.RoutingPolicy;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.ServiceGroup;
@@ -64,16 +66,17 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenPortForwardingCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AssignTungstenFloatingIpCommand;
@@ -91,9 +94,10 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCom
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkLoadbalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingLogicalRouterCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenTagCommand;
@@ -113,12 +117,12 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPol
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenObjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenRoutingLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenTagTypeCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPortCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenRoutingLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFabricNetworkCommand;
@@ -140,16 +144,18 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRoute
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNicCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingLogicalRouterCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagTypeCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkGatewayFromLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
@@ -157,7 +163,8 @@ import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyComm
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkGatewayFromLogicalRouterCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenTagCommand;
@@ -181,12 +188,11 @@ import org.apache.cloudstack.network.tungsten.service.TungstenVRouterApi;
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.log4j.Logger;
 
+import javax.naming.ConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import javax.naming.ConfigurationException;
 
 public class TungstenResource implements ServerResource {
 
@@ -510,6 +516,16 @@ public class TungstenResource implements ServerResource {
             return executeRequest((RemoveTungstenNetworkGatewayFromLogicalRouterCommand) cmd);
         } else if (cmd instanceof DeleteTungstenRoutingLogicalRouterCommand) {
             return executeRequest((DeleteTungstenRoutingLogicalRouterCommand) cmd, numRetries);
+        } else if (cmd instanceof ListTungstenRoutingPolicyCommand) {
+            return executeRequest((ListTungstenRoutingPolicyCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateTungstenRoutingPolicyCommand) {
+            return executeRequest((CreateTungstenRoutingPolicyCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenRoutingPolicyTermCommand) {
+            return executeRequest((AddTungstenRoutingPolicyTermCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenRoutingPolicyCommand) {
+            return executeRequest((RemoveTungstenRoutingPolicyCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenRoutingPolicyTermCommand) {
+            return executeRequest((RemoveTungstenRoutingPolicyTermCommand) cmd, numRetries);
         }
 
         s_logger.debug("Received unsupported command " + cmd.toString());
@@ -2477,6 +2493,72 @@ public class TungstenResource implements ServerResource {
         if (deleted)
             return new TungstenAnswer(cmd, true, "Tungsten-Fabric logical router is deleted");
         else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(ListTungstenRoutingPolicyCommand cmd, int numRetries) {
+        List<RoutingPolicy> routingPolicies = tungstenApi.listTungstenRoutingPolicy(cmd.getRoutingPolicyUuid());
+        if(routingPolicies != null) {
+            return new TungstenAnswer(cmd, routingPolicies, true, "Tungsten-Fabric routing policies are listed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(CreateTungstenRoutingPolicyCommand cmd, int numRetries) {
+        RoutingPolicy routingPolicy = tungstenApi.createRoutingPolicy(cmd.getRoutingPolicyName());
+        if(routingPolicy != null) {
+            return new TungstenAnswer(cmd, routingPolicy, true, "Tungsten-Fabric routing policy was created");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenRoutingPolicyTermCommand cmd, int numRetries) {
+        PolicyTermType policyTermType = tungstenApi.addRoutingPolicyTerm(cmd.getRoutingPolicyUuid(), cmd.getRoutingPolicyFromTerm(),
+                cmd.getRoutingPolicyThenTerms());
+        if(policyTermType != null) {
+            return new TungstenAnswer(cmd, policyTermType,true, "Tungsten-Fabric routing policy term was added");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenRoutingPolicyCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeRoutingPolicy(cmd.getRoutingPolicyUuid());
+        if(result) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric routing policy was removed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenRoutingPolicyTermCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeRoutingPolicyTerm(cmd.getRoutingPolicyUuid(), cmd.getPolicyTerm());
+        if(result) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric routing policy term was removed");
+        } else {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);
             } else {

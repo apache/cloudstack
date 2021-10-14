@@ -44,6 +44,7 @@ import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricNetwo
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricPolicyRuleCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRouteTableToInterfaceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRouteTableToNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRoutingPolicyTermCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ApplyTungstenFabricPolicyCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ApplyTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenFabricServiceCmd;
@@ -58,6 +59,7 @@ import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricNe
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricPolicyCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricPublicNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricRoutingPolicyCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricServiceGroupCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricTagTypeCmd;
@@ -85,6 +87,7 @@ import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricNicC
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricPolicyCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricPolicyRuleCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricProvidersCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricRoutingPolicyCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricServiceGroupCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricTagTypeCmd;
@@ -100,6 +103,8 @@ import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricPo
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricPolicyRuleCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRouteTableFromInterfaceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRouteTableFromNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRoutingPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRoutingPolicyTermCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.SynchronizeTungstenFabricDataCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
@@ -169,7 +174,10 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
             AddTungstenFabricRouteTableToInterfaceCmd.class, RemoveTungstenFabricRouteTableFromNetworkCmd.class,
             RemoveTungstenFabricRouteTableFromInterfaceCmd.class, CreateTungstenFabricLogicalRouterCmd.class,
             AddTungstenFabricNetworkGatewayToLogicalRouterCmd.class, RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd.class,
-            ListTungstenFabricLogicalRouterCmd.class, DeleteTungstenFabricLogicalRouterCmd.class);
+            ListTungstenFabricLogicalRouterCmd.class, DeleteTungstenFabricLogicalRouterCmd.class,
+            ListTungstenFabricRoutingPolicyCmd.class, CreateTungstenFabricRoutingPolicyCmd.class,
+            AddTungstenFabricRoutingPolicyTermCmd.class, RemoveTungstenFabricRoutingPolicyCmd.class,
+            RemoveTungstenFabricRoutingPolicyTermCmd.class);
     }
 
     @Override

@@ -33,10 +33,14 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfa
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkRouteTableResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkStaticRouteResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRoutingPolicyResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRoutingPolicyTermResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricServiceGroupResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagTypeResponse;
+import org.apache.cloudstack.network.tungsten.model.RoutingPolicyPrefix;
+import org.apache.cloudstack.network.tungsten.model.RoutingPolicyThenTerm;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 
 import java.util.List;
@@ -209,6 +213,22 @@ public interface TungstenService {
 
     boolean removeTungstenFabricRouteTableFromInterface(final long zoneId, final String interfaceUuid,
         final String routeTableUuid);
+
+    List<TungstenFabricRoutingPolicyResponse> listTungstenFabricRoutingPolicies(final long zoneId,
+        final String routingPolicyUuid);
+
+    TungstenFabricRoutingPolicyResponse createTungstenRoutingPolicy(final long zoneId,
+        final String routingPolicyName);
+
+    TungstenFabricRoutingPolicyTermResponse addRoutingPolicyTerm(final long zoneId, String routingPolicyUuid,
+        List<String> communities, boolean matchAll, List<String> protocolList, List<RoutingPolicyPrefix> prefixList,
+        List<RoutingPolicyThenTerm> routingPolicyThenTerms);
+
+    boolean removeRoutingPolicy(final long zoneId, String routingPolicyUuid);
+
+    boolean removeRoutingPolicyTerm(final long zoneId, String routingPolicyUuid, List<String> communities,
+                                    boolean matchAll, List<String> protocolList, List<String> prefixList);
+
 
     void subscribeTungstenEvent();
 

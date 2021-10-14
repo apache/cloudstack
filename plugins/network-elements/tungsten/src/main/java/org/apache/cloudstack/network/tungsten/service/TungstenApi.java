@@ -26,11 +26,17 @@ import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.Status;
+import net.juniper.tungsten.api.types.ActionAsPathType;
+import net.juniper.tungsten.api.types.ActionCommunityType;
+import net.juniper.tungsten.api.types.ActionExtCommunityType;
 import net.juniper.tungsten.api.types.ActionListType;
+import net.juniper.tungsten.api.types.ActionUpdateType;
 import net.juniper.tungsten.api.types.AddressGroup;
 import net.juniper.tungsten.api.types.AddressType;
 import net.juniper.tungsten.api.types.ApplicationPolicySet;
+import net.juniper.tungsten.api.types.AsListType;
 import net.juniper.tungsten.api.types.CommunityAttributes;
+import net.juniper.tungsten.api.types.CommunityListType;
 import net.juniper.tungsten.api.types.ConfigRoot;
 import net.juniper.tungsten.api.types.Domain;
 import net.juniper.tungsten.api.types.FatFlowProtocols;
@@ -66,13 +72,17 @@ import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyEntriesType;
 import net.juniper.tungsten.api.types.PolicyManagement;
 import net.juniper.tungsten.api.types.PolicyRuleType;
+import net.juniper.tungsten.api.types.PolicyStatementType;
+import net.juniper.tungsten.api.types.PolicyTermType;
 import net.juniper.tungsten.api.types.PortMap;
 import net.juniper.tungsten.api.types.PortMappings;
 import net.juniper.tungsten.api.types.PortType;
+import net.juniper.tungsten.api.types.PrefixMatchType;
 import net.juniper.tungsten.api.types.Project;
 import net.juniper.tungsten.api.types.RouteTable;
 import net.juniper.tungsten.api.types.RouteTableType;
 import net.juniper.tungsten.api.types.RouteType;
+import net.juniper.tungsten.api.types.RoutingPolicy;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.ServiceGroup;
@@ -80,6 +90,8 @@ import net.juniper.tungsten.api.types.SubnetListType;
 import net.juniper.tungsten.api.types.SubnetType;
 import net.juniper.tungsten.api.types.Tag;
 import net.juniper.tungsten.api.types.TagType;
+import net.juniper.tungsten.api.types.TermActionListType;
+import net.juniper.tungsten.api.types.TermMatchConditionType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
@@ -87,6 +99,9 @@ import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import net.juniper.tungsten.api.types.VnSubnetsType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.network.tungsten.model.RoutingPolicyFromTerm;
+import org.apache.cloudstack.network.tungsten.model.RoutingPolicyPrefix;
+import org.apache.cloudstack.network.tungsten.model.RoutingPolicyThenTerm;
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.log4j.Logger;
@@ -2907,6 +2922,139 @@ public class TungstenApi {
             return virtualNetworkList;
         } catch (IOException e) {
             return virtualNetworkList;
+        }
+    }
+
+    public RoutingPolicy createRoutingPolicy(String name) {
+        try {
+            RoutingPolicy routingPolicy = new RoutingPolicy();
+            routingPolicy.setName(name);
+            routingPolicy.setDisplayName(name);
+            routingPolicy.setEntries(new PolicyStatementType());
+            Status status = apiConnector.create(routingPolicy);
+            if(status.isSuccess()) {
+                return routingPolicy;
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean removeRoutingPolicy(String routingPolicyUuid) {
+        try {
+            RoutingPolicy routingPolicy = (RoutingPolicy) getTungstenObject(RoutingPolicy.class, routingPolicyUuid);
+            if(routingPolicy != null) {
+                Status status = apiConnector.delete(routingPolicy);
+                return status.isSuccess();
+            } else {
+                return true;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public PolicyTermType addRoutingPolicyTerm(String routingPolicyUuid, RoutingPolicyFromTerm routingPolicyFromTerm,
+                                               List<RoutingPolicyThenTerm> routingPolicyThenTerms) {
+        try {
+            RoutingPolicy routingPolicy = (RoutingPolicy) getTungstenObject(RoutingPolicy.class, routingPolicyUuid);
+            if(routingPolicy == null) {
+                return null;
+            }
+            PolicyTermType policyTermType = new PolicyTermType();
+            policyTermType.setTermActionList(createRoutingPolicyThenTerm(routingPolicyThenTerms));
+            policyTermType.setTermMatchCondition(createRoutingPolicyFromTerm(routingPolicyFromTerm));
+            routingPolicy.getEntries().addTerm(policyTermType);
+            Status status = apiConnector.update(routingPolicy);
+            if(status.isSuccess()) {
+                return policyTermType;
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean removeRoutingPolicyTerm(String routingPolicyUuid, RoutingPolicyFromTerm termToBeRemoved) {
+        try {
+            RoutingPolicy routingPolicy = (RoutingPolicy) getTungstenObject(RoutingPolicy.class, routingPolicyUuid);
+            if(routingPolicy == null) {
+                return false;
+            }
+            for(PolicyTermType item : routingPolicy.getEntries().getTerm()) {
+                RoutingPolicyFromTerm routingPolicyFromTerm = new RoutingPolicyFromTerm(item.getTermMatchCondition());
+                if(routingPolicyFromTerm.equals(termToBeRemoved)) {
+                    routingPolicy.getEntries().getTerm().remove(item);
+                    Status status = apiConnector.update(routingPolicy);
+                    return status.isSuccess();
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private TermMatchConditionType createRoutingPolicyFromTerm(RoutingPolicyFromTerm routingPolicyFromTerm) {
+        TermMatchConditionType termMatchConditionType = new TermMatchConditionType();
+        termMatchConditionType.setCommunityMatchAll(routingPolicyFromTerm.isMatchAll());
+        for(String item : routingPolicyFromTerm.getProtocolList()) {
+            termMatchConditionType.addProtocol(item);
+        }
+        for(String item : routingPolicyFromTerm.getCommunities()) {
+            termMatchConditionType.addCommunity(item);
+        }
+        for(RoutingPolicyPrefix item : routingPolicyFromTerm.getPrefixList()){
+            PrefixMatchType prefixMatchType = new PrefixMatchType(item.getPrefix(), item.getPrefixType());
+            termMatchConditionType.addPrefix(prefixMatchType);
+        }
+        return termMatchConditionType;
+    }
+
+    private TermActionListType createRoutingPolicyThenTerm(List<RoutingPolicyThenTerm> routingPolicyThenTerms) {
+        TermActionListType termActionListType = new TermActionListType(
+                new ActionUpdateType(new ActionAsPathType(new AsListType()),
+                        new ActionCommunityType(new CommunityListType(), new CommunityListType(), new CommunityListType()),
+                        new ActionExtCommunityType()));
+        for(RoutingPolicyThenTerm item : routingPolicyThenTerms) {
+            if(item.getTermType() != null) {
+                switch (item.getTermType()) {
+                    case "action":
+                        termActionListType.setAction(item.getTermAction());
+                        break;
+                    case "med":
+                        termActionListType.getUpdate().setMed(Integer.parseInt(item.getTermValue()));
+                        break;
+                    case "local-preference":
+                        termActionListType.getUpdate().setLocalPref(Integer.parseInt(item.getTermValue()));
+                        break;
+                    case "as-path":
+                        termActionListType.getUpdate().getAsPath().getExpand().addAsn(Integer.parseInt(item.getTermValue()));
+                        break;
+                    case "add community":
+                        termActionListType.getUpdate().getCommunity().getAdd().addCommunity(item.getTermValue());
+                        break;
+                    case "set community":
+                        termActionListType.getUpdate().getCommunity().getSet().addCommunity(item.getTermValue());
+                        break;
+                    case "remove community":
+                        termActionListType.getUpdate().getCommunity().getRemove().addCommunity(item.getTermValue());
+                        break;
+                }
+            }
+        }
+        return termActionListType;
+    }
+
+    public List<RoutingPolicy> listTungstenRoutingPolicy(String routingPolicyUuid) {
+        if(routingPolicyUuid == null) {
+            return (List<RoutingPolicy>) getTungstenListObject(RoutingPolicy.class);
+        } else {
+            RoutingPolicy routingPolicy = (RoutingPolicy) getTungstenObject(RoutingPolicy.class, routingPolicyUuid);
+            return Arrays.asList(routingPolicy);
         }
     }
 

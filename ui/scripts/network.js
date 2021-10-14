@@ -6883,6 +6883,333 @@
                                     }
                                 }
                             },
+                            routingPolicy: {
+                                type: 'select',
+                                id: 'routingPolicy',
+                                title: 'label.tungsten.routing.policy',
+                                listView: {
+                                    id: 'routingPolicy',
+                                    label: 'label.tungsten.routing.policy',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        network: {
+                                            label: 'label.network',
+                                            converter: function (text, item) {
+                                                if (typeof item.network != 'undefined' && item.network.length > 0) {
+                                                    var networks = [];
+                                                    item.network.forEach(function (network) {
+                                                        networks.push(network.name)
+                                                    });
+                                                    return networks.join(',');
+                                                } else {
+                                                    return '';
+                                                }
+                                            }
+                                        }
+                                    },
+                                    actions: {
+                                        add: {
+                                            label: 'label.tungsten.add.routing.policy',
+                                            action: {
+                                                custom: cloudStack.uiCustom.routingPolicyWizard(
+                                                    cloudStack.routingPolicyWizard)
+                                            },
+                                            messages: {
+                                                notification: function (args) {
+                                                    return 'label.tungsten.add.routing.policy';
+                                                }
+                                            }
+                                        }
+                                    },
+                                    dataProvider: function (args) {
+                                        var data = {
+                                            zoneid: args.context.tungsten[0].zoneid
+                                        };
+                                        this.cloudStack.routingPolicyWizard.zoneId = args.context.tungsten[0].zoneid;
+                                        listViewDataProvider(args, data);
+                                        $.ajax({
+                                            url: createURL("listTungstenFabricRoutingPolicy"),
+                                            dataType: "json",
+                                            data: data,
+                                            async: true,
+                                            success: function (json) {
+                                                var items = json.listtungstenfabricroutingpolicyresponse.routingpolicy ? json.listtungstenfabricroutingpolicyresponse.routingpolicy : [];
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                    detailView: {
+                                        name: 'label.details',
+                                        actions: {
+                                            remove: {
+                                                label: 'label.tungsten.remove.routing.policy',
+                                                messages: {
+                                                    confirm: function (args) {
+                                                        return 'message.tungsten.routing.policy.delete';
+                                                    },
+                                                    notification: function (args) {
+                                                        return 'label.tungsten.remove.routing.policy';
+                                                    }
+                                                },
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("removeTungstenFabricRoutingPolicy"),
+                                                        data: {
+                                                            zoneid: args.context.tungsten[0].zoneid,
+                                                            tungstenroutingpolicyuuid: args.context.routingPolicy[0].uuid
+                                                        },
+                                                        success: function (json) {
+                                                            var jid = json.removetungstenfabricroutingpolicyresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function (data) {
+                                                            args.response.error(parseXMLHttpResponse(data));
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            }
+                                        },
+                                        tabs: {
+                                            details: {
+                                                title: 'label.details',
+                                                fields: [{
+                                                    uuid: {
+                                                        label: 'label.uuid'
+                                                    },
+                                                    name: {
+                                                        label: 'label.name'
+                                                    }
+                                                }],
+                                                dataProvider: function (args) {
+                                                    var data = {
+                                                        zoneid: args.context.tungsten[0].zoneid,
+                                                        tungstenroutingpolicyuuid: args.context.routingPolicy[0].uuid
+                                                    };
+                                                    $.ajax({
+                                                        url: createURL("listTungstenFabricRoutingPolicy"),
+                                                        dataType: "json",
+                                                        data: data,
+                                                        async: true,
+                                                        success: function (json) {
+                                                            var item = json.listtungstenfabricroutingpolicyresponse.routingpolicy[0];
+                                                            args.response.success({
+                                                                data: item
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            },
+                                            routingPolicyTerms: {
+                                                title: 'label.tungsten.routing.policy.terms',
+                                                type: 'select',
+                                                id: 'routingPolicyTerm',
+                                                listView: {
+                                                    id: 'routingPolicyTerm',
+                                                    label: 'label.tungsten.routing.policy.terms',
+                                                    fields: {
+                                                        tungstenroutingpolicytermname: {
+                                                            label: 'label.tungsten.routing.policy.term.name'
+                                                        }
+                                                    },
+                                                    actions: {
+                                                        add: {
+                                                            label: 'label.tungsten.add.routing.policy',
+                                                            action: {
+                                                                custom: cloudStack.uiCustom.routingPolicyTermWizard(
+                                                                    cloudStack.routingPolicyTermWizard)
+                                                            },
+                                                            messages: {
+                                                                notification: function (args) {
+                                                                    return 'label.tungsten.add.routing.policy';
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    dataProvider: function (args) {
+                                                        var data = {
+                                                            zoneid: args.context.tungsten[0].zoneid,
+                                                            tungstenroutingpolicyuuid: args.context.routingPolicy[0].uuid
+                                                        };
+                                                        this.cloudStack.routingPolicyTermWizard.routingPolicyUuid = args.context.routingPolicy[0].uuid;
+                                                        this.cloudStack.routingPolicyTermWizard.zoneId = args.context.tungsten[0].zoneid;
+                                                        $.ajax({
+                                                            url: createURL("listTungstenFabricRoutingPolicy"),
+                                                            dataType: "json",
+                                                            data: data,
+                                                            async: true,
+                                                            success: function (json) {
+                                                                var items = json.listtungstenfabricroutingpolicyresponse.routingpolicy[0].tungstenroutingpolicyterm ? json.listtungstenfabricroutingpolicyresponse.routingpolicy[0].tungstenroutingpolicyterm : [];
+                                                                args.response.success({
+                                                                    data: items
+                                                                });
+                                                            }
+                                                        });
+                                                    },
+                                                    detailView: {
+                                                        name: 'label.details',
+                                                        actions: {
+                                                            remove: {
+                                                                label: 'label.tungsten.delete.routing.policy.term',
+                                                                messages: {
+                                                                    confirm: function (args) {
+                                                                        return 'message.tungsten.routing.policy.term.delete';
+                                                                    },
+                                                                    notification: function (args) {
+                                                                        return 'label.tungsten.delete.routing.policy.term';
+                                                                    }
+                                                                },
+                                                                action: function (args) {
+                                                                    var data = {
+                                                                        zoneid: args.context.tungsten[0].zoneid,
+                                                                        tungstenroutingpolicyuuid: args.context.routingPolicy[0].uuid,
+                                                                        tungstenroutingpolicymatchall: args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicymatchall
+                                                                    };
+                                                                    if (args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicyprotocol !== undefined) {
+                                                                        $.extend(data, {
+                                                                            tungstenroutingpolicyprotocol: args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicyprotocol.join()
+                                                                        });
+                                                                    }
+                                                                    if (args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicycommunities !== undefined) {
+                                                                        $.extend(data, {
+                                                                            tungstenroutingpolicyfromtermcommunities: args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicycommunities.join()
+                                                                        });
+                                                                    }
+                                                                    if (args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicyprefixlist !== undefined) {
+                                                                        $.extend(data, {
+                                                                            tungstenroutingpolicyfromtermprefixlist: args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm.tungstenroutingpolicyprefixlist.join()
+                                                                        });
+                                                                    }
+                                                                    $.ajax({
+                                                                        url: createURL('removeTungstenFabricRoutingPolicyTerm'),
+                                                                        dataType: "json",
+                                                                        data: data,
+                                                                        success: function (json) {
+                                                                            var jid = json.removetungstenfabricroutingpolicytermresponse.jobid;
+                                                                            args.response.success({
+                                                                                _custom: {
+                                                                                    jobId: jid,
+                                                                                    getUpdatedItem: function (json) {
+                                                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                                                    }
+                                                                                }
+                                                                            });
+                                                                        },
+                                                                        error: function (data) {
+                                                                            args.response.error(parseXMLHttpResponse(data));
+                                                                        }
+                                                                    });
+                                                                },
+                                                                notification: {
+                                                                    poll: pollAsyncJobResult
+                                                                }
+                                                            }
+                                                        },
+                                                        tabs: {
+                                                            fromTerms: {
+                                                                title: 'label.tungsten.routing.policy.from.term',
+                                                                fields: [{
+                                                                    tungstenroutingpolicycommunities: {
+                                                                        label: 'label.tungsten.communities',
+                                                                        converter: function (data) {
+                                                                            var result = "";
+                                                                            if (data !== undefined) {
+                                                                                data.forEach(function (item) {
+                                                                                    result = result + item + ", ";
+                                                                                });
+                                                                                result = result.slice(0, -2);
+                                                                            }
+                                                                            return result;
+                                                                        }
+                                                                    },
+                                                                    tungstenroutingpolicymatchall: {
+                                                                        label: 'label.tungsten.match.all',
+                                                                    },
+                                                                    tungstenroutingpolicyprefixlist: {
+                                                                        label: 'label.routeprefix.list',
+                                                                        converter: function (data) {
+                                                                            var result = "";
+                                                                            if (data !== undefined) {
+                                                                                data.forEach(function (item) {
+                                                                                    result = result + item + ", ";
+                                                                                });
+                                                                                return result.slice(0, -2);
+                                                                            }
+                                                                            return result;
+                                                                        }
+                                                                    },
+                                                                    tungstenroutingpolicyprotocol: {
+                                                                        label: 'label.tungsten.protocol',
+                                                                        converter: function (data) {
+                                                                            var result = "";
+                                                                            if (data !== undefined) {
+                                                                                data.forEach(function (item) {
+                                                                                    result = result + item + ", ";
+                                                                                });
+                                                                                return result.slice(0, -2);
+                                                                            }
+                                                                            return result;
+                                                                        },
+                                                                        isTokenInput: true
+                                                                    }
+                                                                }],
+                                                                dataProvider: function (args) {  // UI > Templates menu (listing) > select a template from listing > Details tab > Zones tab (listing) > select a zone from listing > Details tab
+                                                                    var jsonObj = args.context.routingPolicyTerm[0].tungstenroutingpolicyfromterm;
+                                                                    args.response.success({
+                                                                        data: jsonObj
+                                                                    });
+                                                                }
+                                                            },
+                                                            thenTerms: {
+                                                                title: 'label.tungsten.routing.policy.then.term',
+                                                                fields: [{
+                                                                    tungstenroutingpolicytermaddcommunity: {
+                                                                        label: 'label.tungsten.routing.policy.term.add.community'
+                                                                    },
+                                                                    tungstenroutingpolicytermsetcommunity: {
+                                                                        label: 'label.tungsten.routing.policy.term.set.community'
+                                                                    },
+                                                                    tungstenroutingpolicytermremovecommunity: {
+                                                                        label: 'label.tungsten.routing.policy.term.remove.community'
+                                                                    },
+                                                                    tungstenroutingpolicytermlocalpreference: {
+                                                                        label: 'label.tungsten.routing.policy.term.local.preference'
+                                                                    },
+                                                                    tungstenroutingpolicytermmed: {
+                                                                        label: 'label.tungsten.routing.policy.term.med'
+                                                                    },
+                                                                    tungstenroutingpolicytermaction: {
+                                                                        label: 'label.tungsten.routing.policy.term.action'
+                                                                    },
+                                                                    tungstenroutingpolicytermaspath: {
+                                                                        label: 'label.tungsten.routing.policy.term.as.path'
+                                                                    }
+                                                                }],
+                                                                dataProvider: function (args) {  // UI > Templates menu (listing) > select a template from listing > Details tab > Zones tab (listing) > select a zone from listing > Details tab
+                                                                    var jsonObj = args.context.routingPolicyTerm[0].tungstenroutingpolicythenterm;
+                                                                    args.response.success({
+                                                                        data: jsonObj
+                                                                    });
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
                             logicalrouter: {
                                 type: 'select',
                                 id: 'logicalrouter',
