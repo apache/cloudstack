@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.network.rules.FirewallRule;
@@ -35,11 +36,25 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> implements LoadBalancerDao {
     private final SearchBuilder<LoadBalancerVO> ListByIp;
     protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
+    private SearchBuilder<LoadBalancerVO> ListByVpcId;
 
     @Inject
     protected FirewallRulesCidrsDao _portForwardingRulesCidrsDao;
     @Inject
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
+    @Inject
+    NetworkDao _networkDao;
+
+    @PostConstruct
+    void init() {
+        ListByVpcId = createSearchBuilder();
+        ListByVpcId.and("networkId", ListByVpcId.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        ListByVpcId.and("scheme", ListByVpcId.entity().getScheme(), SearchCriteria.Op.EQ);
+        SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
+        networkSearch.and("vpcId", networkSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
+        ListByVpcId.join("network", networkSearch, networkSearch.entity().getId(), ListByVpcId.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        ListByVpcId.done();
+    }
 
     protected LoadBalancerDaoImpl() {
         ListByIp = createSearchBuilder();
@@ -66,6 +81,14 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     public List<LoadBalancerVO> listByNetworkIdAndScheme(long networkId, Scheme scheme) {
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
         sc.setParameters("networkId", networkId);
+        sc.setParameters("scheme", scheme);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<LoadBalancerVO> listByVpcIdAndScheme(long vpcId, Scheme scheme) {
+        SearchCriteria<LoadBalancerVO> sc = ListByVpcId.create();
+        sc.setJoinParameters("network", "vpcId", vpcId);
         sc.setParameters("scheme", scheme);
         return listBy(sc);
     }

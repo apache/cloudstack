@@ -58,8 +58,13 @@ public class FirewallRules extends RuleApplier {
 
         if (_purpose == Purpose.LoadBalancing) {
             LoadBalancerDao loadBalancerDao = visitor.getVirtualNetworkApplianceFactory().getLoadBalancerDao();
-            // for load balancer we have to resend all lb rules for the network
-            final List<LoadBalancerVO> lbs = loadBalancerDao.listByNetworkIdAndScheme(_network.getId(), Scheme.Public);
+            // for load balancer we have to resend all lb rules for the network or vpc
+            final List<LoadBalancerVO> lbs;
+            if (_network.getVpcId() != null) {
+                lbs = loadBalancerDao.listByVpcIdAndScheme(_network.getVpcId(), Scheme.Public);
+            } else {
+                lbs = loadBalancerDao.listByNetworkIdAndScheme(_network.getId(), Scheme.Public);
+            }
             _loadbalancingRules = new ArrayList<LoadBalancingRule>();
 
             LoadBalancingRulesManager lbMgr = visitor.getVirtualNetworkApplianceFactory().getLbMgr();
