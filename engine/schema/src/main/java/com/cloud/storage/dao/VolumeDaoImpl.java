@@ -684,7 +684,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             destVol.setUuid(uuid);
             destVol.setInstanceId(instanceId);
             update(srcVolId, srcVol);
-            detachVolume(srcVolId);
             update(destVolId, destVol);
             _tagsDao.updateResourceId(srcVolId, destVolId, ResourceObjectType.Volume);
         } catch (Exception e) {
