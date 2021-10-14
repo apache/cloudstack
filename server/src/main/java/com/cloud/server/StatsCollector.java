@@ -242,6 +242,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private AgentManager _agentMgr;
     @Inject
+    private ManagementServerHostDao managementServerHostDao;
+    @Inject
     private UserVmManager _userVmMgr;
     @Inject
     private HostDao _hostDao;
@@ -304,6 +306,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private ManagementServerHostDao managementServerHostDao;
 
+    private ConcurrentHashMap<Long, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
     private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<String, VolumeStats>();
@@ -406,6 +409,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             _executor.scheduleWithFixedDelay(new VmStatsCollector(), DEFAULT_INITIAL_DELAY, vmStatsInterval, TimeUnit.MILLISECONDS);
         } else {
             s_logger.info("Skipping collect VM stats. The global parameter vm.stats.interval is set to 0 or less than 0.");
+        }
+
+        if (vmStatsInterval > 0) {
+            _executor.scheduleWithFixedDelay(new ManagementServerCollector(), DEFAULT_INITIAL_DELAY, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
         }
 
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
@@ -589,6 +596,43 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected Point creteInfluxDbPoint(Object metricsObject) {
             return createInfluxDbPointForHostMetrics(metricsObject);
+        }
+    }
+
+    class ManagementServerCollector extends AbstractStatsCollector {
+        @Override
+        protected void runInContext() {
+            try {
+                s_logger.debug(String.format("%s is running...", this.getClass().getSimpleName()));
+
+                List<ManagementServerHostVO> msHosts = managementServerHostDao.listAll();
+
+                Map<Object, Object> metrics = new HashMap<>();
+
+                for (ManagementServerHostVO host : msHosts) {
+                    ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(host);
+                    hostStatsEntry.setManagementServerHostVO(host);
+                    metrics.put(hostStatsEntry.getManagementServerHostId(), hostStatsEntry);
+                    managementServerHostStats.put(host.getId(), hostStatsEntry);
+                }
+
+                if (externalStatsType == ExternalStatsProtocol.INFLUXDB) {
+                    sendMetricsToInfluxdb(metrics);
+                }
+            } catch (Throwable t) {
+                s_logger.error("Error trying to retrieve host stats", t);
+            }
+        }
+
+        private ManagementServerHostStatsEntry getDataFrom(ManagementServerHostVO host) {
+            ManagementServerHostStatsEntry newEntry = new ManagementServerHostStatsEntry();
+            newEntry.setManagementServerHostVO(host);
+            return newEntry;
+        }
+
+        @Override
+        protected Point creteInfluxDbPoint(Object metricsObject) {
+            return null;
         }
     }
 
@@ -1452,7 +1496,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * This class allows to writing metrics in InfluxDB for the table that matches the Collector extending it.
      * Thus, VmStatsCollector and HostCollector can use same method to write on different measures (host_stats or vm_stats table).
      */
-    abstract class AbstractStatsCollector extends ManagedContextRunnable {
+    abstract class  AbstractStatsCollector extends ManagedContextRunnable {
         /**
          * Sends metrics to influxdb host. This method supports both VM and Host metrics
          */
