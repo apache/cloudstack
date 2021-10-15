@@ -18,7 +18,6 @@
 package com.cloud.network.rules;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
@@ -52,9 +51,7 @@ public class LoadBalancingRules extends RuleApplier {
 
         LoadBalancerDao loadBalancerDao = visitor.getVirtualNetworkApplianceFactory().getLoadBalancerDao();
         // For load balancer we have to resend all lb rules for the network or vpc
-        final List<LoadBalancerVO> lbs = Optional.ofNullable(_network.getVpcId())
-                .map(x -> loadBalancerDao.listByVpcIdAndScheme(_network.getVpcId(), Scheme.Public))
-                .orElseGet(() -> loadBalancerDao.listByNetworkIdAndScheme(_network.getId(), Scheme.Public));
+        final List<LoadBalancerVO> lbs = loadBalancerDao.listByNetworkIdOrVpcIdAndScheme(_network.getId(), _network.getVpcId(), Scheme.Public);
 
         // We are cleaning it before because all the rules have to be sent to the router.
         _rules.clear();

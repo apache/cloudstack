@@ -94,6 +94,15 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     }
 
     @Override
+    public List<LoadBalancerVO> listByNetworkIdOrVpcIdAndScheme(long networkId, Long vpcId, Scheme scheme) {
+        if (vpcId != null) {
+            return listByVpcIdAndScheme(vpcId, scheme);
+        } else {
+            return listByNetworkIdAndScheme(networkId, scheme);
+        }
+    }
+
+    @Override
     public List<LoadBalancerVO> listInTransitionStateByNetworkIdAndScheme(long networkId, Scheme scheme) {
         SearchCriteria<LoadBalancerVO> sc = TransitionStateSearch.create();
         sc.setParameters("networkId", networkId);

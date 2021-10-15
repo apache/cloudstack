@@ -29,6 +29,8 @@ public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {
 
     List<LoadBalancerVO> listByVpcIdAndScheme(long vpcId, Scheme scheme);
 
+    List<LoadBalancerVO> listByNetworkIdOrVpcIdAndScheme(long networkId, Long vpcId, Scheme scheme);
+
     List<LoadBalancerVO> listInTransitionStateByNetworkIdAndScheme(long networkId, Scheme scheme);
 
     boolean isLoadBalancerRulesMappedToVmGuestIp(long instanceId, String instanceIp, long networkId);
