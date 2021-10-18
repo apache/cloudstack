@@ -73,6 +73,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCom
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyTermCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -164,6 +165,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRule
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
@@ -526,6 +528,10 @@ public class TungstenResource implements ServerResource {
             return executeRequest((RemoveTungstenRoutingPolicyCommand) cmd, numRetries);
         } else if (cmd instanceof RemoveTungstenRoutingPolicyTermCommand) {
             return executeRequest((RemoveTungstenRoutingPolicyTermCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenRoutingPolicyToNetworkCommand) {
+            return executeRequest((AddTungstenRoutingPolicyToNetworkCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenRoutingPolicyFromNetworkCommand) {
+            return executeRequest((RemoveTungstenRoutingPolicyFromNetworkCommand) cmd, numRetries);
         }
 
         s_logger.debug("Received unsupported command " + cmd.toString());
@@ -2503,6 +2509,9 @@ public class TungstenResource implements ServerResource {
 
     private Answer executeRequest(ListTungstenRoutingPolicyCommand cmd, int numRetries) {
         List<RoutingPolicy> routingPolicies = tungstenApi.listTungstenRoutingPolicy(cmd.getRoutingPolicyUuid());
+        if (cmd.getNetworkUuid() != null) {
+            routingPolicies = tungstenApi.filterTungstenRoutingPolicyByNetwork(routingPolicies, cmd.getNetworkUuid(), cmd.isAttachedToNetwork());
+        }
         if(routingPolicies != null) {
             return new TungstenAnswer(cmd, routingPolicies, true, "Tungsten-Fabric routing policies are listed");
         } else {
@@ -2558,6 +2567,32 @@ public class TungstenResource implements ServerResource {
         boolean result = tungstenApi.removeRoutingPolicyTerm(cmd.getRoutingPolicyUuid(), cmd.getPolicyTerm());
         if(result) {
             return new TungstenAnswer(cmd, true, "Tungsten-Fabric routing policy term was removed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenRoutingPolicyToNetworkCommand cmd, int numRetries) {
+        boolean result = tungstenApi.addRoutingPolicyToNetwork(cmd.getNetworkUuid(), cmd.getRoutingPolicyUuid());
+        if(result) {
+            return new TungstenAnswer(cmd, true, "Add Tungsten-Fabric routing policy to a network");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenRoutingPolicyFromNetworkCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeRoutingPolicyFromNetwork(cmd.getNetworkUuid(), cmd.getRoutingPolicyUuid());
+        if(result) {
+            return new TungstenAnswer(cmd, true, "Remove Tungsten-Fabric routing policy from a network");
         } else {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);

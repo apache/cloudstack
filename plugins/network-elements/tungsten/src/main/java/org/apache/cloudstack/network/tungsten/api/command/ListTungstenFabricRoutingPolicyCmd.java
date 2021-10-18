@@ -53,9 +53,16 @@ public class ListTungstenFabricRoutingPolicyCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.TUNGSTEN_ROUTING_POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric routing policy")
     private String routingPolicyUuid;
 
+    @Parameter(name = ApiConstants.TUNGSTEN_NETWORK_UUID, type = CommandType.STRING, description = "the UUID of network")
+    private String networkUuid;
+
+    @Parameter(name = ApiConstants.IS_ATTACHED_TO_NETWORK, type = CommandType.BOOLEAN, description = "is the route table attached to the network")
+    private boolean isAttachedToNetwork;
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<TungstenFabricRoutingPolicyResponse> routingPolicyResponses = tungstenService.listTungstenFabricRoutingPolicies(zoneId, routingPolicyUuid);
+        List<TungstenFabricRoutingPolicyResponse> routingPolicyResponses = tungstenService.listTungstenFabricRoutingPolicies(
+                zoneId, routingPolicyUuid, networkUuid, isAttachedToNetwork);
         ListResponse<TungstenFabricRoutingPolicyResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(routingPolicyResponses);
         listResponse.setResponseName(getCommandName());

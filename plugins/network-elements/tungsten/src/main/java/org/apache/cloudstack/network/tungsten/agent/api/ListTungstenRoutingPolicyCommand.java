@@ -18,12 +18,24 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class ListTungstenRoutingPolicyCommand extends TungstenCommand {
     final private String routingPolicyUuid;
+    final private String networkUuid;
+    final private boolean attachedToNetwork;
 
-    public ListTungstenRoutingPolicyCommand(String routingPolicyUuid) {
+    public ListTungstenRoutingPolicyCommand(String routingPolicyUuid, String networkUuid, boolean attachedToNetwork) {
         this.routingPolicyUuid = routingPolicyUuid;
+        this.networkUuid = networkUuid;
+        this.attachedToNetwork = attachedToNetwork;
     }
 
     public String getRoutingPolicyUuid() {
         return routingPolicyUuid;
+    }
+
+    public String getNetworkUuid() {
+        return networkUuid;
+    }
+
+    public boolean isAttachedToNetwork() {
+        return attachedToNetwork;
     }
 }

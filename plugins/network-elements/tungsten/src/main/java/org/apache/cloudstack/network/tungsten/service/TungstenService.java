@@ -215,7 +215,7 @@ public interface TungstenService {
         final String routeTableUuid);
 
     List<TungstenFabricRoutingPolicyResponse> listTungstenFabricRoutingPolicies(final long zoneId,
-        final String routingPolicyUuid);
+        final String routingPolicyUuid, final String networkUuid, final boolean isAttachedToNetwork);
 
     TungstenFabricRoutingPolicyResponse createTungstenRoutingPolicy(final long zoneId,
         final String routingPolicyName);
@@ -229,6 +229,9 @@ public interface TungstenService {
     boolean removeRoutingPolicyTerm(final long zoneId, String routingPolicyUuid, List<String> communities,
                                     boolean matchAll, List<String> protocolList, List<String> prefixList);
 
+    boolean addRoutingPolicyToNetwork(final long zoneId, String networkUuid, String routingPolicyUuid);
+
+    boolean removeRoutingPolicyFromNetwork(final long zoneId, String networkUuid, String routingPolicyUuid);
 
     void subscribeTungstenEvent();
 

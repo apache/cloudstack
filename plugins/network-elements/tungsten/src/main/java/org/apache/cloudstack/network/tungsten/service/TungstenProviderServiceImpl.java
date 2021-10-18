@@ -45,6 +45,7 @@ import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricPolic
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRouteTableToInterfaceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRouteTableToNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRoutingPolicyTermCmd;
+import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRoutingPolicyToNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ApplyTungstenFabricPolicyCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ApplyTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenFabricServiceCmd;
@@ -104,6 +105,7 @@ import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricPo
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRouteTableFromInterfaceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRouteTableFromNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRoutingPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRoutingPolicyFromNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricRoutingPolicyTermCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.SynchronizeTungstenFabricDataCmd;
@@ -177,7 +179,8 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
             ListTungstenFabricLogicalRouterCmd.class, DeleteTungstenFabricLogicalRouterCmd.class,
             ListTungstenFabricRoutingPolicyCmd.class, CreateTungstenFabricRoutingPolicyCmd.class,
             AddTungstenFabricRoutingPolicyTermCmd.class, RemoveTungstenFabricRoutingPolicyCmd.class,
-            RemoveTungstenFabricRoutingPolicyTermCmd.class);
+            RemoveTungstenFabricRoutingPolicyTermCmd.class, AddTungstenFabricRoutingPolicyToNetworkCmd.class,
+            RemoveTungstenFabricRoutingPolicyFromNetworkCmd.class);
     }
 
     @Override

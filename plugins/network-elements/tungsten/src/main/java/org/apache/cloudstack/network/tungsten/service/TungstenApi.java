@@ -2481,7 +2481,8 @@ public class TungstenApi {
         }
     }
 
-    public List<RouteTable> filterTungstenRouteTableByNetwork(List<RouteTable> routeTables, String networkUuid, boolean isAttachedToNetwork) {
+    public List<RouteTable> filterTungstenRouteTableByNetwork(List<RouteTable> routeTables, String networkUuid,
+        boolean isAttachedToNetwork) {
         List<RouteTable> routeTablesAttachedToNetwork = new ArrayList<>();
         boolean networkFounded = false;
         for (RouteTable item : routeTables) {
@@ -2505,7 +2506,33 @@ public class TungstenApi {
         }
     }
 
-    public List<InterfaceRouteTable> filterTungstenRouteTableByInterface(List<InterfaceRouteTable> routeTables, String vmUuid, boolean isAttachedToInterface) {
+    public List<RoutingPolicy> filterTungstenRoutingPolicyByNetwork(List<RoutingPolicy> routingPolicies, String networkUuid,
+        boolean isAttachedToNetwork) {
+        List<RoutingPolicy> routingPoliciesAttachedToNetwork = new ArrayList<>();
+        boolean networkFounded = false;
+        for (RoutingPolicy item : routingPolicies) {
+            if (item.getVirtualNetworkBackRefs() != null) {
+                for (ObjectReference<ApiPropertyBase> virtualNetwork : item.getVirtualNetworkBackRefs()) {
+                    if (virtualNetwork.getUuid().equals(networkUuid)) {
+                        networkFounded = true;
+                    }
+                }
+                if (networkFounded) {
+                    routingPoliciesAttachedToNetwork.add(item);
+                    networkFounded = false;
+                }
+            }
+        }
+        if (isAttachedToNetwork) {
+            return routingPoliciesAttachedToNetwork;
+        } else {
+            routingPolicies.removeAll(routingPoliciesAttachedToNetwork);
+            return routingPolicies;
+        }
+    }
+
+    public List<InterfaceRouteTable> filterTungstenRouteTableByInterface(List<InterfaceRouteTable> routeTables,
+        String vmUuid, boolean isAttachedToInterface) {
         List<InterfaceRouteTable> routeTablesAttachedToInterface = new ArrayList<>();
         boolean interfaceFounded = false;
         VirtualMachineInterface vmi = getGuestInterfaceFromGuestVm(vmUuid);
@@ -2533,7 +2560,7 @@ public class TungstenApi {
     }
 
     public RouteType addNetworkStaticRoute(String routeTableUuid, String routePrefix,
-                                           String routeNextHop, String routeNextHopType, String routeCommunities) {
+        String routeNextHop, String routeNextHopType, String routeCommunities) {
         try {
             RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, routeTableUuid);
             if (routeTable == null) {
@@ -2560,8 +2587,7 @@ public class TungstenApi {
         }
     }
 
-    public RouteType addInterfaceStaticRoute(String routeTableUuid, String routePrefix,
-                                             String routeCommunities) {
+    public RouteType addInterfaceStaticRoute(String routeTableUuid, String routePrefix, String routeCommunities) {
         try {
             InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
                     InterfaceRouteTable.class, routeTableUuid);
@@ -2993,6 +3019,36 @@ public class TungstenApi {
                 }
             }
             return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean addRoutingPolicyToNetwork(String networkUuid, String routingPolicyUuid) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            RoutingPolicy routingPolicy = (RoutingPolicy) apiConnector.findById(RoutingPolicy.class, routingPolicyUuid);
+            if(virtualNetwork == null || routingPolicy == null) {
+                return false;
+            }
+            virtualNetwork.addRoutingPolicy(routingPolicy);
+            Status status = apiConnector.update(virtualNetwork);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean removeRoutingPolicyFromNetwork(String networkUuid, String routingPolicyUuid) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            RoutingPolicy routingPolicy = (RoutingPolicy) apiConnector.findById(RoutingPolicy.class, routingPolicyUuid);
+            if(virtualNetwork == null || routingPolicy == null) {
+                return false;
+            }
+            virtualNetwork.removeRoutingPolicy(routingPolicy);
+            Status status = apiConnector.update(virtualNetwork);
+            return status.isSuccess();
         } catch (IOException e) {
             return false;
         }

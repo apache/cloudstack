@@ -127,6 +127,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCom
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyTermCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -204,6 +205,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRule
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
@@ -2652,8 +2654,8 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     @Override
     public List<TungstenFabricRoutingPolicyResponse> listTungstenFabricRoutingPolicies(final long zoneId,
-        final String routingPolicyUuid) {
-        TungstenCommand tungstenCommand = new ListTungstenRoutingPolicyCommand(routingPolicyUuid);
+        final String routingPolicyUuid, final String networkUuid, final boolean isAttachedToNetwork) {
+        TungstenCommand tungstenCommand = new ListTungstenRoutingPolicyCommand(routingPolicyUuid, networkUuid, isAttachedToNetwork);
         TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
         List<TungstenFabricRoutingPolicyResponse> routingPolicies = new ArrayList<>();
         for(ApiObjectBase item : tungstenAnswer.getApiObjectBaseList()) {
@@ -2702,6 +2704,20 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         }
         RoutingPolicyFromTerm fromTerm = new RoutingPolicyFromTerm(communities, matchAll, protocolList, prefixes);
         TungstenCommand tungstenCommand = new RemoveTungstenRoutingPolicyTermCommand(routingPolicyUuid, fromTerm);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return tungstenAnswer.getResult();
+    }
+
+    @Override
+    public boolean addRoutingPolicyToNetwork(final long zoneId, String networkUuid, String routingPolicyUuid) {
+        TungstenCommand tungstenCommand = new AddTungstenRoutingPolicyToNetworkCommand(networkUuid, routingPolicyUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return tungstenAnswer.getResult();
+    }
+
+    @Override
+    public boolean removeRoutingPolicyFromNetwork(final long zoneId, String networkUuid, String routingPolicyUuid) {
+        TungstenCommand tungstenCommand = new RemoveTungstenRoutingPolicyFromNetworkCommand(networkUuid, routingPolicyUuid);
         TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
         return tungstenAnswer.getResult();
     }

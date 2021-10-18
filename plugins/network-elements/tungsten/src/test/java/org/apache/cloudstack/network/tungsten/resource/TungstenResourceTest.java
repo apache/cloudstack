@@ -1691,7 +1691,7 @@ public class TungstenResourceTest {
 
     @Test
     public void executeRequestListTungstenRoutingPolicyCommandTest() {
-        TungstenCommand command = new ListTungstenRoutingPolicyCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
+        TungstenCommand command = new ListTungstenRoutingPolicyCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003", null, false);
         RoutingPolicy routingPolicy1 = mock(RoutingPolicy.class);
         RoutingPolicy routingPolicy2 = mock(RoutingPolicy.class);
         List<RoutingPolicy> routingPoliciesAnswer = new ArrayList<>(Arrays.asList(routingPolicy1, routingPolicy2));

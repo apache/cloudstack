@@ -55,9 +55,9 @@ public class TungstenFabricRoutingPolicyThenTermResponse extends BaseResponse {
     private String asPath;
 
     public TungstenFabricRoutingPolicyThenTermResponse(ActionUpdateType actionUpdateType, String action) {
-        this.addCommunity = getActionCommunities(actionUpdateType.getCommunity().getAdd());
-        this.setCommunity = getActionCommunities(actionUpdateType.getCommunity().getSet());
-        this.removeCommunity = getActionCommunities(actionUpdateType.getCommunity().getRemove());
+        this.addCommunity = actionUpdateType.getCommunity() == null ? null : getActionCommunities(actionUpdateType.getCommunity().getAdd());
+        this.setCommunity = actionUpdateType.getCommunity() == null ? null : getActionCommunities(actionUpdateType.getCommunity().getSet());
+        this.removeCommunity = actionUpdateType.getCommunity() == null ? null : getActionCommunities(actionUpdateType.getCommunity().getRemove());
         this.localPreference = actionUpdateType.getLocalPref() == null ? null : actionUpdateType.getLocalPref().toString();
         this.med = actionUpdateType.getMed() == null ? null : actionUpdateType.getMed().toString();
         this.action = action;

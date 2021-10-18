@@ -1970,6 +1970,201 @@
                                         }
                                     }
                                 }
+                            },
+                            routingPolicies: {
+                                type: 'select',
+                                id: 'routingPolicies',
+                                title: 'label.tungsten.routing.policies',
+                                listView: {
+                                    id: 'routingPolicies',
+                                    label: 'label.tungsten.routing.policies',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        }
+                                    },
+                                    dataProvider: function (args) {
+                                        var data = {
+                                            zoneid: args.context.networks[0].zoneid,
+                                            tungstennetworkuuid: args.context.networks[0].id,
+                                            isattachedtonetwork: true
+                                        };
+
+                                        listViewDataProvider(args, data);
+                                        $.ajax({
+                                            url: createURL("listTungstenFabricRoutingPolicy"),
+                                            dataType: "json",
+                                            data: data,
+                                            async: true,
+                                            success: function (json) {
+                                                var items = json.listtungstenfabricroutingpolicyresponse.routingpolicy ? json.listtungstenfabricroutingpolicyresponse.routingpolicy : [];
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                    actions: {
+                                        add: {
+                                            label: "label.tungsten.add.routing.policy.to.network",
+                                            messages: {
+                                                notification: function (args) {
+                                                    return 'label.tungsten.add.network.routing.policy';
+                                                }
+                                            },
+                                            createForm: {
+                                                label: "label.tungsten.add.routing.policy.to.network",
+                                                fields: {
+                                                    tungstenRoutingPolicy: {
+                                                        label: "label.tungsten.network.routing.policy",
+                                                        validation: {
+                                                            required: true
+                                                        },
+                                                        select: function (args) {
+                                                            var tungstenRoutingPolicies = null;
+                                                            var data = {
+                                                                zoneid: args.context.networks[0].zoneid,
+                                                                tungstennetworkuuid: args.context.networks[0].id,
+                                                                isattachedtonetwork: false
+                                                            };
+                                                            $.ajax({
+                                                                url: createURL("listTungstenFabricRoutingPolicy"),
+                                                                data: data,
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function (json) {
+                                                                    tungstenRoutingPolicies = json.listtungstenfabricroutingpolicyresponse.routingpolicy ? json.listtungstenfabricroutingpolicyresponse.routingpolicy : [];
+                                                                }
+                                                            });
+
+                                                            var routingPolicies;
+                                                            if (tungstenRoutingPolicies != null && tungstenRoutingPolicies.length > 0) {
+                                                                routingPolicies = $.map(tungstenRoutingPolicies, function (item) {
+                                                                    return {
+                                                                        id: item.uuid,
+                                                                        description: item.name
+                                                                    }
+                                                                });
+                                                            }
+                                                            args.response.success({
+                                                                data: routingPolicies
+                                                            })
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            action: function (args) {
+                                                var dataObj = {
+                                                    zoneid: args.context.networks[0].zoneid,
+                                                    networkuuid: args.context.networks[0].id,
+                                                    tungstenroutingpolicyuuid: args.data.tungstenRoutingPolicy
+                                                };
+                                                $.ajax({
+                                                    url: createURL("addTungstenFabricRoutingPolicyToNetwork"),
+                                                    dataType: "json",
+                                                    data: dataObj,
+                                                    async: true,
+                                                    success: function (json) {
+                                                        var jid = json.addtungstenfabricroutingpolicytonetworkresponse.jobid;
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jid,
+                                                                getUpdatedItem: function (json) {
+                                                                    return json.queryasyncjobresultresponse.jobresult.routingpolicy;
+                                                                },
+                                                                onComplete: function () {
+                                                                    $(window).trigger('cloudStack.fullRefresh');
+                                                                }
+                                                            }
+                                                        });
+                                                    },
+                                                    error: function (json) {
+                                                        args.response.error(parseXMLHttpResponse(json));
+                                                    }
+                                                })
+                                            },
+                                            notification: {
+                                                poll: pollAsyncJobResult
+                                            }
+                                        }
+                                    },
+                                    detailView: {
+                                        name: 'label.details',
+                                        actions: {
+                                            remove: {
+                                                label: 'label.tungsten.remove.routing.policy.from.network',
+                                                messages: {
+                                                    confirm: function (args) {
+                                                        return 'message.tungsten.routing.policy.remove.from.network';
+                                                    },
+                                                    notification: function (args) {
+                                                        return 'label.tungsten.remove.routing.policy.from.network';
+                                                    }
+                                                },
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("removeTungstenFabricRoutingPolicyFromNetwork"),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        data: {
+                                                            zoneid: args.context.networks[0].zoneid,
+                                                            networkuuid: args.context.networks[0].id,
+                                                            tungstenroutingpolicyuuid: args.context.routingPolicies[0].uuid
+                                                        },
+                                                        success: function (json) {
+                                                            var jid = json.removetungstenfabricroutingpolicyfromnetworkresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    onComplete: function () {
+                                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                                    }
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function (data) {
+                                                            args.response.error(parseXMLHttpResponse(data));
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            }
+                                        },
+                                        tabs: {
+                                            details: {
+                                                title: 'label.details',
+                                                fields: [{
+                                                    uuid: {
+                                                        label: 'label.uuid'
+                                                    },
+                                                    name: {
+                                                        label: 'label.name'
+                                                    }
+                                                }],
+                                                dataProvider: function (args) {
+                                                    var data = {
+                                                        zoneid: args.context.networks[0].zoneid,
+                                                        tungstenroutingpolicyuuid: args.context.routingPolicies[0].uuid
+                                                    };
+                                                    $.ajax({
+                                                        url: createURL("listTungstenFabricRoutingPolicy"),
+                                                        dataType: "json",
+                                                        data: data,
+                                                        async: true,
+                                                        success: function (json) {
+                                                            var item = json.listtungstenfabricroutingpolicyresponse.routingpolicy[0];
+                                                            args.response.success({
+                                                                data: item
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
