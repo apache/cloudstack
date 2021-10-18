@@ -30,7 +30,6 @@ from marvin.lib.base import (ServiceOffering,
                              NATRule,
                              NetworkACL,
                              FireWallRule,
-                             EgressFireWallRule,
                              PublicIPAddress,
                              NetworkOffering,
                              Network,
@@ -178,6 +177,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         try:
             ssh_command = "ping -c 3 8.8.8.8"
             self.logger.debug("SSH into VM with IP: %s" % nat_rule.ipaddress)
+
             ssh = vm.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services[rule_label]["publicport"], retries=5)
             result = str(ssh.execute(ssh_command))
 
@@ -364,9 +364,11 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         self.test_dhcphosts(self.vm_1, router)
         self.test_dhcphosts(self.vm_2, router)
 
+        #TODO vm1 should not be appended/created at class level
         self.logger.debug("Deleting and Expunging VM %s with ip %s" % (self.vm_1.id, self.vm_1.nic[0].ipaddress))
         self.vm_1.delete(self.apiclient)
         self._cleanup.remove(self.vm_1)
+        self.cleanup.remove(nat_rule1)
 
         self.logger.debug("Creating new VM using the same IP as the one which was deleted => IP 10.1.1.50")
         self.vm_1 = VirtualMachine.create(self.apiclient,
