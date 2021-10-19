@@ -99,4 +99,10 @@ class CsVpcGuestNetwork(CsDataBag):
             self.conf.append("        AdvOnLink on;")
             self.conf.append("        AdvAutonomous on;")
             self.conf.append("    };")
+            if 'dns6' in entry.keys() and entry['dns6']:
+                for dns in entry['dns6'].split(","):
+                    self.conf.append("    RDNSS %s" % dns)
+                    self.conf.append("    {")
+                    self.conf.append("        AdvRDNSSLifetime 30;")
+                    self.conf.append("    };")
             self.conf.append("};")

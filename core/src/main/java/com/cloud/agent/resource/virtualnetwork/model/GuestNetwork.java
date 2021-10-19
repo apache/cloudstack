@@ -28,6 +28,7 @@ public class GuestNetwork extends ConfigBase {
     private String routerGuestGateway;
     private String cidr;
     private String dns;
+    private String dns6;
     private String domainName;
     private String routerGuestIp6;
     private String routerGuestIp6Gateway;
@@ -41,7 +42,7 @@ public class GuestNetwork extends ConfigBase {
     }
 
     public GuestNetwork(final boolean add, final String macAddress, final String device, final String routerGuestIp, final String routerGuestNetmask, final String routerGuestGateway,
-            final String cidr, final String dns, final String domainName) {
+            final String cidr, final String dns, final String dns6, final String domainName) {
         super(ConfigBase.GUEST_NETWORK);
         this.add = add;
         this.macAddress = macAddress;
@@ -51,6 +52,7 @@ public class GuestNetwork extends ConfigBase {
         this.routerGuestGateway = routerGuestGateway;
         this.cidr = cidr;
         this.dns = dns;
+        this.dns6 = dns6;
         this.domainName = domainName;
     }
 
@@ -116,6 +118,14 @@ public class GuestNetwork extends ConfigBase {
 
     public void setDns(final String dns) {
         this.dns = dns;
+    }
+
+    public String getDns6() {
+        return dns6;
+    }
+
+    public void setDns6(String dns6) {
+        this.dns6 = dns6;
     }
 
     public String getDomainName() {

@@ -1972,12 +1972,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     buf.append(" gateway=").append(nic.getIPv4Gateway());
                 }
                 if (ipv6) {
+                    defaultIp6Dns1 = nic.getIPv6Dns1() != null? nic.getIPv6Dns1() : dc.getIp6Dns1();
+                    defaultIp6Dns2 = nic.getIPv6Dns2() != null? nic.getIPv6Dns2() : dc.getIp6Dns2();
                     buf.append(" ip6gateway=").append(nic.getIPv6Gateway());
                 }
                 defaultDns1 = nic.getIPv4Dns1();
                 defaultDns2 = nic.getIPv4Dns2();
-                defaultIp6Dns1 = nic.getIPv6Dns1();
-                defaultIp6Dns2 = nic.getIPv6Dns2();
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
