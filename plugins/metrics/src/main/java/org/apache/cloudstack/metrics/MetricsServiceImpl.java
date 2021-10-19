@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
 import org.apache.cloudstack.api.ListInfrastructureCmd;
+import org.apache.cloudstack.api.ListMgmtsMetricsCmd;
 import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
 import org.apache.cloudstack.api.ListVMsMetricsCmd;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StatsResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -49,6 +51,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
+import org.apache.cloudstack.response.ManagementServerMetricsResponse;
 import org.apache.cloudstack.response.StoragePoolMetricsResponse;
 import org.apache.cloudstack.response.VmMetricsResponse;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
@@ -573,6 +576,12 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     @Override
+    public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
+        final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
+        return metricsResponses;
+    }
+
+    @Override
     public List<ZoneMetricsResponse> listZoneMetrics(List<ZoneResponse> zoneResponses) {
         final List<ZoneMetricsResponse> metricsResponses = new ArrayList<>();
         for (final ZoneResponse zoneResponse: zoneResponses) {
@@ -660,6 +669,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         cmdList.add(ListVMsMetricsCmd.class);
         cmdList.add(ListStoragePoolsMetricsCmd.class);
         cmdList.add(ListHostsMetricsCmd.class);
+        cmdList.add(ListMgmtsMetricsCmd.class);
         cmdList.add(ListClustersMetricsCmd.class);
         cmdList.add(ListZonesMetricsCmd.class);
         cmdList.add(ListVMsUsageHistoryCmd.class);

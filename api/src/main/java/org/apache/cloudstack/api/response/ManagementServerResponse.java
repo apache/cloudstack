@@ -41,6 +41,10 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the version of the management server")
     private String version;
 
+    public String getId() {
+        return this.id;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

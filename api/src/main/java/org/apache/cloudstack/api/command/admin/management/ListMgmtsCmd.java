@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 @APICommand(name = ListMgmtsCmd.APINAME, description = "Lists management servers.", responseObject = ManagementServerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListMgmtsCmd extends BaseListCmd {
@@ -74,5 +76,10 @@ public class ListMgmtsCmd extends BaseListCmd {
         ListResponse<ManagementServerResponse> response = _queryService.listManagementServers(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+    }
+
+    protected void updateMngmntResponse(List<ManagementServerResponse> response) {
+        for (ManagementServerResponse managementServerResponse : response) {
+        }
     }
 }
