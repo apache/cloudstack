@@ -197,6 +197,63 @@ export default {
       ]
     },
     {
+      name: 'ipv6ranges',
+      title: 'IPv6 Ranges',
+      icon: 'rocket',
+      docHelp: '',
+      permission: ['listIpv6Ranges'],
+      resourceType: '',
+      columns: ['ip6gateway', 'ip6cidr', 'routeripv6', 'zonename', 'domain', 'account', 'networkname'],
+      details: ['id', 'zonename', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'domain', 'account', 'project', 'networkname', 'vpcname'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
+        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
+          return true
+        }
+        return false
+      },
+      actions: [
+        {
+          api: 'createIpv6Range',
+          icon: 'plus',
+          label: 'Add IPv6 Range',
+          docHelp: '',
+          listView: true,
+          args: ['zoneid', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6'],
+          mapping: {
+            zoneid: {
+              api: 'listZones'
+            },
+            physicalnetworkid: {
+              api: 'listPhysicalNetworks',
+              params: (record) => { return { zoneid: record.zoneid } }
+            }
+          }
+        },
+        {
+          api: 'updateIpv6Range',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: ['ip6gateway', 'ip6cidr', 'routeripv6']
+        },
+        {
+          api: 'deleteIpv6Range',
+          icon: 'delete',
+          label: 'Delete IPv6 Range',
+          message: 'Are you sure to delete this IPv6 range ?',
+          dataView: true
+        }
+      ]
+    },
+    {
       name: 'securitygroups',
       title: 'label.security.groups',
       icon: 'fire',

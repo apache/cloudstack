@@ -67,6 +67,7 @@
   <bean id="consoleProxyDaoImpl" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
   <bean id="counterDaoImpl" class="com.cloud.network.as.dao.CounterDaoImpl" />
   <bean id="dataCenterIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl" />
+  <bean id="dataCenterIpv6AddressDaoImpl" class="com.cloud.dc.dao.DataCenterIpv6AddressDaoImpl" />
   <bean id="dataCenterJoinDaoImpl" class="com.cloud.api.query.dao.DataCenterJoinDaoImpl" />
   <bean id="dataCenterLinkLocalIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl" />
   <bean id="dataCenterVnetDaoImpl" class="com.cloud.dc.dao.DataCenterVnetDaoImpl" />

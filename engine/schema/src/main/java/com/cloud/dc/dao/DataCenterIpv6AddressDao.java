@@ -23,13 +23,13 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterIpv6AddressDao extends GenericDao<DataCenterIpv6AddressVO, Long> {
 
-    void addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6);
+    DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6);
 
-    void removeIpv6Range(long id);
+    boolean removeIpv6Range(long id);
 
-    void dedicateIpv6Range(long id, Long domainId, Long accountId);
+    boolean dedicateIpv6Range(long id, Long domainId, Long accountId);
 
-    void releaseIpv6Range(long id);
+    boolean releaseIpv6Range(long id);
 
     boolean mark(long id, Long networkId, Long domainId, Long accountId);
 

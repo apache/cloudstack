@@ -65,24 +65,26 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
-    public void addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6) {
+    public DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6) {
         DataCenterIpv6AddressVO range = new DataCenterIpv6AddressVO(dcId, physicalNetworkId, ip6Gateway, ip6Cidr, routerIpv6);
-        persist(range);
+        return persist(range);
     }
 
     @Override
-    public void removeIpv6Range(long id) {
-        remove(id);
+    public boolean removeIpv6Range(long id) {
+        return remove(id);
     }
 
     @Override
-    public void dedicateIpv6Range(long id, Long domainId, Long accountId) {
+    public boolean dedicateIpv6Range(long id, Long domainId, Long accountId) {
         //TODO
+        return true;
     }
 
     @Override
-    public void releaseIpv6Range(long id) {
+    public boolean releaseIpv6Range(long id) {
         //TODO
+        return true;
     }
 
     @Override

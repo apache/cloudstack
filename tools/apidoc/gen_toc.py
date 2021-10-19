@@ -56,6 +56,7 @@ known_categories = {
     'Volume': 'Volume',
     'Vlan': 'VLAN',
     'IpAddress': 'Address',
+    'Ipv6': 'IPv6',
     'PortForwarding': 'Firewall',
     'Firewall': 'Firewall',
     'StaticNat': 'NAT',

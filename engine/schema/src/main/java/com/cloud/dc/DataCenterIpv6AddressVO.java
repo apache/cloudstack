@@ -27,6 +27,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "dc_ipv6_range")
@@ -38,7 +39,7 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     long id;
 
     @Column(name = "uuid")
-    String uuid;
+    String uuid = UUID.randomUUID().toString();
 
     @Column(name = "data_center_id", updatable = false, nullable = false)
     long dataCenterId;

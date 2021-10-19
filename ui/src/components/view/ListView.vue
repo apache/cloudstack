@@ -154,6 +154,12 @@
     <a slot="publicip" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
+    <a slot="ip6gateway" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+    </a>
+    <a slot="ip6cidr" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+    </a>
     <span slot="traffictype" slot-scope="text" href="javascript:;">
       {{ text }}
     </span>
