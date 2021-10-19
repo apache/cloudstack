@@ -158,3 +158,18 @@ class CsCmdLine(CsDataBag):
         if 'advert_int' in self.idata():
             return self.idata()['advert_int']
         return 1
+
+    def get_ip6gateway(self):
+        if "ip6gateway" in self.idata():
+            return self.idata()['ip6gateway']
+        return False
+
+    def get_eth0_ip6(self):
+        if "eth0ip6" in self.idata():
+            return self.idata()['eth0ip6']
+        return False
+
+    def get_eth2_ip6(self):
+        if "eth2ip6" in self.idata():
+            return self.idata()['eth2ip6']
+        return False
