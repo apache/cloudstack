@@ -328,6 +328,9 @@ class CsIP:
             if(self.cl.get_gateway()):
                 route.add_defaultroute(self.cl.get_gateway())
 
+        if self.config.is_router() and self.cl.get_ip6gateway():
+            route.add_defaultroute_v6(self.cl.get_ip6gateway())
+
     def set_mark(self):
         cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
             (self.getDevice(), self.dnum)
