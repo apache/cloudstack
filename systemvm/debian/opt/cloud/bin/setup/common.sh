@@ -272,11 +272,17 @@ setup_common() {
   if [ -n "$ETH0_IP6" ]
   then
       setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
+      rm -rf /etc/radvd.conf
+      setup_radvd "0" $ETH0_IP6 $ETH0_IP6_PRELEN
   fi
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
   if [ -n "$ETH2_IP" ]
   then
     setup_interface "2" $ETH2_IP $ETH2_MASK $GW
+  fi
+  if [ -n "$ETH2_IP6" ]
+  then
+      setup_interface_ipv6 "2" $ETH2_IP6 $ETH2_IP6_PRELEN
   fi
 
   echo $NAME > /etc/hostname
@@ -350,6 +356,25 @@ setup_common() {
   if [ "$HYPERVISOR" == "vmware" ]; then
       ntpq -p &> /dev/null || vmware-toolbox-cmd timesync enable
   fi
+}
+
+setup_radvd() {
+  log_it "Setting up radvd"
+
+  local intfnum=$1
+  local ipv6="$2"
+  local prelen="$3"
+
+  local intf=eth${intfnum}
+  local ip6cidr="$ipv6/$prelen"
+
+  cp /etc/radvd.conf.tmpl /etc/radvd.conf.$intf
+  sed -i "s,{{ GUEST_INTERFACE }},$intf,g" /etc/radvd.conf.$intf
+  sed -i "s,{{ IPV6_CIDR }},$ip6cidr,g" /etc/radvd.conf.$intf
+  cat /etc/radvd.conf.$intf >> /etc/radvd.conf
+
+  systemctl enable radvd
+  echo "radvd" >> /var/cache/cloud/enabled_svcs
 }
 
 setup_dnsmasq() {
@@ -653,6 +678,12 @@ parse_cmd_line() {
             ;;
         eth0ip6prelen)
             export ETH0_IP6_PRELEN=$VALUE
+            ;;
+        eth2ip6)
+            export ETH2_IP6=$VALUE
+            ;;
+        eth2ip6prelen)
+            export ETH2_IP6_PRELEN=$VALUE
             ;;
         internaldns1)
             export internalNS1=$VALUE
