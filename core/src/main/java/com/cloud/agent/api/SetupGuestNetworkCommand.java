@@ -30,6 +30,9 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     boolean isRedundant = false;
     boolean add = true;
     NicTO nic;
+    String routerIpv6 = null;
+    String routerIpv6Gateway = null;
+    String routerIpv6Cidr = null;
 
     public NicTO getNic() {
         return nic;
@@ -68,5 +71,29 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
         this.isRedundant = isRedundant;
         this.add = add;
         this.nic = nic;
+    }
+
+    public String getRouterIpv6() {
+        return routerIpv6;
+    }
+
+    public void setRouterIpv6(String routerIpv6) {
+        this.routerIpv6 = routerIpv6;
+    }
+
+    public String getRouterIpv6Gateway() {
+        return routerIpv6Gateway;
+    }
+
+    public void setRouterIpv6Gateway(String routerIpv6Gateway) {
+        this.routerIpv6Gateway = routerIpv6Gateway;
+    }
+
+    public String getRouterIpv6Cidr() {
+        return routerIpv6Cidr;
+    }
+
+    public void setRouterIpv6Cidr(String routerIpv6Cidr) {
+        this.routerIpv6Cidr = routerIpv6Cidr;
     }
 }

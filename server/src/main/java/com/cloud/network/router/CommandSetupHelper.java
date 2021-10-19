@@ -26,6 +26,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DataCenterIpv6AddressDao;
+import com.cloud.network.Ipv6Service;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -179,6 +183,10 @@ public class CommandSetupHelper {
     private RouterControlHelper _routerControlHelper;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    Ipv6Service _ipv6Service;
+    @Inject
+    DataCenterIpv6AddressDao _ipv6AddressDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1025,6 +1033,11 @@ public class CommandSetupHelper {
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
+        NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
+        if (publicNic != null) {
+            updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic.getMacAddress());
+        }
+
         final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId()));
@@ -1039,6 +1052,30 @@ public class CommandSetupHelper {
         }
 
         return setupCmd;
+    }
+
+    private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress) {
+        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
+        if (isIpv6Supported) {
+            final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
+            if (routerIpv6 == null) {
+                final String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(network.getAccountId());
+                if (routerIpv6Gateway == null) {
+                    throw new CloudRuntimeException(String.format("Invalid routerIpv6Prefix for account %s", network.getAccountId()));
+                }
+                final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0];
+                IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
+                s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for mac address " + macAddress);
+                setupCmd.setRouterIpv6(ipv6addr.toString());
+                setupCmd.setRouterIpv6Cidr(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX);
+                setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
+            } else {
+                setupCmd.setRouterIpv6(routerIpv6);
+                setupCmd.setRouterIpv6Cidr(routerIpv6 + Ipv6Service.IPV6_CIDR_SUFFIX);
+                final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
+                setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
+            }
+        }
     }
 
     private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
