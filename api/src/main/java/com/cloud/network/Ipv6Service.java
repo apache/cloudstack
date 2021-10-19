@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.network;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.utils.Pair;
+import com.cloud.vm.NicProfile;
 import org.apache.cloudstack.api.command.admin.ipv6.CreateIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.DedicateIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.DeleteIpv6RangeCmd;
@@ -24,10 +26,17 @@ import org.apache.cloudstack.api.command.admin.ipv6.ListIpv6RangesCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.ReleaseIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.UpdateIpv6RangeCmd;
 import org.apache.cloudstack.api.response.Ipv6RangeResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
 
 public interface Ipv6Service {
+
+    public static final String IPV6_CIDR_SUFFIX = "/64";
+
+    public static final ConfigKey<String> routerIpv6Gateway = new ConfigKey<String>("Advanced", String.class, "router.ipv6.prefix", "",
+            "The gateway of Router Ipv6 address (CIDR prefix length is /64). For example 2001:10:10:10::1", true, ConfigKey.Scope.Account);
+
     Ipv6Address createIpv6Range(CreateIpv6RangeCmd cmd);
 
     Ipv6Address updateIpv6Range(UpdateIpv6RangeCmd cmd);
@@ -38,8 +47,19 @@ public interface Ipv6Service {
 
     boolean releaseIpv6Range(ReleaseIpv6RangeCmd cmd);
 
+    Ipv6Address takeIpv6Range(long zoneId, boolean isRouterIpv6Null);
+
     Pair<List<? extends Ipv6Address>, Integer> searchForIpv6Range(ListIpv6RangesCmd cmd);
 
     Ipv6RangeResponse createIpv6RangeResponse(Ipv6Address address);
 
+    Ipv6Address.InternetProtocol getNetworkOfferingInternetProtocol(Long offeringId);
+
+    Ipv6Address.IPv6Routing getNetworkOfferingIpv6Routing(Long offeringId);
+
+    boolean isIpv6Supported(Long offeringId);
+
+    Boolean isIpv6FirewallEnabled(Long offeringId);
+
+    void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
 }

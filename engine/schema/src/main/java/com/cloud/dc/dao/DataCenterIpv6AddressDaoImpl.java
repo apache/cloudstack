@@ -50,6 +50,10 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ip6Gateway", AllFieldsSearch.entity().getIp6Gateway(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ip6Cidr", AllFieldsSearch.entity().getIp6Cidr(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("routerIpv6EQ", AllFieldsSearch.entity().getRouterIpv6(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("routerIpv6NEQ", AllFieldsSearch.entity().getRouterIpv6(), SearchCriteria.Op.NEQ);
         AllFieldsSearch.and("taken", AllFieldsSearch.entity().getTakenAt(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
@@ -65,8 +69,8 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
-    public DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6) {
-        DataCenterIpv6AddressVO range = new DataCenterIpv6AddressVO(dcId, physicalNetworkId, ip6Gateway, ip6Cidr, routerIpv6);
+    public DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway) {
+        DataCenterIpv6AddressVO range = new DataCenterIpv6AddressVO(dcId, physicalNetworkId, ip6Gateway, ip6Cidr, routerIpv6, routerIpv6Gateway);
         return persist(range);
     }
 
@@ -88,6 +92,19 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
+    public DataCenterIpv6AddressVO takeIpv6Range(long zoneId, boolean isRouterIpv6Null) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("taken", (Object)null);
+        if (isRouterIpv6Null) {
+            sc.setParameters("routerIpv6EQ", (Object) null);
+        } else {
+            sc.setParameters("routerIpv6NEQ", (Object) null);
+        }
+        return findOneBy(sc);
+    }
+
+    @Override
     public boolean mark(long id, Long networkId, Long domainId, Long accountId) {
         DataCenterIpv6AddressVO range = createForUpdate(id);
         range.setNetworkId(networkId);
@@ -98,6 +115,15 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
+    public boolean mark(long zoneId, String ip6Gateway, String ip6Cidr, long networkId, long domainId, long accountId) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("ip6Gateway", ip6Gateway);
+        sc.setParameters("ip6Cidr", ip6Cidr);
+        DataCenterIpv6AddressVO range = findOneBy(sc);
+        return mark(range.getId(), networkId, domainId, accountId);
+    }
+    @Override
     public boolean unmark(long id) {
         DataCenterIpv6AddressVO range = createForUpdate(id);
         range.setNetworkId(null);
@@ -105,6 +131,19 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
         range.setAccountId(null);
         range.setTakenAt(GenericDaoBase.DATE_TO_NULL);
         return update(id, range);
+    }
+
+    @Override
+    public boolean unmark(long networkId, long domainId, long accountId) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("accountId", accountId);
+        DataCenterIpv6AddressVO range = findOneBy(sc);
+        if (range == null) {
+            return true;
+        }
+        return unmark(range.getId());
     }
 
     @Override
@@ -121,5 +160,27 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
             sc.setParameters("accountId", accountId);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public String getRouterIpv6ByNetwork(Long networkId) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        DataCenterIpv6AddressVO addressVO = findOneBy(sc);
+        if (addressVO != null) {
+            return addressVO.getRouterIpv6();
+        }
+        return null;
+    }
+
+    @Override
+    public String getRouterIpv6GatewayByNetwork(Long networkId) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        DataCenterIpv6AddressVO addressVO = findOneBy(sc);
+        if (addressVO != null) {
+            return addressVO.getRouterIpv6Gateway();
+        }
+        return null;
     }
 }

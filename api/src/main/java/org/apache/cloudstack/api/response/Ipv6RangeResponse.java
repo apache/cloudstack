@@ -56,6 +56,10 @@ public class Ipv6RangeResponse extends BaseResponseWithAnnotations implements Co
     @Param(description = "Private IPv6 address in virtual router")
     private String routerIpv6;
 
+    @SerializedName(ApiConstants.ROUTER_IPV6_GATEWAY)
+    @Param(description = "Gateway of private IPv6 address in virtual router")
+    private String routerIpv6Gateway;
+
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID the public ipv6 address is associated with")
     private String domainId;
@@ -147,6 +151,10 @@ public class Ipv6RangeResponse extends BaseResponseWithAnnotations implements Co
 
     public void setRouterIpv6(String routerIpv6) {
         this.routerIpv6 = routerIpv6;
+    }
+
+    public void setRouterIpv6Gateway(String routerIpv6Gateway) {
+        this.routerIpv6Gateway = routerIpv6Gateway;
     }
 
     public void setNetworkId(String networkId) {

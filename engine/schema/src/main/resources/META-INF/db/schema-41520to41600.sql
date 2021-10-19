@@ -816,6 +816,7 @@ CREATE TABLE `cloud`.`dc_ipv6_range` (
   `ip6_gateway` varchar(255) NOT NULL COMMENT 'gateway of this ipv6 range',
   `ip6_cidr` varchar(255) NOT NULL COMMENT 'cidr of this ipv6 range',
   `router_ipv6` varchar(255) DEFAULT NULL COMMENT 'Private ipv6 address on virtual router for this ipv6 range',
+  `router_ipv6_gateway` varchar(255) DEFAULT NULL COMMENT 'The gateway of private ipv6 address on virtual router for this ipv6 range',
   `network_id` bigint unsigned DEFAULT NULL COMMENT 'The network this ipv6 range is associated to',
   `domain_id` bigint unsigned DEFAULT NULL COMMENT 'The domain this ipv6 range is used by',
   `account_id` bigint unsigned DEFAULT NULL COMMENT 'The account this ipv6 range is used by',

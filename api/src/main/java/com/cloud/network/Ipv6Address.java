@@ -82,6 +82,8 @@ public interface Ipv6Address extends Identity, InternalIdentity, Displayable {
 
     String getRouterIpv6();
 
+    String getRouterIpv6Gateway();
+
     Long getNetworkId();
 
     Long getDomainId();

@@ -56,6 +56,9 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     @Column(name = "router_ipv6")
     String routerIpv6;
 
+    @Column(name = "router_ipv6_gateway")
+    String routerIpv6Gateway;
+
     @Column(name = "network_id")
     Long networkId;
 
@@ -72,12 +75,13 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     public DataCenterIpv6AddressVO() {
     }
 
-    public DataCenterIpv6AddressVO(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6) {
+    public DataCenterIpv6AddressVO(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway) {
         this.dataCenterId = dcId;
         this.physicalNetworkId = physicalNetworkId;
         this.ip6Gateway = ip6Gateway;
         this.ip6Cidr = ip6Cidr;
         this.routerIpv6 = routerIpv6;
+        this.routerIpv6Gateway = routerIpv6Gateway;
     }
 
     @Override
@@ -111,6 +115,11 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     @Override
     public String getRouterIpv6() {
         return routerIpv6;
+    }
+
+    @Override
+    public String getRouterIpv6Gateway() {
+        return routerIpv6Gateway;
     }
 
     @Override

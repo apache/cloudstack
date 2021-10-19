@@ -60,6 +60,9 @@ public class CreateIpv6RangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, required = false, description = "the next hop of IPv6 network, assigned on VR public NIC")
     private String routerIpv6;
 
+    @Parameter(name = ApiConstants.ROUTER_IPV6_GATEWAY, type = CommandType.STRING, required = false, description = "the gateway of next hop of IPv6 network")
+    private String routerIpv6Gateway;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +94,13 @@ public class CreateIpv6RangeCmd extends BaseCmd {
             return null;
         }
         return NetUtils.standardizeIp6Address(routerIpv6);
+    }
+
+    public String getRouterIpv6Gateway() {
+        if (routerIpv6Gateway == null) {
+            return null;
+        }
+        return NetUtils.standardizeIp6Address(routerIpv6Gateway);
     }
 
     /////////////////////////////////////////////////////

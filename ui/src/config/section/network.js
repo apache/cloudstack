@@ -203,8 +203,8 @@ export default {
       docHelp: '',
       permission: ['listIpv6Ranges'],
       resourceType: '',
-      columns: ['ip6gateway', 'ip6cidr', 'routeripv6', 'zonename', 'domain', 'account', 'networkname'],
-      details: ['id', 'zonename', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'domain', 'account', 'project', 'networkname', 'vpcname'],
+      columns: ['ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway', 'zonename', 'domain', 'account', 'networkname'],
+      details: ['id', 'zonename', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway', 'domain', 'account', 'project', 'networkname', 'vpcname'],
       tabs: [{
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
@@ -223,10 +223,10 @@ export default {
         {
           api: 'createIpv6Range',
           icon: 'plus',
-          label: 'Add IPv6 Range',
+          label: 'label.add.ipv6.range',
           docHelp: '',
           listView: true,
-          args: ['zoneid', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6'],
+          args: ['zoneid', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway'],
           mapping: {
             zoneid: {
               api: 'listZones'
@@ -242,13 +242,13 @@ export default {
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: ['ip6gateway', 'ip6cidr', 'routeripv6']
+          args: ['ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway']
         },
         {
           api: 'deleteIpv6Range',
           icon: 'delete',
-          label: 'Delete IPv6 Range',
-          message: 'Are you sure to delete this IPv6 range ?',
+          label: 'label.remove.ipv6.range',
+          message: 'message.action.delete.ipv6.range',
           dataView: true
         }
       ]

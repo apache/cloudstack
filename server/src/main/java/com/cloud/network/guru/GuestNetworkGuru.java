@@ -22,7 +22,10 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.network.Ipv6AddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network.GuestType;
+import com.cloud.network.Networks;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -110,6 +113,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     ConfigurationServer _configServer;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    Ipv6Service _ipv6Service;
+    @Inject
+    Ipv6AddressManager _ipv6Mgr;
+
     Random _rand = new Random(System.currentTimeMillis());
 
     static final ConfigKey<Boolean> UseSystemGuestVlans =
@@ -348,6 +356,23 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
+        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
+        boolean isGateway = false;
+        //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
+        if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
+            if (network.getVpcId() != null) {
+                final Vpc vpc = _vpcDao.findById(network.getVpcId());
+                // Redundant Networks need a guest IP that is not the same as the gateway IP.
+                if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VPCVirtualRouter) && !vpc.isRedundant()) {
+                    isGateway = true;
+                }
+            } else {
+                if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VirtualRouter)) {
+                    isGateway = true;
+                }
+            }
+        }
+
         if (nic.getIPv4Address() == null) {
             nic.setBroadcastUri(network.getBroadcastUri());
             nic.setIsolationUri(network.getBroadcastUri());
@@ -357,22 +382,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (network.getSpecifyIpRanges()) {
                 _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIPv4(), null);
             } else {
-                //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
-                boolean isGateway = false;
-                if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
-                    if (network.getVpcId() != null) {
-                        final Vpc vpc = _vpcDao.findById(network.getVpcId());
-                        // Redundant Networks need a guest IP that is not the same as the gateway IP.
-                        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VPCVirtualRouter) && !vpc.isRedundant()) {
-                            isGateway = true;
-                        }
-                    } else {
-                        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VirtualRouter)) {
-                            isGateway = true;
-                        }
-                    }
-                }
-
                 if (isGateway) {
                     guestIp = network.getGateway();
                 } else {
@@ -414,6 +423,20 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (nic.getMacAddress() == null) {
                 throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, network.getId());
             }
+        }
+
+        if (nic.getIPv6Address() == null && isIpv6Supported && network.getIp6Cidr() != null && network.getIp6Gateway() != null) {
+            if (isGateway) {
+                nic.setIPv6Address(network.getIp6Gateway());
+                nic.setIPv6Cidr(network.getIp6Cidr());
+                nic.setIPv6Gateway(network.getIp6Gateway());
+                if (nic.getIPv4Address() != null) {
+                    nic.setFormat(Networks.AddressFormat.DualStack);
+                } else {
+                    nic.setFormat(Networks.AddressFormat.Ip6);
+                }
+            }
+            _ipv6Mgr.setNicIp6Address(nic, dc, network);
         }
 
         return nic;

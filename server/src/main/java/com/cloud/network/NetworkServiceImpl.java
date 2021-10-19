@@ -41,6 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.DataCenterIpv6AddressDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -335,6 +336,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NetworkAccountDao _networkAccountDao;
     @Inject
     VirtualMachineManager vmManager;
+    @Inject
+    Ipv6Service _ipv6Service;
+    @Inject
+    DataCenterIpv6AddressDao _ipv6AddressDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1342,6 +1347,32 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
 
+        if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {
+            ipv6 = _ipv6Service.isIpv6Supported(ntwkOff.getId());
+            if (ipv6) {
+                if (!areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
+                    throw new InvalidParameterValueException("Can only take IPv6 address with isolated networks if SourceNat is supported");
+                }
+                String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(owner.getId());
+                if (org.apache.commons.lang3.StringUtils.isEmpty(routerIpv6Gateway)) {
+                    Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, false);
+                    if (ipv6Address == null) {
+                        throw new InvalidParameterValueException("cannot take an IPv6 range without router ipv6 address for this network");
+                    }
+                    ip6Gateway = ipv6Address.getIp6Gateway();
+                    ip6Cidr = ipv6Address.getIp6Cidr();
+                } else {
+                    Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, true);
+                    if (ipv6Address == null) {
+                        throw new InvalidParameterValueException("cannot take an IPv6 range with router ipv6 address for this network");
+                    }
+                    ip6Gateway = ipv6Address.getIp6Gateway();
+                    ip6Cidr = ipv6Address.getIp6Cidr();
+                }
+            }
+
+        }
+
         if (isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
         }
@@ -1416,7 +1447,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (!createVlan) {
             // Only support advance shared network in IPv6, which means createVlan is a must
-            if (ipv6) {
+            if (ipv6 && ntwkOff.getGuestType() != GuestType.Isolated) {
                 createVlan = true;
             }
         }
@@ -1549,7 +1580,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1566,6 +1597,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, false, null, startIP, endIP, gateway, netmask, vlanId,
                                 bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                    }
+                    if (ntwkOff.getGuestType() == GuestType.Isolated && ip6Gateway != null && ip6Cidr != null) {
+                        _ipv6AddressDao.mark(network.getDataCenterId(), ip6Gateway, ip6Cidr, network.getId(), owner.getDomainId(), owner.getId());
                     }
                     return network;
                 }

@@ -17,15 +17,20 @@
 package com.cloud.network;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpv6AddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterIpv6AddressDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Ipv6Address.IPv6Routing;
+import com.cloud.network.Ipv6Address.InternetProtocol;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -37,6 +42,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicProfile;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.api.command.admin.ipv6.CreateIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.DedicateIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.DeleteIpv6RangeCmd;
@@ -45,13 +54,15 @@ import org.apache.cloudstack.api.command.admin.ipv6.ReleaseIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.UpdateIpv6RangeCmd;
 import org.apache.cloudstack.api.response.Ipv6RangeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Ipv6ServiceImpl implements Ipv6Service, PluggableService {
+public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configurable {
 
     public static final Logger s_logger = Logger.getLogger(Ipv6ServiceImpl.class.getName());
 
@@ -63,11 +74,13 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService {
     AccountDao _accountDao;
     @Inject
     DomainDao _domainDao;
+    @Inject
+    NetworkOfferingDetailsDao _networkOfferingDetailsDao;
 
     @Override
     public Ipv6Address createIpv6Range(CreateIpv6RangeCmd cmd) {
         // check: TODO
-        DataCenterIpv6AddressVO range = _ipv6AddressDao.addIpRange(cmd.getZoneId(), cmd.getPhysicalNetworkId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.getRouterIpv6());
+        DataCenterIpv6AddressVO range = _ipv6AddressDao.addIpRange(cmd.getZoneId(), cmd.getPhysicalNetworkId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.getRouterIpv6(), cmd.getRouterIpv6Gateway());
         return range;
     }
 
@@ -101,6 +114,11 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService {
     public boolean releaseIpv6Range(ReleaseIpv6RangeCmd cmd) {
         // check: TODO
         return _ipv6AddressDao.releaseIpv6Range(cmd.getId());
+    }
+
+    @Override
+    public Ipv6Address takeIpv6Range(long zoneId, boolean isRouterIpv6Null) {
+        return _ipv6AddressDao.takeIpv6Range(zoneId, isRouterIpv6Null);
     }
 
     @Override
@@ -170,6 +188,7 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService {
         response.setIp6Gateway(address.getIp6Gateway());
         response.setIp6Cidr(address.getIp6Cidr());
         response.setRouterIpv6(address.getRouterIpv6());
+        response.setRouterIpv6Gateway(address.getRouterIpv6Gateway());
 
         DataCenterVO dc = ApiDBUtils.findZoneById(address.getDataCenterId());
         response.setZoneId(dc.getUuid());
@@ -226,5 +245,76 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService {
         cmdList.add(DeleteIpv6RangeCmd.class);
         cmdList.add(ReleaseIpv6RangeCmd.class);
         return cmdList;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return Ipv6Service.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[] { routerIpv6Gateway };
+    }
+
+    @Override
+    public InternetProtocol getNetworkOfferingInternetProtocol(Long offeringId) {
+        String internetProtocolStr = _networkOfferingDetailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol);
+        InternetProtocol internetProtocol = InternetProtocol.fromValue(internetProtocolStr);
+        return internetProtocol;
+    }
+
+    @Override
+    public IPv6Routing getNetworkOfferingIpv6Routing(Long offeringId) {
+        String ipv6RoutingStr = _networkOfferingDetailsDao.getDetail(offeringId, NetworkOffering.Detail.ipv6Routing);
+        IPv6Routing ipv6Routing = IPv6Routing.fromValue(ipv6RoutingStr);
+        return ipv6Routing;
+    }
+
+    @Override
+    public boolean isIpv6Supported(Long offeringId) {
+        InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
+        if (InternetProtocol.IPv6.equals(internetProtocol) || InternetProtocol.DualStack.equals(internetProtocol)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean isIpv6FirewallEnabled(Long offeringId) {
+        String ipv6FirewallStr = _networkOfferingDetailsDao.getDetail(offeringId, NetworkOffering.Detail.ipv6Firewall);
+        return Boolean.parseBoolean(ipv6FirewallStr);
+    }
+
+    @Override
+    public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
+        boolean isIpv6Supported = isIpv6Supported(network.getNetworkOfferingId());
+        if (nic.getIPv6Address() == null && isIpv6Supported) {
+            final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
+            if (routerIpv6 == null) {
+                final String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(network.getAccountId());
+                if (routerIpv6Gateway == null) {
+                    throw new CloudRuntimeException(String.format("Invalid routerIpv6Prefix for account %s", network.getAccountId()));
+                }
+                final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0];
+                IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());
+                s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
+                nic.setIPv6Address(ipv6addr.toString());
+                nic.setIPv6Cidr(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX);
+                nic.setIPv6Gateway(routerIpv6Gateway);
+            } else {
+                nic.setIPv6Address(routerIpv6);
+                nic.setIPv6Cidr(routerIpv6 + Ipv6Service.IPV6_CIDR_SUFFIX);
+                final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
+                nic.setIPv6Gateway(routerIpv6Gateway);
+            }
+            if (nic.getIPv4Address() != null) {
+                nic.setFormat(Networks.AddressFormat.DualStack);
+            } else {
+                nic.setFormat(Networks.AddressFormat.Ip6);
+            }
+            nic.setIPv6Dns1(dc.getIp6Dns1());
+            nic.setIPv6Dns2(dc.getIp6Dns2());
+        }
     }
 }

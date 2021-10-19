@@ -18,12 +18,14 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpv6AddressDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -31,6 +33,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6AddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
@@ -70,6 +74,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    Ipv6Service _ipv6Service;
+    @Inject
+    DataCenterIpv6AddressDao _ipv6AddressDao;
+    @Inject
+    Ipv6AddressManager _ipv6Mgr;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Public};
 
@@ -139,6 +149,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         nic.setIPv4Dns1(dc.getDns1());
         nic.setIPv4Dns2(dc.getDns2());
+
+        _ipv6Service.updateNicIpv6(nic, dc, network);
     }
 
     @Override

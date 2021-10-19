@@ -88,6 +88,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpv6AddressDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -129,6 +130,7 @@ import com.cloud.network.NetworkStateListener;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.RemoteAccessVpn;
@@ -321,6 +323,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ResourceManager resourceManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    Ipv6Service _ipv6Service;
+    @Inject
+    DataCenterIpv6AddressDao _ipv6AddressDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -3131,6 +3137,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                     }
                 });
+                // unmark IPv6 range
+                _ipv6AddressDao.unmark(network.getId(), network.getDomainId(), network.getAccountId());
                 if (_networksDao.findById(network.getId()) == null) {
                     // remove its related ACL permission
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
