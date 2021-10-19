@@ -29,6 +29,12 @@ public class GuestNetwork extends ConfigBase {
     private String cidr;
     private String dns;
     private String domainName;
+    private String routerGuestIp6;
+    private String routerGuestIp6Gateway;
+    private String routerGuestIp6Cidr;
+    private String routerIp6;
+    private String routerIp6Gateway;
+    private String routerIp6Cidr;
 
     public GuestNetwork() {
         super(ConfigBase.GUEST_NETWORK);
@@ -118,5 +124,53 @@ public class GuestNetwork extends ConfigBase {
 
     public void setDomainName(final String domainName) {
         this.domainName = domainName;
+    }
+
+    public String getRouterGuestIp6() {
+        return routerGuestIp6;
+    }
+
+    public void setRouterGuestIp6(String routerGuestIp6) {
+        this.routerGuestIp6 = routerGuestIp6;
+    }
+
+    public String getRouterGuestIp6Gateway() {
+        return routerGuestIp6Gateway;
+    }
+
+    public void setRouterGuestIp6Gateway(String routerGuestIp6Gateway) {
+        this.routerGuestIp6Gateway = routerGuestIp6Gateway;
+    }
+
+    public String getRouterGuestIp6Cidr() {
+        return routerGuestIp6Cidr;
+    }
+
+    public void setRouterGuestIp6Cidr(String routerGuestIp6Cidr) {
+        this.routerGuestIp6Cidr = routerGuestIp6Cidr;
+    }
+
+    public String getRouterIp6() {
+        return routerIp6;
+    }
+
+    public void setRouterIp6(String routerIp6) {
+        this.routerIp6 = routerIp6;
+    }
+
+    public String getRouterIp6Gateway() {
+        return routerIp6Gateway;
+    }
+
+    public void setRouterIp6Gateway(String routerIp6Gateway) {
+        this.routerIp6Gateway = routerIp6Gateway;
+    }
+
+    public String getRouterIp6Cidr() {
+        return routerIp6Cidr;
+    }
+
+    public void setRouterIp6Cidr(String routerIp6Cidr) {
+        this.routerIp6Cidr = routerIp6Cidr;
     }
 }

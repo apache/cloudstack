@@ -55,6 +55,13 @@ public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
 
         final GuestNetwork guestNetwork = new GuestNetwork(command.isAdd(), nic.getMac(), "eth" + nic.getDeviceId(), routerGIP, netmask, gateway,
                 cidr, dns, domainName);
+        guestNetwork.setRouterGuestIp6(nic.getIp6Address());
+        guestNetwork.setRouterGuestIp6Gateway(nic.getIp6Gateway());
+        guestNetwork.setRouterGuestIp6Cidr(nic.getIp6Cidr());
+
+        guestNetwork.setRouterIp6(command.getRouterIpv6());
+        guestNetwork.setRouterIp6Gateway(command.getRouterIpv6Gateway());
+        guestNetwork.setRouterIp6Cidr(command.getRouterIpv6Cidr());
 
         return generateConfigItems(guestNetwork);
     }
