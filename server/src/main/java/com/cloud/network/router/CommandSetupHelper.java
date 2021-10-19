@@ -1004,6 +1004,8 @@ public class CommandSetupHelper {
 
         String defaultDns1 = null;
         String defaultDns2 = null;
+        String defaultIp6Dns1 = null;
+        String defaultIp6Dns2 = null;
 
         final boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VPCVirtualRouter);
         final boolean dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, Provider.VPCVirtualRouter);
@@ -1022,6 +1024,8 @@ public class CommandSetupHelper {
             } else {
                 defaultDns2 = dcVo.getDns2();
             }
+            defaultIp6Dns1 = dcVo.getIp6Dns1();
+            defaultIp6Dns2 = dcVo.getIp6Dns2();
         }
 
         final Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
@@ -1035,7 +1039,7 @@ public class CommandSetupHelper {
 
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
-            updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic.getMacAddress());
+            updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic.getMacAddress(), defaultIp6Dns1, defaultIp6Dns2);
         }
 
         final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
@@ -1054,9 +1058,11 @@ public class CommandSetupHelper {
         return setupCmd;
     }
 
-    private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress) {
+    private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress, String defaultIp6Dns1, String defaultIp6Dns2) {
         boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
         if (isIpv6Supported) {
+            setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
+            setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
             final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
             if (routerIpv6 == null) {
                 final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());

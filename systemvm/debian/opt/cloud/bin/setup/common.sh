@@ -371,8 +371,15 @@ setup_radvd() {
   cp /etc/radvd.conf.tmpl /etc/radvd.conf.$intf
   sed -i "s,{{ GUEST_INTERFACE }},$intf,g" /etc/radvd.conf.$intf
   sed -i "s,{{ IPV6_CIDR }},$ip6cidr,g" /etc/radvd.conf.$intf
+  RDNSS_CFG=
+  if [ -n "$IP6_NS1" ];then
+    RDNSS_CFG=$RDNSS_CFG"    RDNSS $IP6_NS1\n    {\n        AdvRDNSSLifetime 30;\n    };\n"
+  fi
+  if [ -n "$IP6_NS2" ];then
+    RDNSS_CFG=$RDNSS_CFG"    RDNSS $IP6_NS2\n    {\n        AdvRDNSSLifetime 30;\n    };\n"
+  fi
+  sed -i "s,{{ RDNSS_CONFIG }},$RDNSS_CFG,g" /etc/radvd.conf.$intf
   cat /etc/radvd.conf.$intf >> /etc/radvd.conf
-
   systemctl enable radvd
   echo "radvd" >> /var/cache/cloud/enabled_svcs
 }
