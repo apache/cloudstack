@@ -92,6 +92,16 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
+    public boolean updateIpRange(long id, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway) {
+        DataCenterIpv6AddressVO range = createForUpdate(id);
+        range.setIp6Gateway(ip6Gateway);
+        range.setIp6Cidr(ip6Cidr);
+        range.setRouterIpv6(routerIpv6);
+        range.setRouterIpv6Gateway(routerIpv6Gateway);
+        return update(id, range);
+    }
+
+    @Override
     public DataCenterIpv6AddressVO takeIpv6Range(long zoneId, boolean isRouterIpv6Null) {
         SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("zoneId", zoneId);

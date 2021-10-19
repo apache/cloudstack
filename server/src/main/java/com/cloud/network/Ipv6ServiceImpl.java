@@ -97,7 +97,15 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
 
     @Override
     public Ipv6Address updateIpv6Range(UpdateIpv6RangeCmd cmd) {
-        // TODO
+        // check: TODO
+        Ipv6Address range = _ipv6AddressDao.findById(cmd.getId());
+        if (range != null && range.getNetworkId() != null) {
+            throw new InvalidParameterValueException("Cannot update this IPv6 range as it is currently in use");
+        }
+
+        if (_ipv6AddressDao.updateIpRange(cmd.getId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.getRouterIpv6(), cmd.getRouterIpv6Gateway())) {
+            return _ipv6AddressDao.findById(cmd.getId());
+        }
         return null;
     }
 

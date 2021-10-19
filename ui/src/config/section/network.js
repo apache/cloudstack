@@ -246,7 +246,8 @@ export default {
           icon: 'edit',
           label: 'label.edit',
           dataView: true,
-          args: ['ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway']
+          popup: true,
+          component: () => import('@/views/network/EditIpv6Range.vue')
         },
         {
           api: 'deleteIpv6Range',

@@ -107,9 +107,17 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
         return ip6Gateway;
     }
 
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
+
     @Override
     public String getIp6Cidr() {
         return ip6Cidr;
+    }
+
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
     }
 
     @Override
@@ -117,9 +125,17 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
         return routerIpv6;
     }
 
+    public void setRouterIpv6(String routerIpv6) {
+        this.routerIpv6 = routerIpv6;
+    }
+
     @Override
     public String getRouterIpv6Gateway() {
         return routerIpv6Gateway;
+    }
+
+    public void setRouterIpv6Gateway(String routerIpv6Gateway) {
+        this.routerIpv6Gateway = routerIpv6Gateway;
     }
 
     @Override

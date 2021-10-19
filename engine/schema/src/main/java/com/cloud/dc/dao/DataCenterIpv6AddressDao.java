@@ -31,6 +31,8 @@ public interface DataCenterIpv6AddressDao extends GenericDao<DataCenterIpv6Addre
 
     boolean releaseIpv6Range(long id);
 
+    boolean updateIpRange(long id, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway);
+
     DataCenterIpv6AddressVO takeIpv6Range(long zoneId, boolean isRouterIpv6Null);
 
     boolean mark(long id, Long networkId, Long domainId, Long accountId);
