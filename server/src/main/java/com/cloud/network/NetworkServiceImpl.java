@@ -1474,6 +1474,31 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
+    private Pair<String, String> getIp6GatewayCidr(Long networkOfferingId, Long zoneId, Long accountId) {
+        String ip6Gateway = null;
+        String ip6Cidr = null;
+        if (!areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat)) {
+            throw new InvalidParameterValueException("Can only take IPv6 address with isolated networks if SourceNat is supported");
+        }
+        String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(accountId);
+        if (org.apache.commons.lang3.StringUtils.isEmpty(routerIpv6Gateway)) {
+            Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, false);
+            if (ipv6Address == null) {
+                throw new InvalidParameterValueException("cannot take an IPv6 range without router ipv6 address for this network");
+            }
+            ip6Gateway = ipv6Address.getIp6Gateway();
+            ip6Cidr = ipv6Address.getIp6Cidr();
+        } else {
+            Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, true);
+            if (ipv6Address == null) {
+                throw new InvalidParameterValueException("cannot take an IPv6 range with router ipv6 address for this network");
+            }
+            ip6Gateway = ipv6Address.getIp6Gateway();
+            ip6Cidr = ipv6Address.getIp6Cidr();
+        }
+        return new Pair<String, String>(ip6Gateway, ip6Cidr);
+    }
+
     /**
      * Retrieve information (if set) for private VLAN when creating the network
      */
@@ -2550,6 +2575,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         Transaction.execute(new TransactionCallbackNoReturn() {
                             @Override
                             public void doInTransactionWithoutResult(TransactionStatus status) {
+                                updateNetworkIpv6(network, networkOfferingId);
                                 network.setNetworkOfferingId(networkOfferingId);
                                 _networksDao.update(networkId, network, newSvcProviders);
                                 // get all nics using this network
@@ -2637,6 +2663,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return getNetwork(network.getId());
+    }
+
+    private void updateNetworkIpv6(NetworkVO network, Long networkOfferingId) {
+        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
+        boolean isIpv6SupportedNew = _ipv6Service.isIpv6Supported(networkOfferingId);
+        if (isIpv6Supported && ! isIpv6SupportedNew) {
+            _ipv6AddressDao.unmark(network.getId(), network.getDomainId(), network.getAccountId());
+            network.setIp6Gateway(null);
+            network.setIp6Cidr(null);
+        } else if (!isIpv6Supported && isIpv6SupportedNew) {
+            Pair<String, String> ip6GatewayCidr = getIp6GatewayCidr(networkOfferingId, network.getDataCenterId(), network.getAccountId());
+            String ip6Gateway = ip6GatewayCidr.first();
+            String ip6Cidr = ip6GatewayCidr.second();
+            _ipv6AddressDao.mark(network.getDataCenterId(), ip6Gateway, ip6Cidr, network.getId(), network.getDomainId(), network.getAccountId());
+            network.setIp6Gateway(ip6Gateway);
+            network.setIp6Cidr(ip6Cidr);
+        }
     }
 
     @Override
