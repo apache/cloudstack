@@ -807,3 +807,29 @@ ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE 
 
 ALTER TABLE `cloud`.`vm_work_job` ADD COLUMN `secondary_object` char(100) COMMENT 'any additional item that must be checked during queueing' AFTER `vm_instance_id`;
 ALTER TABLE cloud.vm_work_job ADD CONSTRAINT vm_work_job_step_and_objects UNIQUE KEY (step,vm_instance_id,secondary_object);
+
+CREATE TABLE `cloud`.`dc_ipv6_range` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) DEFAULT NULL,
+  `data_center_id` bigint unsigned NOT NULL,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this ipv6 is based on',
+  `ip6_gateway` varchar(255) NOT NULL COMMENT 'gateway of this ipv6 range',
+  `ip6_cidr` varchar(255) NOT NULL COMMENT 'cidr of this ipv6 range',
+  `router_ipv6` varchar(255) DEFAULT NULL COMMENT 'Private ipv6 address on virtual router for this ipv6 range',
+  `network_id` bigint unsigned DEFAULT NULL COMMENT 'The network this ipv6 range is associated to',
+  `domain_id` bigint unsigned DEFAULT NULL COMMENT 'The domain this ipv6 range is used by',
+  `account_id` bigint unsigned DEFAULT NULL COMMENT 'The account this ipv6 range is used by',
+  `taken` datetime DEFAULT NULL COMMENT 'Date taken',
+  PRIMARY KEY (`id`),
+  KEY `fk_ipv6__data_center_id` (`data_center_id`),
+  KEY `fk_ipv6__physical_network_id` (`physical_network_id`),
+  KEY `fk_ipv6__network_id` (`network_id`),
+  KEY `fk_ipv6__domain_id` (`domain_id`),
+  KEY `fk_ipv6__account_id` (`account_id`),
+  CONSTRAINT `fk_ipv6__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`),
+  CONSTRAINT `fk_ipv6__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network` (`id`),
+  CONSTRAINT `fk_ipv6__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`),
+  CONSTRAINT `fk_ipv6__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`),
+  CONSTRAINT `fk_ipv6__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

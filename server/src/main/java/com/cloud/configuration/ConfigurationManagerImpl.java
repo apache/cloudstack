@@ -174,6 +174,7 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Address;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -5351,6 +5352,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final boolean enable = cmd.getEnable();
+        Ipv6Address.InternetProtocol internetProtocol = Ipv6Address.InternetProtocol.fromValue(cmd.getInternetProtocol());
+        Ipv6Address.IPv6Routing ipv6Routing = Ipv6Address.IPv6Routing.fromValue(cmd.getIpv6Routing());
+        final Boolean ipv6Firewall = cmd.getIpv6Firewall();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -5623,8 +5627,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             forVpc = false;
         }
 
+        if ((guestType == GuestType.Shared) && (internetProtocol != null || ipv6Routing != null)) {
+            throw new InvalidParameterValueException("internetProtocol and ipv6Routing are only available for isolated networks and VPCs");
+        } else if (guestType == GuestType.Isolated) {
+            if (internetProtocol == null) {
+                internetProtocol = Ipv6Address.InternetProtocol.IPv4;
+            } else if (internetProtocol == Ipv6Address.InternetProtocol.IPv6) {
+                throw new InvalidParameterValueException("Currently IPv6-only network is not supported");
+            } else if (internetProtocol == Ipv6Address.InternetProtocol.DualStack) { // Only if IPv6 is supported
+                if (ipv6Routing == null) {
+                    ipv6Routing = Ipv6Address.IPv6Routing.Static;
+                } else if (ipv6Routing == Ipv6Address.IPv6Routing.Dynamic) {
+                    throw new InvalidParameterValueException("Currently IPv6 with dynamic routing is not supported");
+                }
+            }
+        }
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable,
+                internetProtocol, ipv6Routing, ipv6Firewall);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -5762,7 +5782,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering) {
+            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering,
+            final Ipv6Address.InternetProtocol internetProtocol, final Ipv6Address.IPv6Routing ipv6Routing, final Boolean ipv6Firewall) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6014,6 +6035,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             for (Long zoneId : zoneIds) {
                                 detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.zoneid, String.valueOf(zoneId), false));
                             }
+                        }
+                        if (internetProtocol != null) {
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.internetProtocol, String.valueOf(internetProtocol), true));
+                        }
+                        if (ipv6Routing != null) {
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.ipv6Routing, String.valueOf(ipv6Routing), true));
+                        }
+                        if (ipv6Firewall != null) {
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.ipv6Firewall, String.valueOf(ipv6Firewall), true));
                         }
                         if (!detailsVO.isEmpty()) {
                             networkOfferingDetailsDao.saveDetails(detailsVO);

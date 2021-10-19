@@ -73,17 +73,47 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="guestType !== 'shared'">
+        <a-form-item v-if="guestType == 'isolated'">
+          <tooltip-label slot="label" :title="$t('label.internet.protocol')" :tooltip="apiParams.internetprotocol.description"/>
+          <a-radio-group
+            v-decorator="['internetprotocol', {
+              initialValue: internetProtocol
+            }]"
+            buttonStyle="solid"
+            @change="selected => { handleInternetProtocolChange(selected.target.value) }">
+            <a-radio-button value="ipv4">
+              {{ $t('label.ipv4') }}
+            </a-radio-button>
+            <a-radio-button value="ipv6">
+              {{ $t('label.ipv6') }}
+            </a-radio-button>
+            <a-radio-button value="dualstack">
+              {{ $t('label.ipv6.dualstack') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-row :gutter="12" v-if="guestType == 'isolated' && internetProtocol == 'dualstack'">
           <a-col :md="12" :lg="12">
             <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
-              <a-switch v-decorator="['ispersistent', {initialValue: false}]" />
+              <tooltip-label slot="label" :title="$t('label.ipv6.routing')" :tooltip="apiParams.ipv6routing.description"/>
+              <a-radio-group
+                v-decorator="['ipv6routing', {
+                  initialValue: ipv6Routing
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="static">
+                  {{ $t('label.ipv6.static.routing') }}
+                </a-radio-button>
+                <a-radio-button value="dynamic">
+                  {{ $t('label.ipv6.dynamic.routing') }}
+                </a-radio-button>
+              </a-radio-group>
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">
             <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.specifyvlan')" :tooltip="apiParams.specifyvlan.description"/>
-              <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
+              <tooltip-label slot="label" :title="$t('label.ipv6.firewall')" :tooltip="apiParams.ipv6firewall.description"/>
+              <a-switch v-decorator="['ipv6firewall', {initialValue: false}]" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -449,6 +479,8 @@ export default {
       hasAdvanceZone: false,
       requiredNetworkOfferingExists: false,
       guestType: 'isolated',
+      internetProtocol: 'ipv4',
+      ipv6Routing: 'static',
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
@@ -530,6 +562,9 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
+    },
+    handleInternetProtocolChange (val) {
+      this.internetProtocol = val
     },
     fetchSupportedServiceData () {
       const params = {}
@@ -718,7 +753,7 @@ export default {
         var selectedServices = null
         var keys = Object.keys(values)
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
-        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess', 'internetprotocol', 'ipv6routing', 'ipv6firewall']
         keys.forEach(function (key, keyIndex) {
           if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
@@ -760,6 +795,13 @@ export default {
           delete params.conservemode
         }
 
+        if (values.guestiptype === 'isolated') {
+          params.internetprotocol = values.internetprotocol
+          if (values.internetprotocol === 'dualstack') {
+            params.ipv6routing = values.ipv6routing
+            params.ipv6firewall = values.ipv6firewall
+          }
+        }
         if (values.forvpc === true) {
           params.forvpc = true
         }

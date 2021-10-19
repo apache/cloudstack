@@ -163,6 +163,24 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.16")
     private Boolean enable;
 
+    @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
+            type = CommandType.STRING,
+            description = "The internet protocol of network offering. Options are ipv4, ipv6 and dualstack. Default is ipv4",
+            since = "4.16")
+    private String internetProtocol;
+
+    @Parameter(name = ApiConstants.IPV6_ROUTING,
+            type = CommandType.STRING,
+            description = "The routing mode of network offering. Options are static and dynamic. Default is static",
+            since = "4.16")
+    private String ipv6Routing;
+
+    @Parameter(name = ApiConstants.IPV6_FIREWALL,
+            type = CommandType.BOOLEAN,
+            description = "Whether enable firewall for IPv6 in isolated networks or VPCs. Default is false",
+            since = "4.16")
+    private Boolean ipv6Firewall;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -347,6 +365,18 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return enable;
         }
         return false;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
+    }
+
+    public String getIpv6Routing() {
+        return ipv6Routing;
+    }
+
+    public Boolean getIpv6Firewall() {
+        return ipv6Firewall == null ? false : ipv6Firewall;
     }
 
     /////////////////////////////////////////////////////

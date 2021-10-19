@@ -864,6 +864,10 @@ public class ApiConstants {
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
 
+    public static final String INTERNET_PROTOCOL = "internetprotocol";
+    public static final String IPV6_ROUTING = "ipv6routing";
+    public static final String IPV6_FIREWALL = "ipv6firewall";
+
     public enum BootType {
         UEFI, BIOS;
 
