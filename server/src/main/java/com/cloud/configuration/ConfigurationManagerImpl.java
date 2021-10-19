@@ -5355,6 +5355,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Ipv6Address.InternetProtocol internetProtocol = Ipv6Address.InternetProtocol.fromValue(cmd.getInternetProtocol());
         Ipv6Address.IPv6Routing ipv6Routing = Ipv6Address.IPv6Routing.fromValue(cmd.getIpv6Routing());
         final Boolean ipv6Firewall = cmd.getIpv6Firewall();
+        final Boolean specifyRouterIpv6 = cmd.getSpecifyRouterIpv6();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -5644,7 +5645,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
                 serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable,
-                internetProtocol, ipv6Routing, ipv6Firewall);
+                internetProtocol, ipv6Routing, ipv6Firewall, specifyRouterIpv6);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -5783,7 +5784,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
             final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering,
-            final Ipv6Address.InternetProtocol internetProtocol, final Ipv6Address.IPv6Routing ipv6Routing, final Boolean ipv6Firewall) {
+            final Ipv6Address.InternetProtocol internetProtocol, final Ipv6Address.IPv6Routing ipv6Routing, final Boolean ipv6Firewall, final Boolean specifyRouterIpv6) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6044,6 +6045,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         }
                         if (ipv6Firewall != null) {
                             detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.ipv6Firewall, String.valueOf(ipv6Firewall), true));
+                        }
+                        if (specifyRouterIpv6 != null) {
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.specifyRouterIpv6, String.valueOf(specifyRouterIpv6), true));
                         }
                         if (!detailsVO.isEmpty()) {
                             networkOfferingDetailsDao.saveDetails(detailsVO);
@@ -6407,6 +6411,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());
         if (_networkOfferingDao.remove(offeringId)) {
+            networkOfferingDetailsDao.removeDetails(offeringId);
             return true;
         } else {
             return false;

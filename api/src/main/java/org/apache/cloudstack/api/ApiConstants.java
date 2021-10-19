@@ -868,6 +868,7 @@ public class ApiConstants {
     public static final String INTERNET_PROTOCOL = "internetprotocol";
     public static final String IPV6_ROUTING = "ipv6routing";
     public static final String IPV6_FIREWALL = "ipv6firewall";
+    public static final String SPECIFY_ROUTER_IPV6 = "specifyrouteripv6";
 
     public enum BootType {
         UEFI, BIOS;

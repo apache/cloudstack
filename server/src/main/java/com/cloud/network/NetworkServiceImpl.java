@@ -1478,18 +1478,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (!areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat)) {
             throw new InvalidParameterValueException("Can only take IPv6 address with isolated networks if SourceNat is supported");
         }
-        String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(accountId);
-        if (org.apache.commons.lang3.StringUtils.isEmpty(routerIpv6Gateway)) {
+        Boolean specifyRouterIpv6 = _ipv6Service.isSpecifyRouterIpv6(networkOfferingId);
+        if (specifyRouterIpv6) {
             Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, false);
             if (ipv6Address == null) {
-                throw new InvalidParameterValueException("cannot take an IPv6 range without router ipv6 address for this network");
+                throw new InvalidParameterValueException("cannot take an IPv6 range router ipv6 address for this network");
             }
             ip6Gateway = ipv6Address.getIp6Gateway();
             ip6Cidr = ipv6Address.getIp6Cidr();
         } else {
             Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, true);
             if (ipv6Address == null) {
-                throw new InvalidParameterValueException("cannot take an IPv6 range with router ipv6 address for this network");
+                throw new InvalidParameterValueException("cannot take an IPv6 range without router ipv6 address for this network");
             }
             ip6Gateway = ipv6Address.getIp6Gateway();
             ip6Cidr = ipv6Address.getIp6Cidr();

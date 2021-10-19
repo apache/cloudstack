@@ -1179,6 +1179,7 @@
 "label.ipv6.dualstack": "Dual Stack",
 "label.ipv6.firewall": "IPv6 Firewall",
 "label.ipv6.routing": "IPv6 Routing",
+"label.ipv6.specify.routeripv6": "Specify Router IPv6",
 "label.ipv6.static.routing": "Static Routing",
 "label.iqn": "Target IQN",
 "label.is.in.progress": "is in progress",

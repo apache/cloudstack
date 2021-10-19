@@ -269,7 +269,7 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] { routerIpv6Gateway };
+        return new ConfigKey[] { };
     }
 
     @Override
@@ -302,14 +302,20 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
     }
 
     @Override
+    public Boolean isSpecifyRouterIpv6(Long offeringId) {
+        String specifyRouterIpv6 = _networkOfferingDetailsDao.getDetail(offeringId, NetworkOffering.Detail.specifyRouterIpv6);
+        return Boolean.parseBoolean(specifyRouterIpv6);
+    }
+
+    @Override
     public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
         boolean isIpv6Supported = isIpv6Supported(network.getNetworkOfferingId());
         if (nic.getIPv6Address() == null && isIpv6Supported) {
             final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
             if (routerIpv6 == null) {
-                final String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(network.getAccountId());
+                final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
                 if (routerIpv6Gateway == null) {
-                    throw new CloudRuntimeException(String.format("Invalid routerIpv6Prefix for account %s", network.getAccountId()));
+                    throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
                 }
                 final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0];
                 IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());

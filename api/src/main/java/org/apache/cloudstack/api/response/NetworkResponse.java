@@ -275,6 +275,10 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "Whether enable firewall for IPv6 in isolated networks or VPCs")
     private Boolean ipv6Firewall;
 
+    @SerializedName(ApiConstants.SPECIFY_ROUTER_IPV6)
+    @Param(description = "Whether router IPv6 address is specified")
+    private Boolean specifyRouterIpv6;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -551,5 +555,9 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setIpv6Firewall(Boolean ipv6Firewall) {
         this.ipv6Firewall = ipv6Firewall;
+    }
+
+    public void setSpecifyRouterIpv6(Boolean specifyRouterIpv6) {
+        this.specifyRouterIpv6 = specifyRouterIpv6;
     }
 }

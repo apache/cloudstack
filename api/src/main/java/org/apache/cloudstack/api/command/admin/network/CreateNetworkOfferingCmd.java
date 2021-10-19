@@ -181,6 +181,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.16")
     private Boolean ipv6Firewall;
 
+    @Parameter(name = ApiConstants.SPECIFY_ROUTER_IPV6, type = CommandType.BOOLEAN,
+            description = "true if network offering supports specifying router ipv6; defaulted to true if not specified. If false, router will use SLAAC Ipv6")
+    private Boolean specifyRouterIpv6;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -377,6 +381,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getIpv6Firewall() {
         return ipv6Firewall == null ? false : ipv6Firewall;
+    }
+
+    public Boolean getSpecifyRouterIpv6() {
+        return specifyRouterIpv6 == null ? true : specifyRouterIpv6;
     }
 
     /////////////////////////////////////////////////////

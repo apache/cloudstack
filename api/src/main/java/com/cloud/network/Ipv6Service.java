@@ -30,16 +30,12 @@ import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.response.Ipv6RangeResponse;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
 
 public interface Ipv6Service {
 
     public static final String IPV6_CIDR_SUFFIX = "/64";
-
-    public static final ConfigKey<String> routerIpv6Gateway = new ConfigKey<String>("Advanced", String.class, "router.ipv6.prefix", "",
-            "The gateway of Router Ipv6 address (CIDR prefix length is /64). For example 2001:10:10:10::1", true, ConfigKey.Scope.Account);
 
     Ipv6Address createIpv6Range(CreateIpv6RangeCmd cmd);
 
@@ -64,6 +60,8 @@ public interface Ipv6Service {
     boolean isIpv6Supported(Long offeringId);
 
     Boolean isIpv6FirewallEnabled(Long offeringId);
+
+    Boolean isSpecifyRouterIpv6(Long offeringId);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
 

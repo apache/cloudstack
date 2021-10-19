@@ -2482,6 +2482,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setInternetProtocol(_ipv6Service.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
             response.setIpv6Routing(_ipv6Service.getNetworkOfferingIpv6Routing(network.getNetworkOfferingId()).toString());
             response.setIpv6Firewall(_ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
+            response.setSpecifyRouterIpv6(_ipv6Service.isSpecifyRouterIpv6(network.getNetworkOfferingId()));
         }
 
         response.setObjectName("network");

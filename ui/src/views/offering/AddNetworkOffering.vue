@@ -117,6 +117,14 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12" v-if="guestType == 'isolated' && internetProtocol == 'dualstack'">
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.ipv6.specify.routeripv6')" :tooltip="apiParams.specifyrouteripv6.description"/>
+              <a-switch v-decorator="['specifyrouteripv6', {initialValue: true}]" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
           <a-switch v-decorator="['forvpc', {initialValue: forVpc}]" :defaultChecked="forVpc" @change="val => { handleForVpcChange(val) }" />
@@ -753,7 +761,7 @@ export default {
         var selectedServices = null
         var keys = Object.keys(values)
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
-        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess', 'internetprotocol', 'ipv6routing', 'ipv6firewall']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess', 'internetprotocol', 'ipv6routing', 'ipv6firewall', 'specifyrouteripv6']
         keys.forEach(function (key, keyIndex) {
           if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
@@ -800,6 +808,7 @@ export default {
           if (values.internetprotocol === 'dualstack') {
             params.ipv6routing = values.ipv6routing
             params.ipv6firewall = values.ipv6firewall
+            params.specifyrouteripv6 = values.specifyrouteripv6
           }
         }
         if (values.forvpc === true) {

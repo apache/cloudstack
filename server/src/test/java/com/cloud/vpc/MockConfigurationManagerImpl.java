@@ -509,7 +509,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
                                                    Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                                    Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering,
-                                                   Ipv6Address.InternetProtocol internetProtocol, Ipv6Address.IPv6Routing ipv6Routing, final Boolean ipv6Firewall) {
+                                                   Ipv6Address.InternetProtocol internetProtocol, Ipv6Address.IPv6Routing ipv6Routing, final Boolean ipv6Firewall, final Boolean specifyRouterIpv6) {
         // TODO Auto-generated method stub
         return null;
     }
