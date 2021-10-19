@@ -181,6 +181,10 @@
             <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
             <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
+            <a-select-option value="tcp6">{{ $t('label.tcp6') | capitalise }}</a-select-option>
+            <a-select-option value="udp6">{{ $t('label.udp6') | capitalise }}</a-select-option>
+            <a-select-option value="icmp6">{{ $t('label.icmp6') | capitalise }}</a-select-option>
+            <a-select-option value="all6">{{ $t('label.all.ipv6') }}</a-select-option>
           </a-select>
         </a-form-item>
 
