@@ -42,6 +42,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.dao.DataCenterIpv6AddressDao;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -2672,6 +2673,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _ipv6AddressDao.unmark(network.getId(), network.getDomainId(), network.getAccountId());
             network.setIp6Gateway(null);
             network.setIp6Cidr(null);
+            List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+            for (NicVO nic : nics) {
+                nic.setIPv6Address(null);
+                nic.setIPv6Cidr(null);
+                nic.setIPv6Gateway(null);
+                _nicDao.update(nic.getId(), nic);
+            }
         } else if (!isIpv6Supported && isIpv6SupportedNew) {
             Pair<String, String> ip6GatewayCidr = getIp6GatewayCidr(networkOfferingId, network.getDataCenterId(), network.getAccountId());
             String ip6Gateway = ip6GatewayCidr.first();
@@ -2679,6 +2687,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _ipv6AddressDao.mark(network.getDataCenterId(), ip6Gateway, ip6Cidr, network.getId(), network.getDomainId(), network.getAccountId());
             network.setIp6Gateway(ip6Gateway);
             network.setIp6Cidr(ip6Cidr);
+            final String ip6Prefix = ip6Gateway.split("::")[0];
+            List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+            for (NicVO nic : nics) {
+                IPv6Address ipv6addr = NetUtils.EUI64Address(ip6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());
+                nic.setIPv6Address(ipv6addr.toString());
+                nic.setIPv6Cidr(ip6Cidr);
+                nic.setIPv6Gateway(ip6Gateway);
+                _nicDao.update(nic.getId(), nic);
+            }
         }
     }
 
