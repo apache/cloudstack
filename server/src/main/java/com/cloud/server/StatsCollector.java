@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.server;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.RuntimeMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -61,6 +65,7 @@ import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Pong;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -74,6 +79,7 @@ import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.agent.api.VolumeStatsEntry;
+import com.cloud.api.ApiSessionListener;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -154,6 +160,18 @@ import com.google.gson.Gson;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import org.apache.commons.io.FileUtils;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.jvm.BufferPoolMetricSet;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
+
+//import com.codahale.metrics.jvm.CpuMetricSet;
+//import com.codahale.metrics.jvm.FileDescriptorRatioGauge;
+//import com.codahale.metrics.jvm.RuntimeMetricSet;
+//import com.codahale.metrics.jvm.StandardSystemMetricSet;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -336,6 +354,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
+    final MetricRegistry registry = new MetricRegistry();
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -353,7 +372,37 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Override
     public boolean start() {
         init(_configDao.getConfiguration());
+        registerAll("gc", new GarbageCollectorMetricSet(), registry);
+        registerAll("buffers", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()), registry);
+        registerAll("memory", new MemoryUsageGaugeSet(), registry);
+        registerAll("threads", new ThreadStatesGaugeSet(), registry);
+        //registerAll("threads", new CpuMetricSet(), registry);
+        //registerAll("files", new FileDescriptorRatioGauge(), registry);
+        //registerAll("threads", new RuntimeMetricSet(), registry);
+        //registerAll("threads", new StandardSystemMetricSet(), registry);
         return true;
+    }
+
+    private void registerAll(String prefix, MetricSet metricSet, MetricRegistry registry) {
+        for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
+            if (entry.getValue() instanceof MetricSet) {
+                registerAll(prefix + "." + entry.getKey(), (MetricSet) entry.getValue(), registry);
+            } else {
+                registry.register(prefix + "." + entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void printAllMetrics() {
+        for (String metricName : registry.getGauges().keySet()) {
+            printMetric(metricName);
+        }
+    }
+
+    private void printMetric(String metricName) {
+        Object value = registry.getGauges().get(metricName).getValue();
+        //System.out.println("name=" + metricName + ", value=" + value);
+        s_logger.debug("Metrics collection name=" + metricName + ", value=" + value);
     }
 
     protected void init(Map<String, String> configs) {
@@ -624,10 +673,67 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             }
         }
 
-        private ManagementServerHostStatsEntry getDataFrom(ManagementServerHostVO host) {
+        @NotNull
+        private ManagementServerHostStatsEntry getDataFrom(@NotNull ManagementServerHostVO host) {
             ManagementServerHostStatsEntry newEntry = new ManagementServerHostStatsEntry();
             newEntry.setManagementServerHostVO(host);
+            s_logger.debug("Metrics collection start...");
+            long sessions = ApiSessionListener.getSessionCount();
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("Sessions found in Api %d vs context %d", sessions,ApiSessionListener.getNumberOfSessions()));
+            } else {
+                s_logger.debug("Sessions active: " + sessions);
+            }
+            getJvmDimensions(newEntry);
+            s_logger.debug("Metrics collection extra...");
+            getRuntimeData(newEntry);
+            getCpuData(newEntry);
+            s_logger.debug(String.format(
+                    "Metrics uptime - %d , starttime - %d , proc1 - %d , loadavg - %f ",
+                    newEntry.getUptime(),
+                    newEntry.getStartTime(),
+                    newEntry.getAvailableProcessors(),
+                    newEntry.getLoadAverage()));
+            getMemoryData(newEntry);
+
+            //MetricRegistry registry;
+            s_logger.debug("Metrics collection end!");
             return newEntry;
+        }
+
+        private void getMemoryData(@NotNull ManagementServerHostStatsEntry newEntry) {
+            MemoryMXBean mxBean2 = ManagementFactory.getMemoryMXBean();
+            newEntry.setTotalInit(mxBean2.getHeapMemoryUsage().getInit() + mxBean2.getNonHeapMemoryUsage().getInit());
+            newEntry.setTotalUsed(mxBean2.getHeapMemoryUsage().getUsed() + mxBean2.getNonHeapMemoryUsage().getUsed());
+            newEntry.setTotalMax(mxBean2.getHeapMemoryUsage().getMax() + mxBean2.getNonHeapMemoryUsage().getMax());
+            newEntry.setTotalCommitted(mxBean2.getHeapMemoryUsage().getCommitted() + mxBean2.getNonHeapMemoryUsage().getCommitted());
+        }
+
+        private void getCpuData(@NotNull ManagementServerHostStatsEntry newEntry) {
+            final OperatingSystemMXBean mxBean1 = ManagementFactory.getOperatingSystemMXBean();
+            newEntry.setAvailableProcessors(mxBean1.getAvailableProcessors());
+            newEntry.setLoadAverage(mxBean1.getSystemLoadAverage());
+        }
+
+        private void getRuntimeData(@NotNull ManagementServerHostStatsEntry newEntry) {
+            final RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
+            newEntry.setUptime(mxBean.getUptime());
+            newEntry.setStartTime(mxBean.getStartTime());
+        }
+
+        private void getJvmDimensions(@NotNull ManagementServerHostStatsEntry newEntry) {
+            Runtime runtime = Runtime.getRuntime();
+            newEntry.setTotalMemoryBytes(runtime.totalMemory());
+            long freeMemory = runtime.freeMemory();
+            int proc = runtime.availableProcessors();
+            long maxMem = runtime.maxMemory();
+            s_logger.debug(String.format(
+                    "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %d ",
+                    proc,
+                    maxMem,
+                    newEntry.getTotalMemoryBytes(),
+                    freeMemory));
+            printAllMetrics();
         }
 
         @Override

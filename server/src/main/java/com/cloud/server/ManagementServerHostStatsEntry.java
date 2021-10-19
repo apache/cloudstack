@@ -25,11 +25,21 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private ManagementServerHostVO managementServerHostVO;
     private long managementServerHostId;
 
+    private long sessions;
     private double cpuUtilization;
-    private double totalMemoryBytes;
+    private long totalMemoryBytes;
     private double freeMemoryBytes;
     private double processMemoryBytes;
+    private long uptime;
+    private long startTime;
+    private int availableProcessors;
+    private double loadAverage;
+    long totalInit;
+    long totalUsed;
+    long totalMax;
+    long totalCommitted;
 
+    @Override
     public long getManagementServerHostId() {
         return managementServerHostId;
     }
@@ -42,31 +52,84 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return managementServerHostVO;
     }
 
-    public void setManagementServerHostVO(ManagementServerHostVO managementServerHostVO) {
-        this.managementServerHostVO = managementServerHostVO;
+    @Override
+    public long getSessions() {
+        return sessions;
     }
 
+    @Override
     public double getCpuUtilization() {
         return cpuUtilization;
     }
 
-    public double getTotalMemoryBytes() {
+    @Override
+    public long getTotalMemoryBytes() {
         return totalMemoryBytes;
     }
 
+    @Override
     public double getFreeMemoryBytes() {
         return freeMemoryBytes;
     }
 
+    @Override
     public double getProcessMemoryBytes() {
         return processMemoryBytes;
+    }
+
+    @Override
+    public long getUptime() {
+        return uptime;
+    }
+
+    @Override
+    public long getStartTime() {
+        return startTime;
+    }
+
+    @Override
+    public int getAvailableProcessors() {
+        return availableProcessors;
+    }
+
+    @Override
+    public double getLoadAverage() {
+        return loadAverage;
+    }
+
+    @Override
+    public long getTotalInit() {
+        return totalInit;
+    }
+
+    @Override
+    public long getTotalUsed() {
+        return totalUsed;
+    }
+
+    @Override
+    public long getTotalMax() {
+        return totalMax;
+    }
+
+    @Override
+    public long getTotalCommitted() {
+        return totalCommitted;
+    }
+
+    public void setManagementServerHostVO(ManagementServerHostVO managementServerHostVO) {
+        this.managementServerHostVO = managementServerHostVO;
+    }
+
+    public void setSessions(long sessions) {
+        this.sessions = sessions;
     }
 
     public void setCpuUtilization(double cpuUtilization) {
         this.cpuUtilization = cpuUtilization;
     }
 
-    public void setTotalMemoryBytes(double totalMemoryBytes) {
+    public void setTotalMemoryBytes(long totalMemoryBytes) {
         this.totalMemoryBytes = totalMemoryBytes;
     }
 
@@ -80,5 +143,37 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     protected void validateSome() {
         assert totalMemoryBytes - processMemoryBytes > freeMemoryBytes;
+    }
+
+    public void setUptime(long uptime) {
+        this.uptime = uptime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setAvailableProcessors(int availableProcessors) {
+        this.availableProcessors = availableProcessors;
+    }
+
+    public void setLoadAverage(double loadAverage) {
+        this.loadAverage = loadAverage;
+    }
+
+    public void setTotalInit(long totalInit) {
+        this.totalInit = totalInit;
+    }
+
+    public void setTotalUsed(long totalUsed) {
+        this.totalUsed = totalUsed;
+    }
+
+    public void setTotalMax(long totalMax) {
+        this.totalMax = totalMax;
+    }
+
+    public void setTotalCommitted(long totalCommitted) {
+        this.totalCommitted = totalCommitted;
     }
 }

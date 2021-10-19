@@ -47,6 +47,7 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
+        log.debug("context initialized");
         try {
             cloudStackContext = new CloudStackSpringContext();
             cloudStackContext.registerShutdownHook();
@@ -66,11 +67,11 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
 
     @Override
     protected void customizeContext(ServletContext servletContext, ConfigurableWebApplicationContext applicationContext) {
+        log.debug("customize context");
         super.customizeContext(servletContext, applicationContext);
 
         String[] newLocations = cloudStackContext.getConfigLocationsForWeb(configuredParentName, applicationContext.getConfigLocations());
 
         applicationContext.setConfigLocations(newLocations);
     }
-
 }

@@ -23,12 +23,31 @@ package com.cloud.server;
  * management server related stats
  */
 public interface ManagementServerHostStats {
-    public double getCpuUtilization();
+    long getManagementServerHostId();
 
-    public double getTotalMemoryBytes();
+    long getSessions();
 
-    public double getFreeMemoryBytes();
+    double getCpuUtilization();
 
-    public double getProcessMemoryBytes();
+    long getTotalMemoryBytes();
 
+    double getFreeMemoryBytes();
+
+    double getProcessMemoryBytes();
+
+    long getUptime();
+
+    long getStartTime();
+
+    int getAvailableProcessors();
+
+    double getLoadAverage();
+
+    long getTotalInit();
+
+    long getTotalUsed();
+
+    long getTotalMax();
+
+    long getTotalCommitted();
 }
