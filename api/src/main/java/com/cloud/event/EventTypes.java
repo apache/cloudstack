@@ -478,6 +478,11 @@ public class EventTypes {
     public static final String EVENT_NETWORK_ACL_ITEM_UPDATE = "NETWORK.ACL.ITEM.UPDATE";
     public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";
 
+    // IPv6 firewall rule
+    public static final String EVENT_IPV6_FIREWALL_RULE_CREATE = "IPV6.FIREWALL.RULE.CREATE";
+    public static final String EVENT_IPV6_FIREWALL_RULE_UPDATE = "IPV6.FIREWALL.RULE.UPDATE";
+    public static final String EVENT_IPV6_FIREWALL_RULE_DELETE = "IPV6.FIREWALL.RULE.DELETE";
+
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";

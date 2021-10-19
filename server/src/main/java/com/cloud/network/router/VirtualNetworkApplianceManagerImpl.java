@@ -139,6 +139,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.MonitoringService;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -354,6 +355,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
+    @Inject private Ipv6Service _ipv6Service;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -2128,6 +2130,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
 
         final StringBuilder buf = new StringBuilder();
+
+        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(guestNetwork.getNetworkOfferingId());
+        boolean isIpv6FirewallEnabled = _ipv6Service.isIpv6FirewallEnabled(guestNetwork.getNetworkOfferingId());
+        if (isIpv6Supported && isIpv6FirewallEnabled) {
+            buf.append(" ip6firewall=true");
+        }
 
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {

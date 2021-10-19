@@ -1075,6 +1075,8 @@ public class CommandSetupHelper {
                 final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
                 setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
             }
+            boolean isIpv6FirewallEnabled = _ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId());
+            setupCmd.setRouterIpv6Firewall(isIpv6FirewallEnabled);
         }
     }
 

@@ -33,6 +33,7 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     String routerIpv6 = null;
     String routerIpv6Gateway = null;
     String routerIpv6Cidr = null;
+    Boolean routerIpv6Firewall = false;
 
     public NicTO getNic() {
         return nic;
@@ -95,5 +96,13 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
 
     public void setRouterIpv6Cidr(String routerIpv6Cidr) {
         this.routerIpv6Cidr = routerIpv6Cidr;
+    }
+
+    public Boolean getRouterIpv6Firewall() {
+        return routerIpv6Firewall;
+    }
+
+    public void setRouterIpv6Firewall(Boolean routerIpv6Firewall) {
+        this.routerIpv6Firewall = routerIpv6Firewall;
     }
 }

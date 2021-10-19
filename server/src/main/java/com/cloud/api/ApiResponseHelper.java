@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.network.Ipv6Service;
 import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -414,6 +415,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private AnnotationDao annotationDao;
     @Inject
     private UserStatisticsDao userStatsDao;
+    @Inject
+    private Ipv6Service _ipv6Service;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2474,6 +2477,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setBytesReceived(bytesReceived);
         response.setBytesSent(bytesSent);
+
+        if (_ipv6Service.isIpv6Supported(network.getNetworkOfferingId())) {
+            response.setInternetProtocol(_ipv6Service.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
+            response.setIpv6Routing(_ipv6Service.getNetworkOfferingIpv6Routing(network.getNetworkOfferingId()).toString());
+            response.setIpv6Firewall(_ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
+        }
 
         response.setObjectName("network");
         return response;
@@ -4542,5 +4551,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon) {
         return  ApiDBUtils.newResourceIconResponse(resourceIcon);
+    }
+
+    @Override
+    public FirewallRuleResponse createIpv6FirewallRuleResponse(FirewallRule acl) {
+        return null;
     }
 }

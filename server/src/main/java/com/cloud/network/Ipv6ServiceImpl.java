@@ -26,8 +26,11 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Ipv6Address.IPv6Routing;
 import com.cloud.network.Ipv6Address.InternetProtocol;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
@@ -52,6 +55,10 @@ import org.apache.cloudstack.api.command.admin.ipv6.DeleteIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.ListIpv6RangesCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.ReleaseIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.UpdateIpv6RangeCmd;
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.DeleteIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.response.Ipv6RangeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -76,6 +83,10 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
     DomainDao _domainDao;
     @Inject
     NetworkOfferingDetailsDao _networkOfferingDetailsDao;
+    @Inject
+    FirewallRulesDao _firewallDao;
+    @Inject
+    public FirewallService _firewallService;
 
     @Override
     public Ipv6Address createIpv6Range(CreateIpv6RangeCmd cmd) {
@@ -244,6 +255,10 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
         cmdList.add(ListIpv6RangesCmd.class);
         cmdList.add(DeleteIpv6RangeCmd.class);
         cmdList.add(ReleaseIpv6RangeCmd.class);
+        cmdList.add(CreateIpv6FirewallRuleCmd.class);
+        cmdList.add(ListIpv6FirewallRulesCmd.class);
+        cmdList.add(UpdateIpv6FirewallRuleCmd.class);
+        cmdList.add(DeleteIpv6FirewallRuleCmd.class);
         return cmdList;
     }
 
@@ -317,4 +332,37 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
             nic.setIPv6Dns2(dc.getIp6Dns2());
         }
     }
+
+    @Override
+    public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd) {
+        // TODO
+        return _firewallDao.findById(updateIpv6FirewallRuleCmd.getId());
+    }
+
+    @Override
+    public Pair<List<? extends FirewallRule>, Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd) {
+        return _firewallService.listFirewallRules(listIpv6FirewallRulesCmd);
+    }
+
+    @Override
+    public boolean revokeIpv6FirewallRule(Long id) {
+        // TODO
+        return true;
+    }
+
+    @Override
+    public FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd) {
+        return null;
+    }
+
+    @Override
+    public FirewallRule getIpv6FirewallRule(Long entityId) {
+        return _firewallDao.findById(entityId);
+    }
+
+    @Override
+    public boolean applyIpv6FirewallRule(long id) {
+        return false;
+    }
+
 }

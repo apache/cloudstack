@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 import com.cloud.vm.NicProfile;
 import org.apache.cloudstack.api.command.admin.ipv6.CreateIpv6RangeCmd;
@@ -25,6 +26,9 @@ import org.apache.cloudstack.api.command.admin.ipv6.DeleteIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.ListIpv6RangesCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.ReleaseIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.ipv6.UpdateIpv6RangeCmd;
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.response.Ipv6RangeResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -62,4 +66,16 @@ public interface Ipv6Service {
     Boolean isIpv6FirewallEnabled(Long offeringId);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
+
+    FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
+
+    Pair<List<? extends FirewallRule>,Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd);
+
+    boolean revokeIpv6FirewallRule(Long id);
+
+    FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd);
+
+    FirewallRule getIpv6FirewallRule(Long entityId);
+
+    boolean applyIpv6FirewallRule(long id);
 }

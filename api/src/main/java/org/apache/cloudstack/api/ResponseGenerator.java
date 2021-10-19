@@ -491,4 +491,5 @@ public interface ResponseGenerator {
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
+    FirewallRuleResponse createIpv6FirewallRuleResponse(FirewallRule acl);
 }
