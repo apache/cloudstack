@@ -207,8 +207,97 @@
                                             number: true
                                         },
                                         isHidden: true
-                                    }
+                                    },
 
+                                    domain: {
+                                        label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
+                                        select: function(args) {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                    data: null
+                                                });
+                                            }
+                                        }
+                                    },
+                                    account: {
+                                        label: 'label.account',
+                                        dependsOn: 'domain',
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                            if ((!isAdmin() && !isDomainAdmin()) || args.domain == null || args.domain == "") {
+                                                var $form = args.$select.closest('form');
+                                                $form.find('.form-item[rel=account]').hide();
+                                                args.response.success({
+                                                    data: null
+                                                });
+                                            } else {
+                                                var dataObj = {
+                                                    domainId: args.domain,
+                                                    state: 'Enabled',
+                                                    listAll: false,
+                                                };
+                                                $.ajax({
+                                                    url: createURL('listAccounts', {
+                                                        ignoreProject: true
+                                                    }),
+                                                    data: dataObj,
+                                                    success: function(json) {
+                                                        accountObjs = json.listaccountsresponse.account;
+                                                        var items = [{
+                                                            id: null,
+                                                            description: ''
+                                                        }];
+                                                        $(accountObjs).each(function() {
+                                                            items.push({
+                                                                id: this.name,
+                                                                description: this.name
+                                                            });
+                                                        })
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        var $form = args.$select.closest('form');
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
                                 }
                             },
 
@@ -236,6 +325,17 @@
                                     if (args.data.maxIops != "" && args.data.maxIops > 0) {
                                         $.extend(data, {
                                             maxiops: args.data.maxIops
+                                        });
+                                    }
+                                }
+
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(data, {
+                                        domainid: args.data.domain
+                                    });
+                                    if (args.data.account != null && args.data.account.length > 0) {
+                                        $.extend(data, {
+                                            account: args.data.account
                                         });
                                     }
                                 }
