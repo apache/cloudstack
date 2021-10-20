@@ -578,6 +578,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
         final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
+        for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
+            ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
+
+            try {
+                BeanUtils.copyProperties(metricsResponse, managementServerResponse);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
+            }
+        }
         return metricsResponses;
     }
 
