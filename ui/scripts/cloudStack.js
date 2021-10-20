@@ -367,6 +367,7 @@
                             var cookieName = $.trim(cookies[i].split("=")[0]);
                             if (['login-option', 'lang'].indexOf(cookieName) < 0) {
                                 $.cookie(cookieName, null);
+                                $.cookie(cookieName, null, {'path': '/'});
                             }
                         }
 
