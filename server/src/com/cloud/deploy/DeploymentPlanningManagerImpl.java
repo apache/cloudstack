@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
 
+import org.apache.cloudstack.cluster.ClusterDrainingManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -163,6 +164,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private long _hostReservationReleasePeriod = 60L * 60L * 1000L; // one hour by default
     @Inject
     protected VMReservationDao _reservationDao;
+    @Inject
+    protected ClusterDrainingManager _clusterDrainingManager;
 
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
@@ -271,6 +274,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+
+        _clusterDrainingManager.addDrainingToAvoids(dc, avoids);
 
         if (plan.getHostId() != null && haVmTag == null) {
             Long hostIdSpecified = plan.getHostId();

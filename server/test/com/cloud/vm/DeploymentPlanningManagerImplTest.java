@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.host.Host;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.cluster.ClusterDrainingManager;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -448,6 +449,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public HostGpuGroupsDao hostGpuGroupsDap() {
             return Mockito.mock(HostGpuGroupsDao.class);
+        }
+
+        @Bean
+        public ClusterDrainingManager clusterDrainingManager() {
+            return Mockito.mock(ClusterDrainingManager.class);
         }
 
         public static class Library implements TypeFilter {

@@ -289,6 +289,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.cluster.ClusterDrainingManager;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -361,6 +362,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
     @Inject
     private IPAddressDao userIpAddressDao;
+    @Inject
+    protected ClusterDrainingManager _clusterDrainingManager;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1147,7 +1150,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         clusterResponse.setHypervisorType(cluster.getHypervisorType().toString());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
-        clusterResponse.setAllocationState(cluster.getAllocationState().toString());
+        if (_clusterDrainingManager.isClusterDraining(cluster))
+            clusterResponse.setAllocationState("Draining");
+        else
+            clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         clusterResponse.setManagedState(cluster.getManagedState().toString());
         String cpuOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(), "cpuOvercommitRatio");
         String memoryOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(), "memoryOvercommitRatio");

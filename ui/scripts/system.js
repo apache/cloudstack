@@ -14158,7 +14158,8 @@
                             label: 'label.allocation.state',
                             indicator: {
                                 'Enabled': 'on',
-                                'Disabled': 'off'
+                                'Disabled': 'off',
+                                'Draining': 'off'
                             }
                         }
                     },
@@ -21998,7 +21999,7 @@
             allowedActions.push("unmanage");
             allowedActions.push("disable");
             //allowedActions.push("edit"); // No fields to edit
-        } else if (jsonObj.state == "Disabled") {
+        } else if (jsonObj.state == "Disabled" || jsonObj.state == "Draining") {
             //managed, allocation disabled
             allowedActions.push("unmanage");
             allowedActions.push("enable");
