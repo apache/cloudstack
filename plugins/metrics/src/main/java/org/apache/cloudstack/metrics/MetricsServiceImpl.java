@@ -27,6 +27,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerStatusDao;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
@@ -48,6 +50,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.management.ManagementServerStatus;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
@@ -74,7 +77,6 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
-import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -104,8 +106,10 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
-public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
+public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
+    private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
 
     @Inject
     private DataCenterDao dataCenterDao;
@@ -131,6 +135,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     private AccountManager accountMgr;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    @Inject
+    private ManagementServerStatusDao managementServerStatusDao;
     @Inject
     private AlertDao alertDao;
     @Inject
@@ -578,7 +584,13 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
         final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("getting metrics for %d MS hosts", managementServerResponses.size()));
+        }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("processing metrics for MS hosts %s", managementServerResponse.getId()));
+            }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 
             try {
@@ -586,6 +598,20 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
             }
+            final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
+            if (msStats == null) {
+                LOGGER.info(String.format("no status info found for host %s - %s",
+                        managementServerResponse.getname(),
+                        managementServerResponse.getId()));
+                continue;
+            }
+
+            metricsResponse.setJavaDistribution(msStats.getJavaName());
+            metricsResponse.setJavaVersion(msStats.getJavaVersion());
+            metricsResponse.setOsDistribution(msStats.getOsName());
+            metricsResponse.setOsVersion(msStats.getOsVersion());
+
+            metricsResponses.add(metricsResponse);
         }
         return metricsResponses;
     }

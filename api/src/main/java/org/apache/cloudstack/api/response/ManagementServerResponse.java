@@ -45,6 +45,10 @@ public class ManagementServerResponse extends BaseResponse {
         return this.id;
     }
 
+    public String getname() {
+        return this.name;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

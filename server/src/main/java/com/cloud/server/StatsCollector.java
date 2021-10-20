@@ -194,7 +194,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(StatsCollector.class);
 
     private static final int UNDEFINED_PORT_VALUE = -1;
 
@@ -231,23 +231,34 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final String INFLUXDB_HOST_MEASUREMENT = "host_stats";
     private static final String INFLUXDB_VM_MEASUREMENT = "vm_stats";
 
-    private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
+    private static final ConfigKey<Integer> MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
+            Integer.class, "management.server.stats.interval", "60",
+            "time interval for management servers stats. Set to <= 0 to disable management servers stats", false);
+    private static final ConfigKey<Integer> USAGE_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
+            Integer.class, "usage.server.stats.interval", "60",
+            "time interval for usage servers stats. Set to <= 0 to disable usage servers stats", false);
+    private static final ConfigKey<Integer> DATABASE_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
+            Integer.class, "database.server.stats.interval", "60",
+            "time interval for database servers stats. Set to <= 0 to disable database servers stats", false);
+    private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
-    private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
+    private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
             "Minimal interval (in seconds) to report vm disk statistics. If vm.disk.stats.interval is smaller than this, use this to report vm disk statistics.", false);
-    private static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval", "0",
+    private static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.network.stats.interval", "0",
             "Interval (in seconds) to report vm network statistics (for Shared networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
-    private static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
+    private static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
             "Minimal Interval (in seconds) to report vm network statistics (for Shared networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.",
             false);
-    private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "stats.timeout", "60000",
+    private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<>("Advanced", Integer.class, "stats.timeout", "60000",
             "The timeout for stats call in milli seconds.", true,
             ConfigKey.Scope.Cluster);
-    private static final ConfigKey<String> statsOutputUri = new ConfigKey<String>("Advanced", String.class, "stats.output.uri", "",
+    private static final ConfigKey<String> statsOutputUri = new ConfigKey<>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
     protected static ConfigKey<Boolean> vmStatsIncrementMetrics = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.increment.metrics", "true",
             "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed before being returned."
+    private static final ConfigKey<Boolean> VM_STATS_INCREMENT_METRICS_IN_MEMORY = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.increment.metrics.in.memory", "true",
+            "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed and stored in memory. "
             + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
     protected static ConfigKey<Integer> vmStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.stats.max.retention.time", "1",
             "The maximum time (in minutes) for keeping VM stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
@@ -402,7 +413,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private void printMetric(String metricName) {
         Object value = registry.getGauges().get(metricName).getValue();
         //System.out.println("name=" + metricName + ", value=" + value);
-        s_logger.debug("Metrics collection name=" + metricName + ", value=" + value);
+        LOGGER.debug("Metrics collection name=" + metricName + ", value=" + value);
     }
 
     protected void init(Map<String, String> configs) {
@@ -423,7 +434,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 try {
                     externalStatsType = ExternalStatsProtocol.valueOf(externalStatsScheme.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    s_logger.error(externalStatsScheme + " is not a valid protocol for external statistics. No statistics will be send.");
+                    LOGGER.error(externalStatsScheme + " is not a valid protocol for external statistics. No statistics will be send.");
                 }
 
                 if (StringUtils.isNotEmpty(uri.getHost())) {
@@ -446,7 +457,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
 
             } catch (URISyntaxException e) {
-                s_logger.error("Failed to parse external statistics URI: ", e);
+                LOGGER.error("Failed to parse external statistics URI: ", e);
             }
         }
 
@@ -460,8 +471,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             s_logger.info("Skipping collect VM stats. The global parameter vm.stats.interval is set to 0 or less than 0.");
         }
 
-        if (vmStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new ManagementServerCollector(), DEFAULT_INITIAL_DELAY, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
+        if (MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
+            _executor.scheduleWithFixedDelay(new ManagementServerCollector(),
+                    MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value(),
+                    MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value(),
+                    TimeUnit.SECONDS);
+        } else {
+                LOGGER.debug(String.format("%s - %d is 0 or less, so not scheduling the management host status collector thread",
+                    MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.key(), MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value()));
         }
 
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
@@ -476,26 +493,26 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         if (vmDiskStatsInterval.value() > 0) {
             if (vmDiskStatsInterval.value() < vmDiskStatsIntervalMin.value()) {
-                s_logger.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is smaller than vm.disk.stats.interval.min - " + vmDiskStatsIntervalMin.value()
+                LOGGER.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is smaller than vm.disk.stats.interval.min - " + vmDiskStatsIntervalMin.value()
                         + ", so use vm.disk.stats.interval.min");
                 _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsIntervalMin.value(), vmDiskStatsIntervalMin.value(), TimeUnit.SECONDS);
             } else {
                 _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval.value(), vmDiskStatsInterval.value(), TimeUnit.SECONDS);
             }
         } else {
-            s_logger.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm disk stats thread");
+            LOGGER.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm disk stats thread");
         }
 
         if (vmNetworkStatsInterval.value() > 0) {
             if (vmNetworkStatsInterval.value() < vmNetworkStatsIntervalMin.value()) {
-                s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is smaller than vm.network.stats.interval.min - "
+                LOGGER.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is smaller than vm.network.stats.interval.min - "
                         + vmNetworkStatsIntervalMin.value() + ", so use vm.network.stats.interval.min");
                 _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsIntervalMin.value(), vmNetworkStatsIntervalMin.value(), TimeUnit.SECONDS);
             } else {
                 _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsInterval.value(), vmNetworkStatsInterval.value(), TimeUnit.SECONDS);
             }
         } else {
-            s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm network stats thread");
+            LOGGER.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm network stats thread");
         }
 
         if (volumeStatsInterval > 0) {
@@ -537,7 +554,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             _dailyOrHourly = false;
         }
         if (_usageAggregationRange < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
-            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
+            LOGGER.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
             _usageAggregationRange = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
 
@@ -592,7 +609,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug("HostStatsCollector is running...");
+                LOGGER.debug("HostStatsCollector is running...");
 
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
 
@@ -606,7 +623,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         metrics.put(hostStatsEntry.getHostId(), hostStatsEntry);
                         _hostStats.put(host.getId(), hostStatsEntry);
                     } else {
-                        s_logger.warn("The Host stats is null for host: " + host.getId());
+                        LOGGER.warn("The Host stats is null for host: " + host.getId());
                     }
                 }
 
@@ -616,7 +633,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 updateGpuEnabledHostsDetails(hosts);
             } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve host stats", t);
+                LOGGER.error("Error trying to retrieve host stats", t);
             }
         }
 
@@ -652,24 +669,26 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug(String.format("%s is running...", this.getClass().getSimpleName()));
+                LOGGER.debug(String.format("%s is running...", this.getClass().getSimpleName()));
 
                 List<ManagementServerHostVO> msHosts = managementServerHostDao.listAll();
 
                 Map<Object, Object> metrics = new HashMap<>();
 
                 for (ManagementServerHostVO host : msHosts) {
-                    ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(host);
-                    hostStatsEntry.setManagementServerHostVO(host);
-                    metrics.put(hostStatsEntry.getManagementServerHostId(), hostStatsEntry);
-                    managementServerHostStats.put(host.getId(), hostStatsEntry);
+                    if (false) { // it is not this host we are running on
+                        // TODO send request for data to host and locally;
+                    } else {
+                        // get local data
+                        ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(host);
+                        hostStatsEntry.setManagementServerHostVO(host);
+                        metrics.put(hostStatsEntry.getManagementServerHostId(), hostStatsEntry);
+                        managementServerHostStats.put(host.getId(), hostStatsEntry);
+                    }
                 }
 
-                if (externalStatsType == ExternalStatsProtocol.INFLUXDB) {
-                    sendMetricsToInfluxdb(metrics);
-                }
             } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve host stats", t);
+                LOGGER.error("Error trying to retrieve host stats", t);
             }
         }
 
@@ -677,18 +696,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         private ManagementServerHostStatsEntry getDataFrom(@NotNull ManagementServerHostVO host) {
             ManagementServerHostStatsEntry newEntry = new ManagementServerHostStatsEntry();
             newEntry.setManagementServerHostVO(host);
-            s_logger.debug("Metrics collection start...");
+            LOGGER.debug("Metrics collection start...");
             long sessions = ApiSessionListener.getSessionCount();
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("Sessions found in Api %d vs context %d", sessions,ApiSessionListener.getNumberOfSessions()));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Sessions found in Api %d vs context %d", sessions,ApiSessionListener.getNumberOfSessions()));
             } else {
-                s_logger.debug("Sessions active: " + sessions);
+                LOGGER.debug("Sessions active: " + sessions);
             }
             getJvmDimensions(newEntry);
-            s_logger.debug("Metrics collection extra...");
+            LOGGER.debug("Metrics collection extra...");
             getRuntimeData(newEntry);
             getCpuData(newEntry);
-            s_logger.debug(String.format(
+            LOGGER.debug(String.format(
                     "Metrics uptime - %d , starttime - %d , proc1 - %d , loadavg - %f ",
                     newEntry.getUptime(),
                     newEntry.getStartTime(),
@@ -697,7 +716,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getMemoryData(newEntry);
 
             //MetricRegistry registry;
-            s_logger.debug("Metrics collection end!");
+            LOGGER.debug("Metrics collection end!");
             return newEntry;
         }
 
@@ -727,7 +746,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             long freeMemory = runtime.freeMemory();
             int proc = runtime.availableProcessors();
             long maxMem = runtime.maxMemory();
-            s_logger.debug(String.format(
+            LOGGER.debug(String.format(
                     "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %d ",
                     proc,
                     maxMem,
@@ -746,7 +765,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug("VmStatsCollector is running...");
+                LOGGER.trace("VmStatsCollector is running...");
 
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                 List<HostVO> hosts = _hostDao.search(sc, null);
@@ -794,13 +813,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             metrics.clear();
                         }
                     } catch (Exception e) {
-                        s_logger.debug("Failed to get VM stats for host with ID: " + host.getId());
+                        LOGGER.debug("Failed to get VM stats for host with ID: " + host.getId());
                         continue;
                     }
                 }
 
             } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve VM stats", t);
+                LOGGER.error("Error trying to retrieve VM stats", t);
             }
         }
 
@@ -906,7 +925,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     //msHost in UP state with min id should run the job
                     ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
                     if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
-                        s_logger.debug("Skipping aggregate disk stats update");
+                        LOGGER.debug("Skipping aggregate disk stats update");
                         scanLock.unlock();
                         return;
                     }
@@ -926,17 +945,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         _vmDiskStatsDao.update(stat.getId(), stat);
                                     }
                                 }
-                                s_logger.debug("Successfully updated aggregate vm disk stats");
+                                LOGGER.debug("Successfully updated aggregate vm disk stats");
                             }
                         });
                     } catch (Exception e) {
-                        s_logger.debug("Failed to update aggregate disk stats", e);
+                        LOGGER.debug("Failed to update aggregate disk stats", e);
                     } finally {
                         scanLock.unlock();
                     }
                 }
             } catch (Exception e) {
-                s_logger.debug("Exception while trying to acquire disk stats lock", e);
+                LOGGER.debug("Exception while trying to acquire disk stats lock", e);
             } finally {
                 scanLock.releaseRef();
             }
@@ -950,11 +969,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             //msHost in UP state with min id should run the job
             ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
             if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
-                s_logger.debug("Skipping collect vm disk stats from hosts");
+                LOGGER.debug("Skipping collect vm disk stats from hosts");
                 return;
             }
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
-            s_logger.debug("VmDiskStatsTask is running...");
+            LOGGER.debug("VmDiskStatsTask is running...");
 
             SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
             sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
@@ -996,26 +1015,26 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), vmId, volume.getId());
 
                                     if (areAllDiskStatsZero(vmDiskStat)) {
-                                        s_logger.debug("IO/bytes read and write are all 0. Not updating vm_disk_statistics");
+                                        LOGGER.debug("IO/bytes read and write are all 0. Not updating vm_disk_statistics");
                                         continue;
                                     }
 
                                     if (vmDiskStat_lock == null) {
-                                        s_logger.warn("unable to find vm disk stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()
+                                        LOGGER.warn("unable to find vm disk stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()
                                                 + " and volumeId:" + volume.getId());
                                         continue;
                                     }
 
                                     if (isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStats, vmDiskStat_lock)) {
-                                        s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
+                                        LOGGER.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
                                                 + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesWrite())
                                                 + " Read(IO): " + toHumanReadableSize(vmDiskStat.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStat.getIOWrite()));
                                         continue;
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Read # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
+                                        if (LOGGER.isDebugEnabled()) {
+                                            LOGGER.debug("Read # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " Stored: "
                                                     + vmDiskStat_lock.getCurrentBytesRead());
                                         }
@@ -1023,8 +1042,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     }
                                     vmDiskStat_lock.setCurrentBytesRead(vmDiskStat.getBytesRead());
                                     if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Write # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
+                                        if (LOGGER.isDebugEnabled()) {
+                                            LOGGER.debug("Write # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesWrite()) + " Stored: "
                                                     + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite()));
                                         }
@@ -1032,8 +1051,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     }
                                     vmDiskStat_lock.setCurrentBytesWrite(vmDiskStat.getBytesWrite());
                                     if (vmDiskStat_lock.getCurrentIORead() > vmDiskStat.getIORead()) {
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Read # of IO that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
+                                        if (LOGGER.isDebugEnabled()) {
+                                            LOGGER.debug("Read # of IO that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getIORead() + " Stored: "
                                                     + vmDiskStat_lock.getCurrentIORead());
                                         }
@@ -1041,8 +1060,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     }
                                     vmDiskStat_lock.setCurrentIORead(vmDiskStat.getIORead());
                                     if (vmDiskStat_lock.getCurrentIOWrite() > vmDiskStat.getIOWrite()) {
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Write # of IO that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
+                                        if (LOGGER.isDebugEnabled()) {
+                                            LOGGER.debug("Write # of IO that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getIOWrite() + " Stored: "
                                                     + vmDiskStat_lock.getCurrentIOWrite());
                                         }
@@ -1064,7 +1083,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         }
                     });
                 } catch (Exception e) {
-                    s_logger.warn(String.format("Error while collecting vm disk stats from host %s : ", host.getName()), e);
+                    LOGGER.warn(String.format("Error while collecting vm disk stats from host %s : ", host.getName()), e);
                 }
             }
         }
@@ -1077,11 +1096,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             //msHost in UP state with min id should run the job
             ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
             if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
-                s_logger.debug("Skipping collect vm network stats from hosts");
+                LOGGER.debug("Skipping collect vm network stats from hosts");
                 return;
             }
             // collect the vm network statistics(total) from hypervisor
-            s_logger.debug("VmNetworkStatsTask is running...");
+            LOGGER.debug("VmNetworkStatsTask is running...");
 
             SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
             List<HostVO> hosts = _hostDao.search(sc, null);
@@ -1110,10 +1129,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     continue;
                                 UserVmVO userVm = _userVmDao.findById(vmId);
                                 if (userVm == null) {
-                                    s_logger.debug("Cannot find uservm with id: " + vmId + " , continue");
+                                    LOGGER.debug("Cannot find uservm with id: " + vmId + " , continue");
                                     continue;
                                 }
-                                s_logger.debug("Now we are updating the user_statistics table for VM: " + userVm.getInstanceName()
+                                LOGGER.debug("Now we are updating the user_statistics table for VM: " + userVm.getInstanceName()
                                         + " after collecting vm network statistics from host: " + host.getName());
                                 for (VmNetworkStatsEntry vmNetworkStat : vmNetworkStats) {
                                     SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
@@ -1133,27 +1152,27 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                             nic.getIPv4Address(), vmId, "UserVm");
 
                                     if ((vmNetworkStat.getBytesSent() == 0) && (vmNetworkStat.getBytesReceived() == 0)) {
-                                        s_logger.debug("bytes sent and received are all 0. Not updating user_statistics");
+                                        LOGGER.debug("bytes sent and received are all 0. Not updating user_statistics");
                                         continue;
                                     }
 
                                     if (vmNetworkStat_lock == null) {
-                                        s_logger.warn("unable to find vm network stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()
+                                        LOGGER.warn("unable to find vm network stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()
                                                 + " and nicId:" + nic.getId());
                                         continue;
                                     }
 
                                     if (previousvmNetworkStats != null && ((previousvmNetworkStats.getCurrentBytesSent() != vmNetworkStat_lock.getCurrentBytesSent())
                                             || (previousvmNetworkStats.getCurrentBytesReceived() != vmNetworkStat_lock.getCurrentBytesReceived()))) {
-                                        s_logger.debug("vm network stats changed from the time GetNmNetworkStatsCommand was sent. " + "Ignoring current answer. Host: "
+                                        LOGGER.debug("vm network stats changed from the time GetNmNetworkStatsCommand was sent. " + "Ignoring current answer. Host: "
                                                 + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Sent(Bytes): " + vmNetworkStat.getBytesSent() + " Received(Bytes): "
                                                 + vmNetworkStat.getBytesReceived());
                                         continue;
                                     }
 
                                     if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Sent # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
+                                        if (LOGGER.isDebugEnabled()) {
+                                            LOGGER.debug("Sent # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: "
                                                     + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent()));
                                         }
@@ -1162,8 +1181,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     vmNetworkStat_lock.setCurrentBytesSent(vmNetworkStat.getBytesSent());
 
                                     if (vmNetworkStat_lock.getCurrentBytesReceived() > vmNetworkStat.getBytesReceived()) {
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
+                                        if (LOGGER.isDebugEnabled()) {
+                                            LOGGER.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
                                                     + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: "
                                                     + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived()));
                                         }
@@ -1183,7 +1202,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         }
                     });
                 } catch (Exception e) {
-                    s_logger.warn(String.format("Error while collecting vm network stats from host %s : ", host.getName()), e);
+                    LOGGER.warn(String.format("Error while collecting vm network stats from host %s : ", host.getName()), e);
                 }
             }
         }
@@ -1199,7 +1218,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
                         if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA && (volume.getFormat() != ImageFormat.RAW || pool.getPoolType() != Storage.StoragePoolType.PowerFlex)) {
-                            s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
+                            LOGGER.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
                     }
@@ -1225,12 +1244,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             }
                         }
                     } catch (Exception e) {
-                        s_logger.warn("Failed to get volume stats for cluster with ID: " + pool.getClusterId(), e);
+                        LOGGER.warn("Failed to get volume stats for cluster with ID: " + pool.getClusterId(), e);
                         continue;
                     }
                 }
             } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve volume stats", t);
+                LOGGER.error("Error trying to retrieve volume stats", t);
             }
         }
     }
@@ -1246,8 +1265,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("StorageCollector is running...");
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("StorageCollector is running...");
                 }
 
                 List<DataStore> stores = _dataStoreMgr.listImageStores();
@@ -1261,14 +1280,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), nfsVersion);
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
-                        s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());
+                        LOGGER.debug("There is no secondary storage VM for secondary storage host " + store.getName());
                         continue;
                     }
                     long storeId = store.getId();
                     Answer answer = ssAhost.sendMessage(command);
                     if (answer != null && answer.getResult()) {
                         storageStats.put(storeId, (StorageStats)answer);
-                        s_logger.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
+                        LOGGER.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
                     }
                 }
                 _storageStats = storageStats;
@@ -1294,7 +1313,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
                                     poolNeedsUpdating = true;
                                 } else {
-                                    s_logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
+                                    LOGGER.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
                                 }
                             }
                             if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) || _storageManager.canPoolProvideStorageStats(pool))) {
@@ -1307,14 +1326,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             }
                         }
                     } catch (StorageUnavailableException e) {
-                        s_logger.info("Unable to reach " + pool, e);
+                        LOGGER.info("Unable to reach " + pool, e);
                     } catch (Exception e) {
-                        s_logger.warn("Unable to get stats for " + pool, e);
+                        LOGGER.warn("Unable to get stats for " + pool, e);
                     }
                 }
                 _storagePoolStats = storagePoolStats;
             } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve storage stats", t);
+                LOGGER.error("Error trying to retrieve storage stats", t);
             }
         }
     }
@@ -1323,8 +1342,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("AutoScaling Monitor is running...");
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("AutoScaling Monitor is running...");
                 }
                 // list all AS VMGroups
                 List<AutoScaleVmGroupVO> asGroups = _asGroupDao.listAll();
@@ -1350,8 +1369,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         _asGroupDao.persist(asGroup);
 
                         // collect RRDs data for this group
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("[AutoScale] Collecting RRDs data...");
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("[AutoScale] Collecting RRDs data...");
                         }
                         Map<String, String> params = new HashMap<String, String>();
                         List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _asGroupVmDao.listByGroup(asGroup.getId());
@@ -1392,10 +1411,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         try {
                             Answer answer = _agentMgr.send(receiveHost, perfMon);
                             if (answer == null || !answer.getResult()) {
-                                s_logger.debug("Failed to send data to node !");
+                                LOGGER.debug("Failed to send data to node !");
                             } else {
                                 String result = answer.getDetails();
-                                s_logger.debug("[AutoScale] RRDs collection answer: " + result);
+                                LOGGER.debug("[AutoScale] RRDs collection answer: " + result);
                                 HashMap<Long, Double> avgCounter = new HashMap<Long, Double>();
 
                                 // extract data
@@ -1441,7 +1460,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                                     String scaleAction = getAutoscaleAction(avgCounter, asGroup.getId(), currentVM, params);
                                     if (scaleAction != null) {
-                                        s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
+                                        LOGGER.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
                                         if (scaleAction.equals("scaleup")) {
                                             _asManager.doScaleUp(asGroup.getId(), 1);
                                         } else {
@@ -1459,7 +1478,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
 
             } catch (Throwable t) {
-                s_logger.error("Error trying to monitor autoscaling", t);
+                LOGGER.error("Error trying to monitor autoscaling", t);
             }
 
         }
@@ -1618,7 +1637,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 Collection<Object> metricsObjects = metrics.values();
                 List<Point> points = new ArrayList<>();
 
-                s_logger.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
+                LOGGER.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
 
                 for (Object metricsObject : metricsObjects) {
                     Point vmPoint = creteInfluxDbPoint(metricsObject);
@@ -1645,7 +1664,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         StorageStats imageStoreStats = _storageStats.get(imageStoreId);
 
         if (imageStoreStats == null) {
-            s_logger.debug(String.format("Stats for image store [%s] not found.", imageStoreId));
+            LOGGER.debug(String.format("Stats for image store [%s] not found.", imageStoreId));
             return false;
         }
 
@@ -1655,13 +1674,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         String readableTotalCapacity = FileUtils.byteCountToDisplaySize((long) totalCapacity);
         String readableUsedCapacity = FileUtils.byteCountToDisplaySize((long) usedCapacity);
 
-        s_logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        LOGGER.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
 
         if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
 
-        s_logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        LOGGER.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
         return false;
     }
 
@@ -1688,12 +1707,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * Sends VMs metrics to the configured graphite host.
      */
     protected void sendVmMetricsToGraphiteHost(Map<Object, Object> metrics, HostVO host) {
-        s_logger.debug(String.format("Sending VmStats of host %s to %s host %s:%s", host.getId(), externalStatsType, externalStatsHost, externalStatsPort));
+        LOGGER.debug(String.format("Sending VmStats of host %s to %s host %s:%s", host.getId(), externalStatsType, externalStatsHost, externalStatsPort));
         try {
             GraphiteClient g = new GraphiteClient(externalStatsHost, externalStatsPort);
             g.sendMetrics(metrics);
         } catch (GraphiteException e) {
-            s_logger.debug("Failed sending VmStats to Graphite host " + externalStatsHost + ":" + externalStatsPort + ": " + e.getMessage());
+            LOGGER.debug("Failed sending VmStats to Graphite host " + externalStatsHost + ":" + externalStatsPort + ": " + e.getMessage());
         }
     }
 
@@ -1885,6 +1904,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         return _hostStats.get(hostId);
     }
 
+    public ManagementServerHostStats getManagementServerHostStats(long managementServerId) {
+        return managementServerHostStats.get(managementServerId);
+    }
+
     public StorageStats getStoragePoolStats(long id) {
         return _storagePoolStats.get(id);
     }
@@ -1897,7 +1920,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
-            vmStatsIncrementMetrics, vmStatsMaxRetentionTime};
+            vmStatsIncrementMetrics, vmStatsMaxRetentionTime,
+                VM_STATS_INCREMENT_METRICS_IN_MEMORY,
+                MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
+                USAGE_SERVER_STATUS_COLLECTION_INTERVAL,
+                DATABASE_SERVER_STATUS_COLLECTION_INTERVAL};
+>>>>>>> 2dfe4010bc (further API and DB plumbing)
     }
 
     public double getImageStoreCapacityThreshold() {

@@ -230,6 +230,8 @@ public class ApiConstants {
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
     public static final String ISO_GUEST_OS_NONE = "None";
+    public static final String JAVA_DISTRIBUTION = "javadistribution";
+    public static final String JAVA_VERSION = "javaversion";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
     public static final String LABEL = "label";
@@ -263,6 +265,8 @@ public class ApiConstants {
     public static final String NEW_END_IP = "newendip";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
+    public static final String OS_DISTRIBUTION = "osdistribution";
+    public static final String OS_VERSION = "osversion";
     public static final String IS_SYSTEM_OFFERING = "issystem";
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
