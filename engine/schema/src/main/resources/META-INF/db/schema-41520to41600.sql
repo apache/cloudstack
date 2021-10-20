@@ -794,3 +794,22 @@ ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
 ALTER TABLE cloud_usage.usage_network DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`,`zone_id`,`host_id`,`network_id`,`event_time_millis`);
 ALTER TABLE `cloud`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
 ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
+
+-- Management Server Status
+CREATE TABLE `cloud`.`mshost_status` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `ms_id` bigint unsigned NOT NULL COMMENT 'the id of the management server record',
+  `last_start` datetime COMMENT 'the last start time for this MS',
+  `last_stop` datetime COMMENT 'the last stop time for this MS',
+  `last_boot` datetime COMMENT 'the last system boot time for the host of this MS',
+  `last_down` datetime COMMENT 'the last system shutdown time for the host of this MS',
+  `os_name` varchar(64) default null COMMENT 'the name of the os type running on the host of this MS',
+  `os_version` varchar(64) default null COMMENT 'the version of the os running on the host of this MS',
+  `java_name` varchar(64) default null COMMENT 'the name of the java distribution running this MS',
+  `java_version` varchar(64) default null COMMENT 'the version of the java distribution running this MS',
+  `updated` datetime default NULL,
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_ms_id` UNIQUE (`ms_id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
