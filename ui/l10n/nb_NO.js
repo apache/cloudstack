@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "Alle tjenester levert fra denne virtuelle ruter vil bli avbrutt. Vennligst bekreft at du ønsker å stoppe denne ruteren.",
     "message.action.stop.systemvm": "Vennligst bekreft at du vil stoppe denne system VM.",
     "message.action.take.snapshot": "Vennligst bekreft at du vil ta et øyeblikksbilde av dette volumet.",
+    "message.action.snapshot.fromsnapshot":"Bekreft at du vil ta et øyeblikksbilde av dette virtuelle maskinbildet.",
     "message.action.unmanage.cluster": "Vennligst bekreft at du ikke ønsker å administere klyngen.",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "Vennligst bekreft at du ønsker å slette dette VM øyeblikksbildet.",

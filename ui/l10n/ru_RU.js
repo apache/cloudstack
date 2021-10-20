@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "Подтвердите, что вы действительно хотите остановить этот роутер.",
     "message.action.stop.systemvm": "Пожалуйста подтвердите желание остановить эту служебную машину.",
     "message.action.take.snapshot": "Подтвердите, что вы действительно хотите получить снимок этого диска.",
+    "message.action.snapshot.fromsnapshot":"Пожалуйста, подтвердите, что вы хотите сделать снимок этого снимка виртуальной машины.",
     "message.action.unmanage.cluster": "Подтвердите, что вы действительно хотите перевести кластер в обычный режим.",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "Пожалуйста подтвердите, что Вы хотите удалить этот снимок ВМ.",

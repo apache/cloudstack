@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "Als u deze router stopt zullen de diensten die gebruik maken van de router verstoord worden. Weet u zeker dat u deze actie wil uitvoeren?",
     "message.action.stop.systemvm": "Bevestig dat u deze systeem VM wilt stoppen.",
     "message.action.take.snapshot": "Bevestig dat u een snapshot wilt maken van dit volume.",
+    "message.action.snapshot.fromsnapshot":"Bevestig dat u een snapshot wilt maken van dit VM snapshot.",
     "message.action.unmanage.cluster": "Bevestig dat u dit cluster niet langer wilt laten beheren door CloudStack.",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "Bevestig dat u deze VM snapshot wilt verwijderen.",

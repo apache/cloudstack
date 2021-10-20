@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "Tous les services fournit par ce routeur virtuel vont être interrompus. Confirmer l'arrêt de ce routeur.",
     "message.action.stop.systemvm": "Arrêter cette VM ?",
     "message.action.take.snapshot": "Confirmer la prise d'un instantané pour ce volume.",
+    "message.action.snapshot.fromsnapshot":"Confirmer la prise d'un instantané pour ce instantané VM.",
     "message.action.unmanage.cluster": "Confirmez que vous ne voulez plus gérer le cluster",
     "message.action.vmsnapshot.create": "Veuillez confirmer que vous souhaitez prendre un instantané de cette instance. <br>Notez que l'instance sera mise en pause durant la prise de l'instantané puis remise en route une fois terminée, si elle fonctionne sur KVM.",
     "message.action.vmsnapshot.delete": "Confirmez que vous souhaitez supprimer cet instantané VM.",

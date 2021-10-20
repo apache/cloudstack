@@ -1876,6 +1876,7 @@ var dictionary = {
     "message.action.stop.router": "此虚拟路由器提供的所有服务都将中断。请确认您确实要停止此路由器。",
     "message.action.stop.systemvm": "请确认您确实要停止此系统 VM。",
     "message.action.take.snapshot": "请确认您确实要创建此卷的快照。",
+    "message.action.snapshot.fromsnapshot":"请确认您要对此虚拟机快照制作快照。",
     "message.action.unmanage.cluster": "请确认您确实要取消托管此群集。",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "请确认您确实要删除此 VM 快照。",

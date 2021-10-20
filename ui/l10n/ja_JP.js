@@ -1876,6 +1876,7 @@ var dictionary = {
     "message.action.stop.router": "この仮想ルーターで提供するすべてのサービスが中断されます。このルーターを停止してもよろしいですか?",
     "message.action.stop.systemvm": "このシステム VM を停止してもよろしいですか?",
     "message.action.take.snapshot": "このボリュームのスナップショットを作成してもよろしいですか?",
+    "message.action.snapshot.fromsnapshot":"このVMスナップショットのスナップショットを作成してもよろしいですか?",
     "message.action.unmanage.cluster": "クラスターを非管理対象にしてもよろしいですか?",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "この VM スナップショットを削除してもよろしいですか?",

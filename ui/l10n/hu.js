@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "Minden ezzel a routerrel kapcsolatos szolgáltatás megszakad. Erősítsd meg, hogy le akarod állítani ezt a routert!",
     "message.action.stop.systemvm": "Erősítsd meg, hogy le akarod állítani ezt a rendszer VM-et!",
     "message.action.take.snapshot": "Erősítsd meg, hogy pillanatfelvételt kérsz erről a kötetről!",
+    "message.action.snapshot.fromsnapshot":"Erősítsd meg, hogy pillanatfelvételt kérsz erről a VM pillanatfelvételt!",
     "message.action.unmanage.cluster": "Erősítsd meg, hogy megszakítod a fürt vezérlését!",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "Erősítsd meg, hogy törölni akarod ezt a VM pillanatfelvételt!",

@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "현재 가상 라우터로 제공하는 모든 서비스가 중단됩니다. 이 라우터를 정지하시겠습니까?",
     "message.action.stop.systemvm": "현재 시스템 VM을 정지하시겠습니까?",
     "message.action.take.snapshot": "현재 볼륨 스냅샷을 만드시겠습니까?",
+    "message.action.snapshot.fromsnapshot":"이 VM 스냅 샷의 스냅 샷을 만들려는지 확인하십시오.",
     "message.action.unmanage.cluster": "클러스터를 비관리 대상으로 하시겠습니까?",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "Please confirm that you want to delete this VM snapshot.",

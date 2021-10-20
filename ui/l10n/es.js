@@ -1874,6 +1874,7 @@ var dictionary = {
     "message.action.stop.router": "Todos los servicios provistos por este router virtual serán interrumpidos. Por favor confirmar que desea apagarlo.",
     "message.action.stop.systemvm": "Por favor, confirme que desea detener esta MV de Sistema. ",
     "message.action.take.snapshot": "Por favor, confirme que desea tomar una instantánea de este volúmen.",
+    "message.action.snapshot.fromsnapshot":"Por favor, confirme que desea tomar una instantánea de este instantánea VM.",
     "message.action.unmanage.cluster": "Por favor, confirme que desea dejar de gestionar el Clúster.",
     "message.action.vmsnapshot.create": "Please confirm that you want to take a snapshot of this instance. <br>Please notice that the instance will be paused during the snapshoting, and resumed after snapshotting, if it runs on KVM.",
     "message.action.vmsnapshot.delete": "Por favor confirme que desea borrar esta instantánea de la MV.",
