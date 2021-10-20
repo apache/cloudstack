@@ -67,6 +67,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "If true, router minimum required version is checked before sending command", false);
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
             "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<String> NetworkStatsExclusionList = new ConfigKey<String>("Advanced", String.class, "network.stats.exclusion.list", "",
+            "CIDRs and IPs that are excluded from network usage stats", true, ConfigKey.Scope.Global);
 
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz

@@ -112,3 +112,6 @@ class CsConfig(object):
             return 'mangle'
         else:
             return ""
+
+    def get_network_stats_exclusion_list(self):
+        return self.cl.get_network_stats_exclusion_list()

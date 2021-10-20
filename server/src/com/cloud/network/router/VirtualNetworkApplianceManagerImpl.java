@@ -1491,6 +1491,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
+        String exclusionList = NetworkStatsExclusionList.value().replaceAll("\\s", "");
+        if (!exclusionList.equals("")) {
+            buf.append(" network_stats_exclusion_list=").append(exclusionList);
+        }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
@@ -2590,7 +2595,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval };
+        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval, NetworkStatsExclusionList };
     }
 
     @Override

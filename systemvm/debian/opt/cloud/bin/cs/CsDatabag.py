@@ -158,3 +158,8 @@ class CsCmdLine(CsDataBag):
         if 'advert_int' in self.idata():
             return self.idata()['advert_int']
         return 1
+
+    def get_network_stats_exclusion_list(self):
+        if 'network_stats_exclusion_list' in self.idata():
+            return self.idata()['network_stats_exclusion_list']
+        return False
