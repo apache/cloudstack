@@ -363,7 +363,7 @@
                     </a-checkbox>
                   </a-col>
                 </a-row>
-                <a-row>
+                <a-row v-if="$store.getters.userInfo.roletype === 'Admin'">
                   <a-col :span="12">
                     <a-checkbox value="isfeatured">
                       {{ $t('label.isfeatured') }}
@@ -372,7 +372,7 @@
                   <a-col :span="12">
                     <a-checkbox
                       value="ispublic"
-                      v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+                      v-if="$store.getters.features.userpublictemplateenabled" >
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
