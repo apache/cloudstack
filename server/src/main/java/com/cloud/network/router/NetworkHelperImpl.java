@@ -166,7 +166,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     RouterHealthCheckResultDao _routerHealthCheckResultDao;
     @Inject
-    Ipv6Service _ipv6Service;
+    Ipv6Service ipv6Service;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -685,7 +685,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
             if (routerDeploymentDefinition.getGuestNetwork() != null) {
-                _ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
+                ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
             }
             publicConfig.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }

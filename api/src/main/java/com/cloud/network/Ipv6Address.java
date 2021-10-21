@@ -18,12 +18,12 @@ package com.cloud.network;
 
 import java.util.Date;
 
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
-import org.apache.commons.lang.StringUtils;
+import com.cloud.exception.InvalidParameterValueException;
 
 /**
  *
@@ -50,9 +50,8 @@ public interface Ipv6Address extends Identity, InternalIdentity, Displayable {
                 return IPv6;
             } else if (protocol.equalsIgnoreCase("DualStack")) {
                 return DualStack;
-            } else {
-                throw new InvalidParameterValueException("Unexpected Internet Protocol : " + protocol);
             }
+            throw new InvalidParameterValueException("Unexpected Internet Protocol : " + protocol);
         }
     }
 
@@ -66,9 +65,8 @@ public interface Ipv6Address extends Identity, InternalIdentity, Displayable {
                 return Static;
             } else if (mode.equalsIgnoreCase("Dynamic")) {
                 return Dynamic;
-            } else {
-                throw new InvalidParameterValueException("Unexpected IPv6 routing mode : " + mode);
             }
+            throw new InvalidParameterValueException("Unexpected IPv6 routing mode : " + mode);
         }
     }
 

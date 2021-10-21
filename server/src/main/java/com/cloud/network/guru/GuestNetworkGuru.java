@@ -22,10 +22,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.network.Ipv6AddressManager;
-import com.cloud.network.Ipv6Service;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -47,12 +43,16 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6AddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -114,9 +114,9 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Inject
     IpAddressManager _ipAddrMgr;
     @Inject
-    Ipv6Service _ipv6Service;
+    Ipv6Service ipv6Service;
     @Inject
-    Ipv6AddressManager _ipv6Mgr;
+    Ipv6AddressManager ipv6AddressManager;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -356,7 +356,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
-        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
+        boolean isIpv6Supported = ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
         boolean isGateway = false;
         //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
         if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
@@ -436,7 +436,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     nic.setFormat(Networks.AddressFormat.Ip6);
                 }
             }
-            _ipv6Mgr.setNicIp6Address(nic, dc, network);
+            ipv6AddressManager.setNicIp6Address(nic, dc, network);
         }
 
         return nic;

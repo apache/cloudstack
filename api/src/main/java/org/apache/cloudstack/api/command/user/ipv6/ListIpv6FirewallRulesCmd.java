@@ -19,18 +19,20 @@ package org.apache.cloudstack.api.command.user.ipv6;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
+
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listIpv6FirewallRules", description = "Lists all IPv6 firewall rules", responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -98,10 +100,7 @@ public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd impleme
 
     @Override
     public Boolean getDisplay() {
-        if (display != null) {
-            return display;
-        }
-        return super.getDisplay();
+        return BooleanUtils.toBooleanDefaultIfNull(display, super.getDisplay());
     }
 
     /////////////////////////////////////////////////////

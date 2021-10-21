@@ -26,10 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.DataCenterIpv6AddressDao;
-import com.cloud.network.Ipv6Service;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,10 +67,12 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpv6AddressDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -88,9 +86,9 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -120,6 +118,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
@@ -135,6 +134,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.googlecode.ipv6.IPv6Address;
 
 public class CommandSetupHelper {
 
@@ -184,9 +184,9 @@ public class CommandSetupHelper {
     @Inject
     private HostDao _hostDao;
     @Inject
-    Ipv6Service _ipv6Service;
+    Ipv6Service ipv6Service;
     @Inject
-    DataCenterIpv6AddressDao _ipv6AddressDao;
+    DataCenterIpv6AddressDao ipv6AddressDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1059,31 +1059,32 @@ public class CommandSetupHelper {
     }
 
     private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress, String defaultIp6Dns1, String defaultIp6Dns2) {
-        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
+        boolean isIpv6Supported = ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
         if (isIpv6Supported) {
-            setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
-            setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-            final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
-            if (routerIpv6 == null) {
-                final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
-                if (routerIpv6Gateway == null) {
-                    throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
-                }
-                final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0];
-                IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
-                s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for mac address " + macAddress);
-                setupCmd.setRouterIpv6(ipv6addr.toString());
-                setupCmd.setRouterIpv6Cidr(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX);
-                setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
-            } else {
-                setupCmd.setRouterIpv6(routerIpv6);
-                setupCmd.setRouterIpv6Cidr(routerIpv6 + Ipv6Service.IPV6_CIDR_SUFFIX);
-                final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
-                setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
-            }
-            boolean isIpv6FirewallEnabled = _ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId());
-            setupCmd.setRouterIpv6Firewall(isIpv6FirewallEnabled);
+            return;
         }
+        setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
+        setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
+        final String routerIpv6 = ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
+        if (routerIpv6 == null) {
+            final String routerIpv6Gateway = ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
+            if (routerIpv6Gateway == null) {
+                throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
+            }
+            final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0];
+            IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
+            s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for mac address " + macAddress);
+            setupCmd.setRouterIpv6(ipv6addr.toString());
+            setupCmd.setRouterIpv6Cidr(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX);
+            setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
+        } else {
+            setupCmd.setRouterIpv6(routerIpv6);
+            setupCmd.setRouterIpv6Cidr(routerIpv6 + Ipv6Service.IPV6_CIDR_SUFFIX);
+            final String routerIpv6Gateway = ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
+            setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
+        }
+        boolean isIpv6FirewallEnabled = ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId());
+        setupCmd.setRouterIpv6Firewall(isIpv6FirewallEnabled);
     }
 
     private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,

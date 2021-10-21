@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.ipv6;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.rules.FirewallRule;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,12 +29,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
@@ -83,11 +84,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public boolean isDisplay() {
-        if (display != null) {
-            return display;
-        } else {
-            return true;
-        }
+        return BooleanUtils.toBooleanDefaultIfNull(display, true);
     }
 
     public String getProtocol() {
@@ -105,11 +102,10 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
             return cidrlist;
-        } else {
-            List<String> oneCidrList = new ArrayList<String>();
-            oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
-            return oneCidrList;
         }
+        List<String> oneCidrList = new ArrayList<String>();
+        oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
+        return oneCidrList;
     }
 
     public FirewallRule.TrafficType getTrafficType() {

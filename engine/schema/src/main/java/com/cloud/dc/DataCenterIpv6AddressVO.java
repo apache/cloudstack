@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
-import com.cloud.network.Ipv6Address;
+import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,8 +27,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import java.util.Date;
-import java.util.UUID;
+
+import com.cloud.network.Ipv6Address;
 
 @Entity
 @Table(name = "dc_ipv6_range")
@@ -148,9 +149,13 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
         return accountId;
     }
 
-    public Long getNetworkId() { return networkId; }
+    public Long getNetworkId() {
+        return networkId;
+    }
 
-    public void setNetworkId(Long networkId) { this.networkId = networkId; }
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
+    }
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;

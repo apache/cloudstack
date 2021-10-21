@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.ipv6;
 
 import java.util.List;
 
-import com.cloud.network.rules.FirewallRule;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,10 +25,12 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateIpv6FirewallRule", description = "Updates Ipv6 firewall rule with specified ID", responseObject = FirewallRuleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -76,11 +77,7 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public boolean isDisplay() {
-        if (display != null) {
-            return display;
-        } else {
-            return true;
-        }
+        return BooleanUtils.toBooleanDefaultIfNull(display, true);
     }
 
     public Long getId() {
