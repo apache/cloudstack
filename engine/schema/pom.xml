@@ -159,7 +159,7 @@
             <id>download-kvm-systemvm-template</id>
             <activation>
                 <property>
-                    <name>downloadKvmSystemVmTemplate</name>
+                    <name>systemvm-kvm</name>
                 </property>
             </activation>
             <build>
@@ -195,7 +195,7 @@
             <id>download-vmware-systemvm-template</id>
             <activation>
                 <property>
-                    <name>downloadVmwareSystemVmTemplate</name>
+                    <name>systemvm-vmware</name>
                 </property>
             </activation>
             <build>
@@ -231,7 +231,7 @@
             <id>download-xenserver-systemvm-template</id>
             <activation>
                 <property>
-                    <name>downloadXenserverSystemVmTemplate</name>
+                    <name>systemvm-xen</name>
                 </property>
             </activation>
             <build>
@@ -267,7 +267,7 @@
             <id>download-ovm-systemvm-template</id>
             <activation>
                 <property>
-                    <name>downloadOvmSystemVmTemplate</name>
+                    <name>systemvm-ovm</name>
                 </property>
             </activation>
             <build>
@@ -303,7 +303,7 @@
             <id>download-hyperv-systemvm-template</id>
             <activation>
                 <property>
-                    <name>downloadHypervSystemVmTemplate</name>
+                    <name>systemvm-hyperv</name>
                 </property>
             </activation>
             <build>
