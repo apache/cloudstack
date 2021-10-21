@@ -502,11 +502,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public boolean canPoolProvideStorageStats(StoragePool pool) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats()) {
-            return true;
-        }
-
-        return false;
+       return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats();
     }
 
     @Override
