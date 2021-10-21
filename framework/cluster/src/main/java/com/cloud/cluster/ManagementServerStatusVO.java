@@ -198,18 +198,6 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
 
     @Override
     public String toString() {
-        return String.join("-",
-                "ManagementServerStatus[",
-                String.valueOf(id),
-                String.valueOf(msId),
-                lastStart.toString(),
-                lastStop.toString(),
-                lastBoot.toString(),
-                lastDown.toString(),
-                osName,
-                osVersion,
-                javaName,
-                javaVersion,
-                "]");
+        return new org.apache.commons.lang3.builder.ReflectionToStringBuilder(this, org.apache.commons.lang3.builder.ToStringStyle.SIMPLE_STYLE).toString();
     }
 }

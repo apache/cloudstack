@@ -50,7 +50,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.management.ManagementServerStatus;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
@@ -91,6 +90,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.server.ManagementServerHostStats;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
@@ -106,6 +106,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.log4j.Logger;
 
 public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
@@ -150,16 +151,23 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         super();
     }
 
-    private void updateHostMetrics(final Metrics metrics, final HostJoinVO host) {
-        metrics.incrTotalHosts();
-        metrics.addCpuAllocated(host.getCpuReservedCapacity() + host.getCpuUsedCapacity());
-        metrics.addMemoryAllocated(host.getMemReservedCapacity() + host.getMemUsedCapacity());
+    private Double findRatioValue(final String value) {
+        if (value != null) {
+            return Double.valueOf(value);
+        }
+        return 1.0;
+    }
+
+    private void updateHostMetrics(final org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics hostMetrics, final HostJoinVO host) {
+        hostMetrics.incrTotalHosts();
+        hostMetrics.addCpuAllocated(host.getCpuReservedCapacity() + host.getCpuUsedCapacity());
+        hostMetrics.addMemoryAllocated(host.getMemReservedCapacity() + host.getMemUsedCapacity());
         final HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
         if (hostStats != null) {
-            metrics.addCpuUsedPercentage(hostStats.getCpuUtilization());
-            metrics.addMemoryUsed((long) hostStats.getUsedMemory());
-            metrics.setMaximumCpuUsage(hostStats.getCpuUtilization());
-            metrics.setMaximumMemoryUsage((long) hostStats.getUsedMemory());
+            hostMetrics.addCpuUsedPercentage(hostStats.getCpuUtilization());
+            hostMetrics.addMemoryUsed((long) hostStats.getUsedMemory());
+            hostMetrics.setMaximumCpuUsage(hostStats.getCpuUtilization());
+            hostMetrics.setMaximumMemoryUsage((long) hostStats.getUsedMemory());
         }
     }
     /**
@@ -535,45 +543,45 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, null, clusterId);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
-            final Metrics metrics = new Metrics(cpuCapacity, memoryCapacity);
+            final org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics hostMetrics = new org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics(cpuCapacity, memoryCapacity);
 
             for (final Host host: hostDao.findByClusterId(clusterId)) {
                 if (host == null || host.getType() != Host.Type.Routing) {
                     continue;
                 }
                 if (host.getStatus() == Status.Up) {
-                    metrics.incrUpResources();
+                    hostMetrics.incrUpResources();
                 }
-                metrics.incrTotalResources();
-                updateHostMetrics(metrics, hostJoinDao.findById(host.getId()));
+                hostMetrics.incrTotalResources();
+                updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
             }
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
-            metricsResponse.setResources(metrics.getUpResources(), metrics.getTotalResources());
+            metricsResponse.setResources(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
             // CPU
-            metricsResponse.setCpuTotal(metrics.getTotalCpu());
-            metricsResponse.setCpuAllocated(metrics.getCpuAllocated(), metrics.getTotalCpu());
-            if (metrics.getCpuUsedPercentage() > 0L) {
-                metricsResponse.setCpuUsed(metrics.getCpuUsedPercentage(), metrics.getTotalHosts());
-                metricsResponse.setCpuMaxDeviation(metrics.getMaximumCpuUsage(), metrics.getCpuUsedPercentage(), metrics.getTotalHosts());
+            metricsResponse.setCpuTotal(hostMetrics.getTotalCpu());
+            metricsResponse.setCpuAllocated(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu());
+            if (hostMetrics.getCpuUsedPercentage() > 0L) {
+                metricsResponse.setCpuUsed(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
+                metricsResponse.setCpuMaxDeviation(hostMetrics.getMaximumCpuUsage(), hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
             }
             // Memory
-            metricsResponse.setMemTotal(metrics.getTotalMemory());
-            metricsResponse.setMemAllocated(metrics.getMemoryAllocated(), metrics.getTotalMemory());
-            if (metrics.getMemoryUsed() > 0L) {
-                metricsResponse.setMemUsed(metrics.getMemoryUsed(), metrics.getTotalMemory());
-                metricsResponse.setMemMaxDeviation(metrics.getMaximumMemoryUsage(), metrics.getMemoryUsed(), metrics.getTotalHosts());
+            metricsResponse.setMemTotal(hostMetrics.getTotalMemory());
+            metricsResponse.setMemAllocated(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory());
+            if (hostMetrics.getMemoryUsed() > 0L) {
+                metricsResponse.setMemUsed(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory());
+                metricsResponse.setMemMaxDeviation(hostMetrics.getMaximumMemoryUsage(), hostMetrics.getMemoryUsed(), hostMetrics.getTotalHosts());
             }
             // CPU thresholds
-            metricsResponse.setCpuUsageThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuThreshold);
-            metricsResponse.setCpuUsageDisableThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuDisableThreshold);
-            metricsResponse.setCpuAllocatedThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuThreshold);
-            metricsResponse.setCpuAllocatedDisableThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuDisableThreshold);
+            metricsResponse.setCpuUsageThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuThreshold);
+            metricsResponse.setCpuUsageDisableThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuDisableThreshold);
+            metricsResponse.setCpuAllocatedThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuThreshold);
+            metricsResponse.setCpuAllocatedDisableThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuDisableThreshold);
             // Memory thresholds
-            metricsResponse.setMemoryUsageThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryThreshold);
-            metricsResponse.setMemoryUsageDisableThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryDisableThreshold);
-            metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryThreshold);
-            metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryDisableThreshold);
+            metricsResponse.setMemoryUsageThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryThreshold);
+            metricsResponse.setMemoryUsageDisableThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
+            metricsResponse.setMemoryAllocatedThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryThreshold);
+            metricsResponse.setMemoryAllocatedDisableThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
 
             metricsResponse.setHasAnnotation(clusterResponse.hasAnnotation());
             metricsResponses.add(metricsResponse);
@@ -598,22 +606,43 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
             }
-            final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
-            if (msStats == null) {
-                LOGGER.info(String.format("no status info found for host %s - %s",
-                        managementServerResponse.getname(),
-                        managementServerResponse.getId()));
-                continue;
-            }
 
-            metricsResponse.setJavaDistribution(msStats.getJavaName());
-            metricsResponse.setJavaVersion(msStats.getJavaVersion());
-            metricsResponse.setOsDistribution(msStats.getOsName());
-            metricsResponse.setOsVersion(msStats.getOsVersion());
+            updateManagementServerMetrics(metricsResponse, managementServerResponse);
+
+            getManagementServerRuntimeVersions(managementServerResponse, metricsResponse);
 
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;
+    }
+
+    private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("getting stats for %s", managementServerResponse.getId()));
+        }
+        ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
+        if (status == null ) {
+            LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getname(), managementServerResponse.getId()));
+        } else {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getname(), new ReflectionToStringBuilder(status)));
+            }
+            metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+        }
+    }
+
+    private void getManagementServerRuntimeVersions(org.apache.cloudstack.api.response.ManagementServerResponse managementServerResponse, org.apache.cloudstack.response.ManagementServerMetricsResponse metricsResponse) {
+        final org.apache.cloudstack.management.ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
+        if (msStats == null) {
+            LOGGER.info(String.format("no status info found for host %s - %s",
+                    managementServerResponse.getname(),
+                    managementServerResponse.getId()));
+        } else {
+            metricsResponse.setJavaDistribution(msStats.getJavaName());
+            metricsResponse.setJavaVersion(msStats.getJavaVersion());
+            metricsResponse.setOsDistribution(msStats.getOsName());
+            metricsResponse.setOsVersion(msStats.getOsVersion());
+        }
     }
 
     @Override
@@ -643,53 +672,53 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, zoneId, null);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, zoneId, null);
-            final Metrics metrics = new Metrics(cpuCapacity, memoryCapacity);
+            final org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics hostMetrics = new org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics(cpuCapacity, memoryCapacity);
 
             for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
                 if (cluster == null) {
                     continue;
                 }
-                metrics.incrTotalResources();
+                hostMetrics.incrTotalResources();
                 if (cluster.getAllocationState() == Grouping.AllocationState.Enabled
                         && cluster.getManagedState() == Managed.ManagedState.Managed) {
-                    metrics.incrUpResources();
+                    hostMetrics.incrUpResources();
                 }
 
                 for (final Host host: hostDao.findByClusterId(cluster.getId())) {
                     if (host == null || host.getType() != Host.Type.Routing) {
                         continue;
                     }
-                    updateHostMetrics(metrics, hostJoinDao.findById(host.getId()));
+                    updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
                 }
             }
 
             metricsResponse.setHasAnnotation(zoneResponse.hasAnnotation());
             metricsResponse.setState(zoneResponse.getAllocationState());
-            metricsResponse.setResource(metrics.getUpResources(), metrics.getTotalResources());
+            metricsResponse.setResource(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
             // CPU
-            metricsResponse.setCpuTotal(metrics.getTotalCpu());
-            metricsResponse.setCpuAllocated(metrics.getCpuAllocated(), metrics.getTotalCpu());
-            if (metrics.getCpuUsedPercentage() > 0L) {
-                metricsResponse.setCpuUsed(metrics.getCpuUsedPercentage(), metrics.getTotalHosts());
-                metricsResponse.setCpuMaxDeviation(metrics.getMaximumCpuUsage(), metrics.getCpuUsedPercentage(), metrics.getTotalHosts());
+            metricsResponse.setCpuTotal(hostMetrics.getTotalCpu());
+            metricsResponse.setCpuAllocated(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu());
+            if (hostMetrics.getCpuUsedPercentage() > 0L) {
+                metricsResponse.setCpuUsed(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
+                metricsResponse.setCpuMaxDeviation(hostMetrics.getMaximumCpuUsage(), hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
             }
             // Memory
-            metricsResponse.setMemTotal(metrics.getTotalMemory());
-            metricsResponse.setMemAllocated(metrics.getMemoryAllocated(), metrics.getTotalMemory());
-            if (metrics.getMemoryUsed() > 0L) {
-                metricsResponse.setMemUsed(metrics.getMemoryUsed(), metrics.getTotalMemory());
-                metricsResponse.setMemMaxDeviation(metrics.getMaximumMemoryUsage(), metrics.getMemoryUsed(), metrics.getTotalHosts());
+            metricsResponse.setMemTotal(hostMetrics.getTotalMemory());
+            metricsResponse.setMemAllocated(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory());
+            if (hostMetrics.getMemoryUsed() > 0L) {
+                metricsResponse.setMemUsed(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory());
+                metricsResponse.setMemMaxDeviation(hostMetrics.getMaximumMemoryUsage(), hostMetrics.getMemoryUsed(), hostMetrics.getTotalHosts());
             }
             // CPU thresholds
-            metricsResponse.setCpuUsageThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuThreshold);
-            metricsResponse.setCpuUsageDisableThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuDisableThreshold);
-            metricsResponse.setCpuAllocatedThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuThreshold);
-            metricsResponse.setCpuAllocatedDisableThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuDisableThreshold);
+            metricsResponse.setCpuUsageThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuThreshold);
+            metricsResponse.setCpuUsageDisableThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuDisableThreshold);
+            metricsResponse.setCpuAllocatedThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuThreshold);
+            metricsResponse.setCpuAllocatedDisableThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuDisableThreshold);
             // Memory thresholds
-            metricsResponse.setMemoryUsageThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryThreshold);
-            metricsResponse.setMemoryUsageDisableThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryDisableThreshold);
-            metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryThreshold);
-            metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryDisableThreshold);
+            metricsResponse.setMemoryUsageThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryThreshold);
+            metricsResponse.setMemoryUsageDisableThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
+            metricsResponse.setMemoryAllocatedThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryThreshold);
+            metricsResponse.setMemoryAllocatedDisableThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
 
             metricsResponses.add(metricsResponse);
         }
@@ -711,7 +740,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return cmdList;
     }
 
-    private class Metrics {
+    private class HostMetrics {
         // CPU metrics
         private Long totalCpu = 0L;
         private Long cpuAllocated = 0L;
@@ -727,7 +756,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         private Long totalResources = 0L;
         private Long upResources = 0L;
 
-        public Metrics(final CapacityDaoImpl.SummedCapacity totalCpu, final CapacityDaoImpl.SummedCapacity totalMemory) {
+        public HostMetrics(final CapacityDaoImpl.SummedCapacity totalCpu, final CapacityDaoImpl.SummedCapacity totalMemory) {
             if (totalCpu != null) {
                 this.totalCpu = totalCpu.getTotalCapacity();
             }

@@ -24,6 +24,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     private ManagementServerHostVO managementServerHostVO;
     private long managementServerHostId;
+    private String managementServerHostUuid;
 
     private long sessions;
     private double cpuUtilization;
@@ -46,6 +47,15 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setManagementServerHostId(long managementServerHostId) {
         this.managementServerHostId = managementServerHostId;
+    }
+
+    @Override
+    public String getManagementServerHostUuid() {
+        return managementServerHostUuid;
+    }
+
+    public void setManagementServerHostUuid(String managementServerHostUuid) {
+        this.managementServerHostUuid = managementServerHostUuid;
     }
 
     public ManagementServerHostVO getManagementServerHostVO() {

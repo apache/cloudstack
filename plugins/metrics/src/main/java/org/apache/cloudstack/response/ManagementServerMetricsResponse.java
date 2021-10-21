@@ -19,9 +19,8 @@ package org.apache.cloudstack.response;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.response.ManagementServerResponse;
 
-public class ManagementServerMetricsResponse extends ManagementServerResponse {
+public class ManagementServerMetricsResponse extends org.apache.cloudstack.api.response.ManagementServerResponse {
 
     @SerializedName(ApiConstants.JAVA_DISTRIBUTION)
     @Param(description = "the java distribution name running the management server process")
@@ -39,6 +38,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the version of the OS running on the management server")
     private String osVersion;
 
+    @SerializedName(ApiConstants.AVAILABLE_PROCESSORS)
+    @Param(description = "the number of processors available to the JVM")
+    private int availableProcessors;
+
     public void setJavaDistribution(String javaDistribution) {
         this.javaDistribution = javaDistribution;
     }
@@ -53,5 +56,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setOsVersion(String osVersion) {
         this.osVersion = osVersion;
+    }
+
+    public void setAvailableProcessors(int availableProcessors) {
+        this.availableProcessors = availableProcessors;
     }
 }

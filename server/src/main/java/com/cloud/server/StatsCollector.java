@@ -335,7 +335,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private ManagementServerHostDao managementServerHostDao;
 
-    private ConcurrentHashMap<Long, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
     private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<String, VolumeStats>();
@@ -681,9 +681,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     } else {
                         // get local data
                         ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(host);
-                        hostStatsEntry.setManagementServerHostVO(host);
                         metrics.put(hostStatsEntry.getManagementServerHostId(), hostStatsEntry);
-                        managementServerHostStats.put(host.getId(), hostStatsEntry);
+                        managementServerHostStats.put(host.getUuid(), hostStatsEntry);
                     }
                 }
 
@@ -1904,8 +1903,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         return _hostStats.get(hostId);
     }
 
-    public ManagementServerHostStats getManagementServerHostStats(long managementServerId) {
-        return managementServerHostStats.get(managementServerId);
+    public ManagementServerHostStats getManagementServerHostStats(String managementServerUuid) {
+        return managementServerHostStats.get(managementServerUuid);
     }
 
     public StorageStats getStoragePoolStats(long id) {

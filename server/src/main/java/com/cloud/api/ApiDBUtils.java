@@ -991,8 +991,8 @@ public class ApiDBUtils {
         return s_statsCollector.getHostStats(hostId);
     }
 
-    public static ManagementServerHostStats getManagementServerHostStatistics(long mgmtSrvrId) {
-        return s_statsCollector.getManagementServerHostStats(mgmtSrvrId);
+    public static ManagementServerHostStats getManagementServerHostStatistics(String mgmtSrvrUuid) {
+        return s_statsCollector.getManagementServerHostStats(mgmtSrvrUuid);
     }
 
     public static StorageStats getStoragePoolStatistics(long id) {

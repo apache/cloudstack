@@ -31,6 +31,7 @@ public class ApiConstants {
     public static final String API_KEY = "apikey";
     public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String AUTO_SELECT = "autoselect";
+    public static final String AVAILABLE_PROCESSORS = "availableprocessors";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";

@@ -25,6 +25,8 @@ package com.cloud.server;
 public interface ManagementServerHostStats {
     long getManagementServerHostId();
 
+    String getManagementServerHostUuid();
+
     long getSessions();
 
     double getCpuUtilization();
