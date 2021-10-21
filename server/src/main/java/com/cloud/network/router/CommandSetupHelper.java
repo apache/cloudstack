@@ -1060,7 +1060,7 @@ public class CommandSetupHelper {
 
     private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress, String defaultIp6Dns1, String defaultIp6Dns2) {
         boolean isIpv6Supported = ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
-        if (isIpv6Supported) {
+        if (!isIpv6Supported) {
             return;
         }
         setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
