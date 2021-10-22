@@ -51,18 +51,18 @@
             v-else />
         </div>
         <div slot="disksizetotal" slot-scope="record">
-          {{ record.disksizetotal | byteToGigabyte }} GB
+          <span v-if="record.disksizetotal">{{ record.disksizetotal | byteToGigabyte }} GB</span>
         </div>
         <div slot="disksizeused" slot-scope="record">
-          {{ record.disksizeused | byteToGigabyte }} GB
+          <span v-if="record.disksizeused">{{ record.disksizeused | byteToGigabyte }} GB</span>
         </div>
         <div slot="disksizefree" slot-scope="record">
-          {{ (record.disksizetotal * 1 - record.disksizeused * 1) | byteToGigabyte }} GB
+          <span v-if="record.disksizetotal && record.disksizeused">{{ (record.disksizetotal * 1 - record.disksizeused * 1) | byteToGigabyte }} GB</span>
         </div>
         <template slot="select" slot-scope="record">
           <a-radio
             @click="selectedStoragePool = record"
-            :checked="record.id === selectedStoragePool.id"></a-radio>
+            :checked="selectedStoragePool != null && record.id === selectedStoragePool.id"></a-radio>
         </template>
       </a-table>
       <a-pagination
@@ -105,6 +105,11 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    clusterId: {
+      type: String,
+      required: false,
+      default: null
     },
     suitabilityEnabled: {
       type: Boolean,
@@ -168,11 +173,14 @@ export default {
         { title: this.$t('label.suitability'), scopedSlots: { customRender: 'suitability' } }
       )
     }
+    this.preselectStoragePool()
     this.fetchStoragePools()
   },
   watch: {
     isOpen (newValue) {
       if (newValue) {
+        this.resetForm()
+        this.preselectStoragePool()
         this.fetchStoragePools()
       }
     }
@@ -190,6 +198,8 @@ export default {
           this.totalCount = response.findstoragepoolsformigrationresponse.count
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.addAutoAssignOption()
         })
       } else {
         var params = {
@@ -206,7 +216,14 @@ export default {
           this.totalCount = response.liststoragepoolsresponse.count
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.addAutoAssignOption()
         })
+      }
+    },
+    addAutoAssignOption () {
+      if (this.autoAssignAllowed && this.page === 1) {
+        this.storagePools.unshift({ id: -1, name: this.$t('label.auto.assign'), clustername: '', podname: '' })
       }
     },
     closeModal () {
@@ -222,7 +239,21 @@ export default {
       this.pageSize = pageSize
       this.fetchStoragePools()
     },
+    preselectStoragePool () {
+      if (this.resource && 'selectedstorageid' in this.resource) {
+        this.selectedStoragePool = { id: this.resource.selectedstorageid }
+      }
+    },
+    resetForm () {
+      this.storagePools = []
+      this.searchQuery = ''
+      this.totalCount = 0
+      this.page = 1
+      this.pageSize = 10
+      this.selectedStoragePool = null
+    },
     submitForm () {
+      this.$emit('select', this.resource.id, this.selectedStoragePool)
       this.closeModal()
     }
   },

@@ -94,25 +94,48 @@
       <tooltip-label slot="label" :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
       <a-switch v-decorator="['migratewithstorage']" @change="handleMigrateWithStorageChange" />
     </a-form-item>
-    <a-form v-if="migrateWithStorage">
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.volume.to.storage.pool.map')" :tooltip="$t('message.volume.to.storage.pool.map')" />
-        <div scroll-to="last-child">
-          <a-list itemLayout="horizontal" :dataSource="vmVolumes">
-            <a-list-item slot="renderItem" slot-scope="item">
-              <check-box-select-pair
-                v-decorator="['volume.'+item.name, {}]"
-                :resourceKey="item.id"
-                :checkBoxLabel="item.name +' (' + toGB(item.size) + ' GB)'"
-                :checkBoxDecorator="'volume.' + item.name"
-                :selectOptions="storagePools"
-                :selectDecorator="item.name + '.pool'"
-                @handle-checkselectpair-change="handleVolumePoolChange"/>
-            </a-list-item>
-          </a-list>
-        </div>
-      </a-form-item>
-    </a-form>
+    <a-table
+      class="top-spaced"
+      size="small"
+      style="overflow-y: auto"
+      :loading="vmVolumesLoading"
+      :columns="volumeColumns"
+      :dataSource="vmVolumes"
+      :pagination="false"
+      :rowKey="record => record.id"
+      v-if="migrateWithStorage">
+      <div slot="size" slot-scope="record">
+        <span v-if="record.size">
+          {{ record.size | byteToGigabyte }} GB
+        </span>
+      </div>
+      <template slot="selectstorage" slot-scope="record">
+        <a-input-search
+          :readOnly="true"
+          :disabled="!selectedHost.id"
+          :defaultValue="record.selectedstoragename"
+          @search="openVolumeStoragePoolSelector(record)" />
+      </template>
+    </a-table>
+
+    <a-modal
+      :visible="!(!selectedVolumeForStoragePoolSelection.id)"
+      :title="$t('label.import.instance')"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      :cancelText="$t('label.cancel')"
+      @cancel="closeVolumeStoragePoolSelector()"
+      centered
+      width="auto">
+      <volume-storage-pool-selector
+        :resource="selectedVolumeForStoragePoolSelection"
+        :clusterId="selectedHost.id ? selectedHost.clusterid : null"
+        :autoAssignAllowed="true"
+        :isOpen="!(!selectedVolumeForStoragePoolSelection.id)"
+        @close-action="closeVolumeStoragePoolSelector()"
+        @select="handleVolumeStoragePoolSelection" />
+    </a-modal>
 
     <a-divider />
 
@@ -128,13 +151,13 @@
 <script>
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import VolumeStoragePoolSelector from '@/views/VolumeStoragePoolSelector'
 
 export default {
   name: 'VMMigrateWizard',
   components: {
     TooltipLabel,
-    CheckBoxSelectPair
+    VolumeStoragePoolSelector
   },
   props: {
     resource: {
@@ -191,7 +214,26 @@ export default {
       ],
       migrateWithStorage: false,
       vmVolumes: [],
-      storagePools: []
+      vmVolumesLoading: false,
+      volumeColumns: [
+        {
+          title: this.$t('label.volumeid'),
+          dataIndex: 'name'
+        },
+        {
+          title: this.$t('label.type'),
+          dataIndex: 'type'
+        },
+        {
+          title: this.$t('label.size'),
+          scopedSlots: { customRender: 'size' }
+        },
+        {
+          title: this.$t('label.storage'),
+          scopedSlots: { customRender: 'selectstorage' }
+        }
+      ],
+      selectedVolumeForStoragePoolSelection: {}
     }
   },
   created () {
@@ -289,41 +331,34 @@ export default {
       }
     },
     fetchVolumes () {
-      this.loading = true
+      this.vmVolumesLoading = true
       api('listVolumes', {
         listAll: true,
         virtualmachineid: this.resource.id
       }).then(response => {
         var volumes = response.listvolumesresponse.volume
         if (volumes && volumes.length > 0) {
-          this.vmVolumes = volumes
+          for (const volume of volumes) {
+            volume.selectedstorageid = -1
+            volume.selectedstoragename = this.$t('label.auto.assign')
+            this.vmVolumes.push(volume)
+          }
         }
       }).finally(() => {
-        if (this.vmVolumes) {
-          this.fetchPools()
-        }
+        this.vmVolumesLoading = false
       })
-    },
-    fetchPools () {
-      this.loading = true
-      var params = {
-        zoneid: this.resource.zoneid
-      }
-      if (this.selectedHost) {
-        params.clusterid = this.selectedHost.clusterid
-      }
-      api('listStoragePools', params).then(response => {
-        if (this.arrayHasItems(response.liststoragepoolsresponse.storagepool)) {
-          this.storagePools = response.liststoragepoolsresponse.storagepool
-        }
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    handleVolumePoolChange (v1, v2, v3) {
     },
     toGB (value) {
       return (value / (1024 * 1024 * 1024)).toFixed(2)
+    },
+    openVolumeStoragePoolSelector (volume) {
+      this.selectedVolumeForStoragePoolSelection = volume
+    },
+    closeVolumeStoragePoolSelector () {
+      this.selectedVolumeForStoragePoolSelection = {}
+    },
+    handleVolumeStoragePoolSelection (volumeId, storagePool) {
+      console.log('handleVolumeStoragePoolSelection', volumeId, storagePool)
     }
   },
   filters: {

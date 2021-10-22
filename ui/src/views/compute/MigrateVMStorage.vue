@@ -75,14 +75,26 @@
         <div scroll-to="last-child">
           <a-list itemLayout="horizontal" :dataSource="secondaryVolumes">
             <a-list-item slot="renderItem" slot-scope="item">
-              <check-box-select-pair
-                v-decorator="['volume.'+item.name, {}]"
-                :resourceKey="item.id"
-                :checkBoxLabel="item.name +' (' + toGB(item.size) + ' GB)'"
-                :checkBoxDecorator="'volume.' + item.name"
-                :selectOptions="secondaryVolumePools"
-                :selectDecorator="item.name + '.pool'"
-                @handle-checkselectpair-change="handleVolumePoolChange"/>
+              <span>{{ item.name +' (' + toGB(item.size) + ' GB)' }}</span>
+              <a-button type="primary" size="large" @click="toggleVolumeStoragePoolSelector(item)">
+                <a-icon :type="'setting'"/>
+              </a-button>
+              <a-modal
+                :visible="volumeStoragePoolSelectorOpen && item.isOpen"
+                :title="$t('label.import.instance')"
+                :closable="true"
+                :maskClosable="false"
+                :footer="null"
+                :cancelText="$t('label.cancel')"
+                @cancel="toggleVolumeStoragePoolSelector(item)"
+                centered
+                width="auto">
+                <volume-storage-pool-selector
+                  :resource="item"
+                  :autoAssignAllowed="true"
+                  :isOpen="volumeStoragePoolSelectorOpen && item.isOpen"
+                  @close-action="toggleVolumeStoragePoolSelector(item)" />
+              </a-modal>
             </a-list-item>
           </a-list>
         </div>
@@ -102,13 +114,13 @@
 <script>
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import VolumeStoragePoolSelector from '@/views/VolumeStoragePoolSelector'
 
 export default {
   name: 'MigrateVMStorage',
   components: {
     TooltipLabel,
-    CheckBoxSelectPair
+    VolumeStoragePoolSelector
   },
   props: {
     resource: {
@@ -158,7 +170,8 @@ export default {
           title: this.$t('label.select'),
           scopedSlots: { customRender: 'select' }
         }
-      ]
+      ],
+      volumeStoragePoolSelectorOpen: false
     }
   },
   beforeCreate () {
@@ -206,6 +219,10 @@ export default {
           if (rootVolumes && rootVolumes.length > 0) {
             this.rootVolume = rootVolumes[0]
             this.secondaryVolumes = volumes.filter(item => item.id !== this.rootVolume.id)
+            this.isOpen = {}
+            for (const volume of this.secondaryVolumes) {
+              this.isOpen[volume.id] = false
+            }
           }
         }
       }).finally(() => {
@@ -338,6 +355,12 @@ export default {
     },
     toGB (value) {
       return (value / (1024 * 1024 * 1024)).toFixed(2)
+    },
+    toggleVolumeStoragePoolSelector (volume) {
+      console.log('open', volume.id, volume.isOpen)
+      volume.isOpen = true
+      this.volumeStoragePoolSelectorOpen = true
+      console.log(volume.id, volume.isOpen)
     }
   },
   filters: {
