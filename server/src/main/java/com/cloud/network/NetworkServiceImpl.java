@@ -2687,7 +2687,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _ipv6AddressDao.mark(network.getDataCenterId(), ip6Gateway, ip6Cidr, network.getId(), network.getDomainId(), network.getAccountId());
             network.setIp6Gateway(ip6Gateway);
             network.setIp6Cidr(ip6Cidr);
-            final String ip6Prefix = ip6Gateway.split("::")[0];
+            final String ip6Prefix = ip6Gateway.split("::")[0] + "::";
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
                 IPv6Address ipv6addr = NetUtils.EUI64Address(ip6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());

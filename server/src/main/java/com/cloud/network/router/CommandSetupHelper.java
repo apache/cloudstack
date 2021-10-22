@@ -1071,7 +1071,7 @@ public class CommandSetupHelper {
             if (routerIpv6Gateway == null) {
                 throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
             }
-            final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0];
+            final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0] + "::";
             IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
             s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for mac address " + macAddress);
             setupCmd.setRouterIpv6(ipv6addr.toString());
