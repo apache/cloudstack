@@ -21,6 +21,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.utils.component.Manager;
 
+/**
+ * the definition of the framework for inter MS communication
+ */
 public interface ClusterManager extends Manager {
     static final String ALERT_SUBJECT = "cluster-alert";
     final ConfigKey<Integer> HeartbeatInterval = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.interval", "management-server", "1500",
@@ -28,20 +31,24 @@ public interface ClusterManager extends Manager {
     final ConfigKey<Integer> HeartbeatThreshold = new ConfigKey<Integer>(Integer.class, "cluster.heartbeat.threshold", "management-server", "150000",
         "Threshold before self-fence the management server", true);
 
+    /**
+     * adds a new pakket to the incoming queue
+     * @param pdu protocol data unit
+     */
     void OnReceiveClusterServicePdu(ClusterServicePdu pdu);
 
     /**
-     * This executes
-     * @param strPeer
-     * @param agentId
-     * @param cmds
-     * @param stopOnError
-     * @return
+     * This creates pdu, registers it, notifies listeners, and waits on the pdu to be notified
+     * @param strPeer destination
+     * @param agentId reference to a resource
+     * @param cmds any json string (probably containing encoded commands)
+     * @param stopOnError should the other side continue id an error is encountered
+     * @return json encoded answer from the far side
      */
     String execute(String strPeer, long agentId, String cmds, boolean stopOnError);
 
     /**
-     * Broadcast the command to all of the  management server nodes.
+     * Broadcast the command to all the management server nodes.
      * @param agentId agent id this broadcast is regarding
      * @param cmds commands to broadcast
      */
@@ -55,15 +62,26 @@ public interface ClusterManager extends Manager {
 
     ManagementServerHost getPeer(String peerName);
 
+    /**
+     *
+     * @return {code}Long.toString({code}{@see getManagementNodeId()}{code}){code}
+     */
     String getSelfPeerName();
 
     long getManagementNodeId();
 
+    /**
+     * determined by the time
+     * @return start time as {code}System.currentTimeMillis(){code}
+     */
     long getCurrentRunId();
 
-    public long getManagementRunId(long msId);
+    /**
+     * the other guy's is derived from start time as stored in the db
+     */
+    long getManagementRunId(long msId);
 
-    public interface Dispatcher {
+    interface Dispatcher {
         String getName();
 
         String dispatch(ClusterServicePdu pdu);
