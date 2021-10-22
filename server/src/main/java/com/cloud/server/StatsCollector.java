@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.server;
 
+import javax.inject.Inject;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
@@ -36,8 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -55,6 +54,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -81,6 +81,8 @@ import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.api.ApiSessionListener;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ClusterServicePdu;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.Vlan.VlanType;
@@ -117,6 +119,7 @@ import com.cloud.network.as.dao.CounterDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
@@ -160,6 +163,7 @@ import com.google.gson.Gson;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import org.apache.commons.io.FileUtils;
+import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
@@ -167,16 +171,37 @@ import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
-import com.codahale.metrics.JvmAttributeGaugeSet;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
  *
+ * @startuml
+ *
+ * StatsCollector -> ClusterManager : register
+ * ClusterManager -> StatsCollector : onManagementNodeJoined
+ * StatsCollector -> list : add MS
+ * ClusterManager -> StatsCollector : onManagementNodeJoined
+ * StatsCollector -> list : add MS to send list
+ * StatsCollector -> collector : update own status
+ * StatsCollector -> list : get all ms ids
+ * StatsCollector -> ClusterManager : update status for my (ms id) to all ms_ids
+ * ClusterManager -> ClusterManager : update ms_ids on status on (ms id)
+ * ClusterManager -> StatsCollector : onManagementNodeLeft
+ * StatsCollector -> list : add MS
+ * ClusterManager -> StatsCollector : status data updated for (ms id)
+ * StatsCollector -> StatsCollector : update entry for (ms id)
+ * ClusterManager -> StatsCollector : onManagementNodeLeft
+ * StatsCollector -> list : add MS
+ * @enduml
  */
 @Component
 public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable {
 
-    public static enum ExternalStatsProtocol {
+    public enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite"), INFLUXDB("influxdb");
         String _type;
 
@@ -330,13 +355,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    // stats collector is now a clustered agent
+    @Inject
+    private ClusterManager clusterManager;
 
     private ConcurrentHashMap<String, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
-    protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
-    private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<String, VolumeStats>();
-    private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<Long, StorageStats>();
-    private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
+    private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<>();
+    private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<>();
 
     private static final long DEFAULT_INITIAL_DELAY = 15000L;
 
@@ -405,6 +433,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+
+        clusterManager.registerDispatcher(new ManagementServerStatusAdministrator());
+
+        gson = GsonHelper.getGson();
 
         String statsUri = statsOutputUri.value();
         if (StringUtils.isNotBlank(statsUri)) {
@@ -646,27 +678,23 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
+    Gson gson;
+
     class ManagementServerCollector extends AbstractStatsCollector {
         @Override
         protected void runInContext() {
             try {
                 LOGGER.debug(String.format("%s is running...", this.getClass().getSimpleName()));
 
-                List<ManagementServerHostVO> msHosts = managementServerHostDao.listAll();
-
-                Map<Object, Object> metrics = new HashMap<>();
-
-                for (ManagementServerHostVO host : msHosts) {
-                    if (false) { // TODO check if it is not this host we are running on
-                        // TODO send request for data to host;
-                    } else {
-                        // get local data
-                        ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(host);
-                        metrics.put(hostStatsEntry.getManagementServerHostId(), hostStatsEntry);
-                        managementServerHostStats.put(host.getUuid(), hostStatsEntry);
-                    }
-                }
+                long msid = ManagementServerNode.getManagementServerId();
+                ManagementServerHostVO mshost = managementServerHostDao.findByMsid(msid);
+                // get local data
+                ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(mshost);
+                managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
+                // send to other hosts
+                clusterManager.broadcast(0, gson.toJson(hostStatsEntry.toString()));
             } catch (Throwable t) {
+                // pokemon catch to make sure the thread stays running
                 LOGGER.error("Error trying to retrieve host stats", t);
             }
         }
@@ -799,6 +827,29 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         @Override
         protected Point creteInfluxDbPoint(Object metricsObject) {
+            return null;
+        }
+    }
+
+    protected class ManagementServerStatusAdministrator implements ClusterManager.Dispatcher {
+        @Override
+        public String getName() {
+            return this.getClass().getSimpleName();
+        }
+
+        @Override
+        public String dispatch(ClusterServicePdu pdu) {
+            ManagementServerHostStatsEntry hostStatsEntry = null;
+            try {
+                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),ManagementServerHostStatsEntry.class);
+                managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
+            } catch (final JsonSyntaxException e) {
+                LOGGER.error("Exception in decoding of other MS hosts status from : " + pdu.getSourcePeer());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Exception in decoding of other MS hosts status: ", e);
+                }
+            }
+            // TODO dispatch the data i.e. put it in the hashmap
             return null;
         }
     }
