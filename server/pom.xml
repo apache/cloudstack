@@ -170,16 +170,6 @@
             <groupId>org.influxdb</groupId>
             <artifactId>influxdb-java</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.dropwizard.metrics</groupId>-->
-<!--            <artifactId>metrics-core</artifactId>-->
-<!--            <version>3.0.2</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.dropwizard.metrics</groupId>-->
-<!--            <artifactId>metrics-jvm</artifactId>-->
-<!--            <version>3.0.2</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>com.codahale.metrics</groupId>
             <artifactId>metrics-core</artifactId>
@@ -190,17 +180,6 @@
             <artifactId>metrics-jvm</artifactId>
             <version>3.0.2</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.cloudstack</groupId>-->
-<!--            <artifactId>cloud-framework-spring-module</artifactId>-->
-<!--            <version>4.14.0.0</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
-        <!--        <dependency>-->
-<!--            <groupId>com.codahale.metrics</groupId>-->
-<!--            <artifactId>metrics-parent</artifactId>-->
-<!--            <version>3.0.2</version>-->
-<!--        </dependency>-->
     </dependencies>
     <build>
         <plugins>
