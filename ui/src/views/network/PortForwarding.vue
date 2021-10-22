@@ -259,7 +259,13 @@
           </div>
 
           <div slot="action" slot-scope="text, record" style="text-align: center">
-            <a-radio :value="record.id" @change="e => fetchNics(e)" />
+            <a-radio-group
+              class="radio-group"
+              :key="record.id"
+              v-model="checked"
+              @change="($event) => checked = $event.target.value">
+              <a-radio :value="record.id" @change="e => fetchNics(e)" />
+            </a-radio-group>
           </div>
         </a-table>
         <a-pagination
@@ -325,6 +331,7 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      checked: true,
       selectedRowKeys: [],
       showGroupActionModal: false,
       selectedItems: [],
@@ -730,6 +737,7 @@ export default {
       this.fetchVirtualMachines()
     },
     fetchNics (e) {
+      this.nics = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
       api('listNics', {
