@@ -56,8 +56,9 @@ class CsVpcGuestNetwork(CsDataBag):
             if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (entry['device'], full_addr)):
                 CsHelper.execute("ip -6 addr add %s dev %s" % (full_addr, entry['device']))
             if 'router_ip6' in entry.keys() and entry['router_ip6']:
-                if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (VPC_PUBLIC_INTERFACE, entry['router_ip6_cidr'])):
-                    CsHelper.execute("ip -6 addr add %s dev %s" % (entry['router_ip6_cidr'], VPC_PUBLIC_INTERFACE))
+                full_public_addr = entry['router_ip6'] + "/" + cidr_size
+                if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (VPC_PUBLIC_INTERFACE, full_public_addr)):
+                    CsHelper.execute("ip -6 addr add %s dev %s" % (full_public_addr, VPC_PUBLIC_INTERFACE))
                 if not CsHelper.execute("ip -6 route list default via %s" % entry['router_ip6_gateway']):
                     CsHelper.execute("ip -6 route add default via %s" % entry['router_ip6_gateway'])
         else:
@@ -69,7 +70,8 @@ class CsVpcGuestNetwork(CsDataBag):
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
             CsHelper.execute("ip -6 addr del %s dev %s" % (full_addr, entry['device']))
             if 'router_ip6' in entry.keys() and entry['router_ip6']:
-                CsHelper.execute("ip -6 addr del %s dev %s" % (entry['router_ip6_cidr'], VPC_PUBLIC_INTERFACE))
+                full_public_addr = entry['router_ip6'] + "/" + cidr_size
+                CsHelper.execute("ip -6 addr del %s dev %s" % (full_public_addr, VPC_PUBLIC_INTERFACE))
         else:
             return
 
