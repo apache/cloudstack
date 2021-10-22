@@ -65,6 +65,7 @@
         :confirmLoading="actionLoading"
         :closable="true"
         :maskClosable="false"
+        :footer="null"
         @cancel="onCloseAction"
         v-ctrl-enter="handleSubmit"
         style="top: 20px;"
