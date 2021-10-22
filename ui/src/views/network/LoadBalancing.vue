@@ -431,8 +431,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template slot="buildOptionText" slot-scope="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -1324,6 +1324,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value
