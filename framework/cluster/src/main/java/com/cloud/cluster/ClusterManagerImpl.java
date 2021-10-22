@@ -1141,7 +1141,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 return true;
             } catch (final IOException e) {
                 if (e instanceof ConnectException) {
-                    s_logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException", e);
+                    s_logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException");
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException", e);
+                    }
                     return false;
                 }
             } finally {
