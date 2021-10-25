@@ -37,6 +37,8 @@ public interface ClusterManager extends Manager {
      */
     void OnReceiveClusterServicePdu(ClusterServicePdu pdu);
 
+    void publishStatus(String status);
+
     /**
      * This creates pdu, registers it, notifies listeners, and waits on the pdu to be notified
      * @param strPeer destination
@@ -59,6 +61,8 @@ public interface ClusterManager extends Manager {
     void unregisterListener(ClusterManagerListener listener);
 
     void registerDispatcher(Dispatcher dispatcher);
+
+    void registerStatusAdministrator(StatusAdministrator administrator);
 
     ManagementServerHost getPeer(String peerName);
 
@@ -85,5 +89,9 @@ public interface ClusterManager extends Manager {
         String getName();
 
         String dispatch(ClusterServicePdu pdu);
+    }
+
+    interface StatusAdministrator {
+        String newStatus(ClusterServicePdu pdu);
     }
 }

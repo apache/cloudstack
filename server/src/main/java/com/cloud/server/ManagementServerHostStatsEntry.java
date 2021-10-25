@@ -18,11 +18,8 @@
 //
 package com.cloud.server;
 
-import com.cloud.cluster.ManagementServerHostVO;
-
 public class ManagementServerHostStatsEntry implements ManagementServerHostStats {
 
-    private ManagementServerHostVO managementServerHostVO;
     private long managementServerHostId;
     private String managementServerHostUuid;
 
@@ -56,10 +53,6 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setManagementServerHostUuid(String managementServerHostUuid) {
         this.managementServerHostUuid = managementServerHostUuid;
-    }
-
-    public ManagementServerHostVO getManagementServerHostVO() {
-        return managementServerHostVO;
     }
 
     @Override
@@ -125,10 +118,6 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public long getTotalCommitted() {
         return totalCommitted;
-    }
-
-    public void setManagementServerHostVO(ManagementServerHostVO managementServerHostVO) {
-        this.managementServerHostVO = managementServerHostVO;
     }
 
     public void setSessions(long sessions) {

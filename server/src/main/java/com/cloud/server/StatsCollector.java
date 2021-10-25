@@ -434,7 +434,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
 
-        clusterManager.registerDispatcher(new ManagementServerStatusAdministrator());
+        clusterManager.registerStatusAdministrator(new ManagementServerStatusAdministrator());
 
         gson = GsonHelper.getGson();
 
@@ -485,8 +485,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         if (MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
-            _executor.scheduleWithFixedDelay(new ManagementServerCollector(),
-                    MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value(),
+            _executor.scheduleAtFixedRate(new ManagementServerCollector(),
+                    1L,
                     MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value(),
                     TimeUnit.SECONDS);
         } else {
@@ -692,7 +692,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(mshost);
                 managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
                 // send to other hosts
-                clusterManager.broadcast(0, gson.toJson(hostStatsEntry.toString()));
+                clusterManager.publishStatus(gson.toJson(hostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 LOGGER.error("Error trying to retrieve host stats", t);
@@ -700,10 +700,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         @NotNull
-        private ManagementServerHostStatsEntry getDataFrom(@NotNull ManagementServerHostVO host) {
+        private ManagementServerHostStatsEntry getDataFrom(ManagementServerHostVO mshost) {
             ManagementServerHostStatsEntry newEntry = new ManagementServerHostStatsEntry();
-            newEntry.setManagementServerHostVO(host);
             LOGGER.debug("Metrics collection start...");
+            newEntry.setManagementServerHostId(mshost.getId());
+            newEntry.setManagementServerHostUuid(mshost.getUuid());
             long sessions = ApiSessionListener.getSessionCount();
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("Sessions found in Api %d vs context %d", sessions,ApiSessionListener.getNumberOfSessions()));
@@ -831,14 +832,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    protected class ManagementServerStatusAdministrator implements ClusterManager.Dispatcher {
+    protected class ManagementServerStatusAdministrator implements ClusterManager.StatusAdministrator {
         @Override
-        public String getName() {
-            return this.getClass().getSimpleName();
-        }
+        public String newStatus(ClusterServicePdu pdu) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("StatusUpdate from %s, json: %s", pdu.getSourcePeer(), pdu.getJsonPackage()));
+            }
 
-        @Override
-        public String dispatch(ClusterServicePdu pdu) {
             ManagementServerHostStatsEntry hostStatsEntry = null;
             try {
                 hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),ManagementServerHostStatsEntry.class);
