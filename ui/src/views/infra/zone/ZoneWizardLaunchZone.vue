@@ -322,7 +322,7 @@ export default {
         }
       }
       params.name = this.prefillContent.name.value
-      params.localstorageenabled = this.prefillContent.localstorageenabled ? this.prefillContent.localstorageenabled.value : false
+      params.localstorageenabled = this.prefillContent.localstorageenabled?.value || false
       params.dns1 = this.prefillContent.ipv4Dns1.value
       params.dns2 = this.prefillContent.ipv4Dns2?.value || null
       params.ip6dns1 = this.prefillContent.ipv6Dns1?.value || null
@@ -378,8 +378,8 @@ export default {
       if (this.isBasicZone) {
         const requestedTrafficTypeCount = this.prefillContent.physicalNetworks[0].traffics.length
         this.stepData.requestedTrafficTypeCount = requestedTrafficTypeCount
-        this.stepData.returnedTrafficTypes = this.stepData.returnedTrafficTypes ? this.stepData.returnedTrafficTypes : []
-        this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkReturned ? this.stepData.physicalNetworkReturned : {}
+        this.stepData.returnedTrafficTypes = this.stepData?.returnedTrafficTypes || []
+        this.stepData.physicalNetworkReturned = this.stepData?.physicalNetworkReturned || {}
 
         if (this.prefillContent.physicalNetworks && this.prefillContent.physicalNetworks.length > 0) {
           params.name = this.prefillContent.physicalNetworks[0].name
@@ -434,8 +434,8 @@ export default {
           this.setStepStatus(STATUS_FAILED)
         }
       } else {
-        this.stepData.physicalNetworksReturned = this.stepData.physicalNetworksReturned ? this.stepData.physicalNetworksReturned : []
-        this.stepData.physicalNetworkItem = this.stepData.physicalNetworkItem ? this.stepData.physicalNetworkItem : {}
+        this.stepData.physicalNetworksReturned = this.stepData?.physicalNetworksReturned || []
+        this.stepData.physicalNetworkItem = this.stepData?.physicalNetworkItem || {}
         let physicalNetworkReturned = {}
 
         if (this.stepData.physicalNetworksReturned.length === this.prefillContent.physicalNetworks.length) {
@@ -872,7 +872,7 @@ export default {
         this.addStep('message.configuring.public.traffic', 'publicTraffic')
 
         let stopNow = false
-        this.stepData.returnedPublicTraffic = this.stepData.returnedPublicTraffic ? this.stepData.returnedPublicTraffic : []
+        this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
         for (let index = 0; index < this.prefillContent['public-ipranges'].length; index++) {
           const publicVlanIpRange = this.prefillContent['public-ipranges'][index]
           let isExisting = false
@@ -968,7 +968,7 @@ export default {
       this.currentStep++
       this.addStep('message.configuring.storage.traffic', 'storageTraffic')
 
-      this.stepData.tasks = this.stepData.tasks ? this.stepData.tasks : []
+      this.stepData.tasks = this.stepData?.tasks || []
       await this.prefillContent['storage-ipranges'].map(async (storageIpRange, index) => {
         const params = {}
         params.vlan = storageIpRange.vlan
@@ -1420,7 +1420,7 @@ export default {
         params['details[2].key'] = 'bucket'
         params['details[2].value'] = this.prefillContent.secondaryStorageBucket.value
         params['details[3].key'] = 'usehttps'
-        params['details[3].value'] = this.prefillContent.secondaryStorageHttps ? this.prefillContent.secondaryStorageHttps.value : false
+        params['details[3].value'] = this.prefillContent.secondaryStorageHttps?.value || false
 
         let index = 4
         if (this.prefillContent.secondaryStorageEndpoint &&
