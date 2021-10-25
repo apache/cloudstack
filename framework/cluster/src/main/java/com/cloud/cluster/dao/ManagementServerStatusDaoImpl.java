@@ -20,6 +20,7 @@ import com.cloud.cluster.ManagementServerStatusVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import java.util.List;
@@ -40,9 +41,9 @@ public class ManagementServerStatusDaoImpl extends GenericDaoBase<ManagementServ
         SearchCriteria<ManagementServerStatusVO> sc = MsIdSearch.create();
         sc.setParameters("msid", msId);
 
-        List<ManagementServerStatusVO> l = listIncludingRemovedBy(sc);
-        if (l != null && l.size() > 0) {
-            return l.get(0);
+        List<ManagementServerStatusVO> allServerStats = listIncludingRemovedBy(sc);
+        if (CollectionUtils.isNotEmpty(allServerStats)) {
+            return allServerStats.get(0);
         }
 
         return null;
