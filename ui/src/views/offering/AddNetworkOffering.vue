@@ -73,6 +73,20 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-row :gutter="12" v-if="guestType !== 'shared'">
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
+              <a-switch v-decorator="['ispersistent', {initialValue: false}]" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.specifyvlan')" :tooltip="apiParams.specifyvlan.description"/>
+              <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item v-if="guestType == 'isolated'">
           <tooltip-label slot="label" :title="$t('label.internet.protocol')" :tooltip="apiParams.internetprotocol.description"/>
           <a-radio-group
