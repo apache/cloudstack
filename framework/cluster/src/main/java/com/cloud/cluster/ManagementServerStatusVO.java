@@ -18,6 +18,8 @@ package com.cloud.cluster;
 
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.management.ManagementServerStatus;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -190,6 +192,6 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
 
     @Override
     public String toString() {
-        return new org.apache.commons.lang3.builder.ReflectionToStringBuilder(this, org.apache.commons.lang3.builder.ToStringStyle.SIMPLE_STYLE).toString();
+        return new ReflectionToStringBuilder(this, ToStringStyle.SIMPLE_STYLE).toString();
     }
 }

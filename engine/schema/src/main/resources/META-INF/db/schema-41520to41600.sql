@@ -796,19 +796,21 @@ ALTER TABLE `cloud`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `a
 ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
 
 -- Management Server Status
-CREATE TABLE `cloud`.`mshost_status` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `ms_id` varchar(40) DEFAULT NULL COMMENT 'the id of the management server record',
-  `last_start` datetime COMMENT 'the last start time for this MS',
-  `last_stop` datetime COMMENT 'the last stop time for this MS',
-  `last_boot` datetime COMMENT 'the last system boot time for the host of this MS',
-  `last_down` datetime COMMENT 'the last system shutdown time for the host of this MS',
-  `os_distribution` varchar(255) DEFAULT null COMMENT 'the name and version of the os running on the host of this MS',
-  `java_name` varchar(64) DEFAULT null COMMENT 'the name of the java distribution running this MS',
-  `java_version` varchar(64) DEFAULT null COMMENT 'the version of the java distribution running this MS',
+ALTER TABLE cloud.mshost ADD CONSTRAINT mshost_UUID UNIQUE KEY (uuid);
+CREATE TABLE `mshost_status` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `ms_id` varchar(40) DEFAULT NULL COMMENT 'the uuid of the management server record',
+  `last_start` datetime DEFAULT NULL COMMENT 'the last start time for this MS',
+  `last_stop` datetime DEFAULT NULL COMMENT 'the last stop time for this MS',
+  `last_boot` datetime DEFAULT NULL COMMENT 'the last system boot time for the host of this MS',
+  `last_down` datetime DEFAULT NULL COMMENT 'the last system shutdown time for the host of this MS',
+  `os_distribution` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'the name of the os type running on the host of this MS',
+  `java_name` varchar(64) DEFAULT NULL COMMENT 'the name of the java distribution running this MS',
+  `java_version` varchar(64) DEFAULT NULL COMMENT 'the version of the java distribution running this MS',
   `updated` datetime DEFAULT NULL,
   `created` datetime DEFAULT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `uc_ms_id` UNIQUE (`ms_id`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  CONSTRAINT `uc_ms_id` UNIQUE (`ms_id`),
+  CONSTRAINT `mshost_status_FK` FOREIGN KEY (`ms_id`) REFERENCES `mshost` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;

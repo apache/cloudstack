@@ -159,7 +159,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return 1.0;
     }
 
-    private void updateHostMetrics(final org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics hostMetrics, final HostJoinVO host) {
+    private void updateHostMetrics(final HostMetrics hostMetrics, final HostJoinVO host) {
         hostMetrics.incrTotalHosts();
         hostMetrics.addCpuAllocated(host.getCpuReservedCapacity() + host.getCpuUsedCapacity());
         hostMetrics.addMemoryAllocated(host.getMemReservedCapacity() + host.getMemUsedCapacity());
@@ -632,7 +632,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         }
     }
 
-    private void getManagementServerRuntimeVersions(org.apache.cloudstack.api.response.ManagementServerResponse managementServerResponse, org.apache.cloudstack.response.ManagementServerMetricsResponse metricsResponse) {
+    private void getManagementServerRuntimeVersions(ManagementServerResponse managementServerResponse, ManagementServerMetricsResponse metricsResponse) {
         final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
         if (msStats == null) {
             LOGGER.info(String.format("no status info found for host %s - %s",

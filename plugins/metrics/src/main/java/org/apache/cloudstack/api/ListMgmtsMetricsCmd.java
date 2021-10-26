@@ -44,7 +44,6 @@ public class ListMgmtsMetricsCmd  extends ListMgmtsCmd {
     @Override
     public void execute() {
         ListResponse<ManagementServerResponse> managementServers = _queryService.listManagementServers(this);
-        updateMngmntResponse(managementServers.getResponses());
         final List<ManagementServerMetricsResponse> metricsResponses = metricsService.listManagementServerMetrics(managementServers.getResponses());
         ListResponse<ManagementServerMetricsResponse> response = new ListResponse<>();
         response.setResponses(metricsResponses, managementServers.getCount());
