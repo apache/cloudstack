@@ -30,10 +30,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.resource.icon.dao.ResourceIconDao;
-import com.cloud.server.ResourceManagerUtil;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -206,6 +202,8 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.icon.dao.ResourceIconDao;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -224,6 +222,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -251,6 +250,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -2556,13 +2556,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("dataCenterId", zoneId);
         }
         if (pod != null) {
-            sc.setParameters("podId", pod);
+            SearchCriteria<StoragePoolJoinVO> ssc = _poolJoinDao.createSearchCriteria();
+            ssc.addOr("podId", Op.EQ, pod);
+            ssc.addOr("podId", Op.NULL);
+
+            sc.addAnd("podId", SearchCriteria.Op.SC, ssc);
         }
         if (address != null) {
             sc.setParameters("hostAddress", address);
         }
         if (cluster != null) {
-            sc.setParameters("clusterId", cluster);
+            SearchCriteria<StoragePoolJoinVO> ssc = _poolJoinDao.createSearchCriteria();
+            ssc.addOr("clusterId", Op.EQ, cluster);
+            ssc.addOr("clusterId", Op.NULL);
+
+            sc.addAnd("clusterId", SearchCriteria.Op.SC, ssc);
         }
         if (scopeType != null) {
             sc.setParameters("scope", scopeType.toString());
