@@ -235,7 +235,7 @@ export default {
     },
     returnPodName (id) {
       const match = this.pods.find(i => i.id === id)
-      return match ? match.name : null
+      return match?.name || null
     },
     handleOpenAddIpRangeModal () {
       this.addIpRangeModal = true
