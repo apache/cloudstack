@@ -69,7 +69,7 @@
       <template slot="select" slot-scope="record">
         <a-radio
           class="host-item__radio"
-          @click="selectedHost = record"
+          @click="handleSelectedHostChange(record)"
           :checked="record.id === selectedHost.id"
           :disabled="!record.suitableformigration"></a-radio>
       </template>
@@ -90,9 +90,14 @@
       </template>
     </a-pagination>
 
-    <a-form-item v-if="isUserVm" class="top-spaced">
+    <a-form-item
+      v-if="isUserVm"
+      class="top-spaced">
       <tooltip-label slot="label" :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
-      <a-switch v-decorator="['migratewithstorage']" @change="handleMigrateWithStorageChange" />
+      <a-switch
+        v-decorator="['migratewithstorage']"
+        @change="handleMigrateWithStorageChange"
+        :disabled="!selectedHost || !selectedHost.id || selectedHost.id === -1" />
     </a-form-item>
     <a-table
       class="top-spaced"
@@ -120,7 +125,7 @@
 
     <a-modal
       :visible="!(!selectedVolumeForStoragePoolSelection.id)"
-      :title="$t('label.import.instance')"
+      :title="$t('label.select.ps')"
       :closable="true"
       :maskClosable="false"
       :footer="null"
@@ -278,7 +283,7 @@ export default {
       if (this.loading) return
       this.loading = true
       var migrateApi = this.isUserVm
-        ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
+        ? (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0) ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
         : 'migrateSystemVm'
       var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
@@ -331,6 +336,15 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleSelectedHostChange (host) {
+      this.selectedHost = host
+      this.selectedVolumeForStoragePoolSelection = {}
+      this.volumeToPoolSelection = []
+      for (const volume of this.vmVolumes) {
+        volume.selectedstorageid = -1
+        volume.selectedstoragename = this.$t('label.auto.assign')
+      }
     },
     handleMigrateWithStorageChange (checked) {
       this.migrateWithStorage = checked

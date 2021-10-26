@@ -1982,6 +1982,7 @@
 "label.select.offering": "Select offering",
 "label.select.project": "Select Project",
 "label.select.projects": "Select Projects",
+"label.select.ps": "Select Primary Storage",
 "label.select.region": "Select region",
 "label.select.tier": "Select Tier",
 "label.select.vm.for.static.nat": "Select VM for static NAT",

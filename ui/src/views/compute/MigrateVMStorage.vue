@@ -103,7 +103,7 @@
 
       <a-modal
         :visible="!(!selectedVolumeForStoragePoolSelection.id)"
-        :title="$t('label.import.instance')"
+        :title="$t('label.select.ps')"
         :closable="true"
         :maskClosable="false"
         :footer="null"
@@ -158,10 +158,6 @@ export default {
       pageSize: 10,
       storagePools: [],
       selectedPool: {},
-      rootVolume: null,
-      secondaryVolumes: [],
-      secondaryVolumePools: [],
-      perVolume: false,
       columns: [
         {
           title: this.$t('label.storageid'),
@@ -261,6 +257,15 @@ export default {
     },
     handleMigrateModeChange (value) {
       this.migrateMode = value
+      this.searchQuery = ''
+      this.totalCount = 0
+      this.page = 1
+      this.pageSize = 10
+      this.selectedPool = {}
+      this.selectedVolumeForStoragePoolSelection = {}
+      this.selectedClusterId = null
+      this.volumesWithClusterStoragePool = []
+      this.volumeToPoolSelection = []
       this.fetchData()
     },
     fetchVolumes () {
@@ -301,18 +306,6 @@ export default {
         this.loading = false
       })
     },
-    fetchSecondaryVolumePools () {
-      this.loading = true
-      api('listStoragePools', {
-        zoneid: this.resource.zoneid
-      }).then(response => {
-        if (this.arrayHasItems(response.liststoragepoolsresponse.storagepool)) {
-          this.secondaryVolumePools = response.liststoragepoolsresponse.storagepool
-        }
-      }).finally(() => {
-        this.loading = false
-      })
-    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
@@ -345,7 +338,7 @@ export default {
           this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
           this.closeAction()
         }
-        this.migrateVm(migrateApi, this.selectedPool.id, this.rootVolume.id)
+        this.migrateVm(migrateApi, null, this.volumeToPoolSelection)
         return
       }
       this.migrateVm(migrateApi, this.selectedPool.id, null)
