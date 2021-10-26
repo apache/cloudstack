@@ -36,6 +36,12 @@
         :dataSource="storagePools"
         :pagination="false"
         :rowKey="record => record.id">
+        <div slot="name" slot-scope="record">
+          {{ record.name }}
+          <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.volume.pool.auto.assign')" placement="top">
+            <a-icon type="info-circle" class="tooltip-icon" />
+          </a-tooltip>
+        </div>
         <div slot="suitability" slot-scope="record">
           <a-icon
             class="host-item__suitability-icon"
@@ -138,7 +144,7 @@ export default {
       columns: [
         {
           title: this.$t('label.storageid'),
-          dataIndex: 'name'
+          scopedSlots: { customRender: 'name' }
         },
         {
           title: this.$t('label.clusterid'),

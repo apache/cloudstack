@@ -90,7 +90,7 @@
       </template>
     </a-pagination>
 
-    <a-form-item v-if="isUserVm">
+    <a-form-item v-if="isUserVm" class="top-spaced">
       <tooltip-label slot="label" :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
       <a-switch v-decorator="['migratewithstorage']" @change="handleMigrateWithStorageChange" />
     </a-form-item>
@@ -113,7 +113,7 @@
         <a-input-search
           :readOnly="true"
           :disabled="!selectedHost.id"
-          :defaultValue="record.selectedstoragename"
+          :value="record.selectedstoragename"
           @search="openVolumeStoragePoolSelector(record)" />
       </template>
     </a-table>
@@ -233,7 +233,8 @@ export default {
           scopedSlots: { customRender: 'selectstorage' }
         }
       ],
-      selectedVolumeForStoragePoolSelection: {}
+      selectedVolumeForStoragePoolSelection: {},
+      volumeToPoolSelection: []
     }
   },
   created () {
@@ -281,6 +282,13 @@ export default {
         : 'migrateSystemVm'
       var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
+      if (migrateApi === 'migrateVirtualMachineWithVolume' && this.volumeToPoolSelection.length > 0) {
+        for (var i; i < this.volumeToPoolSelection.length; i++) {
+          const mapping = this.volumeToPoolSelection[i]
+          migrateParams['migrateto[' + i + '].volume'] = mapping.volume
+          migrateParams['migrateto[' + i + '].pool'] = mapping.pool
+        }
+      }
       api(migrateApi, migrateParams).then(response => {
         const jobid = this.isUserVm
           ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
@@ -332,12 +340,16 @@ export default {
     },
     fetchVolumes () {
       this.vmVolumesLoading = true
+      this.vmVolumes = []
       api('listVolumes', {
         listAll: true,
         virtualmachineid: this.resource.id
       }).then(response => {
         var volumes = response.listvolumesresponse.volume
         if (volumes && volumes.length > 0) {
+          volumes.sort((a, b) => {
+            return b.type.localeCompare(a.type)
+          })
           for (const volume of volumes) {
             volume.selectedstorageid = -1
             volume.selectedstoragename = this.$t('label.auto.assign')
@@ -358,7 +370,20 @@ export default {
       this.selectedVolumeForStoragePoolSelection = {}
     },
     handleVolumeStoragePoolSelection (volumeId, storagePool) {
-      console.log('handleVolumeStoragePoolSelection', volumeId, storagePool)
+      for (const volume of this.vmVolumes) {
+        if (volume.id === volumeId) {
+          volume.selectedstorageid = storagePool.id
+          volume.selectedstoragename = storagePool.name
+          volume.selectedstorageclusterid = storagePool.clusterid
+          break
+        }
+      }
+      this.volumeToPoolSelection = []
+      for (const volume of this.vmVolumes) {
+        if (volume.selectedstorageid) {
+          this.volumeToPoolSelection.push({ volume: volume.id, pool: volume.selectedstorageid })
+        }
+      }
     }
   },
   filters: {

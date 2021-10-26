@@ -50,11 +50,14 @@
             twoToneColor="#f5222d"
             v-else />
         </div>
-        <div slot="disksizeallocated" slot-scope="record">
-          {{ record.disksizeallocated | byteToGigabyte }} GB
-        </div>
         <div slot="disksizetotal" slot-scope="record">
-          {{ record.disksizetotal | byteToGigabyte }} GB
+          <span v-if="record.disksizetotal">{{ record.disksizetotal | byteToGigabyte }} GB</span>
+        </div>
+        <div slot="disksizeused" slot-scope="record">
+          <span v-if="record.disksizeused">{{ record.disksizeused | byteToGigabyte }} GB</span>
+        </div>
+        <div slot="disksizefree" slot-scope="record">
+          <span v-if="record.disksizetotal && record.disksizeused">{{ (record.disksizetotal * 1 - record.disksizeused * 1) | byteToGigabyte }} GB</span>
         </div>
         <template slot="select" slot-scope="record">
           <a-radio
@@ -160,12 +163,16 @@ export default {
           dataIndex: 'podname'
         },
         {
-          title: this.$t('label.disksizeallocated'),
-          scopedSlots: { customRender: 'disksizeallocated' }
-        },
-        {
           title: this.$t('label.disksizetotal'),
           scopedSlots: { customRender: 'disksizetotal' }
+        },
+        {
+          title: this.$t('label.disksizeused'),
+          scopedSlots: { customRender: 'disksizeused' }
+        },
+        {
+          title: this.$t('label.disksizefree'),
+          scopedSlots: { customRender: 'disksizefree' }
         },
         {
           title: this.$t('label.select'),
