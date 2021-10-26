@@ -54,7 +54,7 @@ import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.FirewallRulesDcidrsDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
-import com.cloud.network.dao.LoadBalancerDaoImpl;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkServiceMapDaoImpl;
@@ -132,7 +132,7 @@ import org.springframework.core.type.filter.TypeFilter;
     DataCenterDetailsDaoImpl.class, NicSecondaryIpDaoImpl.class, UserIpv6AddressDaoImpl.class, UserDaoImpl.class, NicDaoImpl.class,
     NetworkDomainDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, FirewallRulesDaoImpl.class,
     FirewallRulesCidrsDaoImpl.class, FirewallRulesDcidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class, PhysicalNetworkServiceProviderDaoImpl.class,
-    LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class, PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class,
+    NetworkServiceMapDaoImpl.class, PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class,
     PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class, AccountGuestVlanMapDaoImpl.class, ImageStoreDaoImpl.class, ImageStoreDetailsDaoImpl.class},
                includeFilters = {@Filter(value = ChildTestConfiguration.Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
@@ -342,6 +342,11 @@ public class
     @Bean
     public StorageManager storageManager() {
         return Mockito.mock(StorageManager.class);
+    }
+
+    @Bean
+    public LoadBalancerDao loadBalancerDao() {
+        return Mockito.mock(LoadBalancerDao.class);
     }
 
     public static class Library implements TypeFilter {

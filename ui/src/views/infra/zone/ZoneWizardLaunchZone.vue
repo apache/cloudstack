@@ -2099,8 +2099,8 @@ export default {
     },
     rbdURL (monitor, pool, id, secret) {
       let url
-      secret = secret.replace('+', '-')
-      secret = secret.replace('/', '_')
+      secret = secret.replace(/\+/g, '-')
+      secret = secret.replace(/\//g, '_')
       if (id != null && secret != null) {
         monitor = id + ':' + secret + '@' + monitor
       }

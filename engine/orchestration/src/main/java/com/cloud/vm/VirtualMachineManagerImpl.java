@@ -413,6 +413,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Boolean> HaVmRestartHostUp = new ConfigKey<Boolean>("Advanced", Boolean.class, "ha.vm.restart.hostup", "true",
             "If an out-of-band stop of a VM is detected and its host is up, then power on the VM", true);
 
+    static final ConfigKey<Long> SystemVmRootDiskSize = new ConfigKey<Long>("Advanced",
+            Long.class, "systemvm.root.disk.size", "-1",
+            "Size of root volume (in GB) of system VMs and virtual routers", true);
+
     ScheduledExecutorService _executor = null;
 
     private long _nodeId;
@@ -461,6 +465,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
 
+        Long rootDiskSize = rootDiskOfferingInfo.getSize();
+        if (vm.getType().isUsedBySystem() && SystemVmRootDiskSize.value() != null && SystemVmRootDiskSize.value() > 0L) {
+            rootDiskSize = SystemVmRootDiskSize.value();
+        }
+        final Long rootDiskSizeFinal = rootDiskSize;
+
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {
@@ -486,7 +496,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                     // Do nothing
                 } else {
-                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskSizeFinal,
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                 }
 
@@ -1729,7 +1739,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 final UserVmVO userVm = _userVmDao.findById(vm.getId());
                 if (vm.getType() == VirtualMachine.Type.User) {
-                    if (userVm != null){
+                    if (userVm != null) {
                         userVm.setPowerState(PowerState.PowerOff);
                         _userVmDao.update(userVm.getId(), userVm);
                     }
@@ -2937,8 +2947,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * For each one of the volumes we will map it to a storage pool that is available via the target host.
      * An exception is thrown if we cannot find a storage pool that is accessible in the target host to migrate the volume to.
      */
-    protected void createStoragePoolMappingsForVolumes(VirtualMachineProfile profile, DataCenterDeployment plan, Map<Volume, StoragePool> volumeToPoolObjectMap, List<Volume> allVolumes) {
-        for (Volume volume : allVolumes) {
+    protected void createStoragePoolMappingsForVolumes(VirtualMachineProfile profile, DataCenterDeployment plan, Map<Volume, StoragePool> volumeToPoolObjectMap, List<Volume> volumesNotMapped) {
+        for (Volume volume : volumesNotMapped) {
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
             Host targetHost = null;
@@ -2948,10 +2958,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(plan.getClusterId(), currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, plan, volumeToPoolObjectMap, volume, currentPool);
-            } else {
+            } else if (shouldMapVolume(profile, volume, currentPool)){
                 volumeToPoolObjectMap.put(volume, currentPool);
             }
         }
+    }
+
+    /**
+     * Returns true if it should map the volume for a storage pool to migrate.
+     * <br><br>
+     * Some context: VMware migration workflow requires all volumes to be mapped (even if volume stays on its current pool);
+     *  however, this is not necessary/desirable for the KVM flow.
+     */
+    protected boolean shouldMapVolume(VirtualMachineProfile profile, Volume volume, StoragePoolVO currentPool) {
+        boolean isManaged = currentPool.isManaged();
+        boolean isNotKvm = HypervisorType.KVM != profile.getHypervisorType();
+        boolean isNotDatadisk = Type.DATADISK != volume.getVolumeType();
+        return isNotKvm || isNotDatadisk || isManaged;
     }
 
     /**
@@ -4833,7 +4856,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new ConfigKey<?>[] { ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
-                HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel };
+                HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

@@ -269,7 +269,7 @@
                   }"
                   :autoFocus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option key="" label="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                     <div>
                       <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
@@ -760,7 +760,7 @@ export default {
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
-            this.columnKeys = columns()
+            this.columnKeys = columns(this.$store.getters)
           } else {
             this.columnKeys = columns
           }
