@@ -54,6 +54,7 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
@@ -75,6 +76,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     @Mock
     private UserVmManager userVmManager;
 
+    @Mock
+    private StatsCollector statsCollectorMock;
 
     Map<String, Object> oldFields = new HashMap<>();
     UserVmVO vm = mock(UserVmVO.class);
@@ -201,6 +204,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     // volume.
     public void runningVMRootVolumeUsageEvent()
             throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
+        Mockito.doNothing().when(statsCollectorMock).removeVirtualMachineStats(Mockito.anyLong());
         Mockito.lenient().when(_vmMgr.destroyVm(nullable(Long.class), nullable(Boolean.class))).thenReturn(vm);
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
         UsageEventVO event = emittedEvents.get(0);
