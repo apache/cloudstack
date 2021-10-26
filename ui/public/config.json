@@ -56,5 +56,7 @@
   "plugins": [],
   "basicZoneEnabled": true,
   "multipleServer": false,
-  "docHelpMappings": {}
+  "docHelpMappings": {},
+  "loginPolicy": "By logging, you are accepting the <a href='https://www.apache.org/foundation/policies/privacy.html'>usage policy</a>",
+  "loginHelp": "For login help see <a href='http://docs.cloudstack.apache.org/en/latest/adminguide/ui.html#log-in-to-the-ui'>help</a>"
 }

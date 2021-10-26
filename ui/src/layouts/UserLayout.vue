@@ -31,6 +31,10 @@
       </div>
       <route-view></route-view>
     </div>
+    <div class="user-layout-footer" v-if="$config.loginPolicy || config.loginHelp">
+      <label class="login-policy" v-if="$config.loginPolicy" v-html="$config.loginPolicy"></label>
+      <label class="login-help" v-if="$config.loginHelp" v-html="$config.loginHelp"></label>
+    </div>
   </div>
 </template>
 
@@ -95,6 +99,30 @@ export default {
     .mobile & {
       max-width: 300px;
       margin-bottom: 1rem;
+    }
+  }
+
+  &-footer {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    bottom: 20px;
+    text-align: center;
+    width: 100%;
+
+    @media (max-height: 600px) {
+      position: relative;
+      margin-top: 50px;
+    }
+
+    label {
+      width: 368px;
+      font-weight: 500;
+      margin: 0 auto;
+    }
+
+    .login-policy {
+      color: #f5222d;
     }
   }
 }
