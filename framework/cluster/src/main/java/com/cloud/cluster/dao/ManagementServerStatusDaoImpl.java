@@ -21,13 +21,10 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
 public class ManagementServerStatusDaoImpl extends GenericDaoBase<ManagementServerStatusVO, Long> implements ManagementServerStatusDao {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerHostDaoImpl.class);
-
     private final SearchBuilder<ManagementServerStatusVO> MsIdSearch;
 
     public ManagementServerStatusDaoImpl() {

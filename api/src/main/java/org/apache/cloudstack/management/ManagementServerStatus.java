@@ -23,7 +23,7 @@ import java.util.Date;
 public interface ManagementServerStatus extends InternalIdentity {
     long getId();
 
-    long getMsId();
+    String getMsId();
 
     Date getLastStart();
 
@@ -33,9 +33,7 @@ public interface ManagementServerStatus extends InternalIdentity {
 
     Date getLastDown();
 
-    String getOsName();
-
-    String getOsVersion();
+    String getOsDistribution();
 
     String getJavaName();
 

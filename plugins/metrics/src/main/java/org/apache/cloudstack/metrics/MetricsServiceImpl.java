@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.management.ManagementServerStatus;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
@@ -632,7 +633,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     private void getManagementServerRuntimeVersions(org.apache.cloudstack.api.response.ManagementServerResponse managementServerResponse, org.apache.cloudstack.response.ManagementServerMetricsResponse metricsResponse) {
-        final org.apache.cloudstack.management.ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
+        final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
         if (msStats == null) {
             LOGGER.info(String.format("no status info found for host %s - %s",
                     managementServerResponse.getname(),
@@ -640,8 +641,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         } else {
             metricsResponse.setJavaDistribution(msStats.getJavaName());
             metricsResponse.setJavaVersion(msStats.getJavaVersion());
-            metricsResponse.setOsDistribution(msStats.getOsName());
-            metricsResponse.setOsVersion(msStats.getOsVersion());
+            metricsResponse.setOsDistribution(msStats.getOsDistribution());
         }
     }
 

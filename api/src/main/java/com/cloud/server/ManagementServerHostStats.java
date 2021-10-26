@@ -52,4 +52,14 @@ public interface ManagementServerHostStats {
     long getTotalMax();
 
     long getTotalCommitted();
+
+    long getPid();
+
+    String getJvmName();
+
+    String getJvmVendor();
+
+    String getJvmVersion();
+
+    String getOsDistribution();
 }

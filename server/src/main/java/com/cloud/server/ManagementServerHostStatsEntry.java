@@ -36,6 +36,11 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     long totalUsed;
     long totalMax;
     long totalCommitted;
+    private long pid;
+    private String jvmName;
+    private String jvmVendor;
+    private String jvmVersion;
+    private String osDistribution;
 
     @Override
     public long getManagementServerHostId() {
@@ -120,6 +125,31 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return totalCommitted;
     }
 
+    @Override
+    public long getPid() {
+        return pid;
+    }
+
+    @Override
+    public String getJvmName() {
+        return jvmName;
+    }
+
+    @Override
+    public String getJvmVendor() {
+        return jvmVendor;
+    }
+
+    @Override
+    public String getJvmVersion() {
+        return jvmVersion;
+    }
+
+    @Override
+    public String getOsDistribution() {
+        return osDistribution;
+    }
+
     public void setSessions(long sessions) {
         this.sessions = sessions;
     }
@@ -174,5 +204,25 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setTotalCommitted(long totalCommitted) {
         this.totalCommitted = totalCommitted;
+    }
+
+    public void setProcessId(long pid) {
+        this.pid = pid;
+    }
+
+    public void setJvmName(String name) {
+        this.jvmName = name;
+    }
+
+    public void setJvmVendor(String vmVendor) {
+        this.jvmVendor = vmVendor;
+    }
+
+    public void setJvmVersion(String vmVersion) {
+        this.jvmVersion = vmVersion;
+    }
+
+    public void setOsDistribution(String osDistribution) {
+        this.osDistribution = osDistribution;
     }
 }

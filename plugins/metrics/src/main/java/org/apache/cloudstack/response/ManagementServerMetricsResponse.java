@@ -34,10 +34,6 @@ public class ManagementServerMetricsResponse extends org.apache.cloudstack.api.r
     @Param(description = "the name of the OS distribution running on the management server")
     private String osDistribution;
 
-    @SerializedName(ApiConstants.OS_VERSION)
-    @Param(description = "the version of the OS running on the management server")
-    private String osVersion;
-
     @SerializedName(ApiConstants.AVAILABLE_PROCESSORS)
     @Param(description = "the number of processors available to the JVM")
     private int availableProcessors;
@@ -52,10 +48,6 @@ public class ManagementServerMetricsResponse extends org.apache.cloudstack.api.r
 
     public void setOsDistribution(String osDistribution) {
         this.osDistribution = osDistribution;
-    }
-
-    public void setOsVersion(String osVersion) {
-        this.osVersion = osVersion;
     }
 
     public void setAvailableProcessors(int availableProcessors) {

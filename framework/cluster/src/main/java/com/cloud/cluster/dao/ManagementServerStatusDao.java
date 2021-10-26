@@ -17,7 +17,8 @@
 package com.cloud.cluster.dao;
 
 import com.cloud.cluster.ManagementServerStatusVO;
+import com.cloud.utils.db.GenericDao;
 
-public interface ManagementServerStatusDao {
+public interface ManagementServerStatusDao extends GenericDao<ManagementServerStatusVO, Long> {
     ManagementServerStatusVO findByMsId(String msId);
 }

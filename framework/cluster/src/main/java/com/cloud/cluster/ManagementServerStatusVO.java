@@ -38,26 +38,27 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
     @Column(name = "id")
     private long id;
 
-    @Column(name = "ms_id", updatable = true, nullable = false)
-    private long msId;
+    @Column(name = "ms_id", nullable = false)
+    private String msId;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="last_start")
     private Date lastStart;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="last_stop")
     private Date lastStop;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="last_boot")
     private Date lastBoot;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="last_down")
     private Date lastDown;
 
-    @Column(name="os_name")
-    private String osName;
-
-    @Column(name="os_version")
-    private String osVersion;
+    @Column(name="os_distribution")
+    private String osDistribution;
 
     @Column(name="java_name")
     private String javaName;
@@ -89,11 +90,11 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
     }
 
     @Override
-    public long getMsId() {
+    public String getMsId() {
         return msId;
     }
 
-    public void setMsId(long msId) {
+    public void setMsId(String msId) {
         this.msId = msId;
     }
 
@@ -134,21 +135,12 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
     }
 
     @Override
-    public String getOsName() {
-        return osName;
+    public String getOsDistribution() {
+        return osDistribution;
     }
 
-    public void setOsName(String osName) {
-        this.osName = osName;
-    }
-
-    @Override
-    public String getOsVersion() {
-        return osVersion;
-    }
-
-    public void setOsVersion(String osVersion) {
-        this.osVersion = osVersion;
+    public void setOsDistribution(String osDistribution) {
+        this.osDistribution = osDistribution;
     }
 
     @Override

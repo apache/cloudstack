@@ -37,6 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.cluster.ManagementServerStatusVO;
+import com.cloud.cluster.dao.ManagementServerStatusDao;
+import com.cloud.utils.script.Script;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -358,6 +361,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     // stats collector is now a clustered agent
     @Inject
     private ClusterManager clusterManager;
+    @Inject
+    private ManagementServerStatusDao managementServerStatusDao;
 
     private ConcurrentHashMap<String, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<>();
@@ -683,13 +688,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     class ManagementServerCollector extends AbstractStatsCollector {
         @Override
         protected void runInContext() {
+            LOGGER.debug(String.format("%s is running...", this.getClass().getSimpleName()));
+            long msid = ManagementServerNode.getManagementServerId();
+            ManagementServerHostVO mshost = null;
+            ManagementServerHostStatsEntry hostStatsEntry = null;
             try {
-                LOGGER.debug(String.format("%s is running...", this.getClass().getSimpleName()));
-
-                long msid = ManagementServerNode.getManagementServerId();
-                ManagementServerHostVO mshost = managementServerHostDao.findByMsid(msid);
+                mshost = managementServerHostDao.findByMsid(msid);
                 // get local data
-                ManagementServerHostStatsEntry hostStatsEntry = getDataFrom(mshost);
+                hostStatsEntry = getDataFrom(mshost);
                 managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
                 // send to other hosts
                 clusterManager.publishStatus(gson.toJson(hostStatsEntry));
@@ -697,6 +703,37 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 // pokemon catch to make sure the thread stays running
                 LOGGER.error("Error trying to retrieve host stats", t);
             }
+            try {
+                // send to DB
+                storeStatus(hostStatsEntry, mshost);
+            } catch (Throwable t) {
+                // pokemon catch to make sure the thread stays running
+                LOGGER.error("Error trying to store host state", t);
+            }
+        }
+
+        private void storeStatus(ManagementServerHostStatsEntry hostStatsEntry, ManagementServerHostVO mshost) {
+            if (hostStatsEntry == null || mshost == null) {
+                return;
+            }
+            ManagementServerStatusVO msStats = managementServerStatusDao.findByMsId(hostStatsEntry.getManagementServerHostUuid());
+            if (msStats == null) {
+                LOGGER.info(String.format("creating new status info record for host %s - %s",
+                        mshost.getName(),
+                        hostStatsEntry.getManagementServerHostUuid()));
+                msStats = new ManagementServerStatusVO();
+                msStats.setMsId(hostStatsEntry.getManagementServerHostUuid());
+            }
+            msStats.setOsDistribution(hostStatsEntry.getOsDistribution()); // for now just the bunch details come later
+            msStats.setJavaName(hostStatsEntry.getJvmVendor());
+            msStats.setJavaVersion(hostStatsEntry.getJvmVersion());
+            Date startTime = new Date(hostStatsEntry.getStartTime());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("reporting starttime %s", startTime));
+            }
+            msStats.setLastStart(startTime);
+            msStats.setUpdated(new Date());
+            managementServerStatusDao.persist(msStats);
         }
 
         @NotNull
@@ -715,15 +752,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             LOGGER.debug("Metrics collection extra...");
             getRuntimeData(newEntry);
             getCpuData(newEntry);
-            LOGGER.debug(String.format(
-                    "Metrics uptime - %d , starttime - %d , proc1 - %d , loadavg - %f ",
-                    newEntry.getUptime(),
-                    newEntry.getStartTime(),
-                    newEntry.getAvailableProcessors(),
-                    newEntry.getLoadAverage()));
             getMemoryData(newEntry);
-
-            //MetricRegistry registry;
+            getProcFsData(newEntry);
             LOGGER.debug("Metrics collection end!");
             return newEntry;
         }
@@ -740,13 +770,28 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             final OperatingSystemMXBean mxBean = ManagementFactory.getOperatingSystemMXBean();
             newEntry.setAvailableProcessors(mxBean.getAvailableProcessors());
             newEntry.setLoadAverage(mxBean.getSystemLoadAverage());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format(
+                        "Metrics processors - %d , loadavg - %f ",
+                        newEntry.getAvailableProcessors(),
+                        newEntry.getLoadAverage()));
+            }
         }
 
         private void getRuntimeData(@NotNull ManagementServerHostStatsEntry newEntry) {
             final RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
             newEntry.setUptime(mxBean.getUptime());
             newEntry.setStartTime(mxBean.getStartTime());
-            mxBean.getPid();
+            newEntry.setProcessId(mxBean.getPid());
+            newEntry.setJvmName(mxBean.getName());
+            newEntry.setJvmVendor(mxBean.getVmVendor());
+            newEntry.setJvmVersion(mxBean.getVmVersion());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format(
+                        "Metrics uptime - %d , starttime - %d",
+                        newEntry.getUptime(),
+                        newEntry.getStartTime()));
+            }
         }
 
         private void getJvmDimensions(@NotNull ManagementServerHostStatsEntry newEntry) {
@@ -755,14 +800,26 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             long freeMemory = runtime.freeMemory();
             int proc = runtime.availableProcessors();
             long maxMem = runtime.maxMemory();
-            LOGGER.debug(String.format(
-                    "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %d ",
-                    proc,
-                    maxMem,
-                    newEntry.getTotalMemoryBytes(),
-                    freeMemory));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format(
+                        "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %d ",
+                        proc,
+                        maxMem,
+                        newEntry.getTotalMemoryBytes(),
+                        freeMemory));
+            }
             // TODO change print to store in local fields of newEntry
             gatherAllMetrics(newEntry);
+        }
+
+        /**
+         * As for data from outside the JVM, we only rely on /proc/ contained data.
+         *
+         * @param newEntry
+         */
+        private void getProcFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
+            String OS = Script.runSimpleBashScript("cat /proc/version");
+            newEntry.setOsDistribution(OS);
         }
 
         /**

@@ -267,7 +267,6 @@ public class ApiConstants {
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String OS_DISTRIBUTION = "osdistribution";
-    public static final String OS_VERSION = "osversion";
     public static final String IS_SYSTEM_OFFERING = "issystem";
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
