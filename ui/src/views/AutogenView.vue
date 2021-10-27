@@ -33,7 +33,7 @@
                   {{ $t('label.refresh') }}
                 </a-button>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
                   style="margin-left: 8px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
