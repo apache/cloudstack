@@ -31,9 +31,8 @@
       </div>
       <route-view></route-view>
     </div>
-    <div class="user-layout-footer" v-if="$config.loginPolicy || config.loginHelp">
-      <label class="login-policy" v-if="$config.loginPolicy" v-html="$config.loginPolicy"></label>
-      <label class="login-help" v-if="$config.loginHelp" v-html="$config.loginHelp"></label>
+    <div class="user-layout-footer" v-if="$config.loginPolicy">
+      <label v-html="$config.loginPolicy"></label>
     </div>
   </div>
 </template>
@@ -119,10 +118,6 @@ export default {
       width: 368px;
       font-weight: 500;
       margin: 0 auto;
-    }
-
-    .login-policy {
-      color: #f5222d;
     }
   }
 }
