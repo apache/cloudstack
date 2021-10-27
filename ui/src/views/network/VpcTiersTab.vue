@@ -446,7 +446,7 @@ export default {
       },
       lbProviderMap: {
         publicLb: {
-          vpc: ['VpcVirtualRouter', 'Netscaler']
+          vpc: ['Netscaler']
         }
       },
       publicLBExists: false

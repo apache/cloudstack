@@ -380,85 +380,88 @@
       :footer="null"
     >
       <div v-ctrl-enter="handleAddNewRule">
-        <div>
-          <span
-            v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
-            <strong>{{ $t('label.select.tier') }} </strong>
+        <span
+          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          <strong>{{ $t('label.select.tier') }} </strong>
+          <a-select
+            v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-model:value="selectedTier"
+            @change="fetchVirtualMachines()"
+            :placeholder="$t('label.select.tier')"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="tier in tiers.data"
+              :loading="tiers.loading"
+              :key="tier.id">
+              {{ tier.displaytext }}
+            </a-select-option>
+          </a-select>
+        </span>
+        <a-input-search
+          v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+          class="input-search"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          allowClear
+          @search="onSearch" />
+        <a-table
+          size="small"
+          class="list-view"
+          :loading="addVmModalLoading"
+          :columns="vmColumns"
+          :dataSource="vms"
+          :pagination="false"
+          :rowKey="record => record.id"
+          :scroll="{ y: 300 }">
+          <template #name="{text, record, index}">
+            <span>
+              {{ text }}
+            </span>
+            <loading-outlined v-if="addVmModalNicLoading" />
             <a-select
-              v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
-              v-model:value="selectedTier"
-              @change="fetchVirtualMachines()"
-              :placeholder="$t('label.select.tier')"
+              style="display: block"
+              v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
+              mode="multiple"
+              v-model:value="newRule.vmguestip[index]"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option
-                v-for="tier in tiers.data"
-                :loading="tiers.loading"
-                :key="tier.id">
-                {{ tier.displaytext }}
+              <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
+                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
-          </span>
-          <a-input-search
-            v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
-            class="input-search"
-            :placeholder="$t('label.search')"
-            v-model:value="searchQuery"
-            allowClear
-            @search="onSearch" />
-          <a-table
-            size="small"
-            class="list-view"
-            :loading="addVmModalLoading"
-            :columns="vmColumns"
-            :dataSource="vms"
-            :pagination="false"
-            :rowKey="record => record.id"
-            :scroll="{ y: 300 }">
-            <template #name="{text, record, index}">
-              <span>
-                {{ text }}
-              </span>
-              <loading-outlined v-if="addVmModalNicLoading" />
-              <a-select
-                style="display: block"
-                v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
-                mode="multiple"
-                v-model:value="newRule.vmguestip[index]"
-              >
-                <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-                </a-select-option>
-              </a-select>
-            </template>
+          </template>
 
-            <template #state="{text}">
-              <status :text="text ? text : ''" displayText></status>
-            </template>
+          <template #state="{text}">
+            <status :text="text ? text : ''" displayText></status>
+          </template>
 
-            <template #action="{text, record, index}" style="text-align: center" :text="text">
-              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
-            </template>
-          </a-table>
-          <a-pagination
-            class="pagination"
-            size="small"
-            :current="vmPage"
-            :pageSize="vmPageSize"
-            :total="vmCount"
-            :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-            :pageSizeOptions="['10', '20', '40', '80', '100']"
-            @change="handleChangePage"
-            @showSizeChange="handleChangePageSize"
-            showSizeChanger>
-            <template #buildOptionText="props">
-              <span>{{ props.value }} / {{ $t('label.page') }}</span>
-            </template>
-          </a-pagination>
-        </div>
+          <template #action="{text, record, index}" style="text-align: center" :text="text">
+            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+          </template>
+        </a-table>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="vmPage"
+          :pageSize="vmPageSize"
+          :total="vmCount"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="handleChangePage"
+          @showSizeChange="handleChangePageSize"
+          showSizeChanger>
+          <template #buildOptionText="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button :disabled="newRule.virtualmachineid === []" type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>

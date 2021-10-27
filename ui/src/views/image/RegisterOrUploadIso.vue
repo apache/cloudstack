@@ -131,7 +131,7 @@
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
 
-        <a-form-item ref="isfeatured" name="isfeatured" :label="$t('label.isfeatured')">
+        <a-form-item ref="isfeatured" name="isfeatured" :label="$t('label.isfeatured')" v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-switch v-model:checked="form.isfeatured" />
         </a-form-item>
 

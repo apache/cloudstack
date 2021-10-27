@@ -445,7 +445,7 @@ export default {
       return this.isValidValueForKey(obj, key) && obj[key] === true
     },
     isValidTextValueForKey (obj, key) {
-      return this.isValidValueForKey(obj, key) && obj[key].length > 0
+      return this.isValidValueForKey(obj, key) && String(obj[key]).length > 0
     },
     fetchZoneData () {
       this.zones = []
