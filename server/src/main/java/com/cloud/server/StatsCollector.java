@@ -1505,12 +1505,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             allRunningVmIds.add(vm.getId());
         }
 
-        List<Long> vmIdsToRemoveStats = new ArrayList<Long>();
-        for (Long vmId : _VmStats.keySet()) {
-            if (!allRunningVmIds.contains(vmId)) {
-                vmIdsToRemoveStats.add(vmId);
-            }
-        }
+        List<Long> vmIdsToRemoveStats = new ArrayList<Long>(_VmStats.keySet());
+        vmIdsToRemoveStats.removeAll(allRunningVmIds);
 
         for (Long vmId : vmIdsToRemoveStats) {
             removeVirtualMachineStats(vmId);
