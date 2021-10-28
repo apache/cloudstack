@@ -20,17 +20,17 @@ import store from '@/store'
 export default {
   name: 'managementserver',
   title: 'label.management.servers',
-  icon: 'search',
+  icon: 'control',
   permission: ['listManagementServersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'version']
-    const metricsFields = ['availableprocessors', 'id', 'javadistribution', 'javaversion']
+    const metricsFields = ['availableprocessors', 'javadistribution', 'javaversion']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     return fields
   },
-  details: ['name', 'id', 'state', 'version'],
+  details: ['state', 'version', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution'],
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
