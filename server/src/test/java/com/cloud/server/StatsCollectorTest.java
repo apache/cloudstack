@@ -252,7 +252,7 @@ public class StatsCollectorTest {
     @Test
     public void cleanUpVirtualMachineStatsTestDoNothing() {
         Mockito.doReturn(new ArrayList<>()).when(userVmDaoMock).listAllRunning();
-        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(new HashMap<Long, VmStats>()).keySet())
+        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(new HashMap<>()).keySet())
         .when(vmStatsMock).keySet();
 
         statsCollector.cleanUpVirtualMachineStats();
