@@ -62,4 +62,6 @@ public interface ManagementServerHostStats {
     String getJvmVersion();
 
     String getOsDistribution();
+
+    int getAgentCount();
 }

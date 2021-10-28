@@ -621,6 +621,11 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return metricsResponses;
     }
 
+    /**
+     * get the transient/in memory data
+     * @param metricsResponse
+     * @param managementServerResponse
+     */
     private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("getting stats for %s", managementServerResponse.getId()));
@@ -633,9 +638,15 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
             metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+            metricsResponse.setAgentCount(status.getAgentCount());
         }
     }
 
+    /**
+     * get the static/db data
+     * @param metricsResponse
+     * @param managementServerResponse
+     */
     private void getManagementServerRuntimeVersions(ManagementServerResponse managementServerResponse, ManagementServerMetricsResponse metricsResponse) {
         final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
         if (msStats == null) {

@@ -24,13 +24,13 @@ export default {
   permission: ['listManagementServersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'version']
-    const metricsFields = ['availableprocessors', 'javadistribution', 'javaversion']
+    const metricsFields = ['availableprocessors', 'javadistribution', 'javaversion', 'agentcount']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     return fields
   },
-  details: ['state', 'version', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution'],
+  details: ['state', 'version', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'agentcount'],
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')

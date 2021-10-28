@@ -875,6 +875,8 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
+    public static final String AGENT_COUNT = "agentcount";
+    public static final String SYSTEM = "system";
 
     public enum BootType {
         UEFI, BIOS;

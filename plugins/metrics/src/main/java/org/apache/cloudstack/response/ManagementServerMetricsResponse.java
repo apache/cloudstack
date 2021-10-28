@@ -39,6 +39,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the number of processors available to the JVM")
     private int availableProcessors;
 
+    @SerializedName(ApiConstants.AGENT_COUNT)
+    @Param(description = "the number of agents this Management Server is responsible for")
+    private int agentCount;
+
     public void setJavaDistribution(String javaDistribution) {
         this.javaDistribution = javaDistribution;
     }
@@ -53,5 +57,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
+    }
+
+    public void setAgentCount(int agentCount) {
+        this.agentCount = agentCount;
     }
 }

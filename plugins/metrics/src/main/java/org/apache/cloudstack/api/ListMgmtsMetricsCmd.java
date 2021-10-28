@@ -33,6 +33,9 @@ import java.util.List;
 public class ListMgmtsMetricsCmd  extends ListMgmtsCmd {
     public static final String APINAME = "listManagementServersMetrics";
 
+    @Parameter(name = ApiConstants.SYSTEM, type = CommandType.BOOLEAN, entityType = ManagementServerMetricsResponse.class, description = "include system level stats")
+    private boolean system;
+
     @Inject
     private MetricsService metricsService;
 

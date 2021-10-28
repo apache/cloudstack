@@ -41,6 +41,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private String jvmVendor;
     private String jvmVersion;
     private String osDistribution;
+    private int agentCount;
 
     @Override
     public long getManagementServerHostId() {
@@ -150,6 +151,11 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return osDistribution;
     }
 
+    @Override
+    public int getAgentCount() {
+        return agentCount;
+    }
+
     public void setSessions(long sessions) {
         this.sessions = sessions;
     }
@@ -224,5 +230,9 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setOsDistribution(String osDistribution) {
         this.osDistribution = osDistribution;
+    }
+
+    public void setAgentCount(int agentCount) {
+        this.agentCount = agentCount;
     }
 }

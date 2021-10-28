@@ -754,8 +754,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getCpuData(newEntry);
             getMemoryData(newEntry);
             getProcFsData(newEntry);
+            getDataBaseStatistics(newEntry, mshost.getMsid());
             LOGGER.debug("Metrics collection end!");
             return newEntry;
+        }
+
+        private void getDataBaseStatistics(ManagementServerHostStatsEntry newEntry, long msid) {
+            int count = _hostDao.countByMs(msid);
+            newEntry.setAgentCount(count);
         }
 
         private void getMemoryData(@NotNull ManagementServerHostStatsEntry newEntry) {
