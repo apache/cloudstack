@@ -108,6 +108,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
 public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
@@ -604,6 +605,9 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
 
             try {
                 BeanUtils.copyProperties(metricsResponse, managementServerResponse);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("bean copy result %s", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
+                }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
             }
@@ -623,10 +627,10 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         }
         ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
         if (status == null ) {
-            LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getname(), managementServerResponse.getId()));
+            LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getname(), new ReflectionToStringBuilder(status)));
+                LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
             metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
         }
@@ -636,7 +640,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
         if (msStats == null) {
             LOGGER.info(String.format("no status info found for host %s - %s",
-                    managementServerResponse.getname(),
+                    managementServerResponse.getName(),
                     managementServerResponse.getId()));
         } else {
             metricsResponse.setJavaDistribution(msStats.getJavaName());

@@ -19,8 +19,9 @@ package org.apache.cloudstack.response;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 
-public class ManagementServerMetricsResponse extends org.apache.cloudstack.api.response.ManagementServerResponse {
+public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(ApiConstants.JAVA_DISTRIBUTION)
     @Param(description = "the java distribution name running the management server process")

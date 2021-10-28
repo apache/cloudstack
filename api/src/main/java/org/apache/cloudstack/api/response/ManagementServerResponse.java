@@ -22,6 +22,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.management.ManagementServerHost.State;
 
 @EntityReference(value = ManagementServerHost.class)
 public class ManagementServerResponse extends BaseResponse {
@@ -45,8 +46,16 @@ public class ManagementServerResponse extends BaseResponse {
         return this.id;
     }
 
-    public String getname() {
+    public String getName() {
         return this.name;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     public void setId(String id) {
