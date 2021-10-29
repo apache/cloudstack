@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDao;
@@ -435,7 +436,7 @@ public class SystemVmTemplateRegistration {
         return hypervisorList;
     }
 
-    private Long createTemplateObjectInDB(SystemVMTemplateDetails details) {
+    private VMTemplateVO createTemplateObjectInDB(SystemVMTemplateDetails details) {
         Long templateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO template = new VMTemplateVO();
         template.setUuid(details.getUuid());
@@ -458,10 +459,16 @@ public class SystemVmTemplateRegistration {
         template.setState(VirtualMachineTemplate.State.Inactive);
         template.setDeployAsIs(Hypervisor.HypervisorType.VMware.equals(details.getHypervisorType()));
         template = vmTemplateDao.persist(template);
-        if (template == null) {
-            return null;
+        return template;
+    }
+
+    private void createCrossZonesTemplateZoneRefEntries(VMTemplateVO template, SystemVMTemplateDetails details) {
+        List<DataCenterVO> dcs = dataCenterDao.listAll();
+        for (DataCenterVO dc : dcs) {
+            if (vmTemplateDao.addTemplateToZone(template, dc.getId()) < 1) {
+                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template for hypervisor: %s and zone: %s", details.getHypervisorType().name(), dc));
+            }
         }
-        return template.getId();
     }
 
     private void createTemplateStoreRefEntry(SystemVMTemplateDetails details) {
@@ -585,10 +592,12 @@ public class SystemVmTemplateRegistration {
         SystemVMTemplateDetails details = new SystemVMTemplateDetails(templateName, hypervisorAndTemplateName.second(), created,
                 url, checksum, format, (int) guestOsId, hypervisor, storeId);
         if (templateId == null) {
-            templateId = createTemplateObjectInDB(details);
-        }
-        if (templateId == null) {
-            throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s", hypervisor.name()));
+            VMTemplateVO template = createTemplateObjectInDB(details);
+            if (template == null) {
+                throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s", hypervisor.name()));
+            }
+            templateId = template.getId();
+            createCrossZonesTemplateZoneRefEntries(template, details);
         }
         details.setId(templateId);
         String destTempFolderName = String.valueOf(templateId);
