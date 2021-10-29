@@ -761,7 +761,7 @@ export default {
         // IPv4 (end)
 
         // IPv6 (begin)
-        if (this.isValidTextValueForKey(values, 'ip4gateway')) {
+        if (this.isValidTextValueForKey(values, 'ip6gateway')) {
           params.ip6gateway = values.ip6gateway
         }
         if (this.isValidTextValueForKey(values, 'routerip')) {
