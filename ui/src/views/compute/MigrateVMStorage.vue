@@ -139,10 +139,6 @@ export default {
       var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
       if (isUserVm && this.migrateMode === 2) {
         migrateApi = 'migrateVirtualMachineWithVolume'
-        if (this.volumeToPoolSelection.length < 1) {
-          this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
-          this.closeAction()
-        }
         this.migrateVm(migrateApi, null, this.volumeToPoolSelection)
         return
       }
@@ -161,20 +157,8 @@ export default {
       } else {
         params.storageid = storageId
       }
-      if (Object.keys(params).length > 0) {
-        console.log(migrateApi, params)
-        this.loading = false
-        return
-      }
       api(migrateApi, params).then(response => {
-        var jobId = ''
-        if (migrateApi === 'migrateVirtualMachineWithVolume') {
-          jobId = response.migratevirtualmachinewithvolumeresponse.jobid
-        } else if (migrateApi === 'migrateSystemVm') {
-          jobId = response.migratesystemvmresponse.jobid
-        } else {
-          jobId = response.migratevirtualmachine.jobid
-        }
+        const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
           title: `${this.$t('label.migrating')} ${this.resource.name}`,
           description: this.resource.name,

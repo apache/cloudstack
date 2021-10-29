@@ -262,7 +262,7 @@ export default {
     submitForm () {
       if (this.loading) return
       this.loading = true
-      var migrateApi = this.isUserVm
+      const migrateApi = this.isUserVm
         ? (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0)
           ? 'migrateVirtualMachineWithVolume'
           : 'migrateVirtualMachine'
@@ -278,11 +278,9 @@ export default {
         }
       }
       api(migrateApi, params).then(response => {
-        const jobid = this.isUserVm
-          ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
-          : response.migratesystemvmresponse.jobid
+        const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
-          jobId: jobid,
+          jobId: jobId,
           title: `${this.$t('label.migrating')} ${this.resource.name}`,
           description: this.resource.name,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
