@@ -31,6 +31,9 @@ import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -39,7 +42,7 @@ import org.apache.log4j.Logger;
 
 public class SMTPMailSender {
 
-    private Logger logger = Logger.getLogger(SMTPMailSender.class);
+    protected Logger logger = Logger.getLogger(SMTPMailSender.class);
 
     protected Session session = null;
     protected SMTPSessionProperties sessionProps;
@@ -151,14 +154,20 @@ public class SMTPMailSender {
         return sessionProps;
     }
 
-    public boolean sendMail(SMTPMailProperties mailProps) {
+    public void sendMail(SMTPMailProperties mailProps) {
         if (session == null) {
             logger.error("Unable to send mail due to null session.");
-            return false;
+            return;
         }
 
         try {
             SMTPMessage message = createMessage(mailProps);
+
+            if (ArrayUtils.isEmpty(message.getAllRecipients())) {
+                logger.error(String.format("Unable to send mail [%s] due to the recipient list of the message being empty.",
+                        mailProps.getSubject()));
+                return;
+            }
 
             SMTPTransport smtpTrans = createSmtpTransport();
 
@@ -166,13 +175,9 @@ public class SMTPMailSender {
             smtpTrans.sendMessage(message, message.getAllRecipients());
             smtpTrans.close();
 
-            return true;
         } catch (MessagingException | UnsupportedEncodingException ex) {
             logger.error(String.format("Unable to send mail [%s] to the recipcients [%s].", mailProps.getSubject(), mailProps.getRecipients().toString()), ex);
         }
-
-        return false;
-
     }
 
     protected SMTPMessage createMessage(SMTPMailProperties mailProps) throws MessagingException, UnsupportedEncodingException {
@@ -207,7 +212,12 @@ public class SMTPMailSender {
         return new SMTPTransport(session, urlName);
     }
 
-    protected boolean setMailRecipients(SMTPMessage message, Set<MailAddress> recipients, String subject) throws UnsupportedEncodingException, MessagingException {
+    protected void setMailRecipients(SMTPMessage message, Set<MailAddress> recipients, String subject) throws UnsupportedEncodingException, MessagingException {
+        if (CollectionUtils.isEmpty(recipients)) {
+            logger.error("Unable to set recipients due to the recipient list being empty.");
+            return;
+        }
+
         for (MailAddress recipient : recipients) {
             if (StringUtils.isNotBlank(recipient.getAddress())) {
                 try {
@@ -218,14 +228,6 @@ public class SMTPMailSender {
                 }
             }
         }
-
-        if (recipients.isEmpty() || message.getAllRecipients().length == 0) {
-            logger.error("Unable to send mail due to empty list of recipients.");
-            logger.debug(String.format("Unable to send message [%s].", subject));
-            return false;
-        }
-
-        return true;
     }
 
 }
