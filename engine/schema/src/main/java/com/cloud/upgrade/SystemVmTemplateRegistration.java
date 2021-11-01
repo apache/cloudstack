@@ -475,7 +475,6 @@ public class SystemVmTemplateRegistration {
             templateZoneVO = new VMTemplateZoneVO(zoneId, templateId, new java.util.Date());
             templateZoneVO = vmTemplateZoneDao.persist(templateZoneVO);
         } else {
-            templateZoneVO.setRemoved(GenericDaoBase.DATE_TO_NULL);
             templateZoneVO.setLastUpdated(new java.util.Date());
             if (vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
                 templateZoneVO = null;
