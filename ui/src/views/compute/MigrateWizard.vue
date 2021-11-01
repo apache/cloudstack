@@ -38,7 +38,7 @@
       <div slot="name" slot-scope="record">
         {{ record.name }}
         <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.instance.host.auto.assign')" placement="top">
-          <a-icon type="info-circle" class="tooltip-icon" />
+          <a-icon type="info-circle" class="table-tooltip-icon" />
         </a-tooltip>
       </div>
       <div slot="suitability" slot-scope="record">
@@ -390,5 +390,8 @@ export default {
         margin-right: 10px;
       }
     }
+  }
+  .table-tooltip-icon {
+    color: rgba(0,0,0,.45);
   }
 </style>

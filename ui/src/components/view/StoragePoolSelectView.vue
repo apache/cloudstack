@@ -35,13 +35,13 @@
       <span slot="suitabilityCustomTitle">
         {{ $t('label.suitability') }}
         <a-tooltip :title="$t('message.volume.state.primary.storage.suitability')" placement="top">
-          <a-icon type="info-circle" class="tooltip-icon" />
+          <a-icon type="info-circle" class="table-tooltip-icon" />
         </a-tooltip>
       </span>
       <div slot="name" slot-scope="record">
         {{ record.name }}
         <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.volume.pool.auto.assign')" placement="top">
-          <a-icon type="info-circle" class="tooltip-icon" />
+          <a-icon type="info-circle" class="table-tooltip-icon" />
         </a-tooltip>
       </div>
       <div slot="suitability" slot-scope="record">
@@ -255,7 +255,7 @@ export default {
   .top-spaced {
     margin-top: 20px;
   }
-  .tooltip-icon {
+  .table-tooltip-icon {
     color: rgba(0,0,0,.45);
   }
 </style>
