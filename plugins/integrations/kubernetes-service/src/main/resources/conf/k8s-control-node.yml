@@ -113,10 +113,10 @@ write_files:
         ### Binaries available offline ###
         echo "Installing binaries from ${BINARIES_DIR}"
         mkdir -p /opt/cni/bin
-        tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
+        tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
 
         mkdir -p /opt/bin
-        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
+        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
 
         mkdir -p /opt/bin
         cd /opt/bin
