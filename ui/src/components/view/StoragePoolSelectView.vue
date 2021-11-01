@@ -32,6 +32,12 @@
       :dataSource="storagePools"
       :pagination="false"
       :rowKey="record => record.id">
+      <span slot="suitabilityCustomTitle">
+        {{ $t('label.suitability') }}
+        <a-tooltip :title="$t('message.volume.state.primary.storage.suitability')" placement="top">
+          <a-icon type="info-circle" class="tooltip-icon" />
+        </a-tooltip>
+      </span>
       <div slot="name" slot-scope="record">
         {{ record.name }}
         <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.volume.pool.auto.assign')" placement="top">
@@ -158,8 +164,7 @@ export default {
   },
   created () {
     if (this.suitabilityEnabled) {
-      this.columns.splice(1, 0,
-        { title: this.$t('label.suitability'), scopedSlots: { customRender: 'suitability' } }
+      this.columns.splice(1, 0, { slots: { title: 'suitabilityCustomTitle' }, scopedSlots: { customRender: 'suitability' } }
       )
     }
     this.preselectStoragePool()
@@ -249,5 +254,8 @@ export default {
 <style scoped lang="scss">
   .top-spaced {
     margin-top: 20px;
+  }
+  .tooltip-icon {
+    color: rgba(0,0,0,.45);
   }
 </style>

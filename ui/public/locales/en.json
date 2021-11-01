@@ -3429,6 +3429,7 @@
 "message.volume.state.uploaderror": "Volume upload encountered some error",
 "message.volume.state.uploadinprogress": "Volume upload is in progress",
 "message.volume.state.uploadop": "The volume upload operation is in progress or in short the volume is on secondary storage",
+"message.volume.state.primary.storage.suitability": "The suitability of a primary storage for a volume depends on the disk offering of the volume and on the virtual machine allocations if the volume is attached to a virtual machine.",
 "message.waiting.for.builtin.templates.to.load": "Waiting for builtin templates to load...",
 "message.warn.filetype": "jpg, jpeg, png, bmp and svg are the only supported image formats",
 "message.xstools61plus.update.failed": "Failed to update Original XS Version is 6.1+ field. Error:",
