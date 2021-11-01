@@ -31,8 +31,8 @@
       </div>
       <route-view></route-view>
     </div>
-    <div class="user-layout-footer" v-if="$config.footerText">
-      <label v-html="$config.footerText"></label>
+    <div class="user-layout-footer" v-if="$config.loginFooter">
+      <label v-html="$config.loginFooter"></label>
     </div>
   </div>
 </template>
