@@ -202,7 +202,7 @@ export default {
     },
     {
       name: 'ipv6ranges',
-      title: 'IPv6 Ranges',
+      title: 'label.ipv6.ranges',
       icon: 'rocket',
       docHelp: '',
       permission: ['listIpv6Ranges'],

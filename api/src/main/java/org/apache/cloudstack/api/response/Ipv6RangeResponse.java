@@ -53,11 +53,11 @@ public class Ipv6RangeResponse extends BaseResponseWithAnnotations implements Co
     private String ip6Cidr;
 
     @SerializedName(ApiConstants.ROUTER_IPV6)
-    @Param(description = "Private IPv6 address in virtual router")
+    @Param(description = "Outbound IPv6 address in virtual router")
     private String routerIpv6;
 
     @SerializedName(ApiConstants.ROUTER_IPV6_GATEWAY)
-    @Param(description = "Gateway of private IPv6 address in virtual router")
+    @Param(description = "Gateway of Outbound IPv6 network")
     private String routerIpv6Gateway;
 
     @SerializedName(ApiConstants.DOMAIN_ID)

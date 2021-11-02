@@ -57,10 +57,10 @@ public class CreateIpv6RangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, required = true, description = "the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
-    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, required = false, description = "the Management IPv6 address of virtual router")
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, required = false, description = "the Outbound IPv6 address of virtual router")
     private String routerIpv6;
 
-    @Parameter(name = ApiConstants.ROUTER_IPV6_GATEWAY, type = CommandType.STRING, required = true, description = "the gateway of Management IPv6 network of virtual router")
+    @Parameter(name = ApiConstants.ROUTER_IPV6_GATEWAY, type = CommandType.STRING, required = true, description = "the gateway of Outbound IPv6 network of virtual router")
     private String routerIpv6Gateway;
 
     /////////////////////////////////////////////////////
