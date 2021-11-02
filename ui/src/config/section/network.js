@@ -208,7 +208,7 @@ export default {
       permission: ['listIpv6Ranges'],
       resourceType: '',
       columns: ['ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway', 'zonename', 'domain', 'account', 'networkname'],
-      details: ['id', 'zonename', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway', 'domain', 'account', 'project', 'networkname', 'vpcname'],
+      details: ['id', 'zonename', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway', 'routeripv6vlan', 'domain', 'account', 'project', 'networkname', 'vpcname'],
       tabs: [{
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
@@ -230,7 +230,7 @@ export default {
           label: 'label.add.ipv6.range',
           docHelp: '',
           listView: true,
-          args: ['zoneid', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway'],
+          args: ['zoneid', 'physicalnetworkid', 'ip6gateway', 'ip6cidr', 'routeripv6', 'routeripv6gateway', 'routeripv6vlan'],
           mapping: {
             zoneid: {
               api: 'listZones'

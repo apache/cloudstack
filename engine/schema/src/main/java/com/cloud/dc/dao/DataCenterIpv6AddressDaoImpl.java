@@ -69,8 +69,8 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
-    public DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway) {
-        DataCenterIpv6AddressVO range = new DataCenterIpv6AddressVO(dcId, physicalNetworkId, ip6Gateway, ip6Cidr, routerIpv6, routerIpv6Gateway);
+    public DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway, String routerIpv6Vlan) {
+        DataCenterIpv6AddressVO range = new DataCenterIpv6AddressVO(dcId, physicalNetworkId, ip6Gateway, ip6Cidr, routerIpv6, routerIpv6Gateway, routerIpv6Vlan);
         return persist(range);
     }
 
@@ -92,12 +92,13 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
 
     @Override
-    public boolean updateIpRange(long id, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway) {
+    public boolean updateIpRange(long id, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway, String routerIpv6Vlan) {
         DataCenterIpv6AddressVO range = createForUpdate(id);
         range.setIp6Gateway(ip6Gateway);
         range.setIp6Cidr(ip6Cidr);
         range.setRouterIpv6(routerIpv6);
         range.setRouterIpv6Gateway(routerIpv6Gateway);
+        range.setRouterIpv6Vlan(routerIpv6Vlan);
         return update(id, range);
     }
 
@@ -190,6 +191,17 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
         DataCenterIpv6AddressVO addressVO = findOneBy(sc);
         if (addressVO != null) {
             return addressVO.getRouterIpv6Gateway();
+        }
+        return null;
+    }
+
+    @Override
+    public String getRouterIpv6VlanByNetwork(Long networkId) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        DataCenterIpv6AddressVO addressVO = findOneBy(sc);
+        if (addressVO != null) {
+            return addressVO.getRouterIpv6Vlan();
         }
         return null;
     }

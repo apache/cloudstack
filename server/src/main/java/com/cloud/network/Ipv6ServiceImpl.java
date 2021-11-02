@@ -90,7 +90,8 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
     @Override
     public Ipv6Address createIpv6Range(CreateIpv6RangeCmd cmd) {
         // check: TODO
-        DataCenterIpv6AddressVO range = ipv6AddressDao.addIpRange(cmd.getZoneId(), cmd.getPhysicalNetworkId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.getRouterIpv6(), cmd.getRouterIpv6Gateway());
+        DataCenterIpv6AddressVO range = ipv6AddressDao.addIpRange(cmd.getZoneId(), cmd.getPhysicalNetworkId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(),
+                cmd.getRouterIpv6(), cmd.getRouterIpv6Gateway(), cmd.getRouterIpv6Vlan());
         return range;
     }
 
@@ -102,7 +103,7 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
             throw new InvalidParameterValueException("Cannot update this IPv6 range as it is currently in use");
         }
 
-        if (ipv6AddressDao.updateIpRange(cmd.getId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.getRouterIpv6(), cmd.getRouterIpv6Gateway())) {
+        if (ipv6AddressDao.updateIpRange(cmd.getId(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.getRouterIpv6(), cmd.getRouterIpv6Gateway(), cmd.getRouterIpv6Vlan())) {
             return ipv6AddressDao.findById(cmd.getId());
         }
         return null;
@@ -207,6 +208,7 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
         response.setIp6Cidr(address.getIp6Cidr());
         response.setRouterIpv6(address.getRouterIpv6());
         response.setRouterIpv6Gateway(address.getRouterIpv6Gateway());
+        response.setRouterIpv6Vlan(address.getRouterIpv6Vlan());
 
         DataCenterVO dc = ApiDBUtils.findZoneById(address.getDataCenterId());
         response.setZoneId(dc.getUuid());
@@ -324,7 +326,7 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
                 if (routerIpv6Gateway == null) {
                     throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
                 }
-                final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0] + "::";
+                final String routerIpv6Prefix = getRouterIpv6Prefix(routerIpv6Gateway);
                 IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());
                 s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
                 nic.setIPv6Address(ipv6addr.toString());
@@ -376,6 +378,14 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
     @Override
     public boolean applyIpv6FirewallRule(long id) {
         return false;
+    }
+
+    @Override
+    public String getRouterIpv6Prefix(String routerIpv6Gateway) {
+        if (routerIpv6Gateway == null) {
+            return null;
+        }
+        return routerIpv6Gateway.split("::")[0] + "::";
     }
 
 }

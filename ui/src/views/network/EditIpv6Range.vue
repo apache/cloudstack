@@ -50,6 +50,14 @@
             }]"
             :placeholder="apiParams.routeripv6gateway.description" />
         </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.routeripv6vlan')" :tooltip="apiParams.routeripv6vlan.description"/>
+          <a-input
+            v-decorator="['routeripv6vlan', {
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]"
+            :placeholder="apiParams.routeripv6vlan.description" />
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -132,7 +140,8 @@ export default {
           ip6cidr: values.ip6cidr,
           ip6gateway: values.ip6gateway,
           routeripv6: values.routeripv6,
-          routeripv6gateway: values.routeripv6gateway
+          routeripv6gateway: values.routeripv6gateway,
+          routeripv6vlan: values.routeripv6vlan
         }
         api('updateIpv6Range', params).then(response => {
           this.$emit('refresh-data')

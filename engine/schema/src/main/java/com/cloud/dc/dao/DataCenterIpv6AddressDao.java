@@ -23,7 +23,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterIpv6AddressDao extends GenericDao<DataCenterIpv6AddressVO, Long> {
 
-    DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway);
+    DataCenterIpv6AddressVO addIpRange(long dcId, long physicalNetworkId, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway, String routerIpv6Vlan);
 
     boolean removeIpv6Range(long id);
 
@@ -31,7 +31,7 @@ public interface DataCenterIpv6AddressDao extends GenericDao<DataCenterIpv6Addre
 
     boolean releaseIpv6Range(long id);
 
-    boolean updateIpRange(long id, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway);
+    boolean updateIpRange(long id, String ip6Gateway, String ip6Cidr, String routerIpv6, String routerIpv6Gateway, String routerIpv6Vlan);
 
     DataCenterIpv6AddressVO takeIpv6Range(long zoneId, boolean isRouterIpv6Null);
 
@@ -48,4 +48,6 @@ public interface DataCenterIpv6AddressDao extends GenericDao<DataCenterIpv6Addre
     String getRouterIpv6ByNetwork(Long networkId);
 
     String getRouterIpv6GatewayByNetwork(Long networkId);
+
+    String getRouterIpv6VlanByNetwork(Long networkId);
 }

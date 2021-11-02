@@ -63,6 +63,9 @@ public class CreateIpv6RangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ROUTER_IPV6_GATEWAY, type = CommandType.STRING, required = true, description = "the gateway of Outbound IPv6 network of virtual router")
     private String routerIpv6Gateway;
 
+    @Parameter(name = ApiConstants.ROUTER_IPV6_VLAN, type = CommandType.STRING, required = true, description = "the vlan id of Outbound IPv6 network of virtual router")
+    private String routerIpv6Vlan;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -101,6 +104,10 @@ public class CreateIpv6RangeCmd extends BaseCmd {
             return null;
         }
         return NetUtils.standardizeIp6Address(routerIpv6Gateway);
+    }
+
+    public String getRouterIpv6Vlan() {
+        return routerIpv6Vlan;
     }
 
     /////////////////////////////////////////////////////

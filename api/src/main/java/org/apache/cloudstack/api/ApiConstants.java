@@ -823,6 +823,7 @@ public class ApiConstants {
     public static final String ROUTER_IP = "routerip";
     public static final String ROUTER_IPV6 = "routeripv6";
     public static final String ROUTER_IPV6_GATEWAY = "routeripv6gateway";
+    public static final String ROUTER_IPV6_VLAN = "routeripv6vlan";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
     public static final String CACHE_MODE = "cachemode";

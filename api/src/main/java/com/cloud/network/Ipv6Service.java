@@ -76,4 +76,6 @@ public interface Ipv6Service {
     FirewallRule getIpv6FirewallRule(Long entityId);
 
     boolean applyIpv6FirewallRule(long id);
+
+    String getRouterIpv6Prefix(String routerIpv6Gateway);
 }

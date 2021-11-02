@@ -184,9 +184,9 @@ public class CommandSetupHelper {
     @Inject
     private HostDao _hostDao;
     @Inject
-    Ipv6Service ipv6Service;
+    Ipv6Service _ipv6Service;
     @Inject
-    DataCenterIpv6AddressDao ipv6AddressDao;
+    DataCenterIpv6AddressDao _ipv6AddressDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1059,31 +1059,31 @@ public class CommandSetupHelper {
     }
 
     private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress, String defaultIp6Dns1, String defaultIp6Dns2) {
-        boolean isIpv6Supported = ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
+        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
         if (!isIpv6Supported) {
             return;
         }
         setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
         setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-        final String routerIpv6 = ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
+        final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
         if (routerIpv6 == null) {
-            final String routerIpv6Gateway = ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
+            final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
             if (routerIpv6Gateway == null) {
                 throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
             }
-            final String routerIpv6Prefix = routerIpv6Gateway.split("::")[0] + "::";
-            IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
+            final String routerIpv6Prefix = _ipv6Service.getRouterIpv6Prefix(routerIpv6Gateway);
+            IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + _ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
             s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for mac address " + macAddress);
             setupCmd.setRouterIpv6(ipv6addr.toString());
-            setupCmd.setRouterIpv6Cidr(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX);
+            setupCmd.setRouterIpv6Cidr(routerIpv6Prefix + _ipv6Service.IPV6_CIDR_SUFFIX);
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
         } else {
             setupCmd.setRouterIpv6(routerIpv6);
-            setupCmd.setRouterIpv6Cidr(routerIpv6 + Ipv6Service.IPV6_CIDR_SUFFIX);
-            final String routerIpv6Gateway = ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
+            setupCmd.setRouterIpv6Cidr(routerIpv6 + _ipv6Service.IPV6_CIDR_SUFFIX);
+            final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
         }
-        boolean isIpv6FirewallEnabled = ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId());
+        boolean isIpv6FirewallEnabled = _ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId());
         setupCmd.setRouterIpv6Firewall(isIpv6FirewallEnabled);
     }
 

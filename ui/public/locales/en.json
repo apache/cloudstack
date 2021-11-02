@@ -1917,6 +1917,7 @@
 "label.routerip": "IPv4 address for Router",
 "label.routeripv6": "IPv6 address for Router",
 "label.routeripv6gateway": "IPv6 gateway for Router",
+"label.routeripv6vlan": "Vlan of Outbound IPv6 network for Router",
 "label.routerrequiresupgrade": "Upgrade is required",
 "label.routertype": "Type",
 "label.routing.host": "Routing Host",
