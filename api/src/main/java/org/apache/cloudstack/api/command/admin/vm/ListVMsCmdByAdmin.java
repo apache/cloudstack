@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -52,6 +53,10 @@ public class ListVMsCmdByAdmin extends ListVMsCmd implements AdminCmd {
             description="the storage ID where vm's volumes belong to")
     private Long storageId;
 
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class,
+            description = "the cluster ID", since = "4.16.0")
+    private Long clusterId;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,4 +74,7 @@ public class ListVMsCmdByAdmin extends ListVMsCmd implements AdminCmd {
         return storageId;
     }
 
+    public Long getClusterId() {
+        return clusterId;
+    }
 }
