@@ -132,6 +132,10 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    defaultSelected: {
+      type: String,
+      default: () => ''
     }
   },
   data () {
