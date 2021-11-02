@@ -38,7 +38,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
