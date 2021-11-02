@@ -68,9 +68,13 @@
         <span v-if="record.disksizetotal && record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizetotal * 1 - record.disksizeused * 1) }}</span>
       </div>
       <template slot="select" slot-scope="record">
-        <a-radio
-          @click="updateSelection(record)"
-          :checked="selectedStoragePool != null && record.id === selectedStoragePool.id"></a-radio>
+        <a-tooltip placement="top" :title="record.state !== 'Up' ? $t('message.primary.storage.invalid.state') : ''">
+          <a-radio
+            :disabled="record.state !== 'Up'"
+            @click="updateSelection(record)"
+            :checked="selectedStoragePool != null && record.id === selectedStoragePool.id">
+          </a-radio>
+        </a-tooltip>
       </template>
     </a-table>
     <a-pagination

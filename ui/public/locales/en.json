@@ -3154,6 +3154,7 @@
 "message.pod.dedicated": "Pod Dedicated",
 "message.pod.dedication.released": "Pod dedication released",
 "message.portable.ip.delete.confirm": "Please confirm you want to delete Portable IP Range",
+"message.primary.storage.invalid.state": "Primary storage is not in Up state",
 "message.processing.complete": "Processing complete!",
 "message.project.invite.sent": "Invite sent to user; they will be added to the project once they accept the invitation",
 "message.protocol.description": "For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose NFS, PreSetup (VMFS or iSCSI or FiberChannel or vSAN or vVols) or DatastoreCluster. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.",
