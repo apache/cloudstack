@@ -71,10 +71,6 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
-    },
-    defaultChecked: {
-      type: String,
-      default: ''
     }
   },
   data () {
@@ -105,11 +101,7 @@ export default {
         if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
           if (!this.pagination) {
             this.filterType = filter.id
-            if (!this.checkedValue && this.defaultChecked) {
-              this.checkedValue = this.defaultChecked
-            } else {
-              this.checkedValue = items[filter.id][key][0].id
-            }
+            this.checkedValue = items[filter.id][key][0].id
           }
           break
         }
