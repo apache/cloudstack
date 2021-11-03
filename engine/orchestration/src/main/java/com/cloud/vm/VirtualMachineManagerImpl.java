@@ -4044,7 +4044,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
 
-            throw new RuntimeException("Unexpected job execution result");
+            throw new RuntimeException("null job execution result");
         }
     }
 
