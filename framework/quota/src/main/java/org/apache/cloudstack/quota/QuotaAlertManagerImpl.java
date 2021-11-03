@@ -335,8 +335,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         mailProperties.setContentType("text/html; charset=utf-8");
 
         if (CollectionUtils.isEmpty(emails)) {
-            s_logger.warn(String.format("Unable to send quota alert email with subject [%s] and content [%s]. "
-                    + "Account [%s] does not have users with email registered.", subject, body, accountUuid));
+            s_logger.warn(String.format("Account [%s] does not have users with email registered, "
+                    + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", accountUuid, subject, body));
             return;
         }
 
