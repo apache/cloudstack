@@ -940,7 +940,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         // IDE virtual disk cannot be re-sized if VM is running
-        if (vdisk.second() != null && vdisk.second().contains("ide")) {
+        if (vdisk.second() != null && vdisk.second().toLowerCase().contains("ide")) {
             String errorMsg = String.format("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. "
                     + "Please re-try when virtual disk is attached to VM [name: %s] using a SCSI controller.", vmMo.getVmName());
             s_logger.error(errorMsg);
