@@ -991,11 +991,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
-            ListVMsCmdByAdmin adminCmd = (ListVMsCmdByAdmin)cmd;
-            pod = adminCmd.getPodId();
-            clusterId = adminCmd.getClusterId();
-            hostId = adminCmd.getHostId();
-            storageId = adminCmd.getStorageId();
+            pod = cmd.getPodId();
+            if (cmd instanceof ListVMsCmdByAdmin) {
+                clusterId = ((ListVMsCmdByAdmin)cmd).getClusterId();
+            }
+            hostId = cmd.getHostId();
+            storageId = cmd.getStorageId();
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
