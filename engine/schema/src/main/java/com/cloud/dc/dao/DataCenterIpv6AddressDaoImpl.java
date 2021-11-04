@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterIpv6AddressVO;
+import com.cloud.network.Ipv6Service;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -36,9 +37,6 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     private static final Logger s_logger = Logger.getLogger(DataCenterIpv6AddressDaoImpl.class);
 
     private final SearchBuilder<DataCenterIpv6AddressVO> AllFieldsSearch;
-
-    private static final ConfigKey<String> VirtualRouterPrivateIpv6Cidr = new ConfigKey<String>("Advanced",
-            String.class, "virtual.router.private.ipv6.cidr", "","The private Ipv6 cidr configured on virtual routers.", true, ConfigKey.Scope.Cluster);
 
     public DataCenterIpv6AddressDaoImpl() {
         super();
@@ -65,7 +63,7 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { VirtualRouterPrivateIpv6Cidr };
+        return new ConfigKey<?>[] { };
     }
 
     @Override
@@ -136,12 +134,11 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
     }
     @Override
     public boolean unmark(long id) {
-        DataCenterIpv6AddressVO range = createForUpdate(id);
-        range.setNetworkId(null);
-        range.setDomainId(null);
-        range.setAccountId(null);
-        range.setTakenAt(GenericDaoBase.DATE_TO_NULL);
-        return update(id, range);
+        DataCenterIpv6AddressVO range = findById(id);
+        if (range == null) {
+            return true;
+        }
+        return unmark(range);
     }
 
     @Override
@@ -154,7 +151,18 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
         if (range == null) {
             return true;
         }
-        return unmark(range.getId());
+        return unmark(range);
+    }
+
+    private boolean unmark(DataCenterIpv6AddressVO range) {
+        range.setNetworkId(null);
+        range.setDomainId(null);
+        range.setAccountId(null);
+        range.setTakenAt(GenericDaoBase.DATE_TO_NULL);
+        if (isRouterIpv6Slaac(range)) {
+            range.setRouterIpv6(null);
+        }
+        return update(range.getId(), range);
     }
 
     @Override
@@ -175,9 +183,7 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
 
     @Override
     public String getRouterIpv6ByNetwork(Long networkId) {
-        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkId", networkId);
-        DataCenterIpv6AddressVO addressVO = findOneBy(sc);
+        DataCenterIpv6AddressVO addressVO = getIpv6RangeByNetwork(networkId);
         if (addressVO != null) {
             return addressVO.getRouterIpv6();
         }
@@ -186,9 +192,7 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
 
     @Override
     public String getRouterIpv6GatewayByNetwork(Long networkId) {
-        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkId", networkId);
-        DataCenterIpv6AddressVO addressVO = findOneBy(sc);
+        DataCenterIpv6AddressVO addressVO = getIpv6RangeByNetwork(networkId);
         if (addressVO != null) {
             return addressVO.getRouterIpv6Gateway();
         }
@@ -197,12 +201,43 @@ public class DataCenterIpv6AddressDaoImpl extends GenericDaoBase<DataCenterIpv6A
 
     @Override
     public String getRouterIpv6VlanByNetwork(Long networkId) {
-        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkId", networkId);
-        DataCenterIpv6AddressVO addressVO = findOneBy(sc);
+        DataCenterIpv6AddressVO addressVO = getIpv6RangeByNetwork(networkId);
         if (addressVO != null) {
             return addressVO.getRouterIpv6Vlan();
         }
         return null;
+    }
+
+    @Override
+    public DataCenterIpv6AddressVO getIpv6RangeByNetwork(Long networkId) {
+        SearchCriteria<DataCenterIpv6AddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public boolean updateRouterIpv6ByNetwork(Long networkId, String ipv6) {
+        DataCenterIpv6AddressVO addressVO = getIpv6RangeByNetwork(networkId);
+        if (addressVO == null) {
+            return false;
+        }
+        addressVO.setRouterIpv6(Ipv6Service.RouterSlaacIpv6Prefix + ipv6);
+        return update(addressVO.getId(), addressVO);
+    }
+
+    @Override
+    public boolean isRouterIpv6Slaac(DataCenterIpv6AddressVO range) {
+        if (range.getRouterIpv6() != null && range.getRouterIpv6().startsWith(Ipv6Service.RouterSlaacIpv6Prefix)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public String getRouterIpv6(DataCenterIpv6AddressVO range) {
+        if (isRouterIpv6Slaac(range)) {
+            return range.getRouterIpv6().replace(Ipv6Service.RouterSlaacIpv6Prefix, "");
+        }
+        return range.getRouterIpv6();
     }
 }

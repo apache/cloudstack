@@ -37,6 +37,8 @@ public interface Ipv6Service {
 
     public static final String IPV6_CIDR_SUFFIX = "/64";
 
+    public static final String RouterSlaacIpv6Prefix = "SLAAC-";
+
     Ipv6Address createIpv6Range(CreateIpv6RangeCmd cmd);
 
     Ipv6Address updateIpv6Range(UpdateIpv6RangeCmd cmd);

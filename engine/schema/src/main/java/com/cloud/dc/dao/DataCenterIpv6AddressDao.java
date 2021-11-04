@@ -50,4 +50,12 @@ public interface DataCenterIpv6AddressDao extends GenericDao<DataCenterIpv6Addre
     String getRouterIpv6GatewayByNetwork(Long networkId);
 
     String getRouterIpv6VlanByNetwork(Long networkId);
+
+    DataCenterIpv6AddressVO getIpv6RangeByNetwork(Long networkId);
+
+    boolean updateRouterIpv6ByNetwork(Long networkId, String ipv6);
+
+    boolean isRouterIpv6Slaac(DataCenterIpv6AddressVO range);
+
+    String getRouterIpv6(DataCenterIpv6AddressVO range);
 }

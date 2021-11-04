@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenterIpv6AddressVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1065,22 +1066,27 @@ public class CommandSetupHelper {
         }
         setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
         setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-        final String routerIpv6 = _ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
+
+        final DataCenterIpv6AddressVO range = _ipv6AddressDao.getIpv6RangeByNetwork(network.getId());
+        if (range == null) {
+            throw new CloudRuntimeException(String.format("Cannot find IPv6 range for network %s", network.getName()));
+        }
+        final String routerIpv6Gateway = range.getRouterIpv6Gateway();
+        if (routerIpv6Gateway == null) {
+            throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
+        }
+        final String routerIpv6 = _ipv6AddressDao.getRouterIpv6(range);
         if (routerIpv6 == null) {
-            final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
-            if (routerIpv6Gateway == null) {
-                throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
-            }
             final String routerIpv6Prefix = _ipv6Service.getRouterIpv6Prefix(routerIpv6Gateway);
             IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + _ipv6Service.IPV6_CIDR_SUFFIX, macAddress);
             s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for mac address " + macAddress);
             setupCmd.setRouterIpv6(ipv6addr.toString());
             setupCmd.setRouterIpv6Cidr(routerIpv6Prefix + _ipv6Service.IPV6_CIDR_SUFFIX);
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
+            _ipv6AddressDao.updateRouterIpv6ByNetwork(network.getId(), ipv6addr.toString());
         } else {
             setupCmd.setRouterIpv6(routerIpv6);
             setupCmd.setRouterIpv6Cidr(routerIpv6 + _ipv6Service.IPV6_CIDR_SUFFIX);
-            final String routerIpv6Gateway = _ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
         }
         boolean isIpv6FirewallEnabled = _ipv6Service.isIpv6FirewallEnabled(network.getNetworkOfferingId());

@@ -135,7 +135,7 @@
           <a-col :md="12" :lg="12">
             <a-form-item>
               <tooltip-label slot="label" :title="$t('label.ipv6.specify.routeripv6')" :tooltip="apiParams.specifyrouteripv6.description"/>
-              <a-switch v-decorator="['specifyrouteripv6', {initialValue: true}]" />
+              <a-switch v-decorator="['specifyrouteripv6', {initialValue: true}]" :defaultChecked="true" />
             </a-form-item>
           </a-col>
         </a-row>

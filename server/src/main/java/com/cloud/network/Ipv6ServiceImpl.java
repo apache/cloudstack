@@ -320,22 +320,26 @@ public class Ipv6ServiceImpl implements Ipv6Service, PluggableService, Configura
     public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
         boolean isIpv6Supported = isIpv6Supported(network.getNetworkOfferingId());
         if (nic.getIPv6Address() == null && isIpv6Supported) {
-            final String routerIpv6 = ipv6AddressDao.getRouterIpv6ByNetwork(network.getId());
+            final DataCenterIpv6AddressVO range = ipv6AddressDao.getIpv6RangeByNetwork(network.getId());
+            if (range == null) {
+                throw new CloudRuntimeException(String.format("Cannot find IPv6 range for network %s", network.getName()));
+            }
+            final String routerIpv6Gateway = range.getRouterIpv6Gateway();
+            if (routerIpv6Gateway == null) {
+                throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
+            }
+            final String routerIpv6 = ipv6AddressDao.getRouterIpv6(range);
             if (routerIpv6 == null) {
-                final String routerIpv6Gateway = ipv6AddressDao.getRouterIpv6GatewayByNetwork(network.getId());
-                if (routerIpv6Gateway == null) {
-                    throw new CloudRuntimeException(String.format("Invalid routerIpv6Gateway for network %s", network.getName()));
-                }
                 final String routerIpv6Prefix = getRouterIpv6Prefix(routerIpv6Gateway);
                 IPv6Address ipv6addr = NetUtils.EUI64Address(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());
                 s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
                 nic.setIPv6Address(ipv6addr.toString());
                 nic.setIPv6Cidr(routerIpv6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX);
                 nic.setIPv6Gateway(routerIpv6Gateway);
+                ipv6AddressDao.updateRouterIpv6ByNetwork(network.getId(), ipv6addr.toString());
             } else {
                 nic.setIPv6Address(routerIpv6);
                 nic.setIPv6Cidr(routerIpv6 + Ipv6Service.IPV6_CIDR_SUFFIX);
-                final String routerIpv6Gateway = ipv6AddressDao.getRouterIpv6GatewayByNetwork((network.getId()));
                 nic.setIPv6Gateway(routerIpv6Gateway);
             }
             if (nic.getIPv4Address() != null) {
