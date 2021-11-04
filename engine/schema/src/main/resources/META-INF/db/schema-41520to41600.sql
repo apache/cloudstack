@@ -822,6 +822,8 @@ CREATE TABLE `cloud`.`dc_ipv6_range` (
   `domain_id` bigint unsigned DEFAULT NULL COMMENT 'The domain this ipv6 range is used by',
   `account_id` bigint unsigned DEFAULT NULL COMMENT 'The account this ipv6 range is used by',
   `taken` datetime DEFAULT NULL COMMENT 'Date taken',
+  `created` datetime DEFAULT NULL COMMENT 'Date created',
+  `removed` datetime DEFAULT NULL COMMENT 'Date removed',
   PRIMARY KEY (`id`),
   KEY `fk_ipv6__data_center_id` (`data_center_id`),
   KEY `fk_ipv6__physical_network_id` (`physical_network_id`),

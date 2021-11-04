@@ -76,6 +76,14 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date takenAt;
 
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date created = null;
+
+    @Column(name = "removed")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
+
     public DataCenterIpv6AddressVO() {
     }
 
@@ -95,7 +103,7 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     }
 
     @Override
-    public String getUuid() { return uuid; };
+    public String getUuid() { return uuid; }
 
     @Override
     public long getDataCenterId() {
@@ -190,5 +198,21 @@ public class DataCenterIpv6AddressVO implements Ipv6Address {
     @Override
     public boolean isDisplay() {
         return false;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 }
