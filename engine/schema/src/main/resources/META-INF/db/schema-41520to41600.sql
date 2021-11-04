@@ -814,3 +814,30 @@ CREATE TABLE `mshost_status` (
   CONSTRAINT `uc_ms_id` UNIQUE (`ms_id`),
   CONSTRAINT `mshost_status_FK` FOREIGN KEY (`ms_id`) REFERENCES `mshost` (`uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+
+DROP VIEW IF EXISTS `cloud`.`mshost_view`;
+CREATE VIEW `cloud`.`mshost_view` AS
+select
+    `cloud`.`mshost`.`id` AS `id`,
+    `cloud`.`mshost`.`msid` AS `msid`,
+    `cloud`.`mshost`.`runid` AS `runid`,
+    `cloud`.`mshost`.`name` AS `name`,
+    `cloud`.`mshost`.`uuid` AS `uuid`,
+    `cloud`.`mshost`.`state` AS `state`,
+    `cloud`.`mshost`.`version` AS `version`,
+    `cloud`.`mshost`.`service_ip` AS `service_ip`,
+    `cloud`.`mshost`.`service_port` AS `service_port`,
+    `cloud`.`mshost`.`last_update` AS `last_update`,
+    `cloud`.`mshost`.`removed` AS `removed`,
+    `cloud`.`mshost`.`alert_count` AS `alert_count`,
+    `cloud`.`mshost_status`.`last_start` AS `last_start`,
+    `cloud`.`mshost_status`.`last_stop` AS `last_stop`,
+    `cloud`.`mshost_status`.`last_boot` AS `last_boot`,
+    `cloud`.`mshost_status`.`last_down` AS `last_down`,
+    `cloud`.`mshost_status`.`os_distribution` AS `os_distribution`,
+    `cloud`.`mshost_status`.`java_name` AS `java_name`,
+    `cloud`.`mshost_status`.`java_version` AS `java_version`
+from
+    (`cloud`.`mshost`
+left join `cloud`.`mshost_status` on
+    ((`cloud`.`mshost`.`uuid` = `cloud`.`mshost_status`.`ms_id`)))

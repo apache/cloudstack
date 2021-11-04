@@ -36,11 +36,23 @@ public class ManagementServerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the management server")
-    private ManagementServerHost.State state;
+    private State state;
 
     @SerializedName(ApiConstants.VERSION)
     @Param(description = "the version of the management server")
     private String version;
+
+    @SerializedName(ApiConstants.JAVA_DISTRIBUTION)
+    @Param(description = "the java distribution name running the management server process")
+    private String javaDistribution;
+
+    @SerializedName(ApiConstants.JAVA_VERSION)
+    @Param(description = "the version of the java distribution running the management server process")
+    private String javaVersion;
+
+    @SerializedName(ApiConstants.OS_DISTRIBUTION)
+    @Param(description = "the name of the OS distribution running on the management server")
+    private String osDistribution;
 
     public String getId() {
         return this.id;
@@ -58,6 +70,10 @@ public class ManagementServerResponse extends BaseResponse {
         return version;
     }
 
+    public String getJavaVersion() {
+        return javaVersion;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -66,11 +82,23 @@ public class ManagementServerResponse extends BaseResponse {
         this.name = name;
     }
 
-    public void setState(ManagementServerHost.State state) {
+    public void setState(State state) {
         this.state = state;
     }
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public void setJavaDistribution(String javaDistribution) {
+        this.javaDistribution = javaDistribution;
+    }
+
+    public void setJavaVersion(String javaVersion) {
+        this.javaVersion = javaVersion;
+    }
+
+    public void setOsDistribution(String osDistribution) {
+        this.osDistribution = osDistribution;
     }
 }

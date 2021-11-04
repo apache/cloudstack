@@ -23,18 +23,6 @@ import org.apache.cloudstack.api.response.ManagementServerResponse;
 
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
-    @SerializedName(ApiConstants.JAVA_DISTRIBUTION)
-    @Param(description = "the java distribution name running the management server process")
-    private String javaDistribution;
-
-    @SerializedName(ApiConstants.JAVA_VERSION)
-    @Param(description = "the version of the java distribution running the management server process")
-    private String javaVersion;
-
-    @SerializedName(ApiConstants.OS_DISTRIBUTION)
-    @Param(description = "the name of the OS distribution running on the management server")
-    private String osDistribution;
-
     @SerializedName(ApiConstants.AVAILABLE_PROCESSORS)
     @Param(description = "the number of processors available to the JVM")
     private int availableProcessors;
@@ -42,18 +30,6 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @SerializedName(ApiConstants.AGENT_COUNT)
     @Param(description = "the number of agents this Management Server is responsible for")
     private int agentCount;
-
-    public void setJavaDistribution(String javaDistribution) {
-        this.javaDistribution = javaDistribution;
-    }
-
-    public void setJavaVersion(String javaVersion) {
-        this.javaVersion = javaVersion;
-    }
-
-    public void setOsDistribution(String osDistribution) {
-        this.osDistribution = osDistribution;
-    }
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;

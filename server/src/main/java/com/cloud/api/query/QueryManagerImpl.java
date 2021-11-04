@@ -118,7 +118,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -141,6 +140,7 @@ import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
+import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
@@ -164,6 +164,7 @@ import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.ManagementServerJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -175,8 +176,6 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
@@ -212,7 +211,6 @@ import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
-import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -337,9 +335,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private AccountDao _accountDao;
 
     @Inject
-    private ConfigurationDao _configDao;
-
-    @Inject
     private AccountJoinDao _accountJoinDao;
 
     @Inject
@@ -396,9 +391,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private ResourceMetaDataService _resourceMetaDataMgr;
 
     @Inject
-    private TaggedResourceService _taggedResourceMgr;
-
-    @Inject
     private ResourceManagerUtil resourceManagerUtil;
 
     @Inject
@@ -423,10 +415,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DataStoreManager dataStoreManager;
 
     @Inject
-    ManagementServerHostDao managementServerHostDao;
-
-    @Inject
-    VMTemplateDetailsDao vmTemplateDetailsDao;
+    ManagementServerJoinDao managementServerJoinDao;
 
     @Inject
     public VpcVirtualNetworkApplianceService routerService;
@@ -436,9 +425,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private RouterHealthCheckResultDao routerHealthCheckResultDao;
-
-    @Inject
-    private TemplateDataStoreDao templateDataStoreDao;
 
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
@@ -4287,10 +4273,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<ManagementServerResponse> listManagementServers(ListMgmtsCmd cmd) {
         ListResponse<ManagementServerResponse> response = new ListResponse<>();
-        Pair<List<ManagementServerHostVO>, Integer> result = listManagementServersInternal(cmd);
+        Pair<List<ManagementServerJoinVO>, Integer> result = listManagementServersInternal(cmd);
         List<ManagementServerResponse> hostResponses = new ArrayList<>();
 
-        for (ManagementServerHostVO host : result.first()) {
+        for (ManagementServerJoinVO host : result.first()) {
             ManagementServerResponse hostResponse = createManagementServerResponse(host);
             hostResponses.add(hostResponse);
         }
@@ -4299,27 +4285,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
-    protected Pair<List<ManagementServerHostVO>, Integer> listManagementServersInternal(ListMgmtsCmd cmd) {
+    protected Pair<List<ManagementServerJoinVO>, Integer> listManagementServersInternal(ListMgmtsCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getHostName();
 
-        SearchBuilder<ManagementServerHostVO> sb = managementServerHostDao.createSearchBuilder();
-        SearchCriteria<ManagementServerHostVO> sc = sb.create();
+        SearchBuilder<ManagementServerJoinVO> sb = managementServerJoinDao.createSearchBuilder();
+        SearchCriteria<ManagementServerJoinVO> sc = sb.create();
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-        return managementServerHostDao.searchAndCount(sc, null);
+        return managementServerJoinDao.searchAndCount(sc, null);
     }
 
-    protected ManagementServerResponse createManagementServerResponse(ManagementServerHostVO mgmt) {
+    protected ManagementServerResponse createManagementServerResponse(ManagementServerJoinVO mgmt) {
         ManagementServerResponse mgmtResponse = new ManagementServerResponse();
         mgmtResponse.setId(mgmt.getUuid());
         mgmtResponse.setName(mgmt.getName());
         mgmtResponse.setState(mgmt.getState());
         mgmtResponse.setVersion(mgmt.getVersion());
+        mgmtResponse.setJavaVersion(mgmt.getJavaVersion());
+        mgmtResponse.setJavaDistribution(mgmt.getJavaName());
+        mgmtResponse.setOsDistribution(mgmt.getOsDistribution());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }
