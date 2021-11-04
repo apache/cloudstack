@@ -456,6 +456,7 @@ SELECT
     `host`.`id` AS `host_id`,
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
+    `host`.`cluster_id` AS `cluster_id`,
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
