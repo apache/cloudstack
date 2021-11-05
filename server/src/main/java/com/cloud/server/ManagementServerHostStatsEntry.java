@@ -18,6 +18,8 @@
 //
 package com.cloud.server;
 
+import java.util.Map;
+
 public class ManagementServerHostStatsEntry implements ManagementServerHostStats {
 
     private long managementServerHostId;
@@ -42,6 +44,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private String jvmVersion;
     private String osDistribution;
     private int agentCount;
+    Map<String, Object> details;
 
     @Override
     public long getManagementServerHostId() {
@@ -156,6 +159,11 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return agentCount;
     }
 
+    @Override
+    public Map<String, Object> getDetails() {
+        return details;
+    }
+
     public void setSessions(long sessions) {
         this.sessions = sessions;
     }
@@ -234,5 +242,9 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setAgentCount(int agentCount) {
         this.agentCount = agentCount;
+    }
+
+    public void setDetails(Map<String, Object> details) {
+        this.details = details;
     }
 }

@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.cluster.ManagementServerStatusVO;
 import com.cloud.cluster.dao.ManagementServerStatusDao;
 import com.cloud.utils.script.Script;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -175,7 +177,6 @@ import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -884,11 +885,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          * @param metricsEntry
          */
         private void gatherAllMetrics(ManagementServerHostStatsEntry metricsEntry) {
+            Map<String, Object> metricDetails = new HashMap<>();
             for (String metricName : registry.getGauges().keySet()) {
                 Object value = getMetric(metricName);
+                metricDetails.put(metricName, value);
                 // TODO change to trace
                 LOGGER.debug(String.format("Metrics collection '%s'=%s", metricName, value));
             }
+            metricsEntry.setDetails(metricDetails);
         }
 
         private Object getMetric(String metricName) {
@@ -910,9 +914,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
             ManagementServerHostStatsEntry hostStatsEntry = null;
             try {
-                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),ManagementServerHostStatsEntry.class);
+                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),new TypeToken<ManagementServerHostStatsEntry>(){}.getType());
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
-            } catch (final JsonSyntaxException e) {
+            } catch (JsonParseException e) {
                 LOGGER.error("Exception in decoding of other MS hosts status from : " + pdu.getSourcePeer());
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Exception in decoding of other MS hosts status: ", e);

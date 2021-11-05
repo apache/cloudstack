@@ -631,6 +631,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
             metricsResponse.setAgentCount(status.getAgentCount());
             metricsResponse.setSessions(status.getSessions());
+            metricsResponse.setDetails(status.getDetails());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }

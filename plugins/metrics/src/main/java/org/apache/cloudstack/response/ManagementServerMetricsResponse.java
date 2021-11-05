@@ -21,6 +21,8 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
+import java.util.Map;
+
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(ApiConstants.AVAILABLE_PROCESSORS)
@@ -35,6 +37,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the number of client sessions active on this Management Server")
     private long sessions;
 
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "ManagementServer metrics details in key/value pairs.", since = "4.2.1")
+    private Map details;
+
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
     }
@@ -45,5 +51,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setSessions(long sessions) {
         this.sessions = sessions;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
     }
 }
