@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.dao.ManagementServerStatusDao;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -96,6 +97,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     @Inject
     private ManagementServerHostDao _mshostDao;
+    @Inject
+    private ManagementServerStatusDao mshostStatusDao;
     @Inject
     private ManagementServerHostPeerDao _mshostPeerDao;
 
@@ -1047,8 +1050,11 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         if (_mshostId != null) {
             final ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
+            final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
             mshost.setState(ManagementServerHost.State.Down);
+                mshostStatus.setLastStop(new Date());
             _mshostDao.update(_mshostId, mshost);
+            mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
         }
 
         _heartbeatScheduler.shutdownNow();
