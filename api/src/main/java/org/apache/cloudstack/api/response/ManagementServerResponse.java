@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 
+import java.util.Date;
+
 @EntityReference(value = ManagementServerHost.class)
 public class ManagementServerResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
@@ -53,6 +55,14 @@ public class ManagementServerResponse extends BaseResponse {
     @SerializedName(ApiConstants.OS_DISTRIBUTION)
     @Param(description = "the name of the OS distribution running on the management server")
     private String osDistribution;
+
+    @SerializedName(ApiConstants.LAST_START)
+    @Param(description = "the last time this Management Server was started")
+    private Date lastStart;
+
+    @SerializedName(ApiConstants.LAST_STOP)
+    @Param(description = "the last time this Management Server was started")
+    private Date lastStop;
 
     public String getId() {
         return this.id;
@@ -100,5 +110,13 @@ public class ManagementServerResponse extends BaseResponse {
 
     public void setOsDistribution(String osDistribution) {
         this.osDistribution = osDistribution;
+    }
+
+    public void setLastStart(Date lastStart) {
+        this.lastStart = lastStart;
+    }
+
+    public void setLastStop(Date lastStop) {
+        this.lastStop = lastStop;
     }
 }

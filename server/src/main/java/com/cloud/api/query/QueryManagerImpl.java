@@ -4309,6 +4309,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setJavaVersion(mgmt.getJavaVersion());
         mgmtResponse.setJavaDistribution(mgmt.getJavaName());
         mgmtResponse.setOsDistribution(mgmt.getOsDistribution());
+        mgmtResponse.setLastStart(mgmt.getLastStart());
+        mgmtResponse.setLastStop(mgmt.getLastStop());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }
