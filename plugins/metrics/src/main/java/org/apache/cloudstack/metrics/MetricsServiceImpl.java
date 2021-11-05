@@ -28,7 +28,6 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.cluster.dao.ManagementServerStatusDao;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
@@ -50,7 +49,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.management.ManagementServerStatus;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
@@ -138,8 +136,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private AccountManager accountMgr;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
-    @Inject
-    private ManagementServerStatusDao managementServerStatusDao;
     @Inject
     private AlertDao alertDao;
     @Inject
@@ -614,8 +610,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
 
             updateManagementServerMetrics(metricsResponse, managementServerResponse);
 
-            getManagementServerRuntimeVersions(managementServerResponse, metricsResponse);
-
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;
@@ -634,29 +628,12 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         if (status == null ) {
             LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
+            metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+            metricsResponse.setAgentCount(status.getAgentCount());
+            metricsResponse.setSessions(status.getSessions());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
-            metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
-            metricsResponse.setAgentCount(status.getAgentCount());
-        }
-    }
-
-    /**
-     * get the static/db data
-     * @param metricsResponse
-     * @param managementServerResponse
-     */
-    private void getManagementServerRuntimeVersions(ManagementServerResponse managementServerResponse, ManagementServerMetricsResponse metricsResponse) {
-        final ManagementServerStatus msStats = managementServerStatusDao.findByMsId(managementServerResponse.getId());
-        if (msStats == null) {
-            LOGGER.info(String.format("no status info found for host %s - %s",
-                    managementServerResponse.getName(),
-                    managementServerResponse.getId()));
-        } else {
-            metricsResponse.setJavaDistribution(msStats.getJavaName());
-            metricsResponse.setJavaVersion(msStats.getJavaVersion());
-            metricsResponse.setOsDistribution(msStats.getOsDistribution());
         }
     }
 

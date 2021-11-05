@@ -742,12 +742,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             LOGGER.debug("Metrics collection start...");
             newEntry.setManagementServerHostId(mshost.getId());
             newEntry.setManagementServerHostUuid(mshost.getUuid());
-            long sessions = ApiSessionListener.getSessionCount();
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Sessions found in Api %d vs context %d", sessions,ApiSessionListener.getNumberOfSessions()));
-            } else {
-                LOGGER.debug("Sessions active: " + sessions);
-            }
+            retrieveSession(newEntry);
             getJvmDimensions(newEntry);
             LOGGER.debug("Metrics collection extra...");
             getRuntimeData(newEntry);
@@ -755,8 +750,20 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getMemoryData(newEntry);
             getProcFsData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
+            // TODO change print to store in local fields of newEntry
+            gatherAllMetrics(newEntry);
             LOGGER.debug("Metrics collection end!");
             return newEntry;
+        }
+
+        private void retrieveSession(ManagementServerHostStatsEntry newEntry) {
+            long sessions = ApiSessionListener.getSessionCount();
+            newEntry.setSessions(sessions);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Sessions found in Api %d vs context %d", sessions,ApiSessionListener.getNumberOfSessions()));
+            } else {
+                LOGGER.debug("Sessions active: " + sessions);
+            }
         }
 
         private void getDataBaseStatistics(ManagementServerHostStatsEntry newEntry, long msid) {
@@ -803,19 +810,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         private void getJvmDimensions(@NotNull ManagementServerHostStatsEntry newEntry) {
             Runtime runtime = Runtime.getRuntime();
             newEntry.setTotalMemoryBytes(runtime.totalMemory());
-            long freeMemory = runtime.freeMemory();
-            int proc = runtime.availableProcessors();
-            long maxMem = runtime.maxMemory();
+            newEntry.setFreeMemoryBytes(runtime.freeMemory());
+            newEntry.setAvailableProcessors(runtime.availableProcessors());
+            newEntry.setTotalMax(runtime.maxMemory());
+            //long maxMem = runtime.maxMemory();
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format(
-                        "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %d ",
-                        proc,
-                        maxMem,
+                        "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %f ",
+                        newEntry.getAvailableProcessors(),
+                        newEntry.getTotalMax(),
                         newEntry.getTotalMemoryBytes(),
-                        freeMemory));
+                        newEntry.getFreeMemoryBytes()));
             }
-            // TODO change print to store in local fields of newEntry
-            gatherAllMetrics(newEntry);
         }
 
         /**

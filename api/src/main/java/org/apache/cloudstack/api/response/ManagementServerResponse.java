@@ -84,6 +84,22 @@ public class ManagementServerResponse extends BaseResponse {
         return javaVersion;
     }
 
+    public String getJavaDistribution() {
+        return javaDistribution;
+    }
+
+    public String getOsDistribution() {
+        return osDistribution;
+    }
+
+    public Date getLastStart() {
+        return lastStart;
+    }
+
+    public Date getLastStop() {
+        return lastStop;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

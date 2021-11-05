@@ -31,11 +31,19 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the number of agents this Management Server is responsible for")
     private int agentCount;
 
+    @SerializedName(ApiConstants.SESSIONS)
+    @Param(description = "the number of client sessions active on this Management Server")
+    private long sessions;
+
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
     }
 
     public void setAgentCount(int agentCount) {
         this.agentCount = agentCount;
+    }
+
+    public void setSessions(long sessions) {
+        this.sessions = sessions;
     }
 }

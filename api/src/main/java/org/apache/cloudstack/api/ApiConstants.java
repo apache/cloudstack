@@ -347,6 +347,7 @@ public class ApiConstants {
     public static final String SERIAL = "serial";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SESSIONKEY = "sessionkey";
+    public static final String SESSIONS = "sessions";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
