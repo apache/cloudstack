@@ -144,7 +144,14 @@
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
               <a-form-item :label="$t('label.physicalnetworkid')">
-                <a-select v-decorator="['physicalnetwork']" autoFocus>
+                <a-select
+                  v-decorator="['physicalnetwork']"
+                  autoFocus
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -185,7 +192,13 @@
                 <a-checkbox v-decorator="['nat']"></a-checkbox>
               </a-form-item>
               <a-form-item :label="$t('label.aclid')">
-                <a-select v-decorator="['acl']">
+                <a-select
+                  v-decorator="['acl']"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
                     <strong>{{ item.name }}</strong> ({{ item.description }})
                   </a-select-option>
@@ -276,7 +289,14 @@
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">
-                <a-select v-decorator="['vpncustomergateway']" autoFocus>
+                <a-select
+                  v-decorator="['vpncustomergateway']"
+                  autoFocus
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -297,6 +317,12 @@
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="resource"
+          :items="annotations">
+        </AnnotationsTab>
+      </a-tab-pane>
     </a-tabs>
   </a-spin>
 </template>
@@ -309,6 +335,7 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'VpcTab',
@@ -317,7 +344,8 @@ export default {
     Status,
     IpAddressesTab,
     RoutersTab,
-    VpcTiersTab
+    VpcTiersTab,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
   props: {
@@ -414,7 +442,8 @@ export default {
       },
       page: 1,
       pageSize: 10,
-      currentTab: 'details'
+      currentTab: 'details',
+      annotations: []
     }
   },
   beforeCreate () {
@@ -471,7 +500,22 @@ export default {
         case 'acl':
           this.fetchAclList()
           break
+        case 'comments':
+          this.fetchComments()
+          break
       }
+    },
+    fetchComments () {
+      this.fetchLoading = true
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+      })
     },
     fetchPrivateGateways () {
       this.fetchLoading = true

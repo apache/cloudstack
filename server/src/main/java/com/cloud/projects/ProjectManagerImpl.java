@@ -27,11 +27,24 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
@@ -125,6 +138,18 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     private ProjectRoleDao projectRoleDao;
     @Inject
     private UserDao userDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private UserVmDao _userVmDao;
+    @Inject
+    private VMTemplateDao _templateDao;
+    @Inject
+    private NetworkDao _networkDao;
+    @Inject
+    private VMSnapshotDao _vmSnapshotDao;
+    @Inject
+    private VpcManager _vpcMgr;
 
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400000;
@@ -285,7 +310,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true)
-    public boolean deleteProject(long projectId) {
+    public boolean deleteProject(long projectId, Boolean isCleanup) {
         CallContext ctx = CallContext.current();
 
         ProjectVO project = getProject(projectId);
@@ -297,7 +322,29 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         CallContext.current().setProject(project);
         _accountMgr.checkAccess(ctx.getCallingAccount(), AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
-        return deleteProject(ctx.getCallingAccount(), ctx.getCallingUserId(), project);
+        if (isCleanup != null && isCleanup) {
+            return deleteProject(ctx.getCallingAccount(), ctx.getCallingUserId(), project);
+        } else {
+            List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(project.getProjectAccountId());
+            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.listByAccountId(project.getProjectAccountId());
+            List<UserVmVO> vms = _userVmDao.listByAccountId(project.getProjectAccountId());
+            List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(project.getProjectAccountId());
+            List<NetworkVO> networks = _networkDao.listByOwner(project.getProjectAccountId());
+            List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(project.getProjectAccountId());
+
+            Optional<String> message = Stream.of(userTemplates, vmSnapshots, vms, volumes, networks, vpcs)
+                    .filter(entity -> !entity.isEmpty())
+                    .map(entity -> entity.size() + " " +  entity.get(0).getEntityType().getSimpleName() + " to clean up")
+                    .findFirst();
+
+            if (message.isEmpty()) {
+                return deleteProject(ctx.getCallingAccount(), ctx.getCallingUserId(), project);
+            }
+
+            CloudRuntimeException e = new CloudRuntimeException("Can't delete the project yet because it has " + message.get());
+            e.addProxyObject(project.getUuid(), "projectId");
+            throw e;
+        }
     }
 
     @DB

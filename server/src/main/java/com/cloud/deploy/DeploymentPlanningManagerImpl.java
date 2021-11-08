@@ -678,7 +678,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         ServiceOffering offering = vmProfile.getServiceOffering();
         if (offering.getHostTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
+            if (!host.checkHostServiceOfferingTags(offering)) {
                 s_logger.debug("Service Offering host tag does not match the last host of this VM");
                 return false;
             }
@@ -1639,7 +1639,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
-            if (vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO && vmProfile.getServiceOffering().getTagsArray().length != 0) {
+            if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
+                    && vmProfile.getServiceOffering().getTagsArray().length != 0) {
                 diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
             }
 

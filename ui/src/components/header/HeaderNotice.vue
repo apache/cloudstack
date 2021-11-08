@@ -33,11 +33,12 @@
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(notice, index) in notices" :key="index">
-            <a-list-item-meta :title="notice.title" :description="notice.description">
+            <div slot="title"> {{ notice.path }} </div>
+            <a-list-item-meta :title="notice.title">
               <a-avatar :style="notificationAvatar[notice.status].style" :icon="notificationAvatar[notice.status].icon" slot="avatar"/>
-              <span v-if="getResourceName(notice.description, 'name') && notice.path" slot="description"><router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link></span>
-              <span v-if="getResourceName(notice.description, 'name') && notice.path" slot="description"> {{ getResourceName(notice.description, "msg") }}</span>
-              <span v-else slot="description"> {{ notice.description }} </span>
+              <span slot="description" v-if="getResourceName(notice.description, 'name') && notice.path"><router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link></span>
+              <span slot="description" v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</span>
+              <span slot="description" v-else> {{ notice.description }} </span>
             </a-list-item-meta>
           </a-list-item>
         </a-list>

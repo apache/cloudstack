@@ -116,6 +116,20 @@ public class OVFHelper {
     }
 
     /**
+     * Check if there are elements matching the tag name, otherwise check prepending the prefix
+     */
+    public NodeList getElementsByTagNameAndPrefix(Document doc, String name, String prefix) {
+        if (doc == null) {
+            return null;
+        }
+        NodeList elementsByTagName = doc.getElementsByTagName(name);
+        if (elementsByTagName.getLength() > 0) {
+            return elementsByTagName;
+        }
+        return doc.getElementsByTagName(String.format("%s:%s", prefix, name));
+    }
+
+    /**
      * Check if the attribute is present on the element, otherwise check preprending ':'
      */
     private String getNodeAttribute(Element element, String prefix, String attr) {
@@ -179,7 +193,7 @@ public class OVFHelper {
             return props;
         }
         int propertyIndex = 0;
-        NodeList productSections = doc.getElementsByTagName("ProductSection");
+        NodeList productSections = getElementsByTagNameAndPrefix(doc, "ProductSection", "ovf");
         if (productSections != null) {
             String lastCategoryFound = null;
             for (int i = 0; i < productSections.getLength(); i++) {
@@ -193,10 +207,12 @@ public class OVFHelper {
                     if (child == null) {
                         continue;
                     }
-                    if (child.getNodeName().equalsIgnoreCase("Category")) {
+                    if (child.getNodeName().equalsIgnoreCase("Category") ||
+                            child.getNodeName().equalsIgnoreCase("ovf:Category")) {
                         lastCategoryFound = child.getTextContent();
                         s_logger.info("Category found " + lastCategoryFound);
-                    } else if (child.getNodeName().equalsIgnoreCase("Property")) {
+                    } else if (child.getNodeName().equalsIgnoreCase("Property") ||
+                            child.getNodeName().equalsIgnoreCase("ovf:Property")) {
                         OVFPropertyTO prop = createOVFPropertyFromNode(child, propertyIndex, lastCategoryFound);
                         if (prop != null && prop.isUserConfigurable()) {
                             props.add(prop);
@@ -398,7 +414,7 @@ public class OVFHelper {
     }
 
     protected List<OVFFile> extractFilesFromOvfDocumentTree(File ovfFile, Document doc) {
-        NodeList files = doc.getElementsByTagName("File");
+        NodeList files = getElementsByTagNameAndPrefix(doc, "File", "ovf");
         ArrayList<OVFFile> vf = new ArrayList<>();
         boolean toggle = true;
         for (int j = 0; j < files.getLength(); j++) {
@@ -514,9 +530,9 @@ public class OVFHelper {
     public void rewriteOVFFileForSingleDisk(final String origOvfFilePath, final String newOvfFilePath, final String diskName) {
         final Document doc = getDocumentFromFile(origOvfFilePath);
 
-        NodeList disks = doc.getElementsByTagName("Disk");
-        NodeList files = doc.getElementsByTagName("File");
-        NodeList items = doc.getElementsByTagName("Item");
+        NodeList disks = getElementsByTagNameAndPrefix(doc, "Disk", "ovf");
+        NodeList files = getElementsByTagNameAndPrefix(doc, "File", "ovf");
+        NodeList items = getElementsByTagNameAndPrefix(doc, "Item", "ovf");
         String keepfile = null;
         List<Element> toremove = new ArrayList<>();
         for (int j = 0; j < files.getLength(); j++) {
@@ -677,7 +693,7 @@ public class OVFHelper {
 
     private void checkForOnlyOneSystemNode(Document doc) throws InternalErrorException {
         // get hardware VirtualSystem, for now we support only one of those
-        NodeList systemElements = doc.getElementsByTagName("VirtualSystem");
+        NodeList systemElements = getElementsByTagNameAndPrefix(doc, "VirtualSystem", "ovf");
         if (systemElements.getLength() != 1) {
             String msg = "found " + systemElements.getLength() + " system definitions in OVA, can only handle exactly one.";
             s_logger.warn(msg);
@@ -686,7 +702,7 @@ public class OVFHelper {
     }
 
     private Map<String, OVFNetworkTO> getNetworksFromDocumentTree(Document doc) {
-        NodeList networkElements = doc.getElementsByTagName("Network");
+        NodeList networkElements = getElementsByTagNameAndPrefix(doc,"Network", "ovf");
         Map<String, OVFNetworkTO> nets = new HashMap<>();
         for (int i = 0; i < networkElements.getLength(); i++) {
 
@@ -746,7 +762,7 @@ public class OVFHelper {
     private String getMinimumHardwareVersionFromDocumentTree(Document doc) {
         String version = null;
         if (doc != null) {
-            NodeList systemNodeList = doc.getElementsByTagName("System");
+            NodeList systemNodeList = getElementsByTagNameAndPrefix(doc, "System", "ovf");
             if (systemNodeList.getLength() != 0) {
                 Node systemItem = systemNodeList.item(0);
                 String hardwareVersions = getChildNodeValue(systemItem, "VirtualSystemType");
@@ -766,7 +782,7 @@ public class OVFHelper {
         if (doc == null) {
             return options;
         }
-        NodeList deploymentOptionSection = doc.getElementsByTagName("DeploymentOptionSection");
+        NodeList deploymentOptionSection = getElementsByTagNameAndPrefix(doc,"DeploymentOptionSection", "ovf");
         if (deploymentOptionSection.getLength() == 0) {
             return options;
         }
@@ -775,7 +791,7 @@ public class OVFHelper {
         int index = 0;
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node node = childNodes.item(i);
-            if (node != null && node.getNodeName().equals("Configuration")) {
+            if (node != null && (node.getNodeName().equals("Configuration") || node.getNodeName().equals("ovf:Configuration"))) {
                 Element configuration = (Element) node;
                 String configurationId = getNodeAttribute(configuration,"ovf","id");
                 String description = getChildNodeValue(configuration, "Description");
@@ -793,7 +809,7 @@ public class OVFHelper {
         if (doc == null) {
             return items;
         }
-        NodeList hardwareSection = doc.getElementsByTagName("VirtualHardwareSection");
+        NodeList hardwareSection = getElementsByTagNameAndPrefix(doc, "VirtualHardwareSection","ovf");
         if (hardwareSection.getLength() == 0) {
             return items;
         }
@@ -801,7 +817,7 @@ public class OVFHelper {
         NodeList childNodes = hardwareSectionNode.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node node = childNodes.item(i);
-            if (node != null && node.getNodeName().equals("Item")) {
+            if (node != null && (node.getNodeName().equals("Item") || node.getNodeName().equals("ovf:Item"))) {
                 Element configuration = (Element) node;
                 String configurationIds = getNodeAttribute(configuration, "ovf", "configuration");
                 String allocationUnits = getChildNodeValue(configuration, "AllocationUnits");
@@ -869,7 +885,7 @@ public class OVFHelper {
         if (doc == null) {
             return eulas;
         }
-        NodeList eulaSections = doc.getElementsByTagName("EulaSection");
+        NodeList eulaSections = getElementsByTagNameAndPrefix(doc, "EulaSection", "ovf");
         int eulaIndex = 0;
         if (eulaSections.getLength() > 0) {
             for (int index = 0; index < eulaSections.getLength(); index++) {
@@ -905,7 +921,7 @@ public class OVFHelper {
         if (doc == null) {
             return null;
         }
-        NodeList guesOsList = doc.getElementsByTagName("OperatingSystemSection");
+        NodeList guesOsList = getElementsByTagNameAndPrefix(doc, "OperatingSystemSection", "ovf");
         if (guesOsList.getLength() == 0) {
             return null;
         }

@@ -1,4 +1,4 @@
-# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=main)](https://travis-ci.org/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
+# Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
 
 ![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
@@ -143,5 +143,5 @@ The following provides more details on the included cryptographic software:
 * CloudStack makes use of JaSypt cryptographic libraries.
 * CloudStack has a system requirement of MySQL, and uses native database encryption functionality.
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
-* CloudStack can optionally interacts with and controls OpenSwan-based VPNs.
+* CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.

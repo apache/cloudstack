@@ -430,8 +430,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 virtualDeviceBackingInfo = backingInfo.getParent();
             }
 
-            vmMo.detachAllDisks();
-            vmMo.destroy();
+            vmMo.detachAllDisksAndDestroy();
 
             VmwareStorageLayoutHelper.moveVolumeToRootFolder(dcMo, backingFiles);
 
@@ -821,8 +820,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (volume.getDeviceId().equals(0L)) {
                     if (existingVm != null) {
                         s_logger.info("Found existing VM " + vmName + " before cloning from template, destroying it");
-                        existingVm.detachAllDisks();
-                        existingVm.destroy();
+                        existingVm.detachAllDisksAndDestroy();
                     }
                     s_logger.info("ROOT Volume from deploy-as-is template, cloning template");
                     cloneVMFromTemplate(hyperHost, template.getPath(), vmName, primaryStore.getUuid());
@@ -854,8 +852,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         s_logger.info("Destroy dummy VM after volume creation");
                         if (vmMo != null) {
                             s_logger.warn("Unable to destroy a null VM ManagedObjectReference");
-                            vmMo.detachAllDisks();
-                            vmMo.destroy();
+                            vmMo.detachAllDisksAndDestroy();
                         }
                     }
                 } else {
@@ -930,8 +927,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
         if (volume.getVolumeType() == Volume.Type.DATADISK) {
             s_logger.info("detach disks from volume-wrapper VM " + vmName);
-            vmMo.detachAllDisks();
-            vmMo.destroy();
+            vmMo.detachAllDisksAndDestroy();
         }
         return vmdkFileBaseName;
     }
@@ -968,11 +964,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
             }
 
-            s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
-            vmMo.detachAllDisks();
-
-            s_logger.info("destroy volume-wrapper VM " + vmdkName);
-            vmMo.destroy();
+            s_logger.info("detach disks from volume-wrapper VM and destroy" + vmdkName);
+            vmMo.detachAllDisksAndDestroy();
 
             String srcFile = dsMo.getDatastorePath(vmdkName, true);
 
@@ -1144,8 +1137,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
             if (workerVm != null) {
                 //detach volume and destroy worker vm
-                workerVm.detachAllDisks();
-                workerVm.destroy();
+                workerVm.detachAllDisksAndDestroy();
             }
         }
     }
@@ -1249,23 +1241,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-            vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
-            clonedVm = dcMo.findVm(templateUniqueName);
-
-            /* FR41 THIS IS OLD way of creating template using snapshot
-            if (!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
-                String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
-                s_logger.error(msg);
-                throw new Exception(msg);
+            VirtualDisk requiredDisk = volumeDeviceInfo.first();
+            clonedVm = vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, requiredDisk);
+            if (clonedVm == null) {
+                throw new Exception(String.format("Failed to clone VM with name %s during create template from volume operation", templateUniqueName));
             }
-
-            String hardwareVersion = String.valueOf(vmMo.getVirtualHardwareVersion());
-
-            // 4 MB is the minimum requirement for VM memory in VMware
-            Pair<VirtualMachineMO, String[]> cloneResult =
-                    vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), hardwareVersion);
-            clonedVm = cloneResult.first();
-            * */
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
             // Get VMDK filename
@@ -1295,7 +1275,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
+                s_logger.debug(String.format("Destroying cloned VM: %s with its disks", clonedVm.getName()));
                 clonedVm.destroy();
             }
         }
@@ -1377,8 +1357,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         } finally {
             try {
                 if (volume.getVmName() == null && workerVmMo != null) {
-                    workerVmMo.detachAllDisks();
-                    workerVmMo.destroy();
+                    workerVmMo.detachAllDisksAndDestroy();
                 }
             } catch (Throwable e) {
                 s_logger.error("Failed to destroy worker VM created for detached volume");
@@ -1688,8 +1667,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         workerVM.exportVm(installFullPath, exportName, false, false);
 
-        workerVM.detachAllDisks();
-        workerVM.destroy();
+        workerVM.detachAllDisksAndDestroy();
     }
 
     private String getTemplateVmdkName(String installFullPath, String exportName) {
@@ -1851,12 +1829,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 // 4 MB is the minimum requirement for VM memory in VMware
                 DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-                vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
-                clonedVm = dcMo.findVm(exportName);
+                VirtualDisk requiredDisk = volumeDeviceInfo.first();
+                clonedVm = vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, requiredDisk);
                 if (clonedVm == null) {
-                    String msg = "Failed to clone VM. volume path: " + volumePath;
-                    s_logger.error(msg);
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to clone VM with name %s during export volume operation", exportName));
                 }
                 vmMo = clonedVm;
             }
@@ -1865,7 +1841,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             return new Pair<>(diskDevice, disks);
         } finally {
             if (clonedVm != null) {
-                clonedVm.detachAllDisks();
+                s_logger.debug(String.format("Destroying cloned VM: %s with its disks", clonedVm.getName()));
                 clonedVm.destroy();
             }
         }
@@ -2035,8 +2011,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 try {
                     if (workerVm != null) {
                         // detach volume and destroy worker vm
-                        workerVm.detachAllDisks();
-                        workerVm.destroy();
+                        workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
                     s_logger.warn("Failed to destroy worker VM: " + workerVMName);
@@ -2578,8 +2553,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 } finally {
                     s_logger.info("Destroy dummy VM after volume creation");
                     if (vmMo != null) {
-                        vmMo.detachAllDisks();
-                        vmMo.destroy();
+                        vmMo.detachAllDisksAndDestroy();
                     }
                 }
             }
@@ -2650,6 +2624,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDs);
 
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dcMo = new DatacenterMO(context, morDc);
+
             ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
             ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
@@ -2660,7 +2636,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
                     if (vmMo == null) {
                         // Volume might be on a zone-wide storage pool, look for VM in datacenter
-                        DatacenterMO dcMo = new DatacenterMO(context, morDc);
                         vmMo = dcMo.findVm(vmName);
                     }
 
@@ -2715,7 +2690,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
                                 if (netDetails.getVMMorsOnNetwork() == null || netDetails.getVMMorsOnNetwork().length == 1) {
-                                    resource.cleanupNetwork(hostMo, netDetails);
+                                    resource.cleanupNetwork(dcMo, netDetails);
                                 }
                             }
                         }
@@ -3774,24 +3749,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
-        VirtualMachineMO clonedVm = null;
+        VirtualMachineMO workerVm = null;
         try {
             hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", null);
-            clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
-            if (clonedVm == null) {
+            workerVm = hyperHost.findVmOnHyperHost(newVolumeName);
+            if (workerVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
             }
+            workerVm.tagAsWorkerVM();
 
             if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
                 HypervisorHostHelper.createBaseFolderInDatastore(primaryDsMo, primaryDsMo.getDataCenterMor());
-                clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
+                workerVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
             }
-            clonedVm.detachAllDisks();
+            workerVm.detachAllDisks();
             return _storage.getSize(srcOVFFileName);
         } finally {
-            if (clonedVm != null) {
-                clonedVm.detachAllDisks();
-                clonedVm.destroy();
+            if (workerVm != null) {
+                workerVm.detachAllDisksAndDestroy();
             }
         }
     }

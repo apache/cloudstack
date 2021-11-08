@@ -22,9 +22,6 @@
 # Import Local Modules
 from marvin.codes import (FAILED)
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackException import CloudstackAPIException
-from marvin.cloudstackAPI import rebootRouter
-from marvin.sshClient import SshClient
 from marvin.lib.utils import cleanup_resources, get_process_status
 from marvin.lib.base import (Account,
                              VirtualMachine,
@@ -48,10 +45,9 @@ from marvin.lib.common import (get_domain,
                                list_hosts,
                                list_routers)
 from nose.plugins.attrib import attr
-from ddt import ddt, data
+
 # Import System modules
 import socket
-import time
 import logging
 
 _multiprocess_shared_ = True
@@ -61,6 +57,118 @@ stream_handler = logging.StreamHandler()
 logger.setLevel(logging.DEBUG)
 logger.addHandler(stream_handler)
 
+class Services:
+    """Test multiple public interfaces
+    """
+
+    def __init__(self):
+        self.services = {
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "domain_admin": {
+                "email": "domain@admin.com",
+                "firstname": "Domain",
+                "lastname": "Admin",
+                "username": "DoA",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                "memory": 128,
+            },
+            "publiciprange": {
+                "gateway": "10.6.0.254",
+                "netmask": "255.255.255.0",
+                "startip": "10.6.0.2",
+                "endip": "10.6.0.20",
+                "forvirtualnetwork": "true",
+                "vlan": "300"
+            },
+            "extrapubliciprange": {
+                "gateway": "10.200.100.1",
+                "netmask": "255.255.255.0",
+                "startip": "10.200.100.101",
+                "endip": "10.200.100.105",
+                "forvirtualnetwork": "false",
+                "vlan": "301"
+            },
+            "network_offering": {
+                "name": 'VPC Network offering',
+                "displaytext": 'VPC Network off',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "serviceProviderList": {
+                    "Vpn": 'VpcVirtualRouter',
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "Lb": 'VpcVirtualRouter',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                    "NetworkACL": 'VpcVirtualRouter'
+                },
+            },
+            "virtual_machine": {
+                "displayname": "Test VM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": "TCP",
+                "affinity": {
+                    "name": "webvms",
+                    "type": "host anti-affinity",
+                }
+            },
+            "vpc_offering": {
+                "name": 'VPC off',
+                "displaytext": 'VPC off',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+            },
+            "vpc": {
+                "name": "TestVPC",
+                "displaytext": "TestVPC",
+                "cidr": '10.0.0.1/24'
+            },
+            "network": {
+                "name": "Test Network",
+                "displaytext": "Test Network",
+                "netmask": '255.255.255.0'
+            },
+            "natrule": {
+                "privateport": 22,
+                "publicport": 22,
+                "startport": 22,
+                "endport": 22,
+                "protocol": "TCP",
+                "cidrlist": '0.0.0.0/0',
+            },
+            "ostype": "CentOS 5.6 (64-bit)",
+            "sleep": 60,
+            "timeout": 10,
+            "vlan": "10",
+            "zoneid": '',
+            "mode": 'advanced'
+        }
+
+
 class TestPortForwarding(cloudstackTestCase):
 
     @classmethod
@@ -68,13 +176,16 @@ class TestPortForwarding(cloudstackTestCase):
 
         testClient = super(TestPortForwarding, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
         cls.hypervisor = testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        # cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["zoneid"] = cls.zone.id
+        cls.services["publiciprange"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
+
         template = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -84,31 +195,28 @@ class TestPortForwarding(cloudstackTestCase):
             assert False, "get_template() failed to return template with description %s" % cls.services[
                 "ostype"]
 
-        # Create an account, network, VM and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id
         )
-        cls.services["publiciprange"]["zoneid"] = cls.zone.id
+        cls._cleanup.append(cls.account)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
+            zoneid = cls.services["zoneid"],
             templateid=template.id,
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.account,
-            cls.service_offering
-        ]
+        cls._cleanup.append(cls.virtual_machine)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -117,19 +225,12 @@ class TestPortForwarding(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestPortForwarding,
-                cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestPortForwarding, cls).tearDownClass()
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
+        super(TestPortForwarding, self).tearDown()
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advancedsg", "smoke"], required_hardware="true")
     def test_port_forwarding_on_ip_from_non_src_nat_ip_range(self):
         """Test for port forwarding on a IP which is in pubic IP range different
            from public IP range that has source NAT IP associated with network
@@ -142,10 +243,12 @@ class TestPortForwarding(cloudstackTestCase):
         # 4. Create a firewall rule to open up the port
         # 5. Test SSH works to the VM
 
+        self.services["extrapubliciprange"]["zoneid"] = self.services["zoneid"]
         self.public_ip_range = PublicIpRange.create(
                                     self.apiclient,
-                                    self.services["publiciprange"]
+                                    self.services["extrapubliciprange"]
                                )
+        self.cleanup.append(self.public_ip_range)
 
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
@@ -162,7 +265,6 @@ class TestPortForwarding(cloudstackTestCase):
             self.services["virtual_machine"]
         )
         self.cleanup.append(ip_address)
-        self.cleanup.append(self.public_ip_range)
         # Check if VM is in Running state before creating NAT and firewall rules
         vm_response = VirtualMachine.list(
             self.apiclient,
@@ -187,7 +289,7 @@ class TestPortForwarding(cloudstackTestCase):
         )
 
         # Open up firewall port for SSH
-        FireWallRule.create(
+        fwr = FireWallRule.create(
             self.apiclient,
             ipaddressid=ip_address.ipaddress.id,
             protocol=self.services["natrule"]["protocol"],
@@ -195,6 +297,7 @@ class TestPortForwarding(cloudstackTestCase):
             startport=self.services["natrule"]["publicport"],
             endport=self.services["natrule"]["publicport"]
         )
+        self.cleanup.append(fwr)
 
         # Create PF rule
         nat_rule = NATRule.create(
@@ -223,15 +326,14 @@ class TestStaticNat(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-
         testClient = super(TestStaticNat, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
         cls.hypervisor = testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        # cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["zoneid"] = cls.zone.id
         template = get_template(
             cls.apiclient,
@@ -241,33 +343,32 @@ class TestStaticNat(cloudstackTestCase):
         if template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services[
                 "ostype"]
+        cls._cleanup = []
 
-        # Create an account, network, VM and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.services["publiciprange"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
+            zoneid = cls.services["zoneid"],
             templateid=template.id,
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.virtual_machine)
         cls.defaultNetworkId = cls.virtual_machine.nic[0].networkid
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.account,
-            cls.service_offering
-        ]
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -276,19 +377,12 @@ class TestStaticNat(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestStaticNat,
-                cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestStaticNat, cls).tearDownClass()
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
+        super(TestStaticNat, self).tearDown()
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advancedsg", "smoke"], required_hardware="true")
     def test_static_nat_on_ip_from_non_src_nat_ip_range(self):
         """Test for static nat on a IP which is in pubic IP range different
            from public IP range that has source NAT IP associated with network
@@ -301,10 +395,12 @@ class TestStaticNat(cloudstackTestCase):
         # 4. Create a firewall rule to open up the port
         # 5. Test SSH works to the VM
 
+        self.services["extrapubliciprange"]["zoneid"] = self.services["zoneid"]
         self.public_ip_range = PublicIpRange.create(
                                     self.apiclient,
-                                    self.services["publiciprange"]
+                                    self.services["extrapubliciprange"]
                                )
+        self.cleanup.append(self.public_ip_range)
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
                                                 self.apiclient,
@@ -320,7 +416,6 @@ class TestStaticNat(cloudstackTestCase):
             self.services["virtual_machine"]
         )
         self.cleanup.append(ip_address)
-        self.cleanup.append(self.public_ip_range)
         # Check if VM is in Running state before creating NAT and firewall rules
         vm_response = VirtualMachine.list(
             self.apiclient,
@@ -345,7 +440,7 @@ class TestStaticNat(cloudstackTestCase):
         )
 
         # Open up firewall port for SSH
-        FireWallRule.create(
+        fwr = FireWallRule.create(
             self.apiclient,
             ipaddressid=ip_address.ipaddress.id,
             protocol=self.services["natrule"]["protocol"],
@@ -353,6 +448,7 @@ class TestStaticNat(cloudstackTestCase):
             startport=self.services["natrule"]["publicport"],
             endport=self.services["natrule"]["publicport"]
         )
+        self.cleanup.append(fwr)
 
         # Create Static NAT rule
         StaticNATRule.enable(
@@ -388,13 +484,14 @@ class TestRouting(cloudstackTestCase):
 
         testClient = super(TestRouting, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
         cls.hypervisor = testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        # cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["zoneid"] = cls.zone.id
+        cls._cleanup = []
         template = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -404,32 +501,30 @@ class TestRouting(cloudstackTestCase):
             assert False, "get_template() failed to return template with description %s" % cls.services[
                 "ostype"]
 
-        # Create an account, network, VM and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.services["publiciprange"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
+            zoneid = cls.services["zoneid"],
             templateid=template.id,
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.account,
-            cls.service_offering
-        ]
+        cls._cleanup.append(cls.virtual_machine)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -438,19 +533,12 @@ class TestRouting(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestRouting,
-                cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestRouting, cls).tearDownClass()
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
+        super(TestRouting, self).tearDown()
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advancedsg", "smoke"], required_hardware="true")
     def test_routing_tables(self):
         """Test routing table in case we have IP associated with a network which is in
             different pubic IP range from that of public IP range that has source NAT IP.
@@ -465,11 +553,12 @@ class TestRouting(cloudstackTestCase):
         # 5. Login to VR and verify routing tables, there should be Table_eth3
         # 6. Delete firewall rule, since its last IP, routing table Table_eth3 should be deleted
 
+        self.services["extrapubliciprange"]["zoneid"] = self.services["zoneid"]
         self.public_ip_range = PublicIpRange.create(
                                     self.apiclient,
-                                    self.services["publiciprange"]
+                                    self.services["extrapubliciprange"]
                                )
-        self._cleanup.append(self.public_ip_range)
+        self.cleanup.append(self.public_ip_range)
 
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
@@ -486,7 +575,7 @@ class TestRouting(cloudstackTestCase):
             self.services["virtual_machine"]
         )
         self.cleanup.append(ip_address)
-        self.cleanup.append(self.public_ip_range)
+
         # Check if VM is in Running state before creating NAT and firewall rules
         vm_response = VirtualMachine.list(
             self.apiclient,
@@ -519,6 +608,7 @@ class TestRouting(cloudstackTestCase):
             startport=self.services["natrule"]["publicport"],
             endport=self.services["natrule"]["publicport"]
         )
+        self.cleanup.append(firewall_rule)
 
         # Get the router details associated with account
         routers = list_routers(
@@ -585,6 +675,7 @@ class TestRouting(cloudstackTestCase):
         )
 
         firewall_rule.delete(self.apiclient)
+        self.cleanup.remove(firewall_rule)
 
         if (self.hypervisor.lower() == 'vmware'
                 or self.hypervisor.lower() == 'hyperv'):
@@ -646,13 +737,14 @@ class TestIptables(cloudstackTestCase):
 
         testClient = super(TestIptables, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
         cls.hypervisor = testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        # cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["zoneid"] = cls.zone.id
+
         template = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -662,32 +754,31 @@ class TestIptables(cloudstackTestCase):
             assert False, "get_template() failed to return template with description %s" % cls.services[
                 "ostype"]
 
-        # Create an account, network, VM and IP addresses
+        cls._cleanup = []
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.services["publiciprange"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
+            zoneid = cls.services["zoneid"],
             templateid=template.id,
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.account,
-            cls.service_offering
-        ]
+        cls._cleanup.append(cls.virtual_machine)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -696,19 +787,12 @@ class TestIptables(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestIptables,
-                cls).getClsTestClient().getApiClient()
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestIptables, cls).tearDownClass()
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
+        super(TestIptables, self).tearDown()
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advancedsg", "smoke"], required_hardware="true")
     def test_iptable_rules(self):
         """Test iptable rules in case we have IP associated with a network which is in
             different pubic IP range from that of public IP range that has source NAT IP.
@@ -723,11 +807,12 @@ class TestIptables(cloudstackTestCase):
         # 5. Login to VR and verify routing tables, there should be Table_eth3
         # 6. Delete firewall rule, since its last IP, routing table Table_eth3 should be deleted
 
+        self.services["extrapubliciprange"]["zoneid"] = self.services["zoneid"]
         self.public_ip_range = PublicIpRange.create(
                                     self.apiclient,
-                                    self.services["publiciprange"]
+                                    self.services["extrapubliciprange"]
                                )
-        self._cleanup.append(self.public_ip_range)
+        self.cleanup.append(self.public_ip_range)
 
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
@@ -776,6 +861,7 @@ class TestIptables(cloudstackTestCase):
             startport=self.services["natrule"]["publicport"],
             endport=self.services["natrule"]["publicport"]
         )
+        self.cleanup.append(firewall_rule)
         # Get the router details associated with account
         routers = list_routers(
             self.apiclient,
@@ -831,18 +917,15 @@ class TestIptables(cloudstackTestCase):
             "Check to ensure there is a iptable rule to accept the RELATED,ESTABLISHED traffic"
         )
         firewall_rule.delete(self.apiclient)
+        self.cleanup.remove(firewall_rule)
 
 class TestVPCPortForwarding(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-
         socket.setdefaulttimeout(60)
-
-        testClient = super(TestVPCPortForwarding, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -852,35 +935,6 @@ class TestVPCPortForwarding(cloudstackTestCase):
                                     cls.zone.id,
                                     cls.services["ostype"]
                                     )
-        cls.services["vpc_offering"] = { "name": 'VPC off',
-                                     "displaytext": 'VPC off',
-                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                                    }
-        cls.services["network_offering"] = {
-                "name": 'VPC Network offering',
-                "displaytext": 'VPC Network off',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "useVpc": 'on',
-                "serviceProviderList": {
-                    "Vpn": 'VpcVirtualRouter',
-                    "Dhcp": 'VpcVirtualRouter',
-                    "Dns": 'VpcVirtualRouter',
-                    "SourceNat": 'VpcVirtualRouter',
-                    "PortForwarding": 'VpcVirtualRouter',
-                    "Lb": 'VpcVirtualRouter',
-                    "UserData": 'VpcVirtualRouter',
-                    "StaticNat": 'VpcVirtualRouter',
-                    "NetworkACL": 'VpcVirtualRouter'
-                },
-            }
-        cls.services["network"] = {
-                "name": "Test Network",
-                "displaytext": "Test Network",
-                "netmask": '255.255.255.0'
-            }
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["publiciprange"]["zoneid"] = cls.zone.id
@@ -895,29 +949,24 @@ class TestVPCPortForwarding(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
+        super(TestVPCPortForwarding, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
         self.account = Account.create(
                                                 self.apiclient,
                                                 self.services["account"],
                                                 admin=True,
                                                 domainid=self.domain.id
                                                 )
-        self.cleanup = [self.account]
+        self.cleanup.append(self.account)
         logger.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
                                                 self.apiclient,
                                                 self.services["vpc_offering"]
                                                 )
-        self._cleanup.append(self.vpc_off)
+        self.cleanup.append(self.vpc_off)
         logger.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
@@ -931,29 +980,11 @@ class TestVPCPortForwarding(cloudstackTestCase):
                                 account=self.account.name,
                                 domainid=self.account.domainid
                                 )
+        self.cleanup.append(self.vpc)
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            logger.debug("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def check_ssh_into_vm(self, vm, public_ip, testnegative=False):
-        logger.debug("Checking if we can SSH into VM=%s on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
-        try:
-                vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-                if not testnegative:
-                    logger.debug("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
-                else:
-                    self.fail("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
-        except:
-                if not testnegative:
-                    self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
-                else:
-                    logger.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+        super(TestVPCPortForwarding, self).tearDown()
 
     def create_natrule(self, vm, public_ip, network, services=None):
         logger.debug("Creating NAT rule in network for vm with public IP")
@@ -967,6 +998,7 @@ class TestVPCPortForwarding(cloudstackTestCase):
                                             networkid=network.id,
                                             vpcid=self.vpc.id
                                             )
+        self.cleanup.append(nat_rule)
         return nat_rule
 
     def acquire_publicip(self, network):
@@ -978,41 +1010,11 @@ class TestVPCPortForwarding(cloudstackTestCase):
                                         networkid=network.id,
                                         vpcid=self.vpc.id
                                         )
+        self.cleanup.append(public_ip)
         logger.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress,
                                                     network.id
                                                     ))
         return public_ip
-
-    def create_network(self, net_offerring, gateway='10.1.1.1',vpc=None):
-        try:
-                logger.debug('Create NetworkOffering')
-                net_offerring["name"] = "NET_OFF-" + str(gateway)
-                nw_off = NetworkOffering.create(self.apiclient,
-                                                        net_offerring,
-                                                        conservemode=False
-                                                        )
-                # Enable Network offering
-                nw_off.update(self.apiclient, state='Enabled')
-                self._cleanup.append(nw_off)
-                logger.debug('Created and Enabled NetworkOffering')
-
-                self.services["network"]["name"] = "NETWORK-" + str(gateway)
-                logger.debug('Adding Network=%s' % self.services["network"])
-                default_acl = NetworkACLList.list(self.apiclient, name="default_allow")[0]
-                obj_network = Network.create(self.apiclient,
-                                                self.services["network"],
-                                                accountid=self.account.name,
-                                                domainid=self.account.domainid,
-                                                networkofferingid=nw_off.id,
-                                                zoneid=self.zone.id,
-                                                gateway=gateway,
-                                                aclid=default_acl.id,
-                                                vpcid=vpc.id if vpc else self.vpc.id
-                                                )
-                logger.debug("Created network with ID: %s" % obj_network.id)
-                return obj_network
-        except Exception as e:
-                self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):
         try:
@@ -1026,13 +1028,14 @@ class TestVPCPortForwarding(cloudstackTestCase):
                                                 networkids=[str(network.id)],
                                                 hostid=host_id
                                                 )
+                self.cleanup.append(vm)
                 logger.debug('Created VM=%s in network=%s' % (vm.id, network.name))
 
                 return vm
         except:
                 self.fail('Unable to create VM in a Network=%s' % network.name)
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advancedsg", "intervlan"], required_hardware="true")
     def test_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
         """
@@ -1047,11 +1050,12 @@ class TestVPCPortForwarding(cloudstackTestCase):
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
+        self.services["extrapubliciprange"]["zoneid"] = self.services["zoneid"]
         self.public_ip_range = PublicIpRange.create(
                                     self.apiclient,
-                                    self.services["publiciprange"]
+                                    self.services["extrapubliciprange"]
                                )
-        self._cleanup.append(self.public_ip_range)
+        self.cleanup.append(self.public_ip_range)
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
                                                 self.apiclient,
@@ -1063,6 +1067,7 @@ class TestVPCPortForwarding(cloudstackTestCase):
         self.create_natrule( vm_1, public_ip_1, network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.public_ip_range.release(self.apiclient)
+        self.cleanup.remove(self.public_ip_range)
         return
 
 class TestVPCStaticNat(cloudstackTestCase):
@@ -1074,8 +1079,7 @@ class TestVPCStaticNat(cloudstackTestCase):
 
         testClient = super(TestVPCStaticNat, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1085,72 +1089,38 @@ class TestVPCStaticNat(cloudstackTestCase):
                                     cls.zone.id,
                                     cls.services["ostype"]
                                     )
-        cls.services["vpc_offering"] = { "name": 'VPC off',
-                                     "displaytext": 'VPC off',
-                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                                    }
-        cls.services["network_offering"] = {
-                "name": 'VPC Network offering',
-                "displaytext": 'VPC Network off',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "useVpc": 'on',
-                "serviceProviderList": {
-                    "Vpn": 'VpcVirtualRouter',
-                    "Dhcp": 'VpcVirtualRouter',
-                    "Dns": 'VpcVirtualRouter',
-                    "SourceNat": 'VpcVirtualRouter',
-                    "PortForwarding": 'VpcVirtualRouter',
-                    "Lb": 'VpcVirtualRouter',
-                    "UserData": 'VpcVirtualRouter',
-                    "StaticNat": 'VpcVirtualRouter',
-                    "NetworkACL": 'VpcVirtualRouter'
-                },
-            }
-        cls.services["network"] = {
-                "name": "Test Network",
-                "displaytext": "Test Network",
-                "netmask": '255.255.255.0'
-            }
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["publiciprange"]["zoneid"] = cls.zone.id
 
         cls.service_offering = ServiceOffering.create(
-                                                        cls.api_client,
-                                                        cls.services["service_offering"]
-                                                        )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls._cleanup = [cls.service_offering]
         return
 
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
+        super(TestVPCStaticNat, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
         self.account = Account.create(
                                                 self.apiclient,
                                                 self.services["account"],
                                                 admin=True,
                                                 domainid=self.domain.id
                                                 )
-        self.cleanup = [self.account]
+        self.cleanup.append(self.account)
         logger.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
                                                 self.apiclient,
                                                 self.services["vpc_offering"]
                                                 )
-        self._cleanup.append(self.vpc_off)
+        self.cleanup.append(self.vpc_off)
         logger.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
@@ -1164,30 +1134,11 @@ class TestVPCStaticNat(cloudstackTestCase):
                                 account=self.account.name,
                                 domainid=self.account.domainid
                                 )
+        self.cleanup.append(self.vpc)
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            logger.debug("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def check_ssh_into_vm(self, vm, public_ip, testnegative=False):
-        logger.debug("Checking if we can SSH into VM=%s on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
-        try:
-                vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-                if not testnegative:
-                    logger.debug("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
-                else:
-                    self.fail("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
-        except:
-                if not testnegative:
-                    self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
-                else:
-                    logger.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
-
+        super(TestVPCStaticNat, self).tearDown()
 
     def acquire_publicip(self, network):
         logger.debug("Associating public IP for network: %s" % network.name)
@@ -1198,41 +1149,11 @@ class TestVPCStaticNat(cloudstackTestCase):
                                         networkid=network.id,
                                         vpcid=self.vpc.id
                                         )
+        self.cleanup.append(public_ip)
         logger.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress,
                                                     network.id
                                                     ))
         return public_ip
-
-    def create_network(self, net_offerring, gateway='10.1.1.1',vpc=None):
-        try:
-                logger.debug('Create NetworkOffering')
-                net_offerring["name"] = "NET_OFF-" + str(gateway)
-                nw_off = NetworkOffering.create(self.apiclient,
-                                                        net_offerring,
-                                                        conservemode=False
-                                                        )
-                # Enable Network offering
-                nw_off.update(self.apiclient, state='Enabled')
-                self._cleanup.append(nw_off)
-                logger.debug('Created and Enabled NetworkOffering')
-
-                self.services["network"]["name"] = "NETWORK-" + str(gateway)
-                logger.debug('Adding Network=%s' % self.services["network"])
-                default_acl = NetworkACLList.list(self.apiclient, name="default_allow")[0]
-                obj_network = Network.create(self.apiclient,
-                                                self.services["network"],
-                                                accountid=self.account.name,
-                                                domainid=self.account.domainid,
-                                                networkofferingid=nw_off.id,
-                                                zoneid=self.zone.id,
-                                                gateway=gateway,
-                                                aclid=default_acl.id,
-                                                vpcid=vpc.id if vpc else self.vpc.id
-                                                )
-                logger.debug("Created network with ID: %s" % obj_network.id)
-                return obj_network
-        except Exception as e:
-                self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):
         try:
@@ -1246,6 +1167,7 @@ class TestVPCStaticNat(cloudstackTestCase):
                                                 networkids=[str(network.id)],
                                                 hostid=host_id
                                                 )
+                self.cleanup.append(vm)
                 logger.debug('Created VM=%s in network=%s' % (vm.id, network.name))
 
                 return vm
@@ -1270,7 +1192,7 @@ class TestVPCStaticNat(cloudstackTestCase):
                 self.fail("Failed to enable static NAT on IP: %s - %s" % (
                                                     public_ip.ipaddress.ipaddress, e))
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advancedsg", "intervlan"], required_hardware="true")
     def test_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
         """
@@ -1289,7 +1211,7 @@ class TestVPCStaticNat(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["publiciprange"]
                                )
-        self._cleanup.append(self.public_ip_range)
+        self.cleanup.append(self.public_ip_range)
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
                                                 self.apiclient,
@@ -1301,4 +1223,5 @@ class TestVPCStaticNat(cloudstackTestCase):
         self.create_StaticNatRule_For_VM( vm_1, public_ip_1, network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.public_ip_range.release(self.apiclient)
+        self.cleanup.remove(self.public_ip_range)
         return

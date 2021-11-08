@@ -177,6 +177,8 @@ class TestSnapshots(cloudstackTestCase):
             cls.api_client,
             cls.services["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -198,21 +200,13 @@ class TestSnapshots(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSnapshots, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -220,9 +214,7 @@ class TestSnapshots(cloudstackTestCase):
         self.cleanup = []
 
         if self.unsupportedHypervisor:
-            self.skipTest("Skipping test because unsupported hypervisor: %s" %
-                    self.hypervisor)
-
+            self.skipTest("Skipping test because unsupported hypervisor: %s" % self.hypervisor)
 
         # Create VMs, NAT Rules etc
         self.account = Account.create(
@@ -245,12 +237,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSnapshots, self).tearDown()
 
     @attr(speed="slow")
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -307,17 +294,17 @@ class TestSnapshots(cloudstackTestCase):
                 snapshot.id))
         return
 
-    @attr(speed="slow")
-    @attr(
-        tags=[
-            "advanced",
-            "advancedns",
-            "basic",
-            "sg"],
-        required_hardware="true")
+    # @attr(speed="slow")
+    # @attr(
+    #     tags=[
+    #         "advanced",
+    #         "advancedns",
+    #         "basic",
+    #         "sg"],
+    #     required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_01_volume_from_snapshot(self):
         """Test Creating snapshot from volume having spaces in name(KVM)
-        """
         # Validate the following
         # 1. Create a virtual machine and data volume
         # 2. Attach data volume to VM
@@ -327,6 +314,7 @@ class TestSnapshots(cloudstackTestCase):
         # 5. Create another Volume from snapshot
         # 6. Mount/Attach volume to another virtual machine
         # 7. Compare data, data should match
+        """
 
         if self.hypervisor.lower() in ['hyperv']:
             self.skipTest("Snapshots feature is not supported on Hyper-V")
@@ -334,7 +322,7 @@ class TestSnapshots(cloudstackTestCase):
         random_data_0 = random_gen(size=100)
         random_data_1 = random_gen(size=100)
 
-        self.debug("random_data_0 : %s" % random_data_0)
+        self.debug("random_data_0: %s" % random_data_0)
         self.debug("random_data_1: %s" % random_data_1)
 
         try:
@@ -355,7 +343,7 @@ class TestSnapshots(cloudstackTestCase):
         self.virtual_machine.attach_volume(
             self.apiclient,
             volume
-        )
+        )  # volume should be cleanup with `self.virtual_machine`
         self.debug("Attach volume: %s to VM: %s" %
                    (volume.id, self.virtual_machine.id))
 
@@ -483,7 +471,7 @@ class TestSnapshots(cloudstackTestCase):
             mode=self.services["mode"]
         )
         self.debug("Deployed new VM for account: %s" % self.account.name)
-        # self.cleanup.append(new_virtual_machine)
+        self.cleanup.append(new_virtual_machine)
 
         self.debug("Attaching volume: %s to VM: %s" % (
             volume_from_snapshot.id,
@@ -764,25 +752,24 @@ class TestSnapshots(cloudstackTestCase):
         )
         return
 
-    @attr(speed="slow")
-    @attr(
-        tags=[
-            "advanced",
-            "advancedns",
-            "smoke",
-            "xen"],
-        required_hardware="true")
+    # @attr(speed="slow")
+    # @attr(
+    #     tags=[
+    #         "advanced",
+    #         "advancedns",
+    #         "smoke",
+    #         "xen"],
+    #     required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
-        """
-
         # 1. Login to machine; create temp/test directories on data volume
         # 2. Snapshot the Volume
         # 3. Create Template from snapshot
         # 4. Deploy Virtual machine using this template
         # 5. Login to newly created virtual machine
-        # 6. Compare data in the root disk with the one that was written on the
-        # volume, it should match
+        # 6. Compare data in the root disk with the one that was written on the volume, it should match
+        """
 
         if self.hypervisor.lower() in ['hyperv']:
             self.skipTest("Snapshots feature is not supported on Hyper-V")
@@ -865,6 +852,7 @@ class TestSnapshots(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(snapshot)
 
         self.debug("Snapshot created from volume ID: %s" % volume.id)
         # Generate template from the snapshot
@@ -873,7 +861,6 @@ class TestSnapshots(cloudstackTestCase):
             snapshot,
             self.services["templates"]
         )
-        self.cleanup.append(template)
         self.debug("Template created from snapshot ID: %s" % snapshot.id)
 
         # Verify created template
@@ -905,6 +892,7 @@ class TestSnapshots(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             mode=self.services["mode"]
         )
+        self.cleanup.append(new_virtual_machine)
         try:
             # Login to VM & mount directory
             ssh = new_virtual_machine.get_ssh_client()
@@ -997,25 +985,19 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
         )
-        cls._cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
+        cls._cleanup.append(cls.service_offering)
+
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCreateVMSnapshotTemplate, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1027,12 +1009,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCreateVMSnapshotTemplate, self).tearDown()
 
     @attr(speed="slow")
     @attr(tags=["advanced", "advancedns"], required_hardware="true")
@@ -1072,8 +1049,9 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(self.virtual_machine)
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
-        # Get the Root disk of VM
+
         volumes = list_volumes(
             userapiclient,
             virtualmachineid=self.virtual_machine.id,
@@ -1117,8 +1095,8 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
             snapshot,
             self.services["templates"]
         )
-        self.debug("Created template from snapshot: %s" % template.id)
         self.cleanup.append(template)
+        self.debug("Created template from snapshot: %s" % template.id)
 
         templates = list_templates(
             userapiclient,
@@ -1147,11 +1125,11 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(new_virtual_machine)
         self.debug("Created VM with ID: %s from template: %s" % (
             new_virtual_machine.id,
             template.id
         ))
-        self.cleanup.append(new_virtual_machine)
 
         # Newly deployed VM should be 'Running'
         virtual_machines = list_virtual_machines(
@@ -1219,6 +1197,7 @@ class TestSnapshotEvents(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -1226,6 +1205,8 @@ class TestSnapshotEvents(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
+
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -1234,21 +1215,13 @@ class TestSnapshotEvents(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.virtual_machine)
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSnapshotEvents, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1260,12 +1233,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSnapshotEvents, self).tearDown()
 
     @attr(speed="slow")
     @attr(tags=["advanced", "advancedns"], required_hardware="false")

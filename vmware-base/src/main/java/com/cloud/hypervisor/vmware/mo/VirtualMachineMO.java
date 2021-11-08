@@ -40,6 +40,8 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.vim25.InvalidStateFaultMsg;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.VirtualMachineTicket;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -749,42 +751,87 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Pair<VirtualDisk, String> volumeDeviceInfo)
+    public VirtualMachineMO createFullCloneWithSpecificDisk(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, VirtualDisk requiredDisk)
             throws Exception {
 
         assert (morFolder != null);
         assert (morResourcePool != null);
-        assert (morDs != null);
-        VirtualDisk requiredDisk = volumeDeviceInfo.first();
+        VirtualMachineRuntimeInfo runtimeInfo = getRuntimeInfo();
+        HostMO hostMo = new HostMO(_context, runtimeInfo.getHost());
+        DatacenterMO dcMo = new DatacenterMO(_context, hostMo.getHyperHostDatacenter());
+        DatastoreMO dsMo = new DatastoreMO(_context, morResourcePool);
 
         VirtualMachineRelocateSpec rSpec = new VirtualMachineRelocateSpec();
-        List<VirtualMachineRelocateSpecDiskLocator> diskLocator = new ArrayList<VirtualMachineRelocateSpecDiskLocator>(1);
-        VirtualMachineRelocateSpecDiskLocator loc = new VirtualMachineRelocateSpecDiskLocator();
-        loc.setDatastore(morDs);
-        loc.setDiskId(requiredDisk.getKey());
-        loc.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
-        diskLocator.add(loc);
 
-        rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
-        rSpec.getDisk().addAll(diskLocator);
+        VirtualDisk[] vmDisks = getAllDiskDevice();
+        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        s_logger.debug(String.format("Removing the disks other than the required disk with key %s to the cloned VM", requiredDisk.getKey()));
+        for (VirtualDisk disk : vmDisks) {
+            s_logger.debug(String.format("Original disk with key %s found in the VM %s", disk.getKey(), getName()));
+            if (requiredDisk.getKey() != disk.getKey()) {
+                VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+                virtualDeviceConfigSpec.setDevice(disk);
+                virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+                vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
+            }
+        }
         rSpec.setPool(morResourcePool);
 
         VirtualMachineCloneSpec cloneSpec = new VirtualMachineCloneSpec();
         cloneSpec.setPowerOn(false);
         cloneSpec.setTemplate(false);
         cloneSpec.setLocation(rSpec);
+        cloneSpec.setMemory(false);
+        cloneSpec.setConfig(vmConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().cloneVMTask(_mor, morFolder, cloneName, cloneSpec);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (result) {
             _context.waitForTaskProgressDone(morTask);
-            return true;
+            VirtualMachineMO clonedVm = dcMo.findVm(cloneName);
+            if (clonedVm == null) {
+                s_logger.error(String.format("Failed to clone VM %s", cloneName));
+                return null;
+            }
+            s_logger.debug(String.format("Cloned VM: %s as %s", getName(), cloneName));
+            clonedVm.tagAsWorkerVM();
+            makeSureVMHasOnlyRequiredDisk(clonedVm, requiredDisk, dsMo, dcMo);
+            return clonedVm;
         } else {
             s_logger.error("VMware cloneVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            return null;
+        }
+    }
+
+    private void makeSureVMHasOnlyRequiredDisk(VirtualMachineMO clonedVm, VirtualDisk requiredDisk, DatastoreMO dsMo, DatacenterMO dcMo) throws Exception {
+
+        String vmName = clonedVm.getName();
+        VirtualDisk[] vmDisks = clonedVm.getAllDiskDevice();
+        s_logger.debug(String.format("Checking if VM %s is created only with required Disk, if not detach the remaining disks", vmName));
+        if (vmDisks.length == 1) {
+            s_logger.debug(String.format("VM %s is created only with required Disk", vmName));
+            return;
         }
 
-        return false;
+        VirtualDisk requiredCloneDisk = null;
+        for (VirtualDisk vmDisk: vmDisks) {
+            if (vmDisk.getKey() == requiredDisk.getKey()) {
+                requiredCloneDisk = vmDisk;
+                break;
+            }
+        }
+        if (requiredCloneDisk == null) {
+            s_logger.error(String.format("Failed to identify required disk in VM %s", vmName));
+            throw new CloudRuntimeException(String.format("VM %s is not created with required disk", vmName));
+        }
+
+        String baseName = VmwareHelper.getDiskDeviceFileName(requiredCloneDisk);
+        s_logger.debug(String.format("Detaching all disks for the VM: %s except disk with base name: %s, key=%d", vmName, baseName, requiredCloneDisk.getKey()));
+        List<String> detachedDisks = clonedVm.detachAllDisksExcept(baseName, null);
+        for (String diskPath : detachedDisks) {
+            dsMo.deleteFile(diskPath, dcMo.getMor(), true, null);
+        }
     }
 
     public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs, Storage.ProvisioningType diskProvisioningType)
@@ -1506,6 +1553,11 @@ public class VirtualMachineMO extends BaseMO {
         return chain;
     }
 
+    public void detachAllDisksAndDestroy() throws Exception {
+        detachAllDisks();
+        destroy();
+    }
+
     public void detachAllDisks() throws Exception {
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - detachAllDisk(). target MOR: " + _mor.getValue());
@@ -2056,8 +2108,7 @@ public class VirtualMachineMO extends BaseMO {
             return clonedVmMo;
         } finally {
             if (!bSuccess) {
-                clonedVmMo.detachAllDisks();
-                clonedVmMo.destroy();
+                clonedVmMo.detachAllDisksAndDestroy();
             }
         }
     }
@@ -2821,6 +2872,20 @@ public class VirtualMachineMO extends BaseMO {
                 virtualDisks.add((VirtualDisk)device);
             }
         }
+
+        return virtualDisks;
+    }
+
+    public List<VirtualDisk> getVirtualDisksOrderedByKey() throws Exception {
+        List<VirtualDisk> virtualDisks = getVirtualDisks();
+        Collections.sort(virtualDisks, new Comparator<VirtualDisk>() {
+            @Override
+            public int compare(VirtualDisk disk1, VirtualDisk disk2) {
+                Integer disk1Key = disk1.getKey();
+                Integer disk2Key = disk2.getKey();
+                return disk1Key.compareTo(disk2Key);
+            }
+        });
 
         return virtualDisks;
     }
@@ -3592,5 +3657,35 @@ public class VirtualMachineMO extends BaseMO {
     public String acquireVncTicket() throws InvalidStateFaultMsg, RuntimeFaultFaultMsg {
         VirtualMachineTicket ticket = _context.getService().acquireTicket(_mor, "webmks");
         return ticket.getTicket();
+    }
+
+    public void cancelPendingTasks() throws Exception {
+        String vmName = getVmName();
+        s_logger.debug("Checking for pending tasks of the VM: " + vmName);
+
+        ManagedObjectReference taskmgr = _context.getServiceContent().getTaskManager();
+        List<ManagedObjectReference> tasks = _context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+
+        int vmTasks = 0, vmPendingTasks = 0;
+        for (ManagedObjectReference task : tasks) {
+            TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
+            if (info.getEntityName().equals(vmName)) {
+                vmTasks++;
+                if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
+                    String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
+                    s_logger.debug(taskName + " task pending for the VM: " + vmName + ", cancelling it");
+                    vmPendingTasks++;
+                    _context.getVimClient().cancelTask(task);
+                }
+            }
+        }
+
+        s_logger.debug(vmPendingTasks + " pending tasks for the VM: " + vmName + " found, out of " + vmTasks + " recent VM tasks");
+    }
+
+    public void tagAsWorkerVM() throws Exception {
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
+        String workerTag = String.format("%d-%s", System.currentTimeMillis(), getContext().getStockObject("noderuninfo"));
+        setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
     }
 }

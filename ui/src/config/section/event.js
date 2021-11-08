@@ -45,9 +45,7 @@ export default {
         ids: {
           value: (record) => { return record.id }
         }
-      },
-      show: (record, store) => { return !['User'].includes(store.userInfo.roletype) },
-      groupShow: (record, store) => { return !['User'].includes(store.userInfo.roletype) }
+      }
     },
     {
       api: 'deleteEvents',
@@ -64,9 +62,7 @@ export default {
         ids: {
           value: (record) => { return record.id }
         }
-      },
-      show: (record, store) => { return !['User'].includes(store.userInfo.roletype) },
-      groupShow: (record, store) => { return !['User'].includes(store.userInfo.roletype) }
+      }
     }
   ]
 }

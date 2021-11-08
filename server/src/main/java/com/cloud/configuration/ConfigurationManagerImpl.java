@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,18 +36,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Vector;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.storage.Storage;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -54,6 +57,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -69,6 +73,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -87,6 +92,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -144,6 +150,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.domain.Domain;
@@ -165,6 +172,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -176,6 +184,7 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -185,6 +194,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -209,6 +219,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
@@ -246,7 +257,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
@@ -399,7 +409,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     HostTagsDao hostTagDao;
     @Inject
     StoragePoolTagsDao storagePoolTagDao;
-
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    UserIpv6AddressDao _ipv6Dao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -430,9 +443,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
                         true, ConfigKey.Scope.Zone, null);
+    public static final ConfigKey<Boolean> ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.account.settings.for.domain", "Advanced", "false",
+            "Indicates whether to add account settings for domain. If true, account settings will be added to domain settings, all accounts in the domain will inherit the domain setting if account setting is not set.", true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
+            "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
+            true, ConfigKey.Scope.Global, null);
+
+    public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
+      + "for vm service offering. If 0 - no limitation", true);
+
+    public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_RAM_SIZE = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.ram.size.max", "0", "Maximum RAM size in "
+      + "MB for vm service offering. If 0 - no limitation", true);
 
     public static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<Integer>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
             "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
+    public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
+            "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -531,9 +557,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
                         globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
                     _indirectAgentLB.propagateMSListToAgents();
-                } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())) {
+                } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
+                        ||  globalSettingUpdated.equals(Config.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<String, String>();
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
                 }
             }
@@ -798,12 +826,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        value = value.trim();
-
-        if (value.isEmpty() || value.equals("null")) {
-            value = null;
-        }
-
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -843,6 +865,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
+        value = value.trim();
+
+        if (value.isEmpty() || value.equals("null")) {
+            value = (id == null) ? null : "";
+        }
+
         final String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
@@ -861,7 +889,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final String configScope = cfg.getScope();
         if (scope != null) {
-            if (!configScope.contains(scope)) {
+            if (!configScope.contains(scope) &&
+                    !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account.toString()) &&
+                            scope.equals(ConfigKey.Scope.Domain.toString()))) {
                 s_logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
             }
@@ -1226,6 +1256,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (dr != null) {
                     _dedicatedDao.remove(dr.getId());
                 }
+
+                // Remove comments (if any)
+                annotationDao.removeByEntityType(AnnotationService.EntityType.POD.name(), pod.getUuid());
             }
         });
 
@@ -1502,6 +1535,178 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } catch (final Exception e) {
             s_logger.error("Unable to delete Pod " + podId + "IP range due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to delete Pod " + podId + "IP range. Please contact Cloud Support.");
+        }
+    }
+
+    @Override
+    @DB
+    public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
+        final long podId = cmd.getPodId();
+        final HostPodVO pod = _podDao.findById(podId);
+        if (pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
+        }
+
+        final String currentStartIP = cmd.getCurrentStartIP();
+        final String currentEndIP = cmd.getCurrentEndIP();
+        String newStartIP = cmd.getNewStartIP();
+        String newEndIP = cmd.getNewEndIP();
+
+        if (newStartIP == null) {
+            newStartIP = currentStartIP;
+        }
+
+        if (newEndIP == null) {
+            newEndIP = currentEndIP;
+        }
+
+        if (newStartIP.equals(currentStartIP) && newEndIP.equals(currentEndIP)) {
+            throw new InvalidParameterValueException("New starting and ending IP address are the same as current starting and ending IP address");
+        }
+
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+        if (existingPodIpRanges.length == 0) {
+            throw new InvalidParameterValueException("The IP range cannot be found in the pod: " + podId + " since the existing IP range is empty.");
+        }
+
+        verifyIpRangeParameters(currentStartIP,currentEndIP);
+        verifyIpRangeParameters(newStartIP,newEndIP);
+        checkIpRangeContainsTakenAddresses(pod,currentStartIP,currentEndIP,newStartIP,newEndIP);
+
+        String vlan = verifyPodIpRangeExists(podId,existingPodIpRanges,currentStartIP,currentEndIP,newStartIP,newEndIP);
+
+        List<Long> currentIpRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
+        List<Long> newIpRange = listAllIPsWithintheRange(newStartIP,newEndIP);
+
+        try {
+            final String finalNewEndIP = newEndIP;
+            final String finalNewStartIP = newStartIP;
+            final Integer vlanId = vlan.equals(Vlan.UNTAGGED) ? null : Integer.parseInt(vlan);
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    final long zoneId = pod.getDataCenterId();
+                    pod.setDescription(pod.getDescription().replace(currentStartIP + "-",
+                            finalNewStartIP + "-").replace(currentEndIP, finalNewEndIP));
+                    updatePodIpRangeInDb(zoneId,podId,vlanId,pod,newIpRange,currentIpRange);
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to update Pod " + podId + " IP range due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+        }
+    }
+
+    private String verifyPodIpRangeExists(long podId,String[] existingPodIpRanges, String currentStartIP,
+            String currentEndIP, String newStartIP, String newEndIP) {
+        boolean foundRange = false;
+        String vlan = null;
+
+        for (String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if (existingPodIpRange.length > 1) {
+                if (!NetUtils.isValidIp4(existingPodIpRange[0]) || !NetUtils.isValidIp4(existingPodIpRange[1])) {
+                    continue;
+                }
+                if (currentStartIP.equals(existingPodIpRange[0]) && currentEndIP.equals(existingPodIpRange[1])) {
+                    foundRange = true;
+                    vlan = existingPodIpRange[3];
+                }
+                if (!foundRange && NetUtils.ipRangesOverlap(newStartIP, newEndIP, existingPodIpRange[0], existingPodIpRange[1])) {
+                    throw new InvalidParameterValueException("The Start and End IP address range: (" + newStartIP + "-" + newEndIP + ") overlap with the pod IP range: " + podIpRange);
+                }
+            }
+        }
+
+        if (!foundRange) {
+            throw new InvalidParameterValueException("The input IP range: " + currentStartIP + "-" + currentEndIP + " of pod: " + podId + " is not present. Please input an existing range.");
+        }
+
+        return vlan;
+    }
+
+    private void updatePodIpRangeInDb (long zoneId, long podId, Integer vlanId, HostPodVO pod, List<Long> newIpRange, List<Long> currentIpRange) {
+        HostPodVO lock = null;
+        try {
+            lock = _podDao.acquireInLockTable(podId);
+            if (lock == null) {
+                String msg = "Unable to acquire lock on table to update the ip range of POD: " + pod.getName() + ", Update failed.";
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            List<Long> iPaddressesToAdd = new ArrayList(newIpRange);
+            iPaddressesToAdd.removeAll(currentIpRange);
+            if (iPaddressesToAdd.size() > 0) {
+                for (Long startIP : iPaddressesToAdd) {
+                    _zoneDao.addPrivateIpAddress(zoneId, podId, NetUtils.long2Ip(startIP), NetUtils.long2Ip(startIP), false, vlanId);
+                }
+            } else {
+                currentIpRange.removeAll(newIpRange);
+                if (currentIpRange.size() > 0) {
+                    for (Long startIP: currentIpRange) {
+                        if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(startIP),podId,zoneId)) {
+                            throw new CloudRuntimeException("Failed to remove private ip address: " + NetUtils.long2Ip(startIP) + " of Pod: " + podId + " DC: " + pod.getDataCenterId());
+                        }
+                    }
+                }
+            }
+            _podDao.update(podId, pod);
+        } catch (final Exception e) {
+            s_logger.error("Unable to update Pod " + podId + " IP range due to database error " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+        }  finally {
+            if (lock != null) {
+                _podDao.releaseFromLockTable(podId);
+            }
+        }
+    }
+
+    private List<Long> listAllIPsWithintheRange(String startIp, String endIP) {
+        verifyIpRangeParameters(startIp,endIP);
+        long startIpLong = NetUtils.ip2Long(startIp);
+        long endIpLong = NetUtils.ip2Long(endIP);
+
+        List<Long> listOfIpsinRange = new ArrayList<>();
+        while (startIpLong <= endIpLong) {
+            listOfIpsinRange.add(startIpLong);
+            startIpLong++;
+        }
+        return listOfIpsinRange;
+    }
+
+    private void verifyIpRangeParameters(String startIP, String endIp) {
+
+        if (!Strings.isNullOrEmpty(startIP) && !NetUtils.isValidIp4(startIP)) {
+            throw new InvalidParameterValueException("The current start address of the IP range " + startIP + " is not a valid IP address.");
+        }
+
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
+            throw new InvalidParameterValueException("The current end address of the IP range " + endIp + " is not a valid IP address.");
+        }
+
+        if (NetUtils.ip2Long(startIP) > NetUtils.ip2Long(endIp)) {
+            throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
+        }
+    }
+
+    private void checkIpRangeContainsTakenAddresses(final HostPodVO pod,final String currentStartIP,
+            final String currentEndIP,final String newStartIp, final String newEndIp) {
+
+        List<Long> newIpRange = listAllIPsWithintheRange(newStartIp,newEndIp);
+        List<Long> currentIpRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
+        List<Long> takenIpsList = new ArrayList<>();
+        final List<DataCenterIpAddressVO> takenIps = _privateIpAddressDao.listIpAddressUsage(pod.getId(),pod.getDataCenterId(),true);
+
+        for (DataCenterIpAddressVO takenIp : takenIps) {
+            takenIpsList.add(NetUtils.ip2Long(takenIp.getIpAddress()));
+        }
+
+        takenIpsList.retainAll(currentIpRange);
+        if (!newIpRange.containsAll(takenIpsList)) {
+            throw new InvalidParameterValueException("The IP range does not contain some IP addresses that have "
+                    + "already been taken. Please adjust your IP range to include all IP addresses already taken.");
         }
     }
 
@@ -1880,6 +2085,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteZone(final DeleteZoneCmd cmd) {
 
         final Long zoneId = cmd.getId();
+        DataCenterVO zone = _zoneDao.findById(zoneId);
 
         // Make sure the zone exists
         if (!validZone(zoneId)) {
@@ -1916,6 +2122,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null, null);
                         }
                     }
+                    annotationDao.removeByEntityType(AnnotationService.EntityType.ZONE.name(), zone.getUuid());
                 }
 
                 return success;
@@ -2382,8 +2589,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
             }
         } else {
-            Integer maxCPUCores = VirtualMachineManager.VmServiceOfferingMaxCPUCores.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxCPUCores.value();
-            Integer maxRAMSize = VirtualMachineManager.VmServiceOfferingMaxRAMSize.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxRAMSize.value();
+            Integer maxCPUCores = VM_SERVICE_OFFERING_MAX_CPU_CORES.value() == 0 ? Integer.MAX_VALUE: VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
+            Integer maxRAMSize = VM_SERVICE_OFFERING_MAX_RAM_SIZE.value() == 0 ? Integer.MAX_VALUE: VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
             if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > maxCPUCores)) {
                 throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + maxCPUCores);
             }
@@ -3443,6 +3650,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete disk offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_diskOfferingDao.update(offering.getId(), offering)) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
@@ -3510,6 +3718,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete service offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.SERVICE_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_serviceOfferingDao.update(offeringId, offering)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
@@ -4219,6 +4428,260 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException,ResourceAllocationException {
+
+        return  updateVlanAndPublicIpRange(cmd.getId(), cmd.getStartIp(),cmd.getEndIp(), cmd.getGateway(),cmd.getNetmask(),
+                cmd.getStartIpv6(), cmd.getEndIpv6(), cmd.getIp6Gateway(), cmd.getIp6Cidr(), cmd.isForSystemVms());
+    }
+
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_UPDATE, eventDescription = "update vlan ip Range", async
+            = false)
+    public Vlan updateVlanAndPublicIpRange(final long id, String startIp,
+                                           String endIp,
+                                           String gateway,
+                                           String netmask,
+                                           String startIpv6,
+                                           String endIpv6,
+                                           String ip6Gateway,
+                                           String ip6Cidr,
+                                           Boolean forSystemVms) throws ConcurrentOperationException {
+
+        VlanVO vlanRange = _vlanDao.findById(id);
+        if (vlanRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid IP range id.");
+        }
+
+        final boolean ipv4 = vlanRange.getVlanGateway() != null;
+        final boolean ipv6 = vlanRange.getIp6Gateway() != null;
+        if (!ipv4) {
+            if (startIp != null || endIp != null || gateway != null || netmask != null) {
+                throw new InvalidParameterValueException("IPv4 is not support in this IP range.");
+            }
+        }
+        if (!ipv6) {
+            if (startIpv6 != null || endIpv6 != null || ip6Gateway != null || ip6Cidr != null) {
+                throw new InvalidParameterValueException("IPv6 is not support in this IP range.");
+            }
+        }
+
+        final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
+        if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+            if (VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
+                throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
+            }
+            // Check if range has already been dedicated
+            final List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(id);
+            if (maps != null && !maps.isEmpty()) {
+                throw new InvalidParameterValueException("Specified Public IP range has already been dedicated to an account");
+            }
+
+            List<DomainVlanMapVO> domainmaps = _domainVlanMapDao.listDomainVlanMapsByVlan(id);
+            if (domainmaps != null && !domainmaps.isEmpty()) {
+                throw new InvalidParameterValueException("Specified Public IP range has already been dedicated to a domain");
+            }
+        }
+        if (ipv4) {
+            updateVlanAndIpv4Range(id, vlanRange, startIp, endIp, gateway, netmask, isRangeForSystemVM, forSystemVms);
+        }
+        if (ipv6) {
+            updateVlanAndIpv6Range(id, vlanRange, startIpv6, endIpv6, ip6Gateway, ip6Cidr, isRangeForSystemVM, forSystemVms);
+        }
+        return _vlanDao.findById(id);
+    }
+
+    private void updateVlanAndIpv4Range(final long id, final VlanVO vlanRange,
+                                        String startIp,
+                                        String endIp,
+                                        String gateway,
+                                        String netmask,
+                                        final Boolean isRangeForSystemVM,
+                                        final Boolean forSystemVms) {
+        final List<IPAddressVO> listAllocatedIPs = _publicIpAddressDao.listByVlanIdAndState(id, IpAddress.State.Allocated);
+
+        if (gateway != null && !gateway.equals(vlanRange.getVlanGateway()) && CollectionUtils.isNotEmpty(listAllocatedIPs)) {
+            throw new InvalidParameterValueException(String.format("Unable to change gateway to %s because some IPs are in use", gateway));
+        }
+        if (netmask != null && !netmask.equals(vlanRange.getVlanNetmask()) && CollectionUtils.isNotEmpty(listAllocatedIPs)) {
+            throw new InvalidParameterValueException(String.format("Unable to change netmask to %s because some IPs are in use", netmask));
+        }
+
+        gateway = MoreObjects.firstNonNull(gateway, vlanRange.getVlanGateway());
+        netmask = MoreObjects.firstNonNull(netmask, vlanRange.getVlanNetmask());
+
+        final String[] existingVlanIPRangeArray = vlanRange.getIpRange().split("-");
+        final String currentStartIP = existingVlanIPRangeArray[0];
+        final String currentEndIP = existingVlanIPRangeArray[1];
+
+        startIp = MoreObjects.firstNonNull(startIp, currentStartIP);
+        endIp = MoreObjects.firstNonNull(endIp, currentEndIP);
+
+        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        if (Strings.isNullOrEmpty(cidr)) {
+            throw new InvalidParameterValueException(String.format("Invalid gateway (%s) or netmask (%s)", gateway, netmask));
+        }
+        final String cidrAddress = getCidrAddress(cidr);
+        final long cidrSize = getCidrSize(cidr);
+
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+
+        checkGatewayOverlap(startIp, endIp, gateway);
+
+        checkAllocatedIpsAreWithinVlanRange(listAllocatedIPs, startIp, endIp, forSystemVms);
+
+        try {
+            final String newStartIP = startIp;
+            final String newEndIP = endIp;
+
+            VlanVO range = _vlanDao.acquireInLockTable(id, 30);
+            if (range == null) {
+                throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("lock vlan " + id + " is acquired");
+            }
+
+            commitUpdateVlanAndIpRange(id, newStartIP, newEndIP, currentStartIP, currentEndIP, gateway, netmask,true, isRangeForSystemVM, forSystemVms);
+
+        } catch (final Exception e) {
+            s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
+        } finally {
+            _vlanDao.releaseFromLockTable(id);
+        }
+    }
+
+    private void updateVlanAndIpv6Range(final long id, final VlanVO vlanRange,
+                                        String startIpv6,
+                                        String endIpv6,
+                                        String ip6Gateway,
+                                        String ip6Cidr,
+                                        final Boolean isRangeForSystemVM,
+                                        final Boolean forSystemVms) {
+        final List<UserIpv6AddressVO> listAllocatedIPs = _ipv6Dao.listByVlanIdAndState(id, IpAddress.State.Allocated);
+
+        if (ip6Gateway != null && !ip6Gateway.equals(vlanRange.getIp6Gateway()) && CollectionUtils.isNotEmpty(listAllocatedIPs)) {
+            throw new InvalidParameterValueException(String.format("Unable to change ipv6 gateway to %s because some IPs are in use", ip6Gateway));
+        }
+        if (ip6Cidr != null && !ip6Cidr.equals(vlanRange.getIp6Cidr()) && CollectionUtils.isNotEmpty(listAllocatedIPs)) {
+            throw new InvalidParameterValueException(String.format("Unable to change ipv6 cidr to %s because some IPs are in use", ip6Cidr));
+        }
+        ip6Gateway = MoreObjects.firstNonNull(ip6Gateway, vlanRange.getIp6Gateway());
+        ip6Cidr = MoreObjects.firstNonNull(ip6Cidr, vlanRange.getIp6Cidr());
+
+        final String[] existingVlanIPRangeArray = vlanRange.getIp6Range().split("-");
+        final String currentStartIPv6 = existingVlanIPRangeArray[0];
+        final String currentEndIPv6 = existingVlanIPRangeArray[1];
+
+        startIpv6 = MoreObjects.firstNonNull(startIpv6, currentStartIPv6);
+        endIpv6 = MoreObjects.firstNonNull(endIpv6, currentEndIPv6);
+
+        if (startIpv6 != currentStartIPv6 || endIpv6 != currentEndIPv6) {
+            _networkModel.checkIp6Parameters(startIpv6, endIpv6, ip6Gateway, ip6Cidr);
+            checkAllocatedIpv6sAreWithinVlanRange(listAllocatedIPs, startIpv6, endIpv6);
+
+            try {
+                VlanVO range = _vlanDao.acquireInLockTable(id, 30);
+                if (range == null) {
+                    throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
+                }
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("lock vlan " + id + " is acquired");
+                }
+
+                commitUpdateVlanAndIpRange(id, startIpv6, endIpv6, currentStartIPv6, currentEndIPv6, ip6Gateway, ip6Cidr, false, isRangeForSystemVM,forSystemVms);
+
+            } catch (final Exception e) {
+                s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
+                throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
+            } finally {
+                _vlanDao.releaseFromLockTable(id);
+            }
+        }
+    }
+
+    private VlanVO commitUpdateVlanAndIpRange(final Long id, final String newStartIP, final String newEndIP, final String currentStartIP, final String currentEndIP,
+                                              final String gateway, final String netmask,
+                                              final boolean ipv4, final Boolean isRangeForSystemVM, final Boolean forSystemvms) {
+
+        return Transaction.execute(new TransactionCallback<VlanVO>() {
+            @Override
+            public VlanVO doInTransaction(final TransactionStatus status) {
+                VlanVO vlanRange = _vlanDao.findById(id);
+                s_logger.debug("Updating vlan range " + vlanRange.getId());
+                if (ipv4) {
+                    vlanRange.setIpRange(newStartIP + "-" + newEndIP);
+                    vlanRange.setVlanGateway(gateway);
+                    vlanRange.setVlanNetmask(netmask);
+                    _vlanDao.update(vlanRange.getId(), vlanRange);
+                    if (!updatePublicIPRange(newStartIP, currentStartIP, newEndIP, currentEndIP, vlanRange.getDataCenterId(), vlanRange.getId(), vlanRange.getNetworkId(), vlanRange.getPhysicalNetworkId(), isRangeForSystemVM, forSystemvms)) {
+                        throw new CloudRuntimeException("Failed to update IPv4 range. Please contact Cloud Support.");
+                    }
+                } else {
+                    vlanRange.setIp6Range(newStartIP + "-" + newEndIP);
+                    vlanRange.setIp6Gateway(gateway);
+                    vlanRange.setIp6Cidr(netmask);
+                    _vlanDao.update(vlanRange.getId(), vlanRange);
+                }
+                return vlanRange;
+            }
+        });
+    }
+
+    private boolean checkIfVlanRangeIsForSystemVM(final long vlanId) {
+        List<IPAddressVO> existingPublicIPs = _publicIpAddressDao.listByVlanId(vlanId);
+        boolean initialIsSystemVmValue = existingPublicIPs.get(0).isForSystemVms();
+        for (IPAddressVO existingIPs : existingPublicIPs) {
+            if (initialIsSystemVmValue != existingIPs.isForSystemVms()) {
+                throw new CloudRuntimeException("Your \"For System VM\" value seems to be inconsistent with the rest of the records. Please contact Cloud Support");
+            }
+        }
+        return initialIsSystemVmValue;
+    }
+
+    private void checkAllocatedIpsAreWithinVlanRange
+            (List<IPAddressVO> listAllocatedIPs, String startIp, String endIp, Boolean forSystemVms) {
+        Collections.sort(listAllocatedIPs, Comparator.comparing(IPAddressVO::getAddress));
+        for (IPAddressVO allocatedIP : listAllocatedIPs) {
+            if ((!Strings.isNullOrEmpty(startIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(allocatedIP.getAddress().addr()))
+                    || (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(endIp) < NetUtils.ip2Long(allocatedIP.getAddress().addr()))) {
+                throw new InvalidParameterValueException(String.format("The start IP address must be less than or equal to %s which is already in use. "
+                                + "The end IP address must be greater than or equal to %s which is already in use. "
+                                + "There are %d IPs already allocated in this range.",
+                        listAllocatedIPs.get(0).getAddress(), listAllocatedIPs.get(listAllocatedIPs.size() - 1).getAddress(), listAllocatedIPs.size()));
+            }
+            if (forSystemVms != null && allocatedIP.isForSystemVms() != forSystemVms) {
+                throw new InvalidParameterValueException(String.format("IP %s is in use, cannot change forSystemVms of the IP range", allocatedIP.getAddress().addr()));
+            }
+        }
+    }
+
+    private void checkAllocatedIpv6sAreWithinVlanRange(List<UserIpv6AddressVO> listAllocatedIPs, String startIpv6, String endIpv6) {
+        Collections.sort(listAllocatedIPs, Comparator.comparing(UserIpv6AddressVO::getAddress));
+        for (UserIpv6AddressVO allocatedIP : listAllocatedIPs) {
+            if ((!Strings.isNullOrEmpty(startIpv6)
+                    && IPv6Address.fromString(startIpv6).toBigInteger().compareTo(IPv6Address.fromString(allocatedIP.getAddress()).toBigInteger()) > 0)
+                    || (!Strings.isNullOrEmpty(endIpv6)
+                    && IPv6Address.fromString(endIpv6).toBigInteger().compareTo(IPv6Address.fromString(allocatedIP.getAddress()).toBigInteger()) < 0)) {
+                throw new InvalidParameterValueException(String.format("The start IPv6 address must be less than or equal to %s which is already in use. "
+                                + "The end IPv6 address must be greater than or equal to %s which is already in use. "
+                                + "There are %d IPv6 addresses already allocated in this range.",
+                        listAllocatedIPs.get(0).getAddress(), listAllocatedIPs.get(listAllocatedIPs.size() - 1).getAddress(), listAllocatedIPs.size()));
+            }
+        }
+    }
+
+    private void checkGatewayOverlap(String startIp, String endIp, String gateway) {
+        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+            throw new InvalidParameterValueException("The gateway shouldn't overlap the new start/end ip "
+                    + "addresses");
+        }
+    }
+
+    @Override
     @DB
     public boolean deleteVlanAndPublicIpRange(final long userId, final long vlanDbId, final Account caller) {
         VlanVO vlanRange = _vlanDao.findById(vlanDbId);
@@ -4271,7 +4734,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + " as ip " + ip
                                 + " belonging to the range has firewall rules applied. Cleanup the rules first");
                     }
-                    if (ip.getAllocatedTime() != null) {// This means IP is allocated
+                    if (ip.getAllocatedTime() != null) {
+                        // This means IP is allocated
                         // release public ip address here
                         success = _ipAddrMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     }
@@ -4547,6 +5011,59 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
+        return CollectionUtils.isEmpty(problemIps);
+    }
+
+    @DB
+    protected boolean updatePublicIPRange(final String newStartIP, final String currentStartIP, final String newEndIP, final String currentEndIP, final long zoneId, final long vlanDbId, final long sourceNetworkid, final long physicalNetworkId, final boolean isRangeForSystemVM, final Boolean forSystemVms) {
+        long newStartIPLong = NetUtils.ip2Long(newStartIP);
+        long newEndIPLong = NetUtils.ip2Long(newEndIP);
+        long currentStartIPLong = NetUtils.ip2Long(currentStartIP);
+        long currentEndIPLong = NetUtils.ip2Long(currentEndIP);
+
+        List<Long> currentIPRange = new ArrayList<>();
+        List<Long> newIPRange = new ArrayList<>();
+        while (newStartIPLong <= newEndIPLong) {
+            newIPRange.add(newStartIPLong);
+            newStartIPLong++;
+        }
+        while (currentStartIPLong <= currentEndIPLong) {
+            currentIPRange.add(currentStartIPLong);
+            currentStartIPLong++;
+        }
+
+        final List<String> problemIps = Transaction.execute(new TransactionCallback<List<String>>() {
+
+            @Override
+            public List<String> doInTransaction(final TransactionStatus status) {
+                final IPRangeConfig config = new IPRangeConfig();
+                Vector<String> configResult = new Vector<>();
+                List<Long> ipAddressesToAdd = new ArrayList(newIPRange);
+                ipAddressesToAdd.removeAll(currentIPRange);
+                if (ipAddressesToAdd.size() > 0) {
+                    for (Long startIP : ipAddressesToAdd) {
+                        configResult.addAll(config.savePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId, forSystemVms != null ? forSystemVms : isRangeForSystemVM));
+                    }
+                }
+                List<Long> ipAddressesToDelete = new ArrayList(currentIPRange);
+                ipAddressesToDelete.removeAll(newIPRange);
+                if (ipAddressesToDelete.size() > 0) {
+                    for (Long startIP : ipAddressesToDelete) {
+                        configResult.addAll(config.deletePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, vlanDbId));
+                    }
+                }
+                if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+                    List<Long> ipAddressesToUpdate = new ArrayList(currentIPRange);
+                    ipAddressesToUpdate.removeAll(ipAddressesToDelete);
+                    if (ipAddressesToUpdate.size() > 0) {
+                        for (Long startIP : ipAddressesToUpdate) {
+                            configResult.addAll(config.updatePublicIPRange(TransactionLegacy.currentTxn(), startIP, startIP, vlanDbId, forSystemVms));
+                        }
+                    }
+                }
+                return configResult;
+            }
+        });
         return problemIps != null && problemIps.size() == 0;
     }
 
@@ -5548,9 +6065,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(final ListNetworkOfferingsCmd cmd) {
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = isAscending == null ? Boolean.TRUE : isAscending;
-        final Filter searchFilter = new Filter(NetworkOfferingJoinVO.class, "sortKey", isAscending, null, null);
+        final Filter searchFilter = new Filter(NetworkOfferingJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
+        searchFilter.addOrderBy(NetworkOfferingJoinVO.class, "id", true);
         final Account caller = CallContext.current().getCallingAccount();
         final SearchCriteria<NetworkOfferingJoinVO> sc = networkOfferingJoinDao.createSearchCriteria();
 
@@ -5859,6 +6375,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + "To make the network offering unavaiable, disable it");
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());
         if (_networkOfferingDao.remove(offeringId)) {
             return true;
         } else {
@@ -6529,7 +7046,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
-                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
-                VM_USERDATA_MAX_LENGTH};
+                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
+                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
+                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN
+        };
     }
 }

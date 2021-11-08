@@ -19,6 +19,7 @@ package com.cloud.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,11 +33,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.configuration.Resource;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -44,6 +47,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
@@ -151,6 +156,12 @@ public class UserVmManagerImplTest {
     @Mock
     private CloneVMCmd cloneVMCommand;
 
+    @Mock    
+    private AccountDao accountDao;
+
+    @Mock
+    ResourceLimitService resourceLimitMgr;
+
     private long vmId = 1l;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
@@ -173,6 +184,8 @@ public class UserVmManagerImplTest {
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
+        lenient().doNothing().when(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class));
+        lenient().doNothing().when(resourceLimitMgr).decrementResourceCount(anyLong(), any(Resource.ResourceType.class), anyLong());
     }
 
     @After
@@ -286,6 +299,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateVirtualMachineTestCleanUpFalseAndDetailsEmpty() throws ResourceUnavailableException, InsufficientCapacityException {
+        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(callerAccount);
         prepareAndExecuteMethodDealingWithDetails(false, false);
     }
 
@@ -294,6 +308,10 @@ public class UserVmManagerImplTest {
 
         ServiceOffering offering = getSvcoffering(512);
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+        ServiceOfferingVO currentServiceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.lenient().when(currentServiceOffering.getCpu()).thenReturn(1);
+        Mockito.lenient().when(currentServiceOffering.getRamSize()).thenReturn(512);
 
         List<NicVO> nics = new ArrayList<>();
         NicVO nic1 = mock(NicVO.class);
@@ -309,7 +327,6 @@ public class UserVmManagerImplTest {
         }
         Mockito.when(updateVmCommand.getDetails()).thenReturn(details);
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(cleanUpDetails);
-
         configureDoNothingForDetailsMethod();
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
@@ -563,19 +580,6 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getMaxIops()).thenReturn(offeringMaxIops);
         Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
-    }
-
-    @Test
-    public void validateRemoveEncryptedPasswordFromUserVmVoDetails(){
-        Map<String, String> detailsMock = Mockito.mock(HashMap.class);
-
-        Mockito.doReturn(detailsMock).when(userVmVoMock).getDetails();
-        Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
-        userVmManagerImpl.removeEncryptedPasswordFromUserVmVoDetails(userVmVoMock);
-
-        Mockito.verify(detailsMock, Mockito.times(1)).remove(VmDetailConstants.ENCRYPTED_PASSWORD);
-        Mockito.verify(userVmVoMock, Mockito.times(1)).setDetails(detailsMock);
-        Mockito.verify(userVmDao, Mockito.times(1)).saveDetails(userVmVoMock);
     }
 
     @Test

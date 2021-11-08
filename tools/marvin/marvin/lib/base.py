@@ -2561,6 +2561,7 @@ class GuestOs:
     @classmethod
     def listCategories(cls, apiclient, **kwargs):
         """List all Os Categories"""
+        cmd = listOsCategories.listOsCategoriesCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
 
         return (apiclient.listOsCategories(cmd))
@@ -2992,7 +2993,8 @@ class StoragePool:
     @classmethod
     def create(cls, apiclient, services, scope=None, clusterid=None,
                zoneid=None, podid=None, provider=None, tags=None,
-               capacityiops=None, capacitybytes=None, hypervisor=None):
+               capacityiops=None, capacitybytes=None, hypervisor=None,
+               details=None):
         """Create Storage pool (Primary Storage)"""
 
         cmd = createStoragePool.createStoragePoolCmd()
@@ -3043,6 +3045,13 @@ class StoragePool:
             cmd.hypervisor = hypervisor
         elif "hypervisor" in services:
             cmd.hypervisor = services["hypervisor"]
+
+        d = services.get("details", details)
+        if d:
+            count = 1
+            for key, value in d.items():
+                setattr(cmd, "details[{}].{}".format(count, key), value)
+                count = count + 1
 
         return StoragePool(apiclient.createStoragePool(cmd).__dict__)
 
@@ -4106,6 +4115,7 @@ class Project:
 
         cmd = deleteProject.deleteProjectCmd()
         cmd.id = self.id
+        cmd.cleanup = True
         apiclient.deleteProject(cmd)
 
     def update(self, apiclient, **kwargs):

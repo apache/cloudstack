@@ -39,7 +39,7 @@ public class EncryptionSecretKeyCheckerTest {
     Assert.assertNotNull(checker);
     Properties properties = DbProperties.getDbProperties();
     properties.setProperty("db.cloud.encryption.type", "file");
-    checker.check(properties);
+    checker.check(properties, DbProperties.dbEncryptionType);
   }
 
 }

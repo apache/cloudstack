@@ -457,7 +457,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         return null;
     }
 
-
     @Override
     public Map<String, String> getKeys(Long userId) {
         return null;

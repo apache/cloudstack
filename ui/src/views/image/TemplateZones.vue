@@ -34,10 +34,28 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
+      <div slot="zonename" slot-scope="text, record">
+        <span v-if="fetchZoneIcon(record.zoneid)">
+          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+        </span>
+        <a-icon v-else type="global" style="margin-right: 5px" />
+        <span> {{ record.zonename }} </span>
+      </div>
       <div slot="isready" slot-scope="text, record">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
       </div>
+      <template slot="expandedRowRender" slot-scope="record">
+        <a-table
+          style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
+          slot="expandedRowRender"
+          :columns="innerColumns"
+          :data-source="record.downloaddetails"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.zoneid">
+        </a-table>
+      </template>
       <template slot="action" slot-scope="text, record">
         <tooltip-button
           style="margin-right: 5px"
@@ -104,12 +122,18 @@
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
               autoFocus>
-              <a-select-option v-for="zone in zones" :key="zone.id">
-                {{ zone.name }}
+              <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
+                <div>
+                  <span v-if="zone.icon && zone.icon.base64image">
+                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  </span>
+                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  {{ zone.name }}
+                </div>
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -175,6 +199,8 @@
 
 <script>
 import { api } from '@/api'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import Status from '@/components/widgets/Status'
@@ -184,6 +210,8 @@ export default {
   name: 'TemplateZones',
   components: {
     TooltipButton,
+    OsLogo,
+    ResourceIcon,
     BulkActionProgress,
     Status
   },
@@ -235,7 +263,8 @@ export default {
     this.columns = [
       {
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename'
+        dataIndex: 'zonename',
+        scopedSlots: { customRender: 'zonename' }
       },
       {
         title: this.$t('label.status'),
@@ -247,11 +276,24 @@ export default {
         scopedSlots: { customRender: 'isready' }
       }
     ]
+    this.innerColumns = [
+      {
+        title: this.$t('label.secondary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
     if (this.isActionPermitted()) {
       this.columns.push({
         title: '',
         dataIndex: 'action',
-        fixed: 'right',
         width: 100,
         scopedSlots: { customRender: 'action' }
       })
@@ -291,6 +333,15 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      this.fetchZoneData()
+    },
+    fetchZoneIcon (zoneid) {
+      const zoneItem = this.zones.filter(zone => zone.id === zoneid)
+      if (zoneItem?.[0]?.icon?.base64image) {
+        this.zoneIcon = zoneItem[0].icon.base64image
+        return true
+      }
+      return false
     },
     handleChangePage (page, pageSize) {
       this.page = page
@@ -442,7 +493,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { listall: true }).then(json => {
+      api('listZones', { listall: true, showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {

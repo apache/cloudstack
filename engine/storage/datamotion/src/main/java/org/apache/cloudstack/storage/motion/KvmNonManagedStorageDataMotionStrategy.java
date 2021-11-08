@@ -82,20 +82,19 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      */
     @Override
     protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        if (super.internalCanHandle(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
-            if (canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
-                Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
-
-                for (VolumeInfo volumeInfo : volumeInfoSet) {
-                    StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-                    if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem && storagePoolVO.getPoolType() != StoragePoolType.NetworkFilesystem) {
-                        return StrategyPriority.CANT_HANDLE;
-                    }
-                }
-            }
-            return StrategyPriority.HYPERVISOR;
+        if (super.internalCanHandle(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE
+                || canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE) {
+            return StrategyPriority.CANT_HANDLE;
         }
-        return StrategyPriority.CANT_HANDLE;
+
+        Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
+        for (VolumeInfo volumeInfo : volumeInfoSet) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+            if (!supportStoragePoolType(storagePoolVO.getPoolType())) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+        return StrategyPriority.HYPERVISOR;
     }
 
     /**
@@ -187,7 +186,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      */
     @Override
     protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
-        return sourceStoragePool.getPoolType() == StoragePoolType.Filesystem || sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem;
+        return supportStoragePoolType(sourceStoragePool.getPoolType());
     }
 
     /**
@@ -201,7 +200,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
         }
 
         VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
-        if (sourceVolumeTemplateStoragePoolVO == null && destStoragePool.getPoolType() == StoragePoolType.Filesystem) {
+        if (sourceVolumeTemplateStoragePoolVO == null && (isStoragePoolTypeInList(destStoragePool.getPoolType(), StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint))) {
             DataStore sourceTemplateDataStore = dataStoreManagerImpl.getRandomImageStore(srcVolumeInfo.getDataCenterId());
             if (sourceTemplateDataStore != null) {
                 TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
@@ -269,5 +268,9 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             }
             LOGGER.error(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
         }
+    }
+
+    protected Boolean supportStoragePoolType(StoragePoolType storagePoolType) {
+        return super.supportStoragePoolType(storagePoolType, StoragePoolType.Filesystem);
     }
 }

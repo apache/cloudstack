@@ -17,9 +17,10 @@
 package com.cloud.user;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface SSHKeyPair extends ControlledEntity, InternalIdentity {
+public interface SSHKeyPair extends ControlledEntity, InternalIdentity, Identity {
 
     /**
      * @return The given name of the key pair.

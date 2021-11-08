@@ -206,6 +206,8 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class})
@@ -220,6 +222,9 @@ public class LibvirtComputingResourceTest {
     LibvirtVMDef vmDef;
     @Spy
     private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(LibvirtComputingResource.class);
+
+    @Mock
+    Domain domainMock;
 
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING = 5000000;
@@ -328,6 +333,7 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
         LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -621,7 +627,7 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy._videoRam = 200;
         libvirtComputingResourceSpy._videoHw = "vGPU";
 
-        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef();
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
         assertXpath(domainDoc, "/video/model/@type", "vGPU");
         assertXpath(domainDoc, "/video/model/@vram", "200");
@@ -710,11 +716,15 @@ public class LibvirtComputingResourceTest {
     }
 
     private void verifyVcpu(VirtualMachineTO to, Document domainDoc) {
-        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getCpus()));
+        assertXpath(domainDoc, "/domain/cpu/numa/cell/@cpus", String.format("0-%s", to.getVcpuMaxLimit() - 1));
+        assertXpath(domainDoc, "/domain/vcpu/@current", String.valueOf(to.getCpus()));
+        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getVcpuMaxLimit()));
     }
 
     private void verifyMemory(VirtualMachineTO to, Document domainDoc, String minRam) {
-        assertXpath(domainDoc, "/domain/memory/text()", String.valueOf(to.getMaxRam() / 1024));
+        assertXpath(domainDoc, "/domain/maxMemory/text()", String.valueOf( to.getMaxRam() / 1024 ));
+        assertXpath(domainDoc, "/domain/memory/text()",minRam);
+        assertXpath(domainDoc, "/domain/cpu/numa/cell/@memory", minRam);
         assertXpath(domainDoc, "/domain/currentMemory/text()", minRam);
     }
 
@@ -4871,6 +4881,46 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testResizeVolumeCommandLinstorNotifyOnly() {
+        final String path = "/dev/drbd1000";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 200l;
+        final boolean shrinkOk = false;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(0)).getResizeScriptType(storagePool, vol);
+
+        verify(libvirtComputingResource, times(0)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(0)).getConnection();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
     public void testResizeVolumeCommandSameSize() {
         final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
@@ -5620,7 +5670,89 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(vmDef, times(1)).addComp(any());
     }
 
+    public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource._noMemBalloon = true;
+        long maxMemory = 2048;
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
+        Assert.assertEquals(maxMemory, currentMemory);
+        Mockito.verify(vmTo, Mockito.times(0)).getMinRam();
+    }
+
     @Test
+    public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource._noMemBalloon = false;
+
+        long maxMemory = 2048;
+        long minMemory = ByteScaleUtils.mibToBytes(64);
+
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
+        Assert.assertEquals(ByteScaleUtils.bytesToKib(minMemory), currentMemory);
+        Mockito.verify(vmTo).getMinRam();
+    }
+
+    @Test
+    public void validateCreateGuestResourceDefWithVcpuMaxLimit(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        int maxCpu = 16;
+
+        Mockito.when(vmTo.getVcpuMaxLimit()).thenReturn(maxCpu);
+
+        LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
+        Assert.assertEquals(maxCpu, grd.getMaxVcpu());
+    }
+
+    @Test
+    public void validateCreateGuestResourceDefWithVcpuMaxLimitAsNull(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        int min = 1;
+
+        Mockito.when(vmTo.getCpus()).thenReturn(min);
+        Mockito.when(vmTo.getVcpuMaxLimit()).thenReturn(null);
+
+        LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
+        Assert.assertEquals(min, grd.getMaxVcpu());
+    }
+
+    @Test
+    public void validateGetDomainMemory() throws LibvirtException{
+        long valueExpected = ByteScaleUtils.KiB;
+
+        Mockito.doReturn(valueExpected).when(domainMock).getMaxMemory();
+        Assert.assertEquals(valueExpected, LibvirtComputingResource.getDomainMemory(domainMock));
+    }
+
+    private VcpuInfo createVcpuInfoWithState(VcpuInfo.VcpuState state) {
+        VcpuInfo vcpu = new VcpuInfo();
+        vcpu.state = state;
+        return vcpu;
+    }
+
+    @Test
+    public void validateCountDomainRunningVcpus() throws LibvirtException{
+        VcpuInfo vcpus[] = new VcpuInfo[5];
+        long valueExpected = 3; // 3 vcpus with state VIR_VCPU_RUNNING
+
+        vcpus[0] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_BLOCKED);
+        vcpus[1] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_OFFLINE);
+        vcpus[2] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+        vcpus[3] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+        vcpus[4] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+
+        Mockito.doReturn(vcpus).when(domainMock).getVcpusInfo();
+        long result =  LibvirtComputingResource.countDomainRunningVcpus(domainMock);
+
+        Assert.assertEquals(valueExpected, result);
+    }
+
     public void setDiskIoDriverTestIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
         Assert.assertEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());

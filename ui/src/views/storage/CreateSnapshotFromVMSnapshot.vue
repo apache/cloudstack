@@ -38,7 +38,11 @@
             rules: [{ required: true, message: $t('message.error.select') }]}]"
           :loading="loading"
           @change="id => (volumes.filter(x => x.id === id))"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(volume, index) in volumes"
             :value="volume.id"

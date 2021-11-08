@@ -16,34 +16,28 @@
 // under the License.
 package com.cloud.resource;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.deploy.DeploymentPlanningManager;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -52,12 +46,11 @@ import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -112,6 +105,10 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.event.ActionEvent;
@@ -120,9 +117,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
@@ -149,6 +148,8 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
@@ -157,6 +158,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -188,13 +190,17 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 @Component
@@ -285,6 +291,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ClusterVSMMapDao _clusterVSMMapDao;
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -534,8 +542,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // save cluster details for later cluster/host cross-checking
         final Map<String, String> details = new HashMap<String, String>();
         details.put("url", url);
-        details.put("username", username);
-        details.put("password", password);
+        details.put("username", org.apache.commons.lang3.StringUtils.defaultString(username));
+        details.put("password", org.apache.commons.lang3.StringUtils.defaultString(password));
         details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
         details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
         _clusterDetailsDao.persist(cluster.getId(), details);
@@ -686,6 +694,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+        List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
+        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT)) &&
+                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
+            throw new InvalidParameterValueException("Username and Password need to be provided.");
         }
 
         if (clusterId != null) {
@@ -966,6 +979,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (dr != null) {
                     _dedicatedDao.remove(dr.getId());
                 }
+
+                // Remove comments (if any)
+                annotationDao.removeByEntityType(AnnotationService.EntityType.HOST.name(), host.getUuid());
             }
         });
 
@@ -1046,6 +1062,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         if (dr != null) {
                             _dedicatedDao.remove(dr.getId());
                         }
+                        // Remove comments (if any)
+                        annotationDao.removeByEntityType(AnnotationService.EntityType.CLUSTER.name(), cluster.getUuid());
                     }
 
                 }
@@ -1306,7 +1324,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return true;
             }
 
-            final List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            if (CollectionUtils.isEmpty(hosts)) {
+                s_logger.warn("Unable to find a host for vm migration in cluster: " + host.getClusterId());
+                if (! isClusterWideMigrationPossible(host, vms, hosts)) {
+                    return false;
+                }
+            }
+
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
@@ -1335,6 +1360,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         return true;
     }
+
+    private boolean isClusterWideMigrationPossible(Host host, List<VMInstanceVO> vms, List<HostVO> hosts) {
+        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(host.getDataCenterId())) {
+            s_logger.info("Looking for hosts across different clusters in zone: " + host.getDataCenterId());
+            Long podId = null;
+            for (final VMInstanceVO vm : vms) {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                    // SystemVMs can only be migrated to same pod
+                    podId = host.getPodId();
+                    break;
+                }
+            }
+            hosts.addAll(listAllUpAndEnabledHosts(Host.Type.Routing, null, podId, host.getDataCenterId()));
+            if (CollectionUtils.isEmpty(hosts)) {
+                s_logger.warn("Unable to find a host for vm migration in zone: " + host.getDataCenterId());
+                return false;
+            }
+            s_logger.info("Found hosts in the zone for vm migration: " + hosts);
+            if (HypervisorType.VMware.equals(host.getHypervisorType())) {
+                s_logger.debug("Skipping pool check of volumes on VMware environment because across-cluster vm migration is supported by vMotion");
+                return true;
+            }
+            // Don't migrate vm if it has volumes on cluster-wide pool
+            for (final VMInstanceVO vm : vms) {
+                if (_vmMgr.checkIfVmHasClusterWideVolumes(vm.getId())) {
+                    s_logger.warn(String.format("VM %s cannot be migrated across cluster as it has volumes on cluster-wide pool", vm));
+                    return false;
+                }
+            }
+        } else {
+            s_logger.warn(String.format("VMs cannot be migrated across cluster since %s is false for zone ID: %d", MIGRATE_VM_ACROSS_CLUSTERS.key(), host.getDataCenterId()));
+            return false;
+        }
+        return true;
+   }
 
     /**
      * Looks for Hosts able to allocate the VM and migrates the VM with its volume.
@@ -1748,13 +1808,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
-
         final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
             }
-            _hostTagsDao.persist(hostId, hostTags);
+            _hostTagsDao.persist(hostId, new ArrayList(new HashSet<String>(hostTags)));
         }
 
         final String url = cmd.getUrl();

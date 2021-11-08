@@ -65,6 +65,7 @@
         :confirmLoading="actionLoading"
         :closable="true"
         :maskClosable="false"
+        :footer="null"
         @cancel="onCloseAction"
         v-ctrl-enter="handleSubmit"
         style="top: 20px;"
@@ -112,7 +113,12 @@
                   }]
                 }]"
                 :loading="field.loading"
-                :placeholder="field.description">
+                :placeholder="field.description"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option
                   v-for="(opt, idx) in field.opts"
                   :key="idx">{{ opt.name || opt.description }}</a-select-option>
@@ -375,7 +381,7 @@ export default {
               api: 'addBrocadeVcsDevice',
               listView: true,
               icon: 'plus',
-              label: 'label.add.bigswitchbcf.device',
+              label: 'label.add.brocadevcs.device',
               args: ['hostname', 'username', 'password']
             },
             {

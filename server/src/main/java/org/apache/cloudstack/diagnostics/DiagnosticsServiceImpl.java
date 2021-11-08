@@ -18,7 +18,6 @@
 package org.apache.cloudstack.diagnostics;
 
 import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.getTimeDifference;
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.umountSecondaryStorage;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.RouterDefaultSupportedFiles;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.SystemVMDefaultSupportedFiles;
 
@@ -341,7 +340,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
             if (existsInSecondaryStore) {
                 // scp from system VM to mounted sec storage directory
-                File permKey = new File("/var/cloudstack/management/.ssh/id_rsa");
+                String homeDir = System.getProperty("user.home");
+                File permKey = new File(homeDir + "/.ssh/id_rsa");
                 SshHelper.scpFrom(vmSshIp, 3922, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsFile);
             }
 
@@ -352,8 +352,6 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
             LOGGER.error(msg, e);
             return new Pair<>(false, msg);
-        } finally {
-            umountSecondaryStorage(mountPoint);
         }
 
         return new Pair<>(success, "File copied to secondary storage successfully");
@@ -481,17 +479,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         private void cleanupOldDiagnosticFiles(DataStore store) {
             String mountPoint = null;
-            try {
-                mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
-                if (StringUtils.isNotBlank(mountPoint)) {
-                    File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
-                    if (directory.isDirectory()) {
-                        deleteOldDiagnosticsFiles(directory, store.getName());
-                    }
-                }
-            } finally {
-                if (StringUtils.isNotBlank(mountPoint)) {
-                    umountSecondaryStorage(mountPoint);
+            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+            if (StringUtils.isNotBlank(mountPoint)) {
+                File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
+                if (directory.isDirectory()) {
+                    deleteOldDiagnosticsFiles(directory, store.getName());
                 }
             }
         }

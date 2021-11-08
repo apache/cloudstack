@@ -20,19 +20,39 @@
     <div class="form" v-ctrl-enter="handleSubmitForm">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
+        <a-select
+          v-model="zoneId"
+          @change="fetchPods"
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
-            :key="zone.id">
-            {{ zone.name }}
+            :key="zone.id"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </div>
 
       <div class="form__item">
         <div class="form__label">{{ $t('label.hypervisor') }}</div>
-        <a-select v-model="hypervisor" @change="resetAllFields">
+        <a-select
+          v-model="hypervisor"
+          @change="resetAllFields"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="hv in hypervisorsList"
             :value="hv.name"
@@ -44,7 +64,13 @@
 
       <div class="form__item">
         <div class="form__label">{{ $t('label.podname') }}</div>
-        <a-select v-model="podId">
+        <a-select
+          v-model="podId"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
@@ -108,11 +134,13 @@
 <script>
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ClusterAdd',
   components: {
-    DedicateDomain
+    DedicateDomain,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -162,7 +190,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones').then(response => {
+      api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id || null
         this.fetchPods()

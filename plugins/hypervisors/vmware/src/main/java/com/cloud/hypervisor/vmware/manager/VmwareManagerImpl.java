@@ -16,6 +16,55 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -49,6 +98,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -100,6 +150,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -118,48 +169,6 @@ import com.google.common.base.Strings;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -263,6 +272,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         _storageMgr = new VmwareStorageManagerImpl(this);
     }
 
+    private boolean isSystemVmIsoCopyNeeded(File srcIso, File destIso) {
+        if (!destIso.exists()) {
+            return true;
+        }
+        boolean copyNeeded = false;
+        try {
+            String srcIsoMd5 = DigestUtils.md5Hex(new FileInputStream(srcIso));
+            String destIsoMd5 = DigestUtils.md5Hex(new FileInputStream(destIso));
+            copyNeeded = !StringUtils.equals(srcIsoMd5, destIsoMd5);
+            if (copyNeeded) {
+                s_logger.debug(String.format("MD5 checksum: %s for source ISO: %s is different from MD5 checksum: %s from destination ISO: %s", srcIsoMd5, srcIso.getAbsolutePath(), destIsoMd5, destIso.getAbsolutePath()));
+            }
+        } catch (IOException e) {
+            s_logger.debug(String.format("Unable to compare MD5 checksum for systemvm.iso at source: %s and destination: %s", srcIso.getAbsolutePath(), destIso.getAbsolutePath()), e);
+        }
+        return copyNeeded;
+    }
+
     @Override
     public String getConfigComponentName() {
         return VmwareManagerImpl.class.getSimpleName();
@@ -270,7 +297,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -446,6 +473,29 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
+    private HostMO getOldestExistentHostInCluster(Long clusterId, VmwareContext serviceContext) throws Exception {
+        HostVO host = hostDao.findOldestExistentHypervisorHostInCluster(clusterId);
+        if (host == null) {
+            return null;
+        }
+
+        ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
+        if (morSrcHost == null) {
+            Map<String, String> clusterDetails = clusterDetailsDao.findDetails(clusterId);
+            if (MapUtils.isEmpty(clusterDetails) || StringUtils.isBlank(clusterDetails.get("url"))) {
+                return null;
+            }
+
+            URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            if (morSrcHost == null) {
+                return null;
+            }
+        }
+
+        return new HostMO(serviceContext, morSrcHost);
+    }
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
@@ -498,6 +548,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
+                HostMO olderHostMo = getOldestExistentHostInCluster(clusterId, serviceContext);
+                if (olderHostMo != null) {
+                    hostMo.copyPortGroupsFromHost(olderHostMo);
+                }
+
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
@@ -673,7 +728,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
                     File srcIso = getSystemVMPatchIsoFile();
                     File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
-                    if (!destIso.exists()) {
+                    if (isSystemVmIsoCopyNeeded(srcIso, destIso)) {
                         s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
                         _configServer.updateKeyPairs();
 

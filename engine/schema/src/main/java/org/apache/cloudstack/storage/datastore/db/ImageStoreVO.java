@@ -135,6 +135,10 @@ public class ImageStoreVO implements ImageStore {
         return this.dcId;
     }
 
+    public Long getDcId() {
+        return this.dcId;
+    }
+
     public ScopeType getScope() {
         return this.scope;
     }

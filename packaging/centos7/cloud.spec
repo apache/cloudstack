@@ -298,6 +298,11 @@ install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
+# SystemVM template
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
+cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
+
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
@@ -369,7 +374,7 @@ cp -r test/integration/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-integration-tests/
 # MYSQL HA
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
-  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
 fi
 
 #License files from whisker
@@ -551,6 +556,7 @@ pip3 install --upgrade urllib3
 %{_datadir}/%{name}-management/conf
 %{_datadir}/%{name}-management/lib/*.jar
 %{_datadir}/%{name}-management/logs
+%{_datadir}/%{name}-management/templates
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
@@ -639,7 +645,7 @@ pip3 install --upgrade urllib3
 %if "%{_ossnoss}" == "noredist"
 %files mysql-ha
 %defattr(0644,cloud,cloud,0755)
-%attr(0644,root,root) %{_datadir}/%{name}-management/lib/*mysqlha*jar
+%attr(0644,root,root) %{_datadir}/%{name}-mysql-ha/lib/*
 %endif
 
 %files baremetal-agent
