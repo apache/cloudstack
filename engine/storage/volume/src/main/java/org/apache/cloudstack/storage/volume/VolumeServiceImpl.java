@@ -1869,6 +1869,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         long sourceVolumeId = sourceVolume.getId();
         volDao.updateUuid(sourceVolumeId, destinationVolume.getId());
+        volDao.detachVolume(sourceVolumeId);
 
         s_logger.info(String.format("Cleaning up %s on storage [%s].", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId()));
         destroyVolume(sourceVolumeId);
@@ -2063,6 +2064,7 @@ public class VolumeServiceImpl implements VolumeService {
                 srcVolume.processEvent(Event.OperationSuccessed);
                 destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
                 volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+                volDao.detachVolume(srcVolume.getId());
                 try {
                     destroyVolume(srcVolume.getId());
                     srcVolume = volFactory.getVolume(srcVolume.getId());

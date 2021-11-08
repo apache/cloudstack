@@ -56,7 +56,7 @@ function createMetadataFile() {
   do
     section="$i"
     hvName=$(getGenericName $i)
-    templatename="systemvm-${i}-${CS_VERSION}"
+    templatename="systemvm-${i}-${CS_VERSION}.${CS_MINOR_VERSION}"
     checksum=$(getChecksum "$fileData" $hvName)
     downloadurl="${templates[$i]}"
     filename=$(echo ${downloadurl##*'/'})

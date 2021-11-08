@@ -19,4 +19,4 @@
 -- Schema upgrade cleanup from 4.15.2.0 to 4.16.0.0
 --;
 
-ALTER TABLE `cloud`.`ssh_keypairs` MODIFY COLUMN `uuid` varchar(40) NOT NULL UNIQUE;
+ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `uc_ssh_keypairs__uuid` UNIQUE (`uuid`);

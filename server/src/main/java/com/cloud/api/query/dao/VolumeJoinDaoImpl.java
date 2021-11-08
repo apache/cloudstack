@@ -213,10 +213,13 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setStoragePoolId(volume.getPoolUuid());
             if (poolId != null) {
                 StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
-                if (poolVO != null && poolVO.getParent() != 0L) {
-                    StoragePoolVO datastoreClusterVO = primaryDataStoreDao.findById(poolVO.getParent());
-                    volResponse.setStoragePoolName(datastoreClusterVO.getName());
-                    volResponse.setStoragePoolId(datastoreClusterVO.getUuid());
+                if (poolVO != null) {
+                    volResponse.setStorageType(poolVO.isLocal() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
+                    if (poolVO.getParent() != 0L) {
+                        StoragePoolVO datastoreClusterVO = primaryDataStoreDao.findById(poolVO.getParent());
+                        volResponse.setStoragePoolName(datastoreClusterVO.getName());
+                        volResponse.setStoragePoolId(datastoreClusterVO.getUuid());
+                    }
                 }
             }
         }

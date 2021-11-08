@@ -615,7 +615,7 @@ class TestKubernetesCluster(cloudstackTestCase):
     def waitForAutoscalerPodInRunningState(self, cluster_id, retries=5, interval=60):
         k8s_config = self.fetchKubernetesClusterConfig(cluster_id)
         cfg = io.StringIO(k8s_config.configdata)
-        cfg = yaml.load(cfg)
+        cfg = yaml.safe_load(cfg)
         # Adding this so we don't get certificate exceptions
         cfg['clusters'][0]['cluster']['insecure-skip-tls-verify']=True
         config.load_kube_config_from_dict(cfg)
