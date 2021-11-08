@@ -156,7 +156,7 @@ public class UserVmManagerImplTest {
     @Mock
     private CloneVMCmd cloneVMCommand;
 
-    @Mock    
+    @Mock
     private AccountDao accountDao;
 
     @Mock
