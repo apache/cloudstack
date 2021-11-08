@@ -19,9 +19,9 @@
 
 package com.cloud.info;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 public class ConsoleProxyInfoTest {
 
@@ -35,7 +35,7 @@ public class ConsoleProxyInfoTest {
     public void testGetProxyImageUrlHttp() {
         ConsoleProxyInfo cpi = new ConsoleProxyInfo(false, "10.10.10.10", 80, 80 , "console.example.com");
         String url = cpi.getProxyImageUrl();
-        assertEquals("http://console.example.com", url);
+        assertEquals("//console.example.com", url);
     }
     @Test
     public void testGetProxyImageUrlWildcardHttps() {
@@ -47,13 +47,13 @@ public class ConsoleProxyInfoTest {
     public void testGetProxyImageUrlWildcardHttp() {
         ConsoleProxyInfo cpi = new ConsoleProxyInfo(false, "1.2.3.4", 80, 8888 , "*.example.com");
         String url = cpi.getProxyImageUrl();
-        assertEquals("http://1-2-3-4.example.com:8888", url);
+        assertEquals("//1-2-3-4.example.com:8888", url);
     }
     @Test
     public void testGetProxyImageUrlIpHttp() {
         ConsoleProxyInfo cpi = new ConsoleProxyInfo(false, "1.2.3.4", 80, 8888, "");
         String url = cpi.getProxyImageUrl();
-        assertEquals("http://1.2.3.4:8888", url);
+        assertEquals("//1.2.3.4:8888", url);
     }
     @Test
     public void testGetProxyImageUrlIpHttps() {

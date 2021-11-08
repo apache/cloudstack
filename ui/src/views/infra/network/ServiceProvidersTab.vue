@@ -65,6 +65,7 @@
         :confirmLoading="actionLoading"
         :closable="true"
         :maskClosable="false"
+        :footer="null"
         @cancel="onCloseAction"
         v-ctrl-enter="handleSubmit"
         style="top: 20px;"
@@ -380,7 +381,7 @@ export default {
               api: 'addBrocadeVcsDevice',
               listView: true,
               icon: 'plus',
-              label: 'label.add.bigswitchbcf.device',
+              label: 'label.add.brocadevcs.device',
               args: ['hostname', 'username', 'password']
             },
             {

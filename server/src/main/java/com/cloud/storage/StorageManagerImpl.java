@@ -48,6 +48,7 @@ import javax.inject.Inject;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.server.StatsCollector;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -469,13 +470,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public Answer sendToPool(StoragePool pool, Command cmd) throws StorageUnavailableException {
-        if (cmd instanceof GetStorageStatsCommand) {
-            DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-            if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats()) {
-                // Get stats from the pool directly instead of sending cmd to host
-                return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd);
-            }
+        if (cmd instanceof GetStorageStatsCommand && canPoolProvideStorageStats(pool)) {
+            // Get stats from the pool directly instead of sending cmd to host
+            return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd);
         }
 
         Answer[] answers = sendToPool(pool, new Commands(cmd));
@@ -499,6 +496,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return answer;
+    }
+
+    @Override
+    public boolean canPoolProvideStorageStats(StoragePool pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats();
     }
 
     @Override
@@ -2265,14 +2269,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private boolean checkUsagedSpace(StoragePool pool) {
         // Managed storage does not currently deal with accounting for physically used space (only provisioned space). Just return true if "pool" is managed.
-        // StatsCollector gets the storage stats from the ScaleIO/PowerFlex pool directly, limit the usage based on the capacity disable threshold
-        if (pool.isManaged() && pool.getPoolType() != StoragePoolType.PowerFlex) {
+        if (pool.isManaged() && !canPoolProvideStorageStats(pool)) {
             return true;
         }
 
-        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         long totalSize = pool.getCapacityBytes();
-        double usedPercentage = ((double)pool.getUsedBytes() / (double)totalSize);
+        long usedSize = getUsedSize(pool);
+        double usedPercentage = ((double)usedSize / (double)totalSize);
+        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + pool.getUsedBytes() +
                     ", usedPct: " + usedPercentage + ", disable threshold: " + storageUsedThreshold);
@@ -2285,6 +2289,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         }
         return true;
+    }
+
+    private long getUsedSize(StoragePool pool) {
+        if (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) || canPoolProvideStorageStats(pool)) {
+            return (pool.getUsedBytes());
+        }
+
+        StatsCollector sc = StatsCollector.getInstance();
+        if (sc != null) {
+            StorageStats stats = sc.getStoragePoolStats(pool.getId());
+            if (stats == null) {
+                stats = sc.getStorageStats(pool.getId());
+            }
+            if (stats != null) {
+                return (stats.getByteUsed());
+            }
+        }
+
+        return 0;
     }
 
     @Override
