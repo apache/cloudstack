@@ -751,7 +751,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getMemoryData(newEntry);
             getProcFsData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
-            // TODO change print to store in local fields of newEntry
             gatherAllMetrics(newEntry);
             LOGGER.debug("Metrics collection end!");
             return newEntry;
@@ -835,64 +834,81 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setOsDistribution(OS);
         }
 
-        /**
-         * gather what we need from this list:
-         *
-         * 'buffers.direct.capacity'=8192 type=Long
-         * 'buffers.direct.count'=1 type=Long
-         * 'buffers.direct.used'=8192 type=Long
-         * 'buffers.mapped.capacity'=0 type=Long
-         * 'buffers.mapped.count'=0 type=Long
-         * 'buffers.mapped.used'=0 type=Long
-         * 'gc.G1-Old-Generation.count'=0 type=Long
-         * 'gc.G1-Old-Generation.time'=0 type=Long
-         * 'gc.G1-Young-Generation.count'=36 type=Long
-         * 'gc.G1-Young-Generation.time'=678 type=Long
-         * 'jvm.name'=532601@matah type=String
-         * 'jvm.uptime'=272482 type=Long
-         * 'jvm.vendor'=Red Hat, Inc. OpenJDK 64-Bit Server VM 11.0.12+7 (11) type=String
-         * 'memory.heap.committed'=1200619520 type=Long
-         * 'memory.heap.init'=522190848 type=Long
-         * 'memory.heap.max'=4294967296 type=Long
-         * 'memory.heap.usage'=0.06405723094940186 type=Double
-         * 'memory.heap.used'=275123712 type=Long
-         * 'memory.non-heap.committed'=217051136 type=Long
-         * 'memory.non-heap.init'=7667712 type=Long
-         * 'memory.non-heap.max'=-1 type=Long
-         * 'memory.non-heap.usage'=-2.11503936E8 type=Double
-         * 'memory.non-heap.used'=211503936 type=Long
-         * 'memory.pools.CodeHeap-'non-nmethods'.usage'=0.3137061403508772 type=Double
-         * 'memory.pools.CodeHeap-'non-profiled-nmethods'.usage'=0.16057488836310319 type=Double
-         * 'memory.pools.CodeHeap-'profiled-nmethods'.usage'=0.3391885643349885 type=Double
-         * 'memory.pools.Compressed-Class-Space.usage'=0.012650594115257263 type=Double
-         * 'memory.pools.G1-Eden-Space.usage'=0.005822416302765648 type=Double
-         * 'memory.pools.G1-Old-Gen.usage'=0.054535746574401855 type=Double
-         * 'memory.pools.G1-Survivor-Space.usage'=1.0 type=Double
-         * 'memory.pools.Metaspace.usage'=0.9765298966718151 type=Double
-         * 'memory.total.committed'=1417670656 type=Long
-         * 'memory.total.init'=529858560 type=Long
-         * 'memory.total.max'=4294967295 type=Long
-         * 'memory.total.used'=486627648 type=Long
-         * 'threads.blocked.count'=1 type=Integer
-         * 'threads.count'=439 type=Integer
-         * 'threads.daemon.count'=12 type=Integer
-         * 'threads.deadlocks'=[] type=EmptySet
-         * 'threads.new.count'=0 type=Integer
-         * 'threads.runnable.count'=5 type=Integer
-         * 'threads.terminated.count'=0 type=Integer
-         * 'threads.timed_waiting.count'=52 type=Integer
-         * 'threads.waiting.count'=381 type=Integer
-         * @param metricsEntry
-         */
         private void gatherAllMetrics(ManagementServerHostStatsEntry metricsEntry) {
             Map<String, Object> metricDetails = new HashMap<>();
             for (String metricName : registry.getGauges().keySet()) {
                 Object value = getMetric(metricName);
                 metricDetails.put(metricName, value);
-                // TODO change to trace
-                LOGGER.debug(String.format("Metrics collection '%s'=%s", metricName, value));
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("Metrics collection '%s'=%s", metricName, value));
+                }
+                // gather what we need from this list
+                extractDetailToField(metricsEntry, metricName, value);
             }
-            metricsEntry.setDetails(metricDetails);
+        }
+
+        /**
+         * store a value in the local fields of newEntry
+         *
+         * @param metricsEntry the stats info we need to communicate
+         * @param metricName the detail to extract
+         * @param value ;)
+         */
+        private void extractDetailToField(ManagementServerHostStatsEntry metricsEntry, String metricName, Object value) {
+            switch (metricName) {
+                case "memory.heap.used":
+                    metricsEntry.setHeapMemoryUsed((Long) value);
+                    break;
+                default:
+                    LOGGER.debug(String.format("not storiung detail %s, %s", metricName, value));
+                    /*
+                     * 'buffers.direct.capacity'=8192 type=Long
+                     * 'buffers.direct.count'=1 type=Long
+                     * 'buffers.direct.used'=8192 type=Long
+                     * 'buffers.mapped.capacity'=0 type=Long
+                     * 'buffers.mapped.count'=0 type=Long
+                     * 'buffers.mapped.used'=0 type=Long
+                     * 'gc.G1-Old-Generation.count'=0 type=Long
+                     * 'gc.G1-Old-Generation.time'=0 type=Long
+                     * 'gc.G1-Young-Generation.count'=36 type=Long
+                     * 'gc.G1-Young-Generation.time'=678 type=Long
+                     * 'jvm.name'=532601@matah type=String
+                     * 'jvm.uptime'=272482 type=Long
+                     * 'jvm.vendor'=Red Hat, Inc. OpenJDK 64-Bit Server VM 11.0.12+7 (11) type=String
+                     * 'memory.heap.committed'=1200619520 type=Long
+                     * 'memory.heap.init'=522190848 type=Long
+                     * 'memory.heap.max'=4294967296 type=Long
+                     * 'memory.heap.usage'=0.06405723094940186 type=Double
+                     *+ 'memory.heap.used'=275123712 type=Long
+                     * 'memory.non-heap.committed'=217051136 type=Long
+                     * 'memory.non-heap.init'=7667712 type=Long
+                     * 'memory.non-heap.max'=-1 type=Long
+                     * 'memory.non-heap.usage'=-2.11503936E8 type=Double
+                     * 'memory.non-heap.used'=211503936 type=Long
+                     * 'memory.pools.CodeHeap-'non-nmethods'.usage'=0.3137061403508772 type=Double
+                     * 'memory.pools.CodeHeap-'non-profiled-nmethods'.usage'=0.16057488836310319 type=Double
+                     * 'memory.pools.CodeHeap-'profiled-nmethods'.usage'=0.3391885643349885 type=Double
+                     * 'memory.pools.Compressed-Class-Space.usage'=0.012650594115257263 type=Double
+                     * 'memory.pools.G1-Eden-Space.usage'=0.005822416302765648 type=Double
+                     * 'memory.pools.G1-Old-Gen.usage'=0.054535746574401855 type=Double
+                     * 'memory.pools.G1-Survivor-Space.usage'=1.0 type=Double
+                     * 'memory.pools.Metaspace.usage'=0.9765298966718151 type=Double
+                     * 'memory.total.committed'=1417670656 type=Long
+                     * 'memory.total.init'=529858560 type=Long
+                     * 'memory.total.max'=4294967295 type=Long
+                     * 'memory.total.used'=486627648 type=Long
+                     * 'threads.blocked.count'=1 type=Integer
+                     * 'threads.count'=439 type=Integer
+                     * 'threads.daemon.count'=12 type=Integer
+                     * 'threads.deadlocks'=[] type=EmptySet
+                     * 'threads.new.count'=0 type=Integer
+                     * 'threads.runnable.count'=5 type=Integer
+                     * 'threads.terminated.count'=0 type=Integer
+                     * 'threads.timed_waiting.count'=52 type=Integer
+                     * 'threads.waiting.count'=381 type=Integer
+                     */
+                    break;
+            }
         }
 
         private Object getMetric(String metricName) {
@@ -922,7 +938,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     LOGGER.debug("Exception in decoding of other MS hosts status: ", e);
                 }
             }
-            // TODO dispatch the data i.e. put it in the hashmap
             return null;
         }
     }

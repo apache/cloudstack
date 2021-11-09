@@ -37,6 +37,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the number of client sessions active on this Management Server")
     private long sessions;
 
+    @SerializedName(ApiConstants.HEAP_MEMORY_USED)
+    @Param(description = "the amount of memory used by this Management Server")
+    private long heapMemoryUsed;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "ManagementServer metrics details in key/value pairs.", since = "4.2.1")
     private Map details;
@@ -55,5 +59,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setDetails(Map details) {
         this.details = details;
+    }
+
+    public void setHeapMemoryUsed(long heapMemoryUsed) {
+        this.heapMemoryUsed = heapMemoryUsed;
     }
 }

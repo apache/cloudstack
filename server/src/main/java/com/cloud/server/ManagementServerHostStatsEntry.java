@@ -18,8 +18,6 @@
 //
 package com.cloud.server;
 
-import java.util.Map;
-
 public class ManagementServerHostStatsEntry implements ManagementServerHostStats {
 
     private long managementServerHostId;
@@ -44,7 +42,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private String jvmVersion;
     private String osDistribution;
     private int agentCount;
-    Map<String, Object> details;
+
+    private long heapMemoryUsed;
 
     @Override
     public long getManagementServerHostId() {
@@ -160,8 +159,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
-    public Map<String, Object> getDetails() {
-        return details;
+    public long getHeapMemoryUsed() {
+        return heapMemoryUsed;
     }
 
     public void setSessions(long sessions) {
@@ -244,7 +243,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         this.agentCount = agentCount;
     }
 
-    public void setDetails(Map<String, Object> details) {
-        this.details = details;
+    public void setHeapMemoryUsed(long heapMemoryUsed) {
+        this.heapMemoryUsed = heapMemoryUsed;
     }
 }

@@ -18,9 +18,6 @@
 //
 package com.cloud.server;
 
-
-import java.util.Map;
-
 /**
  * management server related stats
  */
@@ -67,5 +64,5 @@ public interface ManagementServerHostStats {
 
     int getAgentCount();
 
-    Map<String, Object> getDetails();
+    long getHeapMemoryUsed();
 }

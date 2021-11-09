@@ -880,6 +880,7 @@ public class ApiConstants {
     public static final String ANNOTATION_FILTER = "annotationfilter";
     public static final String AGENT_COUNT = "agentcount";
     public static final String SYSTEM = "system";
+    public static final String HEAP_MEMORY_USED = "heapmemoryused";
 
     public enum BootType {
         UEFI, BIOS;
