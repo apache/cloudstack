@@ -88,9 +88,18 @@
           <a-select
             :loading="domainLoading"
             v-decorator="['domainid']"
-            :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.path || domain.name || domain.description }}
+            :placeholder="apiParams.domainid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
+              <span>
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ domain.path || domain.name || domain.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -101,24 +110,37 @@
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
             :loading="loadingAccount"
-            :placeholder="apiParams.account.description">
-            <a-select-option v-for="(item, idx) in accountList" :key="idx">
-              {{ item.name }}
+            :placeholder="apiParams.account.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(item, idx) in accountList" :key="idx" :label="item.name">
+              <span>
+                <resource-icon v-if="item && item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="team" style="margin-right: 5px" />
+                {{ item.name }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
           <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
-            showSearch
             v-decorator="['timezone']"
-            :loading="timeZoneLoading">
+            :loading="timeZoneLoading"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item :label="$t('label.samlenable')">
             <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
           </a-form-item>
@@ -128,8 +150,13 @@
               v-decorator="['samlentity', {
                 initialValue: selectedIdp,
               }]"
-              :loading="idpLoading">
-              <a-select-option v-for="(idp, idx) in idps" :key="idx">
+              :loading="idpLoading"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option v-for="idp in idps" :key="idp.id">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
@@ -148,12 +175,14 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddUser',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
@@ -179,6 +208,11 @@ export default {
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
     this.fetchData()
   },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
+  },
   methods: {
     fetchData () {
       this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
@@ -190,7 +224,7 @@ export default {
         this.fetchAccount()
       }
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
@@ -198,6 +232,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
@@ -214,7 +249,7 @@ export default {
     fetchAccount () {
       this.accountList = []
       this.loadingAccount = true
-      api('listAccounts', { listAll: true }).then(response => {
+      api('listAccounts', { listAll: true, showicon: true }).then(response => {
         this.accountList = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notification.error({
@@ -288,26 +323,24 @@ export default {
             message: this.$t('label.create.user'),
             description: `${this.$t('message.success.create.user')} ${params.username}`
           })
-          const users = response.createuserresponse.user.user
-          if (values.samlenable && users) {
-            for (var i = 0; i < users.length; i++) {
-              api('authorizeSamlSso', {
-                enable: values.samlenable,
-                entityid: values.samlentity,
-                userid: users[i].id
-              }).then(response => {
-                this.$notification.success({
-                  message: this.$t('label.samlenable'),
-                  description: this.$t('message.success.enable.saml.auth')
-                })
-              }).catch(error => {
-                this.$notification.error({
-                  message: this.$t('message.request.failed'),
-                  description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-                  duration: 0
-                })
+          const user = response.createuserresponse.user
+          if (values.samlenable && user) {
+            api('authorizeSamlSso', {
+              enable: values.samlenable,
+              entityid: values.samlentity,
+              userid: user.id
+            }).then(response => {
+              this.$notification.success({
+                message: this.$t('label.samlenable'),
+                description: this.$t('message.success.enable.saml.auth')
               })
-            }
+            }).catch(error => {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
+                duration: 0
+              })
+            })
           }
           this.closeAction()
         }).catch(error => {

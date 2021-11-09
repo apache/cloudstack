@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -37,6 +39,7 @@ import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
@@ -81,6 +84,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private UserDao _userDao;
     @Inject
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
+    @Inject
+    private AnnotationDao annotationDao;
     @Inject
     UserStatisticsDao userStatsDao;
 
@@ -312,6 +317,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             addTagInformation(userVm, userVmResponse);
         }
 
+        userVmResponse.setHasAnnotation(annotationDao.hasAnnotations(userVm.getUuid(),
+                AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(caller.getId())));
+
         if (details.contains(VMDetails.all) || details.contains(VMDetails.affgrp)) {
             Long affinityGroupId = userVm.getAffinityGroupId();
             if (affinityGroupId != null && affinityGroupId.longValue() != 0) {
@@ -487,6 +495,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         long tag_id = uvo.getTagId();
         if (tag_id > 0 && !userVmData.containTag(tag_id)) {
             addTagInformation(uvo, userVmData);
+        }
+
+        if (userVmData.hasAnnotation() == null) {
+            userVmData.setHasAnnotation(annotationDao.hasAnnotations(uvo.getUuid(),
+                    AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
 
         Long affinityGroupId = uvo.getAffinityGroupId();

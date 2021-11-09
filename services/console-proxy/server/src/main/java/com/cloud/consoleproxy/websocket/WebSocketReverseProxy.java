@@ -25,13 +25,14 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.protocols.Protocol;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
@@ -54,15 +55,28 @@ public class WebSocketReverseProxy extends WebSocketClient {
     private Session remoteSession;
 
     private void acceptAllCerts() {
-        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return new java.security.cert.X509Certificate[]{};
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509ExtendedTrustManager() {
+            @Override
+            public void checkClientTrusted (X509Certificate [] chain, String authType, Socket socket) {
             }
-            public void checkClientTrusted(X509Certificate[] chain,
-                                           String authType) throws CertificateException {
+            @Override
+            public void checkServerTrusted (X509Certificate [] chain, String authType, Socket socket) {
             }
-            public void checkServerTrusted(X509Certificate[] chain,
-                                           String authType) throws CertificateException {
+            @Override
+            public void checkClientTrusted (X509Certificate [] chain, String authType, SSLEngine engine) {
+            }
+            @Override
+            public void checkServerTrusted (X509Certificate [] chain, String authType, SSLEngine engine) {
+            }
+            @Override
+            public java.security.cert.X509Certificate [] getAcceptedIssuers () {
+                return null;
+            }
+            @Override
+            public void checkClientTrusted (X509Certificate [] certs, String authType) {
+            }
+            @Override
+            public void checkServerTrusted (X509Certificate [] certs, String authType) {
             }
         }};
         SSLContext sc;

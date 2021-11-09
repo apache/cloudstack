@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.BufferedReader;
@@ -51,6 +52,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
@@ -882,33 +884,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             // Invoke plugin to setup the bridge which will be used by this
             // network
             final String bridge = nw.getBridge(conn);
-            final Map<String, String> nwOtherConfig = nw.getOtherConfig(conn);
-            final String configuredHosts = nwOtherConfig.get("ovs-host-setup");
-            boolean configured = false;
-            if (configuredHosts != null) {
-                final String hostIdsStr[] = configuredHosts.split(",");
-                for (final String hostIdStr : hostIdsStr) {
-                    if (hostIdStr.equals(((Long)hostId).toString())) {
-                        configured = true;
-                        break;
-                    }
-                }
+            String result;
+            if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
+                result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id",
+                        ((Long)hostId).toString());
+            } else {
+                result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id", ((Long)hostId).toString());
             }
 
-            if (!configured) {
-                String result;
-                if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
-                    result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id",
-                            ((Long)hostId).toString());
-                } else {
-                    result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id", ((Long)hostId).toString());
-                }
-
-                // Note down the fact that the ovs bridge has been setup
-                final String[] res = result.split(":");
-                if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
-                    throw new CloudRuntimeException("Unable to pre-configure OVS bridge " + bridge);
-                }
+            // Note down the fact that the ovs bridge has been setup
+            final String[] res = result.split(":");
+            if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
+                throw new CloudRuntimeException("Unable to pre-configure OVS bridge " + bridge);
             }
             return nw;
         } catch (final Exception e) {
@@ -1438,6 +1425,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
+        try {
+            String bootMode = org.apache.commons.lang3.StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
+            String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
+            setVmBootDetails(vm, conn, bootType, bootMode);
+        } catch (final XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+        }
         return vm;
     }
 
@@ -1784,6 +1778,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.getProductVersion());
+            if (isUefiSupported(_host.getProductVersion())) {
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));
@@ -1940,6 +1937,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.info("Appending user extra configuration settings to VM");
             ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
+    }
+
+    protected void setVmBootDetails(final VM vm, final Connection conn, String bootType, String bootMode) throws XenAPIException, XmlRpcException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Setting boottype=%s and bootmode=%s for VM: %s", bootType, bootMode, vm.getUuid(conn)));
+        }
+        Boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
+                ApiConstants.BootMode.SECURE.toString().equals(bootMode);
+        final Map<String, String> bootParams = vm.getHVMBootParams(conn);
+        bootParams.replace("firmware", bootType.toLowerCase());
+        vm.setHVMBootParams(conn, bootParams);
+        final Map<String, String> platform = vm.getPlatform(conn);
+        platform.put("secureboot", isSecure.toString());
+        vm.setPlatform(conn, platform);
     }
 
     /**

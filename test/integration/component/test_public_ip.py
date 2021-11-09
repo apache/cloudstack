@@ -376,7 +376,7 @@ class TestPublicIp(cloudstackTestCase):
         )
 
         # Step 2. Associate IP in range dedicated to domain1
-        ip_address_1 = self.get_free_ipaddress(self.public_ip_range1.vlan.id)
+        ip_address_1 = self.get_free_ipaddress(self.public_ip_range1.vlan.id, self.account1.domainid, self.account1.name)
         ipaddress = PublicIPAddress.create(
             self.apiclient,
             zoneid=self.zone.id,
@@ -519,7 +519,7 @@ class TestPublicIp(cloudstackTestCase):
         )
 
         # Step 4: Associate IP in range dedicated to sub domain
-        ip_address_1 = self.get_free_ipaddress(self.public_ip_range2.vlan.id)
+        ip_address_1 = self.get_free_ipaddress(self.public_ip_range2.vlan.id, self.sub_account.domainid, self.sub_account.name)
         ipaddress = PublicIPAddress.create(
             sub_user_api_client,
             zoneid=self.zone.id,
@@ -729,7 +729,7 @@ class TestPublicIp(cloudstackTestCase):
         )
 
         # Acquire public ip address from VPC
-        ip_address_1 = self.get_free_ipaddress(self.public_ip_range3.vlan.id)
+        ip_address_1 = self.get_free_ipaddress(self.public_ip_range3.vlan.id, self.account2.domainid, self.account2.name)
         PublicIPAddress.create(
             user_api_client,
             zoneid=self.zone.id,
@@ -828,10 +828,12 @@ class TestPublicIp(cloudstackTestCase):
         except Exception as e:
             self.info("Got exception as expected since domain2 cant access network of domain1")
 
-    def get_free_ipaddress(self, vlanId):
+    def get_free_ipaddress(self, vlanId, domainId, account):
         ipaddresses = PublicIPAddress.list(
             self.apiclient,
             vlanid=vlanId,
+            domainId=domainId,
+            account=account,
             state='Free'
         )
         self.assertEqual(

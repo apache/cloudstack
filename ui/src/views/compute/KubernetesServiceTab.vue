@@ -93,8 +93,8 @@
         <a-table
           class="table"
           size="small"
-          :columns="this.vmColumns"
-          :dataSource="this.virtualmachines"
+          :columns="vmColumns"
+          :dataSource="virtualmachines"
           :rowKey="item => item.id"
           :pagination="false"
         >
@@ -107,6 +107,26 @@
           <template slot="port" slot-scope="text, record, index">
             {{ cksSshStartingPort + index }}
           </template>
+          <template slot="action" slot-scope="text, record">
+            <a-tooltip placement="bottom" >
+              <template slot="title">
+                {{ $t('label.action.delete.node') }}
+              </template>
+              <a-popconfirm
+                :title="$t('message.action.delete.node')"
+                @confirm="deleteNode(record)"
+                :okText="$t('label.yes')"
+                :cancelText="$t('label.no')"
+                :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
+              >
+                <a-button
+                  type="danger"
+                  icon="delete"
+                  shape="circle"
+                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled" />
+              </a-popconfirm>
+            </a-tooltip>
+          </template>
         </a-table>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.firewall')" key="firewall" v-if="publicIpAddress">
@@ -117,6 +137,12 @@
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
         <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="resource"
+          :items="annotations">
+        </AnnotationsTab>
       </a-tab-pane>
     </a-tabs>
   </a-spin>
@@ -130,6 +156,7 @@ import FirewallRules from '@/views/network/FirewallRules'
 import PortForwarding from '@/views/network/PortForwarding'
 import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -138,9 +165,11 @@ export default {
     FirewallRules,
     PortForwarding,
     LoadBalancing,
-    Status
+    Status,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
+  inject: ['parentFetchData'],
   props: {
     resource: {
       type: Object,
@@ -167,7 +196,8 @@ export default {
       network: {},
       publicIpAddress: {},
       currentTab: 'details',
-      cksSshStartingPort: 2222
+      cksSshStartingPort: 2222,
+      annotations: []
     }
   },
   created () {
@@ -221,6 +251,14 @@ export default {
     }
   },
   mounted () {
+    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+      this.vmColumns.push({
+        title: this.$t('label.action'),
+        dataIndex: 'action',
+        scopedSlots: { customRender: 'action' }
+      })
+    }
+    this.handleFetchData()
     this.setCurrentTab()
   },
   methods: {
@@ -261,6 +299,19 @@ export default {
       this.fetchKubernetesVersion()
       this.fetchInstances()
       this.fetchPublicIpAddress()
+      this.fetchComments()
+    },
+    fetchComments () {
+      this.clusterConfigLoading = true
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.clusterConfigLoading = false
+      })
     },
     fetchKubernetesClusterConfig () {
       this.clusterConfigLoading = true
@@ -359,6 +410,35 @@ export default {
         elem.click()
         document.body.removeChild(elem)
       }
+    },
+    deleteNode (node) {
+      const params = {
+        id: this.resource.id,
+        nodeids: node.id
+      }
+      api('scaleKubernetesCluster', params).then(json => {
+        const jobId = json.scalekubernetesclusterresponse.jobid
+        console.log(jobId)
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.action.delete.node'),
+          jobid: jobId,
+          description: node.name,
+          status: 'progress'
+        })
+        this.$pollJob({
+          jobId,
+          loadingMessage: `${this.$t('message.deleting.node')} ${node.name}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          successMessage: `${this.$t('message.success.delete.node')} ${node.name}`,
+          successMethod: () => {
+            this.parentFetchData()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.parentFetchData()
+      })
     }
   }
 }

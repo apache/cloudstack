@@ -65,6 +65,9 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List zones by resource tags (key/value pairs)", since = "4.3")
     private Map tags;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the zones")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -97,6 +100,10 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
         return TaggedResources.parseKeyValueMap(tags, false);
     }
 
+    public Boolean getShowIcon () {
+        return  showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -108,7 +115,6 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
 
     @Override
     public void execute() {
-
         ListResponse<ZoneResponse> response = _queryService.listDataCenters(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -28,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {KubernetesCluster.class})
-public class KubernetesClusterResponse extends BaseResponse implements ControlledEntityResponse {
+public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the Kubernetes cluster")
     private String id;
@@ -145,6 +145,18 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
     @Param(description = "Public IP Address ID of the cluster")
     private String ipAddressId;
+
+    @SerializedName(ApiConstants.AUTOSCALING_ENABLED)
+    @Param(description = "Whether autoscaling is enabled for the cluster")
+    private boolean isAutoscalingEnabled;
+
+    @SerializedName(ApiConstants.MIN_SIZE)
+    @Param(description = "Minimum size of the cluster")
+    private Long minSize;
+
+    @SerializedName(ApiConstants.MAX_SIZE)
+    @Param(description = "Maximum size of the cluster")
+    private Long maxSize;
 
     public KubernetesClusterResponse() {
     }
@@ -352,5 +364,17 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setIpAddressId(String ipAddressId) {
         this.ipAddressId = ipAddressId;
+    }
+
+    public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {
+        this.isAutoscalingEnabled = isAutoscalingEnabled;
+    }
+
+    public void setMinSize(Long minSize) {
+        this.minSize = minSize;
+    }
+
+    public void setMaxSize(Long maxSize) {
+        this.maxSize = maxSize;
     }
 }

@@ -21,15 +21,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Date;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -54,6 +51,8 @@ import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Utility class to manage interactions with agent-based console access
@@ -198,12 +197,15 @@ public abstract class AgentHookBase implements AgentHook {
             String storePassword = Base64.encodeBase64String(randomBytes);
 
             byte[] ksBits = null;
+
             String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
-            if (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty()) {
-                s_logger.debug("SSL is disabled for console proxy based on global config, skip loading certificates");
-            } else {
+            String consoleProxySslEnabled = _configDao.getValue("consoleproxy.sslEnabled");
+            if (!StringUtils.isEmpty(consoleProxyUrlDomain) && !StringUtils.isEmpty(consoleProxySslEnabled)
+                    && consoleProxySslEnabled.equalsIgnoreCase("true")) {
                 ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
                 //ks manager raises exception if ksBits are null, hence no need to explicltly handle the condition
+            } else {
+                s_logger.debug("SSL is disabled for console proxy. To enable SSL, please configure consoleproxy.sslEnabled and consoleproxy.url.domain global settings.");
             }
 
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);

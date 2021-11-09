@@ -19,16 +19,17 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 
 import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value = Domain.class)
-public class DomainResponse extends BaseResponse implements ResourceLimitAndCountResponse {
+public class DomainResponse extends BaseResponseWithAnnotations implements ResourceLimitAndCountResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the domain")
     private String id;
@@ -174,6 +175,14 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
 
     @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String secondaryStorageAvailable;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
+    @SerializedName(ApiConstants.DOMAIN_DETAILS)
+    @Param(description = "details for the domain")
+    private Map<String, String> details;
 
     public String getId() {
         return this.id;
@@ -428,5 +437,14 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
     @Override
     public void setVmRunning(Integer vmRunning) {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

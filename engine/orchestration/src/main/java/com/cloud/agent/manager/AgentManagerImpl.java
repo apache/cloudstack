@@ -38,6 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Config;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -1758,7 +1759,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (cmd instanceof StartupRoutingCommand) {
                 if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                     Map<String, String> params = new HashMap<String, String>();
-                    params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
+                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);

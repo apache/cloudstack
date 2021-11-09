@@ -144,4 +144,9 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     public Class<?> getEntityType() {
         return NicSecondaryIp.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

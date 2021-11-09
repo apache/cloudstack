@@ -34,7 +34,12 @@
             autoFocus
             v-model="newRule.protocol"
             style="width: 100%;"
-            @change="resetRulePorts">
+            @change="resetRulePorts"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
             <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
@@ -277,6 +282,9 @@ export default {
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     getCapitalise (val) {
+      if (!val) {
+        return
+      }
       if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     },

@@ -255,6 +255,11 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     }
 
     @Override
+    public String getName() {
+        return accountName;
+    }
+
+    @Override
     public String getProjectUuid() {
         return null;
     }

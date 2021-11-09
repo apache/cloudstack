@@ -86,7 +86,7 @@ export default {
       pattern: 'YYYY-MM-DD'
     }
   },
-  inject: ['parentEditTariffAction', 'parentFetchData'],
+  inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
@@ -97,7 +97,7 @@ export default {
   },
   methods: {
     onClose () {
-      this.parentEditTariffAction(false)
+      this.$emit('edit-tariff-action', false)
     },
     submitTariff (e) {
       e.preventDefault()
@@ -122,7 +122,7 @@ export default {
             }
             this.parentFetchData()
           }
-
+          this.$message.success(`${this.$t('message.setting.updated')} ${this.resource.description}`)
           this.onClose()
         }).catch(error => {
           this.$notification.error({

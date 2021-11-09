@@ -52,5 +52,168 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.ini4j</groupId>
+            <artifactId>ini4j</artifactId>
+            <version>${cs.ini.version}</version>
+        </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>gmaven-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>setproperty</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <source>
+                                def projectVersion = project.version
+                                String[] versionParts =  projectVersion.tokenize('.')
+                                pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
+                                pom.properties['patch.version'] = versionParts[2]
+                            </source>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>set-properties</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <source>
+                                def csVersion = pom.properties['cs.version']
+                                def patch = pom.properties['patch.version']
+                                def templateList = []
+                                templateList.add("systemvmtemplate-${csVersion}.${patch}-kvm")
+                                templateList.add("systemvmtemplate-${csVersion}.${patch}-vmware")
+                                templateList.add("systemvmtemplate-${csVersion}.${patch}-xen")
+                                templateList.add("systemvmtemplate-${csVersion}.${patch}-ovm")
+                                templateList.add("systemvmtemplate-${csVersion}.${patch}-hyperv")
+                                File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
+                                def lines = file.readLines()
+                                for (template in templateList) {
+                                    def data = lines.findAll { it.contains(template) }
+                                    if (data != null) {
+                                        def hypervisor =  template.tokenize('-')[-1]
+                                        pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                                    }
+                                }
+                            </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.6.3</version>
+                <executions>
+                    <execution>
+                        <id>download-checksums</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
+                            <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                            <skipCache>true</skipCache>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>systemvm-template-metadata</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${basedir}/</workingDirectory>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>templateConfig.sh</argument>
+                                <armument>${project.version}</armument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>template-create</id>
+            <activation>
+                <property>
+                    <name>noredist</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-kvm-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${kvm.checksum}</md5>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-vmware-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${vmware.checksum}</md5>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-xenserver-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${xen.checksum}</md5>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
@@ -171,6 +173,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     protected VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -703,6 +707,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 throw new InvalidParameterValueException("There is other active vm snapshot tasks on the instance, please try again later");
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VM_SNAPSHOT.name(), vmSnapshot.getUuid());
         if (vmSnapshot.getState() == VMSnapshot.State.Allocated) {
             return _vmSnapshotDao.remove(vmSnapshot.getId());
         } else {
