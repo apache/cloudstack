@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.tungsten.api.response;
 
 import com.cloud.serializer.Param;
+import com.cloud.utils.TungstenUtils;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.ObjectReference;
@@ -53,6 +54,10 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric firewall rule source address group")
     private String srcAddressGroup;
 
+    @SerializedName(ApiConstants.SRC_NETWORK)
+    @Param(description = "Tungsten-Fabric firewall rule source network")
+    private String srcNetwork;
+
     @SerializedName(ApiConstants.DIRECTION)
     @Param(description = "Tungsten-Fabric firewall rule direction")
     private String direction;
@@ -64,6 +69,10 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.DEST_ADDRESS_GROUP)
     @Param(description = "Tungsten-Fabric firewall rule destination address group")
     private String destAddressGroup;
+
+    @SerializedName(ApiConstants.DEST_NETWORK)
+    @Param(description = "Tungsten-Fabric firewall rule destination network")
+    private String destNetwork;
 
     @SerializedName(ApiConstants.TAG_TYPE)
     @Param(description = "Tungsten-Fabric firewall rule tag type")
@@ -88,25 +97,43 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
 
         if (firewallRule.getEndpoint1() != null) {
             FirewallRuleEndpointType srcEndpoint = firewallRule.getEndpoint1();
-            if (srcEndpoint.getTags() != null) {
-                List<String> srcTagList = srcEndpoint.getTags();
-                this.srcTag = srcTagList.get(0);
-            } else {
+            if (srcEndpoint.getTags() != null && srcEndpoint.getTags().size() > 0) {
+                String[] srcTagList = srcEndpoint.getTags().get(0).split(":");
+                this.srcTag = srcTagList[srcTagList.length - 1];
+            }
+
+            if (srcEndpoint.getAddressGroup() != null) {
                 String addressGroup = srcEndpoint.getAddressGroup();
                 String[] addressGroupList = StringUtils.split(addressGroup, ":");
                 this.srcAddressGroup = addressGroupList[addressGroupList.length - 1];
+            }
+
+            if (srcEndpoint.getVirtualNetwork() != null) {
+                String network = srcEndpoint.getVirtualNetwork();
+                String[] networkList = StringUtils.split(network, ":");
+                String networkName = networkList[networkList.length - 1];
+                this.srcNetwork = TungstenUtils.getNameFromNetwork(networkName);
             }
         }
 
         if (firewallRule.getEndpoint2() != null) {
             FirewallRuleEndpointType destEndpoint = firewallRule.getEndpoint2();
-            if (destEndpoint.getTags() != null) {
-                List<String> destTagList = destEndpoint.getTags();
-                this.destTag = destTagList.get(0);
-            } else {
+            if (destEndpoint.getTags() != null && destEndpoint.getTags().size() > 0) {
+                String[] destTagList = destEndpoint.getTags().get(0).split(":");
+                this.destTag = destTagList[destTagList.length - 1];
+            }
+
+            if (destEndpoint.getAddressGroup() != null) {
                 String addressGroup = destEndpoint.getAddressGroup();
                 String[] addressGroupList = StringUtils.split(addressGroup, ":");
                 this.destAddressGroup = addressGroupList[addressGroupList.length - 1];
+            }
+
+            if (destEndpoint.getVirtualNetwork() != null) {
+                String network = destEndpoint.getVirtualNetwork();
+                String[] networkList = StringUtils.split(network, ":");
+                String networkName = networkList[networkList.length - 1];
+                this.destNetwork = TungstenUtils.getNameFromNetwork(networkName);
             }
         }
 
@@ -195,5 +222,21 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
 
     public void setDestTag(final String destTag) {
         this.destTag = destTag;
+    }
+
+    public String getSrcNetwork() {
+        return srcNetwork;
+    }
+
+    public void setSrcNetwork(final String srcNetwork) {
+        this.srcNetwork = srcNetwork;
+    }
+
+    public String getDestNetwork() {
+        return destNetwork;
+    }
+
+    public void setDestNetwork(final String destNetwork) {
+        this.destNetwork = destNetwork;
     }
 }

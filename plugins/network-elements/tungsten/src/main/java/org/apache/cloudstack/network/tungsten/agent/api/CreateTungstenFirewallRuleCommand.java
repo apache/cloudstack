@@ -20,33 +20,45 @@ import java.util.UUID;
 
 public class CreateTungstenFirewallRuleCommand extends TungstenCommand {
     private final String uuid;
+    private final String firewallPolicyUuid;
     private final String name;
     private final String action;
     private final String serviceGroupUuid;
     private final String srcTagUuid;
     private final String srcAddressGroupUuid;
+    private final String srcNetworkUuid;
     private final String direction;
     private final String destTagUuid;
     private final String destAddressGroupUuid;
+    private final String destNetworkUuid;
     private final String tagTypeUuid;
+    private final int sequence;
 
-    public CreateTungstenFirewallRuleCommand(final String name, final String action, final String serviceGroupUuid,
-        final String srcTagUuid, final String srcAddressGroupUuid, final String direction, final String destTagUuid,
-        final String destAddressGroupUuid, final String tagTypeUuid) {
+    public CreateTungstenFirewallRuleCommand(final String firewallPolicyUuid, final String name, final String action, final String serviceGroupUuid,
+        final String srcTagUuid, final String srcAddressGroupUuid, final String srcNetworkUuid, final String direction, final String destTagUuid,
+        final String destAddressGroupUuid, final String destNetworkUuid, final String tagTypeUuid, final int sequence) {
         this.uuid = UUID.randomUUID().toString();
+        this.firewallPolicyUuid = firewallPolicyUuid;
         this.name = name;
         this.action = action;
         this.serviceGroupUuid = serviceGroupUuid;
         this.srcTagUuid = srcTagUuid;
         this.srcAddressGroupUuid = srcAddressGroupUuid;
+        this.srcNetworkUuid = srcNetworkUuid;
         this.direction = direction;
         this.destTagUuid = destTagUuid;
         this.destAddressGroupUuid = destAddressGroupUuid;
+        this.destNetworkUuid = destNetworkUuid;
         this.tagTypeUuid = tagTypeUuid;
+        this.sequence = sequence;
     }
 
     public String getUuid() {
         return uuid;
+    }
+
+    public String getFirewallPolicyUuid() {
+        return firewallPolicyUuid;
     }
 
     public String getName() {
@@ -65,12 +77,20 @@ public class CreateTungstenFirewallRuleCommand extends TungstenCommand {
         return srcAddressGroupUuid;
     }
 
+    public String getSrcNetworkUuid() {
+        return srcNetworkUuid;
+    }
+
     public String getDirection() {
         return direction;
     }
 
     public String getDestAddressGroupUuid() {
         return destAddressGroupUuid;
+    }
+
+    public String getDestNetworkUuid() {
+        return destNetworkUuid;
     }
 
     public String getTagTypeUuid() {
@@ -83,5 +103,9 @@ public class CreateTungstenFirewallRuleCommand extends TungstenCommand {
 
     public String getDestTagUuid() {
         return destTagUuid;
+    }
+
+    public int getSequence() {
+        return sequence;
     }
 }

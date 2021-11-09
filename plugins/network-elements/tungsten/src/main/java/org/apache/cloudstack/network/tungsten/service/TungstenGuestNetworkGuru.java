@@ -74,7 +74,6 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPor
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNatIpCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
@@ -312,21 +311,6 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
     public boolean release(final NicProfile nic, final VirtualMachineProfile vm, final String reservationId) {
         Network network = networkDao.findById(nic.getNetworkId());
         String tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
-
-        // release floating ip
-        IPAddressVO ipAddressVO = ipAddressDao.findByAssociatedVmId(vm.getId());
-        if (ipAddressVO != null) {
-            Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
-                Networks.TrafficType.Public);
-            TungstenCommand releaseTungstenFloatingIpCommand = new ReleaseTungstenFloatingIpCommand(
-                publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
-                TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
-            TungstenAnswer releaseFloatingIpAnswer = tungstenFabricUtils.sendTungstenCommand(
-                releaseTungstenFloatingIpCommand, network.getDataCenterId());
-            if (!releaseFloatingIpAnswer.getResult()) {
-                return false;
-            }
-        }
 
         // delete vrouter port
         VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vm.getId());

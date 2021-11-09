@@ -36,11 +36,9 @@ import com.google.common.collect.Lists;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricFirewallPolicyCmd;
-import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricFirewallRuleCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricInterfaceStaticRouteCmd;
-import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricNetworkStaticRouteCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricNetworkGatewayToLogicalRouterCmd;
+import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricNetworkStaticRouteCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricPolicyRuleCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRouteTableToInterfaceCmd;
 import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricRouteTableToNetworkCmd;
@@ -93,8 +91,6 @@ import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricServ
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricTagCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricTagTypeCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricVmCmd;
-import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricFirewallPolicyCmd;
-import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricFirewallRuleCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricInterfaceRouteTableCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricInterfaceStaticRouteCmd;
 import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd;
@@ -162,11 +158,9 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
             CreateTungstenFabricAddressGroupCmd.class, ListTungstenFabricApplictionPolicySetCmd.class,
             ListTungstenFabricFirewallPolicyCmd.class, ListTungstenFabricFirewallRuleCmd.class,
             ListTungstenFabricServiceGroupCmd.class, ListTungstenFabricAddressGroupCmd.class,
-            AddTungstenFabricFirewallPolicyCmd.class, AddTungstenFabricFirewallRuleCmd.class,
             DeleteTungstenFabricApplicationPolicySetCmd.class, DeleteTungstenFabricFirewallPolicyCmd.class,
             DeleteTungstenFabricFirewallRuleCmd.class, DeleteTungstenFabricAddressGroupCmd.class,
-            DeleteTungstenFabricServiceGroupCmd.class, RemoveTungstenFabricFirewallPolicyCmd.class,
-            RemoveTungstenFabricFirewallRuleCmd.class, AddTungstenFabricNetworkStaticRouteCmd.class,
+            DeleteTungstenFabricServiceGroupCmd.class, AddTungstenFabricNetworkStaticRouteCmd.class,
             AddTungstenFabricInterfaceStaticRouteCmd.class, CreateTungstenFabricInterfaceRouteTableCmd.class,
             CreateTungstenFabricNetworkRouteTableCmd.class, ListTungstenFabricNetworkRouteTableCmd.class,
             ListTungstenFabricInterfaceRouteTableCmd.class, RemoveTungstenFabricNetworkStaticRouteCmd.class,

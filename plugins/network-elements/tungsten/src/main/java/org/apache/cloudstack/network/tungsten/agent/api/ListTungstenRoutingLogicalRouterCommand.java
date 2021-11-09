@@ -17,10 +17,16 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class ListTungstenRoutingLogicalRouterCommand extends TungstenCommand {
+    final private String networkUuid;
     final private String logicalRouterUuid;
 
-    public ListTungstenRoutingLogicalRouterCommand(final String logicalRouterUuid) {
+    public ListTungstenRoutingLogicalRouterCommand(final String networkUuid, final String logicalRouterUuid) {
+        this.networkUuid = networkUuid;
         this.logicalRouterUuid = logicalRouterUuid;
+    }
+
+    public String getNetworkUuid() {
+        return networkUuid;
     }
 
     public String getLogicalRouterUuid() {

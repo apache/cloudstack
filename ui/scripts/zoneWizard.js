@@ -23,8 +23,6 @@
     var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
     var configurationUseLocalStorage = false;
     var skipGuestTrafficStep = false;
-    var tungstenZone = false;
-    var tungstenPhysicalNetworkId;
     var selectedNetworkOfferingObj = {};
     var baremetalProviders = ["BaremetalDhcpProvider", "BaremetalPxeProvider", "BaremetalUserdataProvider"];
     var selectedBaremetalProviders = [];
@@ -3069,9 +3067,10 @@
                             // TODO : need make a UI to add tungsten fabric provider && for zone instead of physical network
                             // tungsten zone will have tungsten public network by default
                             // add tungsten fabric provider with physical network have tungsten public network
+                            args.data.zone.isTungstenZone = false;
                             if (thisPhysicalNetwork.isolationmethods == "TF") {
-                                tungstenZone = true;
-                                tungstenPhysicalNetworkId = thisPhysicalNetwork.id;
+                                args.data.zone.isTungstenZone = true;
+                                args.data.zone.tungstenPhysicalNetworkId = thisPhysicalNetwork.id;
                             }
                             // ***** Tungsten End *******
 
@@ -3700,7 +3699,7 @@
                                                         } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone
                                                             message(_l('message.enabling.security.group.provider'));
 
-                                                            if (tungstenZone && tungstenPhysicalNetworkId == thisPhysicalNetwork.id) {
+                                                            if (args.data.zone.isTungstenZone && args.data.zone.tungstenPhysicalNetworkId == thisPhysicalNetwork.id) {
                                                                 var tungstenProviderId;
                                                                 $.ajax({
                                                                     url: createURL("listNetworkServiceProviders&name=Tungsten&physicalNetworkId=" + thisPhysicalNetwork.id),
@@ -4185,7 +4184,7 @@
                         if (stopNow == true)
                             return; //stop the whole process
 
-                        if (tungstenZone == true) {
+                        if (args.data.zone.isTungstenZone == true) {
                             stepFns.createTungstenPublicNetwork({
                                 data : args.data
                             });
@@ -4197,7 +4196,7 @@
                             });
                         }
                     } else if (args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled == true) { // Advanced SG-enabled zone doesn't have public traffic type
-                        if (tungstenZone == true) {
+                        if (args.data.zone.isTungstenZone == true) {
                             stepFns.createTungstenPublicNetwork({
                                 data : args.data
                             });
@@ -4249,7 +4248,7 @@
                         url: createURL('configTungstenFabricService'),
                         data: {
                             zoneid: args.data.returnedZone.id,
-                            physicalnetworkid: tungstenPhysicalNetworkId
+                            physicalnetworkid: args.data.zone.tungstenPhysicalNetworkId
                         },
                         type: "POST",
                         async: false,
@@ -4282,8 +4281,8 @@
                     });
 
                     if (args.data.zone.sgEnabled == true) {
-                        stepFns.configureStorageTraffic({
-                            data: args.data
+                        stepFns.configureGuestTraffic({
+                            data: $.extend(args.data, data)
                         });
                     } else {
                         $.ajax({
@@ -4302,10 +4301,8 @@
                             }
                         });
 
-                        stepFns.configureStorageTraffic({
-                            data: $.extend(args.data, {
-                                returnedPublicTraffic: returnedPublicVlanIpRanges
-                            })
+                        stepFns.configureGuestTraffic({
+                            data: $.extend(args.data, data)
                         });
                     }
                 },

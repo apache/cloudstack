@@ -62,6 +62,9 @@ public class RemoveTungstenFabricTagCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric policy")
     private String policyUuid;
 
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    private String applicationPolicySetUuid;
+
     @Parameter(name = ApiConstants.TAG_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric tag")
     private String tagUuid;
 
@@ -69,7 +72,7 @@ public class RemoveTungstenFabricTagCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         TungstenFabricTagResponse tungstenFabricTagResponse = tungstenService.removeTungstenTag(zoneId, networkUuids,
-            vmUuids, nicUuids, policyUuid, tagUuid);
+            vmUuids, nicUuids, policyUuid, applicationPolicySetUuid, tagUuid);
         if (tungstenFabricTagResponse == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Tungsten-Fabric tag");
         } else {

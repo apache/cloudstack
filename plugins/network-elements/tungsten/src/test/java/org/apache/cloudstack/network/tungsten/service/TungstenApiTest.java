@@ -950,7 +950,7 @@ public class TungstenApiTest {
         assertNull(tungstenApi.getTungstenObject(Tag.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        assertNotNull(tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue"));
+        assertNotNull(tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123"));
 
         s_logger.debug("Check if tag was created in Tungsten-Fabric");
         assertNotNull(tungstenApi.getTungstenObject(Tag.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
@@ -972,12 +972,16 @@ public class TungstenApiTest {
 
     @Test
     public void createTungstenFirewallPolicyTest() {
+        s_logger.debug("Create application policy set in Tungsten-Fabric");
+        assertNotNull(tungstenApi.createTungstenApplicationPolicySet("f5ba12c8-d4c5-4c20-a57d-67a9b6fca652",
+            "applicationpolicyset"));
+
         s_logger.debug("Check if firewall policy is not exist in Tungsten-Fabric");
         assertNull(tungstenApi.getTungstenObject(FirewallPolicy.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
 
         s_logger.debug("Create firewall policy in Tungsten-Fabric");
-        assertNotNull(
-            tungstenApi.createTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187", "firewallpolicy"));
+        assertNotNull(tungstenApi.createTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "firewallpolicy", 1));
 
         s_logger.debug("Check if firewall policy was created in Tungsten-Fabric");
         assertNotNull(tungstenApi.getTungstenObject(FirewallPolicy.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
@@ -985,6 +989,14 @@ public class TungstenApiTest {
 
     @Test
     public void createTungstenFirewallRuleTest() {
+        s_logger.debug("Create application policy set in Tungsten-Fabric");
+        assertNotNull(tungstenApi.createTungstenApplicationPolicySet("f5ba12c8-d4c5-4c20-a57d-67a9b6fca652",
+            "applicationpolicyset"));
+
+        s_logger.debug("Create firewall policy in Tungsten-Fabric");
+        assertNotNull(tungstenApi.createTungstenFirewallPolicy("1ab1b179-8c6c-492a-868e-0493f4be175c",
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "firewallpolicy", 1));
+
         s_logger.debug("Check if firewall rule is not exist in Tungsten-Fabric");
         assertNull(tungstenApi.getTungstenObject(FirewallRule.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
 
@@ -992,10 +1004,10 @@ public class TungstenApiTest {
         tungstenApi.createTungstenServiceGroup("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "servicegroup", "tcp", 80, 90);
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype1", "tagvalue1");
+        tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype1", "tagvalue1", "123");
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype2", "tagvalue2");
+        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype2", "tagvalue2", "123");
 
         s_logger.debug("Create address group in Tungsten-Fabric");
         tungstenApi.createTungstenAddressGroup("88729834-3ebd-413a-adf9-40aff73cf638", "addressgroup1", "10.0.0.0", 24);
@@ -1007,11 +1019,11 @@ public class TungstenApiTest {
         tungstenApi.createTungstenTagType("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", "tagtype");
 
         s_logger.debug("Create firewall rule in Tungsten-Fabric");
-        assertNotNull(
-            tungstenApi.createTungstenFirewallRule("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", "firewallrule", "pass",
-                "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-                "88729834-3ebd-413a-adf9-40aff73cf638", ">", "7d5575eb-d029-467e-8b78-6056a8c94a71",
-                "9291ae28-56cf-448c-b848-f2334b3c86da", "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d"));
+        assertNotNull(tungstenApi.createTungstenFirewallRule("124d0792-e890-4b7e-8fe8-1b7a6d63c66a",
+            "1ab1b179-8c6c-492a-868e-0493f4be175c", "firewallrule", "pass", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4",
+            "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "88729834-3ebd-413a-adf9-40aff73cf638", null, ">",
+            "7d5575eb-d029-467e-8b78-6056a8c94a71", "9291ae28-56cf-448c-b848-f2334b3c86da",
+            null, "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", 1));
 
         s_logger.debug("Check if firewall rule was created in Tungsten-Fabric");
         assertNotNull(tungstenApi.getTungstenObject(FirewallRule.class, "124d0792-e890-4b7e-8fe8-1b7a6d63c66a"));
@@ -1066,7 +1078,7 @@ public class TungstenApiTest {
         assertNull(virtualNetwork.getTag());
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue");
+        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Check if tag was applied to network in Tungsten-Fabric");
         assertTrue(tungstenApi.applyTungstenNetworkTag(Arrays.asList(tungstenNetworkUuid),
@@ -1085,7 +1097,7 @@ public class TungstenApiTest {
         assertNull(virtualMachine.getTag());
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue");
+        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Check if tag was applied to vm in Tungsten-Fabric");
         assertTrue(
@@ -1112,7 +1124,7 @@ public class TungstenApiTest {
         assertNull(virtualMachineInterface.getTag());
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue");
+        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Check if tag was applied to vmi in Tungsten-Fabric");
         assertTrue(tungstenApi.applyTungstenNicTag(Arrays.asList(vmiUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
@@ -1132,7 +1144,7 @@ public class TungstenApiTest {
         assertNull(networkPolicy.getTag());
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue");
+        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Check if tag was applied to network policy in Tungsten-Fabric");
         assertTrue(tungstenApi.applyTungstenPolicyTag(networkPolicy.getUuid(), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
@@ -1161,7 +1173,7 @@ public class TungstenApiTest {
             projectUuid, tungstenRuleList1);
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue");
+        tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Apply tag to network in Tungsten-Fabric");
         tungstenApi.applyTungstenNetworkTag(Arrays.asList(tungstenNetworkUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
@@ -1197,7 +1209,7 @@ public class TungstenApiTest {
 
         s_logger.debug("remove tag from network, vm, nic, policy in Tungsten-Fabric");
         assertNotNull(tungstenApi.removeTungstenTag(Arrays.asList(tungstenNetworkUuid), Arrays.asList(tungstenVmUuid),
-            Arrays.asList(vmiUuid), networkPolicy.getUuid(), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
+            Arrays.asList(vmiUuid), networkPolicy.getUuid(), null, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
 
         s_logger.debug("Check if tag was removed from network in Tungsten-Fabric");
         VirtualNetwork virtualNetwork1 = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
@@ -1327,77 +1339,6 @@ public class TungstenApiTest {
     }
 
     @Test
-    public void addTungstenFirewallPolicyTest() {
-        s_logger.debug("Create application policy set in Tungsten-Fabric");
-        ApplicationPolicySet applicationPolicySet =
-            (ApplicationPolicySet) tungstenApi.createTungstenApplicationPolicySet(
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187", "applicationpolicyset");
-
-        s_logger.debug("Create firewall policy in Tungsten-Fabric");
-        tungstenApi.createTungstenFirewallPolicy("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", "firewallpolicy");
-
-        s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", "tagtype", "tagvalue");
-
-        s_logger.debug("Check if firewall policy is not apply to application policy set in Tungsten-Fabric");
-        assertNull(applicationPolicySet.getFirewallPolicy());
-
-        s_logger.debug("Add firewall policy to application policy set in Tungsten-Fabric");
-        tungstenApi.addTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", 1, "124d0792-e890-4b7e-8fe8-1b7a6d63c66a");
-
-        s_logger.debug("Check if firewall policy was applied to application policy set in Tungsten-Fabric");
-        ApplicationPolicySet applicationPolicySet1 = (ApplicationPolicySet) tungstenApi.getTungstenObject(
-            ApplicationPolicySet.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        assertEquals(1, applicationPolicySet1.getFirewallPolicy().size());
-        assertEquals("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", applicationPolicySet.getFirewallPolicy().get(0).getUuid());
-    }
-
-    @Test
-    public void addTungstenFirewallRuleTest() {
-        s_logger.debug("Create firewall policy in Tungsten-Fabric");
-        FirewallPolicy firewallPolicy = (FirewallPolicy) tungstenApi.createTungstenFirewallPolicy(
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187", "firewallpolicy");
-
-        s_logger.debug("Create service group in Tungsten-Fabric");
-        tungstenApi.createTungstenServiceGroup("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "servicegroup", "tcp", 80, 90);
-
-        s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype1", "tagvalue1");
-
-        s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype2", "tagvalue2");
-
-        s_logger.debug("Create address group in Tungsten-Fabric");
-        tungstenApi.createTungstenAddressGroup("88729834-3ebd-413a-adf9-40aff73cf638", "addressgroup1", "10.0.0.0", 24);
-
-        s_logger.debug("Create address group in Tungsten-Fabric");
-        tungstenApi.createTungstenAddressGroup("9291ae28-56cf-448c-b848-f2334b3c86da", "addressgroup2", "10.0.0.0", 24);
-
-        s_logger.debug("Create tag type in Tungsten-Fabric");
-        tungstenApi.createTungstenTagType("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", "tagtype");
-
-        s_logger.debug("Create firewall rule in Tungsten-Fabric");
-        tungstenApi.createTungstenFirewallRule("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", "firewallrule", "pass",
-            "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "88729834-3ebd-413a-adf9-40aff73cf638", ">", "7d5575eb-d029-467e-8b78-6056a8c94a71",
-            "9291ae28-56cf-448c-b848-f2334b3c86da", "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d");
-
-        s_logger.debug("Check if firewall rule is not apply to firewall policy in Tungsten-Fabric");
-        assertNull(firewallPolicy.getFirewallRule());
-
-        s_logger.debug("Add firewall rule to firewall policy in Tungsten-Fabric");
-        tungstenApi.addTungstenFirewallRule("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", 1);
-
-        s_logger.debug("Check if firewall rule was applied to firewall policy in Tungsten-Fabric");
-        FirewallPolicy firewallPolicy1 = (FirewallPolicy) tungstenApi.getTungstenObject(FirewallPolicy.class,
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        assertEquals(1, firewallPolicy1.getFirewallRule().size());
-        assertEquals("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", firewallPolicy1.getFirewallRule().get(0).getUuid());
-    }
-
-    @Test
     public void listTungstenAddressPolicyTest() {
         s_logger.debug("Create policy in Tungsten-Fabric");
         ApiObjectBase networkPolicy1 = tungstenApi.createTungstenPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
@@ -1510,21 +1451,21 @@ public class TungstenApiTest {
     public void listTungstenTagTest() {
         s_logger.debug("Create tag in Tungsten-Fabric");
         ApiObjectBase apiObjectBase1 = tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype1",
-            "tagvalue1");
+            "tagvalue1", "123");
         ApiObjectBase apiObjectBase2 = tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype2",
-            "tagvalue2");
+            "tagvalue2", "123");
         ApiObjectBase apiObjectBase3 = tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype3",
-            "tagvalue3");
+            "tagvalue3", "123");
         ApiObjectBase apiObjectBase4 = tungstenApi.createTungstenTag("88729834-3ebd-413a-adf9-40aff73cf638", "tagtype4",
-            "tagvalue4");
+            "tagvalue4", "123");
         ApiObjectBase apiObjectBase5 = tungstenApi.createTungstenTag("105f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype5",
-            "tagvalue5");
+            "tagvalue5", "123");
         ApiObjectBase apiObjectBase6 = tungstenApi.createTungstenTag("7b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype6",
-            "tagvalue6");
+            "tagvalue6", "123");
         ApiObjectBase apiObjectBase7 = tungstenApi.createTungstenTag("8d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype7",
-            "tagvalue7");
+            "tagvalue7", "123");
         ApiObjectBase apiObjectBase8 = tungstenApi.createTungstenTag("98729834-3ebd-413a-adf9-40aff73cf638", "tagtype8",
-            "tagvalue8");
+            "tagvalue8", "123");
         List<? extends ApiObjectBase> listTag = Arrays.asList(apiObjectBase1);
         List<? extends ApiObjectBase> listTag1 = Arrays.asList(apiObjectBase1, apiObjectBase2);
         List<? extends ApiObjectBase> listTag2 = Arrays.asList(apiObjectBase3, apiObjectBase4);
@@ -1570,36 +1511,38 @@ public class TungstenApiTest {
 
         s_logger.debug("Check if tag was listed with network in Tungsten-Fabric");
         List<? extends ApiObjectBase> listTag6 = tungstenApi.listTungstenTag("9291ae28-56cf-448c-b848-f2334b3c86da",
-            null, null, null, null);
+            null, null, null, null, null);
         listTag6.sort(comparator);
         assertEquals(listTag1, listTag6);
 
         s_logger.debug("Check if tag was listed with vm in Tungsten-Fabric");
         List<? extends ApiObjectBase> listTag7 = tungstenApi.listTungstenTag(null,
-            "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", null, null, null);
+            "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", null, null, null
+        , null);
         listTag7.sort(comparator);
         assertEquals(listTag2, listTag7);
 
         s_logger.debug("Check if tag was listed with nic in Tungsten-Fabric");
         List<? extends ApiObjectBase> listTag8 = tungstenApi.listTungstenTag(null, null,
-            "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", null, null);
+            "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", null, null,
+            null);
         listTag8.sort(comparator);
         assertEquals(listTag3, listTag8);
 
         s_logger.debug("Check if tag was listed with policy in Tungsten-Fabric");
         List<? extends ApiObjectBase> listTag9 = tungstenApi.listTungstenTag(null, null, null,
-            "205f0dea-0196-11ec-a1ed-b42e99f6e187", null);
+            "205f0dea-0196-11ec-a1ed-b42e99f6e187", null, null);
         listTag9.sort(comparator);
         assertEquals(listTag4, listTag9);
 
         s_logger.debug("Check if tag was listed all in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag10 = tungstenApi.listTungstenTag(null, null, null, null, null);
+        List<? extends ApiObjectBase> listTag10 = tungstenApi.listTungstenTag(null, null, null, null, null, null);
         listTag10.sort(comparator);
         assertEquals(listTag5, listTag10);
 
         s_logger.debug("Check if tag was listed with uuid in Tungsten-Fabric");
         List<? extends ApiObjectBase> listTag11 = tungstenApi.listTungstenTag(null, null, null, null,
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187");
+            null, "005f0dea-0196-11ec-a1ed-b42e99f6e187");
         listTag11.sort(comparator);
         assertEquals(listTag, listTag11);
     }
@@ -1681,68 +1624,50 @@ public class TungstenApiTest {
     @Test
     public void listTungstenFirewallPolicyTest() {
         s_logger.debug("Create application policy set in Tungsten-Fabric");
-        tungstenApi.createTungstenApplicationPolicySet("005f0dea-0196-11ec-a1ed-b42e99f6e187", "aps1");
+        tungstenApi.createTungstenApplicationPolicySet("f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "aps1");
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype1", "tagvalue1");
+        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype1", "tagvalue1", "123");
 
         s_logger.debug("Create firewall policy in Tungsten-Fabric");
         ApiObjectBase fwPolicy1 = tungstenApi.createTungstenFirewallPolicy("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4",
-            "firewallpolicy1");
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "firewallpolicy1", 1);
         ApiObjectBase fwPolicy2 = tungstenApi.createTungstenFirewallPolicy("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "firewallpolicy2");
-        ApiObjectBase fwPolicy3 = tungstenApi.createTungstenFirewallPolicy("88729834-3ebd-413a-adf9-40aff73cf638",
-            "firewallpolicy3");
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "firewallpolicy2", 1);
         List<? extends ApiObjectBase> fwPolicyList1 = Arrays.asList(fwPolicy1, fwPolicy2);
         fwPolicyList1.sort(comparator);
         List<? extends ApiObjectBase> fwPolicyList2 = Arrays.asList(fwPolicy1);
-        List<? extends ApiObjectBase> fwPolicyList3 = Arrays.asList(fwPolicy1, fwPolicy2, fwPolicy3);
-        fwPolicyList3.sort(comparator);
-        List<? extends ApiObjectBase> fwPolicyList4 = Arrays.asList(fwPolicy3);
-
-        s_logger.debug("Add firewall policy to application policy set in Tungsten-Fabric");
-        tungstenApi.addTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", 1, "7d5575eb-d029-467e-8b78-6056a8c94a71");
-        tungstenApi.addTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", 2, "7d5575eb-d029-467e-8b78-6056a8c94a71");
 
         s_logger.debug("Check if firewall policy set was listed all with application policy set in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwPolicyList5 = tungstenApi.listTungstenFirewallPolicy(
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187", null);
-        fwPolicyList5.sort(comparator);
-        assertEquals(fwPolicyList1, fwPolicyList5);
+        List<? extends ApiObjectBase> fwPolicyList3 = tungstenApi.listTungstenFirewallPolicy(
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", null);
+        fwPolicyList3.sort(comparator);
+        assertEquals(fwPolicyList1, fwPolicyList3);
 
         s_logger.debug(
             "Check if firewall policy set was listed with uuid and application policy set in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwPolicyList6 = tungstenApi.listTungstenFirewallPolicy(
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
-        assertEquals(fwPolicyList2, fwPolicyList6);
-
-        s_logger.debug("Check if firewall policy set was listed all without application policy set in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwPolicyList7 = tungstenApi.listTungstenFirewallPolicy(null, null);
-        fwPolicyList7.sort(comparator);
-        assertEquals(fwPolicyList3, fwPolicyList7);
-
-        s_logger.debug(
-            "Check if firewall policy set was listed uuid without application policy set in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwPolicyList8 = tungstenApi.listTungstenFirewallPolicy(null,
-            "88729834-3ebd-413a-adf9-40aff73cf638");
-        assertEquals(fwPolicyList4, fwPolicyList8);
+        List<? extends ApiObjectBase> fwPolicyList4 = tungstenApi.listTungstenFirewallPolicy(
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
+        assertEquals(fwPolicyList2, fwPolicyList4);
     }
 
     @Test
     public void listTungstenFirewallRuleTest() {
+        s_logger.debug("Create application policy set in Tungsten-Fabric");
+        tungstenApi.createTungstenApplicationPolicySet("f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "aps");
+
         s_logger.debug("Create firewall policy in Tungsten-Fabric");
-        tungstenApi.createTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187", "firewallpolicy");
+        tungstenApi.createTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
+            "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "firewallpolicy", 1);
 
         s_logger.debug("Create service group in Tungsten-Fabric");
         tungstenApi.createTungstenServiceGroup("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "servicegroup1", "tcp", 80, 90);
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype1", "tagvalue1");
+        tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype1", "tagvalue1", "123");
 
         s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype2", "tagvalue2");
+        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype2", "tagvalue2", "123");
 
         s_logger.debug("Create address group in Tungsten-Fabric");
         tungstenApi.createTungstenAddressGroup("88729834-3ebd-413a-adf9-40aff73cf638", "addressgroup1", "10.0.0.0", 24);
@@ -1755,50 +1680,30 @@ public class TungstenApiTest {
 
         s_logger.debug("Create firewall rule in Tungsten-Fabric");
         ApiObjectBase firewallRule1 = tungstenApi.createTungstenFirewallRule("124d0792-e890-4b7e-8fe8-1b7a6d63c66a",
-            "firewallrule1", "pass", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "88729834-3ebd-413a-adf9-40aff73cf638", ">", "7d5575eb-d029-467e-8b78-6056a8c94a71",
-            "9291ae28-56cf-448c-b848-f2334b3c86da", "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d");
+            "005f0dea-0196-11ec-a1ed-b42e99f6e187", "firewallrule1", "pass", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4",
+            "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "88729834-3ebd-413a-adf9-40aff73cf638", null, ">",
+            "7d5575eb-d029-467e-8b78-6056a8c94a71", "9291ae28-56cf-448c-b848-f2334b3c86da",
+            null, "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", 1);
         ApiObjectBase firewallRule2 = tungstenApi.createTungstenFirewallRule("224d0792-e890-4b7e-8fe8-1b7a6d63c66a",
-            "firewallrule2", "pass", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "88729834-3ebd-413a-adf9-40aff73cf638", ">", "7d5575eb-d029-467e-8b78-6056a8c94a71",
-            "9291ae28-56cf-448c-b848-f2334b3c86da", "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d");
-        ApiObjectBase firewallRule3 = tungstenApi.createTungstenFirewallRule("324d0792-e890-4b7e-8fe8-1b7a6d63c66a",
-            "firewallrule3", "pass", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "88729834-3ebd-413a-adf9-40aff73cf638", ">", "7d5575eb-d029-467e-8b78-6056a8c94a71",
-            "9291ae28-56cf-448c-b848-f2334b3c86da", "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d");
+            "005f0dea-0196-11ec-a1ed-b42e99f6e187", "firewallrule2", "pass", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4",
+            "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "88729834-3ebd-413a-adf9-40aff73cf638", null, ">",
+            "7d5575eb-d029-467e-8b78-6056a8c94a71", "9291ae28-56cf-448c-b848-f2334b3c86da",
+            null, "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", 1);
 
-        s_logger.debug("Add firewall rule to firewall policy in Tungsten-Fabric");
-        tungstenApi.addTungstenFirewallRule("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", 1);
-        tungstenApi.addTungstenFirewallRule("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "224d0792-e890-4b7e-8fe8-1b7a6d63c66a", 1);
         List<? extends ApiObjectBase> fwRuleList1 = Arrays.asList(firewallRule1, firewallRule2);
         fwRuleList1.sort(comparator);
         List<? extends ApiObjectBase> fwRuleList2 = Arrays.asList(firewallRule1);
-        List<? extends ApiObjectBase> fwRuleList3 = Arrays.asList(firewallRule1, firewallRule2, firewallRule3);
-        fwRuleList3.sort(comparator);
-        List<? extends ApiObjectBase> fwRuleList4 = Arrays.asList(firewallRule3);
 
         s_logger.debug("Check if firewall rule set was listed all with firewall policy in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwRuleList5 = tungstenApi.listTungstenFirewallRule(
+        List<? extends ApiObjectBase> fwRuleList3 = tungstenApi.listTungstenFirewallRule(
             "005f0dea-0196-11ec-a1ed-b42e99f6e187", null);
-        fwRuleList5.sort(comparator);
-        assertEquals(fwRuleList1, fwRuleList5);
+        fwRuleList3.sort(comparator);
+        assertEquals(fwRuleList1, fwRuleList3);
 
         s_logger.debug("Check if firewall rule set was listed with uuid and firewall policy in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwRuleList6 = tungstenApi.listTungstenFirewallRule(
+        List<? extends ApiObjectBase> fwRuleList4 = tungstenApi.listTungstenFirewallRule(
             "005f0dea-0196-11ec-a1ed-b42e99f6e187", "124d0792-e890-4b7e-8fe8-1b7a6d63c66a");
-        assertEquals(fwRuleList2, fwRuleList6);
-
-        s_logger.debug("Check if firewall rule set was listed all without firewall policy in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwRuleList7 = tungstenApi.listTungstenFirewallRule(null, null);
-        fwRuleList7.sort(comparator);
-        assertEquals(fwRuleList3, fwRuleList7);
-
-        s_logger.debug("Check if firewall rule set was listed uuid without firewall policy in Tungsten-Fabric");
-        List<? extends ApiObjectBase> fwRuleList8 = tungstenApi.listTungstenFirewallRule(null,
-            "324d0792-e890-4b7e-8fe8-1b7a6d63c66a");
-        assertEquals(fwRuleList4, fwRuleList8);
+        assertEquals(fwRuleList2, fwRuleList4);
     }
 
     @Test
@@ -1866,80 +1771,6 @@ public class TungstenApiTest {
         NetworkPolicy networkPolicy2 = (NetworkPolicy) tungstenApi.getTungstenObject(NetworkPolicy.class,
             "005f0dea-0196-11ec-a1ed-b42e99f6e187");
         assertEquals(0, networkPolicy2.getEntries().getPolicyRule().size());
-    }
-
-    @Test
-    public void removeTungstenFirewallPolicyTest() {
-        s_logger.debug("Create application policy set in Tungsten-Fabric");
-        tungstenApi.createTungstenApplicationPolicySet("005f0dea-0196-11ec-a1ed-b42e99f6e187", "applicationpolicyset");
-
-        s_logger.debug("Create firewall policy in Tungsten-Fabric");
-        tungstenApi.createTungstenFirewallPolicy("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", "firewallpolicy");
-
-        s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", "tagtype", "tagvalue");
-
-        s_logger.debug("Add firewall policy to application policy set in Tungsten-Fabric");
-        tungstenApi.addTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", 1, "124d0792-e890-4b7e-8fe8-1b7a6d63c66a");
-
-        s_logger.debug("Check if firewall policy was applied to application policy set in Tungsten-Fabric");
-        ApplicationPolicySet applicationPolicySet1 = (ApplicationPolicySet) tungstenApi.getTungstenObject(
-            ApplicationPolicySet.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        assertEquals(1, applicationPolicySet1.getFirewallPolicy().size());
-
-        s_logger.debug("Check if firewall policy was removed from application policy set in Tungsten-Fabric");
-        assertNotNull(tungstenApi.removeTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d"));
-        ApplicationPolicySet applicationPolicySet2 = (ApplicationPolicySet) tungstenApi.getTungstenObject(
-            ApplicationPolicySet.class, "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        assertEquals(0, applicationPolicySet2.getFirewallPolicy().size());
-    }
-
-    @Test
-    public void removeTungstenFirewallRuleTest() {
-        s_logger.debug("Create firewall policy in Tungsten-Fabric");
-        tungstenApi.createTungstenFirewallPolicy("005f0dea-0196-11ec-a1ed-b42e99f6e187", "firewallpolicy");
-
-        s_logger.debug("Create service group in Tungsten-Fabric");
-        tungstenApi.createTungstenServiceGroup("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "servicegroup", "tcp", 80, 90);
-
-        s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "tagtype1", "tagvalue1");
-
-        s_logger.debug("Create tag in Tungsten-Fabric");
-        tungstenApi.createTungstenTag("7d5575eb-d029-467e-8b78-6056a8c94a71", "tagtype2", "tagvalue2");
-
-        s_logger.debug("Create address group in Tungsten-Fabric");
-        tungstenApi.createTungstenAddressGroup("88729834-3ebd-413a-adf9-40aff73cf638", "addressgroup1", "10.0.0.0", 24);
-
-        s_logger.debug("Create address group in Tungsten-Fabric");
-        tungstenApi.createTungstenAddressGroup("9291ae28-56cf-448c-b848-f2334b3c86da", "addressgroup2", "10.0.0.0", 24);
-
-        s_logger.debug("Create tag type in Tungsten-Fabric");
-        tungstenApi.createTungstenTagType("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", "tagtype");
-
-        s_logger.debug("Create firewall rule in Tungsten-Fabric");
-        tungstenApi.createTungstenFirewallRule("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", "firewallrule", "pass",
-            "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "88729834-3ebd-413a-adf9-40aff73cf638", ">", "7d5575eb-d029-467e-8b78-6056a8c94a71",
-            "9291ae28-56cf-448c-b848-f2334b3c86da", "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d");
-
-        s_logger.debug("Add firewall rule to firewall policy in Tungsten-Fabric");
-        tungstenApi.addTungstenFirewallRule("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", 1);
-
-        s_logger.debug("Check if firewall rule was applied to firewall policy in Tungsten-Fabric");
-        FirewallPolicy firewallPolicy1 = (FirewallPolicy) tungstenApi.getTungstenObject(FirewallPolicy.class,
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        assertEquals(1, firewallPolicy1.getFirewallRule().size());
-
-        s_logger.debug("Check if firewall rule was removed from firewall policy in Tungsten-Fabric");
-        assertNotNull(tungstenApi.removeTungstenFirewallRule("005f0dea-0196-11ec-a1ed-b42e99f6e187",
-            "124d0792-e890-4b7e-8fe8-1b7a6d63c66a"));
-        FirewallPolicy firewallPolicy2 = (FirewallPolicy) tungstenApi.getTungstenObject(FirewallPolicy.class,
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        assertEquals(0, firewallPolicy2.getFirewallRule().size());
     }
 
     @Test
@@ -2147,10 +1978,10 @@ public class TungstenApiTest {
         List<? extends ApiObjectBase> list2 = Arrays.asList(apiObjectBase1);
 
         s_logger.debug("Check if logical router was listed all in Tungsten-Fabric.");
-        List<? extends ApiObjectBase> list3 = tungstenApi.listRoutingLogicalRouter(null);
+        List<? extends ApiObjectBase> list3 = tungstenApi.listRoutingLogicalRouter(null, null);
         list3.sort(comparator);
         assertEquals(list1, list3);
-        List<? extends ApiObjectBase> list4 = tungstenApi.listRoutingLogicalRouter(
+        List<? extends ApiObjectBase> list4 = tungstenApi.listRoutingLogicalRouter(null,
             "005f0dea-0196-11ec-a1ed-b42e99f6e187");
         assertEquals(list2, list4);
     }
@@ -2259,7 +2090,8 @@ public class TungstenApiTest {
         assertNotNull(tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
         assertNotNull(tungstenApi.createNetworkRouteTable("test2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
 
-        List<RouteTable> routeTableList = (List<RouteTable>) tungstenApi.listTungstenNetworkRouteTable("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
+        List<RouteTable> routeTableList = (List<RouteTable>) tungstenApi.listTungstenNetworkRouteTable(
+            "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
         assertEquals(1, routeTableList.size());
     }
 

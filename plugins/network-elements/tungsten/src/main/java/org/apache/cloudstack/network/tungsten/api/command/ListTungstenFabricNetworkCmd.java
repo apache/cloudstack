@@ -56,10 +56,15 @@ public class ListTungstenFabricNetworkCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric network")
     private String networkUuid;
 
+    @Parameter(name = ApiConstants.LIST_ALL,
+        type = CommandType.BOOLEAN,
+        description = "If set to false, list only resources belonging to the command's caller; if set to true - list resources that include public network. Default value is false")
+    private Boolean listAll;
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<BaseResponse> baseResponseList = tungstenService.listTungstenNetwork(zoneId, networkUuid);
+        List<BaseResponse> baseResponseList = tungstenService.listTungstenNetwork(zoneId, networkUuid, listAll);
         List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<BaseResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(pagingList);

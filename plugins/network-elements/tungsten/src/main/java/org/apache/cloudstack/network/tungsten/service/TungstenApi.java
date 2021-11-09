@@ -17,7 +17,6 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -104,6 +103,7 @@ import org.apache.cloudstack.network.tungsten.model.RoutingPolicyPrefix;
 import org.apache.cloudstack.network.tungsten.model.RoutingPolicyThenTerm;
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -1183,7 +1183,7 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenTag(final String uuid, final String tagType, final String tagValue) {
+    public ApiObjectBase createTungstenTag(final String uuid, final String tagType, final String tagValue, final String tagId) {
         try {
             Tag tag = new Tag();
             tag.setUuid(uuid);
@@ -1191,6 +1191,9 @@ public class TungstenApi {
             tag.setTypeName(tagType);
             tag.setValue(tagValue);
             tag.setParent(new ConfigRoot());
+            if (tagId != null) {
+                tag.setId(tagId);
+            }
             Status status = apiConnector.create(tag);
             status.ifFailure(errorHandler);
             return apiConnector.findById(Tag.class, tag.getUuid());
@@ -1219,7 +1222,7 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenFirewallPolicy(String uuid, String name) {
+    public ApiObjectBase createTungstenFirewallPolicy(String uuid, String applicationPolicySetUuid, String name, int sequence) {
         try {
             String policyManagementUuid = apiConnector.findByName(PolicyManagement.class, new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
             PolicyManagement policyManagement = (PolicyManagement) apiConnector.findById(PolicyManagement.class, policyManagementUuid);
@@ -1227,33 +1230,57 @@ public class TungstenApi {
                 return null;
             }
 
+            ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
+            List<ObjectReference<ApiPropertyBase>> objectReferenceList = applicationPolicySet.getTag();
             FirewallPolicy firewallPolicy = new FirewallPolicy();
             firewallPolicy.setUuid(uuid);
             firewallPolicy.setName(name);
             firewallPolicy.setParent(policyManagement);
+            if (objectReferenceList != null && objectReferenceList.size() > 0) {
+                for (ObjectReference<ApiPropertyBase> objectReference : objectReferenceList) {
+                    Tag tag = (Tag) apiConnector.findById(Tag.class, objectReference.getUuid());
+                    firewallPolicy.setTag(tag);
+                }
+            }
             Status status = apiConnector.create(firewallPolicy);
             status.ifFailure(errorHandler);
-            return apiConnector.findById(FirewallPolicy.class, firewallPolicy.getUuid());
+
+            if (status.isSuccess()) {
+                applicationPolicySet.addFirewallPolicy(firewallPolicy, new FirewallSequence(String.valueOf(sequence)));
+                Status update = apiConnector.update(applicationPolicySet);
+                update.ifFailure(errorHandler);
+                if (update.isSuccess()) {
+                    return apiConnector.findById(FirewallPolicy.class, firewallPolicy.getUuid());
+                } else {
+                    apiConnector.delete(firewallPolicy);
+                }
+            }
+            return null;
         } catch (IOException e) {
             return null;
         }
     }
 
-    public ApiObjectBase createTungstenFirewallRule(String uuid, String name, String action, String serviceGroupUuid,
-        String srcTagUuid, String srcAddressGroupUuid, String direction, String destTagUuid,
-        String destAddressGroupUuid, String tagTypeUuid) {
+    public ApiObjectBase createTungstenFirewallRule(String uuid, String firewallPolicyUuid, String name, String action, String serviceGroupUuid,
+        String srcTagUuid, String srcAddressGroupUuid, String srcNetworkUuid, String direction, String destTagUuid,
+        String destAddressGroupUuid, String destNetworkUuid, String tagTypeUuid, int sequence) {
         try {
             String policyManagementUuid = apiConnector.findByName(PolicyManagement.class, new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
             PolicyManagement policyManagement = (PolicyManagement) apiConnector.findById(PolicyManagement.class, policyManagementUuid);
             if (policyManagement == null) {
                 return null;
             }
-
+            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class, firewallPolicyUuid);
+            if (firewallPolicy == null) {
+                return null;
+            }
             ServiceGroup serviceGroup = (ServiceGroup) apiConnector.findById(ServiceGroup.class, serviceGroupUuid);
             AddressGroup srcAddressGroup = (AddressGroup) apiConnector.findById(AddressGroup.class,
                 srcAddressGroupUuid);
             AddressGroup destAddressGroup = (AddressGroup) apiConnector.findById(AddressGroup.class,
                 destAddressGroupUuid);
+            VirtualNetwork srcNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, srcNetworkUuid);
+            VirtualNetwork destNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, destNetworkUuid);
             Tag srcTag = (Tag) apiConnector.findById(Tag.class, srcTagUuid);
             Tag destTag = (Tag) apiConnector.findById(Tag.class, destTagUuid);
             TagType tagType = (TagType) apiConnector.findById(TagType.class, tagTypeUuid);
@@ -1261,11 +1288,11 @@ public class TungstenApi {
                 return null;
             }
 
-            if (srcAddressGroup == null && srcTag == null) {
+            if (srcAddressGroup == null && srcTag == null && srcNetwork == null) {
                 return null;
             }
 
-            if (destAddressGroup == null && destTag == null) {
+            if (destAddressGroup == null && destTag == null && destNetwork == null) {
                 return null;
             }
 
@@ -1277,18 +1304,32 @@ public class TungstenApi {
             firewallRule.setServiceGroup(serviceGroup);
             FirewallRuleEndpointType srcFirewallRuleEndpointType = new FirewallRuleEndpointType();
             if (srcTag != null) {
-                srcFirewallRuleEndpointType.addTags(srcTag.getName());
-            } else {
+                srcFirewallRuleEndpointType.addTags("global:" + srcTag.getName());
+                srcFirewallRuleEndpointType.addTagIds(Integer.decode(srcTag.getId()));
+            }
+
+            if (srcAddressGroup != null) {
                 String srcAddressGroupName = StringUtils.join(srcAddressGroup.getQualifiedName(), ":");
                 srcFirewallRuleEndpointType.setAddressGroup(srcAddressGroupName);
             }
 
+            if (srcNetwork != null) {
+                srcFirewallRuleEndpointType.setVirtualNetwork(StringUtils.join(srcNetwork.getQualifiedName(), ":"));
+            }
+
             FirewallRuleEndpointType destFirewallRuleEndpointType = new FirewallRuleEndpointType();
             if (destTag != null) {
-                destFirewallRuleEndpointType.addTags(destTag.getName());
-            } else {
+                destFirewallRuleEndpointType.addTags("global:" + destTag.getName());
+                destFirewallRuleEndpointType.addTagIds(Integer.decode(destTag.getId()));
+            }
+
+            if (destAddressGroup != null) {
                 String destAddressGroupName = StringUtils.join(destAddressGroup.getQualifiedName(), ":");
                 destFirewallRuleEndpointType.setAddressGroup(destAddressGroupName);
+            }
+
+            if (destNetwork != null) {
+                destFirewallRuleEndpointType.setVirtualNetwork(StringUtils.join(destNetwork.getQualifiedName(), ":"));
             }
 
             firewallRule.setEndpoint1(srcFirewallRuleEndpointType);
@@ -1302,7 +1343,17 @@ public class TungstenApi {
 
             Status status = apiConnector.create(firewallRule);
             status.ifFailure(errorHandler);
-            return apiConnector.findById(FirewallRule.class, firewallRule.getUuid());
+            if (status.isSuccess()) {
+                firewallPolicy.addFirewallRule(firewallRule, new FirewallSequence(String.valueOf(sequence)));
+                Status updated = apiConnector.update(firewallPolicy);
+                updated.ifFailure(errorHandler);
+                if (updated.isSuccess()) {
+                    return apiConnector.findById(FirewallRule.class, firewallRule.getUuid());
+                } else {
+                    apiConnector.delete(firewallRule);
+                }
+            }
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -1425,8 +1476,32 @@ public class TungstenApi {
         }
     }
 
+    public boolean applyTungstenApplicationPolicySetTag(String applicationPolicySetUuid, String tagUuid) {
+        try {
+            Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
+            ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
+            applicationPolicySet.addTag(tag);
+            Status status = apiConnector.update(applicationPolicySet);
+            status.ifFailure(errorHandler);
+
+            List<ObjectReference<FirewallSequence>> firewallPolicyList = applicationPolicySet.getFirewallPolicy();
+            if (firewallPolicyList != null && firewallPolicyList.size() > 0) {
+                for(ObjectReference<FirewallSequence> objectReference : firewallPolicyList) {
+                    FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class, objectReference.getUuid());
+                    firewallPolicy.setTag(tag);
+                    Status updateFirewallPolicyStatus = apiConnector.update(firewallPolicy);
+                    updateFirewallPolicyStatus.ifFailure(errorHandler);
+                }
+            }
+
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public ApiObjectBase removeTungstenTag(List<String> networkUuids, List<String> vmUuids, List<String> nicUuids,
-        String policyUuid, String tagUuid) {
+        String policyUuid, String applicationPolicySetUuid, String tagUuid) {
         try {
             Tag tag = (Tag) getTungstenObject(Tag.class, tagUuid);
             if (tag == null) {
@@ -1473,6 +1548,15 @@ public class TungstenApi {
                 if (tag != null && networkPolicy != null) {
                     networkPolicy.removeTag(tag);
                     Status status = apiConnector.update(networkPolicy);
+                    status.ifFailure(errorHandler);
+                }
+            }
+
+            if (applicationPolicySetUuid != null) {
+                ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) getTungstenObject(ApplicationPolicySet.class, applicationPolicySetUuid);
+                if (tag != null && applicationPolicySet != null) {
+                    applicationPolicySet.removeTag(tag);
+                    Status status = apiConnector.update(applicationPolicySet);
                     status.ifFailure(errorHandler);
                 }
             }
@@ -1563,47 +1647,6 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase addTungstenFirewallPolicy(final String applicationPolicySetUuid,
-        final String firewallPolicyUuid, final int sequence, final String tagUuid) {
-        try {
-            ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(
-                ApplicationPolicySet.class, applicationPolicySetUuid);
-            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
-                firewallPolicyUuid);
-            Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
-            if (applicationPolicySet == null || firewallPolicy == null || tag == null) {
-                return null;
-            }
-
-            applicationPolicySet.addFirewallPolicy(firewallPolicy, new FirewallSequence(String.valueOf(sequence)));
-            applicationPolicySet.setTag(tag);
-
-            Status status = apiConnector.update(applicationPolicySet);
-            status.ifFailure(errorHandler);
-            return apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public ApiObjectBase addTungstenFirewallRule(final String firewallPolicyUuid, final String firewallRuleUuid,
-        final int sequence) {
-        try {
-            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
-                firewallPolicyUuid);
-            FirewallRule firewallRule = (FirewallRule) apiConnector.findById(FirewallRule.class, firewallRuleUuid);
-            if (firewallPolicy == null || firewallRule == null) {
-                return null;
-            }
-            firewallPolicy.addFirewallRule(firewallRule, new FirewallSequence(String.valueOf(sequence)));
-            Status status = apiConnector.update(firewallPolicy);
-            status.ifFailure(errorHandler);
-            return apiConnector.findById(FirewallPolicy.class, firewallPolicyUuid);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
     public List<? extends ApiObjectBase> listTungstenAddressPolicy(String projectUuid, String policyName) {
         Project project = (Project) getTungstenObject(Project.class, projectUuid);
         List<NetworkPolicy> networkPolicyList = new ArrayList<>();
@@ -1638,7 +1681,7 @@ public class TungstenApi {
     }
 
     public List<? extends ApiObjectBase> listTungstenTag(String networkUuid, String vmUuid, String nicUuid,
-        String policyUuid, String tagUuid) {
+        String policyUuid, String applicationPolicySetUuid, String tagUuid) {
         try {
             List<Tag> tagList;
 
@@ -1656,11 +1699,14 @@ public class TungstenApi {
             } else if (policyUuid != null) {
                 NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
                 tagList = (List<Tag>) getTungstenListObject(Tag.class, networkPolicy.getTag());
+            } else if (applicationPolicySetUuid != null) {
+                ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
+                tagList = (List<Tag>) getTungstenListObject(Tag.class, applicationPolicySet.getTag());
             } else {
                 tagList = (List<Tag>) getTungstenListObject(Tag.class);
             }
 
-            return getObjectList(tagList, tagUuid);
+            return getObjectList(filterSystemTag(tagList), tagUuid);
         } catch (IOException e) {
             return new ArrayList<>();
         }
@@ -1682,7 +1728,7 @@ public class TungstenApi {
                     }
                 }
             }
-            return tagTypeList;
+            return filterSystemTagType(tagTypeList);
         } catch (IOException e) {
             return new ArrayList<>();
         }
@@ -1741,7 +1787,7 @@ public class TungstenApi {
                     }
                 }
             }
-            return applicationPolicySetList;
+            return filterSystemApplicationPolicySet(applicationPolicySetList);
         } catch (IOException e) {
             return new ArrayList<>();
         }
@@ -1906,42 +1952,6 @@ public class TungstenApi {
             Status status = apiConnector.update(networkPolicy);
             status.ifFailure(errorHandler);
             return apiConnector.findById(NetworkPolicy.class, policyUuid);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public ApiObjectBase removeTungstenFirewallPolicy(String applicationPolicySetUuid, String firewallPolicyUuid) {
-        try {
-            ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(
-                ApplicationPolicySet.class, applicationPolicySetUuid);
-            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
-                firewallPolicyUuid);
-            if (applicationPolicySet == null || firewallPolicy == null) {
-                return null;
-            }
-            applicationPolicySet.removeFirewallPolicy(firewallPolicy, new FirewallSequence());
-            applicationPolicySet.clearTag();
-            Status status = apiConnector.update(applicationPolicySet);
-            status.ifFailure(errorHandler);
-            return apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public ApiObjectBase removeTungstenFirewallRule(String firewallPolicyUuid, String firewallRuleUuid) {
-        try {
-            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
-                firewallPolicyUuid);
-            FirewallRule firewallRule = (FirewallRule) apiConnector.findById(FirewallRule.class, firewallRuleUuid);
-            if (firewallPolicy == null || firewallRule == null) {
-                return null;
-            }
-            firewallPolicy.removeFirewallRule(firewallRule, new FirewallSequence());
-            Status status = apiConnector.update(firewallPolicy);
-            status.ifFailure(errorHandler);
-            return apiConnector.findById(FirewallPolicy.class, firewallPolicyUuid);
         } catch (IOException e) {
             return null;
         }
@@ -2481,8 +2491,7 @@ public class TungstenApi {
         }
     }
 
-    public List<RouteTable> filterTungstenRouteTableByNetwork(List<RouteTable> routeTables, String networkUuid,
-        boolean isAttachedToNetwork) {
+    public List<RouteTable> filterTungstenRouteTableByNetwork(List<RouteTable> routeTables, String networkUuid, boolean isAttachedToNetwork) {
         List<RouteTable> routeTablesAttachedToNetwork = new ArrayList<>();
         boolean networkFounded = false;
         for (RouteTable item : routeTables) {
@@ -2830,7 +2839,7 @@ public class TungstenApi {
         }
     }
 
-    public List<? extends ApiObjectBase> listRoutingLogicalRouter(String logicalRouterUuid) {
+    public List<? extends ApiObjectBase> listRoutingLogicalRouter(String networkUuid, String logicalRouterUuid) {
         try {
             List<LogicalRouter> logicalRouterList = new ArrayList<>();
             List<LogicalRouter> logicalRouters = (List<LogicalRouter>) apiConnector.list(LogicalRouter.class, null);
@@ -2842,14 +2851,12 @@ public class TungstenApi {
                                 (LogicalRouter) apiConnector.findById(LogicalRouter.class, logicalRouterUuid));
                         }
                     } else {
-                        if (logicalRouter.getName().startsWith(TungstenUtils.ROUTINGLR_NAME)) {
-                            logicalRouterList.add(
-                                (LogicalRouter) apiConnector.findById(LogicalRouter.class, logicalRouter.getUuid()));
-                        }
+                        logicalRouterList.add(
+                            (LogicalRouter) apiConnector.findById(LogicalRouter.class, logicalRouter.getUuid()));
                     }
                 }
             }
-            return logicalRouterList;
+            return filterSystemLogicalRouter(logicalRouterList);
         } catch (IOException e) {
             return new ArrayList<>();
         }
@@ -3194,5 +3201,48 @@ public class TungstenApi {
             return null;
         }
         return null;
+    }
+
+    private List<Tag> filterSystemTag(List<Tag> tagList) {
+        List<Tag> result = new ArrayList<>();
+        for(Tag tag : tagList) {
+            String[] tagTypeList = StringUtils.split(tag.getName(), "=");
+            if (tagTypeList.length == 2) {
+                if (!tagTypeList[1].startsWith("fabric")) {
+                    result.add(tag);
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<TagType> filterSystemTagType(List<TagType> tagTypeList) {
+        List<TagType> result = new ArrayList<>();
+        for(TagType tagType : tagTypeList) {
+            if (!tagType.getName().startsWith("neutron")) {
+                result.add(tagType);
+            }
+        }
+        return result;
+    }
+
+    private List<ApplicationPolicySet> filterSystemApplicationPolicySet(List<ApplicationPolicySet> applicationPolicySetList) {
+        List<ApplicationPolicySet> result = new ArrayList<>();
+        for(ApplicationPolicySet applicationPolicySet : applicationPolicySetList) {
+            if (!applicationPolicySet.getName().startsWith("default")) {
+                result.add(applicationPolicySet);
+            }
+        }
+        return result;
+    }
+
+    private List<LogicalRouter> filterSystemLogicalRouter(List<LogicalRouter> logicalRouterList) {
+        List<LogicalRouter> result = new ArrayList<>();
+        for(LogicalRouter logicalRouter : logicalRouterList) {
+            if (logicalRouter.getName().startsWith(TungstenUtils.ROUTINGLR_NAME)) {
+                result.add(logicalRouter);
+            }
+        }
+        return result;
     }
 }

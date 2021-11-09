@@ -404,8 +404,6 @@ public class TungstenGuestNetworkGuruTest {
         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
 
         guru.release(nic, vm, "test");
-        verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(ReleaseTungstenFloatingIpCommand.class),
-            anyLong());
         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
             anyLong());
         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class),

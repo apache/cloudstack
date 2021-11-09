@@ -64,13 +64,16 @@ public class ListTungstenFabricTagCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric policy")
     private String policyUuid;
 
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    private String applicationPolicySetUuid;
+
     @Parameter(name = ApiConstants.TAG_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric tag")
     private String tagUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<BaseResponse> baseResponseList = tungstenService.listTungstenTags(zoneId, networkUuid, vmUuid, nicUuid, policyUuid, tagUuid);
+        List<BaseResponse> baseResponseList = tungstenService.listTungstenTags(zoneId, networkUuid, vmUuid, nicUuid, policyUuid, applicationPolicySetUuid, tagUuid);
         List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<BaseResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(pagingList);

@@ -53,13 +53,16 @@ public class ListTungstenFabricLogicalRouterCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric network")
+    private String networkUuid;
+
     @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric logical router")
     private String logicalRouterUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<BaseResponse> baseResponseList = tungstenService.listRoutingLogicalRouter(zoneId, logicalRouterUuid);
+        List<BaseResponse> baseResponseList = tungstenService.listRoutingLogicalRouter(zoneId, networkUuid, logicalRouterUuid);
         List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<BaseResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(pagingList);

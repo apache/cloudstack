@@ -35,6 +35,8 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogical
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 @APICommand(name = AddTungstenFabricNetworkGatewayToLogicalRouterCmd.APINAME, description = "add Tungsten-Fabric network gateway to logical router",
@@ -58,6 +60,11 @@ public class AddTungstenFabricNetworkGatewayToLogicalRouterCmd extends BaseAsync
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        List<String> networkList = tungstenService.listConnectedNetworkFromLogicalRouter(zoneId, logicalRouterUuid);
+        if (networkList.contains(networkUuid)) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, "Tungsten Fabric network was connected to logical router");
+        }
+
         BaseResponse response = tungstenService.addNetworkGatewayToLogicalRouter(zoneId, networkUuid, logicalRouterUuid);
         if (response == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Tungsten-Fabric network gateway to logical router");

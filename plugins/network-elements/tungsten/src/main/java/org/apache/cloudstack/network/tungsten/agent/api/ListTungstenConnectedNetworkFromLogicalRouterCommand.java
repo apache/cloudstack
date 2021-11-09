@@ -16,20 +16,14 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class RemoveTungstenFirewallPolicyCommand extends TungstenCommand {
-    private final String applicationPolicySetUuid;
-    private final String firewallPolicyUuid;
+public class ListTungstenConnectedNetworkFromLogicalRouterCommand extends TungstenCommand {
+    private final String logicalRouterUuid;
 
-    public RemoveTungstenFirewallPolicyCommand(final String applicationPolicySetUuid, final String firewallPolicyUuid) {
-        this.applicationPolicySetUuid = applicationPolicySetUuid;
-        this.firewallPolicyUuid = firewallPolicyUuid;
+    public ListTungstenConnectedNetworkFromLogicalRouterCommand(final String logicalRouterUuid) {
+        this.logicalRouterUuid = logicalRouterUuid;
     }
 
-    public String getApplicationPolicySetUuid() {
-        return applicationPolicySetUuid;
-    }
-
-    public String getFirewallPolicyUuid() {
-        return firewallPolicyUuid;
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
     }
 }

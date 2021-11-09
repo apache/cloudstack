@@ -20,18 +20,30 @@ import java.util.UUID;
 
 public class CreateTungstenFirewallPolicyCommand extends TungstenCommand {
     private final String uuid;
+    private final String applicationPolicySetUuid;
     private final String name;
+    private final int sequence;
 
-    public CreateTungstenFirewallPolicyCommand(final String name) {
+    public CreateTungstenFirewallPolicyCommand(final String name, final String applicationPolicySetUuid, final int sequence) {
         this.uuid = UUID.randomUUID().toString();
+        this.applicationPolicySetUuid = applicationPolicySetUuid;
         this.name = name;
+        this.sequence = sequence;
     }
 
     public String getUuid() {
         return uuid;
     }
 
+    public String getApplicationPolicySetUuid() {
+        return applicationPolicySetUuid;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public int getSequence() {
+        return sequence;
     }
 }

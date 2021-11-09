@@ -62,18 +62,21 @@ public class ApplyTungstenFabricTagCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric policy")
     private String policyUuid;
 
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    private String applicationPolicySetUuid;
+
     @Parameter(name = ApiConstants.TAG_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric tag")
     private String tagUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        if (networkUuids == null && nicUuids == null && vmUuids == null && policyUuid == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Need network, vm, nic or policy parameter");
+        if (networkUuids == null && nicUuids == null && vmUuids == null && policyUuid == null && applicationPolicySetUuid == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Need network, vm, nic, policy or applicationpolicyset parameter");
         }
 
         TungstenFabricTagResponse tungstenFabricTagResponse = tungstenService.applyTungstenTag(zoneId, networkUuids,
-            vmUuids, nicUuids, policyUuid, tagUuid);
+            vmUuids, nicUuids, policyUuid, applicationPolicySetUuid, tagUuid);
 
         if (tungstenFabricTagResponse == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to applied Tungsten-Fabric tag");

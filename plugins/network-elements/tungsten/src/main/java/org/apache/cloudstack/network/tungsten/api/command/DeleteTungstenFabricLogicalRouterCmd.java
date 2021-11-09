@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 @APICommand(name = DeleteTungstenFabricLogicalRouterCmd.APINAME, description = "delete Tungsten-Fabric logical router",
@@ -54,6 +56,11 @@ public class DeleteTungstenFabricLogicalRouterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        List<String> networkList = tungstenService.listConnectedNetworkFromLogicalRouter(zoneId, logicalRouterUuid);
+        if (networkList.size() > 0) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, "Tungsten-Fabric logical router still have connected network");
+        }
+
         boolean result = tungstenService.deleteLogicalRouter(zoneId, logicalRouterUuid);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

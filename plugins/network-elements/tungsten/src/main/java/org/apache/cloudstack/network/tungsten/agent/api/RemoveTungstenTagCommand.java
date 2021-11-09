@@ -23,14 +23,16 @@ public class RemoveTungstenTagCommand extends TungstenCommand {
     private final List<String> vmUuids;
     private final List<String> nicUuids;
     private final String policyUuid;
+    private final String applicationPolicySetUuid;
     private final String tagUuid;
 
     public RemoveTungstenTagCommand(final List<String> networkUuids, final List<String> vmUuids,
-        final List<String> nicUuids, final String policyUuid, final String tagUuid) {
+        final List<String> nicUuids, final String policyUuid, final String applicationPolicySetUuid, final String tagUuid) {
         this.networkUuids = networkUuids;
         this.vmUuids = vmUuids;
         this.nicUuids = nicUuids;
         this.policyUuid = policyUuid;
+        this.applicationPolicySetUuid = applicationPolicySetUuid;
         this.tagUuid = tagUuid;
     }
 
@@ -48,6 +50,10 @@ public class RemoveTungstenTagCommand extends TungstenCommand {
 
     public String getPolicyUuid() {
         return policyUuid;
+    }
+
+    public String getApplicationPolicySetUuid() {
+        return applicationPolicySetUuid;
     }
 
     public String getTagUuid() {

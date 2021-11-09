@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.model;
 
+import net.juniper.tungsten.api.types.ApplicationPolicySet;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.Tag;
 import net.juniper.tungsten.api.types.VirtualMachine;
@@ -30,18 +31,20 @@ public class TungstenTag implements TungstenModel {
     private List<VirtualMachine> virtualMachineList;
     private List<VirtualMachineInterface> virtualMachineInterfaceList;
     private List<NetworkPolicy> networkPolicyList;
+    private List<ApplicationPolicySet> applicationPolicySetList;
 
     public TungstenTag() {
     }
 
     public TungstenTag(final Tag tag, final List<VirtualNetwork> virtualNetworkList,
         final List<VirtualMachine> virtualMachineList, final List<VirtualMachineInterface> virtualMachineInterfaceList,
-        final List<NetworkPolicy> networkPolicyList) {
+        final List<NetworkPolicy> networkPolicyList, final List<ApplicationPolicySet> applicationPolicySetList) {
         this.tag = tag;
         this.virtualNetworkList = virtualNetworkList;
         this.virtualMachineList = virtualMachineList;
         this.virtualMachineInterfaceList = virtualMachineInterfaceList;
         this.networkPolicyList = networkPolicyList;
+        this.applicationPolicySetList = applicationPolicySetList;
     }
 
     public Tag getTag() {
@@ -82,5 +85,13 @@ public class TungstenTag implements TungstenModel {
 
     public void setVirtualNetworkList(final List<VirtualNetwork> virtualNetworkList) {
         this.virtualNetworkList = virtualNetworkList;
+    }
+
+    public List<ApplicationPolicySet> getApplicationPolicySetList() {
+        return applicationPolicySetList;
+    }
+
+    public void setApplicationPolicySetList(final List<ApplicationPolicySet> applicationPolicySetList) {
+        this.applicationPolicySetList = applicationPolicySetList;
     }
 }

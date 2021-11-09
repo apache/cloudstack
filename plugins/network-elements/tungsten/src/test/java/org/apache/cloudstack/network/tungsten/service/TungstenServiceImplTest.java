@@ -133,8 +133,6 @@ import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
@@ -203,8 +201,6 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenServiceGroup
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagTypeCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkGatewayFromLogicalRouterCommand;
@@ -1035,7 +1031,7 @@ public class TungstenServiceImplTest {
         doReturn(Arrays.asList(virtualNetwork)).when(listTungstenNetworkAnswer).getApiObjectBaseList();
         when((virtualNetwork.getName())).thenReturn("guestNetwork1");
 
-        assertNotNull(tungstenService.listTungstenNetwork(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+        assertNotNull(tungstenService.listTungstenNetwork(1L, "948f421c-edde-4518-a391-09299cc25dc2", false));
     }
 
     @Test
@@ -1187,6 +1183,7 @@ public class TungstenServiceImplTest {
         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
         VirtualMachine virtualMachine = mock(VirtualMachine.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+        ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagCommand.class), anyLong())).thenReturn(listTungstenTagAnswer);
         when(listTungstenTagAnswer.getResult()).thenReturn(true);
@@ -1196,10 +1193,11 @@ public class TungstenServiceImplTest {
         doReturn(Arrays.asList(virtualMachine)).when(tungstenTag).getVirtualMachineList();
         doReturn(Arrays.asList(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
         doReturn(Arrays.asList(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+        doReturn(Arrays.asList(applicationPolicySet)).when(tungstenTag).getApplicationPolicySetList();
 
         assertNotNull(tungstenService.listTungstenTags(1L, "948f421c-edde-4518-a391-09299cc25dc2"
         , "8b4637b6-5629-46de-8fb2-d0b0502bfa85", "8d097a79-a38d-4db4-8a41-16f15d9c5afa", "a329662e-1805-4a89-9b05-2b818ea35978",
-            "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"));
+            "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb", "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652"));
     }
 
     @Test
@@ -1270,7 +1268,8 @@ public class TungstenServiceImplTest {
         when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(Arrays.asList(virtualMachineInterface));
 
         assertNotNull(tungstenService.applyTungstenTag(1L, Arrays.asList("948f421c-edde-4518-a391-09299cc25dc2"), Arrays.asList("8b4637b6-5629-46de-8fb2-d0b0502bfa85")
-            , Arrays.asList("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"));
+            , Arrays.asList("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"
+        , "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652"));
     }
 
     @Test
@@ -1308,8 +1307,10 @@ public class TungstenServiceImplTest {
         when(tungstenTag.getVirtualMachineList()).thenReturn(Arrays.asList(virtualMachine));
         when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(Arrays.asList(virtualMachineInterface));
 
-        assertNotNull(tungstenService.removeTungstenTag(1L, Arrays.asList("948f421c-edde-4518-a391-09299cc25dc2"), Arrays.asList("8b4637b6-5629-46de-8fb2-d0b0502bfa85")
-            , Arrays.asList("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"));
+        assertNotNull(tungstenService.removeTungstenTag(1L, Arrays.asList("948f421c-edde-4518-a391-09299cc25dc2"),
+            Arrays.asList("8b4637b6-5629-46de-8fb2-d0b0502bfa85"),
+            Arrays.asList("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", null,
+            "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"));
     }
 
     @Test
@@ -1370,9 +1371,9 @@ public class TungstenServiceImplTest {
         when(firewallRuleEndpointType2.getAddressGroup()).thenReturn("address:group");
         when(firewallRule.getMatchTags()).thenReturn(firewallRuleMatchTagsType);
 
-        assertNotNull(tungstenService.createTungstenFirewallRule(1L, "test", "pass", "948f421c-edde-4518-a391-09299cc25dc2",
-            "8b4637b6-5629-46de-8fb2-d0b0502bfa85", "8d097a79-a38d-4db4-8a41-16f15d9c5afa", "<>", "a329662e-1805-4a89-9b05-2b818ea35978"
-        , "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb", "df8e4490-2a40-4d63-a6f3-1f829ffe4fc6"));
+        assertNotNull(tungstenService.createTungstenFirewallRule(1L, "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "test", "pass", "948f421c-edde-4518-a391-09299cc25dc2",
+            "8b4637b6-5629-46de-8fb2-d0b0502bfa85", "8d097a79-a38d-4db4-8a41-16f15d9c5afa", null, "<>", "a329662e-1805-4a89-9b05-2b818ea35978"
+        , "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb", null, "df8e4490-2a40-4d63-a6f3-1f829ffe4fc6", 1));
     }
 
     @Test
@@ -1387,7 +1388,7 @@ public class TungstenServiceImplTest {
         when(firewallPolicy.getFirewallRule()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
         when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
 
-        assertNotNull(tungstenService.createTungstenFirewallPolicy(1L, "test"));
+        assertNotNull(tungstenService.createTungstenFirewallPolicy(1L, "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652","test", 1));
     }
 
     @Test
@@ -1406,41 +1407,6 @@ public class TungstenServiceImplTest {
         when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
 
         assertNotNull(tungstenService.createTungstenApplicationPolicySet(1L, "test"));
-    }
-
-    @Test
-    public void addTungstenFirewallPolicyTest() {
-        TungstenAnswer addTungstenFirewallPolicyAnswer = mock(TungstenAnswer.class);
-        ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(addTungstenFirewallPolicyAnswer);
-        when(addTungstenFirewallPolicyAnswer.getResult()).thenReturn(true);
-        when(addTungstenFirewallPolicyAnswer.getApiObjectBase()).thenReturn(applicationPolicySet);
-        when(applicationPolicySet.getTag()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("tag"));
-        when(applicationPolicySet.getFirewallPolicy()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
-
-        assertNotNull(tungstenService.addTungstenFirewallPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85",
-            "8d097a79-a38d-4db4-8a41-16f15d9c5afa", 1));
-    }
-
-    @Test
-    public void addTungstenFirewallRuleTest() {
-        TungstenAnswer addTungstenFirewallRuleAnswer = mock(TungstenAnswer.class);
-        FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenFirewallRuleCommand.class), anyLong())).thenReturn(addTungstenFirewallRuleAnswer);
-        when(addTungstenFirewallRuleAnswer.getResult()).thenReturn(true);
-        when(addTungstenFirewallRuleAnswer.getApiObjectBase()).thenReturn(firewallPolicy);
-        when(firewallPolicy.getFirewallRule()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
-
-        assertNotNull(tungstenService.addTungstenFirewallRule(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-        , "8b4637b6-5629-46de-8fb2-d0b0502bfa85", 1));
     }
 
     @Test
@@ -1586,39 +1552,6 @@ public class TungstenServiceImplTest {
         when(tungstenAnswer.getResult()).thenReturn(true);
 
         assertTrue(tungstenService.deleteTungstenAddressGroup(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
-    }
-
-    @Test
-    public void removeTungstenFirewallPolicyTest() {
-        TungstenAnswer removeTungstenFirewallPolicyAnswer = mock(TungstenAnswer.class);
-        ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(removeTungstenFirewallPolicyAnswer);
-        when(removeTungstenFirewallPolicyAnswer.getResult()).thenReturn(true);
-        when(removeTungstenFirewallPolicyAnswer.getApiObjectBase()).thenReturn(applicationPolicySet);
-        when(applicationPolicySet.getTag()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("tag"));
-        when(applicationPolicySet.getFirewallPolicy()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
-
-        assertNotNull(tungstenService.removeTungstenFirewallPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
-    }
-
-    @Test
-    public void removeTungstenFirewallRuleTest() {
-        TungstenAnswer removeTungstenFirewallRuleAnswer = mock(TungstenAnswer.class);
-        FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenFirewallRuleCommand.class), anyLong())).thenReturn(removeTungstenFirewallRuleAnswer);
-        when(removeTungstenFirewallRuleAnswer.getResult()).thenReturn(true);
-        when(removeTungstenFirewallRuleAnswer.getApiObjectBase()).thenReturn(firewallPolicy);
-        when(firewallPolicy.getFirewallRule()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
-
-        assertNotNull(tungstenService.removeTungstenFirewallRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
 
     @Test
@@ -2006,7 +1939,7 @@ public class TungstenServiceImplTest {
         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
         when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
 
-        assertNotNull(tungstenService.listRoutingLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+        assertNotNull(tungstenService.listRoutingLogicalRouter(1L, null, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
 
     @Test

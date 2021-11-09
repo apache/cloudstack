@@ -326,4 +326,13 @@ public class TungstenUtils {
 
         return null;
     }
+
+    public static String getNameFromNetwork(String network) {
+        if (network.startsWith(GUEST_NETWORK_NAME)) {
+            String[] name = network.split("-");
+            return name[0].replaceFirst(GUEST_NETWORK_NAME, "");
+        } else {
+            return network;
+        }
+    }
 }

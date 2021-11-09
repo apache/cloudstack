@@ -35,6 +35,8 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogical
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 @APICommand(name = RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd.APINAME, description = "remove Tungsten-Fabric network gateway from logical router",
@@ -58,6 +60,11 @@ public class RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd extends Base
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        List<String> networkList = tungstenService.listConnectedNetworkFromLogicalRouter(zoneId, logicalRouterUuid);
+        if (!networkList.contains(networkUuid)) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, "Tungsten-Fabric network is not connect to logical router");
+        }
+
         BaseResponse response = tungstenService.removeNetworkGatewayFromLogicalRouter(zoneId, networkUuid, logicalRouterUuid);
         if (response == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Tungsten-Fabric network gateway from routing logical router");

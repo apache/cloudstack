@@ -50,6 +50,9 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric firewall policy")
+    private String firewallPolicyUuid;
+
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric firewall rule name")
     private String name;
 
@@ -65,6 +68,9 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SRC_ADDRESS_GROUP_UUID, type = CommandType.STRING, description = "Tungsten-Fabric firewall rule source address group uuid")
     private String srcAddressGroupUuid;
 
+    @Parameter(name = ApiConstants.SRC_NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric source network")
+    private String srcNetworkUuid;
+
     @Parameter(name = ApiConstants.DIRECTION, type = CommandType.STRING, required = true, description = "Tungsten-Fabric firewall rule direction")
     private String direction;
 
@@ -74,8 +80,14 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.DEST_ADDRESS_GROUP_UUID, type = CommandType.STRING, description = "Tungsten-Fabric firewall rule destination address group uuid")
     private String destAddressGroupUuid;
 
+    @Parameter(name = ApiConstants.DEST_NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric destination network")
+    private String destNetworkUuid;
+
     @Parameter(name = ApiConstants.TAG_TYPE_UUID, type = CommandType.STRING, description = "Tungsten-Fabric firewall rule tag type uuid")
     private String tagTypeUuid;
+
+    @Parameter(name = ApiConstants.SEQUENCE, type = CommandType.INTEGER, required = true, description = "the sequence of Tungsten-Fabric firewall rule")
+    private int sequence;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
@@ -84,8 +96,8 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
             direction.equals(ApiConstants.ONE_WAY) ? TungstenUtils.ONE_WAY_DIRECTION : TungstenUtils.TWO_WAY_DIRECTION;
         TungstenFabricFirewallRuleResponse tungstenFabricFirewallRuleResponse =
             tungstenService.createTungstenFirewallRule(
-            zoneId, name, action, serviceGroupUuid, srcTagUuid, srcAddressGroupUuid, tungstenDirection, destTagUuid,
-            destAddressGroupUuid, tagTypeUuid);
+            zoneId, firewallPolicyUuid, name, action, serviceGroupUuid, srcTagUuid, srcAddressGroupUuid, srcNetworkUuid, tungstenDirection, destTagUuid,
+            destAddressGroupUuid, destNetworkUuid, tagTypeUuid, sequence);
         if (tungstenFabricFirewallRuleResponse == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Tungsten-Fabric firewall rule");
         } else {

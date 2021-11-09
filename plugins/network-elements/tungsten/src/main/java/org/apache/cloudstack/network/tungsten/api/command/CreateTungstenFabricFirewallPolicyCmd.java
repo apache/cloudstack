@@ -49,15 +49,21 @@ public class CreateTungstenFabricFirewallPolicyCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    private String applicationPolicySetUuid;
+
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric firewall policy name")
     private String name;
+
+    @Parameter(name = ApiConstants.SEQUENCE, type = CommandType.INTEGER, required = true, description = "the sequence of Tungsten-Fabric firewall policy")
+    private int sequence;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         TungstenFabricFirewallPolicyResponse tungstenFabricFirewallPolicyResponse =
             tungstenService.createTungstenFirewallPolicy(
-            zoneId, name);
+            zoneId, applicationPolicySetUuid, name, sequence);
         if (tungstenFabricFirewallPolicyResponse == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
                 "Failed to create Tungsten-Fabric firewall policy");
