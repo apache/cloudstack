@@ -55,6 +55,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.ini4j.Ini;
 
@@ -120,6 +121,8 @@ public class SystemVmTemplateRegistration {
     @Inject
     ConfigurationDao configurationDao;
 
+    private String systemVmTemplateVersion;
+
     public SystemVmTemplateRegistration() {
         dataCenterDao = new DataCenterDaoImpl();
         vmTemplateDao = new VMTemplateDaoImpl();
@@ -129,6 +132,21 @@ public class SystemVmTemplateRegistration {
         imageStoreDao = new ImageStoreDaoImpl();
         clusterDao = new ClusterDaoImpl();
         configurationDao = new ConfigurationDaoImpl();
+    }
+
+    /**
+     * Convenience constructor method to use when there is no system VM template change for a new version.
+     */
+    public SystemVmTemplateRegistration(String systemVmTemplateVersion) {
+        this();
+        this.systemVmTemplateVersion = systemVmTemplateVersion;
+    }
+
+    public String getSystemVmTemplateVersion() {
+        if (StringUtils.isEmpty(systemVmTemplateVersion)) {
+            return String.format("%s.%s", CS_MAJOR_VERSION, CS_TINY_VERSION);
+        }
+        return systemVmTemplateVersion;
     }
 
     private static class SystemVMTemplateDetails {
@@ -658,7 +676,7 @@ public class SystemVmTemplateRegistration {
                     hypervisorImageFormat.get(hypervisor), hypervisorGuestOsMap.get(hypervisor), storeUrlAndId.second(), null, filePath, true);
             Map<String, String> configParams = new HashMap<>();
             configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
-            configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_TINY_VERSION);
+            configParams.put("minreq.sysvmtemplate.version", getSystemVmTemplateVersion());
             updateConfigurationParams(configParams);
             updateSystemVMEntries(templateId, hypervisorAndTemplateName.first());
         } catch (Exception e) {
@@ -809,7 +827,7 @@ public class SystemVmTemplateRegistration {
         // Change value of global configuration parameter router.template.* for the corresponding hypervisor and minreq.sysvmtemplate.version for the ACS version
         Map<String, String> configParams = new HashMap<>();
         configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
-        configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_TINY_VERSION);
+        configParams.put("minreq.sysvmtemplate.version", getSystemVmTemplateVersion());
         updateConfigurationParams(configParams);
     }
 
@@ -854,11 +872,11 @@ public class SystemVmTemplateRegistration {
                                     registerTemplates(hypervisorsListInUse);
                                     break;
                                 } catch (final Exception e) {
-                                    throw new CloudRuntimeException(String.format("%s.%s %s SystemVm template not found. Cannot upgrade system Vms", CS_MAJOR_VERSION, CS_TINY_VERSION, hypervisorAndTemplateName.getKey()));
+                                    throw new CloudRuntimeException(String.format("%s %s SystemVm template not found. Cannot upgrade system Vms", getSystemVmTemplateVersion(), hypervisorAndTemplateName.getKey()));
                                 }
                             } else {
-                                LOGGER.warn(String.format("%s.%s %s SystemVm template not found. Cannot upgrade system Vms hypervisor is not used, so not failing upgrade",
-                                        CS_MAJOR_VERSION, CS_TINY_VERSION, hypervisorAndTemplateName.getKey()));
+                                LOGGER.warn(String.format("%s %s SystemVm template not found. Cannot upgrade system Vms hypervisor is not used, so not failing upgrade",
+                                        getSystemVmTemplateVersion(), hypervisorAndTemplateName.getKey()));
                                 // Update the latest template URLs for corresponding hypervisor
                                 VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisor(hypervisorAndTemplateName.getKey(), Storage.TemplateType.SYSTEM);
                                 if (templateVO != null) {
