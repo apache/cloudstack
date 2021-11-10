@@ -41,7 +41,6 @@ import java.util.Vector;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -52,6 +51,7 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIp6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
@@ -112,6 +112,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -135,6 +136,7 @@ import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.PodGuestIp6PrefixVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -148,6 +150,7 @@ import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.PodGuestIp6PrefixDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
@@ -264,8 +267,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Sets;
+import com.googlecode.ipv6.IPv6Address;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -412,6 +415,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private AnnotationDao annotationDao;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
+    @Inject
+    PodGuestIp6PrefixDao podGuestIp6PrefixDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -1297,6 +1302,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String gateway = cmd.getGateWay();
         final String netmask = cmd.getNetmask();
         final String startIp = cmd.getStartIp();
+        final String ip6Cidr = cmd.getCidr();
+        final boolean isIp6Range = cmd.isIp6Range();
         String endIp = cmd.getEndIp();
         final boolean forSystemVms = cmd.isForSystemVms();
         String vlan = cmd.getVlan();
@@ -1315,11 +1322,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final long zoneId = pod.getDataCenterId();
 
-        if(!NetUtils.isValidIp4(gateway)) {
+        if(!NetUtils.isValidIp4(gateway) && !NetUtils.isValidIp6(gateway)) {
             throw new InvalidParameterValueException("The gateway IP address is invalid.");
         }
 
-        if(!NetUtils.isValidIp4Netmask(netmask)) {
+        if(!isIp6Range && !NetUtils.isValidIp4Netmask(netmask)) {
             throw new InvalidParameterValueException("The netmask IP address is invalid.");
         }
 
@@ -1327,10 +1334,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             endIp = startIp;
         }
 
-        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidr = isIp6Range ? ip6Cidr : NetUtils.ipAndNetMaskToCidr(gateway, netmask);
 
-        if(!NetUtils.isValidIp4Cidr(cidr)) {
+        if(!isIp6Range && !NetUtils.isValidIp4Cidr(cidr)) {
             throw new InvalidParameterValueException("The CIDR is invalid " + cidr);
+        }
+
+        if(isIp6Range && !NetUtils.isValidIp6Cidr(cidr)) {
+            throw new InvalidParameterValueException("The CIDR is invalid " + cidr);
+        }
+
+        if (isIp6Range) {
+            return createPodIp6Range(pod, gateway, cidr, startIp, endIp, cmd.getVlan());
         }
 
         final String cidrAddress = pod.getCidrAddress();
@@ -1421,6 +1436,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Failed to create Pod IP range. Please contact Cloud Support.");
         }
 
+        return pod;
+    }
+
+    private Pod createPodIp6Range(HostPodVO pod, String gateway, String cidr, String startIp, String endIp, String vlan) {
+        Integer vlanId = null;
+        if (vlan != null && !vlan.equalsIgnoreCase("untagged")) {
+            try {
+                vlanId = Integer.valueOf(vlan);
+            } catch (NumberFormatException nfe) {
+                throw new InvalidParameterValueException("The VLAN is invalid");
+            }
+        }
+        PodManagementIp6RangeVO ip6RangeVO = new PodManagementIp6RangeVO(pod.getDataCenterId(), pod.getId(), gateway, cidr, vlanId, startIp, endIp);
+        podManagementIp6RangeDao.persist(ip6RangeVO);
         return pod;
     }
 
@@ -1707,6 +1736,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("The IP range does not contain some IP addresses that have "
                     + "already been taken. Please adjust your IP range to include all IP addresses already taken.");
         }
+    }
+
+    @Override
+    @DB
+    public Pod createPodGuestIp6Prefix(final CreateGuestNetworkIp6PrefixCmd cmd) throws ConcurrentOperationException {
+        final long podId = cmd.getPodId();
+        final HostPodVO pod = _podDao.findById(podId);
+        if (pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
+        }
+
+        final String prefix = cmd.getPrefix();
+
+        try {
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    final long zoneId = pod.getDataCenterId();
+                    PodGuestIp6PrefixVO podGuestIp6PrefixVO = new PodGuestIp6PrefixVO(zoneId, podId, prefix);
+                    podGuestIp6PrefixDao.persist(podGuestIp6PrefixVO);
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to update Pod " + podId + " IP range due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+        }
+        return pod;
     }
 
     @Override
@@ -3823,9 +3880,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 zoneId = network.getDataCenterId();
                 physicalNetworkId = network.getPhysicalNetworkId();
             }
-        } else if (ipv6) {
+        }/* else if (ipv6) {
             throw new InvalidParameterValueException("Only support IPv6 on extending existed network");
-        }
+        }*/
 
         // Verify that zone exists
         final DataCenterVO zone = _zoneDao.findById(zoneId);
@@ -3833,11 +3890,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
 
-        if (ipv6) {
-            if (network.getGuestType() != GuestType.Shared || zone.isSecurityGroupEnabled()) {
-                throw new InvalidParameterValueException("Only support IPv6 on extending existed share network without SG");
-            }
-        }
+//        if (ipv6) {
+//            if (network.getGuestType() != GuestType.Shared || zone.isSecurityGroupEnabled()) {
+//                throw new InvalidParameterValueException("Only support IPv6 on extending existed share network without SG");
+//            }
+//        }
         // verify that physical network exists
         PhysicalNetworkVO pNtwk = null;
         if (physicalNetworkId != null) {
@@ -5330,6 +5387,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public NetworkOffering createNetworkOffering(final CreateNetworkOfferingCmd cmd) {
         final String name = cmd.getNetworkOfferingName();
         final String displayText = cmd.getDisplayText();
+        final NetworkOffering.InternetProtocol internetProtocol = NetworkOffering.InternetProtocol.fromValue(cmd.getInternetProtocol());
         final String tags = cmd.getTags();
         final String trafficTypeString = cmd.getTraffictype();
         final boolean specifyVlan = cmd.getSpecifyVlan();
@@ -5623,7 +5681,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable, internetProtocol);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -5761,7 +5819,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering) {
+            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetworkOffering.InternetProtocol internetProtocol) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6013,6 +6071,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             for (Long zoneId : zoneIds) {
                                 detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.zoneid, String.valueOf(zoneId), false));
                             }
+                        }
+                        if (internetProtocol != null) {
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.internetProtocol, String.valueOf(internetProtocol), true));
                         }
                         if (!detailsVO.isEmpty()) {
                             networkOfferingDetailsDao.saveDetails(detailsVO);

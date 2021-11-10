@@ -14,19 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.event.EventTypes;
@@ -36,17 +36,17 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = CreateManagementNetworkIpRangeCmd.APINAME,
-        description = "Creates a Management network IP range.",
+@APICommand(name = CreateGuestNetworkIp6PrefixCmd.APINAME,
+        description = "Creates a Guest network IPv6 prefix.",
         responseObject = PodResponse.class,
-        since = "4.11.0.0",
+        since = "4.17.0.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateManagementNetworkIpRangeCmd.class);
+public class CreateGuestNetworkIp6PrefixCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateGuestNetworkIp6PrefixCmd.class);
 
-    public static final String APINAME = "createManagementNetworkIpRange";
+    public static final String APINAME = "createGuestNetworkIp6Prefix";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,47 +59,11 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             validations = {ApiArgValidator.PositiveNumber})
     private Long podId;
 
-    @Parameter(name = ApiConstants.GATEWAY,
+    @Parameter(name = ApiConstants.PREFIX,
             type = CommandType.STRING,
             required = true,
-            description = "The gateway for the management network.")
-    private String gateway;
-
-    @Parameter(name = ApiConstants.NETMASK,
-            type = CommandType.STRING,
-            description = "The netmask for the management network.")
-    private String netmask;
-
-    @Parameter(name = ApiConstants.CIDR,
-            type = CommandType.STRING,
-            description = "The CIDR for the management network.")
-    private String cidr;
-
-    @Parameter(name = ApiConstants.START_IP,
-            type = CommandType.STRING,
-            required = true,
-            description = "The starting IP address.")
-    private String startIp;
-
-    @Parameter(name = ApiConstants.END_IP,
-            type = CommandType.STRING,
-            description = "The ending IP address.")
-    private String endIp;
-
-    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS,
-            type = CommandType.BOOLEAN,
-            description = "Specify if range is dedicated for CPVM and SSVM.")
-    private Boolean forSystemVms;
-
-    @Parameter(name = ApiConstants.VLAN,
-            type = CommandType.STRING,
-            description = "Optional. The vlan id the ip range sits on, default to Null when it is not specified which means you network is not on any Vlan")
-    private String vlan;
-
-    @Parameter(name = ApiConstants.IP6_RANGE,
-            type = CommandType.BOOLEAN,
-            description = "Optional. Specify if the range is for IPv6. Default value is false")
-    private Boolean ip6Range;
+            description = "The /56 or higher IPv6 CIDR for network prefix.")
+    private String prefix;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -109,61 +73,29 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
         return podId;
     }
 
-    public String getGateWay() {
-        return gateway;
+    public String getPrefix() {
+        return prefix;
     }
-
-    public String getNetmask() {
-        return netmask;
-    }
-
-    public String getCidr() {
-        return cidr;
-    }
-
-    public String getStartIp() {
-        return startIp;
-    }
-
-    public String getEndIp() {
-        return endIp;
-    }
-
-    public Boolean isForSystemVms() {
-        return forSystemVms == null ? Boolean.FALSE : forSystemVms;
-    }
-
-    public String getVlan() {
-        if (vlan == null || vlan.isEmpty()) {
-            vlan = "untagged";
-        }
-        return vlan;
-    }
-
-    public boolean isIp6Range() {
-        return Boolean.TRUE.equals(ip6Range);
-    }
-
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_MANAGEMENT_IP_RANGE_CREATE;
+        return EventTypes.EVENT_PUBLIC_IP6_PREFIX_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating management ip range from " + getStartIp() + " to " + getEndIp() + " and gateway=" + getGateWay() + ", netmask=" + getNetmask() + " of pod=" + getPodId();
+        return "Creating public IPv6 prefix " + getPrefix() + " for pod=" + getPodId();
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
-        Pod result = _configService.createPodIpRange(this);
+        Pod result = _configService.createPodGuestIp6Prefix(this);
         if (result != null) {
             PodResponse response = _responseGenerator.createPodResponse(result, false);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Pod IP Range.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Pod Public IP6 prefix.");
         }
     }
 

@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -223,10 +222,12 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.PodGuestIp6PrefixVO;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.PodGuestIp6PrefixDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
@@ -304,6 +305,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.resource.RollingMaintenanceManager;
+import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
@@ -413,6 +415,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private AnnotationDao annotationDao;
     @Inject
     private UserStatisticsDao userStatsDao;
+    @Inject
+    PodGuestIp6PrefixDao podGuestIp6PrefixDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -846,7 +850,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         SearchCriteria<IPAddressVO> sc = sb.create();
         sc.setParameters("vlanId", vlanId);
         IPAddressVO userIpAddresVO = userIpAddressDao.findOneBy(sc);
-        return userIpAddresVO.isForSystemVms();
+        return userIpAddresVO != null ? userIpAddresVO.isForSystemVms() : false;
     }
 
     @Override
@@ -1122,6 +1126,18 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        List<PodManagementIp6RangeVO> ip6Ranges = podManagementIp6RangeDao.listByPodId(pod.getId());
+        List<IpRangeResponse> ip6RangesResponses = new ArrayList<>();
+        for (PodManagementIp6RangeVO ip6Range : ip6Ranges) {
+            IpRangeResponse response = new IpRangeResponse();
+            response.setGateway(ip6Range.getGateway());
+            response.setCidr(ip6Range.getCidr());
+            response.setVlanId(ip6Range.getVlan() != null ? BroadcastDomainType.Vlan.toUri(String.valueOf(ip6Range.getVlan())).toString() : BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
+            response.setStartIp(ip6Range.getStartIp());
+            response.setEndIp(ip6Range.getEndIp());
+            ip6RangesResponses.add(response);
+        }
+
         PodResponse podResponse = new PodResponse();
         podResponse.setId(pod.getUuid());
         podResponse.setName(pod.getName());
@@ -1132,6 +1148,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
         podResponse.setIpRanges(ipRanges);
+        if (CollectionUtils.isNotEmpty(ip6Ranges)) {
+            podResponse.setIp6Ranges(ip6RangesResponses);
+        }
         podResponse.setStartIp(startIps);
         podResponse.setEndIp(endIps);
         podResponse.setForSystemVms(forSystemVms);
@@ -1164,6 +1183,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
             podResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
+
+        List<PodGuestIp6PrefixVO> ip6Prefixes = podGuestIp6PrefixDao.listByPodId(pod.getId());
+        podResponse.setPublicIp6Prefixes(ip6Prefixes.stream().map(PodGuestIp6PrefixVO::getPrefix).collect(Collectors.toList()));
+
         podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         podResponse.setObjectName("pod");

@@ -17,6 +17,7 @@
 package com.cloud.offerings.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +52,9 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
+
+    private final List<NetworkOffering.InternetProtocol> ipv6EnabledProtocols = Arrays.asList(NetworkOffering.InternetProtocol.IPv6, NetworkOffering.InternetProtocol.DualStack);
+
     @Inject
     NetworkOfferingDetailsDao _detailsDao;
     @Inject
@@ -268,5 +272,12 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
                 "Offering for L2 networks with config drive user data VLAN",
                 true, true);
+    }
+
+    @Override
+    public boolean isIpv6Supported(Long offeringId) {
+        String internetProtocolStr = _detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol);
+        NetworkOffering.InternetProtocol internetProtocol = NetworkOffering.InternetProtocol.fromValue(internetProtocolStr);
+        return ipv6EnabledProtocols.contains(internetProtocol);
     }
 }

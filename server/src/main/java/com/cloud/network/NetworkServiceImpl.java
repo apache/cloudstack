@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -72,10 +74,12 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.dc.PodGuestIp6PrefixVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.dc.dao.PodGuestIp6PrefixDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
@@ -112,6 +116,7 @@ import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.Ip6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
@@ -206,6 +211,8 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.googlecode.ipv6.IPv6Network;
+import com.googlecode.ipv6.IPv6NetworkMask;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -332,6 +339,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NetworkAccountDao _networkAccountDao;
     @Inject
     VirtualMachineManager vmManager;
+    @Inject
+    PodGuestIp6PrefixDao podGuestIp6PrefixDao;
+    @Inject
+    Ip6GuestPrefixSubnetNetworkMapDao ip6GuestPrefixSubnetNetworkMapDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1338,6 +1349,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
+
+        if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {
+            ipv6 = _networkOfferingDao.isIpv6Supported(ntwkOff.getId());
+            if (ipv6) {
+                Pair<String, String> ip6GatewayCidr = getIp6GatewayCidr(ntwkOff.getId(), zoneId, owner.getId());
+                ip6Gateway = ip6GatewayCidr.first();
+                ip6Cidr = ip6GatewayCidr.second();
+            }
+        }
 
         if (StringUtils.isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
@@ -4740,6 +4760,48 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress};
+    }
+
+
+    private Pair<String, String> getGuestNetworkIp6GatewayAndCidr(long physicalNetworkId) throws ResourceAllocationException {
+        List<VlanVO> vlans = _vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(physicalNetworkId);
+        if (CollectionUtils.isEmpty(vlans)) {
+            throw new ResourceAllocationException("Unable to allocate IPv6 vlan network", Resource.ResourceType.network);
+        }
+        for (VlanVO vlan : vlans) {
+            vlan.
+        }
+        List<PodGuestIp6PrefixVO> prefixes = podGuestIp6PrefixDao.listByPodId(1);
+        if (CollectionUtils.isEmpty(prefixes)) {
+            throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
+        }
+        Ip6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
+        for (PodGuestIp6PrefixVO prefix : prefixes) {
+            ip6Subnet = ip6GuestPrefixSubnetNetworkMapDao.findFirstAvailable(prefix.getId());
+            if (ip6Subnet == null) {
+                Ip6GuestPrefixSubnetNetworkMapVO last = ip6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
+                String lastUsedSubnet = last != null ? last.getSubnet() : null;
+                final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
+                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(64));
+                while (splits.hasNext()) {
+                    IPv6Network i = splits.next();
+                    if (lastUsedSubnet == null) {
+                        ip6Subnet = new Ip6GuestPrefixSubnetNetworkMapVO(prefix.getId(), i.toString(), null, Ip6GuestPrefixSubnetNetworkMap.State.Allocated);
+                        break;
+                    }
+                    if (i.toString().equals(lastUsedSubnet)) {
+                        lastUsedSubnet = null;
+                    }
+                }
+            }
+            if (ip6Subnet != null) {
+                break;
+            }
+        }
+        if (ip6Subnet == null) {
+            throw new ResourceAllocationException("Unable to allocate IPv6 guest subnet for the network", Resource.ResourceType.network);
+        }
+        return new Pair<>(vlanip6Subnet.getSubnet());
     }
 
 }

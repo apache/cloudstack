@@ -69,4 +69,6 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      * Create default L2 network offerings
      */
     void persistDefaultL2NetworkOfferings();
+
+    boolean isIpv6Supported(Long offeringId);
 }

@@ -214,7 +214,8 @@ public interface ConfigurationManager {
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
                                             boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-                                            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering);
+                                            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
+                                            List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetworkOffering.InternetProtocol internetProtocol);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
         String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr)
@@ -252,7 +253,7 @@ public interface ConfigurationManager {
      * @throws
      * @throws
      */
-    Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationStateStr);
+    Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask, String allocationState);
 
     void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr);
 

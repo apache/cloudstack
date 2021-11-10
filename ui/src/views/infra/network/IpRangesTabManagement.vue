@@ -22,7 +22,7 @@
       type="dashed"
       icon="plus"
       style="margin-bottom: 20px; width: 100%"
-      @click="handleOpenAddIpRangeModal">
+      @click="handleOpenAddIp4RangeModal">
       {{ $t('label.add.ip.range') }}
     </a-button>
 
@@ -66,6 +66,42 @@
       </template>
     </a-pagination>
 
+    <br>
+    <br>
+    IPv6 Ranges
+
+    <a-button
+      :disabled="!('createManagementNetworkIpRange' in $store.getters.apis)"
+      type="dashed"
+      icon="plus"
+      style="margin-bottom: 20px; width: 100%"
+      @click="handleOpenAddIp6RangeModal">
+      {{ $t('Add IPv6 Range') }}
+    </a-button>
+    <a-table
+      style="overflow-y: auto"
+      size="small"
+      :columns="ip6Columns"
+      :dataSource="ip6Ranges"
+      :rowKey="record => record.id + record.startip"
+      :pagination="false"
+    >
+      <template slot="forsystemvms" slot-scope="text, record">
+        <a-checkbox :checked="record.forsystemvms" />
+      </template>
+      <template slot="actions" slot-scope="record">
+        <div class="actions">
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.remove.ip.range')"
+            :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
+            icon="delete"
+            type="danger"
+            @click="handleDeleteIpRange(record)" />
+        </div>
+      </template>
+    </a-table>
+
     <a-modal
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
@@ -98,7 +134,12 @@
             v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.netmask')" class="form__item">
+        <a-form-item :label="$t('label.cidr')" class="form__item" v-if="addingIp6Range">
+          <a-input
+            v-decorator="['cidr', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+          </a-input>
+        </a-form-item>
+        <a-form-item :label="$t('label.netmask')" class="form__item" v-else>
           <a-input
             v-decorator="['netmask', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
@@ -118,7 +159,7 @@
             v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.system.vms')" class="form__item">
+        <a-form-item :label="$t('label.system.vms')" class="form__item" v-if="!addingIp6Range">
           <a-checkbox v-decorator="['vms']"></a-checkbox>
         </a-form-item>
 
@@ -200,7 +241,42 @@ export default {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
-      ]
+      ],
+      ip6Ranges: [],
+      ip6Columns: [
+        {
+          title: this.$t('label.podid'),
+          dataIndex: 'name'
+        },
+        {
+          title: this.$t('label.gateway'),
+          dataIndex: 'gateway'
+        },
+        {
+          title: this.$t('label.cidr'),
+          dataIndex: 'cidr'
+        },
+        {
+          title: this.$t('label.vlan'),
+          dataIndex: 'vlanid',
+          scopedSlots: { customRender: 'vlan' }
+        },
+        {
+          title: this.$t('label.startip'),
+          dataIndex: 'startip',
+          scopedSlots: { customRender: 'startip' }
+        },
+        {
+          title: this.$t('label.endip'),
+          dataIndex: 'endip',
+          scopedSlots: { customRender: 'endip' }
+        },
+        {
+          title: this.$t('label.action'),
+          scopedSlots: { customRender: 'actions' }
+        }
+      ],
+      addingIp6Range: false
     }
   },
   beforeCreate () {
@@ -226,6 +302,7 @@ export default {
         pagesize: this.pageSize
       }).then(response => {
         this.items = []
+        this.ip6Ranges = []
         this.total = response.listpodsresponse.count || 0
         this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
         for (const pod of this.pods) {
@@ -240,6 +317,19 @@ export default {
                 startip: pod.ipranges[idx].startip,
                 endip: pod.ipranges[idx].endip,
                 forsystemvms: pod.ipranges[idx].forsystemvms === '1'
+              })
+            }
+          }
+          if (pod && pod.ip6ranges && pod.ip6ranges.length > 0) {
+            for (var ip6range of pod.ip6ranges) {
+              this.ip6Ranges.push({
+                id: pod.id,
+                name: pod.name,
+                gateway: ip6range.gateway,
+                cidr: ip6range.cidr,
+                vlanid: ip6range.vlanid,
+                startip: ip6range.startip,
+                endip: ip6range.endip
               })
             }
           }
@@ -260,6 +350,14 @@ export default {
           })
         }
       }, 200)
+    },
+    handleOpenAddIp4RangeModal () {
+      this.addIpRangeModal = false
+      this.handleOpenAddIpRangeModal()
+    },
+    handleOpenAddIp6RangeModal () {
+      this.addingIp6Range = true
+      this.handleOpenAddIpRangeModal()
     },
     handleDeleteIpRange (record) {
       this.componentLoading = true
@@ -303,15 +401,21 @@ export default {
 
         this.componentLoading = true
         this.addIpRangeModal = false
-        api('createManagementNetworkIpRange', {
+        var params = {
           podid: values.pod,
           gateway: values.gateway,
-          netmask: values.netmask,
           startip: values.startip,
           endip: values.endip,
-          forsystemvms: values.vms,
           vlan: values.vlan || null
-        }).then(response => {
+        }
+        if (this.addingIp6Range) {
+          params.ip6range = true
+          params.cidr = values.cidr
+        } else {
+          params.forsystemvms = values.vms
+          params.netmask = values.netmask
+        }
+        api('createManagementNetworkIpRange', params).then(response => {
           this.$pollJob({
             jobId: response.createmanagementnetworkiprangeresponse.jobid,
             title: this.$t('label.add.ip.range'),

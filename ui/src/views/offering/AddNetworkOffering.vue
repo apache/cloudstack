@@ -73,6 +73,24 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item v-if="guestType === 'isolated'">
+          <tooltip-label slot="label" :title="$t('label.internet.protocol')" :tooltip="apiParams.internetprotocol.description"/>
+          <a-radio-group
+            v-decorator="['internetprotocol', {
+              initialValue: 'ipv4'
+            }]"
+            buttonStyle="solid">
+            <a-radio-button value="ipv4">
+              {{ $t('label.ip.v4') }}
+            </a-radio-button>
+            <a-radio-button value="ipv6">
+              {{ $t('label.ip.v6') }}
+            </a-radio-button>
+            <a-radio-button value="dualstack">
+              {{ $t('label.dual.stack') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-row :gutter="12" v-if="guestType !== 'shared'">
           <a-col :md="12" :lg="12">
             <a-form-item>

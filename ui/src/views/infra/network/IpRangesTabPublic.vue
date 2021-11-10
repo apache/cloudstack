@@ -34,6 +34,15 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
+      <template slot="gateway" slot-scope="record">
+        {{ record.gateway || record.ip6gateway }}
+      </template>
+      <template slot="startip" slot-scope="record">
+        {{ record.startip || record.startipv6 }}
+      </template>
+      <template slot="endip" slot-scope="record">
+        {{ record.endip || record.endipv6 }}
+      </template>
       <template slot="account" slot-scope="record" v-if="!basicGuestNetwork">
         <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
       </template>
@@ -164,6 +173,21 @@
         layout="vertical"
         class="form"
       >
+        <a-form-item :label="$t('label.ip.range.type')" class="form__item">
+          <a-radio-group
+            v-decorator="['iptype', {
+              initialValue: addFormIpType
+            }]"
+            buttonStyle="solid"
+            @change="selected => { addFormIpType = selected.target.value }">
+            <a-radio-button value="">
+              {{ $t('label.ip.v4') }}
+            </a-radio-button>
+            <a-radio-button value="ip6">
+              {{ $t('label.ip.v6') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-form-item :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
           <a-select
             autoFocus
@@ -178,32 +202,57 @@
             <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.gateway')" class="form__item">
-          <a-input
-            autoFocus
-            v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
-        <a-form-item :label="$t('label.netmask')" class="form__item">
-          <a-input
-            v-decorator="['netmask', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
         <a-form-item :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
           <a-input
             v-decorator="['vlan']">
           </a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.startip')" class="form__item">
-          <a-input
-            v-decorator="['startip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
-        <a-form-item :label="$t('label.endip')" class="form__item">
-          <a-input
-            v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
+        <div v-if="addFormIpType==='ip6'">
+          <a-form-item :label="$t('label.ip6gateway')" class="form__item">
+            <a-input
+              autoFocus
+              v-decorator="['ip6gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+          <a-form-item :label="$t('label.ip6cidr')" class="form__item">
+            <a-input
+              v-decorator="['ip6cidr', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+          <a-form-item :label="$t('label.startipv6')" class="form__item">
+            <a-input
+              v-decorator="['startipv6', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+          <a-form-item :label="$t('label.endipv6')" class="form__item">
+            <a-input
+              v-decorator="['endipv6', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+        </div>
+        <div v-else>
+          <a-form-item :label="$t('label.gateway')" class="form__item">
+            <a-input
+              autoFocus
+              v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+          <a-form-item :label="$t('label.netmask')" class="form__item">
+            <a-input
+              v-decorator="['netmask', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+          <a-form-item :label="$t('label.startip')" class="form__item">
+            <a-input
+              v-decorator="['startip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+          <a-form-item :label="$t('label.endip')" class="form__item">
+            <a-input
+              v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            </a-input>
+          </a-form-item>
+        </div>
         <div class="form__item" v-if="!basicGuestNetwork">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
           <a-switch @change="handleShowAccountFields"></a-switch>
@@ -342,11 +391,15 @@ export default {
       columns: [
         {
           title: this.$t('label.gateway'),
-          dataIndex: 'gateway'
+          scopedSlots: { customRender: 'gateway' }
         },
         {
-          title: this.$t('label.netmask'),
+          title: this.$t('label.ip4netmask'),
           dataIndex: 'netmask'
+        },
+        {
+          title: this.$t('label.ip6cidr'),
+          dataIndex: 'ip6cidr'
         },
         {
           title: this.$t('label.vlan'),
@@ -354,17 +407,18 @@ export default {
         },
         {
           title: this.$t('label.startip'),
-          dataIndex: 'startip'
+          scopedSlots: { customRender: 'startip' }
         },
         {
           title: this.$t('label.endip'),
-          dataIndex: 'endip'
+          scopedSlots: { customRender: 'endip' }
         },
         {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
-      ]
+      ],
+      addFormIpType: ''
     }
   },
   beforeCreate () {
@@ -372,7 +426,7 @@ export default {
   },
   created () {
     if (!this.basicGuestNetwork) {
-      this.columns.splice(5, 0,
+      this.columns.splice(6, 0,
         {
           title: this.$t('label.account'),
           scopedSlots: { customRender: 'account' }
@@ -521,11 +575,13 @@ export default {
 
         this.componentLoading = true
         this.addIpRangeModal = false
-        var params = {
-          gateway: values.gateway,
-          netmask: values.netmask,
-          startip: values.startip,
-          endip: values.endip
+        var ipRangeKeys = ['gateway', 'netmask', 'startip', 'endip']
+        if (values.iptype === 'ip6') {
+          ipRangeKeys = ['ip6gateway', 'ip6cidr', 'startipv6', 'endipv6']
+        }
+        var params = {}
+        for (const key of ipRangeKeys) {
+          params[key] = values[key]
         }
         if (!this.basicGuestNetwork) {
           params.zoneId = this.resource.zoneid

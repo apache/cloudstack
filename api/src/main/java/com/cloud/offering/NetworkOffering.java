@@ -16,14 +16,16 @@
 // under the License.
 package com.cloud.offering;
 
+import java.util.Date;
+
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
-
-import java.util.Date;
 
 /**
  * Describes network offering
@@ -40,7 +42,24 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType
+        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
+    }
+
+    public enum InternetProtocol {
+        IPv4, IPv6, DualStack;
+
+        public static InternetProtocol fromValue(String protocol) {
+            if (StringUtils.isBlank(protocol)) {
+                return null;
+            } else if (protocol.equalsIgnoreCase("IPv4")) {
+                return IPv4;
+            } else if (protocol.equalsIgnoreCase("IPv6")) {
+                return IPv6;
+            } else if (protocol.equalsIgnoreCase("DualStack")) {
+                return DualStack;
+            }
+            throw new InvalidParameterValueException("Unexpected Internet Protocol : " + protocol);
+        }
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";

@@ -19,6 +19,7 @@ package com.cloud.configuration;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIp6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
@@ -212,6 +213,11 @@ public interface ConfigurationService {
      * @return Success
      */
     void updatePodIpRange(UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException;
+
+    /**
+     * ToDo
+     */
+    Pod createPodGuestIp6Prefix(CreateGuestNetworkIp6PrefixCmd cmd);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

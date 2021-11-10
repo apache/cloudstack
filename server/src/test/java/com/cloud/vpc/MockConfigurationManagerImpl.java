@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIp6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
@@ -211,6 +212,11 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return;
+    }
+
+    @Override
+    public Pod createPodGuestIp6Prefix(CreateGuestNetworkIp6PrefixCmd cmd) {
+        return null;
     }
 
     /* (non-Javadoc)
@@ -507,7 +513,8 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
                                                    Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-                                                   Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering) {
+                                                   Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
+                                                   List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetworkOffering.InternetProtocol internetProtocol) {
         // TODO Auto-generated method stub
         return null;
     }
