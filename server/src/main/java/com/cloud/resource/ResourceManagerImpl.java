@@ -2871,7 +2871,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
-        final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
+        final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost() && org.apache.commons.lang3.StringUtils.isNotBlank(command.getPassword());
         // get agents for the cluster
         final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
         for (final HostVO host : hosts) {
@@ -2908,7 +2908,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.error("Agent is not availbale!", e);
         }
 
-        final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
+        final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost() && org.apache.commons.lang3.StringUtils.isNotBlank(command.getPassword());
         // If shouldUpdateHostPasswd has been set to false, the method doUpdateHostPassword() won't be called.
         return shouldUpdateHostPasswd && doUpdateHostPassword(command.getHostId());
     }

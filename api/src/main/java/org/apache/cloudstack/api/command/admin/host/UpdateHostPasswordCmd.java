@@ -50,9 +50,11 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the username for the host/cluster")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the new password for the host/cluster")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "the new password for the host/cluster")
     private String password;
 
+    @Parameter(name = ApiConstants.PRIVATE_KEY, type = CommandType.STRING, description = "the new private key for the host/cluster; support KVM only.", length = 16384)
+    private String privateKey;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -76,6 +78,10 @@ public class UpdateHostPasswordCmd extends BaseCmd {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getPrivateKey() {
+        return privateKey;
     }
 
     // ///////////////////////////////////////////////////

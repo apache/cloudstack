@@ -719,7 +719,6 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -4407,24 +4406,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private void persistHostPasswordAndPrivateKey(long hostId, String password, String privateKey) {
+        HostVO host = _hostDao.findById(hostId);
+        _hostDao.loadDetails(host);
+        Map<String, String> hostDetails = host.getDetails();
         if (StringUtils.isNotBlank(password)) {
-            DetailVO nvp = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
-            if (nvp != null) {
-                nvp.setValue(DBEncryptionUtil.encrypt(password));
-            } else {
-                nvp = new DetailVO(hostId, ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(password));
-            }
-            _detailsDao.persist(nvp);
+            hostDetails.put(ApiConstants.PASSWORD, password);
         }
         if (StringUtils.isNotBlank(privateKey)) {
-            DetailVO nvp = _detailsDao.findDetail(hostId, ApiConstants.PRIVATE_KEY);
-            if (nvp != null) {
-                nvp.setValue(DBEncryptionUtil.encrypt(privateKey));
-            } else {
-                nvp = new DetailVO(hostId, ApiConstants.PRIVATE_KEY, DBEncryptionUtil.encrypt(privateKey));
-            }
-            _detailsDao.persist(nvp);
+            hostDetails.put(ApiConstants.PRIVATE_KEY, privateKey);
         }
+        _hostDao.saveDetails(host);
     }
 
     @Override
