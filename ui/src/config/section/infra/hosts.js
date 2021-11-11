@@ -70,6 +70,20 @@ export default {
       }
     },
     {
+      api: 'updateHostPassword',
+      icon: 'form',
+      label: 'label.update.host.password',
+      message: 'label.update.host.password',
+      dataView: true,
+      show: (record) => { return ['KVM'].includes(record.hypervisor) },
+      args: ['hostid', 'username', 'password', 'privatekey', 'update_passwd_on_host'],
+      mapping: {
+        hostid: {
+          value: (record) => { return record.id }
+        }
+      }
+    },
+    {
       api: 'provisionCertificate',
       icon: 'safety-certificate',
       label: 'label.action.secure.host',
