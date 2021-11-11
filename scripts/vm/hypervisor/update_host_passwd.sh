@@ -18,10 +18,9 @@
 
 username=$1
 new_passwd=$2
-expected="successfully."
-result=`echo -e "$new_passwd\n$new_passwd" | passwd --stdin $username | grep successfully | awk '{ print $6 }'`
+echo "$username:$new_passwd" | chpasswd 2>&1
 
-if [ $result = $expected ]; then
+if [ $? -eq 0 ]; then
    exit 0
 else
    exit 1
