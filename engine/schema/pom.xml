@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-engine</artifactId>
-        <version>4.16.0.0-SNAPSHOT</version>
+        <version>4.17.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -75,8 +75,8 @@
                             <source>
                                 def projectVersion = project.version
                                 String[] versionParts =  projectVersion.tokenize('.')
-                                pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
-                                pom.properties['patch.version'] = versionParts[2]
+                                pom.properties['cs.version'] = "4.16"
+                                pom.properties['patch.version'] = "0"
                             </source>
                         </configuration>
                     </execution>
