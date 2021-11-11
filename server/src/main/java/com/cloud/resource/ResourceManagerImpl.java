@@ -200,7 +200,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 @Component
@@ -373,7 +372,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         for (final ResourceListener l : lst) {
             if (event.equals(ResourceListener.EVENT_DISCOVER_BEFORE)) {
                 l.processDiscoverEventBefore((Long)params[0], (Long)params[1], (Long)params[2], (URI)params[3], (String)params[4], (String)params[5],
-                        (List<String>)params[6]);
+                        (String)params[6], (List<String>)params[7]);
                 eventName = "EVENT_DISCOVER_BEFORE";
             } else if (event.equals(ResourceListener.EVENT_DISCOVER_AFTER)) {
                 l.processDiscoverEventAfter((Map<? extends ServerResource, Map<String, String>>)params[0]);
@@ -565,7 +564,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             final List<HostVO> hosts = new ArrayList<HostVO>();
             Map<? extends ServerResource, Map<String, String>> resources = null;
-            resources = discoverer.find(dcId, podId, cluster.getId(), uri, username, password, null);
+            resources = discoverer.find(dcId, podId, cluster.getId(), uri, username, password, null, null);
 
             if (resources != null) {
                 for (final Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
@@ -611,6 +610,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String url = cmd.getUrl();
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
+        final String privateKey = cmd.getPrivateKey();
         final List<String> hostTags = cmd.getHostTags();
 
         dcId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), dcId);
@@ -639,17 +639,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), false);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, privateKey, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), false);
     }
 
     @Override
     public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         final Long dcId = cmd.getZoneId();
         final String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, null, "SecondaryStorage", null, null, false);
     }
 
-    private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
+    private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password, String privateKey,
             final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation) throws IllegalArgumentException, DiscoveryException,
             InvalidParameterValueException {
         URI uri = null;
@@ -696,9 +696,20 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
         }
         List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
-        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT)) &&
-                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
-            throw new InvalidParameterValueException("Username and Password need to be provided.");
+        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT))) {
+            if (HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
+                if (org.apache.commons.lang3.StringUtils.isBlank(username) ||
+                        (org.apache.commons.lang3.StringUtils.isBlank(password) && org.apache.commons.lang3.StringUtils.isBlank(privateKey))) {
+                    throw new InvalidParameterValueException("Username and Password/privateKey need to be provided.");
+                }
+            } else {
+                if (org.apache.commons.lang3.StringUtils.isBlank(username) || org.apache.commons.lang3.StringUtils.isBlank(password)) {
+                    throw new InvalidParameterValueException("Username and Password need to be provided.");
+                }
+            }
+        }
+        if (!HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType) && org.apache.commons.lang3.StringUtils.isNotBlank(privateKey)) {
+            throw new InvalidParameterValueException("privateKey is not supported by hypervisors other than KVM");
         }
 
         if (clusterId != null) {
@@ -797,9 +808,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             isHypervisorTypeSupported = true;
             Map<? extends ServerResource, Map<String, String>> resources = null;
 
-            processResourceEvent(ResourceListener.EVENT_DISCOVER_BEFORE, dcId, podId, clusterId, uri, username, password, hostTags);
+            processResourceEvent(ResourceListener.EVENT_DISCOVER_BEFORE, dcId, podId, clusterId, uri, username, password, privateKey, hostTags);
             try {
-                resources = discoverer.find(dcId, podId, clusterId, uri, username, password, hostTags);
+                resources = discoverer.find(dcId, podId, clusterId, uri, username, password, privateKey, hostTags);
             } catch (final DiscoveryException e) {
                 throw e;
             } catch (final Exception e) {

@@ -112,7 +112,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
-    find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
+    find(long dcId, Long podId, Long clusterId, URI url, String username, String password, String privateKey, List<String> hostTags) throws DiscoveryException {
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());

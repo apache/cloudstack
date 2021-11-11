@@ -4329,12 +4329,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     if (nv == null) {
                         final DetailVO nvu = new DetailVO(h.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
                         _detailsDao.persist(nvu);
-                        final DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
-                        _detailsDao.persist(nvp);
+                        persistHostPasswordAndPrivateKey(h.getId(), command.getPassword(), command.getPrivateKey());
                     } else if (nv.getValue().equals(userNameWithoutSpaces)) {
-                        final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                        nvp.setValue(DBEncryptionUtil.encrypt(command.getPassword()));
-                        _detailsDao.persist(nvp);
+                        persistHostPasswordAndPrivateKey(h.getId(), command.getPassword(), command.getPrivateKey());
                     } else {
                         // if one host in the cluster has diff username then
                         // rollback to maintain consistency
@@ -4396,12 +4393,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (nv == null) {
                     final DetailVO nvu = new DetailVO(host.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
                     _detailsDao.persist(nvu);
-                    final DetailVO nvp = new DetailVO(host.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(cmd.getPassword()));
-                    _detailsDao.persist(nvp);
+                    persistHostPasswordAndPrivateKey(host.getId(), cmd.getPassword(), cmd.getPrivateKey());
                 } else if (nv.getValue().equals(userNameWithoutSpaces)) {
-                    final DetailVO nvp = _detailsDao.findDetail(host.getId(), ApiConstants.PASSWORD);
-                    nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                    _detailsDao.persist(nvp);
+                    persistHostPasswordAndPrivateKey(host.getId(), cmd.getPassword(), cmd.getPrivateKey());
                 } else {
                     // if one host in the cluster has diff username then
                     // rollback to maintain consistency
@@ -4410,6 +4404,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         });
         return true;
+    }
+
+    private void persistHostPasswordAndPrivateKey(long hostId, String password, String privateKey) {
+        if (StringUtils.isNotBlank(password)) {
+            DetailVO nvp = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
+            if (nvp != null) {
+                nvp.setValue(DBEncryptionUtil.encrypt(password));
+            } else {
+                nvp = new DetailVO(hostId, ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(password));
+            }
+            _detailsDao.persist(nvp);
+        }
+        if (StringUtils.isNotBlank(privateKey)) {
+            DetailVO nvp = _detailsDao.findDetail(hostId, ApiConstants.PRIVATE_KEY);
+            if (nvp != null) {
+                nvp.setValue(DBEncryptionUtil.encrypt(privateKey));
+            } else {
+                nvp = new DetailVO(hostId, ApiConstants.PRIVATE_KEY, DBEncryptionUtil.encrypt(privateKey));
+            }
+            _detailsDao.persist(nvp);
+        }
     }
 
     @Override

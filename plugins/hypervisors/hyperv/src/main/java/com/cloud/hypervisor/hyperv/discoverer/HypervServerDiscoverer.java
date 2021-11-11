@@ -211,7 +211,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     // ignored in favour of another created in response to
     @Override
     public final Map<? extends ServerResource, Map<String, String>> find(final long dcId, final Long podId, final Long clusterId, final URI uri, final String username,
-        final String password, final List<String> hostTags) throws DiscoveryException {
+        final String password, final String privateKey, final List<String> hostTags) throws DiscoveryException {
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Discover host. dc(zone): " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + uri.getHost());

@@ -78,7 +78,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, String privateKey, List<String> hostTags)
             throws DiscoveryException {
 
         /* Enable this after we decide to use addBaremetalHostCmd instead of addHostCmd

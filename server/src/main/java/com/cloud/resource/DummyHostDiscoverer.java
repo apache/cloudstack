@@ -36,7 +36,7 @@ public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(DummyHostDiscoverer.class);
 
     @Override
-    public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) {
+    public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, String privateKey, List<String> hostTags) {
         if (!url.getScheme().equals("dummy")) {
             return null;
         }

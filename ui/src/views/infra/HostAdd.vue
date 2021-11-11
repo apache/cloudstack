@@ -94,10 +94,21 @@
         <a-input :placeholder="placeholder.username" v-model="username"></a-input>
       </div>
 
-      <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
-        <span class="required required-label">{{ $t('label.required') }}</span>
+      <div class="form__item" v-if="selectedClusterHyperVisorType !== 'VMware'">
+        <div class="form__label">{{ $t('label.password') }}</div>
         <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
+      </div>
+
+      <div class="form__item" v-if="selectedClusterHyperVisorType === 'KVM'">
+        <div class="form__label">{{ $t('label.privatekey') }}</div>
+        <a-textarea
+          id="privatekey"
+          rows="2"
+          :placeholder="placeholder.privatekey"
+          v-model="privatekey"
+          name="privatekey"
+          v-decorator="['privatekey', {}]"
+        ></a-textarea>
       </div>
 
       <template v-if="selectedClusterHyperVisorType === 'Ovm3'">
@@ -181,6 +192,7 @@ export default {
       hostname: null,
       username: null,
       password: null,
+      privatekey: null,
       selectedTags: [],
       zonesList: [],
       clustersList: [],
@@ -200,6 +212,7 @@ export default {
       placeholder: {
         username: null,
         password: null,
+        privatekey: null,
         hosttags: null
       }
     }
@@ -300,6 +313,10 @@ export default {
         this.password = ''
       }
 
+      if (this.selectedClusterHyperVisorType !== 'KVM') {
+        this.privatekey = ''
+      }
+
       if (this.hostname.indexOf('http://') === -1) {
         this.url = `http://${this.hostname}`
       } else {
@@ -315,6 +332,7 @@ export default {
         hosttags: this.selectedTags.join(),
         username: this.username,
         password: this.password,
+        privatekey: this.privatekey,
         url: this.url,
         agentusername: this.agentusername,
         agentpassword: this.agentpassword,

@@ -60,6 +60,9 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "the password for the host; required to be passed for hypervisors other than VMWare")
     private String password;
 
+    @Parameter(name = ApiConstants.PRIVATE_KEY, type = CommandType.STRING, description = "the private key for the host; support KVM only.", length = 16384)
+    private String privateKey;
+
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the Pod ID for the host")
     private Long podId;
 
@@ -92,6 +95,10 @@ public class AddHostCmd extends BaseCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getPrivateKey() {
+        return privateKey;
     }
 
     public Long getPodId() {

@@ -213,7 +213,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
-        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, String privateKey, List<String> hostTags) throws DiscoveryException {
         boolean isUefiSupported = false;
 
         ClusterVO cluster = _clusterDao.findById(clusterId);
@@ -259,9 +259,13 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             sshConnection = new Connection(agentIp, 22);
 
             sshConnection.connect(null, 60000, 60000);
-            if (!sshConnection.authenticateWithPassword(username, password)) {
-                s_logger.debug("Failed to authenticate");
-                throw new DiscoveredWithErrorException("Authentication error");
+
+            if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
+                s_logger.error("Failed to authenticate with ssh key");
+                if (!sshConnection.authenticateWithPassword(username, password)) {
+                    s_logger.error("Failed to authenticate with password");
+                    throw new DiscoveredWithErrorException("Authentication error");
+                }
             }
 
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "ls /dev/kvm")) {
@@ -356,6 +360,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             Map<String, String> hostDetails = connectedHost.getDetails();
             hostDetails.put("password", password);
             hostDetails.put("username", username);
+            hostDetails.put("privatekey", privateKey);
             hostDetails.put(Host.HOST_UEFI_ENABLE, isUefiSupported == true ? Boolean.toString(true) : Boolean.toString(false));
             _hostDao.saveDetails(connectedHost);
             return resources;

@@ -92,7 +92,7 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
-        find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
+        find(long dcId, Long podId, Long clusterId, URI url, String username, String password, String privateKey, List<String> hostTags) throws DiscoveryException {
         Connection conn = null;
 
         if (!url.getScheme().equals("http")) {

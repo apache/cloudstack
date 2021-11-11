@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.16.0.0 to 4.16.1.0
 --;
+
+ALTER TABLE `cloud`.`host_details` MODIFY COLUMN `value` varchar(16384);
+

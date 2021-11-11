@@ -136,7 +136,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId,
             Long podId, Long clusterId, URI url, String username,
-            String password, List<String> hostTags) throws DiscoveryException {
+            String password, String privateKey, List<String> hostTags) throws DiscoveryException {
         Connection c = null;
 
         CheckUrl(url);

@@ -70,7 +70,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         List<DetailVO> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (DetailVO result : results) {
-            if ("password".equals(result.getName())) {
+            if ("password".equals(result.getName()) || "privatekey".equals(result.getName())) {
                 details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
             } else {
                 details.put(result.getName(), result.getValue());
@@ -99,7 +99,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
 
         for (Map.Entry<String, String> detail : details.entrySet()) {
             String value = detail.getValue();
-            if ("password".equals(detail.getKey())) {
+            if ("password".equals(detail.getKey()) || "privatekey".equals(detail.getKey())) {
                 value = DBEncryptionUtil.encrypt(value);
             }
             try {

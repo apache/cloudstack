@@ -76,7 +76,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
      */
     @Override
     public Map<? extends ServerResource, Map<String, String>>
-        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, String privateKey, List<String> hostTags) throws DiscoveryException {
         Map<AgentResourceBase, Map<String, String>> resources;
 
         try {

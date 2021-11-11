@@ -160,7 +160,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     }
 
     @Override
-    public void processDiscoverEventBefore(Long dcid, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
+    public void processDiscoverEventBefore(Long dcid, Long podId, Long clusterId, URI uri, String username, String password, String privateKey, List<String> hostTags) {
         // TODO Auto-generated method stub
 
     }

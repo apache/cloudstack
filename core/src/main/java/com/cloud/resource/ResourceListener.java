@@ -49,7 +49,7 @@ public interface ResourceListener {
      *
      * Called before Discover.find()
      */
-    void processDiscoverEventBefore(Long dcid, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags);
+    void processDiscoverEventBefore(Long dcid, Long podId, Long clusterId, URI uri, String username, String password, String privateKey, List<String> hostTags);
 
     /**
      *
