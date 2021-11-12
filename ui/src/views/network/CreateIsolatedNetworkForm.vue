@@ -270,7 +270,7 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     isValidTextValueForKey (obj, key) {
-      return key in obj && obj[key] != null && obj[key].length > 0
+      return key in obj && obj[key] != null && String(obj[key]).length > 0
     },
     fetchZoneData () {
       this.zones = []

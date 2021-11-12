@@ -19,6 +19,19 @@
 -- Schema upgrade from 4.15.2.0 to 4.16.0.0
 --;
 
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';
+
+-- This is set, so as to ensure that the controller details from the ovf template are adhered to
+UPDATE `cloud`.`vm_template` set deploy_as_is = 1 where id = 8;
+
+DELETE FROM `cloud`.`configuration` WHERE name IN ("cloud.kubernetes.cluster.template.name.kvm", "cloud.kubernetes.cluster.template.name.vmware", "cloud.kubernetes.cluster.template.name.xenserver", "cloud.kubernetes.cluster.template.name.hyperv");
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;
+
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `control_node` tinyint(1) unsigned NOT NULL DEFAULT 0;
+
 -- Adding dynamic scalable flag for service offering table
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamic_scaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
@@ -443,6 +456,7 @@ SELECT
     `host`.`id` AS `host_id`,
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
+    `host`.`cluster_id` AS `cluster_id`,
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
@@ -791,6 +805,3 @@ ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
 ALTER TABLE cloud_usage.usage_network DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`,`zone_id`,`host_id`,`network_id`,`event_time_millis`);
 ALTER TABLE `cloud`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
 ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
-
-ALTER TABLE `cloud`.`vm_work_job` ADD COLUMN `secondary_object` char(100) COMMENT 'any additional item that must be checked during queueing' AFTER `vm_instance_id`;
-ALTER TABLE cloud.vm_work_job ADD CONSTRAINT vm_work_job_step_and_objects UNIQUE KEY (step,vm_instance_id,secondary_object);

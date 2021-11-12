@@ -27,4 +27,5 @@ public interface KubernetesClusterVmMap {
     long getId();
     long getClusterId();
     long getVmId();
+    boolean isControlNode();
 }

@@ -259,7 +259,13 @@
           </div>
 
           <div slot="action" slot-scope="text, record" style="text-align: center">
-            <a-radio :value="record.id" @change="e => fetchNics(e)" />
+            <a-radio-group
+              class="radio-group"
+              :key="record.id"
+              v-model="checked"
+              @change="($event) => checked = $event.target.value">
+              <a-radio :value="record.id" @change="e => fetchNics(e)" />
+            </a-radio-group>
           </div>
         </a-table>
         <a-pagination
@@ -270,8 +276,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template slot="buildOptionText" slot-scope="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -325,6 +331,7 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      checked: true,
       selectedRowKeys: [],
       showGroupActionModal: false,
       selectedItems: [],
@@ -730,6 +737,7 @@ export default {
       this.fetchVirtualMachines()
     },
     fetchNics (e) {
+      this.nics = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
       api('listNics', {
@@ -784,6 +792,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value

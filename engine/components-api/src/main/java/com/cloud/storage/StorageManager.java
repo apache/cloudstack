@@ -180,6 +180,8 @@ public interface StorageManager extends StorageService {
 
     public Answer getVolumeStats(StoragePool pool, Command cmd);
 
+    boolean canPoolProvideStorageStats(StoragePool pool);
+
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host

@@ -268,6 +268,10 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
+    <span slot="autoscalingenabled" slot-scope="text, record">
+      <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
+      {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
+    </span>
     <span slot="current" slot-scope="text, record">
       <status :text="record.current ? record.current.toString() : 'false'" />
     </span>

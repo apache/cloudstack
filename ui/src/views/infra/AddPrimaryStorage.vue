@@ -195,18 +195,6 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="protocolSelected !== 'Linstor'">
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
-            <a-select
-              v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-              @change="updateProviderAndProtocol">
-              <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
-                {{ provider }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </div>
         <div v-if="this.providerSelected !== 'DefaultPrimary' && this.providerSelected !== 'PowerFlex' && this.providerSelected !== 'Linstor'">
           <a-form-item>
             <tooltip-label slot="label" :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
@@ -516,8 +504,8 @@ export default {
       /*  Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
           It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
       */
-      secret = secret.replace('+', '-')
-      secret = secret.replace('/', '_')
+      secret = secret.replace(/\+/g, '-')
+      secret = secret.replace(/\//g, '_')
       if (id !== null && secret !== null) {
         monitor = id + ':' + secret + '@' + monitor
       }

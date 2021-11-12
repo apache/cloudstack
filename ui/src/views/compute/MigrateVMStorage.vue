@@ -176,7 +176,7 @@ export default {
         } else if (migrateApi === 'migrateSystemVm') {
           jobId = response.migratesystemvmresponse.jobid
         } else {
-          jobId = response.migratevirtualmachine.jobid
+          jobId = response.migratevirtualmachineresponse.jobid
         }
         this.$pollJob({
           title: `${this.$t('label.migrating')} ${this.resource.name}`,
