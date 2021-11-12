@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
@@ -58,6 +59,9 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.", required = true)
     private String password;
 
+    @Parameter(name = "code", type = CommandType.STRING, description = "2FA code", required = false)
+    private String code;
+
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Path of the domain that the user belongs to. Example: domain=/com/cloud/internal. If no domain is passed in, the ROOT (/) domain is assumed.")
     private String domain;
 
@@ -77,6 +81,10 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
 
     public String getPassword() {
         return password;
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public String getDomain() {
@@ -116,6 +124,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);
         final String[] password = (String[])params.get(ApiConstants.PASSWORD);
+        final String[] code = (String[])params.get("code");
         String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
 
         if (domainIdArr == null) {
@@ -158,6 +167,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         String serializedResponse = null;
         if (username != null) {
             final String pwd = ((password == null) ? null : password[0]);
+            final String code2fa = ((code == null) ? null : code[0]);
             try {
                 final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
                 if (userDomain != null) {
@@ -169,8 +179,13 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                 if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                     throw new CloudAuthenticationException("User is not allowed CloudStack login");
                 }
-                return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
-                        responseType);
+                ResponseObject loginResp = _apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params);
+                if (code2fa != null && !code2fa.isEmpty()) {
+                    // again a hackathon shortcut here, ideally 2FA setting should be checked/enforced per user account
+                    // that is we should check and enforce 2FA for user-accounts where this is enabled
+                    _apiServer.check2FA(code2fa, userAccount);
+                }
+                return ApiResponseSerializer.toSerializedString(loginResp, responseType);
             } catch (final CloudAuthenticationException ex) {
                 // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)
                 try {

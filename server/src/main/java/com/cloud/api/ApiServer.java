@@ -55,6 +55,7 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import de.taimos.totp.TOTP;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -104,7 +105,9 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -1139,6 +1142,37 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             return createLoginResponse(session);
         }
         throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
+    }
+
+    public static String get2FAKey() {
+        return "7t4gabg72liipmq7n43lt3cw66fel4iz";
+        /*
+        This logic can be replaced on per-user-account basis
+        where the key is generated to show the user one-time QR code,
+        and then stored in DB.
+        For #CCC21 hackathon, we'll take shortcuts ;)
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[20];
+        random.nextBytes(bytes);
+        Base32 base32 = new Base32();
+        return base32.encodeToString(bytes);
+         */
+    }
+
+    public static String get2FACode(String secretKey) {
+        Base32 base32 = new Base32();
+        byte[] bytes = base32.decode(secretKey);
+        String hexKey = Hex.encodeHexString(bytes);
+        return TOTP.getOTP(hexKey);
+    }
+
+    @Override
+    public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException {
+        String expectedCode = get2FACode(get2FAKey());
+        if (!expectedCode.equals(code)) {
+            s_logger.info("2FA matches user's input");
+        }
+        throw new CloudAuthenticationException("two-factor authentication has failed for the user");
     }
 
     @Override

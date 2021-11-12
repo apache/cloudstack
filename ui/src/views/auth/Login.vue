@@ -91,6 +91,20 @@
         <a-form-item>
           <a-input
             size="large"
+            autocomplete="false"
+            placeholder="2FA Code"
+            v-decorator="[
+              'code',
+              {rules: [{ required: true, message: 'Please enter 2FA code' }], validateTrigger: 'blur'}
+            ]"
+          >
+            <a-icon slot="prefix" type="key" />
+          </a-input>
+        </a-form-item>
+
+        <a-form-item>
+          <a-input
+            size="large"
             type="text"
             :placeholder="$t('label.domain')"
             v-decorator="[
@@ -238,7 +252,7 @@ export default {
 
       state.loginBtn = true
 
-      const validateFieldsKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
+      const validateFieldsKey = customActiveKey === 'cs' ? ['username', 'password', 'code', 'domain'] : ['idp']
 
       validateFields(validateFieldsKey, { force: true }, (err, values) => {
         if (!err) {
@@ -252,6 +266,7 @@ export default {
             delete loginParams.username
             loginParams[!state.loginType ? 'email' : 'username'] = values.username
             loginParams.password = values.password
+            loginParams.code = values.code
             loginParams.domain = values.domain
             if (!loginParams.domain) {
               loginParams.domain = '/'

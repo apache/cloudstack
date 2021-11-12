@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.user.UserAccount;
 
 public interface ApiServerService {
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId, InetAddress remoteAddress) throws ServerApiException;
@@ -30,6 +31,8 @@ public interface ApiServerService {
 
     public ResponseObject loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, InetAddress loginIpAddress,
             Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
+
+    void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException;
 
     public void logoutUser(long userId);
 
