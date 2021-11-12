@@ -179,12 +179,12 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                 if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                     throw new CloudAuthenticationException("User is not allowed CloudStack login");
                 }
-                ResponseObject loginResp = _apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params);
                 if (code2fa != null && !code2fa.isEmpty()) {
                     // again a hackathon shortcut here, ideally 2FA setting should be checked/enforced per user account
                     // that is we should check and enforce 2FA for user-accounts where this is enabled
                     _apiServer.check2FA(code2fa, userAccount);
                 }
+                ResponseObject loginResp = _apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params);
                 return ApiResponseSerializer.toSerializedString(loginResp, responseType);
             } catch (final CloudAuthenticationException ex) {
                 // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)

@@ -47,10 +47,15 @@
                   {{ name }}
                 </h4>
               </div>
-              <span v-if="resource.username">
-                <img src="https://www.google.com/chart?chs=200x200&chld=M%%7C0&cht=qr&chl=otpauth://totp/Apache%20CloudStack%3Atest%40gmail.com?secret=7t4gabg72liipmq7n43lt3cw66fel4iz&issuer=Apache%20CloudStack"/>
-              </span>
             </slot>
+          </div>
+          <div>
+            <br/>
+            <a-divider/>
+            <p><b>2FA QR</b></p>
+            <span v-if="resource.username">
+              <img src="https://www.google.com/chart?chs=200x200&chld=M%%7C0&cht=qr&chl=otpauth://totp/Apache%20CloudStack%3Atest%40gmail.com?secret=7t4gabg72liipmq7n43lt3cw66fel4iz&issuer=Apache%20CloudStack"/>
+            </span>
           </div>
           <slot name="actions">
             <div class="tags">

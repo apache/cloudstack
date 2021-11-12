@@ -44,6 +44,7 @@ export function login (arg) {
   params.append('command', 'login')
   params.append('username', arg.username || arg.email)
   params.append('password', arg.password)
+  params.append('code', arg.code)
   params.append('domain', arg.domain)
   params.append('response', 'json')
   return axios({
