@@ -114,7 +114,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan?.description || null"/>
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan ? apiParams.vlan.description : null"/>
             <a-input
               v-decorator="['vlanid', {
                 rules: [{ required: true, message: $t('message.please.enter.value') }]
@@ -122,7 +122,7 @@
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck?.description || null"/>
+            <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck ? apiParams.bypassvlanoverlapcheck.description : null"/>
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
