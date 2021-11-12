@@ -1170,8 +1170,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException {
         // TODO: in future get userAccount specific 2FA key
         String expectedCode = get2FACode(get2FAKey());
-        if (!expectedCode.equals(code)) {
+        if (expectedCode.equals(code)) {
             s_logger.info("2FA matches user's input");
+            return;
         }
         throw new CloudAuthenticationException("two-factor authentication has failed for the user");
     }
