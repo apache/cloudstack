@@ -19,8 +19,6 @@
 
 package com.cloud.utils.ssh;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -85,18 +83,8 @@ public class SSHCmdHelper {
 
     public static boolean acquireAuthorizedConnectionWithPublicKey(final com.trilead.ssh2.Connection sshConnection, final String username, final String privateKey) {
         if (StringUtils.isNotBlank(privateKey)) {
-            File privateKeyFile = null;
             try {
-                privateKeyFile = File.createTempFile("cloudstack-host-", null);
-                FileWriter writer = new FileWriter(privateKeyFile.getAbsolutePath());
-                writer.write(privateKey);
-                writer.close();
-            } catch (IOException e) {
-                s_logger.warn("An exception occurred when create a tmp file and write private key to the tmp file");
-                return false;
-            }
-            try {
-                if (!sshConnection.authenticateWithPublicKey(username, privateKeyFile, null)) {
+                if (!sshConnection.authenticateWithPublicKey(username, privateKey.toCharArray(), null)) {
                     s_logger.warn("Failed to authenticate with ssh key");
                     return false;
                 }
@@ -104,10 +92,6 @@ public class SSHCmdHelper {
             } catch (IOException e) {
                 s_logger.warn("An exception occurred when authenticate with ssh key");
                 return false;
-            } finally {
-                if (privateKeyFile != null && privateKeyFile.exists()) {
-                    privateKeyFile.delete();
-                }
             }
         }
         return false;
