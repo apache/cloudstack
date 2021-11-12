@@ -94,9 +94,8 @@
         <a-input :placeholder="placeholder.username" v-model="username"></a-input>
       </div>
 
-      <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
-        <span class="required required-label">{{ $t('label.required') }}</span>
+      <div class="form__item" v-if="selectedClusterHyperVisorType !== 'VMware'">
+        <div class="form__label">{{ $t('label.password') }}</div>
         <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
       </div>
 
