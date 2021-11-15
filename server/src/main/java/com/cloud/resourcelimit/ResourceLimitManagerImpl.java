@@ -447,9 +447,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
-    private void checkAccountResourceLimit(final Account account, final Project project, final ResourceType type, long numResources) throws ResourceAllocationException {
-        // Check account limits
-        long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
+    private void checkAccountResourceLimit(final Account account, final Project project, final ResourceType type, long numResources,
+                                            long accountResourceLimit) throws ResourceAllocationException {
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
         long requestedResourceCount = currentResourceCount + numResources;
 
@@ -521,13 +520,21 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         final Project projectFinal = project;
+
+        // Check account limits. If it's unlimited then don't lock the db rows
+        long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
+        if (Resource.RESOURCE_UNLIMITED == accountResourceLimit) {
+            s_logger.info((project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName()) +
+                    " has unlimited resource count. Skipping capacity check");
+            return;
+        }
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
                 // Lock all rows first so nobody else can read it
                 lockAccountAndOwnerDomainRows(account.getId(), type);
                 // Check account limits
-                checkAccountResourceLimit(account, projectFinal, type, numResources);
+                checkAccountResourceLimit(account, projectFinal, type, numResources, accountResourceLimit);
                 // check all domains in the account's domain hierarchy
                 checkDomainResourceLimit(account, projectFinal, type, numResources);
             }
