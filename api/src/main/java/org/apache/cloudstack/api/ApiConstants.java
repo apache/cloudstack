@@ -881,6 +881,13 @@ public class ApiConstants {
     public static final String AGENT_COUNT = "agentcount";
     public static final String SYSTEM = "system";
     public static final String HEAP_MEMORY_USED = "heapmemoryused";
+    public static final String HEAP_MEMORY_TOTAL = "heapmemorytotal";
+    public static final String THREADS_BLOCKED_COUNT = "threadsblockedcount";
+    public static final String THREADS_DEAMON_COUNT = "threadsdeamoncount";
+    public static final String THREADS_RUNNABLE_COUNT = "threadsrunnablecount";
+    public static final String THREADS_TERMINATED_COUNT = "threadsteminatedcount";
+    public static final String THREADS_TOTAL_COUNT = "threadstotalcount";
+    public static final String THREADS_WAITING_COUNT = "threadswaitingcount";
 
     public enum BootType {
         UEFI, BIOS;

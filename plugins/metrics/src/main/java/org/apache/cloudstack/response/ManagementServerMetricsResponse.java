@@ -21,8 +21,6 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
-import java.util.Map;
-
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(ApiConstants.AVAILABLE_PROCESSORS)
@@ -41,9 +39,33 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the amount of memory used by this Management Server")
     private long heapMemoryUsed;
 
-    @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "ManagementServer metrics details in key/value pairs.", since = "4.2.1")
-    private Map details;
+    @SerializedName(ApiConstants.HEAP_MEMORY_TOTAL)
+    @Param(description = "the amount of memory allocated to this Management Server")
+    private long heapMemoryTotal;
+
+    @SerializedName(ApiConstants.THREADS_BLOCKED_COUNT)
+    @Param(description = "The number of blocked threads")
+    private int threadsBlockedCount;
+
+    @SerializedName(ApiConstants.THREADS_DEAMON_COUNT)
+    @Param(description = "The number of deamon threads")
+    private int threadsDeamonCount;
+
+    @SerializedName(ApiConstants.THREADS_RUNNABLE_COUNT)
+    @Param(description = "The number of deamon threads")
+    private int threadsRunnableCount;
+
+    @SerializedName(ApiConstants.THREADS_TERMINATED_COUNT)
+    @Param(description = "The number of deamon threads")
+    private int threadsTerminatedCount;
+
+    @SerializedName(ApiConstants.THREADS_TOTAL_COUNT)
+    @Param(description = "The number of deamon threads")
+    private int threadsTotalCount;
+
+    @SerializedName(ApiConstants.THREADS_WAITING_COUNT)
+    @Param(description = "The number of deamon threads")
+    private int threadsWaitingCount;
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
@@ -57,11 +79,35 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
         this.sessions = sessions;
     }
 
-    public void setDetails(Map details) {
-        this.details = details;
-    }
-
     public void setHeapMemoryUsed(long heapMemoryUsed) {
         this.heapMemoryUsed = heapMemoryUsed;
+    }
+
+    public void setHeapMemoryTotal(long heapMemoryTotal) {
+        this.heapMemoryTotal = heapMemoryTotal;
+    }
+
+    public void setThreadsBlockedCount(int threadsBlockedCount) {
+        this.threadsBlockedCount = threadsBlockedCount;
+    }
+
+    public void setThreadsDeamonCount(int threadsDeamonCount) {
+        this.threadsDeamonCount = threadsDeamonCount;
+    }
+
+    public void setThreadsRunnableCount(int threadsRunnableCount) {
+        this.threadsRunnableCount = threadsRunnableCount;
+    }
+
+    public void setThreadsTerminatedCount(int threadsTerminatedCount) {
+        this.threadsTerminatedCount = threadsTerminatedCount;
+    }
+
+    public void setThreadsTotalCount(int threadsTotalCount) {
+        this.threadsTotalCount = threadsTotalCount;
+    }
+
+    public void setThreadsWaitingCount(int threadsWaitingCount) {
+        this.threadsWaitingCount = threadsWaitingCount;
     }
 }

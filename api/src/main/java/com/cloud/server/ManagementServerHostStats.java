@@ -65,4 +65,18 @@ public interface ManagementServerHostStats {
     int getAgentCount();
 
     long getHeapMemoryUsed();
+
+    long getHeapMemoryTotal();
+
+    int getThreadsBlockedCount();
+
+    int getThreadsTotalCount();
+
+    int getThreadsDeamonCount();
+
+    int getThreadsRunnableCount();
+
+    int getThreadsTerminatedCount();
+
+    int getThreadsWaitingCount();
 }

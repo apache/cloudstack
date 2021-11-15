@@ -859,6 +859,30 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 case "memory.heap.used":
                     metricsEntry.setHeapMemoryUsed((Long) value);
                     break;
+                case "memory.heap.max":
+                    metricsEntry.setHeapMemoryTotal((Long) value);
+                    break;
+                case "threads.blocked.count":
+                    metricsEntry.setThreadsBlockedCount((Integer) value);
+                    break;
+                case "threads.count":
+                    metricsEntry.setThreadsTotalCount((Integer) value);
+                    break;
+                case "threads.daemon.count":
+                    metricsEntry.setThreadsDeamonCount((Integer) value);
+                    break;
+                case "threads.runnable.count":
+                    metricsEntry.setThreadsRunnableCount((Integer) value);
+                    break;
+                case "threads.terminated.count":
+                    metricsEntry.setThreadsTerminatedCount((Integer) value);
+                    break;
+                case "threads.waiting.count":
+                    metricsEntry.setThreadsWaitingCount((Integer) value);
+                    break;
+                case "threads.deadlocks":
+                case "threads.new.count":
+                case "threads.timed_waiting.count":
                 default:
                     LOGGER.debug(String.format("not storiung detail %s, %s", metricName, value));
                     /*
@@ -877,7 +901,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                      * 'jvm.vendor'=Red Hat, Inc. OpenJDK 64-Bit Server VM 11.0.12+7 (11) type=String
                      * 'memory.heap.committed'=1200619520 type=Long
                      * 'memory.heap.init'=522190848 type=Long
-                     * 'memory.heap.max'=4294967296 type=Long
+                     *+ 'memory.heap.max'=4294967296 type=Long
                      * 'memory.heap.usage'=0.06405723094940186 type=Double
                      *+ 'memory.heap.used'=275123712 type=Long
                      * 'memory.non-heap.committed'=217051136 type=Long
@@ -897,15 +921,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                      * 'memory.total.init'=529858560 type=Long
                      * 'memory.total.max'=4294967295 type=Long
                      * 'memory.total.used'=486627648 type=Long
-                     * 'threads.blocked.count'=1 type=Integer
-                     * 'threads.count'=439 type=Integer
-                     * 'threads.daemon.count'=12 type=Integer
+                     *+ 'threads.blocked.count'=1 type=Integer
+                     *+ 'threads.count'=439 type=Integer
+                     *+ 'threads.daemon.count'=12 type=Integer
                      * 'threads.deadlocks'=[] type=EmptySet
                      * 'threads.new.count'=0 type=Integer
-                     * 'threads.runnable.count'=5 type=Integer
-                     * 'threads.terminated.count'=0 type=Integer
+                     *+ 'threads.runnable.count'=5 type=Integer
+                     *+ 'threads.terminated.count'=0 type=Integer
                      * 'threads.timed_waiting.count'=52 type=Integer
-                     * 'threads.waiting.count'=381 type=Integer
+                     *+ 'threads.waiting.count'=381 type=Integer
                      */
                     break;
             }

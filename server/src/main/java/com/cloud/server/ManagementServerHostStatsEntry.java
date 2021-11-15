@@ -44,6 +44,13 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private int agentCount;
 
     private long heapMemoryUsed;
+    private long heapMemoryTotal;
+    private int threadsBlockedCount;
+    private int threadsDeamonCount;
+    private int threadsRunnableCount;
+    private int threadsTerminatedCount;
+    private int threadsTotalCount;
+    private int threadsWaitingCount;
 
     @Override
     public long getManagementServerHostId() {
@@ -163,6 +170,11 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return heapMemoryUsed;
     }
 
+    @Override
+    public long getHeapMemoryTotal() {
+        return heapMemoryTotal;
+    }
+
     public void setSessions(long sessions) {
         this.sessions = sessions;
     }
@@ -245,5 +257,63 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setHeapMemoryUsed(long heapMemoryUsed) {
         this.heapMemoryUsed = heapMemoryUsed;
+    }
+
+    public void setHeapMemoryTotal(long heapMemoryTotal) {
+        this.heapMemoryTotal = heapMemoryTotal;
+    }
+
+    public void setThreadsBlockedCount(int threadsBlockedCount) {
+        this.threadsBlockedCount = threadsBlockedCount;
+    }
+
+    @Override
+    public int getThreadsBlockedCount() {
+        return threadsBlockedCount;
+    }
+
+    public void setThreadsTotalCount(int threadsTotalCount) {
+        this.threadsTotalCount = threadsTotalCount;
+    }
+
+    @Override
+    public int getThreadsTotalCount() {
+        return threadsTotalCount;
+    }
+
+    public void setThreadsDeamonCount(int threadsDeamonCount) {
+        this.threadsDeamonCount = threadsDeamonCount;
+    }
+
+    @Override
+    public int getThreadsDeamonCount() {
+        return threadsDeamonCount;
+    }
+
+    public void setThreadsRunnableCount(int threadsRunnableCount) {
+        this.threadsRunnableCount = threadsRunnableCount;
+    }
+
+    @Override
+    public int getThreadsRunnableCount() {
+        return threadsRunnableCount;
+    }
+
+    public void setThreadsTerminatedCount(int threadsTerminatedCount) {
+        this.threadsTerminatedCount = threadsTerminatedCount;
+    }
+
+    @Override
+    public int getThreadsTerminatedCount() {
+        return threadsTerminatedCount;
+    }
+
+    public void setThreadsWaitingCount(int threadsWaitingCount) {
+        this.threadsWaitingCount = threadsWaitingCount;
+    }
+
+    @Override
+    public int getThreadsWaitingCount() {
+        return threadsWaitingCount;
     }
 }
