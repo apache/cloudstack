@@ -639,6 +639,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setThreadsTerminatedCount(status.getThreadsTerminatedCount());
             metricsResponse.setThreadsTotalCount(status.getThreadsTotalCount());
             metricsResponse.setThreadsWaitingCount(status.getThreadsWaitingCount());
+            metricsResponse.setSystemMemoryTotal(status.getSystemMemoryTotal());
+            metricsResponse.setSystemMemoryFree(status.getSystemMemoryFree());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }

@@ -51,6 +51,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private int threadsTerminatedCount;
     private int threadsTotalCount;
     private int threadsWaitingCount;
+    private long systemMemoryTotal;
+    private long systemMemoryFree;
 
     @Override
     public long getManagementServerHostId() {
@@ -315,5 +317,23 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public int getThreadsWaitingCount() {
         return threadsWaitingCount;
+    }
+
+    public void setSystemMemoryTotal(long systemMemoryTotal) {
+        this.systemMemoryTotal = systemMemoryTotal;
+    }
+
+    @Override
+    public long getSystemMemoryTotal() {
+        return systemMemoryTotal;
+    }
+
+    public void setSystemMemoryFree(long systemMemoryFree) {
+        this.systemMemoryFree = systemMemoryFree;
+    }
+
+    @Override
+    public long getSystemMemoryFree() {
+        return systemMemoryFree;
     }
 }

@@ -79,4 +79,8 @@ public interface ManagementServerHostStats {
     int getThreadsTerminatedCount();
 
     int getThreadsWaitingCount();
+
+    long getSystemMemoryTotal();
+
+    long getSystemMemoryFree();
 }

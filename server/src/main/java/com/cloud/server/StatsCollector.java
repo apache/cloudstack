@@ -832,6 +832,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         private void getProcFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
             String OS = Script.runSimpleBashScript("cat /proc/version");
             newEntry.setOsDistribution(OS);
+            String mem = Script.runSimpleBashScript("cat /proc/meminfo | grep MemTotal | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
+            newEntry.setSystemMemoryTotal(Long.parseLong(mem) * 1024);
+            String free = Script.runSimpleBashScript("cat /proc/meminfo | grep MemFree | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
+            newEntry.setSystemMemoryFree(Long.parseLong(free) * 1024);
         }
 
         private void gatherAllMetrics(ManagementServerHostStatsEntry metricsEntry) {

@@ -888,6 +888,8 @@ public class ApiConstants {
     public static final String THREADS_TERMINATED_COUNT = "threadsteminatedcount";
     public static final String THREADS_TOTAL_COUNT = "threadstotalcount";
     public static final String THREADS_WAITING_COUNT = "threadswaitingcount";
+    public static final String SYSTEM_MEMORY_TOTAL = "systemmemorytotal";
+    public static final String SYSTEM_MEMORY_FREE = "systemmemoryfree";
 
     public enum BootType {
         UEFI, BIOS;

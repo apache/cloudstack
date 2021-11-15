@@ -67,6 +67,14 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "The number of deamon threads")
     private int threadsWaitingCount;
 
+    @SerializedName(ApiConstants.SYSTEM_MEMORY_TOTAL)
+    @Param(description = "The number of deamon threads")
+    private long systemMemoryTotal;
+
+    @SerializedName(ApiConstants.SYSTEM_MEMORY_FREE)
+    @Param(description = "The number of deamon threads")
+    private long systemMemoryFree;
+
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
     }
@@ -109,5 +117,13 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setThreadsWaitingCount(int threadsWaitingCount) {
         this.threadsWaitingCount = threadsWaitingCount;
+    }
+
+    public void setSystemMemoryTotal(long systemMemoryTotal) {
+        this.systemMemoryTotal = systemMemoryTotal;
+    }
+
+    public void setSystemMemoryFree(long systemMemoryFree) {
+        this.systemMemoryFree = systemMemoryFree;
     }
 }
