@@ -205,7 +205,7 @@ test_data = {
     "network2": {
         "name": "Test Network Shared",
         "displaytext": "Test Network Shared",
-        "vlan": 1201,
+        "vlan": 4000,
         "gateway": "172.16.15.1",
         "netmask": "255.255.255.0",
         "startip": "172.16.15.21",
@@ -1015,7 +1015,8 @@ test_data = {
             "ostype": "Other Linux (64-bit)",
             "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
             "requireshvm": "True",
-            "ispublic": "True"
+            "ispublic": "True",
+            "deployasis": "True"
         }
     },
     "test_ovf_templates": [
@@ -1755,7 +1756,7 @@ test_data = {
             "netmask": "255.255.255.0",
             "startip": "10.223.59.200",
             "endip": "10.223.59.240",
-            "vlan": "1000"
+            "vlan": "4005"
         },
         "netscaler": {
             "ipaddress": "",
@@ -1938,7 +1939,7 @@ test_data = {
             "netmask": "255.255.255.0",
             "startip": "10.223.59.200",
             "endip": "10.223.59.240",
-            "vlan": "1000"
+            "vlan": "4005"
         },
         "netscaler": {
             "ipaddress": "",

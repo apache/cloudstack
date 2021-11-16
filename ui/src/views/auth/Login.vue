@@ -202,6 +202,11 @@ export default {
       api('listIdps').then(response => {
         if (response) {
           this.idps = response.listidpsresponse.idp || []
+          this.idps.sort(function (a, b) {
+            if (a.orgName < b.orgName) { return -1 }
+            if (a.orgName > b.orgName) { return 1 }
+            return 0
+          })
           this.selectedIdp = this.idps[0].id || ''
         }
       })

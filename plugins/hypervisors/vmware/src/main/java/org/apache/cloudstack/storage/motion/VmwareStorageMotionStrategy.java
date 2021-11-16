@@ -181,7 +181,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             if (hostId == null) {
                 throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + sourcePool.getName());
             }
-            hostGuidInTargetCluster = getHostGuidInTargetCluster(sourcePool.getClusterId(), targetPool, sourceScopeType);
+            hostGuidInTargetCluster = getHostGuidInTargetCluster(sourcePool.getClusterId(), targetPool, targetScopeType);
         } else if (ScopeType.CLUSTER.equals(targetScopeType)) {
             hostId = findSuitableHostIdForWorkerVmPlacement(targetPool.getClusterId());
             if (hostId == null) {
