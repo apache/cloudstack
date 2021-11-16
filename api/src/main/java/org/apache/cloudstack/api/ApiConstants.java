@@ -890,6 +890,8 @@ public class ApiConstants {
     public static final String THREADS_WAITING_COUNT = "threadswaitingcount";
     public static final String SYSTEM_MEMORY_TOTAL = "systemmemorytotal";
     public static final String SYSTEM_MEMORY_FREE = "systemmemoryfree";
+    public static final String SYSTEM_MEMORY_USED = "systemmemoryused";
+    public static final String SYSTEM_MEMORY_VIRTUALSIZE = "systemmemoryvirtualsize";
 
     public enum BootType {
         UEFI, BIOS;

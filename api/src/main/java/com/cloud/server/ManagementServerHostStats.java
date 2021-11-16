@@ -83,4 +83,8 @@ public interface ManagementServerHostStats {
     long getSystemMemoryTotal();
 
     long getSystemMemoryFree();
+
+    long getSystemMemoryUsed();
+
+    long getSystemMemoryVirtualSize();
 }

@@ -2198,6 +2198,8 @@
 "label.system.wide.capacity": "System-wide capacity",
   "label.systemmemoryfree": "Free System Memory",
   "label.systemmemorytotal": "Total System Memory",
+  "label.systemmemoryused": "Used System Memory",
+  "label.systemmemoryvirtualsize": "Virtual Process Size",
 "label.systemvmtype": "System VM Type",
 "label.tag.key": "Tag Key",
 "label.tag.value": "Tag Value",

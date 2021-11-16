@@ -749,6 +749,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getRuntimeData(newEntry);
             getCpuData(newEntry);
             getMemoryData(newEntry);
+            // newEntry must now include a pid!
             getProcFsData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
             gatherAllMetrics(newEntry);
@@ -836,6 +837,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setSystemMemoryTotal(Long.parseLong(mem) * 1024);
             String free = Script.runSimpleBashScript("cat /proc/meminfo | grep MemFree | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
             newEntry.setSystemMemoryFree(Long.parseLong(free) * 1024);
+            String used = Script.runSimpleBashScript(String.format("ps -o rss= %d", newEntry.getPid()));
+            newEntry.setSystemMemoryUsed(Long.parseLong(used));
+            String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
+            newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse));
         }
 
         private void gatherAllMetrics(ManagementServerHostStatsEntry metricsEntry) {

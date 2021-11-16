@@ -53,6 +53,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private int threadsWaitingCount;
     private long systemMemoryTotal;
     private long systemMemoryFree;
+    private long systemMemoryUsed;
+    private long systemMemoryVirtualSize;
 
     @Override
     public long getManagementServerHostId() {
@@ -335,5 +337,23 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public long getSystemMemoryFree() {
         return systemMemoryFree;
+    }
+
+    public void setSystemMemoryUsed(long systemMemoryUsed) {
+        this.systemMemoryUsed = systemMemoryUsed;
+    }
+
+    @Override
+    public long getSystemMemoryUsed() {
+        return systemMemoryUsed;
+    }
+
+    public void setSystemMemoryVirtualSize(long systemMemoryVirtualSize) {
+        this.systemMemoryVirtualSize = systemMemoryVirtualSize;
+    }
+
+    @Override
+    public long getSystemMemoryVirtualSize() {
+        return systemMemoryVirtualSize;
     }
 }

@@ -52,28 +52,36 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     private int threadsDeamonCount;
 
     @SerializedName(ApiConstants.THREADS_RUNNABLE_COUNT)
-    @Param(description = "The number of deamon threads")
+    @Param(description = "The number of runnable threads")
     private int threadsRunnableCount;
 
     @SerializedName(ApiConstants.THREADS_TERMINATED_COUNT)
-    @Param(description = "The number of deamon threads")
+    @Param(description = "The number of terminated threads")
     private int threadsTerminatedCount;
 
     @SerializedName(ApiConstants.THREADS_TOTAL_COUNT)
-    @Param(description = "The number of deamon threads")
+    @Param(description = "The number of threads")
     private int threadsTotalCount;
 
     @SerializedName(ApiConstants.THREADS_WAITING_COUNT)
-    @Param(description = "The number of deamon threads")
+    @Param(description = "The number of waiting threads")
     private int threadsWaitingCount;
 
     @SerializedName(ApiConstants.SYSTEM_MEMORY_TOTAL)
-    @Param(description = "The number of deamon threads")
+    @Param(description = "Total system memory")
     private long systemMemoryTotal;
 
     @SerializedName(ApiConstants.SYSTEM_MEMORY_FREE)
-    @Param(description = "The number of deamon threads")
+    @Param(description = "Free system memory")
     private long systemMemoryFree;
+
+    @SerializedName(ApiConstants.SYSTEM_MEMORY_USED)
+    @Param(description = "Amount of memory used")
+    private long systemMemoryUsed;
+
+    @SerializedName(ApiConstants.SYSTEM_MEMORY_VIRTUALSIZE)
+    @Param(description = "Virtual size of the fully loaded process")
+    private long systemMemoryVirtualSize;
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
@@ -125,5 +133,13 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setSystemMemoryFree(long systemMemoryFree) {
         this.systemMemoryFree = systemMemoryFree;
+    }
+
+    public void setSystemMemoryUsed(long systemMemoryUsed) {
+        this.systemMemoryUsed = systemMemoryUsed;
+    }
+
+    public void setSystemMemoryVirtualSize(long systemMemoryVirtualSize) {
+        this.systemMemoryVirtualSize = systemMemoryVirtualSize;
     }
 }
