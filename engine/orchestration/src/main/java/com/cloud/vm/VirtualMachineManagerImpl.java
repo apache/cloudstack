@@ -42,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -4005,7 +4004,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
-            placeHolder = createPlaceHolderWork(vm.getId(), network.getUuid());
+            placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 return orchestrateAddVmToNetwork(vm, network, requested);
             } finally {
@@ -4045,23 +4044,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    /**
-     * duplicated in {@see UserVmManagerImpl} for a {@see UserVmVO}
-     */
-    private void checkIfNetworkExistsForVM(VirtualMachine virtualMachine, Network network) {
-        List<NicVO> allNics = _nicsDao.listByVmId(virtualMachine.getId());
-        for (NicVO nic : allNics) {
-            if (nic.getNetworkId() == network.getId()) {
-                throw new CloudRuntimeException("A NIC already exists for VM:" + virtualMachine.getInstanceName() + " in network: " + network.getUuid());
-            }
-        }
-    }
-
     private NicProfile orchestrateAddVmToNetwork(final VirtualMachine vm, final Network network, final NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
         final CallContext cctx = CallContext.current();
 
-        checkIfNetworkExistsForVM(vm, network);
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
         final VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         final ReservationContext context = new ReservationContextImpl(null, null, cctx.getCallingUser(), cctx.getCallingAccount());
@@ -5412,7 +5398,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<Volume, StoragePool> volumeStorageMap = dest.getStorageForDisks();
         if (volumeStorageMap != null) {
             for (Volume vol : volumeStorageMap.keySet()) {
-                checkConcurrentJobsPerDatastoreThreshold(volumeStorageMap.get(vol));
+                checkConcurrentJobsPerDatastoreThreshhold(volumeStorageMap.get(vol));
             }
         }
 
@@ -5577,7 +5563,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
     }
 
-    private void checkConcurrentJobsPerDatastoreThreshold(final StoragePool destPool) {
+    private void checkConcurrentJobsPerDatastoreThreshhold(final StoragePool destPool) {
         final Long threshold = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
         if (threshold != null && threshold > 0) {
             long count = _jobMgr.countPendingJobs("\"storageid\":\"" + destPool.getUuid() + "\"", MigrateVMCmd.class.getName(), MigrateVolumeCmd.class.getName(), MigrateVolumeCmdByAdmin.class.getName());
@@ -5598,7 +5584,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Set<Long> uniquePoolIds = new HashSet<>(poolIds);
         for (Long poolId : uniquePoolIds) {
             StoragePoolVO pool = _storagePoolDao.findById(poolId);
-            checkConcurrentJobsPerDatastoreThreshold(pool);
+            checkConcurrentJobsPerDatastoreThreshhold(pool);
         }
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -5645,61 +5631,35 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
                 VirtualMachine.Type.Instance, vm.getId(),
-                VmWorkAddVmToNetwork.class.getName(), network.getUuid());
+                VmWorkAddVmToNetwork.class.getName());
 
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-            if (pendingWorkJobs.size() > 1) {
-                s_logger.warn(String.format("The number of jobs to add network %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
-            }
+            assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("no jobs to add network %s for vm %s yet", network, vm));
-            }
 
-            workJob = createVmWorkJobToAddNetwork(vm, network, requested, context, user, account);
+            workJob = new VmWorkJobVO(context.getContextId());
+
+            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+            workJob.setCmd(VmWorkAddVmToNetwork.class.getName());
+
+            workJob.setAccountId(account.getId());
+            workJob.setUserId(user.getId());
+            workJob.setVmType(VirtualMachine.Type.Instance);
+            workJob.setVmInstanceId(vm.getId());
+            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+            // save work context info (there are some duplications)
+            final VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
+                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network.getId(), requested);
+            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
-    }
-
-    private VmWorkJobVO createVmWorkJobToAddNetwork(
-            VirtualMachine vm,
-            Network network,
-            NicProfile requested,
-            CallContext context,
-            User user,
-            Account account) {
-        VmWorkJobVO workJob;
-        workJob = new VmWorkJobVO(context.getContextId());
-
-        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-        workJob.setCmd(VmWorkAddVmToNetwork.class.getName());
-
-        workJob.setAccountId(account.getId());
-        workJob.setUserId(user.getId());
-        workJob.setVmType(VirtualMachine.Type.Instance);
-        workJob.setVmInstanceId(vm.getId());
-        workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-        workJob.setSecondaryObjectIdentifier(network.getUuid());
-
-        // save work context info (there are some duplications)
-        final VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
-                VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network.getId(), requested);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-        try {
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
-        } catch (CloudRuntimeException e) {
-            if (e.getCause() instanceof EntityExistsException) {
-                String msg = String.format("A job to add a nic for network %s to vm %s already exists", network.getUuid(), vm.getUuid());
-                s_logger.warn(msg, e);
-            }
-            throw e;
-        }
-        return workJob;
     }
 
     public Outcome<VirtualMachine> removeNicFromVmThroughJobQueue(
@@ -6008,10 +5968,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private VmWorkJobVO createPlaceHolderWork(final long instanceId) {
-        return createPlaceHolderWork(instanceId, null);
-    }
-
-    private VmWorkJobVO createPlaceHolderWork(final long instanceId, String secondaryObjectIdentifier) {
         final VmWorkJobVO workJob = new VmWorkJobVO("");
 
         workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
@@ -6023,9 +5979,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         workJob.setStep(VmWorkJobVO.Step.Starting);
         workJob.setVmType(VirtualMachine.Type.Instance);
         workJob.setVmInstanceId(instanceId);
-        if(StringUtils.isNotBlank(secondaryObjectIdentifier)) {
-            workJob.setSecondaryObjectIdentifier(secondaryObjectIdentifier);
-        }
         workJob.setInitMsid(ManagementServerNode.getManagementServerId());
 
         _workJobDao.persist(workJob);
