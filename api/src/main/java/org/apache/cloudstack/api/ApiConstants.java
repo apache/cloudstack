@@ -893,6 +893,9 @@ public class ApiConstants {
     public static final String SYSTEM_MEMORY_USED = "systemmemoryused";
     public static final String SYSTEM_MEMORY_VIRTUALSIZE = "systemmemoryvirtualsize";
     public static final String LOG_INFO = "loginfo";
+    public static final String SYSTEM_CYCLES = "systemtotalcpucycles";
+    public static final String SYSTEM_LOAD_AVERAGES = "systemloadaverages";
+    public static final String SYSTEM_CYCLE_USAGE = "systemcycleusage";
 
     public enum BootType {
         UEFI, BIOS;

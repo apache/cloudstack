@@ -87,6 +87,18 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the log files and their usage on disk")
     private String logInfo;
 
+    @SerializedName(ApiConstants.SYSTEM_CYCLES)
+    @Param(description = "the total system cpu capacity")
+    private double systemTotalCpuCycles;
+
+    @SerializedName(ApiConstants.SYSTEM_LOAD_AVERAGES)
+    @Param(description = "the load averages for 1 5 and 15 minutes")
+    private double[] systemLoadAverages;
+
+    @SerializedName(ApiConstants.SYSTEM_CYCLE_USAGE)
+    @Param(description = "the system load for user = and system processes, and the system idle cycles")
+    private double[] systemCycleUsage;
+
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
     }
@@ -149,5 +161,17 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setLogInfo(String logInfo) {
         this.logInfo = logInfo;
+    }
+
+    public void setSystemTotalCpuCycles(double systemTotalCpuCycles) {
+        this.systemTotalCpuCycles = systemTotalCpuCycles;
+    }
+
+    public void setSystemLoadAverages(double[] systemLoadAverages) {
+        this.systemLoadAverages = systemLoadAverages;
+    }
+
+    public void setSystemCycleUsage(double[] systemCycleUsage) {
+        this.systemCycleUsage = systemCycleUsage;
     }
 }

@@ -644,6 +644,9 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setSystemMemoryUsed(status.getSystemMemoryUsed());
             metricsResponse.setSystemMemoryVirtualSize(status.getSystemMemoryVirtualSize());
             metricsResponse.setLogInfo(status.getLogInfo());
+            metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
+            metricsResponse.setSystemLoadAverages(status.getSystemLoadAverages());
+            metricsResponse.setSystemCycleUsage(status.getSystemCyclesUsage());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }

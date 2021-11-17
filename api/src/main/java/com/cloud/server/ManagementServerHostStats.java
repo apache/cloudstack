@@ -89,4 +89,13 @@ public interface ManagementServerHostStats {
     long getSystemMemoryVirtualSize();
 
     String getLogInfo();
+
+    /**
+     * @return in mega herz
+     */
+    double getSystemTotalCpuCycles();
+
+    double[] getSystemLoadAverages();
+
+    double[] getSystemCyclesUsage();
 }

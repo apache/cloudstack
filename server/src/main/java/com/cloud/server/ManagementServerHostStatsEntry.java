@@ -56,6 +56,9 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private long systemMemoryUsed;
     private long systemMemoryVirtualSize;
     private String logInfo;
+    private double systemTotalCpuCycles;
+    private double[] systemLoadAverages;
+    private double[] systemCyclesUsage;
 
     @Override
     public long getManagementServerHostId() {
@@ -365,5 +368,32 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public String getLogInfo() {
         return logInfo;
+    }
+
+    public void setSystemTotalCpuCycles(double systemTotalCpuCycles) {
+        this.systemTotalCpuCycles = systemTotalCpuCycles;
+    }
+
+    @Override
+    public double getSystemTotalCpuCycles() {
+        return systemTotalCpuCycles;
+    }
+
+    public void setSystemLoadAverages(double[] systemLoadAverages) {
+        this.systemLoadAverages = systemLoadAverages;
+    }
+
+    @Override
+    public double[] getSystemLoadAverages() {
+        return systemLoadAverages;
+    }
+
+    public void setSystemCyclesUsage(double[] systemCyclesUsage) {
+        this.systemCyclesUsage = systemCyclesUsage;
+    }
+
+    @Override
+    public double[] getSystemCyclesUsage() {
+        return systemCyclesUsage;
     }
 }

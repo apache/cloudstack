@@ -421,6 +421,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         registerAll("jvm", new JvmAttributeGaugeSet(), registry);
         return true;
     }
+    @Override
+    public boolean stop() {
+        _executor.shutdown();
+        return true;
+    }
 
     private void registerAll(String prefix, MetricSet metricSet, MetricRegistry registry) {
         for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
@@ -843,6 +848,41 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setSystemMemoryUsed(Long.parseLong(used));
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse));
+
+            newEntry.setSystemTotalCpuCycles(getSystemCpuCyclesTotal());
+            newEntry.setSystemLoadAverages(getCpuLoads());
+            newEntry.setSystemCyclesUsage(getSystemCpuUsage(newEntry));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.debug(
+                        String.format("cpu\ncapacities: %f\n     loads: %s ; %s ; %s\n     stats: %f ; %f ; %f",
+                                newEntry.getSystemTotalCpuCycles(),
+                                newEntry.getSystemLoadAverages()[0], newEntry.getSystemLoadAverages()[1], newEntry.getSystemLoadAverages()[2],
+                                newEntry.getSystemCyclesUsage()[0], newEntry.getSystemCyclesUsage()[1], newEntry.getSystemCyclesUsage()[2]
+                        )
+                );
+            }
+        }
+
+        @NotNull
+        private double[] getCpuLoads() {
+            String[] cpuloadString = Script.runSimpleBashScript("cat /proc/loadavg").split(" ");
+            double[] cpuloads = {Double.parseDouble(cpuloadString[0]), Double.parseDouble(cpuloadString[1]), Double.parseDouble(cpuloadString[2])};
+            return cpuloads;
+        }
+
+        private double [] getSystemCpuUsage(@NotNull ManagementServerHostStatsEntry newEntry) {
+            String[] cpustats = Script.runSimpleBashScript("cat /proc/stat | grep \"cpu \" | tr -d \"cpu\"").trim().split(" ");
+            double [] cycleUsage = {Double.parseDouble(cpustats[0]) + Double.parseDouble(cpustats[1]), Double.parseDouble(cpustats[2]), Double.parseDouble(cpustats[3])};
+            return cycleUsage;
+        }
+
+        private double getSystemCpuCyclesTotal() {
+            String cpucaps = Script.runSimpleBashScript("cat /proc/cpuinfo | grep \"cpu MHz\" | grep \"cpu MHz\" | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
+            double totalcpucap = 0;
+            for (String cpucap : cpucaps.split(" ")) {
+                totalcpucap += Double.parseDouble(cpucap);
+            }
+            return totalcpucap;
         }
 
         private void getFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
