@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -986,10 +987,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object securityGroupId = cmd.getSecurityGroupId();
         Object isHaEnabled = cmd.getHaEnabled();
         Object pod = null;
+        Long clusterId = null;
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
             pod = cmd.getPodId();
+            if (cmd instanceof ListVMsCmdByAdmin) {
+                clusterId = ((ListVMsCmdByAdmin)cmd).getClusterId();
+            }
             hostId = cmd.getHostId();
             storageId = cmd.getStorageId();
         }
@@ -1002,6 +1007,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -1173,6 +1179,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (state == null) {
                     sc.setParameters("stateNEQ", "Destroyed");
                 }
+            }
+
+            if (clusterId != null) {
+                sc.setParameters("clusterId", clusterId);
             }
 
             if (hostId != null) {
