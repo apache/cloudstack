@@ -87,4 +87,6 @@ public interface ManagementServerHostStats {
     long getSystemMemoryUsed();
 
     long getSystemMemoryVirtualSize();
+
+    String getLogInfo();
 }

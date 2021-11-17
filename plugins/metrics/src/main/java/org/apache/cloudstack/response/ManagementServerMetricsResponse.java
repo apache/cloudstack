@@ -83,6 +83,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "Virtual size of the fully loaded process")
     private long systemMemoryVirtualSize;
 
+    @SerializedName(ApiConstants.LOG_INFO)
+    @Param(description = "the log files and their usage on disk")
+    private String logInfo;
+
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
     }
@@ -141,5 +145,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setSystemMemoryVirtualSize(long systemMemoryVirtualSize) {
         this.systemMemoryVirtualSize = systemMemoryVirtualSize;
+    }
+
+    public void setLogInfo(String logInfo) {
+        this.logInfo = logInfo;
     }
 }

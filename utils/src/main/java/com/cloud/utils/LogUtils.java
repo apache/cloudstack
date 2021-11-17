@@ -59,12 +59,19 @@ public class LogUtils {
     public static Set<String> getLogFileNames() {
         Set<String> fileNames = new HashSet<>();
         Enumeration appenders = LOGGER.getRootLogger().getAllAppenders();
+        int appenderCount=0;
         while(appenders.hasMoreElements()) {
+            ++appenderCount;
             Appender currAppender = (Appender) appenders.nextElement();
             if(currAppender instanceof FileAppender) {
-                fileNames.add(((FileAppender) currAppender).getFile());
+                String fileName =((FileAppender) currAppender).getFile();
+                fileNames.add(fileName);
+                LOGGER.debug(String.format("file for %s : %s", currAppender.getName(), fileName));
+            } else {
+                LOGGER.debug(String.format("not counting %s as a file.", currAppender.getName()));
             }
         }
+        LOGGER.debug(String.format("out of %d appenders, %d are log files", appenderCount, fileNames.size()));
         return fileNames;
     }
 }

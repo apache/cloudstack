@@ -643,6 +643,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setSystemMemoryFree(status.getSystemMemoryFree());
             metricsResponse.setSystemMemoryUsed(status.getSystemMemoryUsed());
             metricsResponse.setSystemMemoryVirtualSize(status.getSystemMemoryVirtualSize());
+            metricsResponse.setLogInfo(status.getLogInfo());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }

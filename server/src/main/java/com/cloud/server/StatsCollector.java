@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.cloud.cluster.ManagementServerStatusVO;
 import com.cloud.cluster.dao.ManagementServerStatusDao;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.script.Script;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
@@ -751,6 +752,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getMemoryData(newEntry);
             // newEntry must now include a pid!
             getProcFsData(newEntry);
+            getFsData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
             gatherAllMetrics(newEntry);
             LOGGER.debug("Metrics collection end!");
@@ -841,6 +843,20 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setSystemMemoryUsed(Long.parseLong(used));
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse));
+        }
+
+        private void getFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
+            Set<String> logFileNames = LogUtils.getLogFileNames();
+            StringBuilder logInfoBuilder = new StringBuilder();
+            for (String fileName : logFileNames) {
+                String du = Script.runSimpleBashScript(String.format("du -sk %s", fileName));
+                String df = Script.runSimpleBashScript(String.format("df -k %s | grep -v Filesystem", fileName));
+                logInfoBuilder.append(fileName).append('\n').append("usage: ").append(du).append('\n').append("disk :").append(df);
+            }
+            newEntry.setLogInfo(logInfoBuilder.toString());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("log stats:\n" + newEntry.getLogInfo());
+            }
         }
 
         private void gatherAllMetrics(ManagementServerHostStatsEntry metricsEntry) {

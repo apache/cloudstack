@@ -55,6 +55,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private long systemMemoryFree;
     private long systemMemoryUsed;
     private long systemMemoryVirtualSize;
+    private String logInfo;
 
     @Override
     public long getManagementServerHostId() {
@@ -355,5 +356,14 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public long getSystemMemoryVirtualSize() {
         return systemMemoryVirtualSize;
+    }
+
+    public void setLogInfo(String logInfo) {
+        this.logInfo = logInfo;
+    }
+
+    @Override
+    public String getLogInfo() {
+        return logInfo;
     }
 }
