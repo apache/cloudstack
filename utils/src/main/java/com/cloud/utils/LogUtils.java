@@ -20,26 +20,51 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 public class LogUtils {
-    public static final Logger s_logger = Logger.getLogger(LogUtils.class);
+    public static final Logger LOGGER = Logger.getLogger(LogUtils.class);
+
+    public static String getConfigFileLocation() {
+        return configFileLocation;
+    }
+
+    private static String configFileLocation = null;
 
     public static void initLog4j(String log4jConfigFileName) {
         assert (log4jConfigFileName != null);
         File file = PropertiesUtil.findConfigFile(log4jConfigFileName);
         if (file != null) {
-            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+            configFileLocation = file.getAbsolutePath();
+            DOMConfigurator.configureAndWatch(configFileLocation);
         } else {
             String nameWithoutExtension = log4jConfigFileName.substring(0, log4jConfigFileName.lastIndexOf('.'));
             file = PropertiesUtil.findConfigFile(nameWithoutExtension + ".properties");
             if (file != null) {
-                s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+                configFileLocation = file.getAbsolutePath();
+                DOMConfigurator.configureAndWatch(configFileLocation);
             }
         }
+        if(configFileLocation != null) {
+            LOGGER.info("log4j configuration found at " + configFileLocation);
+        }
+    }
+    public static Set<String> getLogFileNames() {
+        Set<String> fileNames = new HashSet<>();
+        Enumeration appenders = LOGGER.getRootLogger().getAllAppenders();
+        while(appenders.hasMoreElements()) {
+            Appender currAppender = (Appender) appenders.nextElement();
+            if(currAppender instanceof FileAppender) {
+                fileNames.add(((FileAppender) currAppender).getFile());
+            }
+        }
+        return fileNames;
     }
 }
