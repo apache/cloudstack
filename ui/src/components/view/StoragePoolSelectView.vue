@@ -70,7 +70,7 @@
       <template slot="select" slot-scope="record">
         <a-tooltip placement="top" :title="record.state !== 'Up' ? $t('message.primary.storage.invalid.state') : ''">
           <a-radio
-            :disabled="record.state !== 'Up'"
+            :disabled="record.id !== -1 && record.state !== 'Up'"
             @click="updateSelection(record)"
             :checked="selectedStoragePool != null && record.id === selectedStoragePool.id">
           </a-radio>
@@ -174,8 +174,16 @@ export default {
     this.preselectStoragePool()
     this.fetchStoragePools()
   },
+  watch: {
+    searchQuery (newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.page = 1
+      }
+    }
+  },
   methods: {
     fetchStoragePools () {
+      this.loading = true
       if (this.suitabilityEnabled) {
         api('findStoragePoolsForMigration', {
           id: this.resource.id,
@@ -207,6 +215,7 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.handleStoragePoolsFetchComplete()
+          this.loading = false
         })
       }
     },

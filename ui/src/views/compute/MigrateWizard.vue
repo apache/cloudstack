@@ -198,6 +198,13 @@ export default {
       return this.$route.meta.name === 'vm'
     }
   },
+  watch: {
+    searchQuery (newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.page = 1
+      }
+    }
+  },
   methods: {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
