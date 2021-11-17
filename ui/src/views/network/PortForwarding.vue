@@ -331,7 +331,7 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
-      checked: true,
+      checked: false,
       selectedRowKeys: [],
       showGroupActionModal: false,
       selectedItems: [],
@@ -639,6 +639,7 @@ export default {
       this.addVmModalNicLoading = false
       this.showConfirmationAction = false
       this.nics = []
+      this.checked = false
       this.resetTagInputs()
     },
     openTagsModal (id) {
