@@ -2357,6 +2357,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 s_logger.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
                 isSecureBoot = true;
             }
+
+            bootMode = customParams.get(GuestDef.BootType.UEFI.toString());
         }
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
