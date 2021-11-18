@@ -3116,7 +3116,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 if (networkAccount != null) {
                                     _networkAccountDao.remove(networkAccount.getId());
                                 }
-                                // Remove network details
+
                                 networkDetailsDao.removeDetails(networkFinal.getId());
                             }
 
