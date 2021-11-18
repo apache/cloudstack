@@ -39,7 +39,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.utils.ssh.SshHelper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesClusterUtil {
 
@@ -103,7 +103,7 @@ public class KubernetesClusterUtil {
                                                         final UserVm userVm, final long timeoutTime,
                                                         final int waitDuration) {
         String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
+        if (StringUtils.isNotEmpty(hostName)) {
             hostName = hostName.toLowerCase();
         }
         while (System.currentTimeMillis() < timeoutTime) {
@@ -134,13 +134,13 @@ public class KubernetesClusterUtil {
                                                                  final String namespace, String serviceName) {
         try {
             String cmd = "sudo /opt/bin/kubectl get pods --all-namespaces";
-            if (!Strings.isNullOrEmpty(namespace)) {
+            if (StringUtils.isNotEmpty(namespace)) {
                 cmd = String.format("sudo /opt/bin/kubectl get pods --namespace=%s", namespace);
             }
             Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, user,
                     sshKeyFile, null, cmd,
                     10000, 10000, 10000);
-            if (result.first() && !Strings.isNullOrEmpty(result.second())) {
+            if (result.first() && StringUtils.isNotEmpty(result.second())) {
                 String[] lines = result.second().split("\n");
                 for (String line :
                         lines) {
@@ -192,7 +192,7 @@ public class KubernetesClusterUtil {
                         sshKeyFile, null, "sudo cat /etc/kubernetes/admin.conf",
                         10000, 10000, 10000);
 
-                if (result.first() && !Strings.isNullOrEmpty(result.second())) {
+                if (result.first() && StringUtils.isNotEmpty(result.second())) {
                     kubeConfig = result.second();
                     break;
                 } else  {
@@ -235,7 +235,7 @@ public class KubernetesClusterUtil {
                 con.setSSLSocketFactory(sslContext.getSocketFactory());
                 BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 String versionOutput = br.lines().collect(Collectors.joining());
-                if (!Strings.isNullOrEmpty(versionOutput)) {
+                if (StringUtils.isNotEmpty(versionOutput)) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(String.format("Kubernetes cluster : %s API has been successfully provisioned, %s", kubernetesCluster.getName(), versionOutput));
                     }

@@ -36,10 +36,10 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.CertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
-import com.google.common.base.Strings;
 
 @APICommand(name = IssueCertificateCmd.APINAME,
         description = "Issues a client certificate using configured or provided CA plugin",
@@ -85,7 +85,7 @@ public class IssueCertificateCmd extends BaseAsyncCmd {
 
     private List<String> processList(final String string) {
         final List<String> list = new ArrayList<>();
-        if (!Strings.isNullOrEmpty(string)) {
+        if (StringUtils.isNotEmpty(string)) {
             for (final String address: string.split(",")) {
                 list.add(address.trim());
             }
@@ -115,7 +115,7 @@ public class IssueCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        if (Strings.isNullOrEmpty(getCsr()) && getDomains().isEmpty()) {
+        if (StringUtils.isEmpty(getCsr()) && getDomains().isEmpty()) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide the domains or the CSR, none of them are provided");
         }
         final Certificate certificate = caManager.issueCertificate(getCsr(), getDomains(), getAddresses(), getValidityDuration(), getProvider());

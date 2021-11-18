@@ -43,7 +43,7 @@ import com.vmware.pbm.PbmPortType;
 import com.vmware.pbm.PbmService;
 import com.vmware.pbm.PbmServiceInstanceContent;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 

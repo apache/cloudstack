@@ -141,12 +141,6 @@ public class StringUtilsTest {
     }
 
     @Test
-    public void testJoin() {
-        assertEquals("a-b-c", StringUtils.join("-", "a", "b", "c"));
-        assertEquals("", StringUtils.join("-"));
-    }
-
-    @Test
     public void testCleanSecretkeyFromJsonObjectAtEnd() {
         final String input = "{\"foo\":\"bar\",\"secretkey\":\"test\"}";
         // TODO: It would be nice to clean up the regex in question to not

@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -70,7 +71,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -81,7 +81,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.common.base.Strings;
 
 public class KubernetesClusterActionWorker {
 
@@ -172,7 +171,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected String readResourceFile(String resource) throws IOException {
-        return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), StringUtils.getPreferredCharset());
+        return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
     }
 
     protected void logMessage(final Level logLevel, final String message, final Exception e) {
@@ -298,7 +297,7 @@ public class KubernetesClusterActionWorker {
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
-        if (detail != null && !Strings.isNullOrEmpty(detail.getValue())) {
+        if (detail != null && StringUtils.isNotEmpty(detail.getValue())) {
             return new Pair<>(detail.getValue(), port);
         }
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());

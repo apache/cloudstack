@@ -29,7 +29,7 @@ import java.util.Map.Entry;
 
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;

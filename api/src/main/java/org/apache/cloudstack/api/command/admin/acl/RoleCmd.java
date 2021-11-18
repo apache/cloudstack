@@ -23,8 +23,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.RoleResponse;
-
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class RoleCmd extends BaseCmd {
 
@@ -43,7 +42,7 @@ public abstract class RoleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public RoleType getRoleType() {
-        if (!Strings.isNullOrEmpty(roleType)) {
+        if (StringUtils.isNotEmpty(roleType)) {
             return RoleType.fromString(roleType);
         }
         return null;

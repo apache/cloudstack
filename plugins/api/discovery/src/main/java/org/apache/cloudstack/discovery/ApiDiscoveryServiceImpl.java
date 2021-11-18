@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
@@ -46,7 +47,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.serializer.Param;
 import com.cloud.user.User;
 import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.PluggableService;
 import com.google.gson.annotations.SerializedName;
@@ -126,7 +126,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             for (ApiParameterResponse param : response.getParams()) {
                 if (responseApiNameListMap.containsKey(param.getRelated())) {
                     List<String> relatedApis = responseApiNameListMap.get(param.getRelated());
-                    param.setRelated(StringUtils.join(relatedApis, ","));
+                    param.setRelated(StringUtils.defaultString(StringUtils.join(relatedApis, ",")));
                 } else {
                     param.setRelated(null);
                 }
