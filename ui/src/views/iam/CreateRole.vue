@@ -176,6 +176,8 @@ export default {
         }
 
         this.createRole(params)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

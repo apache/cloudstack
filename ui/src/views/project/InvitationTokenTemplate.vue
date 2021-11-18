@@ -92,6 +92,8 @@ export default {
           this.loading = false
           setTimeout(loading, 1000)
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     checkForAddAsyncJob (json, title, description) {

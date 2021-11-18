@@ -382,6 +382,8 @@ export default {
           this.modal = false
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     fetchBasedOnScope (e) {

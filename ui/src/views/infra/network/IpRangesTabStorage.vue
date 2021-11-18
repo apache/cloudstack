@@ -323,6 +323,8 @@ export default {
           this.componentLoading = false
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     changePage (page, pageSize) {

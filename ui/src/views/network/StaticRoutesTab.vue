@@ -298,6 +298,8 @@ export default {
           this.$notifyError(error)
           this.tagsLoading = false
         }).finally(() => { this.tagsLoading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     openTagsModal (route) {

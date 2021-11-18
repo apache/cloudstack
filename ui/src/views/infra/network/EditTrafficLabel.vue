@@ -196,6 +196,8 @@ export default {
           this.loading = false
           this.closeAction()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

@@ -29,8 +29,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <div v-if="currentForm === 'Create'">
           <a-form-item :label="$t('label.url')" name="url" ref="url">
             <a-input
@@ -852,6 +851,8 @@ export default {
             this.loading = false
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleChangeDirect (checked) {

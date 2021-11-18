@@ -278,6 +278,8 @@ export default {
           }
           window.location.href = samlUrl
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     loginSuccess (res) {

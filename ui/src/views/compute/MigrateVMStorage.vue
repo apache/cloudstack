@@ -162,6 +162,8 @@ export default {
           return
         }
         this.migrateVm(migrateApi, values.storageid, null)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     migrateVm (migrateApi, storageId, rootVolumeId) {

@@ -467,6 +467,8 @@ export default {
           this.onCloseCopyForm()
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeModal () {

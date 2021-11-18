@@ -202,7 +202,8 @@ export default {
           }
         })
         this.$emit('update-network-config', this.networks)
-      }).catch(() => {
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
         this.$emit('handler-error', true)
       })
     },

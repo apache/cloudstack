@@ -446,6 +446,8 @@ export default {
           this.$notifyError(error)
           this.tagsLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       }).finally(() => {
         this.tagsLoading = false
       })
@@ -531,6 +533,8 @@ export default {
           this.$notifyError(error)
           this.fetchLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteRule (id) {
@@ -602,6 +606,8 @@ export default {
           this.fetchLoading = false
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     changeOrder (e) {

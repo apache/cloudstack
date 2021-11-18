@@ -827,6 +827,8 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteTag (tag) {
@@ -985,6 +987,8 @@ export default {
         })
 
         this.handleAddStickinessPolicy(data, values)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleStickinessMethodSelectChange (e) {

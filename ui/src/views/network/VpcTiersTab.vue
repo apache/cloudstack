@@ -668,7 +668,8 @@ export default {
           this.fetchLoading = false
           this.modalLoading = false
         })
-      }).catch(() => {
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
         this.fetchLoading = false
         this.modalLoading = false
       })
@@ -720,7 +721,8 @@ export default {
           this.showAddInternalLB = false
           this.fetchData()
         })
-      }).catch(() => {
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
         this.fetchLoading = true
         this.modalLoading = false
       })

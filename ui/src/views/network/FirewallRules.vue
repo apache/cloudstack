@@ -502,6 +502,8 @@ export default {
         }).finally(() => {
           this.addTagLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteTag (tag) {

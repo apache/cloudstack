@@ -457,6 +457,8 @@ export default {
           this.parentToggleLoading()
           this.tagsLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       }).finally(() => { this.tagsLoading = false })
     },
     openTagsModal (rule) {

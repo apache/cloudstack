@@ -171,6 +171,8 @@ export default {
           setTimeout(loadingJob)
           this.closeAction()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     migrateData (args, title) {

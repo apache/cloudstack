@@ -461,6 +461,8 @@ export default {
         }
 
         this.$emit('nextPressed')
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleBack () {

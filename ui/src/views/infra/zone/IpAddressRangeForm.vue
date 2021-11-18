@@ -250,6 +250,8 @@ export default {
           endIp: values.endIp
         })
         this.formRef.value.resetFields()
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
       this.emitIpRanges()
     },

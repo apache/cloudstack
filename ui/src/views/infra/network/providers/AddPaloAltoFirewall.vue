@@ -386,6 +386,8 @@ export default {
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     addNetworkServiceProvider (args) {

@@ -247,6 +247,8 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => { this.loading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     onCloseAction () {

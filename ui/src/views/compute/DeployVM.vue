@@ -1698,6 +1698,7 @@ export default {
           this.loading.deploy = false
         })
       }).catch(err => {
+        this.formRef.value.scrollToField(err.errorFields[0].name)
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({

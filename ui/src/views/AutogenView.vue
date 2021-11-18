@@ -1198,6 +1198,8 @@ export default {
             this.actionLoading = false
             this.fetchData()
           })
+        }).catch(error => {
+          this.formRef.value.scrollToField(error.errorFields[0].name)
         })
       } else {
         this.execSubmit(e)
@@ -1366,6 +1368,8 @@ export default {
         }).finally(f => {
           this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     shouldNavigateBack (action) {

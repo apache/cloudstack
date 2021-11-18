@@ -766,6 +766,8 @@ export default {
         }).finally(() => {
           this.updateLoading(false)
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     updateLoading (value) {

@@ -168,6 +168,8 @@ export default {
         const values = toRaw(this.form)
         this.onCloseGetHealthChecksForm()
         this.checkConfigurationAndGetHealthChecks(values.performfreshchecks)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     checkConfigurationAndGetHealthChecks (performFreshChecks) {

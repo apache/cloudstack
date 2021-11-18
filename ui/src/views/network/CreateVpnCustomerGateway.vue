@@ -341,6 +341,8 @@ export default {
           this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
           this.isSubmitted = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }

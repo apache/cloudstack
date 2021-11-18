@@ -144,6 +144,8 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         this.$emit('nextPressed')
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }

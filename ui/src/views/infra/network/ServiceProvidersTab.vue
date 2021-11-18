@@ -1211,6 +1211,8 @@ export default {
             description: error
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     onCloseAction () {

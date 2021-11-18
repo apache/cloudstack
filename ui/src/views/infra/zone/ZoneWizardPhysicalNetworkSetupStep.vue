@@ -520,6 +520,8 @@ export default {
           trafficInEdit.traffic.label = values.trafficLabel
         }
         this.trafficInEdit = null
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
       this.emitPhysicalNetworks()
     },

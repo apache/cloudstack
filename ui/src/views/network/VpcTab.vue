@@ -707,7 +707,10 @@ export default {
           this.modals.gateway = false
           this.handleFetchData()
         })
-      }).catch(() => { this.modals.gatewayLoading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+        this.modals.gatewayLoading = false
+      })
     },
     handleVpnConnectionFormSubmit () {
       if (this.fetchLoading) return
@@ -748,7 +751,10 @@ export default {
           this.fetchVpnConnections()
           this.fetchLoading = false
         })
-      }).catch(() => { this.fetchLoading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+        this.fetchLoading = false
+      })
     },
     handleNetworkAclFormSubmit () {
       if (this.fetchLoading) return
@@ -786,7 +792,10 @@ export default {
           this.fetchLoading = false
           this.fetchAclList()
         })
-      }).catch(() => { this.fetchLoading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+        this.fetchLoading = false
+      })
     },
     handleCreateVpnGateway () {
       this.fetchLoading = true
