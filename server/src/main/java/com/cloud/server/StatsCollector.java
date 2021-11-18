@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerStatusVO;
 import com.cloud.cluster.dao.ManagementServerStatusDao;
 import com.cloud.utils.LogUtils;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
@@ -1010,7 +1012,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    protected class ManagementServerStatusAdministrator implements ClusterManager.StatusAdministrator {
+    protected class ManagementServerStatusAdministrator implements ClusterManager.StatusAdministrator, ClusterManagerListener {
         @Override
         public String newStatus(ClusterServicePdu pdu) {
             if (LOGGER.isDebugEnabled()) {
@@ -1028,6 +1030,26 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
             }
             return null;
+        }
+
+        @Override
+        public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
+            // do nothing, but wait for the status to come through
+        }
+
+        @Override
+        public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
+            // remove the status for those ones
+            for (ManagementServerHost node : nodeList) {
+                LOGGER.info(String.format("node %s (%s) at %s (%od) is reported to have left the cluster, invalidating status.",node.getName(), node.getUuid(), node.getServiceIP(), node.getMsid()));
+                managementServerHostStats.remove(node.getUuid());
+            }
+        }
+
+        @Override
+        public void onManagementNodeIsolated() {
+            LOGGER.error(String.format("This management server is reported to be isolated (msid %d", mgmtSrvrId));
+            // not sure if anything should be done now.
         }
     }
 
