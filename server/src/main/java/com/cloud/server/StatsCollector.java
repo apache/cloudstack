@@ -892,8 +892,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             StringBuilder logInfoBuilder = new StringBuilder();
             for (String fileName : logFileNames) {
                 String du = Script.runSimpleBashScript(String.format("du -sk %s", fileName));
-                String df = Script.runSimpleBashScript(String.format("df -k %s | grep -v Filesystem", fileName));
-                logInfoBuilder.append(fileName).append('\n').append("usage: ").append(du).append('\n').append("disk :").append(df);
+                String df = Script.runSimpleBashScript(String.format("df -h %s | grep -v Filesystem", fileName));
+                logInfoBuilder.append(fileName).append('\n').append("usage: ").append(du).append(" kb\n").append("disk :").append(df);
             }
             newEntry.setLogInfo(logInfoBuilder.toString());
             if (LOGGER.isTraceEnabled()) {
