@@ -119,7 +119,7 @@ export default {
 
       if (this.formLoading) return
 
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

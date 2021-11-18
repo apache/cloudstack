@@ -265,7 +265,7 @@ export default {
       if (this.sslFormSubmitting) return
       this.sslFormSubmitting = true
 
-      this.form.validateFields(errors => {
+      this.form.validateFieldsAndScroll(errors => {
         if (errors) {
           this.sslFormSubmitting = false
           return
