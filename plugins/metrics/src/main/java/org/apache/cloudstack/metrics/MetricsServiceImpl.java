@@ -541,7 +541,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, null, clusterId);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
-            final org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics hostMetrics = new org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics(cpuCapacity, memoryCapacity);
+            final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
 
             for (final Host host: hostDao.findByClusterId(clusterId)) {
                 if (host == null || host.getType() != Host.Type.Routing) {
@@ -680,7 +680,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, zoneId, null);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, zoneId, null);
-            final org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics hostMetrics = new org.apache.cloudstack.metrics.MetricsServiceImpl.HostMetrics(cpuCapacity, memoryCapacity);
+            final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
 
             for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
                 if (cluster == null) {
