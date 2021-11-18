@@ -2052,7 +2052,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     //Create nic profile for migration
                     s_logger.debug("Creating nic profile for migration. BroadcastUri: "+broadcastUri.toString()+" NetworkId: "+ntwkId+" Vm: "+vm.getId());
                     final NetworkVO network = _networksDao.findById(ntwkId);
-                    _networkModel.getNetworkRate(network.getId(), vm.getId());
                     final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                     final NicProfile profile = new NicProfile();
                     profile.setDeviceId(255); //dummyId
@@ -2066,7 +2065,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     profile.setIsolationUri(Networks.IsolationType.Vlan.toUri(publicIp.getVlanTag()));
                     profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
                     profile.setName(_networkModel.getNetworkTag(vm.getHypervisorType(), network));
-                    profile.setNetworId(network.getId());
+                    profile.setNetworkRate(_networkModel.getNetworkRate(network.getId(), vm.getId()));
+                    profile.setNetworkId(network.getId());
 
                     guru.updateNicProfile(profile, network);
                     vm.addNic(profile);
