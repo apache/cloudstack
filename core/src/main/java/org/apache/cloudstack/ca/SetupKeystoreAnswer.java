@@ -20,14 +20,14 @@
 package org.apache.cloudstack.ca;
 
 import com.cloud.agent.api.LogLevel;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class SetupKeystoreAnswer extends SetupCertificateAnswer {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private final String csr;
 
     public SetupKeystoreAnswer(final String csr) {
-        super(!Strings.isNullOrEmpty(csr));
+        super(StringUtils.isNotEmpty(csr));
         this.csr = csr;
     }
 

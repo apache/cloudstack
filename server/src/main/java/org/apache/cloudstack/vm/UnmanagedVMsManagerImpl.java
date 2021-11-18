@@ -137,7 +137,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
@@ -259,7 +258,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             for (UnmanagedInstanceTO.Disk disk : instance.getDisks()) {
                 UnmanagedInstanceDiskResponse diskResponse = new UnmanagedInstanceDiskResponse();
                 diskResponse.setDiskId(disk.getDiskId());
-                if (!Strings.isNullOrEmpty(disk.getLabel())) {
+                if (StringUtils.isNotEmpty(disk.getLabel())) {
                     diskResponse.setLabel(disk.getLabel());
                 }
                 diskResponse.setCapacity(disk.getCapacity());
@@ -281,7 +280,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 nicResponse.setId(nic.getNicId());
                 nicResponse.setNetworkName(nic.getNetwork());
                 nicResponse.setMacAddress(nic.getMacAddress());
-                if (!Strings.isNullOrEmpty(nic.getAdapterType())) {
+                if (StringUtils.isNotEmpty(nic.getAdapterType())) {
                     nicResponse.setAdapterType(nic.getAdapterType());
                 }
                 if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
@@ -314,7 +313,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 if (volumeVO.getRemoved() == null) {
                     continue;
                 }
-                if (Strings.isNullOrEmpty(volumeVO.getChainInfo())) {
+                if (StringUtils.isEmpty(volumeVO.getChainInfo())) {
                     continue;
                 }
                 List<String> volumeFileNames = new ArrayList<>();
@@ -338,14 +337,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         path = split[split.length - 1];
                         split = path.split("\\.");
                         path = split[0];
-                        if (!Strings.isNullOrEmpty(path)) {
+                        if (StringUtils.isNotEmpty(path)) {
                             if (!additionalNameFilter.contains(path)) {
                                 volumeFileNames.add(path);
                             }
                             if (path.contains("-")) {
                                 split = path.split("-");
                                 path = split[0];
-                                if (!Strings.isNullOrEmpty(path) && !path.equals("ROOT") && !additionalNameFilter.contains(path)) {
+                                if (StringUtils.isNotEmpty(path) && !path.equals("ROOT") && !additionalNameFilter.contains(path)) {
                                     volumeFileNames.add(path);
                                 }
                             }
@@ -576,7 +575,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (!diskOfferingMap.containsKey(disk.getDiskId())) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import", disk.getDiskId()));
             }
-            if (Strings.isNullOrEmpty(diskController)) {
+            if (StringUtils.isEmpty(diskController)) {
                 diskController = disk.getController();
             } else {
                 if (!diskController.equals(disk.getController())) {
@@ -604,13 +603,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         String networkBroadcastUri = network.getBroadcastUri() == null ? null : network.getBroadcastUri().toString();
         if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() == null &&
-                (Strings.isNullOrEmpty(networkBroadcastUri) ||
+                (StringUtils.isEmpty(networkBroadcastUri) ||
                         !networkBroadcastUri.equals(String.format("vlan://%d", nic.getVlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan()));
         }
         String pvLanType = nic.getPvlanType() == null ? "" : nic.getPvlanType().toLowerCase().substring(0, 1);
         if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() != null && nic.getPvlan() != 0 &&
-                (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) ||
+                (StringUtils.isEmpty(network.getBroadcastUri().toString()) ||
                         !networkBroadcastUri.equals(String.format("pvlan://%d-%s%d", nic.getVlan(), pvLanType, nic.getPvlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("PVLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) pvlan://%d-%s%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan(), pvLanType, nic.getPvlan()));
         }
@@ -639,11 +638,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import", nic.getNicId()));
         }
         // Check IP is assigned for non L2 networks
-        if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || Strings.isNullOrEmpty(ipAddresses.getIp4Address()))) {
+        if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || StringUtils.isEmpty(ipAddresses.getIp4Address()))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s). %s parameter of API can be used for this", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
         }
         // If network is non L2, IP v4 is assigned and not set to auto-assign, check it is available for network
-        if (!network.getGuestType().equals(Network.GuestType.L2) && ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
+        if (!network.getGuestType().equals(Network.GuestType.L2) && ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getIp4Address()) && !ipAddresses.getIp4Address().equals("auto")) {
             Set<Long> ips = networkModel.getAvailableIps(network, ipAddresses.getIp4Address());
             if (CollectionUtils.isEmpty(ips) || !ips.contains(NetUtils.ip2Long(ipAddresses.getIp4Address()))) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("IP address %s for NIC(ID: %s) is not available in network(ID: %s)", ipAddresses.getIp4Address(), nic.getNicId(), network.getUuid()));
@@ -655,7 +654,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Map<String, Long> nicNetworkMap = new HashMap<>();
         String nicAdapter = null;
         for (UnmanagedInstanceTO.Nic nic : nics) {
-            if (Strings.isNullOrEmpty(nicAdapter)) {
+            if (StringUtils.isEmpty(nicAdapter)) {
                 nicAdapter = nic.getAdapterType();
             } else {
                 if (!nicAdapter.equals(nic.getAdapterType())) {
@@ -705,9 +704,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                       Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
                                                       Account owner, Long deviceId) {
         final DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
-        final String path = Strings.isNullOrEmpty(disk.getFileBaseName()) ? disk.getImagePath() : disk.getFileBaseName();
+        final String path = StringUtils.isEmpty(disk.getFileBaseName()) ? disk.getImagePath() : disk.getFileBaseName();
         String chainInfo = disk.getChainInfo();
-        if (Strings.isNullOrEmpty(chainInfo)) {
+        if (StringUtils.isEmpty(chainInfo)) {
             VirtualMachineDiskInfo diskInfo = new VirtualMachineDiskInfo();
             diskInfo.setDiskDeviceBusName(String.format("%s%d:%d", disk.getController(), disk.getControllerUnit(), disk.getPosition()));
             diskInfo.setDiskChain(new String[]{disk.getImagePath()});
@@ -876,7 +875,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             } catch (Exception e) {
                 LOGGER.error(String.format("VM import failed for unmanaged vm: %s during volume migration", vm.getInstanceName()), e);
                 cleanupFailedImportVM(vm);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume migration. %s", userVm.getInstanceName(), Strings.nullToEmpty(e.getMessage())));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume migration. %s", userVm.getInstanceName(), StringUtils.defaultString(e.getMessage())));
             }
         }
         return userVm;
@@ -928,7 +927,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(),
                         Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 1L, VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplay());
             } catch (Exception e) {
-                LOGGER.error(String.format("Failed to publish network usage records during VM import. %s", Strings.nullToEmpty(e.getMessage())));
+                LOGGER.error(String.format("Failed to publish network usage records during VM import. %s", StringUtils.defaultString(e.getMessage())));
             }
         }
     }
@@ -945,7 +944,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             validatedServiceOffering = getUnmanagedInstanceServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details);
         } catch (Exception e) {
             LOGGER.error("Service offering for VM import not compatible", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import VM: %s. %s", unmanagedInstance.getName(), Strings.nullToEmpty(e.getMessage())));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import VM: %s. %s", unmanagedInstance.getName(), StringUtils.defaultString(e.getMessage())));
         }
 
         String internalCSName = unmanagedInstance.getInternalCSName();
@@ -972,7 +971,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
         final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
         final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
-        if (rootDisk == null || Strings.isNullOrEmpty(rootDisk.getController())) {
+        if (rootDisk == null || StringUtils.isEmpty(rootDisk.getController())) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
@@ -985,7 +984,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume, unmanagedInstanceDisks.size());
         } catch (ResourceAllocationException e) {
             LOGGER.error(String.format("Volume resource allocation error for owner: %s", owner.getUuid()), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resource allocation error for owner: %s. %s", owner.getUuid(), Strings.nullToEmpty(e.getMessage())));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resource allocation error for owner: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
         }
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
@@ -1037,7 +1036,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
             cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, Strings.nullToEmpty(e.getMessage())));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
         try {
             boolean firstNic = true;
@@ -1050,7 +1049,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
             cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, Strings.nullToEmpty(e.getMessage())));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
         if (migrateAllowed) {
             userVm = migrateImportedVM(host, template, validatedServiceOffering, userVm, owner, diskProfileStoragePoolList);
@@ -1134,10 +1133,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         final DataCenter zone = dataCenterDao.findById(cluster.getDataCenterId());
         final String instanceName = cmd.getName();
-        if (Strings.isNullOrEmpty(instanceName)) {
+        if (StringUtils.isEmpty(instanceName)) {
             throw new InvalidParameterValueException(String.format("Instance name cannot be empty"));
         }
-        if (cmd.getDomainId() != null && Strings.isNullOrEmpty(cmd.getAccountName())) {
+        if (cmd.getDomainId() != null && StringUtils.isEmpty(cmd.getAccountName())) {
             throw new InvalidParameterValueException("domainid parameter must be specified with account parameter");
         }
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
@@ -1175,14 +1174,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, 1);
         } catch (ResourceAllocationException e) {
             LOGGER.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), Strings.nullToEmpty(e.getMessage())));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
         }
         String displayName = cmd.getDisplayName();
-        if (Strings.isNullOrEmpty(displayName)) {
+        if (StringUtils.isEmpty(displayName)) {
             displayName = instanceName;
         }
         String hostName = cmd.getHostName();
-        if (Strings.isNullOrEmpty(hostName)) {
+        if (StringUtils.isEmpty(hostName)) {
             if (!NetUtils.verifyDomainNameLabel(instanceName, true)) {
                 throw new InvalidParameterValueException(String.format("Please provide hostname for the VM. VM name contains unsupported characters for it to be used as hostname"));
             }
@@ -1237,14 +1236,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     if (template.getName().equals(VM_IMPORT_DEFAULT_TEMPLATE_NAME)) {
                         String osName = unmanagedInstance.getOperatingSystem();
                         GuestOS guestOS = null;
-                        if (!Strings.isNullOrEmpty(osName)) {
+                        if (StringUtils.isNotEmpty(osName)) {
                             guestOS = guestOSDao.listByDisplayName(osName);
                         }
                         GuestOSHypervisor guestOSHypervisor = null;
                         if (guestOS != null) {
                             guestOSHypervisor = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
                         }
-                        if (guestOSHypervisor == null && !Strings.isNullOrEmpty(unmanagedInstance.getOperatingSystemId())) {
+                        if (guestOSHypervisor == null && StringUtils.isNotEmpty(unmanagedInstance.getOperatingSystemId())) {
                             guestOSHypervisor = guestOSHypervisorDao.findByOsNameAndHypervisor(unmanagedInstance.getOperatingSystemId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
                         }
                         if (guestOSHypervisor == null) {

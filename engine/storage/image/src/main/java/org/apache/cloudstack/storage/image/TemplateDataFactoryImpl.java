@@ -24,7 +24,6 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -37,6 +36,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 

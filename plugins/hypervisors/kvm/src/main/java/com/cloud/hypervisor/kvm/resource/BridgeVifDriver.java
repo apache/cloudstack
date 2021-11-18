@@ -28,10 +28,9 @@ import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
@@ -402,7 +401,7 @@ public class BridgeVifDriver extends VifDriverBase {
                     continue;
                 }
                 final String device = tokens[2];
-                if (!Strings.isNullOrEmpty(device) && !device.equalsIgnoreCase(linkLocalBr)) {
+                if (StringUtils.isNotEmpty(device) && !device.equalsIgnoreCase(linkLocalBr)) {
                     Script.runSimpleBashScript("ip route del " + _controlCidr + " dev " + tokens[2]);
                 } else {
                     foundLinkLocalBr = true;

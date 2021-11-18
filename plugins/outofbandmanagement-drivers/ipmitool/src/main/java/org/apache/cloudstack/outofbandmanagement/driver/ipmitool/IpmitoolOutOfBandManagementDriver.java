@@ -19,7 +19,6 @@ package org.apache.cloudstack.outofbandmanagement.driver.ipmitool;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -59,7 +58,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
 
     private String getIpmiUserId(ImmutableMap<OutOfBandManagement.Option, String> options, final Duration timeOut) {
         final String username = options.get(OutOfBandManagement.Option.USERNAME);
-        if (Strings.isNullOrEmpty(username)) {
+        if (StringUtils.isEmpty(username)) {
             throw new CloudRuntimeException("Empty IPMI user configured, cannot proceed to find user's ID.");
         }
 
@@ -76,7 +75,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
         }
 
         final String userId = IPMITOOL.findIpmiUser(output.getResult(), username);
-        if (Strings.isNullOrEmpty(userId)) {
+        if (StringUtils.isEmpty(userId)) {
             String message = String.format("No IPMI user ID found for the username [%s].", username);
             LOG.debug(message);
             throw new CloudRuntimeException(message);

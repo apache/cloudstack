@@ -34,6 +34,8 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -50,7 +52,6 @@ import static com.amazonaws.Protocol.HTTPS;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 
 public final class S3Utils {
@@ -108,7 +109,7 @@ public final class S3Utils {
 
         final AmazonS3Client client = new AmazonS3Client(basicAWSCredentials, configuration);
 
-        if (isNotBlank(clientOptions.getEndPoint())) {
+        if (StringUtils.isNotBlank(clientOptions.getEndPoint())) {
             LOGGER.debug(format("Setting the end point for S3 client with access key %1$s to %2$s.", clientOptions.getAccessKey(), clientOptions.getEndPoint()));
 
             client.setEndpoint(clientOptions.getEndPoint());

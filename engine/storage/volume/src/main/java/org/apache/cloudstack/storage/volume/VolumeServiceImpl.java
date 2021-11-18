@@ -132,7 +132,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
 import java.util.concurrent.ExecutionException;
@@ -2113,7 +2113,7 @@ public class VolumeServiceImpl implements VolumeService {
                 destPoolSystemId = destPoolSystemIdDetail.getValue();
             }
 
-            if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
+            if (StringUtils.isAnyEmpty(srcPoolSystemId, destPoolSystemId)) {
                 s_logger.warn("PowerFlex src pool: " + srcDataStore.getId() + " or dest pool: " + destDataStore.getId() +
                         " storage instance details are not available");
                 return false;

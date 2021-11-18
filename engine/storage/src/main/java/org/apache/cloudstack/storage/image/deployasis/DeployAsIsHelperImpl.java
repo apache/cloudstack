@@ -56,7 +56,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -172,7 +172,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                 GuestOSHypervisorVO mapping = guestOsMappings.get(0);
                 guestOsId = mapping.getGuestOsId();
             } else {
-                if (!StringUtils.isEmpty(guestOsDescription)) {
+                if (StringUtils.isNotEmpty(guestOsDescription)) {
                     for (GuestOSHypervisorVO guestOSHypervisorVO : guestOsMappings) {
                         GuestOSVO guestOSVO = guestOSDao.findById(guestOSHypervisorVO.getGuestOsId());
                         if (guestOsDescription.equalsIgnoreCase(guestOSVO.getDisplayName())) {
