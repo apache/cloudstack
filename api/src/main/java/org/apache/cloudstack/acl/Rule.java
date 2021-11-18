@@ -18,9 +18,10 @@
 package org.apache.cloudstack.acl;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.google.common.base.Strings;
 
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 public final class Rule {
     private final String rule;
@@ -32,7 +33,7 @@ public final class Rule {
     }
 
     public boolean matches(final String commandName) {
-        return !Strings.isNullOrEmpty(commandName)
+        return StringUtils.isNotEmpty(commandName)
                 && commandName.toLowerCase().matches(rule.toLowerCase().replace("*", "\\w*"));
     }
 
@@ -46,7 +47,7 @@ public final class Rule {
     }
 
     private static boolean validate(final String rule) {
-        if (Strings.isNullOrEmpty(rule) || !ALLOWED_PATTERN.matcher(rule).matches()) {
+        if (StringUtils.isEmpty(rule) || !ALLOWED_PATTERN.matcher(rule).matches()) {
             throw new InvalidParameterValueException("Only API names and wildcards are allowed, invalid rule provided: " + rule);
         }
         return true;

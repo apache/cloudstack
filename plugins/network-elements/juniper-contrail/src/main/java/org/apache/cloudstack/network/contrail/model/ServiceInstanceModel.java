@@ -31,7 +31,7 @@ import net.juniper.contrail.api.types.ServiceTemplate;
 import net.juniper.contrail.api.types.ServiceTemplateType;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;

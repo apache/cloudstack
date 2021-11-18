@@ -2085,7 +2085,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         final String controlIp = getRouterSshControlIp(cmd);
         final String config = cmd.getConfiguration();
-        if (org.apache.commons.lang.StringUtils.isBlank(config)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(config)) {
             s_logger.error("SetMonitorServiceCommand should have config for this case");
             return new Answer(cmd, false, "SetMonitorServiceCommand failed due to missing config");
         }
@@ -2401,7 +2401,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 }
                 final List<String> stringList = new ArrayList<String>();
                 Collections.addAll(stringList, temp);
-                cleanLogString = StringUtils.join(stringList, ",");
+                cleanLogString = org.apache.commons.lang3.StringUtils.join(stringList, ",");
             }
         }
         return cleanLogString;
