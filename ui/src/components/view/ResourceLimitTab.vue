@@ -23,6 +23,7 @@
       @finish="handleSubmit"
       layout="vertical"
       v-ctrl-enter="handleSubmit"
+      :scrollToFirstError="true"
     >
       <div v-for="(item, index) in dataResource" :key="index">
         <a-form-item
@@ -128,7 +129,7 @@ export default {
 
       if (this.formLoading) return
 
-      this.form.validateFieldsAndScroll((err, values) => {
+      this.form.validateFields((err, values) => {
         if (err) {
           return
         }

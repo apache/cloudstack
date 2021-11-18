@@ -155,7 +155,7 @@
       :footer="null"
       @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
-      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork">
+      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork" :scrollToFirstError="true">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.network') }}:</p>
           <a-select
@@ -200,7 +200,7 @@
     >
       {{ $t('message.network.updateip') }}
 
-      <a-form @finish="submitUpdateIP" v-ctrl-enter="submitUpdateIP">
+      <a-form @finish="submitUpdateIP" v-ctrl-enter="submitUpdateIP" :scrollToFirstError="true">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
           <a-select
