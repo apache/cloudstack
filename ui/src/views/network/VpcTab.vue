@@ -82,7 +82,8 @@
             :model="form"
             :rules="rules"
             @finish="handleNetworkAclFormSubmit"
-            v-ctrl-enter="handleNetworkAclFormSubmit">
+            v-ctrl-enter="handleNetworkAclFormSubmit"
+            :scrollToFirstError="true">
             <a-form-item :label="$t('label.add.list.name')" ref="name" name="name">
               <a-input
                 v-model:value="form.name"
@@ -153,7 +154,8 @@
               @finish="handleGatewayFormSubmit"
               :ref="formRef"
               :model="form"
-              :rules="rules">
+              :rules="rules"
+              :scrollToFirstError="true">
               <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork">
                 <a-select
                   v-model:value="form.physicalnetwork"
@@ -304,7 +306,8 @@
               @finish="handleVpnConnectionFormSubmit"
               :ref="formRef"
               :model="form"
-              :rules="rules">
+              :rules="rules"
+              :scrollToFirstError="true">
               <a-form-item :label="$t('label.vpncustomergatewayid')" ref="vpncustomergateway" name="vpncustomergateway">
                 <a-select
                   v-model:value="form.vpncustomergateway"

@@ -25,7 +25,8 @@
           :ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical">
+          layout="vertical"
+          :scrollToFirstError="true">
           <a-form-item name="" ref="">
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
@@ -92,7 +93,8 @@
           :ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical">
+          layout="vertical"
+          :scrollToFirstError="true">
           <a-alert type="warning" style="margin-bottom: 20px">
             <template #message>
               <div v-html="$t('message.add.user.to.project')"></div>

@@ -23,7 +23,8 @@
       :rules="rules"
       layout="vertical"
       :loading="loading"
-      @finish="handleSubmit">
+      @finish="handleSubmit"
+      :scrollToFirstError="true">
       <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
         <a-switch
           v-model:checked="form.samlEnable"

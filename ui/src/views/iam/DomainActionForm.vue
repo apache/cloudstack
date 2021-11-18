@@ -36,7 +36,8 @@
           :model="form"
           :rules="rules"
           @finish="handleSubmit"
-          layout="vertical" >
+          layout="vertical"
+          :scrollToFirstError="true">
           <a-alert type="warning" v-if="action.message">
             <template #message>{{ $t(action.message) }}</template>
           </a-alert>

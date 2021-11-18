@@ -140,7 +140,7 @@
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else v-ctrl-enter="handleAddTag">
-        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags">
+        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags" :scrollToFirstError="true">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item ref="key" name="key">

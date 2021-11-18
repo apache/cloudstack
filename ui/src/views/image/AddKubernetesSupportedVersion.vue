@@ -23,7 +23,8 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        @finish="handleSubmit">
+        @finish="handleSubmit"
+        :scrollToFirstError="true">
         <a-form-item ref="semanticversion" name="semanticversion">
           <template #label>
             <tooltip-label :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>

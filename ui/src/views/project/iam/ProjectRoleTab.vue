@@ -68,7 +68,8 @@
             :rules="rules"
             layout="vertical"
             @finish="updateProjectRole"
-            v-ctrl-enter="updateProjectRole">
+            v-ctrl-enter="updateProjectRole"
+            :scrollToFirstError="true">
             <a-form-item ref="name" name="name" :label="$t('label.name')">
               <a-input v-model:value="form.name" v-focus="true"></a-input>
             </a-form-item>
@@ -95,7 +96,8 @@
             :rules="rules"
             @finish="createProjectRole"
             v-ctrl-enter="createProjectRole"
-            layout="vertical">
+            layout="vertical"
+            :scrollToFirstError="true">
             <a-form-item ref="name" name="name" :label="$t('label.name')">
               <a-input
                 v-model:value="form.name"

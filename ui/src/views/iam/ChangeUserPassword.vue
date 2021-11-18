@@ -23,7 +23,8 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        @finish="handleSubmit">
+        @finish="handleSubmit"
+        :scrollToFirstError="true">
         <a-form-item name="currentpassword" ref="currentpassword" v-if="!isAdminOrDomainAdmin()">
           <template #label>
             <tooltip-label :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>

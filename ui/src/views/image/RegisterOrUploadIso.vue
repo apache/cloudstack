@@ -29,7 +29,8 @@
         :rules="rules"
         @finish="handleSubmit"
         v-ctrl-enter="handleSubmit"
-        layout="vertical">
+        layout="vertical"
+        :scrollToFirstError="true">
         <a-form-item
           v-if="currentForm === 'Create'"
           ref="url"

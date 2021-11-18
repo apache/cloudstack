@@ -22,7 +22,8 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        :scrollToFirstError="true">
         <a-form-item ref="projectid" name="projectid" :label="$t('label.projectid')">
           <a-input
             v-model:value="form.projectid"

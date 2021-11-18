@@ -117,7 +117,13 @@
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
-        <a-form :ref="formRef" :model="form" :rules="tagRules" class="add-tags" v-ctrl-enter="handleAddTag">
+        <a-form
+          :ref="formRef"
+          :model="form"
+          :rules="tagRules"
+          class="add-tags"
+          v-ctrl-enter="handleAddTag"
+          :scrollToFirstError="true">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item ref="key" name="key">
@@ -157,7 +163,13 @@
       :footer="null"
       :visible="ruleModalVisible"
       @cancel="ruleModalVisible = false">
-      <a-form :ref="formRef" :model="form" :rules="rules" @finish="handleRuleModalForm" v-ctrl-enter="handleRuleModalForm">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleRuleModalForm"
+        v-ctrl-enter="handleRuleModalForm"
+        :scrollToFirstError="true">
         <a-form-item :label="$t('label.number')" ref="number" name="number">
           <a-input-number v-focus="true" style="width: 100%" v-model:value="form.number" />
         </a-form-item>

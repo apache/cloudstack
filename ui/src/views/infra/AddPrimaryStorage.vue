@@ -18,7 +18,13 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        @finish="handleSubmit"
+        :scrollToFirstError="true">
         <a-form-item name="scope" ref="scope">
           <template #label>
             <tooltip-label :title="$t('label.scope')" :tooltip="apiParams.scope.description"/>

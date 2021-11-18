@@ -24,7 +24,8 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
-      v-ctrl-enter="handleSubmit">
+      v-ctrl-enter="handleSubmit"
+      :scrollToFirstError="true">
       <div style="margin-bottom: 10px">
         <a-alert type="warning">
           <template #message>

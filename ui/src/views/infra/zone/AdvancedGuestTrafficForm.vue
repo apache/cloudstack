@@ -28,7 +28,8 @@
       :ref="formRef"
       :model="form"
       :rules="rules"
-      @finish="handleSubmit">
+      @finish="handleSubmit"
+      :scrollToFirstError="true">
       <a-form-item
         :label="$t('label.vlan.range')"
         v-bind="formItemLayout"

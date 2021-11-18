@@ -24,7 +24,8 @@
       layout="vertical"
       class="form"
       @finish="handleSubmit"
-      v-ctrl-enter="handleSubmit">
+      v-ctrl-enter="handleSubmit"
+      :scrollToFirstError="true">
 
       <a-form-item name="zoneid" ref="zoneid" class="form__item" :label="$t('label.zone')">
         <a-select

@@ -29,7 +29,8 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical">
+        layout="vertical"
+        :scrollToFirstError="true">
         <div v-if="currentForm === 'Create'">
           <a-form-item :label="$t('label.url')" name="url" ref="url">
             <a-input

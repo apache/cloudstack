@@ -27,6 +27,7 @@
             :rules="rules"
             @finish="handleSubmit"
             layout="vertical"
+            :scrollToFirstError="true"
           >
             <a-steps direction="vertical" size="small">
               <a-step :title="$t('label.select.deployment.infrastructure')" status="process">

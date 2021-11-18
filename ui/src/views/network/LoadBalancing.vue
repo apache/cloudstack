@@ -187,7 +187,8 @@
         :rules="rules"
         class="add-tags"
         @finish="handleAddTag"
-        v-ctrl-enter="handleAddTag">
+        v-ctrl-enter="handleAddTag"
+        :scrollToFirstError="true">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item ref="key" name="key">
@@ -238,7 +239,8 @@
         :rules="rules"
         @finish="handleSubmitStickinessForm"
         v-ctrl-enter="handleSubmitStickinessForm"
-        class="custom-ant-form">
+        class="custom-ant-form"
+        :scrollToFirstError="true">
         <a-form-item name="methodname" ref="methodname" :label="$t('label.stickiness.method')">
           <a-select
             v-focus="true"

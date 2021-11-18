@@ -24,7 +24,8 @@
       :rules="rules"
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit"
-      layout="vertical">
+      layout="vertical"
+      :scrollToFirstError="true">
       <a-form-item :label="$t('label.name')" name="name" ref="name">
         <a-input
           v-focus="true"

@@ -124,7 +124,7 @@
       width="450px">
       <a-spin :spinning="acquireLoading" v-ctrl-enter="acquireIpAddress">
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
-        <a-form layout="vertical" style="margin-top: 10px">
+        <a-form layout="vertical" style="margin-top: 10px" :scrollToFirstError="true">
           <a-form-item :label="$t('label.ipaddress')">
             <a-select
               v-focus="true"

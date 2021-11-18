@@ -24,7 +24,8 @@
       :model="form"
       :rules="rules"
       v-ctrl-enter="handleSubmit"
-      @finish="handleSubmit">
+      @finish="handleSubmit"
+      :scrollToFirstError="true">
       <a-alert style="margin-bottom: 5px" type="warning" show-icon>
         <template #message>
           <span v-html="$t('message.restart.vm.to.update.settings')" />

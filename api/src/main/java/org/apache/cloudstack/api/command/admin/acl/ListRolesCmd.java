@@ -33,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.google.common.base.Strings;
 
 @APICommand(name = ListRolesCmd.APINAME, description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.9.0", authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin })
@@ -66,7 +65,7 @@ public class ListRolesCmd extends BaseListCmd {
     }
 
     public RoleType getRoleType() {
-        if (!Strings.isNullOrEmpty(roleType)) {
+        if (StringUtils.isNotEmpty(roleType)) {
             return RoleType.valueOf(roleType);
         }
         return null;

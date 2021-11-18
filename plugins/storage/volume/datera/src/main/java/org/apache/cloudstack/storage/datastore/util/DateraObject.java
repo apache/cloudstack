@@ -17,12 +17,13 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
-import com.cloud.utils.StringUtils;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
 
 public class DateraObject {
 

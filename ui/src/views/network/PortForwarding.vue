@@ -161,7 +161,8 @@
         :rules="rules"
         class="add-tags"
         @finish="handleAddTag"
-        v-ctrl-enter="handleAddTag">
+        v-ctrl-enter="handleAddTag"
+        :scrollToFirstError="true">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item name="key" ref="key">

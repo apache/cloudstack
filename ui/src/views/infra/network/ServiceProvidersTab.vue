@@ -72,7 +72,6 @@
         @cancel="onCloseAction"
         style="top: 20px;"
         centered
-        :footer="null"
       >
         <a-form
           :ref="formRef"
@@ -80,7 +79,8 @@
           :rules="rules"
           @finish="handleSubmit"
           v-ctrl-enter="handleSubmit"
-          layout="vertical">
+          layout="vertical"
+          :scrollToFirstError="true">
           <a-form-item
             :name="field.name"
             :ref="field.name"

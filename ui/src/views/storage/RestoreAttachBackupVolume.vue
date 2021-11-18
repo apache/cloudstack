@@ -23,7 +23,8 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
-      v-ctrl-enter="handleSubmit">
+      v-ctrl-enter="handleSubmit"
+      :scrollToFirstError="true">
       <a-form-item name="volumeid" ref="volumeid" :label="$t('label.volume')">
         <a-select
           allowClear

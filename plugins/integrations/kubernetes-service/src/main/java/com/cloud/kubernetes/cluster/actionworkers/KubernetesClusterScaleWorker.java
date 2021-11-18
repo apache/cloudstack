@@ -57,7 +57,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -186,7 +186,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         File pkFile = getManagementServerSshPublicKeyFile();
         int retryCounter = 0;
         String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
+        if (StringUtils.isNotEmpty(hostName)) {
             hostName = hostName.toLowerCase();
         }
         while (retryCounter < retries) {
@@ -394,7 +394,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
-        if (Strings.isNullOrEmpty(publicIpAddress)) {
+        if (StringUtils.isEmpty(publicIpAddress)) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to retrieve associated public IP", kubernetesCluster.getName()));
         }
         if (newVmRequiredCount < 0) { // downscale

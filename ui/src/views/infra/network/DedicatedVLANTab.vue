@@ -78,7 +78,8 @@
           :model="form"
           :rules="rules"
           @finish="handleSubmit"
-          layout="vertical" >
+          layout="vertical"
+          :scrollToFirstError="true">
           <a-form-item name="range" ref="range" :label="$t('label.vlanrange')">
             <a-input v-model:value="form.range" v-focus="true" />
           </a-form-item>

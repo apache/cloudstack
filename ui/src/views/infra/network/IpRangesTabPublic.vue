@@ -172,6 +172,7 @@
         v-ctrl-enter="handleAddIpRange"
         layout="vertical"
         class="form"
+        :scrollToFirstError="true"
       >
         <a-form-item name="podid" ref="podid" :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
           <a-select
@@ -253,6 +254,7 @@
         v-ctrl-enter="handleAddIpRange"
         layout="vertical"
         class="form"
+        :scrollToFirstError="true"
       >
         <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
           <a-input v-focus="true" v-model:value="form.startip"></a-input>

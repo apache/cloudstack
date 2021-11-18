@@ -22,11 +22,9 @@ import static com.cloud.network.NetworkModel.PASSWORD_FILE;
 import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
 import static com.cloud.network.NetworkModel.USERDATA_DIR;
 import static com.cloud.network.NetworkModel.USERDATA_FILE;
-import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -80,7 +78,7 @@ import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -798,7 +796,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     return new CopyCmdAnswer(errMsg);
                 }
             }
-            File destFile = new File(downloadDirectory, substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
+            File destFile = new File(downloadDirectory, StringUtils.substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
             S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), destFile).waitForCompletion();
 
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
@@ -1093,7 +1091,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String determineS3TemplateDirectory(final Long accountId, final Long templateId, final String templateUniqueName) {
-        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
+        return StringUtils.join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
     }
 
     private String determineS3TemplateNameFromKey(String key) {
@@ -1101,7 +1099,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String determineS3VolumeDirectory(final Long accountId, final Long volId) {
-        return join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
+        return StringUtils.join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
     }
 
     protected Long determineS3VolumeIdFromKey(String key) {
@@ -1109,7 +1107,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private String determineStorageTemplatePath(final String storagePath, String dataPath, String nfsVersion) {
-        return join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
+        return StringUtils.join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
     }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
@@ -3470,7 +3468,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     public void validatePostUploadRequest(String signature, String metadata, String timeout, String hostname, long contentLength, String uuid)
             throws InvalidParameterValueException {
         // check none of the params are empty
-        if (StringUtils.isEmpty(signature) || StringUtils.isEmpty(metadata) || StringUtils.isEmpty(timeout)) {
+        if (StringUtils.isAnyEmpty(signature, metadata, timeout)) {
             updateStateMapWithError(uuid, "signature, metadata and expires are compulsory fields.");
             throw new InvalidParameterValueException("signature, metadata and expires are compulsory fields.");
         }

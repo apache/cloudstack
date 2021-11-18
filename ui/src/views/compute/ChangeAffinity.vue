@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form" v-ctrl-enter="handleSubmit">
+  <a-form class="form" v-ctrl-enter="handleSubmit" :scrollToFirstError="true">
 
     <p v-html="$t('message.select.affinity.groups')" />
 

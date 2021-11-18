@@ -18,7 +18,13 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        @finish="handleSubmit"
+        :scrollToFirstError="true">
         <a-form-item name="name" ref="name" :label="$t('label.name')">
           <a-input v-model:value="form.name" v-focus="true" />
         </a-form-item>

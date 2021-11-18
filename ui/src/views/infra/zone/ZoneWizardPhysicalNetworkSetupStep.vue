@@ -166,7 +166,13 @@
       :maskClosable="false"
       centered
       :footer="null">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" v-ctrl-enter:[trafficInEdit]="updateTrafficLabel">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        v-ctrl-enter:[trafficInEdit]="updateTrafficLabel"
+        :scrollToFirstError="true">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
         <a-form-item
           v-if="hypervisor !== 'VMware'"

@@ -22,7 +22,8 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        :scrollToFirstError="true">
         <a-form-item ref="state" name="state" :label="$t('label.state')">
           <a-select
             id="state-selection"

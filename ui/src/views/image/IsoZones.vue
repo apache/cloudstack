@@ -108,7 +108,8 @@
           :rules="rules"
           layout="vertical"
           @finish="handleCopyIsoSubmit"
-          v-ctrl-enter="handleCopyIsoSubmit">
+          v-ctrl-enter="handleCopyIsoSubmit"
+          :scrollToFirstError="true">
           <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"

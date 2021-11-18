@@ -54,7 +54,8 @@
             :model="form"
             :rules="rules"
             @finish="handleGetHealthChecksSubmit"
-            layout="vertical">
+            layout="vertical"
+            :scrollToFirstError="true">
             <a-form-item name="performfreshchecks" ref="performfreshchecks">
               <template #label>
                 <tooltip-label :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>

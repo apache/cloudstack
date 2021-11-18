@@ -44,7 +44,8 @@
             :ref="formRef"
             :model="form"
             :rules="rules"
-            @finish="handleAddRange">
+            @finish="handleAddRange"
+            :scrollToFirstError="true">
             <div class="form-row">
               <div class="form-col">
                 <a-form-item name="gateway" ref="gateway">
