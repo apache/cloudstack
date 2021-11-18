@@ -19,7 +19,7 @@ package com.cloud.server;
 import javax.inject.Inject;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.lang.management.OperatingSystemMXBean;
+import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -790,14 +790,24 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         private void getCpuData(@NotNull ManagementServerHostStatsEntry newEntry) {
-            final OperatingSystemMXBean mxBean = ManagementFactory.getOperatingSystemMXBean();
-            newEntry.setAvailableProcessors(mxBean.getAvailableProcessors());
-            newEntry.setLoadAverage(mxBean.getSystemLoadAverage());
+            java.lang.management.OperatingSystemMXBean bean = ManagementFactory.getOperatingSystemMXBean();
+            newEntry.setAvailableProcessors(bean.getAvailableProcessors());
+            newEntry.setLoadAverage(bean.getSystemLoadAverage());
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format(
                         "Metrics processors - %d , loadavg - %f ",
                         newEntry.getAvailableProcessors(),
                         newEntry.getLoadAverage()));
+            }
+            if (bean instanceof OperatingSystemMXBean) {
+                OperatingSystemMXBean mxBean = (OperatingSystemMXBean) bean;
+                newEntry.setSystemMemoryTotal(mxBean.getTotalPhysicalMemorySize());
+                newEntry.setSystemMemoryFree(mxBean.getFreePhysicalMemorySize());
+                newEntry.setSystemMemoryUsed(mxBean.getCommittedVirtualMemorySize());
+                LOGGER.debug(String.format("data from 'OperatingSystemMXBean': total mem: %d, free mem: %d, used mem: %d",
+                        newEntry.getSystemMemoryTotal(),
+                        newEntry.getSystemMemoryFree(),
+                        newEntry.getSystemMemoryUsed()));
             }
         }
 
@@ -842,12 +852,22 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         private void getProcFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
             String OS = Script.runSimpleBashScript("cat /proc/version");
             newEntry.setOsDistribution(OS);
-            String mem = Script.runSimpleBashScript("cat /proc/meminfo | grep MemTotal | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
-            newEntry.setSystemMemoryTotal(Long.parseLong(mem) * 1024);
-            String free = Script.runSimpleBashScript("cat /proc/meminfo | grep MemFree | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
-            newEntry.setSystemMemoryFree(Long.parseLong(free) * 1024);
-            String used = Script.runSimpleBashScript(String.format("ps -o rss= %d", newEntry.getPid()));
-            newEntry.setSystemMemoryUsed(Long.parseLong(used));
+            // if we got these from the bean, skip
+            if (newEntry.getSystemMemoryTotal() == 0) {
+                String mem = Script.runSimpleBashScript("cat /proc/meminfo | grep MemTotal | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
+                newEntry.setSystemMemoryTotal(Long.parseLong(mem) * 1024);
+                LOGGER.debug(String.format("system memory from /proc: %d", newEntry.getSystemMemoryTotal()));
+            }
+            if (newEntry.getSystemMemoryFree() == 0) {
+                String free = Script.runSimpleBashScript("cat /proc/meminfo | grep MemFree | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
+                newEntry.setSystemMemoryFree(Long.parseLong(free) * 1024);
+                LOGGER.debug(String.format("free memory from /proc: %d", newEntry.getSystemMemoryFree()));
+            }
+            if (newEntry.getSystemMemoryUsed() <= 0) {
+                String used = Script.runSimpleBashScript(String.format("ps -o rss= %d", newEntry.getPid()));
+                newEntry.setSystemMemoryUsed(Long.parseLong(used));
+                LOGGER.debug(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
+            }
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse));
 
