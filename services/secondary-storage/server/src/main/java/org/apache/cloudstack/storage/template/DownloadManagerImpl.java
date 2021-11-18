@@ -77,13 +77,13 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -463,7 +463,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
         } else {
-            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(StringUtils.getPreferredCharset())).toString();
+            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         }
         return templateName;
     }

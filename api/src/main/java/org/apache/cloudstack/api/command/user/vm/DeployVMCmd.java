@@ -68,12 +68,11 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -360,7 +359,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
-                if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
+                if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
                 map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());

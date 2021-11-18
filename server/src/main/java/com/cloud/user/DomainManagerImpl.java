@@ -85,7 +85,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
@@ -257,7 +257,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     public Domain findDomainByIdOrPath(final Long id, final String domainPath) {
         Long domainId = id;
         if (domainId == null || domainId < 1L) {
-            if (Strings.isNullOrEmpty(domainPath) || domainPath.trim().isEmpty()) {
+            if (StringUtils.isBlank(domainPath)) {
                 domainId = Domain.ROOT_DOMAIN;
             } else {
                 final Domain domainVO = findDomainByPath(domainPath.trim());

@@ -56,7 +56,6 @@ import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -80,7 +79,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -138,7 +137,7 @@ public class VeeamClient {
             final HttpResponse response = httpClient.execute(request);
             checkAuthFailure(response);
             veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
-            if (Strings.isNullOrEmpty(veeamSessionId)) {
+            if (StringUtils.isEmpty(veeamSessionId)) {
                 throw new CloudRuntimeException("Veeam Session ID is not available to perform API requests");
             }
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {

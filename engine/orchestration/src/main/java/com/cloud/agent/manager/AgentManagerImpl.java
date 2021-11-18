@@ -120,7 +120,7 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -391,7 +391,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
         String logcontextid = (String) MDC.get("logcontextid");
-        if (!Strings.isNullOrEmpty(logcontextid)) {
+        if (StringUtils.isNotEmpty(logcontextid)) {
             cmd.setContextParam("logid", logcontextid);
         }
     }
@@ -1086,7 +1086,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             String lbAlgorithm = null;
             if (startup != null && startup.length > 0) {
                 final String agentMSHosts = startup[0].getMsHostList();
-                if (!Strings.isNullOrEmpty(agentMSHosts)) {
+                if (StringUtils.isNotEmpty(agentMSHosts)) {
                     String[] msHosts = agentMSHosts.split("@");
                     if (msHosts.length > 1) {
                         lbAlgorithm = msHosts[1];
