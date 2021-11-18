@@ -57,7 +57,7 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -103,7 +103,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.vmware.vim25.BaseConfigInfoDiskFileBackingInfo;
 import com.vmware.vim25.DatastoreHostMount;
@@ -1241,10 +1240,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-            vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
-            clonedVm = dcMo.findVm(templateUniqueName);
-
-            clonedVm.tagAsWorkerVM();
+            VirtualDisk requiredDisk = volumeDeviceInfo.first();
+            clonedVm = vmMo.createFullCloneWithSpecificDisk(templateUniqueName, dcMo.getVmFolder(), morPool, requiredDisk);
+            if (clonedVm == null) {
+                throw new Exception(String.format("Failed to clone VM with name %s during create template from volume operation", templateUniqueName));
+            }
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
             // Get VMDK filename
@@ -1828,14 +1828,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 // 4 MB is the minimum requirement for VM memory in VMware
                 DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
-                vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), volumeDeviceInfo);
-                clonedVm = dcMo.findVm(exportName);
+                VirtualDisk requiredDisk = volumeDeviceInfo.first();
+                clonedVm = vmMo.createFullCloneWithSpecificDisk(exportName, dcMo.getVmFolder(), morPool, requiredDisk);
                 if (clonedVm == null) {
-                    String msg = "Failed to clone VM. volume path: " + volumePath;
-                    s_logger.error(msg);
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to clone VM with name %s during export volume operation", exportName));
                 }
-                clonedVm.tagAsWorkerVM();
                 vmMo = clonedVm;
             }
             vmMo.exportVm(exportPath, exportName, false, false);
@@ -2188,7 +2185,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (isAttach) {
                 String diskController = getLegacyVmDataDiskController();
 
-                if (controllerInfo != null && !Strings.isNullOrEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
+                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
                     diskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 }
 
@@ -2782,7 +2779,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         target.setPort(storagePortNumber);
         target.setIScsiName(iqn);
 
-        if (StringUtils.isNotBlank(chapName) && StringUtils.isNotBlank(chapSecret)) {
+        if (StringUtils.isNoneBlank(chapName, chapSecret)) {
             HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
 
             String strAuthType = "chapRequired";
@@ -2793,7 +2790,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             auth.setChapName(chapName);
             auth.setChapSecret(chapSecret);
 
-            if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
+            if (StringUtils.isNoneBlank(mutualChapName, mutualChapSecret)) {
                 auth.setMutualChapInherited(false);
                 auth.setMutualChapAuthenticationType(strAuthType);
                 auth.setMutualChapName(mutualChapName);

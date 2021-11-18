@@ -265,13 +265,51 @@
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :autoFocus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
-                  <a-select-option v-for="opt in field.opts" :key="opt.id">
-                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
+                    <div>
+                      <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <os-logo v-else :osId="opt.ostypeid" :osName="opt.ostypename" size="lg" style="margin-left: -1px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="global" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('project'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="project" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('network'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                      </span>
+                      {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                    </div>
                   </a-select-option>
                 </a-select>
               </span>
@@ -369,7 +407,8 @@
         :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData" />
+        @refresh="this.fetchData"
+        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
         style="margin-top: 10px"
@@ -411,6 +450,8 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -425,7 +466,9 @@ export default {
     ActionButton,
     SearchView,
     BulkActionProgress,
-    TooltipLabel
+    TooltipLabel,
+    OsLogo,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -437,8 +480,7 @@ export default {
       parentSearch: this.onSearch,
       parentChangeFilter: this.changeFilter,
       parentChangeResource: this.changeResource,
-      parentPollActionCompletion: this.pollActionCompletion,
-      parentEditTariffAction: () => {}
+      parentPollActionCompletion: this.pollActionCompletion
     }
   },
   data () {
@@ -490,6 +532,11 @@ export default {
   created () {
     eventBus.$on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        this.fetchData()
+      }
+    })
+    eventBus.$on('refresh-icon', () => {
+      if (this.$showIcon()) {
         this.fetchData()
       }
     })
@@ -554,6 +601,7 @@ export default {
     if ('projectid' in this.$route.query) {
       this.switchProject(this.$route.query.projectid)
     }
+    this.setModalWidthByScreen()
   },
   beforeRouteUpdate (to, from, next) {
     this.currentPath = this.$route.fullPath
@@ -712,7 +760,7 @@ export default {
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
-            this.columnKeys = columns()
+            this.columnKeys = columns(this.$store.getters)
           } else {
             this.columnKeys = columns
           }
@@ -786,6 +834,9 @@ export default {
       params.page = this.page
       params.pagesize = this.pageSize
 
+      if (this.$showIcon()) {
+        params.showIcon = true
+      }
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -901,6 +952,8 @@ export default {
       } else {
         this.modalWidth = '30vw'
       }
+
+      this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
       const self = this
@@ -986,6 +1039,10 @@ export default {
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
       const possibleName = 'list' + extractedParamName + 's'
+      var showIcon = false
+      if (this.$showIcon(extractedParamName)) {
+        showIcon = true
+      }
       var possibleApi
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].api) {
         possibleApi = this.currentAction.mapping[param.name].api
@@ -1016,6 +1073,16 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+      } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
+        if (this.resource.type) {
+          params.guestiptype = this.resource.type
+        }
+        if (!this.resource.vpcid) {
+          params.forvpc = false
+        }
+      }
+      if (showIcon) {
+        params.showicon = true
       }
       api(possibleApi, params).then(json => {
         param.loading = false
@@ -1042,7 +1109,6 @@ export default {
       }).catch(function (error) {
         console.log(error)
         param.loading = false
-      }).then(function () {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
@@ -1068,6 +1134,9 @@ export default {
                   duration: 0
                 })
               }
+            }
+            if ('successMethod' in action) {
+              action.successMethod(this, result)
             }
             resolve(true)
           },
@@ -1132,7 +1201,7 @@ export default {
           this.modalInfo.title = this.currentAction.label
           this.modalInfo.docHelp = this.currentAction.docHelp
         }
-        this.form.validateFields((err, values) => {
+        this.form.validateFieldsAndScroll((err, values) => {
           if (!err) {
             this.actionLoading = true
             const itemsNameMap = {}
@@ -1226,7 +1295,7 @@ export default {
     },
     execSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -1459,7 +1528,7 @@ export default {
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
           callback()
         } else if (value && this.confirmDirty) {
-          form.validateFields(['confirmpassword'], { force: true })
+          form.validateFieldsAndScroll(['confirmpassword'], { force: true })
           callback()
         } else {
           callback()
@@ -1467,13 +1536,18 @@ export default {
       } else {
         callback()
       }
+    },
+    setModalWidthByScreen () {
+      const screenWidth = window.innerWidth
+      if (screenWidth <= 768) {
+        this.modalWidth = '450px'
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;

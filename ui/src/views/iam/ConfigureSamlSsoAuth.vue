@@ -31,14 +31,14 @@
       <a-form-item :label="$t('label.samlentity')">
         <a-select
           v-decorator="['samlEntity', {
-            initialValue: selectedIdp,
+            initialValue: selectedIdp
           }]"
           showSearch
           optionFilterProp="children"
           :filterOption="(input, option) => {
             return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="(idp, idx) in idps" :key="idx">
+          <a-select-option v-for="idp in idps" :key="idp.id">
             {{ idp.orgName }}
           </a-select-option>
         </a-select>
@@ -98,7 +98,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

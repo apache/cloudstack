@@ -102,6 +102,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
             domainResponse.setProjectAvailable(projectAvail);
         }
 
+        domainResponse.setDetails(ApiDBUtils.getDomainDetails(domain.getId()));
         domainResponse.setObjectName("domain");
 
         return domainResponse;

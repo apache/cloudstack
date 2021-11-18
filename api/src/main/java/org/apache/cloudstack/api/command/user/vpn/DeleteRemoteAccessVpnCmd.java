@@ -96,6 +96,8 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
         if (! _ravService.destroyRemoteAccessVpnForIp(publicIpId, CallContext.current().getCallingAccount(), false)) {
                        throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete remote access vpn");
         }
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override

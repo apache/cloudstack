@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
@@ -43,7 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = AssignVirtualMachineToBackupOfferingCmd.APINAME,
         description = "Assigns a VM to a backup offering",
-        responseObject = BackupResponse.class, since = "4.14.0",
+        responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
     public static final String APINAME = "assignVirtualMachineToBackupOffering";

@@ -202,6 +202,11 @@ export default {
       api('listIdps').then(response => {
         if (response) {
           this.idps = response.listidpsresponse.idp || []
+          this.idps.sort(function (a, b) {
+            if (a.orgName < b.orgName) { return -1 }
+            if (a.orgName > b.orgName) { return 1 }
+            return 0
+          })
           this.selectedIdp = this.idps[0].id || ''
         }
       })
@@ -224,7 +229,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       const {
-        form: { validateFields },
+        form: { validateFieldsAndScroll },
         state,
         customActiveKey,
         Login
@@ -233,9 +238,9 @@ export default {
 
       state.loginBtn = true
 
-      const validateFieldsKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
+      const validateFieldsAndScrollKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
 
-      validateFields(validateFieldsKey, { force: true }, (err, values) => {
+      validateFieldsAndScroll(validateFieldsAndScrollKey, { force: true }, (err, values) => {
         if (!err) {
           if (this.$config.multipleServer) {
             this.axios.defaults.baseURL = (this.server.apiHost || '') + this.server.apiBase

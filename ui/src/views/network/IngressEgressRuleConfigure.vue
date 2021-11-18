@@ -282,6 +282,9 @@ export default {
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     getCapitalise (val) {
+      if (!val) {
+        return
+      }
       if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     },
@@ -412,7 +415,7 @@ export default {
       this.tagsLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsLoading = false
           return

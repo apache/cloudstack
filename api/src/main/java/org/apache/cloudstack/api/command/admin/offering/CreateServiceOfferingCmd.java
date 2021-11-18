@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -41,7 +42,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
 
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -240,7 +240,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        if (Strings.isNullOrEmpty(displayText)) {
+        if (StringUtils.isEmpty(displayText)) {
             throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
         }
         return displayText;
@@ -255,7 +255,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getServiceOfferingName() {
-        if (Strings.isNullOrEmpty(serviceOfferingName)) {
+        if (StringUtils.isEmpty(serviceOfferingName)) {
             throw new InvalidParameterValueException("Failed to create service offering because offering name has not been spified.");
         }
         return serviceOfferingName;
@@ -326,7 +326,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             for (Object prop : props) {
                 HashMap<String, String> detail = (HashMap<String, String>) prop;
                 // Compatibility with key and value pairs input from API cmd for details map parameter
-                if (!Strings.isNullOrEmpty(detail.get("key")) && !Strings.isNullOrEmpty(detail.get("value"))) {
+                if (StringUtils.isNoneEmpty(detail.get("key"), detail.get("value"))) {
                     detailsMap.put(detail.get("key"), detail.get("value"));
                     continue;
                 }
