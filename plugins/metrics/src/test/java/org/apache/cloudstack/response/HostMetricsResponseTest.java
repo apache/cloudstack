@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class HostHostMetricsResponseTest {
+public class HostMetricsResponseTest {
 
     final char decimalSeparator = ((DecimalFormat) DecimalFormat.getInstance()).getDecimalFormatSymbols().getDecimalSeparator();
 
