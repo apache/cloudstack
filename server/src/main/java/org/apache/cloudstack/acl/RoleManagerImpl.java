@@ -61,7 +61,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
 
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
 
@@ -132,7 +131,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public RolePermission findRolePermissionByRoleIdAndRule(final Long roleId, final String rule) {
-        if (roleId == null || Strings.isNullOrEmpty(rule)) {
+        if (roleId == null || StringUtils.isEmpty(rule)) {
             return null;
         }
 
@@ -182,7 +181,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_IMPORT, eventDescription = "importing Role")
     public Role importRole(String name, RoleType type, String description, List<Map<String, Object>> rules, boolean forced) {
         checkCallerAccess();
-        if (Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isEmpty(name)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role name provided");
         }
         if (type == null || type == RoleType.Unknown) {
@@ -252,7 +251,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unknown is not a valid role type");
         }
         RoleVO roleVO = (RoleVO)role;
-        if (!Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             roleVO.setName(name);
         }
         if (roleType != null) {
@@ -263,7 +262,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                 throw new PermissionDeniedException("Found accounts that have role in use, won't allow to change role type");
             }
         }
-        if (!Strings.isNullOrEmpty(description)) {
+        if (StringUtils.isNotEmpty(description)) {
             roleVO.setDescription(description);
         }
 
@@ -440,7 +439,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public Permission getRolePermission(String permission) {
-        if (Strings.isNullOrEmpty(permission)) {
+        if (StringUtils.isEmpty(permission)) {
             return null;
         }
         if (!permission.equalsIgnoreCase(RolePermission.Permission.ALLOW.toString()) &&

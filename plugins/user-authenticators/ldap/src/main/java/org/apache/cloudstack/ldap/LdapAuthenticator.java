@@ -24,7 +24,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.auth.UserAuthenticator;
@@ -66,7 +66,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         }
 
         // TODO not allowing an empty password is a policy we shouldn't decide on. A private cloud may well want to allow this.
-        if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(password)) {
+        if (StringUtils.isNoneEmpty(username, password)) {
             if (_ldapManager.isLdapEnabled(domainId) || _ldapManager.isLdapEnabled()) {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("LDAP is enabled in the ldapManager");

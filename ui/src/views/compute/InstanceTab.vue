@@ -159,7 +159,7 @@
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.network') }}:</p>
           <a-select
-            :defaultValue="addNetworkData.network"
+            :value="addNetworkData.network"
             @change="e => addNetworkData.network = e"
             autoFocus
             showSearch

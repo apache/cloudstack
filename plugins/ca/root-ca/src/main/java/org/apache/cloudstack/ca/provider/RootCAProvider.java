@@ -75,7 +75,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public final class RootCAProvider extends AdapterBase implements CAProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(RootCAProvider.class);
@@ -133,7 +133,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     ///////////////////////////////////////////////////////////
 
     private Certificate generateCertificate(final List<String> domainNames, final List<String> ipAddresses, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException, OperatorCreationException {
-        if (domainNames == null || domainNames.size() < 1 || Strings.isNullOrEmpty(domainNames.get(0))) {
+        if (domainNames == null || domainNames.size() < 1 || StringUtils.isEmpty(domainNames.get(0))) {
             throw new CloudRuntimeException("No domain name is specified, cannot generate certificate");
         }
         final String subject = "CN=" + domainNames.get(0);
@@ -335,7 +335,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     private boolean loadRootCAKeyPair() {
-        if (Strings.isNullOrEmpty(rootCAPublicKey.value()) || Strings.isNullOrEmpty(rootCAPrivateKey.value())) {
+        if (StringUtils.isAnyEmpty(rootCAPublicKey.value(), rootCAPrivateKey.value())) {
             return false;
         }
         try {
@@ -348,7 +348,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     private boolean loadRootCACertificate() {
-        if (Strings.isNullOrEmpty(rootCACertificate.value())) {
+        if (StringUtils.isEmpty(rootCACertificate.value())) {
             return false;
         }
         try {

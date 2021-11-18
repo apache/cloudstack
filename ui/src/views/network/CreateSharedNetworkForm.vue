@@ -694,7 +694,12 @@ export default {
     },
     handleSubmit (e) {
       if (this.actionLoading) return
-      this.form.validateFields((error, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (error, values) => {
         if (error) {
           return
         }
@@ -761,7 +766,7 @@ export default {
         // IPv4 (end)
 
         // IPv6 (begin)
-        if (this.isValidTextValueForKey(values, 'ip4gateway')) {
+        if (this.isValidTextValueForKey(values, 'ip6gateway')) {
           params.ip6gateway = values.ip6gateway
         }
         if (this.isValidTextValueForKey(values, 'routerip')) {

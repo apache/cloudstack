@@ -111,7 +111,7 @@ class CsDhcp(CsDataBag):
                 if self.config.is_dhcp() and not self.config.use_extdns():
                     guest_ip = self.config.address().get_guest_ip()
                     if guest_ip and guest_ip in dns_list and ip not in dns_list:
-                        ## Replace the default guest IP in VR with the ip in additional IP ranges, if shared network has multiple IP ranges.
+                        # Replace the default guest IP in VR with the ip in additional IP ranges, if shared network has multiple IP ranges.
                         dns_list.remove(guest_ip)
                         dns_list.insert(0, ip)
                 line = "dhcp-option=tag:interface-%s-%s,6,%s" % (device, idx, ','.join(dns_list))

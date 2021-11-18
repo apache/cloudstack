@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
