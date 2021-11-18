@@ -279,7 +279,7 @@ export default {
     },
     handleAddIpRange (e) {
       if (this.componentLoading) return
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) return
 
         this.componentLoading = true

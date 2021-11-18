@@ -60,7 +60,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -86,10 +85,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * @since 4.11
@@ -296,7 +293,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String userUuid = cmd.getUserUuid();
         String entityUuid = cmd.getEntityUuid();
         String entityType = cmd.getEntityType();
-        String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
+        String annotationFilter = StringUtils.isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
         boolean isCallerAdmin = isCallingUserRole(RoleType.Admin);
         UserVO callingUser = getCallingUserFromContext();
         String callingUserUuid = callingUser.getUuid();
@@ -304,16 +301,16 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
         if (cmd.getUuid() != null) {
             annotations = getSingleAnnotationListByUuid(cmd.getUuid(), userUuid, annotationFilter, callingUserUuid, isCallerAdmin);
-        } else if (isNotBlank(entityType)) {
+        } else if (StringUtils.isNotBlank(entityType)) {
             annotations = getAnnotationsForSpecificEntityType(entityType, entityUuid, userUuid, isCallerAdmin,
                     annotationFilter, callingUserUuid, keyword, callingUser);
-        } else if (isNotBlank(entityUuid)) {
+        } else if (StringUtils.isNotBlank(entityUuid)) {
             annotations = getAnnotationsForSpecificEntityId(entityUuid, userUuid, isCallerAdmin,
                     annotationFilter, callingUserUuid, keyword, callingUser);
         } else {
             annotations = getAllAnnotations(annotationFilter, userUuid, callingUserUuid, isCallerAdmin, keyword);
         }
-        List<AnnotationVO> paginated = StringUtils.applyPagination(annotations, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<AnnotationVO> paginated = com.cloud.utils.StringUtils.applyPagination(annotations, cmd.getStartIndex(), cmd.getPageSizeVal());
         return (paginated != null) ? new Pair<>(paginated, annotations.size()) :
                 new Pair<>(annotations, annotations.size());
     }
@@ -323,7 +320,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if(LOGGER.isDebugEnabled()) {
             LOGGER.debug("getting all annotations");
         }
-        if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
+        if ("self".equalsIgnoreCase(annotationFilter) && StringUtils.isBlank(userUuid)) {
             userUuid = callingUserUuid;
         }
         List<AnnotationVO> annotations = annotationDao.listAllAnnotations(userUuid, getCallingUserRole(),
@@ -359,10 +356,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("getting annotations for type: " + entityType);
         }
-        if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
+        if ("self".equalsIgnoreCase(annotationFilter) && StringUtils.isBlank(userUuid)) {
             userUuid = callingUserUuid;
         }
-        if (isNotBlank(entityUuid)) {
+        if (StringUtils.isNotBlank(entityUuid)) {
             return getAnnotationsByEntityIdAndType(entityType, entityUuid, userUuid, isCallerAdmin,
                     annotationFilter, callingUserUuid, keyword, callingUser);
         } else {

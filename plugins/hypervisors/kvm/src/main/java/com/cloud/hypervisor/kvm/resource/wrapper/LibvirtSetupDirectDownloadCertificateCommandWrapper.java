@@ -27,13 +27,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import static org.apache.commons.lang.StringUtils.isBlank;
 
 @ResourceWrapper(handles =  SetupDirectDownloadCertificateCommand.class)
 public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends CommandWrapper<SetupDirectDownloadCertificateCommand, Answer, LibvirtComputingResource> {
@@ -118,7 +117,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
         try {
             File agentFile = getAgentPropertiesFile();
             String privatePassword = getKeystorePassword(agentFile);
-            if (isBlank(privatePassword)) {
+            if (StringUtils.isBlank(privatePassword)) {
                 return new Answer(cmd, false, "No password found for keystore: " + KeyStoreUtils.KS_FILENAME);
             }
 

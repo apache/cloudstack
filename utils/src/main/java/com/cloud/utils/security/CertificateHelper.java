@@ -21,7 +21,7 @@ package com.cloud.utils.security;
 
 import com.cloud.utils.Ternary;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -50,9 +50,9 @@ import java.util.List;
 public class CertificateHelper {
     public static byte[] buildAndSaveKeystore(final String alias, final String cert, final String privateKey, final String storePassword) throws KeyStoreException, CertificateException,
     NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(alias), "Certificate alias cannot be blank");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(cert), "Certificate cannot be blank");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(privateKey), "Private key cannot be blank");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(alias), "Certificate alias cannot be blank");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(cert), "Certificate cannot be blank");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(privateKey), "Private key cannot be blank");
 
         final KeyStore ks = buildKeystore(alias, cert, privateKey, storePassword);
 
@@ -106,9 +106,9 @@ public class CertificateHelper {
 
     public static KeyStore buildKeystore(final String alias, final String cert, final String privateKey, final String storePassword) throws KeyStoreException, CertificateException,
     NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(alias), "Certificate alias cannot be blank");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(cert), "Certificate cannot be blank");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(privateKey), "Private key cannot be blank");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(alias), "Certificate alias cannot be blank");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(cert), "Certificate cannot be blank");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(privateKey), "Private key cannot be blank");
 
         char password[] = null;
         if (storePassword != null) {

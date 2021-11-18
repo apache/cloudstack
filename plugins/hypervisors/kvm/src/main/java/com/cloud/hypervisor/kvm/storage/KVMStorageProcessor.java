@@ -70,7 +70,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -1893,7 +1893,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             Long templateSize = null;
-            if (!org.apache.commons.lang.StringUtils.isBlank(cmd.getUrl())) {
+            if (StringUtils.isNotBlank(cmd.getUrl())) {
                 String url = cmd.getUrl();
                 templateSize = UriUtils.getRemoteSize(url);
             }

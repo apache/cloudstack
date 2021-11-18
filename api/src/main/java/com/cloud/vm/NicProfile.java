@@ -148,7 +148,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         return networkId;
     }
 
-    public void setNetworId(long networkId){
+    public void setNetworkId(long networkId){
         this.networkId = networkId;
     }
 
