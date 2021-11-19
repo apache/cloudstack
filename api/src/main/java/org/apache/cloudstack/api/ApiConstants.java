@@ -896,6 +896,8 @@ public class ApiConstants {
     public static final String SYSTEM_CYCLES = "systemtotalcpucycles";
     public static final String SYSTEM_LOAD_AVERAGES = "systemloadaverages";
     public static final String SYSTEM_CYCLE_USAGE = "systemcycleusage";
+    public static final String LAST_HEARTBEAT = "lastheartbeat";
+    public static final String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
 
     public enum BootType {
         UEFI, BIOS;

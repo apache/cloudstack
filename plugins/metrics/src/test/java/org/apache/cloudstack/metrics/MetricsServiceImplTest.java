@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.metrics;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
@@ -46,6 +48,10 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmStatsDao;
+
+import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.powermock.api.mockito.PowerMockito.when;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class MetricsServiceImplTest {
@@ -310,5 +316,53 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(fakeVmStatsData).when(vmStatsVOMock).getVmStatsData();
 
         spy.createStatsResponse(Arrays.asList(vmStatsVOMock));
+    }
+
+    @Test
+    public void testIsDbIpv6Local() {
+        MetricsServiceImpl service = spy(new MetricsServiceImpl());
+        Properties p = new Properties();
+        p.put("db.cloud.host", "::1");
+        when(service.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(service.isDbLocal());
+    }
+    @Test
+    public void testIsDbIpv4Local() {
+        MetricsServiceImpl service = spy(new MetricsServiceImpl());
+        Properties p = new Properties();
+        p.put("db.cloud.host", "127.0.0.1");
+        when(service.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(service.isDbLocal());
+    }
+    @Test
+    public void testIsDbSymbolicLocal() {
+        MetricsServiceImpl service = spy(new MetricsServiceImpl());
+        Properties p = new Properties();
+        p.put("db.cloud.host", "localhost");
+        when(service.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(service.isDbLocal());
+    }
+    @Test
+    public void testIsDbOnSameIp() {
+        MetricsServiceImpl service = spy(new MetricsServiceImpl());
+        Properties p = new Properties();
+        p.put("db.cloud.host", "10.10.10.10");
+        p.put("cluster.node.IP", "10.10.10.10");
+        when(service.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(service.isDbLocal());
+    }
+    @Test
+    public void testIsDbNotLocal() {
+        MetricsServiceImpl service = spy(new MetricsServiceImpl());
+        Properties p = new Properties();
+        p.put("db.cloud.host", "10.10.10.11");
+        p.put("cluster.node.IP", "10.10.10.10");
+        when(service.getDbProperties()).thenReturn(p);
+
+        Assert.assertFalse(service.isDbLocal());
     }
 }

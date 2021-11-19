@@ -24,16 +24,23 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.List;
+import java.util.Properties;
 
 import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.usage.UsageJobVO;
+import com.cloud.usage.dao.UsageJobDao;
+import com.cloud.utils.db.DbProperties;
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
 import org.apache.cloudstack.api.ListInfrastructureCmd;
 import org.apache.cloudstack.api.ListMgmtsMetricsCmd;
 import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
+import org.apache.cloudstack.api.ListUsageServerMetricsCmd;
 import org.apache.cloudstack.api.ListVMsMetricsCmd;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVolumesMetricsCmd;
@@ -54,6 +61,7 @@ import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
 import org.apache.cloudstack.response.ManagementServerMetricsResponse;
 import org.apache.cloudstack.response.StoragePoolMetricsResponse;
+import org.apache.cloudstack.response.UsageServerMetricsResponse;
 import org.apache.cloudstack.response.VmMetricsResponse;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 import org.apache.cloudstack.response.VolumeMetricsResponse;
@@ -105,6 +113,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
@@ -142,8 +151,11 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     protected UserVmDao userVmDao;
     @Inject
     protected VmStatsDao vmStatsDao;
+    @Inject
+    private UsageJobDao usageJobDao;
 
     private static Gson gson = new Gson();
+
 
     protected MetricsServiceImpl() {
         super();
@@ -659,6 +671,22 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         }
     }
 
+    protected boolean isDbLocal() {
+        Properties p = getDbProperties();
+        String configeredHost = p.getProperty("db.cloud.host");
+        String localHost = p.getProperty("cluster.node.IP");
+        // see if these resolve to the same
+        if ("localhost".equals(configeredHost)) return true;
+        if ("127.0.0.1".equals(configeredHost)) return true;
+        if ("::1".equals(configeredHost)) return true;
+        if (StringUtils.isNotBlank(configeredHost) && StringUtils.isNotBlank(localHost) && configeredHost.equals(localHost)) return true;
+        return false;
+    }
+
+    protected Properties getDbProperties() {
+        return DbProperties.getDbProperties();
+    }
+
     @Override
     public List<ZoneMetricsResponse> listZoneMetrics(List<ZoneResponse> zoneResponses) {
         final List<ZoneMetricsResponse> metricsResponses = new ArrayList<>();
@@ -740,6 +768,29 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     @Override
+    public List<UsageServerMetricsResponse> listUsageServerMetrics() {
+        List<UsageServerMetricsResponse> responses = new ArrayList<>();
+        UsageServerMetricsResponse response = new UsageServerMetricsResponse();
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            response.setLastHeartbeat(usageJobDao.getLastHeartbeat());
+            UsageJobVO job = usageJobDao.getNextImmediateJob();
+            if (job == null) {
+                job = usageJobDao.getLastJob();
+            }
+            response.setHostname(job == null? "N/A": job.getHost());
+            response.setLastSuccesfulJob(new Date(usageJobDao.getLastJobSuccessDateMillis()));
+        } finally {
+            txn.close();
+            TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            swap.close();
+        }
+
+        responses.add(response);
+        return responses;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ListInfrastructureCmd.class);
@@ -748,6 +799,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         cmdList.add(ListStoragePoolsMetricsCmd.class);
         cmdList.add(ListHostsMetricsCmd.class);
         cmdList.add(ListMgmtsMetricsCmd.class);
+        cmdList.add(ListUsageServerMetricsCmd.class);
         cmdList.add(ListClustersMetricsCmd.class);
         cmdList.add(ListZonesMetricsCmd.class);
         cmdList.add(ListVMsUsageHistoryCmd.class);
