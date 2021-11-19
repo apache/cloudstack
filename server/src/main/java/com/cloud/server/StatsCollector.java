@@ -447,8 +447,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
-
-        clusterManager.registerStatusAdministrator(new ManagementServerStatusAdministrator());
+        ManagementServerStatusAdministrator managementServerStatusAdministrator = new ManagementServerStatusAdministrator();
+        clusterManager.registerStatusAdministrator(managementServerStatusAdministrator);
+        clusterManager.registerListener(managementServerStatusAdministrator);
 
         gson = GsonHelper.getGson();
 
