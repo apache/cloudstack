@@ -18,18 +18,21 @@
 
 import logging
 import libvirt
-import socket
 import json
+import socket
 import requests
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import ssl
+import os.path
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-log_folder = "/var/log/cloudstack/agent/"
-log_path = "/var/log/cloudstack/agent/agent-ha-helper.log"
 root_path = "/"
 check_path = "/check-neighbour/"
+cloud_key = '/etc/cloudstack/agent/cloud.key'
+cloud_cert = '/etc/cloudstack/agent/cloud.crt'
 http_ok = 200
 http_multiple_choices = 300
 http_not_found = 404
+server_side = True
 
 class Libvirt():
     def __init__(self):
@@ -54,7 +57,7 @@ class Libvirt():
 class HTTPServerV6(HTTPServer):
     address_family = socket.AF_INET6
 
-class CloudStackAgentHAHelper(BaseHTTPRequestHandler):
+class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == root_path:
             libvirt = Libvirt()
@@ -73,8 +76,8 @@ class CloudStackAgentHAHelper(BaseHTTPRequestHandler):
 
         elif check_path in self.path:
             host_and_port = self.path.partition(check_path)[2]
-            request_url = 'http://{}/'.format(host_and_port)
-            logging.debug('Check if Host {} is reachable via HTTP GET request to agent-ha-helper.'.format(request_url))
+            request_url = 'https://{}/'.format(host_and_port)
+            logging.debug('Check if Host {} is reachable via HTTPs GET request to agent-ha-helper.'.format(request_url))
             logging.debug('GET request: {}'.format(request_url))
             try:
                 response = requests.get(url = request_url)
@@ -108,10 +111,16 @@ class CloudStackAgentHAHelper(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-def run(port=8080):
+def run(port=443):
     server_address = ('', port)
-    httpd = HTTPServerV6((server_address), CloudStackAgentHAHelper)
-    httpd.serve_forever()
+    if os.path.isfile(cloud_key) & os.path.isfile(cloud_cert):
+        httpd = HTTPServerV6(server_address, CloudStackAgentHAHelper)
+        httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=cloud_key, certfile=cloud_cert, server_side=True)
+        httpd.serve_forever()
+    else:
+        logging.error('Failed to run HTTPS server, cannot open file {}.'.format(filepath))
+
+
 
 
 if __name__ == "__main__":
