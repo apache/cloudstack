@@ -20,19 +20,17 @@ set -e
 set -x
 
 function configure_user() {
-  # cloud user
-  adduser cloud
-  echo 'cloud ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/cloud
-  usermod -a -G admin cloud
-  mkdir -p /home/cloud/.ssh
-  chmod 700 /home/cloud/.ssh
-  echo "cloud:`openssl rand -base64 32`" | chpasswd
   # root user
   echo "root:password" | chpasswd
   mkdir -p /root/.ssh
   chmod 644 /root/.ssh
   touch /root/.ssh/authorized_keys
   chmod 600 /root/.ssh/authorized_keys
+  # cloud user
+  useradd -m -p "$(openssl rand -base64 32)" -s /bin/bash cloud
+  mkdir -p /home/cloud/.ssh
+  chmod 700 /home/cloud/.ssh
+  echo 'cloud ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/cloud
 }
 
 function configure_inittab() {

@@ -95,9 +95,8 @@ function configure_services() {
   # Fix haproxy directory issue
   mkdir -p /var/lib/haproxy
 
-  #FIXME: rsync/shar logic?
-  #install_cloud_scripts
-  #do_signature
+  install_cloud_scripts
+  do_signature
 
   systemctl daemon-reload
   systemctl disable apt-daily.service

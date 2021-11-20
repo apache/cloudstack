@@ -40,23 +40,15 @@ END
   echo 'cloud ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount, /sbin/halt' > /etc/sudoers.d/cloud
 }
 
-# Zero out the free space to save space in the final image:
-function zero_disk() {
+function fstrim_disk() {
   df -h
   fstrim -av
-  for path in / /boot
-  do
-    dd if=/dev/zero of=${path}/zero bs=1M || true
-    sync
-    rm -f ${path}/zero
-  done
 }
 
 function finalize() {
   configure_rundisk_size
   configure_sudoers
-  sync
-  zero_disk
+  fstrim_disk
   sync
 }
 
