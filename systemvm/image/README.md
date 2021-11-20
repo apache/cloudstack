@@ -1,7 +1,6 @@
 # Introduction
 
-This is used to build SystemVM image for use with CloudStack under 7minutes
-using debootstrap and qemu-nbd.
+This is used to build SystemVM image for use with CloudStack.
 
 # Setting up Tools and Environment
 
@@ -16,17 +15,16 @@ Or, on CentOS distros with `epel-release` enabled:
 
 # How to build images
 
-Just run build.sh as sudoer user or root, it will create KVM systemvm template
-`systemvmtemplate-kvm.qcow2` in the current directory:
+Just run build.sh as sudoer user or root, it will create a image.qcow2 systemvm
+template in current directory: (roughly takes 5mins)
 
     sudo bash -x build.sh
 
-To explicitly create images for XenServer (`systemvmtemplate-xen.vhd`) and VMware
-(`systemvmtemplate-vmware.ova`) run:
+To export the template to KVM, VMware and XenServer, run: (roughly takes 5mins)
 
-    bash -x export.sh
+    bash -x export.sh image.qcow2
 
-Note: when building in docker container, because of NBD this may need privileged
+Note: if building in docker container, because of NBD this may need privileged
 container options:
 
     docker run -it --privileged --cap-add=ALL -v /dev:/dev <your container>

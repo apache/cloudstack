@@ -91,6 +91,3 @@ for script in apt_upgrade.sh configure_grub.sh configure_locale.sh \
 done
 rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts scripts/cloud_scripts_shar_archive.sh
 clean_env
-# this works well on Ubuntu but not on CentOS:
-# virt-sparsify $FILE --compress systemvmtemplate-kvm.qcow2 && rm -f $FILE
-qemu-img convert -f qcow2 -O qcow2 -c $FILE systemvmtemplate-kvm.qcow2 && rm -f $FILE
