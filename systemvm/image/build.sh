@@ -64,7 +64,7 @@ mkfs.ext4 -q ${DISK}p3 || fail "cannot create / ext4"
 # Create Debian base
 MNT_DIR=$(mktemp -d)
 mount ${DISK}p3 $MNT_DIR || fail "cannot mount /"
-debootstrap --arch amd64 --include="sudo,ntp,bzip2,locales,openssh-server,openssl,acpid" bullseye $MNT_DIR http://ftp.debian.org/debian/ || fail "cannot install 'bullseye' into $DISK"
+debootstrap --arch amd64 --include="sudo,bzip2,locales,openssh-server,openssl,acpid" bullseye $MNT_DIR http://ftp.debian.org/debian/ || fail "cannot install 'bullseye' into $DISK"
 
 # Configure fstab and mounts
 UUID_BOOT=$(lsblk -f ${DISK}p1 | tail -1 | awk '{print $4}')

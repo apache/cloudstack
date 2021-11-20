@@ -44,7 +44,7 @@ function install_packages() {
 
   local apt_get="apt-get --no-install-recommends -q -y"
 
-  ${apt_get} install \
+  ${apt_get} install ntp \
     rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
     openssh-server e2fsprogs tcpdump iftop socat wget coreutils systemd \
     python python3 python3-flask ieee-data \
