@@ -17,8 +17,8 @@
 # under the License.
 # Requirements: apt-get install debootstrap debian-keyring debian-archive-keyring qemu-utils apt-cacher-ng
 # Reference: examples from https://gist.github.com/spectra/10301941 and https://diogogomes.com/2012/07/13/debootstrap-kvm-image/
+# Usage: sudo bash -x <this script>
 set -x
-ARCH="amd64"
 
 clean_env() {
   [ "$MNT_DIR" != "" ] && chroot $MNT_DIR umount /proc /sys /dev /boot
@@ -64,7 +64,7 @@ mkfs.ext4 -q ${DISK}p3 || fail "cannot create / ext4"
 # Create Debian base
 MNT_DIR=$(mktemp -d)
 mount ${DISK}p3 $MNT_DIR || fail "cannot mount /"
-debootstrap --arch $ARCH --include="locales,sudo,openssh-server,acpid" stable $MNT_DIR http://ftp.debian.org/debian/ || fail "cannot install 'stable' into $DISK"
+debootstrap --arch amd64 --include="sudo,openssh-server,openssl,ntp,bzip2,locales,acpid" stable $MNT_DIR http://ftp.debian.org/debian/ || fail "cannot install 'stable' into $DISK"
 
 # Configure fstab and mounts
 UUID_BOOT=$(lsblk -f ${DISK}p1 | tail -1 | awk '{print $4}')
@@ -81,13 +81,16 @@ chroot $MNT_DIR mount -t proc none /proc || fail "cannot mount /proc"
 chroot $MNT_DIR mount -t sysfs none /sys || fail "cannot mount /sys"
 
 # Install Linux Kernel and Grub
-DEBIAN_FRONTEND=noninteractive chroot $MNT_DIR apt-get install -y --force-yes -q linux-image-$ARCH grub-pc || fail "failed to install Linux Kernel and Grub"
+DEBIAN_FRONTEND=noninteractive chroot $MNT_DIR apt-get install -y --force-yes -q linux-image-amd64 grub-pc || fail "failed to install Linux Kernel and Grub"
 chroot $MNT_DIR grub-install $DISK --target=i386-pc --modules="biosdisk part_msdos" || fail "cannot install grub"
 
 # Setup SystemVM
 bash -x shar_cloud_scripts.sh
 cp -vr ./scripts $MNT_DIR/
-for script in "apt_upgrade.sh configure_grub.sh configure_locale.sh configure_networking.sh configure_acpid.sh install_systemvm_packages.sh configure_conntrack.sh configure_login.sh cloud_scripts_shar_archive.sh configure_systemvm_services.sh cleanup.sh finalize.sh"; do
+for script in apt_upgrade.sh configure_grub.sh configure_locale.sh \
+	      configure_networking.sh configure_acpid.sh install_systemvm_packages.sh \
+	      configure_conntrack.sh configure_login.sh cloud_scripts_shar_archive.sh \
+	      configure_systemvm_services.sh cleanup.sh finalize.sh; do
     chroot $MNT_DIR bash -x /scripts/$script || fail "$script failed"
 done
 rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts scripts/cloud_scripts_shar_archive.sh
