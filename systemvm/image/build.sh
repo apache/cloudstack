@@ -40,7 +40,7 @@ cancel() {
 trap cancel INT
 
 FILE=image.qcow2
-rm -f $FILE && qemu-img create -f qcow2 -o compat=0.10 $FILE 4G
+rm -f $FILE && qemu-img create -f qcow2 -o compat=0.10 $FILE 5G
 DISK=
 modprobe nbd max_part=16 || fail "failed to load nbd module into kernel"
 for i in /dev/nbd*; do
@@ -53,8 +53,8 @@ done
 
 # Create partitions
 sfdisk $DISK -q << EOF || fail "cannot partition $FILE"
-,256000,83,*
-,256000,S
+,512000,83,*
+,512000,S
 ;
 EOF
 mkfs.ext2 -q ${DISK}p1 || fail "cannot create /boot ext2"
