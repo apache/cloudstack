@@ -1,2 +1,0 @@
-SHA1(systemvmtemplate-vmware.ovf)= 7067dcd59a1ba0d9828c219c1c045c64f8e54f2f
-SHA1(systemvmtemplate-vmware-disk1.vmdk)= 22645204247c8d4c66cc488a7a6d34ab9be90e3e

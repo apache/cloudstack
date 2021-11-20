@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# Requirements: apt-get install debootstrap debian-keyring debian-archive-keyring qemu-utils apt-cacher-ng
+# Requirements: apt-get install debootstrap debian-keyring debian-archive-keyring qemu-utils libguestfs-tools apt-cacher-ng
 # Reference: examples from https://gist.github.com/spectra/10301941 and https://diogogomes.com/2012/07/13/debootstrap-kvm-image/
 # Usage: sudo bash -x <this script>
 set -x
@@ -40,7 +40,7 @@ cancel() {
 trap cancel INT
 
 FILE=image.qcow2
-rm -f $FILE && qemu-img create -f qcow2 $FILE 4G
+rm -f $FILE && qemu-img create -f qcow2 -o compat=0.10 $FILE 4G
 DISK=
 modprobe nbd max_part=16 || fail "failed to load nbd module into kernel"
 for i in /dev/nbd*; do
@@ -96,4 +96,4 @@ done
 rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts scripts/cloud_scripts_shar_archive.sh
 
 clean_env
-qemu-img convert -c -o compat=0.10 -f qcow2 -O qcow2 $FILE systemvmtemplate-kvm.qcow2 && rm -f $FILE
+virt-sparsify $FILE --compress systemvmtemplate-kvm.qcow2 && rm -f $FILE
