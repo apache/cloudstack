@@ -88,12 +88,11 @@ chroot $MNT_DIR grub-install $DISK --target=i386-pc --modules="biosdisk part_msd
 bash -x shar_cloud_scripts.sh
 cp -vr ./scripts $MNT_DIR/
 for script in apt_upgrade.sh configure_grub.sh configure_locale.sh \
-	      configure_networking.sh configure_acpid.sh install_systemvm_packages.sh \
-	      configure_conntrack.sh configure_login.sh cloud_scripts_shar_archive.sh \
-	      configure_systemvm_services.sh cleanup.sh finalize.sh; do
+              configure_networking.sh configure_acpid.sh install_systemvm_packages.sh \
+              configure_conntrack.sh configure_login.sh cloud_scripts_shar_archive.sh \
+              configure_systemvm_services.sh cleanup.sh finalize.sh; do
     chroot $MNT_DIR bash -x /scripts/$script || fail "$script failed"
 done
 rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts scripts/cloud_scripts_shar_archive.sh
-
 clean_env
 virt-sparsify $FILE --compress systemvmtemplate-kvm.qcow2 && rm -f $FILE

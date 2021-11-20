@@ -1,42 +1,26 @@
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-
-===========================================================
-
 # Introduction
 
-This is used to build appliances for use with CloudStack. Currently two
-build profiles are available for building systemvmtemplate (Debian based) and
-CentOS based built-in user VM template.
+This is used to build SystemVM image for use with CloudStack under 7minutes
+using debootstrap and qemu-nbd.
 
 # Setting up Tools and Environment
 
-- Install packer and latest KVM, qemu on a Linux machine
-- Install tools for exporting appliances: qemu-img, ovftool, faketime
-- Build and install `vhd-util` as described in build.sh or use pre-built
-  binaries at:
+Install debootstrap, qemu-utils (qemu-img, qemu-nbd) and libguestfs-tools:
 
-      http://packages.shapeblue.com/systemvmtemplate/vhd-util
-      http://packages.shapeblue.com/systemvmtemplate/libvhd.so.1.0
+    apt-get install debootstrap debian-keyring debian-archive-keyring qemu-utils libguestfs-tools apt-cacher-ng
 
-# How to build appliances
+Or, on CentOS distros with `epel-release` enabled:
 
-Just run build.sh, it will export archived appliances for KVM, XenServer,
-VMWare and HyperV in `dist` directory:
+    yum install debootstrap debian-keyring debian-archive-keyring qemu-img libguestfs-tools apt-cacher-ng
 
-    bash build.sh systemvmtemplate
-    bash build.sh builtin
+# How to build images
+
+Just run build.sh as sudoer user or root, it will create KVM systemvm template
+`systemvmtemplate-kvm.qcow2` in the current directory:
+
+    sudo bash -x build.sh
+
+To explicitly create images for XenServer (`systemvmtemplate-xen.vhd`) and VMware
+(`systemvmtemplate-vmware.ova`) run:
+
+    bash -x export.sh
