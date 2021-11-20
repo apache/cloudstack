@@ -42,7 +42,7 @@ trap cancel INT
 FILE=image.qcow2
 rm -f $FILE && qemu-img create -f qcow2 -o compat=0.10 $FILE 5G
 DISK=
-modprobe nbd max_part=16 || fail "failed to load nbd module into kernel"
+modprobe nbd max_part=16
 for i in /dev/nbd*; do
   if qemu-nbd -c $i $FILE; then
     DISK=$i
@@ -52,11 +52,7 @@ done
 [ "$DISK" == "" ] && fail "no nbd device available"
 
 # Create partitions
-sfdisk $DISK -q << EOF || fail "cannot partition $FILE"
-,512000,83,*
-,512000,S
-;
-EOF
+bash -x ./scripts/part.sh $DISK || fail "cannot partition $FILE"
 mkfs.ext2 -q ${DISK}p1 || fail "cannot create /boot ext2"
 mkswap ${DISK}p2 || fail "cannot create swap"
 mkfs.ext4 -q ${DISK}p3 || fail "cannot create / ext4"
@@ -95,4 +91,6 @@ for script in apt_upgrade.sh configure_grub.sh configure_locale.sh \
 done
 rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts scripts/cloud_scripts_shar_archive.sh
 clean_env
-virt-sparsify $FILE --compress systemvmtemplate-kvm.qcow2 && rm -f $FILE
+# this works well on Ubuntu but not on CentOS:
+# virt-sparsify $FILE --compress systemvmtemplate-kvm.qcow2 && rm -f $FILE
+qemu-img convert -f qcow2 -O qcow2 -c $FILE systemvmtemplate-kvm.qcow2 && rm -f $FILE

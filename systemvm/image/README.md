@@ -11,7 +11,8 @@ Install debootstrap, qemu-utils (qemu-img, qemu-nbd) and libguestfs-tools:
 
 Or, on CentOS distros with `epel-release` enabled:
 
-    yum install debootstrap debian-keyring debian-archive-keyring qemu-img libguestfs-tools apt-cacher-ng
+    yum install epel-release centos-release-qemu-ev
+    yum install debootstrap qemu-img-ev libguestfs-tools apt-cacher-ng
 
 # How to build images
 
@@ -24,3 +25,8 @@ To explicitly create images for XenServer (`systemvmtemplate-xen.vhd`) and VMwar
 (`systemvmtemplate-vmware.ova`) run:
 
     bash -x export.sh
+
+Note: when building in docker container, because of NBD this may need privileged
+container options:
+
+    docker run -it --privileged --cap-add=ALL -v /dev:/dev <your container>
