@@ -30,13 +30,13 @@ qemu-img convert -f qcow2 -O vmdk $IMAGE systemvmtemplate-vmware-disk1.vmdk
 size=$(stat --printf="%s" systemvmtemplate-vmware-disk1.vmdk)
 cat <<EOF > systemvmtemplate-vmware.ovf
 <?xml version="1.0" encoding="UTF-8"?>
-<Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1" xmlns:cim="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<Envelope vmw:buildId="build-2459827" xmlns="http://schemas.dmtf.org/ovf/envelope/1" xmlns:cim="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <References>
     <File ovf:href="systemvmtemplate-vmware-disk1.vmdk" ovf:id="file1" ovf:size="$size"/>
   </References>
   <DiskSection>
     <Info>Virtual disk information</Info>
-    <Disk ovf:capacity="4000" ovf:capacityAllocationUnits="byte * 2^20" ovf:diskId="vmdisk1" ovf:fileRef="file1" ovf:format="http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized" ovf:populatedSize="$size"/>
+    <Disk ovf:capacity="5" ovf:capacityAllocationUnits="byte * 2^30" ovf:diskId="vmdisk1" ovf:fileRef="file1" ovf:format="http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized" ovf:populatedSize="$size"/>
   </DiskSection>
   <VirtualSystem ovf:id="vm">
     <Info>A virtual machine</Info>
@@ -133,7 +133,7 @@ SHA1(systemvmtemplate-vmware.ovf)= $(sha1sum systemvmtemplate-vmware.ovf|awk '{p
 SHA1(systemvmtemplate-vmware-disk1.vmdk)= $(sha1sum systemvmtemplate-vmware-disk1.vmdk |awk '{print $1}')
 EOF
 
-tar -cvf systemvmtemplate-vmware.ova systemvmtemplate-vmware.ovf systemvmtemplate-vmware.mf systemvmtemplate-vmware-disk1.vmdk
+tar -cvf systemvmtemplate-vmware.ova --format=ustar systemvmtemplate-vmware.ovf systemvmtemplate-vmware.mf systemvmtemplate-vmware-disk1.vmdk
 rm -f systemvmtemplate-vmware.ovf systemvmtemplate-vmware.mf systemvmtemplate-vmware-disk1.vmdk
 
 # Create checksums
