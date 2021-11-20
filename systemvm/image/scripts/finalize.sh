@@ -48,7 +48,7 @@ function fstrim_disk() {
 function finalize() {
   configure_rundisk_size
   configure_sudoers
-  fstrim_disk
+  #fstrim_disk
   sync
 }
 

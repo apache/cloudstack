@@ -72,7 +72,7 @@ echo "Connected $FILE to $DISK"
 echo "Partitioning $DISK..."
 sfdisk $DISK -q << EOF || fail "cannot partition $FILE"
 ,256000,83,*
-,512000,S
+,640000,S
 ;
 EOF
 
@@ -121,7 +121,7 @@ chroot $MNT_DIR bash /scripts/cloud_scripts_shar_archive.sh || fail "shar script
 chroot $MNT_DIR bash /scripts/configure_systemvm_services.sh || fail "configure_systemvm_services.sh"
 chroot $MNT_DIR bash /scripts/cleanup.sh || fail "cleanup.sh"
 chroot $MNT_DIR bash /scripts/finalize.sh || fail "finalize.sh"
-rm -fr $MNT_DIR/scripts
+rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts
 
 # Install grub
 #grub-install $DISK --target=i386-pc --root-directory=$MNT_DIR --modules="biosdisk part_msdos" || fail "cannot reinstall grub"

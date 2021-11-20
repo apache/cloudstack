@@ -73,10 +73,12 @@ function install_packages() {
     conntrack apt-transport-https ca-certificates curl gnupg gnupg-agent
 
   apt-get install -y python3-json-pointer python3-jsonschema cloud-init
+  apt-get clean
 
   # python2-netaddr workaround
   wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
   dpkg -i python-netaddr_0.7.19-1_all.deb
+  rm -f python-netaddr_0.7.19-1_all.deb
 
   # 32 bit architecture support for vhd-util
   if [ "${arch}" != "i386" ]; then
@@ -91,6 +93,7 @@ function install_packages() {
   echo "deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable" > /etc/apt/sources.list.d/docker.list
   apt-get update
   ${apt_get} install docker-ce docker-ce-cli containerd.io
+  apt-get clean
 
   install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it
