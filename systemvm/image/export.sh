@@ -15,21 +15,22 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# Requirements: apt-get install qemu-utils
-# Usage: sudo bash -x <this script> <qcow2 systemvm image>
+# Requirements: apt-get install qemu-utils libguestfs-tools; ovftool
+# Usage: sudo bash -x <this script> <qcow2 image> <prefix name>
 set -x
 
-IMAGE=$1
+IMAGE=${1:-"image.qcow2"}
+PREFIX=${2:-"systemvmtemplate"}
 
 # Export for KVM
-virt-sparsify $IMAGE --compress systemvmtemplate-kvm.qcow2
+virt-sparsify $IMAGE --compress -o compat=0.10 $PREFIX-kvm.qcow2
 
 # Export for VMware
-qemu-img convert -f qcow2 -O vmdk systemvmtemplate-kvm.qcow2 systemvmtemplate-vmware.vmdk
-cat <<EOF > systemvmtemplate-vmware.vmx
+qemu-img convert -f qcow2 -O vmdk $PREFIX-kvm.qcow2 $PREFIX-vmware.vmdk
+cat <<EOF > $PREFIX-vmware.vmx
 .encoding = "UTF-8"
-displayname = "systemvmtemplate-vmware"
-annotation = "systemvmtemplate-vmware"
+displayname = "$PREFIX-vmware"
+annotation = "$PREFIX-vmware"
 guestos = "otherlinux-64"
 virtualHW.version = "11"
 config.version = "8"
@@ -61,7 +62,7 @@ svga.autodetect = "false"
 svga.vramSize = "4194304"
 scsi0:0.present = "TRUE"
 scsi0:0.deviceType = "disk"
-scsi0:0.fileName = "systemvmtemplate-vmware.vmdk"
+scsi0:0.fileName = "$PREFIX-vmware.vmdk"
 scsi0:0.mode = "persistent"
 scsi0:0.writeThrough = "false"
 scsi0.virtualDev = "lsilogic"
@@ -72,14 +73,14 @@ vcpu.hotremove = "false"
 firmware = "bios"
 mem.hotadd = "false"
 EOF
-ovftool systemvmtemplate-vmware.vmx systemvmtemplate-vmware.ova
-chmod +r systemvmtemplate-vmware.ova
-rm -f systemvmtemplate-vmware.vmx systemvmtemplate-vmware.vmdk
+ovftool $PREFIX-vmware.vmx $PREFIX-vmware.ova
+chmod +r $PREFIX-vmware.ova
+rm -f $PREFIX-vmware.vmx $PREFIX-vmware.vmdk
 
 # Export for XenServer/XCP-ng
-qemu-img convert -f qcow2 -O vpc systemvmtemplate-kvm.qcow2 systemvmtemplate-xen.vhd
-bzip2 systemvmtemplate-xen.vhd
+qemu-img convert -f qcow2 -O vpc $PREFIX-kvm.qcow2 $PREFIX-xen.vhd
+bzip2 $PREFIX-xen.vhd
 
 # Create checksums
-md5sum systemvmtemplate* > md5sum.txt
-sha512sum systemvmtemplate* > sha512sum.txt
+md5sum $PREFIX* > md5sum.txt
+sha512sum $PREFIX* > sha512sum.txt

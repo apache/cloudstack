@@ -22,12 +22,12 @@ echo n      # Add a new partition
 echo p      # Primary partition
 echo 1      # Partition number
 echo        # First sector
-echo 409600
+echo 514047 # 250M size
 echo n      # Add a new partition
 echo p      # Primary partition
 echo 2      # Partition number
 echo
-echo 819200
+echo 1026047
 echo n      # Add a new partition
 echo p      # Primary partition
 echo 3      # Partition number
@@ -40,3 +40,4 @@ echo 2      # Select Parition 2
 echo 82     # Select swap
 echo w      # Write changes
 ) | sudo fdisk $1
+sudo fdisk -l $1

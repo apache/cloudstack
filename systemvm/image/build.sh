@@ -40,7 +40,7 @@ cancel() {
 trap cancel INT
 
 FILE=image.qcow2
-rm -f $FILE && qemu-img create -f qcow2 -o compat=0.10 $FILE 5G
+rm -f $FILE && qemu-img create -f qcow2 $FILE 5G
 DISK=
 modprobe nbd max_part=16
 for i in /dev/nbd*; do
@@ -91,3 +91,4 @@ for script in apt_upgrade.sh configure_grub.sh configure_locale.sh \
 done
 rm -fr $MNT_DIR/scripts $MNT_DIR/cloud_scripts scripts/cloud_scripts_shar_archive.sh
 clean_env
+echo "SystemVM image generated: $FILE"
