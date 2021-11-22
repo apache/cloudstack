@@ -194,8 +194,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 destDatastoreId = orderedDS.get(1);
             }
 
-            if (chosenFileForMigration.getSize() > storageCapacities.get(destDatastoreId).first()) {
-                s_logger.debug("file: " + chosenFileForMigration.getId() + " too large to be migrated to " + destDatastoreId);
+            if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destDatastoreId).first()) {
+                s_logger.debug("file: " + chosenFileForMigration.getUuid() + " too large to be migrated to " + destDatastoreId);
                 continue;
             }
 

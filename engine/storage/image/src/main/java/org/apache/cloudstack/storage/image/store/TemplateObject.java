@@ -142,6 +142,15 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public long getPhysicalSize() {
+        TemplateDataStoreVO templateDataStoreVO = templateStoreDao.findByTemplate(imageVO.getId(), DataStoreRole.Image);
+        if (templateDataStoreVO != null) {
+            return templateDataStoreVO.getPhysicalSize();
+        }
+        return imageVO.getSize();
+    }
+
+    @Override
     public DataObjectType getType() {
         return DataObjectType.TEMPLATE;
     }

@@ -114,7 +114,7 @@ public class DataMigrationUtility {
     }
 
     protected Long getFileSize(DataObject file, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
-        Long size = file.getSize();
+        Long size = file.getPhysicalSize();
         Pair<List<SnapshotInfo>, Long> chain = snapshotChain.get(file);
         if (file instanceof SnapshotInfo && chain.first() != null && !chain.first().isEmpty()) {
             size = chain.second();
@@ -159,8 +159,8 @@ public class DataMigrationUtility {
         Collections.sort(files, new Comparator<DataObject>() {
             @Override
             public int compare(DataObject o1, DataObject o2) {
-                Long size1 = o1.getSize();
-                Long size2 = o2.getSize();
+                Long size1 = o1.getPhysicalSize();
+                Long size2 = o2.getPhysicalSize();
                 if (o1 instanceof SnapshotInfo) {
                     size1 = snapshotChains.get(o1).second();
                 }
@@ -226,7 +226,7 @@ public class DataMigrationUtility {
     protected Long getSizeForChain(List<SnapshotInfo> chain) {
         Long size = 0L;
         for (SnapshotInfo snapshot : chain) {
-            size += snapshot.getSize();
+            size += snapshot.getPhysicalSize();
         }
         return size;
     }
