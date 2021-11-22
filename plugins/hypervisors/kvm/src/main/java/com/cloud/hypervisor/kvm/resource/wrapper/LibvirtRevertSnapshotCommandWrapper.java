@@ -113,7 +113,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
             } else {
                 KVMStoragePool secondaryStoragePool = null;
                 if (snapshotImageStore != null && DataStoreRole.Primary != snapshotImageStore.getRole()) {
-                    storagePoolMgr.getStoragePoolByURI(snapshotImageStore.getUrl());
+                    secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(snapshotImageStore.getUrl());
                 }
 
                 if (primaryPool.getType() == StoragePoolType.CLVM) {
