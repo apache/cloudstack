@@ -20,7 +20,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
@@ -43,7 +43,7 @@ public class RollingMaintenanceAgentExecutor extends RollingMaintenanceExecutorB
         Duration duration = Duration.standardSeconds(timeout);
         final Script script = new Script(scriptFile.getAbsolutePath(), duration, s_logger);
         final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        if (!Strings.isNullOrEmpty(payload)) {
+        if (StringUtils.isNotEmpty(payload)) {
             script.add(payload);
         }
         s_logger.info("Executing stage: " + stage + " script: " + script);

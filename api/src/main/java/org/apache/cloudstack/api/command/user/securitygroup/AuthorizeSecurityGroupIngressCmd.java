@@ -38,12 +38,12 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
-import com.cloud.utils.StringUtils;
 
 @APICommand(name = "authorizeSecurityGroupIngress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group", entityType = {SecurityGroup.class},
             requestHasSensitiveInfo = false,

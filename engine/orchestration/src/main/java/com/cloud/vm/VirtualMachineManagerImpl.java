@@ -251,7 +251,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.google.common.base.Strings;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 
@@ -1006,7 +1005,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void setupAgentSecurity(final Host vmHost, final Map<String, String> sshAccessDetails, final VirtualMachine vm) throws AgentUnavailableException, OperationTimedoutException {
         final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
-        if (!Strings.isNullOrEmpty(csr)) {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(csr)) {
             final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
             ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
             final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
@@ -1536,7 +1535,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (disk.getType() != Volume.Type.ISO) {
                 final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
                 final VolumeVO volume = _volsDao.findById(vol.getId());
-                if (vmSpec.getDeployAsIsInfo() != null && StringUtils.isNotBlank(vol.getPath())) {
+                if (vmSpec.getDeployAsIsInfo() != null && org.apache.commons.lang3.StringUtils.isNotBlank(vol.getPath())) {
                     volume.setPath(vol.getPath());
                     _volsDao.update(volume.getId(), volume);
                 }

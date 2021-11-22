@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = AddKubernetesSupportedVersionCmd.APINAME,
         description = "Add a supported Kubernetes version",
@@ -95,7 +95,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     }
 
     public String getSemanticVersion() {
-        if(Strings.isNullOrEmpty(semanticVersion)) {
+        if(StringUtils.isEmpty(semanticVersion)) {
             throw new InvalidParameterValueException("Version can not be null");
         }
         if(!semanticVersion.matches("[0-9]+(\\.[0-9]+)*")) {
