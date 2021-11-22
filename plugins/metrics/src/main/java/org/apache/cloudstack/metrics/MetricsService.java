@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
+import org.apache.cloudstack.response.DbMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
 import org.apache.cloudstack.response.ManagementServerMetricsResponse;
@@ -55,4 +56,5 @@ public interface MetricsService extends PluggableService {
     List<ZoneMetricsResponse> listZoneMetrics(List<ZoneResponse> poolResponses);
 
     List<UsageServerMetricsResponse> listUsageServerMetrics();
+    List<DbMetricsResponse> listDbMetrics();
 }

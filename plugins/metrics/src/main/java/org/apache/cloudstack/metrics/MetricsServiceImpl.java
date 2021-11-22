@@ -25,16 +25,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.List;
+import java.util.Properties;
 
 import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.dao.UsageJobDao;
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
+import org.apache.cloudstack.api.ListDbMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
 import org.apache.cloudstack.api.ListInfrastructureCmd;
 import org.apache.cloudstack.api.ListMgmtsMetricsCmd;
@@ -57,6 +60,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
+import org.apache.cloudstack.response.DbMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
 import org.apache.cloudstack.response.ManagementServerMetricsResponse;
@@ -777,6 +781,38 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return responses;
     }
 
+    @Override
+    public List<DbMetricsResponse> listDbMetrics() {
+        List<DbMetricsResponse> responses = new ArrayList<>();
+        DbMetricsResponse response = new DbMetricsResponse();
+/*
+      ◦ State (Up / Down)
+      ◦ Since Timestamp (for the state Up / Down)
+      ◦ Time Elapsed (since last Up / Down)
+      ◦ Active Connections
+      ◦ Average Queries Per Second
+      ◦ Buffer Pool Utilization (buffer pool is used to cache the table data in memory and is accessed repeatedly by queries without requiring any disk I/O).
+      ◦ List of Replica Hosts (Connected to the Source Host)
+      ◦ any other relevant stats (if useful) to the response from the sql status variables.
+ */
+        response.setHostname(dbHostName());
+        // basically, have we crashed or not:
+        response.setReplicas(dbReplicas());
+
+        responses.add(response);
+        return responses;
+    }
+
+    private String dbHostName() {
+        Properties p =  DbProperties.getDbProperties();
+        return p.getProperty("db.cloud.host");
+    }
+
+    private String[] dbReplicas() {
+        Properties p =  DbProperties.getDbProperties();
+        return p.getProperty("db.cloud.replicas","").split(",");
+    }
+
     /**
      * returns whether a local usage server is running.
      * Note that this might not be the one actually doing the usage aggregation at this moment.
@@ -798,14 +834,15 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(ListInfrastructureCmd.class);
-        cmdList.add(ListVolumesMetricsCmd.class);
-        cmdList.add(ListVMsMetricsCmd.class);
-        cmdList.add(ListStoragePoolsMetricsCmd.class);
-        cmdList.add(ListHostsMetricsCmd.class);
-        cmdList.add(ListMgmtsMetricsCmd.class);
-        cmdList.add(ListUsageServerMetricsCmd.class);
         cmdList.add(ListClustersMetricsCmd.class);
+        cmdList.add(ListDbMetricsCmd.class);
+        cmdList.add(ListHostsMetricsCmd.class);
+        cmdList.add(ListInfrastructureCmd.class);
+        cmdList.add(ListMgmtsMetricsCmd.class);
+        cmdList.add(ListStoragePoolsMetricsCmd.class);
+        cmdList.add(ListUsageServerMetricsCmd.class);
+        cmdList.add(ListVMsMetricsCmd.class);
+        cmdList.add(ListVolumesMetricsCmd.class);
         cmdList.add(ListZonesMetricsCmd.class);
         cmdList.add(ListVMsUsageHistoryCmd.class);
         return cmdList;

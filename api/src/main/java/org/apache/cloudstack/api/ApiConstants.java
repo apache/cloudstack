@@ -900,6 +900,7 @@ public class ApiConstants {
     public static final String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
     public static final String DATABASE_IS_LOCAL = "dbislocal";
     public static final String USAGE_IS_LOCAL = "usageislocal";
+    public static final String REPLICAS = "replicas";
 
     public enum BootType {
         UEFI, BIOS;
