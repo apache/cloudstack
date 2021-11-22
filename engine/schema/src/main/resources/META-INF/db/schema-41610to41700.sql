@@ -121,9 +121,6 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
     GROUP BY
         `disk_offering`.`id`;
 
--- Adding dynamic scalable flag for service offering table
-ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamic_scaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
-
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
     SELECT
@@ -404,6 +401,7 @@ SELECT
     `host`.`id` AS `host_id`,
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
+    `host`.`cluster_id` AS `cluster_id`,
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,

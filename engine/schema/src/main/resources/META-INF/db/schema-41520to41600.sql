@@ -79,7 +79,6 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`is_volatile` AS `is_volatile`,
         `service_offering`.`deployment_planner` AS `deployment_planner`,
         `service_offering`.`dynamic_scaling_enabled` AS `dynamic_scaling_enabled`,
-        `service_offering`.`disk_offering_strictness` AS `disk_offering_strictness`,
         `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
         GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
         GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
@@ -97,168 +96,32 @@ CREATE VIEW `cloud`.`service_offering_view` AS
             INNER JOIN
         `cloud`.`disk_offering_view` AS `disk_offering` ON service_offering.id = disk_offering.id
             LEFT JOIN
-        `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `service_offering`.`id` AND `domain_details`.`name`='domainid'
+        `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `disk_offering`.`id` AND `domain_details`.`name`='domainid'
             LEFT JOIN
         `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
             LEFT JOIN
-        `cloud`.`service_offering_details` AS `zone_details` ON `zone_details`.`service_offering_id` = `service_offering`.`id` AND `zone_details`.`name`='zoneid'
+        `cloud`.`service_offering_details` AS `zone_details` ON `zone_details`.`service_offering_id` = `disk_offering`.`id` AND `zone_details`.`name`='zoneid'
             LEFT JOIN
         `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
 			LEFT JOIN
-		`cloud`.`service_offering_details` AS `min_compute_details` ON `min_compute_details`.`service_offering_id` = `service_offering`.`id`
+		`cloud`.`service_offering_details` AS `min_compute_details` ON `min_compute_details`.`service_offering_id` = `disk_offering`.`id`
 				AND `min_compute_details`.`name` = 'mincpunumber'
 			LEFT JOIN
-		`cloud`.`service_offering_details` AS `max_compute_details` ON `max_compute_details`.`service_offering_id` = `service_offering`.`id`
+		`cloud`.`service_offering_details` AS `max_compute_details` ON `max_compute_details`.`service_offering_id` = `disk_offering`.`id`
 				AND `max_compute_details`.`name` = 'maxcpunumber'
 			LEFT JOIN
-		`cloud`.`service_offering_details` AS `min_memory_details` ON `min_memory_details`.`service_offering_id` = `service_offering`.`id`
+		`cloud`.`service_offering_details` AS `min_memory_details` ON `min_memory_details`.`service_offering_id` = `disk_offering`.`id`
 				AND `min_memory_details`.`name` = 'minmemory'
 			LEFT JOIN
-		`cloud`.`service_offering_details` AS `max_memory_details` ON `max_memory_details`.`service_offering_id` = `service_offering`.`id`
+		`cloud`.`service_offering_details` AS `max_memory_details` ON `max_memory_details`.`service_offering_id` = `disk_offering`.`id`
 				AND `max_memory_details`.`name` = 'maxmemory'
 			LEFT JOIN
-		`cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `service_offering`.`id`
+		`cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `disk_offering`.`id`
 				AND `vsphere_storage_policy`.`name` = 'storagepolicy'
     WHERE
-        `service_offering`.`state`='Active'
+        `disk_offering`.`state`='Active'
     GROUP BY
         `service_offering`.`id`;
-
-DROP VIEW IF EXISTS `cloud`.`volume_view`;
-CREATE VIEW `cloud`.`volume_view` AS
-    SELECT
-        volumes.id,
-        volumes.uuid,
-        volumes.name,
-        volumes.device_id,
-        volumes.volume_type,
-        volumes.provisioning_type,
-        volumes.size,
-        volumes.min_iops,
-        volumes.max_iops,
-        volumes.created,
-        volumes.state,
-        volumes.attached,
-        volumes.removed,
-        volumes.display_volume,
-        volumes.format,
-        volumes.path,
-        volumes.chain_info,
-        account.id account_id,
-        account.uuid account_uuid,
-        account.account_name account_name,
-        account.type account_type,
-        domain.id domain_id,
-        domain.uuid domain_uuid,
-        domain.name domain_name,
-        domain.path domain_path,
-        projects.id project_id,
-        projects.uuid project_uuid,
-        projects.name project_name,
-        data_center.id data_center_id,
-        data_center.uuid data_center_uuid,
-        data_center.name data_center_name,
-        data_center.networktype data_center_type,
-        vm_instance.id vm_id,
-        vm_instance.uuid vm_uuid,
-        vm_instance.name vm_name,
-        vm_instance.state vm_state,
-        vm_instance.vm_type,
-        user_vm.display_name vm_display_name,
-        volume_store_ref.size volume_store_size,
-        volume_store_ref.download_pct,
-        volume_store_ref.download_state,
-        volume_store_ref.error_str,
-        volume_store_ref.created created_on_store,
-        disk_offering.id disk_offering_id,
-        disk_offering.uuid disk_offering_uuid,
-        disk_offering.name disk_offering_name,
-        disk_offering.display_text disk_offering_display_text,
-        disk_offering.use_local_storage,
-        service_offering.system_use,
-        disk_offering.bytes_read_rate,
-        disk_offering.bytes_write_rate,
-        disk_offering.iops_read_rate,
-        disk_offering.iops_write_rate,
-        disk_offering.cache_mode,
-        storage_pool.id pool_id,
-        storage_pool.uuid pool_uuid,
-        storage_pool.name pool_name,
-        cluster.id cluster_id,
-        cluster.name cluster_name,
-        cluster.uuid cluster_uuid,
-        cluster.hypervisor_type,
-        vm_template.id template_id,
-        vm_template.uuid template_uuid,
-        vm_template.extractable,
-        vm_template.type template_type,
-        vm_template.name template_name,
-        vm_template.display_text template_display_text,
-        iso.id iso_id,
-        iso.uuid iso_uuid,
-        iso.name iso_name,
-        iso.display_text iso_display_text,
-        resource_tags.id tag_id,
-        resource_tags.uuid tag_uuid,
-        resource_tags.key tag_key,
-        resource_tags.value tag_value,
-        resource_tags.domain_id tag_domain_id,
-        resource_tags.account_id tag_account_id,
-        resource_tags.resource_id tag_resource_id,
-        resource_tags.resource_uuid tag_resource_uuid,
-        resource_tags.resource_type tag_resource_type,
-        resource_tags.customer tag_customer,
-        async_job.id job_id,
-        async_job.uuid job_uuid,
-        async_job.job_status job_status,
-        async_job.account_id job_account_id,
-        host_pod_ref.id pod_id,
-        host_pod_ref.uuid pod_uuid,
-        host_pod_ref.name pod_name,
-        resource_tag_account.account_name tag_account_name,
-        resource_tag_domain.uuid tag_domain_uuid,
-        resource_tag_domain.name tag_domain_name
-    from
-        `cloud`.`volumes`
-            inner join
-        `cloud`.`account` ON volumes.account_id = account.id
-            inner join
-        `cloud`.`domain` ON volumes.domain_id = domain.id
-            left join
-        `cloud`.`projects` ON projects.project_account_id = account.id
-            left join
-        `cloud`.`data_center` ON volumes.data_center_id = data_center.id
-            left join
-        `cloud`.`vm_instance` ON volumes.instance_id = vm_instance.id
-            left join
-        `cloud`.`user_vm` ON user_vm.id = vm_instance.id
-            left join
-        `cloud`.`volume_store_ref` ON volumes.id = volume_store_ref.volume_id
-            left join
-        `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
-            left join
-        `cloud`.`disk_offering` ON volumes.disk_offering_id = disk_offering.id
-            left join
-        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
-            left join
-        `cloud`.`host_pod_ref` ON storage_pool.pod_id = host_pod_ref.id
-            left join
-        `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
-            left join
-        `cloud`.`vm_template` ON volumes.template_id = vm_template.id
-            left join
-        `cloud`.`vm_template` iso ON iso.id = volumes.iso_id
-            left join
-        `cloud`.`resource_tags` ON resource_tags.resource_id = volumes.id
-            and resource_tags.resource_type = 'Volume'
-            left join
-        `cloud`.`async_job` ON async_job.instance_id = volumes.id
-            and async_job.instance_type = 'Volume'
-            and async_job.job_status = 0
-            left join
-        `cloud`.`account` resource_tag_account ON resource_tag_account.id = resource_tags.account_id
-            left join
-        `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
 
 --;
 -- Stored procedure to do idempotent column add;
@@ -727,109 +590,6 @@ FROM
             AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
-
-DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
-CREATE VIEW `cloud`.`domain_router_view` AS
-    select
-        vm_instance.id id,
-        vm_instance.name name,
-        account.id account_id,
-        account.uuid account_uuid,
-        account.account_name account_name,
-        account.type account_type,
-        domain.id domain_id,
-        domain.uuid domain_uuid,
-        domain.name domain_name,
-        domain.path domain_path,
-        projects.id project_id,
-        projects.uuid project_uuid,
-        projects.name project_name,
-        vm_instance.uuid uuid,
-        vm_instance.created created,
-        vm_instance.state state,
-        vm_instance.removed removed,
-        vm_instance.pod_id pod_id,
-        vm_instance.instance_name instance_name,
-        host_pod_ref.uuid pod_uuid,
-        data_center.id data_center_id,
-        data_center.uuid data_center_uuid,
-        data_center.name data_center_name,
-        data_center.networktype data_center_type,
-        data_center.dns1 dns1,
-        data_center.dns2 dns2,
-        data_center.ip6_dns1 ip6_dns1,
-        data_center.ip6_dns2 ip6_dns2,
-        host.id host_id,
-        host.uuid host_uuid,
-        host.name host_name,
-        host.hypervisor_type,
-        host.cluster_id cluster_id,
-        vm_template.id template_id,
-        vm_template.uuid template_uuid,
-        service_offering.id service_offering_id,
-        service_offering.uuid service_offering_uuid,
-        service_offering.name service_offering_name,
-        nics.id nic_id,
-        nics.uuid nic_uuid,
-        nics.network_id network_id,
-        nics.ip4_address ip_address,
-        nics.ip6_address ip6_address,
-        nics.ip6_gateway ip6_gateway,
-        nics.ip6_cidr ip6_cidr,
-        nics.default_nic is_default_nic,
-        nics.gateway gateway,
-        nics.netmask netmask,
-        nics.mac_address mac_address,
-        nics.broadcast_uri broadcast_uri,
-        nics.isolation_uri isolation_uri,
-        vpc.id vpc_id,
-        vpc.uuid vpc_uuid,
-        vpc.name vpc_name,
-        networks.uuid network_uuid,
-        networks.name network_name,
-        networks.network_domain network_domain,
-        networks.traffic_type traffic_type,
-        networks.guest_type guest_type,
-        async_job.id job_id,
-        async_job.uuid job_uuid,
-        async_job.job_status job_status,
-        async_job.account_id job_account_id,
-        domain_router.template_version template_version,
-        domain_router.scripts_version scripts_version,
-        domain_router.is_redundant_router is_redundant_router,
-        domain_router.redundant_state redundant_state,
-        domain_router.stop_pending stop_pending,
-        domain_router.role role
-    from
-        `cloud`.`domain_router`
-            inner join
-        `cloud`.`vm_instance` ON vm_instance.id = domain_router.id
-            inner join
-        `cloud`.`account` ON vm_instance.account_id = account.id
-            inner join
-        `cloud`.`domain` ON vm_instance.domain_id = domain.id
-            left join
-        `cloud`.`host_pod_ref` ON vm_instance.pod_id = host_pod_ref.id
-            left join
-        `cloud`.`projects` ON projects.project_account_id = account.id
-            left join
-        `cloud`.`data_center` ON vm_instance.data_center_id = data_center.id
-            left join
-        `cloud`.`host` ON vm_instance.host_id = host.id
-            left join
-        `cloud`.`vm_template` ON vm_instance.vm_template_id = vm_template.id
-            left join
-        `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
-            left join
-        `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
-            left join
-        `cloud`.`networks` ON nics.network_id = networks.id
-            left join
-        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id and vpc.removed is null
-            left join
-        `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
-            and async_job.instance_type = 'DomainRouter'
-            and async_job.job_status = 0;
 
 -- Update name for global configuration user.vm.readonly.ui.details
 Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';

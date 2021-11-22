@@ -2881,13 +2881,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If all checks pass, we move forward returning the disk offering object.
      */
     private DiskOfferingVO retrieveAndValidateNewDiskOffering(MigrateVolumeCmd cmd) {
-        String newDiskOfferingUuid = cmd.getNewDiskOfferingUuid();
-        if (StringUtils.isBlank(newDiskOfferingUuid)) {
+        Long newDiskOfferingId = cmd.getNewDiskOfferingId();
+        if (newDiskOfferingId == null) {
             return null;
         }
-        DiskOfferingVO newDiskOffering = _diskOfferingDao.findByUuid(newDiskOfferingUuid);
+        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
         if (newDiskOffering == null) {
-            throw new InvalidParameterValueException(String.format("The disk offering informed is not valid [id=%s].", newDiskOfferingUuid));
+            throw new InvalidParameterValueException(String.format("The disk offering informed is not valid [id=%s].", newDiskOfferingId));
         }
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("We cannot assign a removed disk offering [id=%s] to a volume. ", newDiskOffering.getUuid()));
