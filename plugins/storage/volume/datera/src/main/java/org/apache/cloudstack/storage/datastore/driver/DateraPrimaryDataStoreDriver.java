@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.DateraObject;
 import org.apache.cloudstack.storage.datastore.util.DateraUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -76,7 +77,6 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
@@ -439,7 +439,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         String dataObjectTypeString = dataObject.getType().name(); // TEMPLATE, VOLUME, SNAPSHOT
         String dataObjectTypeBrief;
-        dataObjectTypeBrief = org.apache.commons.lang.StringUtils.substring(dataObjectTypeString, 0, 1);
+        dataObjectTypeBrief = StringUtils.substring(dataObjectTypeString, 0, 1);
         name.add(dataObjectTypeBrief); // T, V
 
         switch (dataObject.getType()) {
@@ -468,7 +468,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         String appInstanceName = StringUtils.join("-", name.toArray());
-        return org.apache.commons.lang.StringUtils.substring(appInstanceName, 0, DateraUtil.APPINSTANCE_MAX_LENTH);
+        return StringUtils.substring(appInstanceName, 0, DateraUtil.APPINSTANCE_MAX_LENTH);
     }
 
     // Not being used right now as Datera doesn't support min IOPS

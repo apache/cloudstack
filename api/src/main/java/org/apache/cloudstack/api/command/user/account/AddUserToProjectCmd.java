@@ -35,7 +35,7 @@ import org.apache.commons.lang3.EnumUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.ProjectAccount;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = AddUserToProjectCmd.APINAME, description = "Adds user to a project", responseObject = SuccessResponse.class, since = "4.14",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
@@ -86,7 +86,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
     }
 
     public ProjectAccount.Role getRoleType() {
-        if (!Strings.isNullOrEmpty(roleType)) {
+        if (StringUtils.isNotEmpty(roleType)) {
             String role = roleType.substring(0, 1).toUpperCase() + roleType.substring(1).toLowerCase();
             if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, role)) {
                 throw new InvalidParameterValueException("Only Admin or Regular project role types are valid");
