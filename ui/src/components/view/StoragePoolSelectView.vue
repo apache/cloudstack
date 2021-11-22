@@ -215,13 +215,13 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.handleStoragePoolsFetchComplete()
-          this.loading = false
         })
       }
     },
     handleStoragePoolsFetchComplete () {
       this.$emit('storagePoolsUpdated', this.storagePools)
       this.addAutoAssignOption()
+      this.loading = false
     },
     addAutoAssignOption () {
       if (this.autoAssignAllowed && this.page === 1) {
