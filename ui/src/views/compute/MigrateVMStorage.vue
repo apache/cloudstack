@@ -120,7 +120,6 @@ export default {
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
-<<<<<<< HEAD
     handleStoragePoolChange (storagePool) {
       this.selectedPool = storagePool
     },
@@ -144,44 +143,6 @@ export default {
         return
       }
       this.migrateVm(migrateApi, this.selectedPool.id, null)
-=======
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-        this.loading = true
-        var isUserVm = true
-        if (this.$route.meta.name !== 'vm') {
-          isUserVm = false
-        }
-        var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
-        if (isUserVm && this.apiParams.hostid && this.apiParams.hostid.required === false) {
-          migrateApi = 'migrateVirtualMachineWithVolume'
-          var rootVolume = null
-          api('listVolumes', {
-            listAll: true,
-            virtualmachineid: this.resource.id
-          }).then(response => {
-            var volumes = response.listvolumesresponse.volume
-            if (volumes && volumes.length > 0) {
-              volumes = volumes.filter(item => item.type === 'ROOT')
-              if (volumes && volumes.length > 0) {
-                rootVolume = volumes[0]
-              }
-              if (rootVolume == null) {
-                this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
-                this.closeAction()
-              }
-              this.migrateVm(migrateApi, values.storageid, rootVolume.id)
-            }
-          })
-          return
-        }
-        this.migrateVm(migrateApi, values.storageid, null)
-      })
->>>>>>> main
     },
     migrateVm (migrateApi, storageId, volumeToPool) {
       var params = {
