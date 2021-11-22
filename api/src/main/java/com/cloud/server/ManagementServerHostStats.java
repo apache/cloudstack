@@ -98,4 +98,8 @@ public interface ManagementServerHostStats {
     double[] getSystemLoadAverages();
 
     double[] getSystemCyclesUsage();
+
+    boolean isDbLocal();
+
+    boolean isUsageLocal();
 }

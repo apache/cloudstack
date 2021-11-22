@@ -19,6 +19,8 @@ package com.cloud.server;
 import javax.inject.Inject;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+
+import com.cloud.utils.db.DbProperties;
 import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.net.URI;
@@ -30,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
@@ -398,7 +401,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
-    final MetricRegistry registry = new MetricRegistry();
+    final static MetricRegistry METRIC_REGISTRY = new MetricRegistry();
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -416,11 +419,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Override
     public boolean start() {
         init(_configDao.getConfiguration());
-        registerAll("gc", new GarbageCollectorMetricSet(), registry);
-        registerAll("buffers", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()), registry);
-        registerAll("memory", new MemoryUsageGaugeSet(), registry);
-        registerAll("threads", new ThreadStatesGaugeSet(), registry);
-        registerAll("jvm", new JvmAttributeGaugeSet(), registry);
+        registerAll("gc", new GarbageCollectorMetricSet(), METRIC_REGISTRY);
+        registerAll("buffers", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()), METRIC_REGISTRY);
+        registerAll("memory", new MemoryUsageGaugeSet(), METRIC_REGISTRY);
+        registerAll("threads", new ThreadStatesGaugeSet(), METRIC_REGISTRY);
+        registerAll("jvm", new JvmAttributeGaugeSet(), METRIC_REGISTRY);
         return true;
     }
     @Override
@@ -752,6 +755,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             LOGGER.debug("Metrics collection start...");
             newEntry.setManagementServerHostId(mshost.getId());
             newEntry.setManagementServerHostUuid(mshost.getUuid());
+            newEntry.setDbLocal(isDbLocal());
+            newEntry.setUsageLocal(isUsageLocal());
             retrieveSession(newEntry);
             getJvmDimensions(newEntry);
             LOGGER.debug("Metrics collection extra...");
@@ -924,7 +929,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         private void gatherAllMetrics(ManagementServerHostStatsEntry metricsEntry) {
             Map<String, Object> metricDetails = new HashMap<>();
-            for (String metricName : registry.getGauges().keySet()) {
+            for (String metricName : METRIC_REGISTRY.getGauges().keySet()) {
                 Object value = getMetric(metricName);
                 metricDetails.put(metricName, value);
                 if (LOGGER.isTraceEnabled()) {
@@ -1024,13 +1029,47 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         private Object getMetric(String metricName) {
-            return registry.getGauges().get(metricName).getValue();
+            return METRIC_REGISTRY.getGauges().get(metricName).getValue();
         }
 
         @Override
         protected Point creteInfluxDbPoint(Object metricsObject) {
             return null;
         }
+
+    }
+
+    /**
+     * @return true if there is a usage server installed locally.
+     */
+    protected boolean isUsageLocal() {
+        boolean local = false;
+        String usageInstall = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Loaded:\"");
+        LOGGER.debug(String.format("usage install: %s", usageInstall));
+
+        if (StringUtils.isNotBlank(usageInstall)) {
+            local = usageInstall.contains("enabled");
+        }
+        return local;
+    }
+
+    /**
+     * @return true if the DB endpoint is local to this server
+     */
+    protected boolean isDbLocal() {
+        Properties p = getDbProperties();
+        String configeredHost = p.getProperty("db.cloud.host");
+        String localHost = p.getProperty("cluster.node.IP");
+        // see if these resolve to the same
+        if ("localhost".equals(configeredHost)) return true;
+        if ("127.0.0.1".equals(configeredHost)) return true;
+        if ("::1".equals(configeredHost)) return true;
+        if (StringUtils.isNotBlank(configeredHost) && StringUtils.isNotBlank(localHost) && configeredHost.equals(localHost)) return true;
+        return false;
+    }
+
+    protected Properties getDbProperties() {
+        return DbProperties.getDbProperties();
     }
 
     protected class ManagementServerStatusAdministrator implements ClusterManager.StatusAdministrator, ClusterManagerListener {

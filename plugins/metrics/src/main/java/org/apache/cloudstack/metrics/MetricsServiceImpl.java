@@ -25,15 +25,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.List;
-import java.util.Properties;
 
 import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.script.Script;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
@@ -56,6 +55,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
@@ -646,6 +646,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         if (status == null ) {
             LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
+            metricsResponse.setDbLocal(status.isDbLocal());
+            metricsResponse.setUsageLocal(status.isUsageLocal());
             metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
             metricsResponse.setAgentCount(status.getAgentCount());
             metricsResponse.setSessions(status.getSessions());
@@ -669,22 +671,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                 LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
         }
-    }
-
-    protected boolean isDbLocal() {
-        Properties p = getDbProperties();
-        String configeredHost = p.getProperty("db.cloud.host");
-        String localHost = p.getProperty("cluster.node.IP");
-        // see if these resolve to the same
-        if ("localhost".equals(configeredHost)) return true;
-        if ("127.0.0.1".equals(configeredHost)) return true;
-        if ("::1".equals(configeredHost)) return true;
-        if (StringUtils.isNotBlank(configeredHost) && StringUtils.isNotBlank(localHost) && configeredHost.equals(localHost)) return true;
-        return false;
-    }
-
-    protected Properties getDbProperties() {
-        return DbProperties.getDbProperties();
     }
 
     @Override
@@ -774,6 +760,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             response.setLastHeartbeat(usageJobDao.getLastHeartbeat());
+            response.setState(isUsageRunning()? State.Up : State.Down);
             UsageJobVO job = usageJobDao.getNextImmediateJob();
             if (job == null) {
                 job = usageJobDao.getLastJob();
@@ -788,6 +775,24 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
 
         responses.add(response);
         return responses;
+    }
+
+    /**
+     * returns whether a local usage server is running.
+     * Note that this might not be the one actually doing the usage aggregation at this moment.
+     * @return true if the service is active
+     */
+    protected boolean isUsageRunning() {
+        boolean local = false;
+        String usageStatus = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Active:\"");
+        LOGGER.debug(String.format("usage status: %s", usageStatus));
+
+        if (StringUtils.isNotBlank(usageStatus)) {
+            local = usageStatus.contains("running");
+        } else {
+
+        }
+        return local;
     }
 
     @Override

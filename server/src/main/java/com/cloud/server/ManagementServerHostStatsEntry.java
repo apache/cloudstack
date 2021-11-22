@@ -59,6 +59,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private double systemTotalCpuCycles;
     private double[] systemLoadAverages;
     private double[] systemCyclesUsage;
+    private boolean dbLocal;
+    private boolean usageLocal;
 
     @Override
     public long getManagementServerHostId() {
@@ -395,5 +397,23 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public double[] getSystemCyclesUsage() {
         return systemCyclesUsage;
+    }
+
+    public void setDbLocal(boolean dbLocal) {
+        this.dbLocal = dbLocal;
+    }
+
+    @Override
+    public boolean isDbLocal() {
+        return dbLocal;
+    }
+
+    public void setUsageLocal(boolean usageLocal) {
+        this.usageLocal = usageLocal;
+    }
+
+    @Override
+    public boolean isUsageLocal() {
+        return usageLocal;
     }
 }

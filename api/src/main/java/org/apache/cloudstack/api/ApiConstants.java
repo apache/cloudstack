@@ -898,6 +898,8 @@ public class ApiConstants {
     public static final String SYSTEM_CYCLE_USAGE = "systemcycleusage";
     public static final String LAST_HEARTBEAT = "lastheartbeat";
     public static final String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
+    public static final String DATABASE_IS_LOCAL = "dbislocal";
+    public static final String USAGE_IS_LOCAL = "usageislocal";
 
     public enum BootType {
         UEFI, BIOS;

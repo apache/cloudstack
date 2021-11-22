@@ -99,6 +99,14 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the system load for user = and system processes, and the system idle cycles")
     private double[] systemCycleUsage;
 
+    @SerializedName(ApiConstants.DATABASE_IS_LOCAL)
+    @Param(description = "the system is running against a local database")
+    private boolean dbLocal;
+
+    @SerializedName(ApiConstants.USAGE_IS_LOCAL)
+    @Param(description = "the system has a usage server running locally")
+    private boolean usageLocal;
+
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
     }
@@ -173,5 +181,13 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setSystemCycleUsage(double[] systemCycleUsage) {
         this.systemCycleUsage = systemCycleUsage;
+    }
+
+    public void setDbLocal(boolean dbLocal) {
+        this.dbLocal = dbLocal;
+    }
+
+    public void setUsageLocal(boolean usageLocal) {
+        this.usageLocal = usageLocal;
     }
 }

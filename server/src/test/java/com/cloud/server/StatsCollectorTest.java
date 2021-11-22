@@ -20,12 +20,14 @@ package com.cloud.server;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -57,6 +59,8 @@ import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.VmStatsDao;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+
+import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(DataProviderRunner.class)
@@ -376,4 +380,46 @@ public class StatsCollectorTest {
         Assert.assertEquals(6.2, result.getDiskWriteIOs(), 0);
     }
 
+    @Test
+    public void testIsDbIpv6Local() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "::1");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbIpv4Local() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "127.0.0.1");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbSymbolicLocal() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "localhost");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbOnSameIp() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "10.10.10.10");
+        p.put("cluster.node.IP", "10.10.10.10");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbNotLocal() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "10.10.10.11");
+        p.put("cluster.node.IP", "10.10.10.10");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertFalse(statsCollector.isDbLocal());
+    }
 }
