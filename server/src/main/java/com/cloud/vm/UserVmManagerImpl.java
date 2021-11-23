@@ -84,6 +84,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
@@ -1115,64 +1116,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
-        // Check resource limits for CPU and Memory.
-        Map<String, String> customParameters = cmd.getDetails();
-        ServiceOfferingVO newServiceOffering = _offeringDao.findById(svcOffId);
-        if (newServiceOffering.getState() == ServiceOffering.State.Inactive) {
-            throw new InvalidParameterValueException(String.format("Unable to upgrade virtual machine %s with an inactive service offering %s", vmInstance.getUuid(), newServiceOffering.getUuid()));
-        }
-        if (newServiceOffering.isDynamic()) {
-            newServiceOffering.setDynamicFlag(true);
-            validateCustomParameters(newServiceOffering, cmd.getDetails());
-            newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customParameters);
-        } else {
-            validateOfferingMaxResource(newServiceOffering);
-        }
-
-        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
-        if (currentServiceOffering.getDiskOfferingStrictness() != newServiceOffering.getDiskOfferingStrictness()) {
-            throw new InvalidParameterValueException("Unable to upgrade VM, since disk offering strictness flag is not same for new service offering and old service offering");
-        }
-
-        if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
-            throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
-        }
-
-        int newCpu = newServiceOffering.getCpu();
-        int newMemory = newServiceOffering.getRamSize();
-        int currentCpu = currentServiceOffering.getCpu();
-        int currentMemory = currentServiceOffering.getRamSize();
-
-        Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
-        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, newCpu - currentCpu);
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, newMemory - currentMemory);
-            }
-        }
-
-        // Check that the specified service offering ID is valid
-        _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
-
-        resizeRootVolumeOfVmWithNewOffering(vmInstance, newServiceOffering);
-
-        _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
-
-        // Increment or decrement CPU and Memory count accordingly.
-        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
-            } else if (currentCpu > newCpu) {
-                _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(currentCpu - newCpu));
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
-            } else if (currentMemory > newMemory) {
-                _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(currentMemory - newMemory));
-            }
-        }
+        upgradeStoppedVirtualMachine(vmId, svcOffId, cmd.getDetails());
 
         // Generate usage event for VM upgrade
         UserVmVO userVm = _vmDao.findById(vmId);
@@ -1237,19 +1181,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private UserVm upgradeStoppedVirtualMachine(Long vmId, Long svcOffId, Map<String, String> customParameters) throws ResourceAllocationException {
-        Account caller = CallContext.current().getCallingAccount();
 
-        // Verify input parameters
-        //UserVmVO vmInstance = _vmDao.findById(vmId);
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
-        }
-
-        _accountMgr.checkAccess(caller, null, true, vmInstance);
-
         // Check resource limits for CPU and Memory.
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(svcOffId);
+        if (newServiceOffering.getState() == ServiceOffering.State.Inactive) {
+            throw new InvalidParameterValueException(String.format("Unable to upgrade virtual machine %s with an inactive service offering %s", vmInstance.getUuid(), newServiceOffering.getUuid()));
+        }
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
             validateCustomParameters(newServiceOffering, customParameters);
@@ -1286,30 +1224,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
         // Check if the new service offering can be applied to vm instance
-        ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
-        _accountMgr.checkAccess(owner, newSvcOffering, _dcDao.findById(vmInstance.getDataCenterId()));
-
-        DiskOfferingVO newRootDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-
-        List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmInstance.getId());
-
-        for (final VolumeVO rootVolumeOfVm : vols) {
-            DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
-
-            ResizeVolumeCmd resizeVolumeCmd = prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, newRootDiskOffering);
-
-            if (rootVolumeOfVm.getDiskOfferingId() != newRootDiskOffering.getId()) {
-                rootVolumeOfVm.setDiskOfferingId(newRootDiskOffering.getId());
-                _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
-            }
-            HypervisorType hypervisorType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
-            if (HypervisorType.Simulator != hypervisorType) {
-                _volumeService.resizeVolume(resizeVolumeCmd);
-            } else if (newRootDiskOffering.getDiskSize() > 0 && currentRootDiskOffering.getDiskSize() != newRootDiskOffering.getDiskSize()) {
-                throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
-            }
+        _accountMgr.checkAccess(owner, newServiceOffering, _dcDao.findById(vmInstance.getDataCenterId()));
+        DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(currentServiceOffering.getDiskOfferingId());
+        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
+        if (currentDiskOffering.isComputeOnly() && newDiskOffering.isComputeOnly()) {
+            changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
         }
-
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
@@ -1362,19 +1282,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     newRootDiskOffering.getId(), newRootDiskOffering.getName(), newNewOfferingRootSizeInGiB, currentRootDiskOfferingGiB));
         }
         return resizeVolumeCmd;
-    }
-
-    private void resizeRootVolumeOfVmWithNewOffering(VMInstanceVO vmInstance, ServiceOfferingVO newServiceOffering)
-            throws ResourceAllocationException {
-        DiskOfferingVO newROOTDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-        List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmInstance.getId());
-
-        for (final VolumeVO rootVolumeOfVm : vols) {
-            rootVolumeOfVm.setDiskOfferingId(newROOTDiskOffering.getId());
-            ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd(rootVolumeOfVm.getId(), newROOTDiskOffering.getMinIops(), newROOTDiskOffering.getMaxIops());
-            _volumeService.resizeVolume(resizeVolumeCmd);
-            _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
-        }
     }
 
     @Override
@@ -1935,7 +1842,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
         if (vmInstance != null) {
             if (vmInstance.getState().equals(State.Stopped)) {
                 upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
@@ -1992,6 +1900,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
             throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
+        }
+
+        DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(currentServiceOffering.getDiskOfferingId());
+        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
+
+        if (Boolean.compare(currentDiskOffering.isComputeOnly(), newDiskOffering.isComputeOnly()) != 0) {
+            throw new InvalidParameterValueException("Unable to scale VM, since compute only flags on old and new service offerings are not same");
         }
 
         int newCpu = newServiceOffering.getCpu();
@@ -2089,7 +2004,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId, customParameters, excludes);
                     }
 
-                    // #3 scale the vm now
+                    // #3 resize or migrate the root volume if required
+                    if (currentDiskOffering.isComputeOnly() && newDiskOffering.isComputeOnly()) {
+                        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
+                    }
+
+                    // #4 scale the vm now
                     vmInstance = _vmInstanceDao.findById(vmId);
                     _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
                     success = true;
@@ -2111,6 +2031,38 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return success;
+    }
+
+    private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters) throws ResourceAllocationException {
+
+        List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmId);
+
+        for (final VolumeVO rootVolumeOfVm : vols) {
+            DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
+            HypervisorType hypervisorType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
+            if (HypervisorType.Simulator != hypervisorType) {
+                Long minIopsInNewDiskOffering = null;
+                Long maxIopsInNewDiskOffering = null;
+                boolean autoMigrate = false;
+                if (customParameters.containsKey(ApiConstants.MIN_IOPS)) {
+                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MIN_IOPS));
+                }
+                if (customParameters.containsKey(ApiConstants.MAX_IOPS)) {
+                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MAX_IOPS));
+                }
+                if (customParameters.containsKey(ApiConstants.AUTO_MIGRATE)) {
+                    autoMigrate = Boolean.parseBoolean(customParameters.get(ApiConstants.AUTO_MIGRATE));
+                }
+
+                ChangeOfferingForVolumeCmd changeOfferingForVolumeCmd = new ChangeOfferingForVolumeCmd(rootVolumeOfVm.getId(), newDiskOffering.getId(), minIopsInNewDiskOffering, maxIopsInNewDiskOffering, autoMigrate);
+                Volume result = _volumeService.changeDiskOfferingForVolume(changeOfferingForVolumeCmd);
+                if (result == null) {
+                    throw new CloudRuntimeException("Failed to change disk offering of the root volume");
+                }
+            } else if (newDiskOffering.getDiskSize() > 0 && currentRootDiskOffering.getDiskSize() != newDiskOffering.getDiskSize()) {
+                throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
+            }
+        }
     }
 
     @Override

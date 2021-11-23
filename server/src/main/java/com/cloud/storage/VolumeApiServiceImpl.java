@@ -1634,39 +1634,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long newSize = cmd.getSize();
         Long newMinIops = cmd.getMinIops();
         Long newMaxIops = cmd.getMaxIops();
-        Integer newHypervisorSnapshotReserve = null;
+        Long newDiskOfferingId = cmd.getNewDiskOfferingId();
         boolean autoMigrateVolume = cmd.getAutoMigrate();
-
-        boolean volumeMigrateRequired = false;
-        boolean volumeResizeRequired = false;
 
         VolumeVO volume = _volsDao.findById(cmd.getId());
         if (volume == null) {
             throw new InvalidParameterValueException("No such volume");
         }
-        long currentSize = volume.getSize();
-
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
 
         /* Does the caller have authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
+        return changeDiskOfferingForVolumeInternal(volume, newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume);
+    }
+
+    private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume) throws ResourceAllocationException {
+        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
+        Integer newHypervisorSnapshotReserve = null;
+
+        boolean volumeMigrateRequired = false;
+        boolean volumeResizeRequired = false;
+
         // VALIDATIONS
-
-        if (newDiskOffering.getId() == diskOffering.getId()) {
-            throw new InvalidParameterValueException(String.format("Volume %s already have the new disk offering %s provided", volume.getUuid(), diskOffering.getUuid()));
-        }
-
         Long updateNewSize[] = {newSize};
         Long updateNewMinIops[] = {newMinIops};
         Long updateNewMaxIops[] = {newMaxIops};
         Integer updateNewHypervisorSnapshotReserve[] = {newHypervisorSnapshotReserve};
-        validateVolumeResizeWithNewDiskOfferingAndLoad(volume, diskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
+        validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];
         newMaxIops = updateNewMaxIops[0];
         newHypervisorSnapshotReserve = updateNewHypervisorSnapshotReserve[0];
+        long currentSize = volume.getSize();
         validateVolumeResizeWithSize(volume, currentSize, newSize, true);
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
@@ -1680,7 +1680,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volume.setHypervisorSnapshotReserve(newHypervisorSnapshotReserve);
 
             if (newDiskOffering != null) {
-                volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
+                volume.setDiskOfferingId(newDiskOfferingId);
             }
 
             _volsDao.update(volume.getId(), volume);
@@ -1691,15 +1691,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
         }
 
-        if (MatchStoragePoolTagsWithDiskOffering.valueIn(volume.getDataCenterId())) {
-            if (!doesNewDiskOfferingHasTagsAsOldDiskOffering(diskOffering, newDiskOffering)) {
-                throw new InvalidParameterValueException(String.format("Selected disk offering %s does not have tags as in existing disk offering of volume %s", diskOffering.getUuid(), volume.getUuid()));
-            }
-        }
-
         if (currentSize != newSize || newMaxIops != volume.getMaxIops() || newMinIops != volume.getMinIops()) {
             volumeResizeRequired = true;
-            validateVolumeResizeChecks(volume, currentSize, newSize);
+            validateVolumeReadyStateAndHypervisorChecks(volume, currentSize, newSize);
         }
 
         StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
@@ -1814,7 +1808,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
-    private void validateVolumeResizeChecks(VolumeVO volume, long currentSize, Long newSize) {
+    private void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
         // checking if there are any ongoing snapshots on the volume which is to be resized
         List<SnapshotVO> ongoingSnapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
         if (ongoingSnapshots.size() > 0) {
@@ -1847,13 +1841,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO diskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
+    private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException("Requested disk offering has been removed.");
         }
 
-        if (diskOffering.getDiskSizeStrictness() != newDiskOffering.getDiskSizeStrictness()) {
+        if (newDiskOffering.getId() == existingDiskOffering.getId()) {
+            throw new InvalidParameterValueException(String.format("Volume %s already have the new disk offering %s provided", volume.getUuid(), existingDiskOffering.getUuid()));
+        }
+
+        if (existingDiskOffering.getDiskSizeStrictness() != newDiskOffering.getDiskSizeStrictness()) {
             throw new InvalidParameterValueException("Disk offering size strictness does not match with new disk offering");
+        }
+
+        if (MatchStoragePoolTagsWithDiskOffering.valueIn(volume.getDataCenterId())) {
+            if (!doesNewDiskOfferingHasTagsAsOldDiskOffering(existingDiskOffering, newDiskOffering)) {
+                throw new InvalidParameterValueException(String.format("Selected disk offering %s does not have tags as in existing disk offering of volume %s", existingDiskOffering.getUuid(), volume.getUuid()));
+            }
         }
 
         Long instanceId = volume.getInstanceId();
@@ -1881,8 +1885,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("You cannot pass in a custom disk size to a non-custom disk offering.");
             }
 
-            newSize[0] = newDiskOffering.getDiskSize();
-
+            if (newDiskOffering.isComputeOnly() && newDiskOffering.getDiskSize() == 0) {
+                newSize[0] = volume.getSize();
+            } else {
+                newSize[0] = newDiskOffering.getDiskSize();
+            }
             if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
                 newMinIops[0] = newMinIops[0] != null ? newMinIops[0] : volume.getMinIops();
                 newMaxIops[0] = newMaxIops[0] != null ? newMaxIops[0] : volume.getMaxIops();
@@ -1897,7 +1904,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             newHypervisorSnapshotReserve[0] = volume.getHypervisorSnapshotReserve() != null ? newDiskOffering.getHypervisorSnapshotReserve() : null;
         }
 
-        if (diskOffering.getDiskSizeStrictness() && !(volume.getSize().equals(newSize[0]))) {
+        if (existingDiskOffering.getDiskSizeStrictness() && !(volume.getSize().equals(newSize[0]))) {
             throw new InvalidParameterValueException(String.format("Resize volume for %s is not allowed since disk offering's size is fixed", volume.getName()));
         }
         checkIfVolumeIsRootAndVmIsRunning(newSize[0], volume, vmInstanceVO);
