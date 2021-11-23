@@ -247,10 +247,6 @@ export default {
                     title: this.$t(this.action.label),
                     description: this.resource.name,
                     successMethod: result => {
-                      if (this.action.api === 'deleteDomain') {
-                        this.$set(this.resource, 'isDel', true)
-                        this.parentUpdActionData(this.resource)
-                      }
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)
                         if (description) {
@@ -266,7 +262,9 @@ export default {
                     catchMessage: this.$t('error.fetching.async.job.result'),
                     action: this.action
                   })
-                  hasJobId = true
+                  if (this.action.api !== 'deleteDomain') {
+                    hasJobId = true
+                  }
                   break
                 }
               }
