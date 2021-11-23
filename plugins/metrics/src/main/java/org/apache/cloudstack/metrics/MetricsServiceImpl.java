@@ -19,12 +19,14 @@ package org.apache.cloudstack.metrics;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.List;
 import java.util.Properties;
 
 import javax.inject.Inject;
@@ -781,26 +783,74 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return responses;
     }
 
+    /**
+    TODO
+          ◦ State (Up / Down) , makes no sense (no db no cloudstack)
+          ◦ Average Queries Per Second
+          ◦ Buffer Pool Utilization (buffer pool is used to cache the table data in memory and is accessed repeatedly by queries without requiring any disk I/O).
+          ◦ any other relevant stats (if useful) to the response from the sql status variables.
+     */
     @Override
     public List<DbMetricsResponse> listDbMetrics() {
         List<DbMetricsResponse> responses = new ArrayList<>();
         DbMetricsResponse response = new DbMetricsResponse();
-/*
-      ◦ State (Up / Down)
-      ◦ Since Timestamp (for the state Up / Down)
-      ◦ Time Elapsed (since last Up / Down)
-      ◦ Active Connections
-      ◦ Average Queries Per Second
-      ◦ Buffer Pool Utilization (buffer pool is used to cache the table data in memory and is accessed repeatedly by queries without requiring any disk I/O).
-      ◦ List of Replica Hosts (Connected to the Source Host)
-      ◦ any other relevant stats (if useful) to the response from the sql status variables.
- */
+
         response.setHostname(dbHostName());
-        // basically, have we crashed or not:
         response.setReplicas(dbReplicas());
+        getDynamicDataFromDB(response);
+        getStaticDataFromDB(response);
+
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(new ReflectionToStringBuilder(response));
+        }
 
         responses.add(response);
         return responses;
+    }
+
+    private void getStaticDataFromDB(DbMetricsResponse response) {
+        String version = "version";
+        String versionComment = "version_comment";
+        Map<String, String> vars = getDbInfo("VARIABLES", version, versionComment);
+        response.setVersion(vars.get(version));
+        response.setVersionComment(vars.get(versionComment));
+    }
+
+    private void getDynamicDataFromDB(DbMetricsResponse response) {
+        String connections = "Connections";
+        String currentTlsVersion = "Current_tls_version";
+        String uptime = "Uptime";
+        Map<String, String> stats = getDbInfo("STATUS", connections, currentTlsVersion, uptime);
+        response.setConnections(Integer.parseInt(stats.get(connections)));
+        response.setTlsVersions(stats.get(currentTlsVersion));
+        response.setUptime(Integer.parseInt(stats.get(uptime)));
+    }
+
+    private Map<String, String> getDbInfo(String type, String ... var) {
+        String vars = String.join(",", var);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("getting info from db of type %s values for '%s'", type, vars));
+        }
+        Map<String, String> result = new HashMap<>();
+        String sql = String.format("SHOW %s WHERE FIND_IN_SET(Variable_name,?)",type);
+        final TransactionLegacy txn = TransactionLegacy.open("metrics");
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setString(1, vars);
+            final ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String variableName = rs.getString("Variable_name");
+                String value = rs.getString("value");
+                result.put(variableName, value);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("info from db type %s name %s value %s", type, variableName, value));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("failed to get the database status: " + e.getLocalizedMessage());
+            LOGGER.debug("failed to get the database status", e);
+        }
+        return result;
     }
 
     private String dbHostName() {

@@ -901,6 +901,10 @@ public class ApiConstants {
     public static final String DATABASE_IS_LOCAL = "dbislocal";
     public static final String USAGE_IS_LOCAL = "usageislocal";
     public static final String REPLICAS = "replicas";
+    public static final String CONNECTIONS = "connections";
+    public static final String UPTIME = "uptime";
+    public static final String TLS_VERSIONS = "tlsversions";
+    public static final String VERSION_COMMENT = "versioncomment";
 
     public enum BootType {
         UEFI, BIOS;

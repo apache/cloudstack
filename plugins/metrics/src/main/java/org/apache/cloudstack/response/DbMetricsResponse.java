@@ -30,11 +30,51 @@ public class DbMetricsResponse extends BaseResponse {
     @Param(description = "the state of the usage server")
     private String[] replicas;
 
+    @SerializedName(ApiConstants.CONNECTIONS)
+    @Param(description = "the number of connections to the DB")
+    private int connections;
+
+    @SerializedName(ApiConstants.UPTIME)
+    @Param(description = "the uptime of the DB")
+    private int uptime;
+
+    @SerializedName(ApiConstants.TLS_VERSIONS)
+    @Param(description = "the tls versions currently in use (accepted) by the DB")
+    private String tlsVersions;
+
+    @SerializedName(ApiConstants.VERSION)
+    @Param(description = "the version of the currently running DB")
+    private String version;
+
+    @SerializedName(ApiConstants.VERSION_COMMENT)
+    @Param(description = "the version of the currently running DB")
+    private String versionComment;
+
     public void setHostname(String hostname) {
         this.hostname = hostname;
     }
 
     public void setReplicas(String[] replicas) {
         this.replicas = replicas;
+    }
+
+    public void setConnections(int connections) {
+        this.connections = connections;
+    }
+
+    public void setUptime(int uptime) {
+        this.uptime = uptime;
+    }
+
+    public void setTlsVersions(String tlsVersions) {
+        this.tlsVersions = tlsVersions;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void setVersionComment(String versionComment) {
+        this.versionComment = versionComment;
     }
 }
