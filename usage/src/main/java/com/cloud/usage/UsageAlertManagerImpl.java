@@ -35,17 +35,18 @@ import java.util.Set;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.ArrayUtils;
 
 @Component
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
-    private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
+    protected Logger logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
 
     private String senderAddress;
     protected SMTPMailSender mailSender;
     protected String[] recipients;
 
     @Inject
-    private AlertDao _alertDao;
+    protected AlertDao _alertDao;
     @Inject
     private ConfigurationDao _configDao;
 
@@ -72,7 +73,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         try {
             clearAlert(alertType.getType(), dataCenterId, podId);
         } catch (Exception ex) {
-            s_logger.error("Problem clearing email alert", ex);
+            logger.error("Problem clearing email alert", ex);
         }
     }
 
@@ -96,7 +97,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
             newAlert.setName(alertType.getName());
             _alertDao.persist(newAlert);
         } else {
-            s_logger.debug(String.format("Have already sent: [%s] emails for alert type [%s] -- skipping send email.", alert.getSentCount(), alertType));
+            logger.debug(String.format("Have already sent [%s] emails for alert type [%s] -- skipping send email.", alert.getSentCount(), alertType));
             return;
         }
 
@@ -105,6 +106,12 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         mailProps.setSubject(subject);
         mailProps.setContent(content);
         mailProps.setContentType("text/plain");
+
+        if (ArrayUtils.isEmpty(recipients)) {
+            logger.warn(String.format("No recipients set in global setting 'alert.email.addresses', "
+                    + "skipping sending alert with subject [%s] and content [%s].", subject, content));
+            return;
+        }
 
         Set<MailAddress> addresses = new HashSet<>();
         for (String recipient : recipients) {
@@ -138,7 +145,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
             sendAlert(alertType, dataCenterId, podId, msg, msg);
             return true;
         } catch (Exception ex) {
-            s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg, ex);
+            logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg, ex);
             return false;
         }
     }
