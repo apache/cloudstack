@@ -233,13 +233,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = DiskOfferingResponse.class,
             description = "the ID of the disk offering to which service offering should be mapped",
-            since = "4.16")
+            since = "4.17")
     private Long diskOfferingId;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_STRICTNESS,
             type = CommandType.BOOLEAN,
             description = "True/False to indicate the strictness of the disk offering association with the compute offering. When set to true, override of disk offering is not allowed when VM is deployed and change disk offering is not allowed for the ROOT disk after the VM is deployed",
-            since = "4.16")
+            since = "4.17")
     private Boolean diskOfferingStrictness;
 
     /////////////////////////////////////////////////////

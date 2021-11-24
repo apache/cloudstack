@@ -43,7 +43,7 @@ import org.apache.cloudstack.context.CallContext;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = { RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
-        since = "4.16")
+        since = "4.17")
 public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd {
     public static final String APINAME = "changeOfferingForVolume";
 
