@@ -83,12 +83,13 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
 
     public ChangeOfferingForVolumeCmd() {}
 
-    public ChangeOfferingForVolumeCmd(Long volumeId, long newDiskOfferingId, Long minIops, Long maxIops, boolean autoMigrate) {
+    public ChangeOfferingForVolumeCmd(Long volumeId, long newDiskOfferingId, Long minIops, Long maxIops, boolean autoMigrate, boolean shrinkOk) {
         this.id = volumeId;
         this.minIops = minIops;
         this.maxIops = maxIops;
         this.newDiskOfferingId = newDiskOfferingId;
         this.autoMigrate = autoMigrate;
+        this.shrinkOk = shrinkOk;
     }
 
     public Long getId() {

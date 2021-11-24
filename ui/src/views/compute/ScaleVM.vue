@@ -53,7 +53,15 @@
       <a-checkbox
         :checked="autoMigrate"
         v-decorator="['autoMigrate']"
-        @change="handleCheckChange"
+        @change="handleAutoMigrateCheckChange"
+      ></a-checkbox>
+    </a-form-item>
+
+    <a-form-item :label="$t('label.shrinkok')">
+      <a-checkbox
+        :checked="shrinkOk"
+        v-decorator="['shrinkOk']"
+        @change="handleShrinkOkCheckChange"
       ></a-checkbox>
     </a-form-item>
 
@@ -88,6 +96,7 @@ export default {
       offerings: [],
       selectedOffering: {},
       autoMigrate: true,
+      shrinkOk: false,
       total: 0,
       params: { id: this.resource.id },
       loading: false,
@@ -160,9 +169,13 @@ export default {
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]
       this.params.automigrate = this.autoMigrate
+      this.params.shrinkok = this.shrinkOk
     },
-    handleCheckChange (e) {
+    handleAutoMigrateCheckChange (e) {
       this.autoMigrate = e.target.checked
+    },
+    handleShrinkOkCheckChange (e) {
+      this.shrinkOk = e.target.checked
     },
     updateFieldValue (name, value) {
       this.params[name] = value
