@@ -62,6 +62,11 @@ public interface ClusterManager extends Manager {
 
     void registerDispatcher(Dispatcher dispatcher);
 
+    /**
+     * register a listener for incoming status changes of ManagementServers
+     *
+     * @param administrator the object administrating statusses
+     */
     void registerStatusAdministrator(StatusAdministrator administrator);
 
     ManagementServerHost getPeer(String peerName);
@@ -91,6 +96,9 @@ public interface ClusterManager extends Manager {
         String dispatch(ClusterServicePdu pdu);
     }
 
+    /**
+     * what the client of {@see registerStatusAdministrator()} should implement
+     */
     interface StatusAdministrator {
         String newStatus(ClusterServicePdu pdu);
     }

@@ -20,25 +20,26 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.MetricConstants;
 
 public class DbMetricsResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_NAME)
     @Param(description = "the name of the active usage server")
     private String hostname;
 
-    @SerializedName(ApiConstants.REPLICAS)
+    @SerializedName(MetricConstants.REPLICAS)
     @Param(description = "the state of the usage server")
     private String[] replicas;
 
-    @SerializedName(ApiConstants.CONNECTIONS)
+    @SerializedName(MetricConstants.CONNECTIONS)
     @Param(description = "the number of connections to the DB")
     private int connections;
 
-    @SerializedName(ApiConstants.UPTIME)
+    @SerializedName(MetricConstants.UPTIME)
     @Param(description = "the uptime of the DB")
     private int uptime;
 
-    @SerializedName(ApiConstants.TLS_VERSIONS)
+    @SerializedName(MetricConstants.TLS_VERSIONS)
     @Param(description = "the tls versions currently in use (accepted) by the DB")
     private String tlsVersions;
 
@@ -46,9 +47,13 @@ public class DbMetricsResponse extends BaseResponse {
     @Param(description = "the version of the currently running DB")
     private String version;
 
-    @SerializedName(ApiConstants.VERSION_COMMENT)
+    @SerializedName(MetricConstants.VERSION_COMMENT)
     @Param(description = "the version of the currently running DB")
     private String versionComment;
+
+    @SerializedName(MetricConstants.QUERIES)
+    @Param(description = "the number of queroes performed on the DB")
+    private int queries;
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
@@ -76,5 +81,9 @@ public class DbMetricsResponse extends BaseResponse {
 
     public void setVersionComment(String versionComment) {
         this.versionComment = versionComment;
+    }
+
+    public void setQueries(int queries) {
+        this.queries = queries;
     }
 }

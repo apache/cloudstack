@@ -26,7 +26,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.UsageServerMetricsResponse;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -35,8 +34,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.17.0", authorized = {RoleType.Admin})
 public class ListUsageServerMetricsCmd  extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListUsageServerMetricsCmd.class.getName());
-
     public static final String APINAME = "listUsageServerMetrics";
 
     @Inject

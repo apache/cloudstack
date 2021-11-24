@@ -20,6 +20,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.MetricConstants;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 
 import java.util.Date;
@@ -33,11 +34,11 @@ public class UsageServerMetricsResponse  extends BaseResponse {
     @Param(description = "the state of the usage server")
     private State state;
 
-    @SerializedName(ApiConstants.LAST_HEARTBEAT)
+    @SerializedName(MetricConstants.LAST_HEARTBEAT)
     @Param(description = "the last time this Usage Server checked for jobs")
     private Date lastHeartbeat;
 
-    @SerializedName(ApiConstants.LAST_SUCCESFUL_JOB)
+    @SerializedName(MetricConstants.LAST_SUCCESFUL_JOB)
     @Param(description = "the last time a usage job succefully completed")
     private Date lastSuccesfulJob;
 

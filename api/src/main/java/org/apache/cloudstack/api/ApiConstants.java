@@ -31,7 +31,6 @@ public class ApiConstants {
     public static final String API_KEY = "apikey";
     public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String AUTO_SELECT = "autoselect";
-    public static final String AVAILABLE_PROCESSORS = "availableprocessors";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
@@ -347,7 +346,6 @@ public class ApiConstants {
     public static final String SERIAL = "serial";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SESSIONKEY = "sessionkey";
-    public static final String SESSIONS = "sessions";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
@@ -878,33 +876,6 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
-    public static final String AGENT_COUNT = "agentcount";
-    public static final String SYSTEM = "system";
-    public static final String HEAP_MEMORY_USED = "heapmemoryused";
-    public static final String HEAP_MEMORY_TOTAL = "heapmemorytotal";
-    public static final String THREADS_BLOCKED_COUNT = "threadsblockedcount";
-    public static final String THREADS_DEAMON_COUNT = "threadsdeamoncount";
-    public static final String THREADS_RUNNABLE_COUNT = "threadsrunnablecount";
-    public static final String THREADS_TERMINATED_COUNT = "threadsteminatedcount";
-    public static final String THREADS_TOTAL_COUNT = "threadstotalcount";
-    public static final String THREADS_WAITING_COUNT = "threadswaitingcount";
-    public static final String SYSTEM_MEMORY_TOTAL = "systemmemorytotal";
-    public static final String SYSTEM_MEMORY_FREE = "systemmemoryfree";
-    public static final String SYSTEM_MEMORY_USED = "systemmemoryused";
-    public static final String SYSTEM_MEMORY_VIRTUALSIZE = "systemmemoryvirtualsize";
-    public static final String LOG_INFO = "loginfo";
-    public static final String SYSTEM_CYCLES = "systemtotalcpucycles";
-    public static final String SYSTEM_LOAD_AVERAGES = "systemloadaverages";
-    public static final String SYSTEM_CYCLE_USAGE = "systemcycleusage";
-    public static final String LAST_HEARTBEAT = "lastheartbeat";
-    public static final String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
-    public static final String DATABASE_IS_LOCAL = "dbislocal";
-    public static final String USAGE_IS_LOCAL = "usageislocal";
-    public static final String REPLICAS = "replicas";
-    public static final String CONNECTIONS = "connections";
-    public static final String UPTIME = "uptime";
-    public static final String TLS_VERSIONS = "tlsversions";
-    public static final String VERSION_COMMENT = "versioncomment";
 
     public enum BootType {
         UEFI, BIOS;

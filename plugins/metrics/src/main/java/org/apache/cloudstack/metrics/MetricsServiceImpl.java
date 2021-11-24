@@ -652,31 +652,35 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         if (status == null ) {
             LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
-            metricsResponse.setDbLocal(status.isDbLocal());
-            metricsResponse.setUsageLocal(status.isUsageLocal());
-            metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
-            metricsResponse.setAgentCount(status.getAgentCount());
-            metricsResponse.setSessions(status.getSessions());
-            metricsResponse.setHeapMemoryUsed(status.getHeapMemoryUsed());
-            metricsResponse.setHeapMemoryTotal(status.getHeapMemoryTotal());
-            metricsResponse.setThreadsBlockedCount(status.getThreadsBlockedCount());
-            metricsResponse.setThreadsDeamonCount(status.getThreadsDeamonCount());
-            metricsResponse.setThreadsRunnableCount(status.getThreadsRunnableCount());
-            metricsResponse.setThreadsTerminatedCount(status.getThreadsTerminatedCount());
-            metricsResponse.setThreadsTotalCount(status.getThreadsTotalCount());
-            metricsResponse.setThreadsWaitingCount(status.getThreadsWaitingCount());
-            metricsResponse.setSystemMemoryTotal(status.getSystemMemoryTotal());
-            metricsResponse.setSystemMemoryFree(status.getSystemMemoryFree());
-            metricsResponse.setSystemMemoryUsed(status.getSystemMemoryUsed());
-            metricsResponse.setSystemMemoryVirtualSize(status.getSystemMemoryVirtualSize());
-            metricsResponse.setLogInfo(status.getLogInfo());
-            metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
-            metricsResponse.setSystemLoadAverages(status.getSystemLoadAverages());
-            metricsResponse.setSystemCycleUsage(status.getSystemCyclesUsage());
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.info(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
+                LOGGER.debug(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
+            copyStatusToResponse(metricsResponse, status);
         }
+    }
+
+    private void copyStatusToResponse(ManagementServerMetricsResponse metricsResponse, ManagementServerHostStats status) {
+        metricsResponse.setDbLocal(status.isDbLocal());
+        metricsResponse.setUsageLocal(status.isUsageLocal());
+        metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+        metricsResponse.setAgentCount(status.getAgentCount());
+        metricsResponse.setSessions(status.getSessions());
+        metricsResponse.setHeapMemoryUsed(status.getHeapMemoryUsed());
+        metricsResponse.setHeapMemoryTotal(status.getHeapMemoryTotal());
+        metricsResponse.setThreadsBlockedCount(status.getThreadsBlockedCount());
+        metricsResponse.setThreadsDeamonCount(status.getThreadsDeamonCount());
+        metricsResponse.setThreadsRunnableCount(status.getThreadsRunnableCount());
+        metricsResponse.setThreadsTerminatedCount(status.getThreadsTerminatedCount());
+        metricsResponse.setThreadsTotalCount(status.getThreadsTotalCount());
+        metricsResponse.setThreadsWaitingCount(status.getThreadsWaitingCount());
+        metricsResponse.setSystemMemoryTotal(status.getSystemMemoryTotal());
+        metricsResponse.setSystemMemoryFree(status.getSystemMemoryFree());
+        metricsResponse.setSystemMemoryUsed(status.getSystemMemoryUsed());
+        metricsResponse.setSystemMemoryVirtualSize(status.getSystemMemoryVirtualSize());
+        metricsResponse.setLogInfo(status.getLogInfo());
+        metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
+        metricsResponse.setSystemLoadAverages(status.getSystemLoadAverages());
+        metricsResponse.setSystemCycleUsage(status.getSystemCyclesUsage());
     }
 
     @Override
@@ -819,10 +823,12 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private void getDynamicDataFromDB(DbMetricsResponse response) {
         String connections = "Connections";
         String currentTlsVersion = "Current_tls_version";
+        String queries = "Queries";
         String uptime = "Uptime";
-        Map<String, String> stats = getDbInfo("STATUS", connections, currentTlsVersion, uptime);
+        Map<String, String> stats = getDbInfo("STATUS", connections, currentTlsVersion, queries, uptime);
         response.setConnections(Integer.parseInt(stats.get(connections)));
         response.setTlsVersions(stats.get(currentTlsVersion));
+        response.setQueries(Integer.parseInt(stats.get(queries)));
         response.setUptime(Integer.parseInt(stats.get(uptime)));
     }
 
@@ -871,12 +877,13 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     protected boolean isUsageRunning() {
         boolean local = false;
         String usageStatus = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Active:\"");
-        LOGGER.debug(String.format("usage status: %s", usageStatus));
+
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("usage status: %s", usageStatus));
+        }
 
         if (StringUtils.isNotBlank(usageStatus)) {
             local = usageStatus.contains("running");
-        } else {
-
         }
         return local;
     }

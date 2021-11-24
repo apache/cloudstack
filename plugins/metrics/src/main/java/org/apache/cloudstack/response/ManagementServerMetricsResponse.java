@@ -18,92 +18,92 @@ package org.apache.cloudstack.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.MetricConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
-    @SerializedName(ApiConstants.AVAILABLE_PROCESSORS)
+    @SerializedName(MetricConstants.AVAILABLE_PROCESSORS)
     @Param(description = "the number of processors available to the JVM")
     private int availableProcessors;
 
-    @SerializedName(ApiConstants.AGENT_COUNT)
+    @SerializedName(MetricConstants.AGENT_COUNT)
     @Param(description = "the number of agents this Management Server is responsible for")
     private int agentCount;
 
-    @SerializedName(ApiConstants.SESSIONS)
+    @SerializedName(MetricConstants.SESSIONS)
     @Param(description = "the number of client sessions active on this Management Server")
     private long sessions;
 
-    @SerializedName(ApiConstants.HEAP_MEMORY_USED)
+    @SerializedName(MetricConstants.HEAP_MEMORY_USED)
     @Param(description = "the amount of memory used by this Management Server")
     private long heapMemoryUsed;
 
-    @SerializedName(ApiConstants.HEAP_MEMORY_TOTAL)
+    @SerializedName(MetricConstants.HEAP_MEMORY_TOTAL)
     @Param(description = "the amount of memory allocated to this Management Server")
     private long heapMemoryTotal;
 
-    @SerializedName(ApiConstants.THREADS_BLOCKED_COUNT)
+    @SerializedName(MetricConstants.THREADS_BLOCKED_COUNT)
     @Param(description = "The number of blocked threads")
     private int threadsBlockedCount;
 
-    @SerializedName(ApiConstants.THREADS_DEAMON_COUNT)
+    @SerializedName(MetricConstants.THREADS_DEAMON_COUNT)
     @Param(description = "The number of deamon threads")
     private int threadsDeamonCount;
 
-    @SerializedName(ApiConstants.THREADS_RUNNABLE_COUNT)
+    @SerializedName(MetricConstants.THREADS_RUNNABLE_COUNT)
     @Param(description = "The number of runnable threads")
     private int threadsRunnableCount;
 
-    @SerializedName(ApiConstants.THREADS_TERMINATED_COUNT)
+    @SerializedName(MetricConstants.THREADS_TERMINATED_COUNT)
     @Param(description = "The number of terminated threads")
     private int threadsTerminatedCount;
 
-    @SerializedName(ApiConstants.THREADS_TOTAL_COUNT)
+    @SerializedName(MetricConstants.THREADS_TOTAL_COUNT)
     @Param(description = "The number of threads")
     private int threadsTotalCount;
 
-    @SerializedName(ApiConstants.THREADS_WAITING_COUNT)
+    @SerializedName(MetricConstants.THREADS_WAITING_COUNT)
     @Param(description = "The number of waiting threads")
     private int threadsWaitingCount;
 
-    @SerializedName(ApiConstants.SYSTEM_MEMORY_TOTAL)
+    @SerializedName(MetricConstants.SYSTEM_MEMORY_TOTAL)
     @Param(description = "Total system memory")
     private long systemMemoryTotal;
 
-    @SerializedName(ApiConstants.SYSTEM_MEMORY_FREE)
+    @SerializedName(MetricConstants.SYSTEM_MEMORY_FREE)
     @Param(description = "Free system memory")
     private long systemMemoryFree;
 
-    @SerializedName(ApiConstants.SYSTEM_MEMORY_USED)
+    @SerializedName(MetricConstants.SYSTEM_MEMORY_USED)
     @Param(description = "Amount of memory used")
     private long systemMemoryUsed;
 
-    @SerializedName(ApiConstants.SYSTEM_MEMORY_VIRTUALSIZE)
+    @SerializedName(MetricConstants.SYSTEM_MEMORY_VIRTUALSIZE)
     @Param(description = "Virtual size of the fully loaded process")
     private long systemMemoryVirtualSize;
 
-    @SerializedName(ApiConstants.LOG_INFO)
+    @SerializedName(MetricConstants.LOG_INFO)
     @Param(description = "the log files and their usage on disk")
     private String logInfo;
 
-    @SerializedName(ApiConstants.SYSTEM_CYCLES)
+    @SerializedName(MetricConstants.SYSTEM_CYCLES)
     @Param(description = "the total system cpu capacity")
     private double systemTotalCpuCycles;
 
-    @SerializedName(ApiConstants.SYSTEM_LOAD_AVERAGES)
+    @SerializedName(MetricConstants.SYSTEM_LOAD_AVERAGES)
     @Param(description = "the load averages for 1 5 and 15 minutes")
     private double[] systemLoadAverages;
 
-    @SerializedName(ApiConstants.SYSTEM_CYCLE_USAGE)
+    @SerializedName(MetricConstants.SYSTEM_CYCLE_USAGE)
     @Param(description = "the system load for user = and system processes, and the system idle cycles")
     private double[] systemCycleUsage;
 
-    @SerializedName(ApiConstants.DATABASE_IS_LOCAL)
+    @SerializedName(MetricConstants.DATABASE_IS_LOCAL)
     @Param(description = "the system is running against a local database")
     private boolean dbLocal;
 
-    @SerializedName(ApiConstants.USAGE_IS_LOCAL)
+    @SerializedName(MetricConstants.USAGE_IS_LOCAL)
     @Param(description = "the system has a usage server running locally")
     private boolean usageLocal;
 

@@ -20,8 +20,6 @@ import javax.inject.Inject;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 
-import com.cloud.utils.db.DbProperties;
-import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,13 +38,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerStatusVO;
-import com.cloud.cluster.dao.ManagementServerStatusDao;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.script.Script;
-import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -93,9 +84,12 @@ import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.api.ApiSessionListener;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusterServicePdu;
 import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.ManagementServerStatusVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerStatusDao;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -146,11 +140,13 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentMethodInterceptable;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
@@ -159,6 +155,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
+import com.cloud.utils.script.Script;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -174,6 +171,7 @@ import com.google.gson.Gson;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import org.apache.commons.io.FileUtils;
+
 import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
@@ -183,6 +181,9 @@ import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
+import com.sun.management.OperatingSystemMXBean;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -752,14 +753,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @NotNull
         private ManagementServerHostStatsEntry getDataFrom(ManagementServerHostVO mshost) {
             ManagementServerHostStatsEntry newEntry = new ManagementServerHostStatsEntry();
-            LOGGER.debug("Metrics collection start...");
+            LOGGER.trace("Metrics collection start...");
             newEntry.setManagementServerHostId(mshost.getId());
             newEntry.setManagementServerHostUuid(mshost.getUuid());
             newEntry.setDbLocal(isDbLocal());
             newEntry.setUsageLocal(isUsageLocal());
             retrieveSession(newEntry);
             getJvmDimensions(newEntry);
-            LOGGER.debug("Metrics collection extra...");
+            LOGGER.trace("Metrics collection extra...");
             getRuntimeData(newEntry);
             getCpuData(newEntry);
             getMemoryData(newEntry);
@@ -768,7 +769,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getFsData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
             gatherAllMetrics(newEntry);
-            LOGGER.debug("Metrics collection end!");
+            LOGGER.trace("Metrics collection end!");
             return newEntry;
         }
 
@@ -810,10 +811,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 newEntry.setSystemMemoryTotal(mxBean.getTotalPhysicalMemorySize());
                 newEntry.setSystemMemoryFree(mxBean.getFreePhysicalMemorySize());
                 newEntry.setSystemMemoryUsed(mxBean.getCommittedVirtualMemorySize());
-                LOGGER.debug(String.format("data from 'OperatingSystemMXBean': total mem: %d, free mem: %d, used mem: %d",
-                        newEntry.getSystemMemoryTotal(),
-                        newEntry.getSystemMemoryFree(),
-                        newEntry.getSystemMemoryUsed()));
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(String.format("data from 'OperatingSystemMXBean': total mem: %d, free mem: %d, used mem: %d",
+                            newEntry.getSystemMemoryTotal(),
+                            newEntry.getSystemMemoryFree(),
+                            newEntry.getSystemMemoryUsed()));
+                }
             }
         }
 
@@ -862,17 +865,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             if (newEntry.getSystemMemoryTotal() == 0) {
                 String mem = Script.runSimpleBashScript("cat /proc/meminfo | grep MemTotal | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
                 newEntry.setSystemMemoryTotal(Long.parseLong(mem) * 1024);
-                LOGGER.debug(String.format("system memory from /proc: %d", newEntry.getSystemMemoryTotal()));
+                LOGGER.info(String.format("system memory from /proc: %d", newEntry.getSystemMemoryTotal()));
             }
             if (newEntry.getSystemMemoryFree() == 0) {
                 String free = Script.runSimpleBashScript("cat /proc/meminfo | grep MemFree | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
                 newEntry.setSystemMemoryFree(Long.parseLong(free) * 1024);
-                LOGGER.debug(String.format("free memory from /proc: %d", newEntry.getSystemMemoryFree()));
+                LOGGER.info(String.format("free memory from /proc: %d", newEntry.getSystemMemoryFree()));
             }
             if (newEntry.getSystemMemoryUsed() <= 0) {
                 String used = Script.runSimpleBashScript(String.format("ps -o rss= %d", newEntry.getPid()));
                 newEntry.setSystemMemoryUsed(Long.parseLong(used));
-                LOGGER.debug(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
+                LOGGER.info(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
             }
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse));
@@ -881,7 +884,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setSystemLoadAverages(getCpuLoads());
             newEntry.setSystemCyclesUsage(getSystemCpuUsage(newEntry));
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.debug(
+                LOGGER.trace(
                         String.format("cpu\ncapacities: %f\n     loads: %s ; %s ; %s\n     stats: %f ; %f ; %f",
                                 newEntry.getSystemTotalCpuCycles(),
                                 newEntry.getSystemLoadAverages()[0], newEntry.getSystemLoadAverages()[1], newEntry.getSystemLoadAverages()[2],

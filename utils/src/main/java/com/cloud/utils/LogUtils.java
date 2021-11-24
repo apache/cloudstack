@@ -32,10 +32,6 @@ import org.apache.log4j.xml.DOMConfigurator;
 public class LogUtils {
     public static final Logger LOGGER = Logger.getLogger(LogUtils.class);
 
-    public static String getConfigFileLocation() {
-        return configFileLocation;
-    }
-
     private static String configFileLocation = null;
 
     public static void initLog4j(String log4jConfigFileName) {
@@ -67,11 +63,13 @@ public class LogUtils {
                 String fileName =((FileAppender) currAppender).getFile();
                 fileNames.add(fileName);
                 LOGGER.debug(String.format("file for %s : %s", currAppender.getName(), fileName));
-            } else {
-                LOGGER.debug(String.format("not counting %s as a file.", currAppender.getName()));
+            } else if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("not counting %s as a file.", currAppender.getName()));
             }
         }
-        LOGGER.debug(String.format("out of %d appenders, %d are log files", appenderCount, fileNames.size()));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("out of %d appenders, %d are log files", appenderCount, fileNames.size()));
+        }
         return fileNames;
     }
 }
