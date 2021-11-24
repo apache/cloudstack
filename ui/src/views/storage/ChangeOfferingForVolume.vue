@@ -97,6 +97,9 @@
         @change="handleCheckChange"
       ></a-checkbox>
     </a-form-item>
+    <a-form-item :label="$t('label.shrinkok')">
+      <a-checkbox v-decorator="['shrinkok']" />
+    </a-form-item>
     <a-divider />
     <div class="actions">
       <a-button @click="closeModal">

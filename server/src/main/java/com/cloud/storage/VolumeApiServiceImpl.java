@@ -1635,6 +1635,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long newMinIops = cmd.getMinIops();
         Long newMaxIops = cmd.getMaxIops();
         Long newDiskOfferingId = cmd.getNewDiskOfferingId();
+        boolean shrinkOk = cmd.isShrinkOk();
         boolean autoMigrateVolume = cmd.getAutoMigrate();
 
         VolumeVO volume = _volsDao.findById(cmd.getId());
@@ -1645,10 +1646,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Does the caller have authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
-        return changeDiskOfferingForVolumeInternal(volume, newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume);
+        return changeDiskOfferingForVolumeInternal(volume, newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume, shrinkOk);
     }
 
-    private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume) throws ResourceAllocationException {
+    private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
         DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
         Integer newHypervisorSnapshotReserve = null;
@@ -1667,7 +1668,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         newMaxIops = updateNewMaxIops[0];
         newHypervisorSnapshotReserve = updateNewHypervisorSnapshotReserve[0];
         long currentSize = volume.getSize();
-        validateVolumeResizeWithSize(volume, currentSize, newSize, true);
+        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk);
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
         // We need to publish this event to usage_volume table
@@ -1734,7 +1735,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // refresh volume data
             volume = _volsDao.findById(volume.getId());
             try {
-                volume = resizeVolumeInternal(volume, newDiskOffering, currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, true);
+                volume = resizeVolumeInternal(volume, newDiskOffering, currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk);
             } catch (Exception e) {
                 if (volumeMigrateRequired) {
                     s_logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));

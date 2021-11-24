@@ -74,6 +74,9 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
             "with new disk offering whenever migration is required to apply the offering")
     private Boolean autoMigrate;
 
+    @Parameter(name = ApiConstants.SHRINK_OK, type = CommandType.BOOLEAN, required = false, description = "Verify OK to Shrink")
+    private Boolean shrinkOk;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -108,6 +111,10 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
 
     public boolean getAutoMigrate() {
         return autoMigrate == null ? true : autoMigrate;
+    }
+
+    public boolean isShrinkOk() {
+        return shrinkOk == null ? false: shrinkOk;
     }
 
     @Override
