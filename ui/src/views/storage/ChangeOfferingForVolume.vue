@@ -94,11 +94,15 @@
       <a-checkbox
         :checked="autoMigrate"
         v-decorator="['autoMigrate']"
-        @change="handleCheckChange"
+        @change="handleAutoMigrateCheckChange"
       ></a-checkbox>
     </a-form-item>
     <a-form-item :label="$t('label.shrinkok')">
-      <a-checkbox v-decorator="['shrinkok']" />
+      <a-checkbox
+        :checked="shrinkOk"
+        v-decorator="['shrinkOk']"
+        @change="handleShrinkOkCheckChange"
+      ></a-checkbox>
     </a-form-item>
     <a-divider />
     <div class="actions">
@@ -132,6 +136,7 @@ export default {
     return {
       diskOfferings: [],
       autoMigrate: true,
+      shrinkOk: false,
       selectedDiskOfferingId: null,
       size: null,
       customDiskOffering: false,
@@ -177,6 +182,7 @@ export default {
         params.diskofferingid = values.diskofferingid
         params.id = this.resource.id
         params.automigrate = values.autoMigrate
+        params.shrinkok = values.shrinkOk
         if (values.size) {
           params.size = values.size
         }
@@ -215,8 +221,11 @@ export default {
       this.customDiskOffering = offering[0]?.iscustomized || false
       this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
     },
-    handleCheckChange (e) {
+    handleAutoMigrateCheckChange (e) {
       this.autoMigrate = e.target.checked
+    },
+    handleShrinkOkCheckChange (e) {
+      this.shrinkOk = e.target.checked
     }
   }
 }
