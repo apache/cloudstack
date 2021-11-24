@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.utils.db.DbUtil;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -210,7 +211,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
  * @enduml
  */
 @Component
-public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable {
+public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable, StatsCollection {
 
     public enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite"), INFLUXDB("influxdb");
@@ -272,6 +273,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<Integer> DATABASE_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
             Integer.class, "database.server.stats.interval", "60",
             "time interval for database servers stats. Set to <= 0 to disable database servers stats", false);
+    private static final ConfigKey<Integer> DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER = new ConfigKey<>("Advanced",
+            Integer.class, "database.server.stats.retention", "10",
+            "the number of load averages to retain in history", true);
     private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
@@ -372,9 +376,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private ManagementServerStatusDao managementServerStatusDao;
 
-    private ConcurrentHashMap<String, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<>();
-    protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> dbStats = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<>();
     private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<>();
@@ -515,6 +520,20 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
+        if (DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
+            _executor.scheduleAtFixedRate(new DbCollector(),
+                    0L,
+                    DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.value(),
+                    TimeUnit.SECONDS);
+        } else {
+            LOGGER.debug(String.format("%s - %d is 0 or less, so not scheduling the management host status collector thread",
+                    DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.key(), DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.value()));
+        }
+
+        if (hostAndVmStatsInterval > 0) {
+            _executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
+        }
+
         if (storageStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new StorageCollector(), DEFAULT_INITIAL_DELAY, storageStatsInterval, TimeUnit.MILLISECONDS);
         }
@@ -649,7 +668,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
                 for (HostVO host : hosts) {
-                    HostStatsEntry hostStatsEntry = (HostStatsEntry)_resourceMgr.getHostStatistics(host.getId());
+                    HostStatsEntry hostStatsEntry = (HostStatsEntry) _resourceMgr.getHostStatistics(host.getId());
                     if (hostStatsEntry != null) {
                         hostStatsEntry.setHostVo(host);
                         metrics.put(hostStatsEntry.getHostId(), hostStatsEntry);
@@ -697,6 +716,47 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
+     class DbCollector extends AbstractStatsCollector {
+         List<Double> loadHistory = new ArrayList<>();
+         DbCollector() {
+             dbStats.put(loadAvarages, loadHistory);
+         }
+         @Override
+         protected void runInContext() {
+             LOGGER.debug(String.format("%s is running...", this.getClass().getSimpleName()));
+
+             try {
+                 int lastUptime = (dbStats.containsKey(uptime) ? (Integer) dbStats.get(uptime) : 0);
+                 int lastQueries = (dbStats.containsKey(queries) ? (Integer) dbStats.get(queries) : 0);
+                 getDynamicDataFromDB();
+                 int interval = (Integer) dbStats.get(uptime) - lastUptime;
+                 int activity = (Integer) dbStats.get(queries) - lastQueries;
+                 loadHistory.add(Double.valueOf(activity / interval));
+                 while (loadHistory.size() > DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER.value()) {
+                     loadHistory.remove(0);
+                 }
+             } catch (Throwable e) {
+                 // pokemon catch to make sure the thread stays running
+                 LOGGER.error("db statistics collection failed due to " + e.getLocalizedMessage());
+                 if (LOGGER.isDebugEnabled()) {
+                     LOGGER.debug("db statistics collection failed.", e);
+                 }
+             }
+         }
+
+         private void getDynamicDataFromDB() {
+             Map<String, String> stats = DbUtil.getDbInfo("STATUS", queries, uptime);
+             dbStats.put(queries, (Integer.valueOf(stats.get(queries))));
+             dbStats.put(uptime, (Integer.valueOf(stats.get(uptime))));
+         }
+
+
+         @Override
+         protected Point creteInfluxDbPoint(Object metricsObject) {
+             return null;
+         }
+     }
+
     Gson gson;
 
     class ManagementServerCollector extends AbstractStatsCollector {
@@ -715,14 +775,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 clusterManager.publishStatus(gson.toJson(hostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
-                LOGGER.error("Error trying to retrieve host stats", t);
+                LOGGER.error("Error trying to retrieve management server host statistics", t);
             }
             try {
                 // send to DB
                 storeStatus(hostStatsEntry, mshost);
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
-                LOGGER.error("Error trying to store host state", t);
+                LOGGER.error("Error trying to store  management server host statistics", t);
             }
         }
 
@@ -2258,6 +2318,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         return _hostStats.get(hostId);
     }
 
+    public Map<String, Object> getDbStats() {
+        return dbStats;
+    }
+
+
     public ManagementServerHostStats getManagementServerHostStats(String managementServerUuid) {
         return managementServerHostStats.get(managementServerUuid);
     }
@@ -2278,8 +2343,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 VM_STATS_INCREMENT_METRICS_IN_MEMORY,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 USAGE_SERVER_STATUS_COLLECTION_INTERVAL,
-                DATABASE_SERVER_STATUS_COLLECTION_INTERVAL};
->>>>>>> 2dfe4010bc (further API and DB plumbing)
+                DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
+                DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER};
     }
 
     public double getImageStoreCapacityThreshold() {

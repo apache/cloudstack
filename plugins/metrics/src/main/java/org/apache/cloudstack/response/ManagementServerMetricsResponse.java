@@ -91,7 +91,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the total system cpu capacity")
     private double systemTotalCpuCycles;
 
-    @SerializedName(MetricConstants.SYSTEM_LOAD_AVERAGES)
+    @SerializedName(MetricConstants.LOAD_AVERAGES)
     @Param(description = "the load averages for 1 5 and 15 minutes")
     private double[] systemLoadAverages;
 

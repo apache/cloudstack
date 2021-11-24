@@ -995,6 +995,10 @@ public class ApiDBUtils {
         return s_statsCollector.getManagementServerHostStats(mgmtSrvrUuid);
     }
 
+    public static Map<String,Object> getDbStatistics() {
+        return s_statsCollector.getDbStats();
+    }
+
     public static StorageStats getStoragePoolStatistics(long id) {
         return s_statsCollector.getStoragePoolStats(id);
     }

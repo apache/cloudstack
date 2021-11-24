@@ -55,6 +55,10 @@ public class DbMetricsResponse extends BaseResponse {
     @Param(description = "the number of queroes performed on the DB")
     private int queries;
 
+    @SerializedName(MetricConstants.LOAD_AVERAGES)
+    @Param(description = "the last measured load averages on the DB")
+    private double[] loadAverages;
+
     public void setHostname(String hostname) {
         this.hostname = hostname;
     }
@@ -85,5 +89,9 @@ public class DbMetricsResponse extends BaseResponse {
 
     public void setQueries(int queries) {
         this.queries = queries;
+    }
+
+    public void setLoadAverages(double []  loadAverages) {
+        this.loadAverages = loadAverages;
     }
 }

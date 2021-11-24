@@ -24,7 +24,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -32,9 +31,11 @@ import java.util.Properties;
 import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.server.StatsCollection;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.DbProperties;
+import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -804,6 +805,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         getDynamicDataFromDB(response);
         getStaticDataFromDB(response);
 
+        getQueryHistory(response);
+
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(new ReflectionToStringBuilder(response));
         }
@@ -812,51 +815,34 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return responses;
     }
 
+    private void getQueryHistory(DbMetricsResponse response) {
+        Map<String, Object> dbStats = ApiDBUtils.getDbStatistics();
+        if (dbStats != null) {
+            response.setQueries((Integer)dbStats.get(StatsCollection.queries));
+            response.setUptime((Integer)dbStats.get(StatsCollection.uptime));
+        }
+
+        List<Double> loadHistory = (List<Double>) dbStats.get(StatsCollection.loadAvarages);
+        double[] loadAverages = new double[loadHistory.size()];
+
+        int index =0;
+        for (Double d : loadHistory) {
+            loadAverages[index++] = d;
+        }
+
+        response.setLoadAverages(loadAverages);
+    }
+
     private void getStaticDataFromDB(DbMetricsResponse response) {
-        String version = "version";
-        String versionComment = "version_comment";
-        Map<String, String> vars = getDbInfo("VARIABLES", version, versionComment);
-        response.setVersion(vars.get(version));
-        response.setVersionComment(vars.get(versionComment));
+        Map<String, String> vars = DbUtil.getDbInfo(StatsCollection.variables, StatsCollection.version, StatsCollection.versionComment);
+        response.setVersion(vars.get(StatsCollection.version));
+        response.setVersionComment(vars.get(StatsCollection.versionComment));
     }
 
     private void getDynamicDataFromDB(DbMetricsResponse response) {
-        String connections = "Connections";
-        String currentTlsVersion = "Current_tls_version";
-        String queries = "Queries";
-        String uptime = "Uptime";
-        Map<String, String> stats = getDbInfo("STATUS", connections, currentTlsVersion, queries, uptime);
-        response.setConnections(Integer.parseInt(stats.get(connections)));
-        response.setTlsVersions(stats.get(currentTlsVersion));
-        response.setQueries(Integer.parseInt(stats.get(queries)));
-        response.setUptime(Integer.parseInt(stats.get(uptime)));
-    }
-
-    private Map<String, String> getDbInfo(String type, String ... var) {
-        String vars = String.join(",", var);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("getting info from db of type %s values for '%s'", type, vars));
-        }
-        Map<String, String> result = new HashMap<>();
-        String sql = String.format("SHOW %s WHERE FIND_IN_SET(Variable_name,?)",type);
-        final TransactionLegacy txn = TransactionLegacy.open("metrics");
-        try {
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setString(1, vars);
-            final ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                String variableName = rs.getString("Variable_name");
-                String value = rs.getString("value");
-                result.put(variableName, value);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("info from db type %s name %s value %s", type, variableName, value));
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("failed to get the database status: " + e.getLocalizedMessage());
-            LOGGER.debug("failed to get the database status", e);
-        }
-        return result;
+        Map<String, String> stats = DbUtil.getDbInfo(StatsCollection.status, StatsCollection.connections, StatsCollection.currentTlsVersion);
+        response.setConnections(Integer.parseInt(stats.get(StatsCollection.connections)));
+        response.setTlsVersions(stats.get(StatsCollection.currentTlsVersion));
     }
 
     private String dbHostName() {

@@ -28,13 +28,13 @@ public interface MetricConstants {
     String HEAP_MEMORY_TOTAL = "heapmemorytotal";
     String LAST_HEARTBEAT = "lastheartbeat";
     String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
+    String LOAD_AVERAGES = "loadaverages";
     String LOG_INFO = "loginfo";
     String REPLICAS = "replicas";
     String SESSIONS = "sessions";
     String SYSTEM = "system";
     String SYSTEM_CYCLES = "systemtotalcpucycles";
     String SYSTEM_CYCLE_USAGE = "systemcycleusage";
-    String SYSTEM_LOAD_AVERAGES = "systemloadaverages";
     String SYSTEM_MEMORY_FREE = "systemmemoryfree";
     String SYSTEM_MEMORY_TOTAL = "systemmemorytotal";
     String SYSTEM_MEMORY_USED = "systemmemoryused";
