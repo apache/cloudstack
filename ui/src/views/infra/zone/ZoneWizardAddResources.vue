@@ -653,7 +653,8 @@ export default {
           required: true,
           placeHolder: 'message.error.s3nfs.server',
           display: {
-            secondaryStorageProvider: ['S3']
+            secondaryStorageProvider: ['S3'],
+            secondaryStorageNFSStaging: true
           }
         },
         {
@@ -662,7 +663,8 @@ export default {
           required: true,
           placeHolder: 'message.error.s3nfs.path',
           display: {
-            secondaryStorageProvider: ['S3']
+            secondaryStorageProvider: ['S3'],
+            secondaryStorageNFSStaging: true
           }
         },
         {
