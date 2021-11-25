@@ -23,17 +23,16 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.UsageServerMetricsResponse;
 
 import javax.inject.Inject;
-import java.util.List;
 
 @APICommand(name = ListUsageServerMetricsCmd.APINAME, description = "Lists Usage Server metrics", responseObject = UsageServerMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.17.0", authorized = {RoleType.Admin})
-public class ListUsageServerMetricsCmd  extends BaseListCmd {
+public class ListUsageServerMetricsCmd  extends BaseCmd {
     public static final String APINAME = "listUsageServerMetrics";
 
     @Inject
@@ -41,15 +40,18 @@ public class ListUsageServerMetricsCmd  extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        ListResponse<UsageServerMetricsResponse> response = new ListResponse<>();
-        List<UsageServerMetricsResponse> usageServers = metricsService.listUsageServerMetrics();
-        response.setResponses(usageServers, usageServers.size());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+        UsageServerMetricsResponse usageServerMetrics = metricsService.listUsageServerMetrics();
+        usageServerMetrics.setResponseName(getCommandName());
+        setResponseObject(usageServerMetrics);
     }
 
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccountId();
     }
 }

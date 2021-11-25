@@ -765,8 +765,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     @Override
-    public List<UsageServerMetricsResponse> listUsageServerMetrics() {
-        List<UsageServerMetricsResponse> responses = new ArrayList<>();
+    public UsageServerMetricsResponse listUsageServerMetrics() {
         UsageServerMetricsResponse response = new UsageServerMetricsResponse();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
@@ -783,9 +782,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             swap.close();
         }
-
-        responses.add(response);
-        return responses;
+        response.setObjectName("usageMetrics");
+        return response;
     }
 
     /**
@@ -794,10 +792,10 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
           ◦ Average Queries Per Second
           ◦ Buffer Pool Utilization (buffer pool is used to cache the table data in memory and is accessed repeatedly by queries without requiring any disk I/O).
           ◦ any other relevant stats (if useful) to the response from the sql status variables.
+     * @return
      */
     @Override
-    public List<DbMetricsResponse> listDbMetrics() {
-        List<DbMetricsResponse> responses = new ArrayList<>();
+    public DbMetricsResponse listDbMetrics() {
         DbMetricsResponse response = new DbMetricsResponse();
 
         response.setHostname(dbHostName());
@@ -811,8 +809,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             LOGGER.trace(new ReflectionToStringBuilder(response));
         }
 
-        responses.add(response);
-        return responses;
+        response.setObjectName("dbMetrics");
+        return response;
     }
 
     private void getQueryHistory(DbMetricsResponse response) {

@@ -55,6 +55,6 @@ public interface MetricsService extends PluggableService {
     List<ClusterMetricsResponse> listClusterMetrics(Pair<List<ClusterResponse>, Integer> clusterResponses);
     List<ZoneMetricsResponse> listZoneMetrics(List<ZoneResponse> poolResponses);
 
-    List<UsageServerMetricsResponse> listUsageServerMetrics();
-    List<DbMetricsResponse> listDbMetrics();
+    UsageServerMetricsResponse listUsageServerMetrics();
+    DbMetricsResponse listDbMetrics();
 }

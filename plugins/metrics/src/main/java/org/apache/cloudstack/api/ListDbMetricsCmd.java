@@ -22,17 +22,16 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.DbMetricsResponse;
 
 import javax.inject.Inject;
-import java.util.List;
 
 @APICommand(name=ListDbMetricsCmd.APINAME, description = "list the db hosts and statistics",
         responseObject = DbMetricsResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         responseView = ResponseObject.ResponseView.Full, since = "4.17.0", authorized = {RoleType.Admin})
-public class ListDbMetricsCmd extends BaseListCmd{
+public class ListDbMetricsCmd extends BaseCmd{
     public static final String APINAME = "listDbMetrics";
 
     @Inject
@@ -40,9 +39,7 @@ public class ListDbMetricsCmd extends BaseListCmd{
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        ListResponse<DbMetricsResponse> response = new ListResponse<>();
-        List<DbMetricsResponse> responses = metricsService.listDbMetrics();
-        response.setResponses(responses, responses.size());
+        DbMetricsResponse response = metricsService.listDbMetrics();
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -50,5 +47,10 @@ public class ListDbMetricsCmd extends BaseListCmd{
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccountId();
     }
 }
