@@ -18,7 +18,6 @@ package com.cloud.deploy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1348,35 +1347,27 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
 
-        return new Pair<Boolean, Boolean>(requiresShared, requiresLocal);
+        return new Pair<>(requiresShared, requiresLocal);
     }
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
                                                                                     ExcludeList avoid, PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts, VirtualMachine vm) {
-        s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
+        s_logger.debug("Trying to find a potential host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
         boolean hostAffinityCheck = false;
 
         if (readyAndReusedVolumes == null) {
-            readyAndReusedVolumes = new ArrayList<Volume>();
+            readyAndReusedVolumes = new ArrayList<>();
         }
-        Map<Volume, StoragePool> storage = new HashMap<Volume, StoragePool>();
-        TreeSet<Volume> volumesOrderBySizeDesc = new TreeSet<Volume>(new Comparator<Volume>() {
-            @Override
-            public int compare(Volume v1, Volume v2) {
-                if (v1.getSize() < v2.getSize())
-                    return 1;
-                else
-                    return -1;
-            }
-        });
+        Map<Volume, StoragePool> storage = new HashMap<>();
+        TreeSet<Volume> volumesOrderBySizeDesc = new TreeSet<>((v1, v2) -> v2.getSize().compareTo(v1.getSize()));
         volumesOrderBySizeDesc.addAll(suitableVolumeStoragePools.keySet());
         boolean multipleVolume = volumesOrderBySizeDesc.size() > 1;
         boolean deployAsIs = isDeployAsIs(vm);
         for (Host potentialHost : suitableHosts) {
-            Map<StoragePool, List<Volume>> volumeAllocationMap = new HashMap<StoragePool, List<Volume>>();
+            Map<StoragePool, List<Volume>> volumeAllocationMap = new HashMap<>();
             if (deployAsIs) {
                 storage = new HashMap<>();
                 // Find the common suitable pools
@@ -1446,7 +1437,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                 if (volumeAllocationMap.containsKey(potentialSPool))
                                     requestVolumes = volumeAllocationMap.get(potentialSPool);
                                 else
-                                    requestVolumes = new ArrayList<Volume>();
+                                    requestVolumes = new ArrayList<>();
                                 requestVolumes.add(vol);
 
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
@@ -1489,7 +1480,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: " + potentialHost.getName() +
                         " and associated storage pools for this VM");
                 volumeAllocationMap.clear();
-                return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
+                return new Pair<>(potentialHost, storage);
             } else {
                 avoid.addHost(potentialHost.getId());
             }
@@ -1542,8 +1533,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             int returnUpTo) {
         List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
-        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
-        List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
+        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<>();
+        List<Volume> readyAndReusedVolumes = new ArrayList<>();
 
         // There should be atleast the ROOT volume of the VM in usable state
         if (volumesTobeCreated.isEmpty()) {
@@ -1560,9 +1551,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         // allocators
         Set<Long> originalAvoidPoolSet = avoid.getPoolsToAvoid();
         if (originalAvoidPoolSet == null) {
-            originalAvoidPoolSet = new HashSet<Long>();
+            originalAvoidPoolSet = new HashSet<>();
         }
-        Set<Long> poolsToAvoidOutput = new HashSet<Long>(originalAvoidPoolSet);
+        Set<Long> poolsToAvoidOutput = new HashSet<>(originalAvoidPoolSet);
 
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             s_logger.debug("Checking suitable pools for volume (Id, Type): (" + toBeCreated.getId() + "," + toBeCreated.getVolumeType().name() + ")");

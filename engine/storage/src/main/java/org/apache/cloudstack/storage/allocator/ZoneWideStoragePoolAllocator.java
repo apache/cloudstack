@@ -91,19 +91,21 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             avoid.addPool(pool.getId());
         }
 
-        for (StoragePoolVO storage : storagePools) {
-            if (suitablePools.size() == returnUpTo) {
-                break;
-            }
-            StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
-            if (filter(avoid, storagePool, dskCh, plan)) {
-                suitablePools.add(storagePool);
-            } else {
-                if (canAddStoragePoolToAvoidSet(storage)) {
-                    avoid.addPool(storagePool.getId());
-                }
-            }
-        }
+        storagePools.parallelStream()
+                .forEach(storage -> {
+                    if (suitablePools.size() == returnUpTo) {
+                        return;
+                    }
+                    StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
+                    if (filter(avoid, storagePool, dskCh, plan)) {
+                        suitablePools.add(storagePool);
+                    } else {
+                        if (canAddStoragePoolToAvoidSet(storage)) {
+                            avoid.addPool(storagePool.getId());
+                        }
+                    }
+                });
+
         return suitablePools;
     }
 

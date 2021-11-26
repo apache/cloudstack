@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -276,76 +277,48 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
         boolean considerReservedCapacity, Account account) {
-        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
-            // Shuffle this so that we don't check the hosts in the same order.
-            Collections.shuffle(hosts);
-        } else if (_allocationAlgorithm.equals("userdispersing")) {
-            hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-        }else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
-            hosts = reorderHostsByCapacity(plan, hosts);
+        List<Host> suitableHosts = new ArrayList<>();
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
         }
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("FirstFitAllocator has " + hosts.size() + " hosts to check for allocation: " + hosts);
         }
 
-        // We will try to reorder the host lists such that we give priority to hosts that have
-        // the minimums to support a VM's requirements
-        hosts = prioritizeHosts(template, offering, hosts);
+        if (_allocationAlgorithm.equals("unorderedfirstfitleastconsumed")) {
+            hosts = reorderHostsByCapacity(plan, hosts);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize() + " MB");
-        }
-
-        long serviceOfferingId = offering.getId();
-        List<Host> suitableHosts = new ArrayList<Host>();
-        ServiceOfferingDetailsVO offeringDetails = null;
-
-        for (Host host : hosts) {
-            if (suitableHosts.size() == returnUpTo) {
-                break;
-            }
-            if (avoid.shouldAvoid(host)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " is in avoid set, skipping this and trying other available hosts");
-                }
-                continue;
+            suitableHosts = hosts.parallelStream()
+                    .filter(host -> isSuitableHost(host, avoid, offering, considerReservedCapacity))
+                    .collect(Collectors.toList());
+        } else {
+            if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
+                // Shuffle this so that we don't check the hosts in the same order.
+                Collections.shuffle(hosts);
+            } else if (_allocationAlgorithm.equals("userdispersing")) {
+                hosts = reorderHostsByNumberOfVms(plan, hosts, account);
+            }else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
+                hosts = reorderHostsByCapacity(plan, hosts);
             }
 
-            //find number of guest VMs occupying capacity on this host.
-            if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
-                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
-                }
-                avoid.addHost(host.getId());
-                continue;
+            // We will try to reorder the host lists such that we give priority to hosts that have
+            // the minimums to support a VM's requirements
+            hosts = prioritizeHosts(template, offering, hosts);
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
             }
 
-            // Check if GPU device is required by offering and host has the availability
-            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
-                    avoid.addHost(host.getId());
-                    continue;
+            for (Host host : hosts) {
+                if (suitableHosts.size() == returnUpTo) {
+                    break;
                 }
-            }
-            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
-            if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found a suitable host, adding to list: " + host.getId());
+
+                if (isSuitableHost(host, avoid,offering, considerReservedCapacity)) {
+                    suitableHosts.add(host);
                 }
-                suitableHosts.add(host);
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
-                }
-                avoid.addHost(host.getId());
             }
         }
 
@@ -354,6 +327,55 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         return suitableHosts;
+    }
+
+    private boolean isSuitableHost(Host host, ExcludeList avoid, ServiceOffering offering, boolean considerReservedCapacity) {
+        ServiceOfferingDetailsVO offeringDetails = null;
+        long serviceOfferingId = offering.getId();
+        String hostDetails = "Host name: " + host.getName() + ", hostId: " + host.getId();
+        if (avoid.shouldAvoid(host)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(hostDetails + " is in avoid set, skipping this and trying other available hosts");
+            }
+            return false;
+        }
+
+        //find number of guest VMs occupying capacity on this host.
+        if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(hostDetails +
+                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+            }
+            avoid.addHost(host.getId());
+            return false;
+        }
+
+        // Check if GPU device is required by offering and host has the availability
+        if ((offeringDetails = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
+            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
+            if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                avoid.addHost(host.getId());
+                return false;
+            }
+        }
+
+        Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
+
+        if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found a suitable host, adding to list: " + host.getId());
+            }
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " +
+                        cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
+            }
+            avoid.addHost(host.getId());
+            return false;
+        }
+
+        return true;
     }
 
     // Reorder hosts in the decreasing order of free capacity.

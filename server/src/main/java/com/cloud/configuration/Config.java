@@ -902,7 +902,7 @@ public enum Config {
             String.class,
             "vm.allocation.algorithm",
             "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
+            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed', 'unorderedfirstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
             null),
     VmDeploymentPlanner(
             "Advanced",
