@@ -59,9 +59,11 @@ export default {
     }
   },
   data () {
+    let virtualmachines = [];
+    let loading = true;
     return {
-      virtualmachines: [],
-      loading: true
+      virtualmachines,
+      loading
     }
   },
   beforeCreate () {

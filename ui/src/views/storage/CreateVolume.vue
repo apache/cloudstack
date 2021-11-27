@@ -150,14 +150,21 @@ export default {
     TooltipLabel
   },
   data () {
+      let zones = [];
+      let offerings = [];
+      let selectedZoneId = '';
+      let selectedDiskOfferingId = '';
+      let customDiskOffering = false;
+      let loading = false;
+      let isCustomizedDiskIOps = false;
     return {
-      zones: [],
-      offerings: [],
-      selectedZoneId: '',
-      selectedDiskOfferingId: '',
-      customDiskOffering: false,
-      loading: false,
-      isCustomizedDiskIOps: false
+      zones,
+      offerings,
+      selectedZoneId,
+      selectedDiskOfferingId,
+      customDiskOffering,
+      loading,
+      isCustomizedDiskIOps
     }
   },
   beforeCreate () {

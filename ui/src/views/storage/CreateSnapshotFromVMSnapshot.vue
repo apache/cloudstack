@@ -71,10 +71,13 @@ export default {
     }
   },
   data () {
+      let volumes = [];
+      let selectedVolumeId = '';
+      let loading = false;
     return {
-      volumes: [],
-      selectedVolumeId: '',
-      loading: false
+      volumes,
+      selectedVolumeId,
+      loading
     }
   },
   beforeCreate () {
