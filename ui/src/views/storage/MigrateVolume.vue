@@ -91,13 +91,19 @@ export default {
   },
   inject: ['parentFetchData'],
   data () {
+      let storagePools = []
+      let selectedStoragePool = null
+      let diskOfferings = []
+      let replaceDiskOffering = false
+      let selectedDiskOffering = null
+      let isSubmitted = false
     return {
-      storagePools: [],
-      selectedStoragePool: null,
-      diskOfferings: [],
-      replaceDiskOffering: false,
-      selectedDiskOffering: null,
-      isSubmitted: false
+      storagePools,
+      selectedStoragePool,
+      diskOfferings,
+      replaceDiskOffering,
+      selectedDiskOffering,
+      isSubmitted,
     }
   },
   created () {
