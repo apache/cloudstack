@@ -524,6 +524,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     }
 
+    @Override
+    public void checkNetworkOperatePermissions(Account owner, Network network) {
+
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getDefaultManagementTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
      */

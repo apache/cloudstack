@@ -96,6 +96,12 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list networks by network offering ID")
     private Long networkOfferingId;
 
+    @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "List networks by associated networks. only available if create a Shared network")
+    private Long associatedNetworkId;
+
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for networks")
     private Boolean showIcon;
@@ -164,6 +170,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     public Long getNetworkOfferingId() {
         return networkOfferingId;
+    }
+
+    public Long getAssociatedNetworkId() {
+        return associatedNetworkId;
     }
 
     @Override

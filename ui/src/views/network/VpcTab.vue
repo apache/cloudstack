@@ -143,7 +143,7 @@
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
-              <a-form-item :label="$t('label.physicalnetworkid')">
+              <a-form-item :label="$t('label.physicalnetworkid')" v-if="this.isAdmin()">
                 <a-select
                   v-decorator="['physicalnetwork']"
                   autoFocus
@@ -157,18 +157,35 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.vlan')" :required="true">
+              <a-form-item :label="$t('label.vlan')" v-if="this.isAdmin()">
                 <a-input
                   :placeholder="placeholders.vlan"
-                  v-decorator="['vlan', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                  v-decorator="['vlan']"
                 ></a-input>
               </a-form-item>
               <a-form-item
                 :label="$t('label.bypassvlanoverlapcheck')"
-                v-if="$store.getters.apis.createPrivateGateway && $store.getters.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0" >
+                v-if="this.isAdmin()">
                 <a-checkbox
                   v-decorator="['bypassvlanoverlapcheck']"
                 ></a-checkbox>
+              </a-form-item>
+              <a-form-item :label="$t('label.associatednetwork')">
+                <a-select
+                  v-decorator="['associatednetwork']"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
+                  <a-select-option v-for="(opt, optIndex) in this.isolatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
+                    <span>
+                      <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <a-icon type="user" style="margin-right: 5px" />
+                      {{ opt.name || opt.description }}
+                    </span>
+                  </a-select-option>
+                </a-select>
               </a-form-item>
               <a-form-item :label="$t('label.publicip')" :required="true">
                 <a-input
@@ -362,6 +379,7 @@ export default {
     return {
       fetchLoading: false,
       privateGateways: [],
+      isolatedNetworks: [],
       vpnGateways: [],
       vpnConnections: [],
       networkAcls: [],
@@ -450,6 +468,7 @@ export default {
     this.gatewayForm = this.$form.createForm(this)
     this.vpnConnectionForm = this.$form.createForm(this)
     this.networkAclForm = this.$form.createForm(this)
+    this.apiParams = this.$getApiParams('createPrivateGateway')
   },
   watch: {
     loading (newData, oldData) {
@@ -466,6 +485,9 @@ export default {
     this.setCurrentTab()
   },
   methods: {
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
     setCurrentTab () {
       this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
     },
@@ -532,6 +554,16 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      api('listNetworks', {
+        domainid: this.resource.domainid,
+        account: this.resource.account,
+        listAll: true,
+        type: 'Isolated'
+      }).then(json => {
+        this.isolatedNetworks = json.listnetworksresponse.network
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchVpnGateways () {
       this.fetchLoading = true
@@ -585,6 +617,10 @@ export default {
     },
     fetchPhysicalNetworks () {
       this.modals.gatewayLoading = true
+      if (!this.isAdmin()) {
+        this.modals.gatewayLoading = false
+        return
+      }
       api('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
         this.physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.modals.gateway === true) {
@@ -651,11 +687,16 @@ export default {
           ipaddress: data.ipaddress,
           gateway: data.gateway,
           netmask: data.netmask,
-          vlan: data.vlan,
           aclid: data.acl
         }
         if (data.bypassvlanoverlapcheck) {
           params.bypassvlanoverlapcheck = data.bypassvlanoverlapcheck
+        }
+        if (data.vlan && String(data.vlan).length > 0) {
+          params.vlan = data.vlan
+        }
+        if (data.associatednetwork) {
+          params.associatednetworkid = data.associatednetwork
         }
 
         api('createPrivateGateway', params).then(response => {

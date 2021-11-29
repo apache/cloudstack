@@ -48,7 +48,7 @@
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                      ? 'all' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
                     style="min-width: 100px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -1426,6 +1426,12 @@ export default {
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
+      } else if (this.$route.name === 'guestvlans') {
+        if (filter === 'all') {
+          query.allocatedonly = 'false'
+        } else if (filter === 'allocatedonly') {
+          query.allocatedonly = 'true'
+        }
       }
       query.filter = filter
       query.page = 1

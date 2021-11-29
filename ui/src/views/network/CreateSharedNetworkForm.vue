@@ -68,7 +68,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="this.isObjectEmpty(this.zone)">
+          <a-form-item v-if="this.isObjectEmpty(this.zone) && this.isAdmin()" >
             <tooltip-label slot="label" :title="$t('label.physicalnetworkid')" :tooltip="apiParams.physicalnetworkid.description"/>
             <a-select
               v-decorator="['physicalnetworkid', {}]"
@@ -85,7 +85,140 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item :label="$t('label.scope')">
+            <a-radio-group
+              v-decorator="['scope', {
+                initialValue: this.scopeType
+              }]"
+              buttonStyle="solid"
+              @change="selected => { this.handleScopeTypeChange(selected.target.value) }">
+              <a-radio-button value="all" v-if="this.isAdmin()">
+                {{ $t('label.all') }}
+              </a-radio-button>
+              <a-radio-button value="domain" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled') && this.isAdminOrDomainAdmin()">
+                {{ $t('label.domain') }}
+              </a-radio-button>
+              <a-radio-button value="account" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
+                {{ $t('label.account') }}
+              </a-radio-button>
+              <a-radio-button value="project" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
+                {{ $t('label.project') }}
+              </a-radio-button>
+            </a-radio-group>
+          </a-form-item>
+          <a-form-item v-if="this.scopeType !== 'all' && this.isAdminOrDomainAdmin()">
+            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            <a-select
+              v-decorator="['domainid', {
+                rules: [
+                  {
+                    required: true,
+                    message: `${this.$t('message.error.select')}`
+                  }
+                ]
+              }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="domainLoading"
+              :placeholder="this.$t('label.domainid')"
+              @change="val => { this.handleDomainChange(this.domains[val]) }">
+              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else-if="optIndex !== 0" type="team" style="margin-right: 5px" />
+                  {{ opt.path || opt.name || opt.description }}
+                </span>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item v-if="this.scopeType === 'domain' && this.isAdminOrDomainAdmin()">
+            <tooltip-label slot="label" :title="$t('label.subdomainaccess')" :tooltip="apiParams.subdomainaccess.description"/>
+            <a-switch v-decorator="['subdomainaccess']" />
+          </a-form-item>
+          <a-form-item v-if="this.scopeType === 'account' && this.isAdminOrDomainAdmin()">
+            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            <a-select
+              v-decorator="['accountid', {
+                rules: [
+                  {
+                    required: true,
+                    message: `${this.$t('message.error.select')}`
+                  }
+                ]
+              }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="accountLoading"
+              :placeholder="this.$t('label.account')"
+              @change="val => { this.handleAccountChange(this.accounts[val]) }">
+              <a-select-option v-for="(opt, optIndex) in this.accounts" :key="optIndex" :label="opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon type="user" style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </span>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item v-if="this.scopeType === 'project'">
+            <tooltip-label slot="label" :title="$t('label.projectid')" :tooltip="apiParams.projectid.description"/>
+            <a-select
+              v-decorator="['projectid', {
+                rules: [
+                  {
+                    required: true,
+                    message: `${this.$t('message.error.select')}`
+                  }
+                ]
+              }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="projectLoading"
+              :placeholder="this.$t('label.projectid')"
+              @change="val => { this.handleProjectChange(this.projects[val]) }">
+              <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex" :label="opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon type="project" style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </span>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            <a-select
+              v-decorator="['networkofferingid', {
+                rules: [
+                  {
+                    required: true,
+                    message: `${this.$t('message.error.select')}`
+                  }
+                ]
+              }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="networkOfferingLoading"
+              :placeholder="this.$t('label.networkofferingid')"
+              @change="val => { this.handleNetworkOfferingChange(this.networkOfferings[val]) }">
+              <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
+                {{ opt.displaytext || opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && this.isAdmin()">
             <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             <a-input
               v-decorator="['vlanid', {
@@ -93,11 +226,11 @@
               }]"
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
-          <a-form-item>
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && this.isAdmin()">
             <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && this.isAdmin()">
             <tooltip-label slot="label" :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
             <a-radio-group
               v-decorator="['isolatedpvlantype', {
@@ -125,114 +258,24 @@
               v-decorator="['isolatedpvlan', {}]"
               :placeholder="this.$t('label.isolatedpvlanid')"/>
           </a-form-item>
-          <a-form-item :label="$t('label.scope')">
-            <a-radio-group
-              v-decorator="['scope', {
-                initialValue: this.scopeType
-              }]"
-              buttonStyle="solid"
-              @change="selected => { this.handleScopeTypeChange(selected.target.value) }">
-              <a-radio-button value="all">
-                {{ $t('label.all') }}
-              </a-radio-button>
-              <a-radio-button value="domain" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
-                {{ $t('label.domain') }}
-              </a-radio-button>
-              <a-radio-button value="account" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
-                {{ $t('label.account') }}
-              </a-radio-button>
-              <a-radio-button value="project" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
-                {{ $t('label.project') }}
-              </a-radio-button>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item v-if="this.scopeType !== 'all'">
-            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && !this.selectedNetworkOffering.specifyvlan">
+            <tooltip-label slot="label" :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
             <a-select
-              v-decorator="['domainid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-decorator="['associatednetworkid', {}]"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
                 return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="domainLoading"
-              :placeholder="this.$t('label.domainid')"
-              @change="val => { this.handleDomainChange(this.domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              :loading="accountLoading"
+              :placeholder="this.$t('label.associatednetwork')"
+              @change="val => { this.handleNetworkChange(this.networks[val]) }">
+              <a-select-option v-for="(opt, optIndex) in this.networks" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else-if="optIndex !== 0" type="block" style="margin-right: 5px" />
-                  {{ opt.path || opt.name || opt.description }}
-                </span>
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item v-if="this.scopeType === 'domain'">
-            <tooltip-label slot="label" :title="$t('label.subdomainaccess')" :tooltip="apiParams.subdomainaccess.description"/>
-            <a-switch v-decorator="['subdomainaccess']" />
-          </a-form-item>
-          <a-form-item v-if="this.scopeType === 'account'">
-            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            <a-input
-              v-decorator="['account', {}]"
-              :placeholder="this.$t('label.account')"/>
-          </a-form-item>
-          <a-form-item v-if="this.scopeType === 'project'">
-            <tooltip-label slot="label" :title="$t('label.projectid')" :tooltip="apiParams.projectid.description"/>
-            <a-select
-              v-decorator="['projectid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
-              showSearch
-              optionFilterProp="children"
-              :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="projectLoading"
-              :placeholder="this.$t('label.projectid')"
-              @change="val => { this.handleProjectChange(this.projects[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex" :label="opt.name || opt.description">
-                <span>
-                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else-if="optIndex !== 0" type="project" style="margin-right: 5px" />
+                  <a-icon type="user" style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
-            <a-select
-              v-decorator="['networkofferingid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
-              showSearch
-              optionFilterProp="children"
-              :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="networkOfferingLoading"
-              :placeholder="this.$t('label.networkofferingid')"
-              @change="val => { this.handleNetworkOfferingChange(this.networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
-                {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -272,7 +315,7 @@
               </a-form-item>
             </a-col>
           </a-row>
-          <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService && this.isAdmin()">
             <tooltip-label slot="label" :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
             <a-input
               v-decorator="['routerip', {}]"
@@ -314,7 +357,7 @@
               </a-form-item>
             </a-col>
           </a-row>
-          <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService && this.isAdmin()">
             <tooltip-label slot="label" :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
             <a-input
               v-decorator="['routeripv6', {}]"
@@ -396,6 +439,12 @@ export default {
       networkOfferings: [],
       networkOfferingLoading: false,
       selectedNetworkOffering: {},
+      networks: [],
+      networkLoading: false,
+      selectedNetwork: {},
+      accounts: [],
+      accountLoading: false,
+      selectedAccount: {},
       projects: [],
       projectLoading: false,
       selectedProject: {},
@@ -482,7 +531,11 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
-      this.fetchPhysicalNetworkData()
+      if (this.isAdmin()) {
+        this.fetchPhysicalNetworkData()
+      } else {
+        this.fetchNetworkOfferingData()
+      }
     },
     fetchPhysicalNetworkData () {
       this.formSelectedPhysicalNetwork = {}
@@ -565,14 +618,31 @@ export default {
         }
         case 'project':
         {
-          this.fetchDomainData()
-          this.fetchProjectData()
-          this.fetchNetworkOfferingData()
+          if (this.isAdminOrDomainAdmin()) {
+            this.fetchDomainData()
+          } else {
+            this.fetchNetworkOfferingData()
+            this.fetchProjectData()
+          }
+          break
+        }
+        case 'account':
+        {
+          if (this.isAdminOrDomainAdmin()) {
+            this.fetchDomainData()
+          } else {
+            this.fetchNetworkOfferingData()
+            this.fetchAccountData()
+          }
           break
         }
         default:
         {
-          this.fetchNetworkOfferingData()
+          if (this.isAdminOrDomainAdmin()) {
+            this.fetchDomainData()
+          } else {
+            this.fetchNetworkOfferingData()
+          }
         }
       }
     },
@@ -585,6 +655,9 @@ export default {
         zoneid: this.selectedZone.id,
         state: 'Enabled'
       }
+      if (!this.isAdmin()) {
+        params.specifyvlan = false
+      }
       if (!this.isObjectEmpty(this.formSelectedPhysicalNetwork) &&
         this.formSelectedPhysicalNetwork.tags &&
         this.formSelectedPhysicalNetwork.tags.length > 0) {
@@ -592,11 +665,9 @@ export default {
       }
       // Network tab in Guest Traffic Type in Infrastructure menu is only available when it's under Advanced zone.
       // zone dropdown in add guest network dialog includes only Advanced zones.
-      if (this.scopeType === 'all' || this.scopeType === 'domain') {
-        params.guestiptype = 'Shared'
-        if (this.scopeType === 'domain') {
-          params.domainid = this.selectedDomain.id
-        }
+      params.guestiptype = 'Shared'
+      if (this.scopeType === 'domain') {
+        params.domainid = this.selectedDomain.id
       }
       this.handleNetworkOfferingChange(null)
       this.networkOfferings = []
@@ -622,7 +693,59 @@ export default {
       this.selectedNetworkOffering = networkOffering
       if (networkOffering) {
         this.networkServiceProviderMap(this.selectedNetworkOffering.id)
+        if (!networkOffering.specifyvlan) {
+          this.fetchNetworkData()
+        }
       }
+    },
+    fetchNetworkData () {
+      if (this.isObjectEmpty(this.selectedZone)) {
+        return
+      }
+      if (this.isObjectEmpty(this.selectedNetworkOffering) || this.selectedNetworkOffering.specifyvlan) {
+        return
+      }
+      this.networkLoading = true
+      var params = {
+        zoneid: this.selectedZone.id,
+        type: 'Isolated'
+      }
+      if (this.formSelectedPhysicalNetwork) {
+        params.physicalnetworkid = this.formSelectedPhysicalNetwork.id
+      }
+      switch (this.scopeType) {
+        case 'domain':
+        {
+          params.domainid = this.selectedDomain.id
+          break
+        }
+        case 'project':
+        {
+          params.projectid = this.selectedProject.id
+          break
+        }
+        case 'account':
+        {
+          params.domainid = this.selectedDomain.id
+          params.account = this.selectedAccount.name
+          break
+        }
+        default:
+        {
+        }
+      }
+      this.handleNetworkChange(null)
+      this.networks = []
+      api('listNetworks', params).then(json => {
+        this.networks = json.listnetworksresponse.network
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.networkLoading = false
+      })
+    },
+    handleNetworkChange (selectedNetwork) {
+      this.selectedNetwork = selectedNetwork
     },
     networkServiceProviderMap (id) {
       api('listNetworkOfferings', { id: id }).then(json => {
@@ -654,18 +777,51 @@ export default {
       this.domainLoading = true
       api('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
-        this.domains = this.domains.concat(listDomains)
+        this.domains = listDomains
       }).finally(() => {
         this.domainLoading = false
-        this.form.setFieldsValue({
-          domainid: 0
-        })
-        this.handleDomainChange(this.domains[0])
+        if (this.arrayHasItems(this.domains) && this.scopeType !== 'all') {
+          this.form.setFieldsValue({
+            domainid: 0
+          })
+          this.handleDomainChange(this.domains[0])
+        }
       })
     },
     handleDomainChange (domain) {
       this.selectedDomain = domain
       if (!this.isObjectEmpty(domain)) {
+        this.fetchNetworkOfferingData()
+        this.fetchAccountData()
+        this.fetchProjectData()
+        this.fetchNetworkData()
+      }
+    },
+    fetchAccountData () {
+      this.accounts = []
+      const params = {}
+      params.showicon = true
+      params.details = 'min'
+      if (this.selectedDomain) {
+        params.domainid = this.selectedDomain.id
+      }
+      this.accountLoading = true
+      api('listAccounts', params).then(json => {
+        const listaccounts = json.listaccountsresponse.account
+        this.accounts = listaccounts
+      }).finally(() => {
+        this.accountLoading = false
+        if (this.arrayHasItems(this.accounts) && this.scopeType === 'account') {
+          this.form.setFieldsValue({
+            accountid: 0
+          })
+          this.handleAccountChange(this.accounts[0])
+        }
+      })
+    },
+    handleAccountChange (account) {
+      this.selectedAccount = account
+      if (!this.isObjectEmpty(account)) {
         this.fetchNetworkOfferingData()
       }
     },
@@ -675,13 +831,16 @@ export default {
       params.listall = true
       params.showicon = true
       params.details = 'min'
+      if (this.selectedDomain) {
+        params.domainid = this.selectedDomain.id
+      }
       this.projectLoading = true
       api('listProjects', params).then(json => {
         const listProjects = json.listprojectsresponse.project
         this.projects = this.projects.concat(listProjects)
       }).finally(() => {
         this.projectLoading = false
-        if (this.arrayHasItems(this.projects)) {
+        if (this.arrayHasItems(this.projects) && this.scopeType === 'project') {
           this.form.setFieldsValue({
             projectid: 0
           })
@@ -737,12 +896,16 @@ export default {
             params.isolatedpvlan = values.isolatedpvlan
           }
         }
+        if (this.selectedNetwork) {
+          params.associatednetworkid = this.selectedNetwork.id
+        }
         if (this.scopeType !== 'all') {
           params.domainid = this.selectedDomain.id
           params.acltype = this.scopeType
           if (this.scopeType === 'account') { // account-specific
-            params.account = values.account
+            params.account = this.selectedAccount.name
           } else if (this.scopeType === 'project') { // project-specific
+            params.acltype = 'account'
             params.projectid = this.selectedProject.id
           } else { // domain-specific
             params.subdomainaccess = this.parseBooleanValueForKey(values, 'subdomainaccess')

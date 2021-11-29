@@ -195,6 +195,8 @@ public interface NetworkModel {
 
     void checkNetworkPermissions(Account owner, Network network);
 
+    void checkNetworkOperatePermissions(Account owner, Network network);
+
     String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType);
 
     String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType);

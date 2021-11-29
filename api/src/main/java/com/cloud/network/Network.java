@@ -372,6 +372,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
     }
 
+    static final String AssociatedNetworkId = "AssociatedNetworkId";
+
     String getName();
 
     Mode getMode();

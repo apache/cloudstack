@@ -3137,7 +3137,7 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3205,6 +3205,8 @@ class Network:
             cmd.externalid = externalid
         if bypassvlanoverlapcheck:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
+        if associatednetworkid:
+            cmd.associatednetworkid = associatednetworkid
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4705,14 +4707,15 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None):
+               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
         cmd.gateway = gateway
         cmd.ipaddress = ipaddress
         cmd.netmask = netmask
-        cmd.vlan = vlan
+        if vlan:
+            cmd.vlan = vlan
         cmd.vpcid = vpcid
         if physicalnetworkid:
             cmd.physicalnetworkid = physicalnetworkid
@@ -4720,6 +4723,8 @@ class PrivateGateway:
             cmd.aclid = aclid
         if bypassvlanoverlapcheck:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
+        if associatednetworkid:
+            cmd.associatednetworkid = associatednetworkid
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 

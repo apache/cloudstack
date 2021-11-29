@@ -30,7 +30,7 @@ export default {
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domain', 'account', 'zonename'],
-      details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
+      details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain', 'associatednetworkid', 'associatednetworkname'],
       filters: ['all', 'isolated', 'shared', 'l2'],
       searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
@@ -672,6 +672,31 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'guestvlans',
+      title: 'label.guest.vlan',
+      icon: 'folder',
+      permission: ['listGuestVlans'],
+      resourceType: 'GuestVlan',
+      filters: ['allocatedonly', 'all'],
+      columns: ['vlan', 'zonename', 'physicalnetworkname', 'allocationstate', 'taken', 'domain', 'account', 'project'],
+      details: ['vlan', 'zonename', 'physicalnetworkname', 'allocationstate', 'taken', 'domain', 'account', 'project', 'isdedicated'],
+      searchFilters: ['zoneid'],
+      tabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }, {
+        name: 'guest.networks',
+        component: () => import('@/views/network/GuestVlanNetworksTab.vue'),
+        show: (record) => { return (record.allocationstate === 'Allocated') }
+      }],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        return true
+      }
     }
   ]
 }

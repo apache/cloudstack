@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.server.ResourceIcon;
+import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
@@ -148,6 +149,7 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
@@ -256,7 +258,7 @@ public interface ResponseGenerator {
 
     IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
-    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
+    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlanRange result);
 
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
@@ -491,4 +493,5 @@ public interface ResponseGenerator {
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
+    GuestVlanResponse createGuestVlanResponse(GuestVlan vlan);
 }

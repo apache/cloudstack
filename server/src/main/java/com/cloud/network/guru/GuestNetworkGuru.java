@@ -112,7 +112,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     IpAddressManager _ipAddrMgr;
     Random _rand = new Random(System.currentTimeMillis());
 
-    static final ConfigKey<Boolean> UseSystemGuestVlans =
+    public static final ConfigKey<Boolean> UseSystemGuestVlans =
             new ConfigKey<Boolean>(
                     "Advanced",
                     Boolean.class,

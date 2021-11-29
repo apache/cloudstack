@@ -195,6 +195,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
     private String vpcName;
 
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
+    @Param(description = "the ID of the Network associated with this network")
+    private String associatedNetworkId;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
+    @Param(description = "the name of the Network associated with this network")
+    private String associatedNetworkName;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -506,6 +514,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
+    }
+
+    public void setAssociatedNetworkId(String associatedNetworkId) {
+        this.associatedNetworkId = associatedNetworkId;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
     }
 
     @Override

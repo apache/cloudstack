@@ -34,7 +34,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.shared')" key="3" v-if="this.isAdmin()">
+      <a-tab-pane :tab="$t('label.shared')" key="3">
         <CreateSharedNetworkForm
           :loading="loading"
           :resource="resource"

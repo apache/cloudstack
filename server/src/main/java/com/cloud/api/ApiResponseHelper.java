@@ -79,6 +79,7 @@ import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
+import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
@@ -237,6 +238,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -269,6 +271,7 @@ import com.cloud.network.as.Counter;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
@@ -413,6 +416,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private AnnotationDao annotationDao;
     @Inject
     private UserStatisticsDao userStatsDao;
+    @Inject
+    private NetworkDao networkDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2424,6 +2429,17 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setVpcName(vpc.getName());
             }
         }
+
+        final NetworkDetailVO detail = networkDetailsDao.findDetail(network.getId(), Network.AssociatedNetworkId);
+        if (detail != null) {
+            Long associatedNetworkId = Long.valueOf(detail.getValue());
+            NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
+            if (associatedNetwork != null) {
+                response.setAssociatedNetworkId(associatedNetwork.getUuid());
+                response.setAssociatedNetworkName(associatedNetwork.getName());
+            }
+        }
+
         response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
 
         // set tag information
@@ -2748,7 +2764,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan vlan) {
+    public GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlanRange vlan) {
         GuestVlanRangeResponse guestVlanRangeResponse = new GuestVlanRangeResponse();
 
         guestVlanRangeResponse.setId(vlan.getUuid());
@@ -4541,5 +4557,55 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon) {
         return  ApiDBUtils.newResourceIconResponse(resourceIcon);
+    }
+
+    @Override
+    public GuestVlanResponse createGuestVlanResponse(GuestVlan guestVlan) {
+        GuestVlanResponse guestVlanResponse = new GuestVlanResponse();
+
+        Account owner = null;
+        if (guestVlan.getAccountId() != null) {
+            owner = ApiDBUtils.findAccountById(guestVlan.getAccountId());
+        } else if (guestVlan.getAccountGuestVlanMapId() != null) {
+            Long accountId = ApiDBUtils.getAccountIdForGuestVlan(guestVlan.getAccountGuestVlanMapId());
+            owner = ApiDBUtils.findAccountById(accountId);
+        }
+        if (owner != null) {
+            populateAccount(guestVlanResponse, owner.getId());
+            populateDomain(guestVlanResponse, owner.getDomainId());
+        }
+        guestVlanResponse.setId(guestVlan.getId());
+        guestVlanResponse.setGuestVlan(guestVlan.getVnet());
+        DataCenterVO zone = ApiDBUtils.findZoneById(guestVlan.getDataCenterId());
+        if (zone != null) {
+            guestVlanResponse.setZoneId(zone.getUuid());
+            guestVlanResponse.setZoneName(zone.getName());
+        }
+        PhysicalNetworkVO pnw = ApiDBUtils.findPhysicalNetworkById(guestVlan.getPhysicalNetworkId());
+        if (pnw != null) {
+            guestVlanResponse.setPhysicalNetworkId(pnw.getUuid());
+            guestVlanResponse.setPhysicalNetworkName(pnw.getName());
+        }
+        if (guestVlan.getAccountGuestVlanMapId() != null) {
+            guestVlanResponse.setDedicated(true);
+        } else {
+            guestVlanResponse.setDedicated(false);
+        }
+        if (guestVlan.getTakenAt() != null) {
+            guestVlanResponse.setAllocationState("Allocated");
+            guestVlanResponse.setTaken(guestVlan.getTakenAt());
+        } else {
+            guestVlanResponse.setAllocationState("Free");
+        }
+
+        List<NetworkVO> networks = networkDao.listByZoneAndUriAndGuestType(guestVlan.getDataCenterId(), guestVlan.getVnet(), null);
+        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        for (Network network : networks) {
+            NetworkResponse ntwkRsp = createNetworkResponse(ResponseView.Full, network);
+            networkResponses.add(ntwkRsp);
+        }
+        guestVlanResponse.setNetworks(networkResponses);
+
+        return guestVlanResponse;
     }
 }
