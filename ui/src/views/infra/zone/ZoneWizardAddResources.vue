@@ -679,7 +679,8 @@ export default {
         {
           title: 'label.account',
           key: 'secondaryStorageAccount',
-          required: false,
+          required: true,
+          placeHolder: 'message.error.swift.account',
           display: {
             secondaryStorageProvider: ['Swift']
           }
@@ -687,7 +688,8 @@ export default {
         {
           title: 'label.username',
           key: 'secondaryStorageUsername',
-          required: false,
+          required: true,
+          placeHolder: 'message.error.swift.username',
           display: {
             secondaryStorageProvider: ['Swift']
           }
@@ -695,6 +697,15 @@ export default {
         {
           title: 'label.key',
           key: 'secondaryStorageKey',
+          required: true,
+          placeHolder: 'message.error.swift.key',
+          display: {
+            secondaryStorageProvider: ['Swift']
+          }
+        },
+        {
+          title: 'label.storagepolicy',
+          key: 'secondaryStoragePolicy',
           required: false,
           display: {
             secondaryStorageProvider: ['Swift']
