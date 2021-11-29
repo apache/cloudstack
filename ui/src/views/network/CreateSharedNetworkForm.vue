@@ -768,7 +768,7 @@ export default {
     fetchDomainData () {
       const params = {}
       if (!this.isObjectEmpty(this.selectedZone) && this.selectedZone.domainid != null) {
-        params.id = this.selectedZone.id
+        params.id = this.selectedZone.domainid
         params.isrecursive = true
       } else {
         params.listall = true
