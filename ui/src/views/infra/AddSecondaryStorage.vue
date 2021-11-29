@@ -191,7 +191,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.access_key')">
+          <a-form-item :label="$t('label.s3.access.key')">
             <a-input
               v-decorator="[
                 'secondaryStorageAccessKey',
@@ -199,7 +199,7 @@
                   rules: [{ required: true, message: `${$t('label.required')}` }]
                 }]"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.secret_key')">
+          <a-form-item :label="$t('label.s3.secret.key')">
             <a-input
               v-decorator="[
                 'secondaryStorageSecretKey',
@@ -218,16 +218,16 @@
           <a-form-item :label="$t('label.s3.endpoint')">
             <a-input v-decorator="['secondaryStorageEndpoint']"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.use_https')">
+          <a-form-item :label="$t('label.s3.use.https')">
             <a-switch v-decorator="['secondaryStorageHttps', { initialValue: true }]" :default-checked="true" />
           </a-form-item>
-          <a-form-item :label="$t('label.s3.connection_timeout')">
+          <a-form-item :label="$t('label.s3.connection.timeout')">
             <a-input v-decorator="['secondaryStorageConnectionTimeout']"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.max_error_retry')">
+          <a-form-item :label="$t('label.s3.max.error.retry')">
             <a-input v-decorator="['secondaryStorageMaxError']"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.socket_timeout')">
+          <a-form-item :label="$t('label.s3.socket.timeout')">
             <a-input v-decorator="['secondaryStorageSocketTimeout']"/>
           </a-form-item>
           <a-form-item :label="$t('label.create.nfs.secondary.staging.storage')">

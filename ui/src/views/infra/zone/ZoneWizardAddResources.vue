@@ -570,7 +570,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.access_key',
+          title: 'label.s3.access.key',
           key: 'secondaryStorageAccessKey',
           required: true,
           placeHolder: 'message.error.access.key',
@@ -579,7 +579,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.secret_key',
+          title: 'label.s3.secret.key',
           key: 'secondaryStorageSecretKey',
           required: true,
           placeHolder: 'message.error.secret.key',
@@ -605,7 +605,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.use_https',
+          title: 'label.s3.use.https',
           key: 'secondaryStorageHttps',
           required: false,
           switch: true,
@@ -615,7 +615,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.connection_timeoutt',
+          title: 'label.s3.connection.timeout',
           key: 'secondaryStorageConnectionTimeout',
           required: false,
           display: {
@@ -623,7 +623,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.max_error_retry',
+          title: 'label.s3.max.error.retry',
           key: 'secondaryStorageMaxError',
           required: false,
           display: {
@@ -631,7 +631,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.socket_timeout',
+          title: 'label.s3.socket.timeout',
           key: 'secondaryStorageSocketTimeout',
           required: false,
           display: {
