@@ -62,6 +62,14 @@ export default {
       component: () => import('@/views/infra/CpuSockets.vue')
     },
     {
+      name: 'metric',
+      title: 'label.metrics',
+      icon: 'bar-chart',
+      docHelp: 'adminguide/management.html#metrics',
+      permission: ['listDbMetrics', 'listUsageServerMetrics'],
+      component: () => import('@/components/view/Metrics.vue')
+    },
+    {
       name: 'alert',
       title: 'label.alerts',
       icon: 'FlagOutlined',
