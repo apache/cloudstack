@@ -1473,7 +1473,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
-            implementedNetworkInCreation(caller, zone, network);
+            return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
     }
