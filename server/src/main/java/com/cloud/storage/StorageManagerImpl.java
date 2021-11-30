@@ -117,6 +117,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -206,7 +207,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -613,7 +613,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(getStoragePoolTagList(poolId));
+        return com.cloud.utils.StringUtils.listToCsvTags(getStoragePoolTagList(poolId));
     }
 
     @Override
@@ -725,7 +725,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
      * The name will follow the pattern: <hostname>-local-<firstBlockOfUuid>
      */
     protected String createLocalStoragePoolName(Host host, StoragePoolInfo storagePoolInformation) {
-        return String.format("%s-%s-%s", org.apache.commons.lang3.StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
+        return String.format("%s-%s-%s", StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
     }
 
     @Override
@@ -889,7 +889,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         String name = cmd.getName();
-        if(org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+        if(StringUtils.isNotBlank(name)) {
             s_logger.debug("Updating Storage Pool name to: " + name);
             pool.setName(name);
             _storagePoolDao.update(pool.getId(), pool);
@@ -1889,7 +1889,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         dataStoreVO.setParent(datastoreClusterPool.getId());
 
         Map<String, String> details = new HashMap<>();
-        if(org.apache.commons.lang.StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
+        if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
             details.put("pool_type", childDataStoreAnswer.getPoolType());
         }
         _storagePoolDao.persist(dataStoreVO, details, storageTags);
@@ -2443,7 +2443,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 storagePolicyId = _diskOfferingDetailsDao.getDetail(volume.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
             }
-            if (org.apache.commons.lang.StringUtils.isNotEmpty(storagePolicyId)) {
+            if (StringUtils.isNotEmpty(storagePolicyId)) {
                 VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
                 List<Long> hostIds = getUpHostsInPool(pool.getId());
                 Collections.shuffle(hostIds);

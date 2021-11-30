@@ -195,12 +195,14 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
      * address information.
      */
     @Override
-    public void setNicIp6Address(final NicProfile nic, final DataCenter dc, final Network network) {
+    public void setNicIp6Address(final NicProfile nic, final DataCenter dc, final Network network) throws InsufficientAddressCapacityException {
         if (network.getIp6Gateway() != null) {
             if (nic.getIPv6Address() == null) {
                 s_logger.debug("Found IPv6 CIDR " + network.getIp6Cidr() + " for Network " + network);
                 nic.setIPv6Cidr(network.getIp6Cidr());
                 nic.setIPv6Gateway(network.getIp6Gateway());
+
+                setNicPropertiesFromNetwork(nic, network);
 
                 IPv6Address ipv6addr = NetUtils.EUI64Address(network.getIp6Cidr(), nic.getMacAddress());
                 s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
@@ -217,4 +219,15 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         }
     }
 
+    private void setNicPropertiesFromNetwork(NicProfile nic, Network network) throws InsufficientAddressCapacityException {
+        if (nic.getBroadcastType() == null) {
+            nic.setBroadcastType(network.getBroadcastDomainType());
+        }
+        if (nic.getBroadCastUri() == null) {
+            nic.setBroadcastUri(network.getBroadcastUri());
+        }
+        if (nic.getMacAddress() == null) {
+            nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
+        }
+    }
 }

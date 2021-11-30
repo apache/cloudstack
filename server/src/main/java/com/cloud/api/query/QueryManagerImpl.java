@@ -30,10 +30,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.resource.icon.dao.ResourceIconDao;
-import com.cloud.server.ResourceManagerUtil;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -62,6 +58,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -206,6 +203,8 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.icon.dao.ResourceIconDao;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -224,6 +223,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -237,7 +237,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -251,11 +250,12 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
@@ -790,7 +790,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean listAll = cmd.listAll();
         Long projectId = cmd.getProjectId();
 
-        if (projectId == null && ResourceObjectType.Project.name().equalsIgnoreCase(resourceType) && !Strings.isNullOrEmpty(resourceId)) {
+        if (projectId == null && ResourceObjectType.Project.name().equalsIgnoreCase(resourceType) && StringUtils.isNotEmpty(resourceId)) {
             try {
                 projectId = Long.parseLong(resourceId);
             } catch (final NumberFormatException e) {
@@ -986,10 +986,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object securityGroupId = cmd.getSecurityGroupId();
         Object isHaEnabled = cmd.getHaEnabled();
         Object pod = null;
+        Long clusterId = null;
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
             pod = cmd.getPodId();
+            if (cmd instanceof ListVMsCmdByAdmin) {
+                clusterId = ((ListVMsCmdByAdmin)cmd).getClusterId();
+            }
             hostId = cmd.getHostId();
             storageId = cmd.getStorageId();
         }
@@ -1002,6 +1006,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -1173,6 +1178,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (state == null) {
                     sc.setParameters("stateNEQ", "Destroyed");
                 }
+            }
+
+            if (clusterId != null) {
+                sc.setParameters("clusterId", clusterId);
             }
 
             if (hostId != null) {
@@ -1557,7 +1566,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     }
                     accountId = owner.getId();
                 }
-                if (!Strings.isNullOrEmpty(username)) {
+                if (StringUtils.isNotEmpty(username)) {
                     User owner = userDao.getUserByName(username, domainId);
                     if (owner == null) {
                         throw new InvalidParameterValueException("Unable to find user " + username + " in domain " + domainId);
@@ -1571,7 +1580,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (accountName != null) {
                     throw new InvalidParameterValueException("could not find account " + accountName + " because domain is not specified");
                 }
-                if (!Strings.isNullOrEmpty(username)) {
+                if (StringUtils.isNotEmpty(username)) {
                     throw new InvalidParameterValueException("could not find user " + username + " because domain is not specified");
                 }
             }
@@ -1584,7 +1593,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new PermissionDeniedException("Can't list domain id= " + domainId + " projects; unauthorized");
             }
 
-            if (!Strings.isNullOrEmpty(username) && !username.equals(user.getUsername())) {
+            if (StringUtils.isNotEmpty(username) && !username.equals(user.getUsername())) {
                 throw new PermissionDeniedException("Can't list user " + username + " projects; unauthorized");
             }
 
@@ -2556,13 +2565,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("dataCenterId", zoneId);
         }
         if (pod != null) {
-            sc.setParameters("podId", pod);
+            SearchCriteria<StoragePoolJoinVO> ssc = _poolJoinDao.createSearchCriteria();
+            ssc.addOr("podId", Op.EQ, pod);
+            ssc.addOr("podId", Op.NULL);
+
+            sc.addAnd("podId", SearchCriteria.Op.SC, ssc);
         }
         if (address != null) {
             sc.setParameters("hostAddress", address);
         }
         if (cluster != null) {
-            sc.setParameters("clusterId", cluster);
+            SearchCriteria<StoragePoolJoinVO> ssc = _poolJoinDao.createSearchCriteria();
+            ssc.addOr("clusterId", Op.EQ, cluster);
+            ssc.addOr("clusterId", Op.NULL);
+
+            sc.addAnd("clusterId", SearchCriteria.Op.SC, ssc);
         }
         if (scopeType != null) {
             sc.setParameters("scope", scopeType.toString());
@@ -3170,7 +3187,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (currentVmOffering != null) {
-            List<String> storageTags = StringUtils.csvTagsToList(currentVmOffering.getTags());
+            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getTags());
             if (!storageTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : storageTags) {
@@ -3185,7 +3202,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
             }
 
-            List<String> hostTags = StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
             if (!hostTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : hostTags) {
@@ -3837,10 +3854,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             case Template:
             case UserVm:
                 HypervisorType hypervisorType = HypervisorType.None;
-                if (!Strings.isNullOrEmpty(resourceUuid) && ResourceObjectType.Template.equals(type)) {
+                if (StringUtils.isNotEmpty(resourceUuid) && ResourceObjectType.Template.equals(type)) {
                     hypervisorType = _templateDao.findByUuid(resourceUuid).getHypervisorType();
                 }
-                if (!Strings.isNullOrEmpty(resourceUuid) && ResourceObjectType.UserVm.equals(type)) {
+                if (StringUtils.isNotEmpty(resourceUuid) && ResourceObjectType.UserVm.equals(type)) {
                     hypervisorType = _vmInstanceDao.findByUuid(resourceUuid).getHypervisorType();
                 }
                 fillVMOrTemplateDetailOptions(options, hypervisorType);

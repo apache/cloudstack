@@ -20,7 +20,7 @@
 package org.apache.cloudstack.utils.process;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class ProcessTest {
     public void testProcessRunner() {
         ProcessResult result = RUNNER.executeCommands(Arrays.asList("sleep", "0"));
         Assert.assertEquals(result.getReturnCode(), 0);
-        Assert.assertTrue(Strings.isNullOrEmpty(result.getStdError()));
+        Assert.assertTrue(StringUtils.isEmpty(result.getStdError()));
     }
 
     @Test

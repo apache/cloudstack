@@ -21,6 +21,8 @@ package com.cloud.test;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -37,7 +39,6 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 import static org.apache.log4j.Level.ALL;
 import static org.apache.log4j.Level.DEBUG;
@@ -154,7 +155,7 @@ public final class TestAppender extends AppenderSkeleton {
         }
         public TestAppenderBuilder addExpectedPattern(final Level level, final String pattern) {
             checkArgument(level != null, "addExpectedPattern requires a non-null level");
-            checkArgument(!isNullOrEmpty(pattern), "addExpectedPattern requires a non-blank pattern");
+            checkArgument(StringUtils.isNotEmpty(pattern), "addExpectedPattern requires a non-blank pattern");
             checkState(expectedPatterns.containsKey(level), "level " + level + " is not supported by " + getClass().getName());
             expectedPatterns.get(level).add(new PatternResult(Pattern.compile(pattern)));
             return this;
