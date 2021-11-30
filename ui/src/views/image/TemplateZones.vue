@@ -107,8 +107,7 @@
           :model="form"
           :rules="rules"
           layout="vertical"
-          @finish="handleCopyTemplateSubmit"
-          :scrollToFirstError="true">
+          @finish="handleCopyTemplateSubmit">
           <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"

@@ -78,7 +78,7 @@
               mode="multiple"
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.zoneids.description"
               @change="handlerSelectZone">

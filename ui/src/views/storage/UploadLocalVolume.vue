@@ -28,8 +28,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <a-form-item :label="$t('label.templatefileupload')" ref="file" name="file">
           <a-upload-dragger
             :multiple="false"

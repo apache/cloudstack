@@ -52,7 +52,7 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id" :label="domain.path || domain.name || domain.description">
             <span>
@@ -73,7 +73,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
               <span>
@@ -96,7 +96,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
               <span>
@@ -117,7 +117,7 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="network in networks" :key="network.id" :value="network.id" :label="network.name ? network.name : '-'">
             <span>

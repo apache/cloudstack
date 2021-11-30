@@ -208,8 +208,7 @@
             :model="form"
             :rules="rules"
             @finish="handleSubmit"
-            layout="vertical"
-            :scrollToFirstError="true">
+            layout="vertical">
             <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
               <a-form-item
                 :name="field.name"

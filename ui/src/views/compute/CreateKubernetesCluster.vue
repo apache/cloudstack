@@ -23,8 +23,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <a-form-item name="name" ref="name">
           <template #label>
             <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
@@ -52,7 +51,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description"

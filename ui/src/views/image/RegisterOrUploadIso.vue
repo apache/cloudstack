@@ -29,8 +29,7 @@
         :rules="rules"
         @finish="handleSubmit"
         v-ctrl-enter="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <a-form-item
           v-if="currentForm === 'Create'"
           ref="url"
@@ -82,7 +81,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
@@ -106,7 +105,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">

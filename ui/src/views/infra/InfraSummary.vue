@@ -54,7 +54,7 @@
               :rules="rules"
               @finish="handleSslFormSubmit"
               v-ctrl-enter="handleSslFormSubmit"
-              :scrollToFirstError="true">
+             >
               <a-form-item name="root" ref="root" :required="true">
                 <template #label>
                   <tooltip-label :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>

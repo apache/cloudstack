@@ -24,7 +24,6 @@
     :rules="rules"
     @finish="handleSubmit"
     v-ctrl-enter="handleSubmit"
-    :scrollToFirstError="true"
   >
     <a-tabs
       :activeKey="customActiveKey"

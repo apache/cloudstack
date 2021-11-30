@@ -27,8 +27,7 @@
           :model="form"
           :rules="rules"
           layout="vertical"
-          @finish="handleSubmit"
-          :scrollToFirstError="true">
+          @finish="handleSubmit">
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.intervaltype')" ref="intervaltype" name="intervaltype">

@@ -45,7 +45,7 @@
             :model="form"
             :rules="rules"
             layout="vertical"
-            :scrollToFirstError="true">
+           >
             <a-col :md="24" :lg="8">
               <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
                 <a-select

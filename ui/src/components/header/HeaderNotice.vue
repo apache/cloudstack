@@ -47,13 +47,11 @@
                 </a-avatar>
               </template>
               <template #description>
-                <div v-if="getResourceName(notice.description, 'name') && notice.path">
+                <span v-if="getResourceName(notice.description, 'name') && notice.path">
                   <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link>
-                </div>
-                <div v-if="getResourceName(notice.description, 'name') && notice.path">
-                  <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "msg") }}</router-link>
-                </div>
-                <div v-else>{{ notice.description }}</div>
+                </span>
+                <span v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</span>
+                <span v-else>{{ notice.description }}</span>
               </template>
             </a-list-item-meta>
           </a-list-item>

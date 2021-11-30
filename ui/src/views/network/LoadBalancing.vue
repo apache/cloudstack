@@ -188,7 +188,7 @@
         class="add-tags"
         @finish="handleAddTag"
         v-ctrl-enter="handleAddTag"
-        :scrollToFirstError="true">
+       >
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item ref="key" name="key">
@@ -210,7 +210,7 @@
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>
@@ -240,7 +240,7 @@
         @finish="handleSubmitStickinessForm"
         v-ctrl-enter="handleSubmitStickinessForm"
         class="custom-ant-form"
-        :scrollToFirstError="true">
+       >
         <a-form-item name="methodname" ref="methodname" :label="$t('label.stickiness.method')">
           <a-select
             v-focus="true"

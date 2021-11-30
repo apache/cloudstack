@@ -18,7 +18,7 @@
 <template>
   <a-tooltip placement="bottom" :title="getTooltip(text)">
     <a-badge
-      :style="{ display: 'flex' }"
+      :style="getStyle()"
       :title="text"
       :color="getStatusColor(text)"
       :status="getBadgeStatus(text)"
@@ -38,6 +38,10 @@ export default {
     displayText: {
       type: Boolean,
       default: false
+    },
+    styles: {
+      type: Object,
+      default: () => {}
     }
   },
   methods: {
@@ -176,6 +180,14 @@ export default {
       }
       // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
       return this.$t(state)
+    },
+    getStyle () {
+      let styles = { display: 'inline-flex' }
+      if (this.styles && typeof this.styles === 'object') {
+        styles = Object.assign({}, styles, this.styles)
+      }
+
+      return styles
     }
   }
 }

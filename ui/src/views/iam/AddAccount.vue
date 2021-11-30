@@ -24,8 +24,7 @@
         :rules="rules"
         :loading="loading"
         layout="vertical"
-        @finish="handleSubmit"
-        :scrollToFirstError="true">
+        @finish="handleSubmit">
         <a-form-item ref="roleid" name="roleid">
           <template #label>
             <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
@@ -116,7 +115,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
               <span>

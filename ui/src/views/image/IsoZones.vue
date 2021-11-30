@@ -108,8 +108,7 @@
           :rules="rules"
           layout="vertical"
           @finish="handleCopyIsoSubmit"
-          v-ctrl-enter="handleCopyIsoSubmit"
-          :scrollToFirstError="true">
+          v-ctrl-enter="handleCopyIsoSubmit">
           <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
@@ -119,7 +118,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
               v-focus="true">

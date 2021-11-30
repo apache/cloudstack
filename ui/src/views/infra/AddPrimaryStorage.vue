@@ -24,7 +24,7 @@
         :rules="rules"
         layout="vertical"
         @finish="handleSubmit"
-        :scrollToFirstError="true">
+       >
         <a-form-item name="scope" ref="scope">
           <template #label>
             <tooltip-label :title="$t('label.scope')" :tooltip="apiParams.scope.description"/>
@@ -71,7 +71,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id" :label="zone.name">
               <span>

@@ -80,7 +80,7 @@
         v-ctrl-enter="handleAddIpRange"
         layout="vertical"
         class="form"
-        :scrollToFirstError="true"
+
       >
         <a-form-item name="pod" ref="pod" :label="$t('label.podid')" class="form__item">
           <a-select

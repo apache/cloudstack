@@ -51,7 +51,7 @@
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else v-ctrl-enter="handleAddTag">
-        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags" :scrollToFirstError="true">
+        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item name="key" ref="key">
@@ -73,7 +73,7 @@
 
         <div class="tags-container">
           <div class="tags" v-for="(tag, index) in tags" :key="index">
-            <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+            <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
           </div>

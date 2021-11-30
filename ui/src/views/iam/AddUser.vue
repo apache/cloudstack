@@ -24,8 +24,7 @@
         :rules="rules"
         :loading="loading"
         layout="vertical"
-        @finish="handleSubmit"
-        :scrollToFirstError="true">
+        @finish="handleSubmit">
         <a-form-item name="username" ref="username">
           <template #label>
             <tooltip-label :title="$t('label.username')" :tooltip="apiParams.username.description"/>
@@ -98,7 +97,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
               <span>
@@ -120,7 +119,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="(item, idx) in accountList" :key="idx" :label="item.name">
               <span>

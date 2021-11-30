@@ -104,6 +104,7 @@ import {
   MessageFilled,
   MessageOutlined,
   MinusCircleOutlined,
+  MinusOutlined,
   MinusSquareOutlined,
   MoreOutlined,
   NotificationOutlined,
@@ -146,6 +147,7 @@ import {
   UsbOutlined,
   UserAddOutlined,
   UserOutlined,
+  UploadOutlined,
   WifiOutlined
 } from '@ant-design/icons-vue'
 
@@ -239,6 +241,7 @@ export default {
     app.component('MessageFilled', MessageFilled)
     app.component('MessageOutlined', MessageOutlined)
     app.component('MinusCircleOutlined', MinusCircleOutlined)
+    app.component('MinusOutlined', MinusOutlined)
     app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
@@ -281,6 +284,7 @@ export default {
     app.component('UsbOutlined', UsbOutlined)
     app.component('UserAddOutlined', UserAddOutlined)
     app.component('UserOutlined', UserOutlined)
+    app.component('UploadOutlined', UploadOutlined)
     app.component('WifiOutlined', WifiOutlined)
   }
 }

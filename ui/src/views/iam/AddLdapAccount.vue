@@ -50,8 +50,7 @@
             :model="form"
             :rules="rules"
             @finish="handleSubmit"
-            layout="vertical"
-            :scrollToFirstError="true">
+            layout="vertical">
             <a-form-item :label="$t('label.filterby')" name="selectedFilter" ref="selectedFilter">
               <a-select
                 @change="fetchListLdapUsers"

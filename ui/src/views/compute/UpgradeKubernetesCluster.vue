@@ -27,8 +27,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
           <template #label>
             <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>

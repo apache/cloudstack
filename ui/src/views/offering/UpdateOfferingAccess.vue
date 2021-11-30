@@ -24,7 +24,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical"
-        :scrollToFirstError="true">
+       >
 
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-model:checked="form.ispublic" v-focus="true" />

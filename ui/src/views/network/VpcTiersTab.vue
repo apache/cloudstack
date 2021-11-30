@@ -168,7 +168,7 @@
           :model="form"
           :rules="rules"
           @finish="handleAddNetworkSubmit"
-          :scrollToFirstError="true">
+         >
           <a-form-item ref="name" name="name" :colon="false">
             <template #label>
               <tooltip-label :title="$t('label.name')" :tooltip="$t('label.create.tier.name.description')"/>
@@ -273,7 +273,7 @@
           :model="form"
           :rules="rules"
           @finish="handleAddInternalLBSubmit"
-          :scrollToFirstError="true">
+         >
           <a-form-item ref="name" name="name" :label="$t('label.name')">
             <a-input
               v-focus="true"

@@ -162,7 +162,7 @@
         class="add-tags"
         @finish="handleAddTag"
         v-ctrl-enter="handleAddTag"
-        :scrollToFirstError="true">
+       >
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item name="key" ref="key">
@@ -185,7 +185,7 @@
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="true" @close="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>

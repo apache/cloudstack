@@ -22,8 +22,7 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        @finish="handleSubmit"
-        :scrollToFirstError="true">
+        @finish="handleSubmit">
         <a-form-item :label="$t('label.iso.name')" ref="id" name="id">
           <a-select
             :loading="loading"

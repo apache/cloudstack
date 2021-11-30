@@ -123,7 +123,7 @@
           :rules="tagRules"
           class="add-tags"
           v-ctrl-enter="handleAddTag"
-          :scrollToFirstError="true">
+         >
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item ref="key" name="key">
@@ -145,7 +145,7 @@
 
         <div class="tags-container">
           <div class="tags" v-for="(tag, index) in tags" :key="index">
-            <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+            <a-tag :key="index" :closable="true" @close="() => handleDeleteTag(tag)">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
           </div>
@@ -169,7 +169,7 @@
         :rules="rules"
         @finish="handleRuleModalForm"
         v-ctrl-enter="handleRuleModalForm"
-        :scrollToFirstError="true">
+       >
         <a-form-item :label="$t('label.number')" ref="number" name="number">
           <a-input-number v-focus="true" style="width: 100%" v-model:value="form.number" />
         </a-form-item>

@@ -35,7 +35,7 @@
       layout="vertical"
       @finish="submitTariff"
       v-ctrl-enter="submitTariff"
-      :scrollToFirstError="true">
+     >
       <a-form-item name="value" ref="value" :label="$t('label.quota.value')">
         <a-input
           v-focus="true"

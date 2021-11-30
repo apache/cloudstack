@@ -134,7 +134,7 @@
         :rules="rules"
         @finish="handleAddTag"
         v-ctrl-enter="handleAddTag"
-        :scrollToFirstError="true">
+       >
         <div class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
@@ -164,7 +164,7 @@
 
       <div class="tags-container">
         <span class="tags" v-for="(tag) in tags" :key="tag.key">
-          <a-tag :key="tag.key" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="tag.key" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </span>

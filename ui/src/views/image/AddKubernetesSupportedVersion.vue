@@ -23,8 +23,7 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        @finish="handleSubmit"
-        :scrollToFirstError="true">
+        @finish="handleSubmit">
         <a-form-item ref="semanticversion" name="semanticversion">
           <template #label>
             <tooltip-label :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
@@ -52,7 +51,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">

@@ -27,7 +27,7 @@
       :ref="formRef"
       :model="form"
       :rules="rules"
-      :scrollToFirstError="true">
+     >
       <a-form-item
         name="name"
         ref="name"

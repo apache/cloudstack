@@ -23,8 +23,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <a-form-item name="storageid" ref="storageid">
           <template #label>
             <tooltip-label :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>

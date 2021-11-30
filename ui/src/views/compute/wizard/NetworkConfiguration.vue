@@ -19,8 +19,7 @@
   <a-form
     :ref="formRef"
     :model="form"
-    :rules="rules"
-    :scrollToFirstError="true">
+    :rules="rules">
     <a-table
       :columns="columns"
       :dataSource="dataItems"

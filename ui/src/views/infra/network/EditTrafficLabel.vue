@@ -25,7 +25,7 @@
         :loading="loading"
         @finish="handleSubmit"
         layout="vertical"
-        :scrollToFirstError="true">
+       >
         <a-form-item name="id" ref="id">
           <template #label>
             <tooltip-label :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>

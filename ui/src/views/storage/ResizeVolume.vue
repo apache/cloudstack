@@ -23,7 +23,7 @@
       :rules="rules"
       layout="vertical"
       @finish="handleSubmit"
-      :scrollToFirstError="true">
+     >
       <a-form-item
         name="diskofferingid"
         ref="diskofferingid"

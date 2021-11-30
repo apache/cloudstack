@@ -80,7 +80,7 @@
           @finish="handleSubmit"
           v-ctrl-enter="handleSubmit"
           layout="vertical"
-          :scrollToFirstError="true">
+         >
           <a-form-item
             :name="field.name"
             :ref="field.name"

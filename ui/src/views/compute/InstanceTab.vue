@@ -155,7 +155,7 @@
       :footer="null"
       @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
-      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork" :scrollToFirstError="true">
+      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.network') }}:</p>
           <a-select
@@ -165,7 +165,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="network in addNetworkData.allNetworks"
@@ -200,7 +200,7 @@
     >
       {{ $t('message.network.updateip') }}
 
-      <a-form @finish="submitUpdateIP" v-ctrl-enter="submitUpdateIP" :scrollToFirstError="true">
+      <a-form @finish="submitUpdateIP" v-ctrl-enter="submitUpdateIP">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
           <a-select

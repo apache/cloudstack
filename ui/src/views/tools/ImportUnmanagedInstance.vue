@@ -33,8 +33,7 @@
               :model="form"
               :rules="rules"
               @finish="handleSubmit"
-              layout="vertical"
-              :scrollToFirstError="true">
+              layout="vertical">
               <a-form-item name="displayname" ref="displayname">
                 <template #label>
                   <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
@@ -62,7 +61,7 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.label.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"

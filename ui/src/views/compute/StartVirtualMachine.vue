@@ -27,8 +27,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <div v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item name="podid" ref="podid">
             <template #label>

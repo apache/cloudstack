@@ -24,7 +24,7 @@
       :rules="rules"
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit"
-      :scrollToFirstError="true">
+     >
       <a-form-item name="zoneType" ref="zoneType">
         <a-radio-group v-model:value="form.zoneType">
           <a-card class="card-item">

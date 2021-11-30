@@ -30,7 +30,7 @@
           :rules="rules"
           layout="vertical"
           @finish="handleSubmit"
-          :scrollToFirstError="true">
+         >
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.intervaltype')" name="intervaltype" ref="intervaltype">
@@ -143,7 +143,7 @@
           <div class="tagsTitle">{{ $t('label.tags') }}</div>
           <div>
             <div v-for="(tag, index) in tags" :key="index">
-              <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+              <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
                 {{ tag.key }} = {{ tag.value }}
               </a-tag>
             </div>

@@ -657,7 +657,7 @@
           <div class="title">{{ $t('label.tags') }}</div>
           <div>
             <template v-for="(tag, index) in tags" :key="index">
-              <a-tag :closable="isAdminOrOwner() && 'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+              <a-tag :closable="isAdminOrOwner() && 'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
                 {{ tag.key }} = {{ tag.value }}
               </a-tag>
             </template>

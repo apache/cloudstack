@@ -24,7 +24,7 @@
           :model="form"
           :rules="rules"
           layout="vertical"
-          :scrollToFirstError="true">
+         >
           <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0" name="podid" ref="podid">
             <template #label>
               <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>

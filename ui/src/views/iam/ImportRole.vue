@@ -23,8 +23,7 @@
         :model="form"
         :rules="rules"
         layout="vertical"
-        @finish="handleSubmit"
-        :scrollToFirstError="true">
+        @finish="handleSubmit">
         <a-form-item name="file" ref="file">
           <template #label>
             <tooltip-label :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>

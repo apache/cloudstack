@@ -23,7 +23,7 @@
         :to="{ path: item.path === '' ? '/' : item.path }"
       >
         <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
-        <span v-else>{{ $t(item.meta.title) }}</span>
+        <span v-if="item.meta.title">{{ $t(item.meta.title) }}</span>
       </router-link>
       <span v-else-if="$route.params.id">
         <label
@@ -92,8 +92,9 @@ export default {
     getBreadcrumb () {
       this.name = this.$route.name
       this.breadList = []
-      this.$route.matched.forEach((item) => {
-        if (item && item.parent && item.parent.name !== 'index' && !item.path.endsWith(':id')) {
+      this.$route.matched.forEach((item, idx) => {
+        const parent = this.$route.matched[idx - 1]
+        if (item && parent && parent.name !== 'index' && !item.path.endsWith(':id')) {
           this.breadList.pop()
         }
         this.breadList.push(item)

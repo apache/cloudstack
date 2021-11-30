@@ -25,8 +25,7 @@
         :model="form"
         :rules="rules"
         @finish="handleSubmit"
-        layout="vertical"
-        :scrollToFirstError="true">
+        layout="vertical">
         <a-form-item name="name" ref="name">
           <template #label :title="apiParams.name.description">
             {{ $t('label.name') }}

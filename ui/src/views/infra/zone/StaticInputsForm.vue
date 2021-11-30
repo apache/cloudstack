@@ -29,7 +29,7 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
-      :scrollToFirstError="true">
+     >
       <div v-for="(field, index) in fields" :key="index">
         <a-form-item
           :name="field.key"

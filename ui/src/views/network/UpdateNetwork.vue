@@ -24,7 +24,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical"
-        :scrollToFirstError="true">
+       >
         <a-form-item name="name" ref="name">
           <template #label>
             <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
