@@ -236,22 +236,36 @@ export default {
     }
   },
   data () {
-    this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
+    this.fetchTimeZone = debounce(this.fetchTimeZone, 800);
+
+    let actionLoading = false;
+    let volumeId = '';
+    let inputKey = '';
+    let inputVisible = '';
+    let inputValue = '';
+    let intervalType = 'hourly';
+    let intervalValue = 0;
+    let tags = [];
+    let dayOfWeek = [];
+    let dayOfMonth = [];
+    let timeZoneMap = [];
+    let fetching = false;
+    let listDayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
     return {
-      actionLoading: false,
-      volumeId: '',
-      inputKey: '',
-      inputVisible: '',
-      inputValue: '',
-      intervalType: 'hourly',
-      intervalValue: 0,
-      tags: [],
-      dayOfWeek: [],
-      dayOfMonth: [],
-      timeZoneMap: [],
-      fetching: false,
-      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      actionLoading,
+      volumeId,
+      inputKey,
+      inputVisible,
+      inputValue,
+      intervalType,
+      intervalValue,
+      tags,
+      dayOfWeek,
+      dayOfMonth,
+      timeZoneMap,
+      fetching,
+      listDayOfWeek
     }
   },
   beforeCreate () {
