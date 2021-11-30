@@ -2775,10 +2775,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (offering == null || offering.getTrafficType() != TrafficType.Guest || offering.getGuestType() != GuestType.Shared) {
             return false;
         }
-        if (! offering.isSpecifyVlan()) {
-            return true;
-        }
-        return false;
+        return !offering.isSpecifyVlan();
     }
 
     private boolean isPrivateGatewayWithoutSpecifyVlan(NetworkOffering ntwkOff) {
