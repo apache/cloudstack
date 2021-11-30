@@ -3113,6 +3113,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 if (networkAccount != null) {
                                     _networkAccountDao.remove(networkAccount.getId());
                                 }
+
+                                networkDetailsDao.removeDetails(networkFinal.getId());
                             }
 
                             final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());

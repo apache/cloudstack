@@ -57,6 +57,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 
     public AccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountName", AllFieldsSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
