@@ -92,6 +92,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
             type = CommandType.UUID,
             entityType = NetworkResponse.class,
+            since = "4.17.0",
             description = "The isolated network this private gateway is associated to.")
     private Long associatedNetworkId;
 

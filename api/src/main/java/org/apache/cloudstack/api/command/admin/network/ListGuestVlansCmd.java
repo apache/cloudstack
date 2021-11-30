@@ -36,6 +36,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listGuestVlans", description = "Lists all guest vlans", responseObject = GuestVlanResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.17.0",
         authorized = {RoleType.Admin})
 public class ListGuestVlansCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListGuestVlansCmd.class.getName());

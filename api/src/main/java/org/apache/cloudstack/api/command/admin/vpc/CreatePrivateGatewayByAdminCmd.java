@@ -33,6 +33,7 @@ import com.cloud.network.vpc.VpcGateway;
         responseObject = PrivateGatewayResponse.class,
         responseView = ResponseView.Full,
         entityType = {VpcGateway.class},
+        since = "4.17.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePrivateGatewayByAdminCmd extends CreatePrivateGatewayCmd implements AdminCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateGatewayByAdminCmd.class.getName());

@@ -153,6 +153,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
             type = CommandType.UUID,
             entityType = NetworkResponse.class,
+            since = "4.17.0",
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
 
