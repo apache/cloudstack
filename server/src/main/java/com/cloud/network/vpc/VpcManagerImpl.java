@@ -1917,7 +1917,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             // Determine the physical network by network offering tags
             physicalNetworkId = _ntwkSvc.findPhysicalNetworkId(dcId, ntwkOff.getTags(), ntwkOff.getTrafficType());
         }
-        physNet = _entityMgr.findById(PhysicalNetwork.class, physicalNetworkId);
+        if (physicalNetworkId == null) {
+            final List<? extends PhysicalNetwork> pNtwks = _ntwkModel.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
+            if (pNtwks.isEmpty() || pNtwks.size() != 1) {
+                throw new InvalidParameterValueException("Physical network can't be determined; pass physical network id");
+            }
+            physNet = pNtwks.get(0);
+            physicalNetworkId = physNet.getId();
+        }
+
+        if (physNet == null) {
+            physNet = _entityMgr.findById(PhysicalNetwork.class, physicalNetworkId);
+        }
 
         final Long physicalNetworkIdFinal = physicalNetworkId;
         final PhysicalNetwork physNetFinal = physNet;
