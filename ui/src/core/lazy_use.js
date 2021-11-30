@@ -24,6 +24,7 @@ import componentsUse from '@/core/lazy_lib/components_use'
 import iconsUse from '@/core/lazy_lib/icons_use'
 
 import 'ant-design-vue/dist/antd.min.css'
+import 'vue-cropper/dist/index.css'
 import '@/style/vars.less'
 
 // ext library

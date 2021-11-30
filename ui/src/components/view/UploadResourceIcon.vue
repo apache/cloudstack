@@ -267,12 +267,12 @@ export default {
         })
       }).finally(() => {
         this.handleClose()
-        eventBus.$emit('refresh-icon')
+        eventBus.emit('refresh-icon')
         if (['user', 'account'].includes(resourceType.toLowerCase())) {
-          eventBus.$emit('refresh-header')
+          eventBus.emit('refresh-header')
         }
         if (['domain'].includes(this.$route.path.split('/')[1])) {
-          eventBus.$emit('refresh-domain-icon')
+          eventBus.emit('refresh-domain-icon')
         }
       })
     },
