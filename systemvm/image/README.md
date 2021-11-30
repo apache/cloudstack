@@ -22,7 +22,7 @@ template in current directory: (roughly takes 5mins)
 
 To export the template to KVM, VMware and XenServer, run: (roughly takes 5mins)
 
-    bash -x export.sh image.qcow2
+    sudo bash -x export.sh image.qcow2
 
 Note: if building in docker container, because of NBD this may need privileged
 container options:
