@@ -79,7 +79,7 @@ export default {
           label: 'label.update.network',
           dataView: true,
           popup: true,
-          component: () => import('@/views/network/UpdateNetwork.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
         {
           api: 'restartNetwork',

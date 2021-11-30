@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 export default {
   name: 'ilbvm',
   title: 'label.internal.lb',
@@ -52,7 +53,7 @@ export default {
       label: 'label.action.migrate.router',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
-      component: () => import('@/views/compute/MigrateWizard'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
       popup: true
     },
     {
@@ -61,7 +62,7 @@ export default {
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
       show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
-      component: () => import('@/views/compute/MigrateVMStorage'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
       popup: true
     }
   ]

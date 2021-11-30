@@ -122,7 +122,7 @@ export default {
       message: 'message.migrate.router.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
-      component: () => import('@/views/compute/MigrateWizard'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
       popup: true
     },
     {
@@ -131,7 +131,7 @@ export default {
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
       show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
-      component: () => import('@/views/compute/MigrateVMStorage'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
       popup: true
     },
     {
