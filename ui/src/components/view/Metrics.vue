@@ -40,37 +40,37 @@
         </a-card>
       </a-col>
     </a-row>
-    <a-divider type="vertical"/>
+    <a-divider/>
     <a-row>
-      <a-col
-        :md="24">
+      <a-col :md="24" :lg="12" :gutter="12">
         <a-card>
-          <a-alert type="info" :showIcon="true" :message="$t('label.desc.db.stats')"/>
-          <div v-cloak class="resource-detail-item">
-            <template v-for="metric of dbMetrics">
-              <span style="margin-right:5px" :key="metric.name">
-                <div> {{ metric.name }} </div>
-                <div> {{ metric.value }} </div>
-              </span>
+          <a-table
+            class="metric-card"
+            :columns="columns"
+            :loading="loading"
+            :data-source="dbMetrics"
+            :pagination="{ pageSize: 15}"
+            size="middle"
+          >
+            <template slot="title">
+              <a>{{ $t('label.desc.db.stats') }}</a>
             </template>
-          </div>
+          </a-table>
         </a-card>
       </a-col>
-    </a-row>
-    <a-divider />
-    <a-row>
-      <a-col
-        :md="24">
+      <a-col :md="24" :lg="12" :gutter="12">
         <a-card>
-          <a-alert type="info" :showIcon="true" :message="$t('label.desc.usage.stats')"/>
-          <div v-cloak class="resource-detail-item">
-            <template v-for="metric of usageMetrics">
-              <span style="margin-right:5px" :key="metric.name">
-                <div> {{ metric.name }} </div>
-                <div> {{ metric.value }} </div>
-              </span>
+          <a-table
+            class="metric-card"
+            :columns="columns"
+            :data-source="usageMetrics"
+            :pagination="false"
+            size="middle"
+          >
+            <template slot="title">
+              <a>{{ $t('label.desc.usage.stats') }}</a>
             </template>
-          </div>
+          </a-table>
         </a-card>
       </a-col>
     </a-row>
@@ -97,10 +97,21 @@ export default {
     return {
       dbMetrics: [],
       usageMetrics: [],
-      columns: ['name', 'value']
+      columns: [
+        {
+          title: this.$t('label.name'),
+          sorter: true,
+          dataIndex: 'name',
+          width: '30%'
+        },
+        {
+          title: this.$t('label.value'),
+          dataIndex: 'value'
+        }
+      ]
     }
   },
-  created () {
+  mounted () {
     this.fetchDetails()
   },
   watch: {
@@ -126,16 +137,33 @@ export default {
       /* eslint-disable no-unused-vars */
       var array = []
       for (var key in map) {
-        var metric = {}
-        metric.name = key
-        metric.value = map[key]
-        array.push(metric)
+        if (key === 'replicas') {
+          map[key].forEach(function (value, i) {
+            var metric = {}
+            var name = 'replica[' + i + ']'
+            metric.name = name
+            metric.value = value
+            array.push(metric)
+          })
+        } else if (key === 'loadaverages') {
+          map[key].forEach(function (value, i) {
+            var metric = {}
+            metric.name = 'load-average[' + i + ']'
+            metric.value = value
+            array.push(metric)
+          })
+        } else {
+          var metric = {}
+          metric.name = key
+          metric.value = map[key]
+          array.push(metric)
+        }
       }
       /* eslint-enable no-unused-vars */
       return array
     },
     fetchDetails () {
-      this.fetchDbMetrics()
+      this.dbMetrics = this.fetchDbMetrics()
       this.usageMetrics = this.fetchUsageMetrics()
     },
     fetchUsageListData () {
@@ -162,5 +190,7 @@ export default {
     margin-right: -24px;
     margin-top: -16px;
     margin-bottom: 12px;
+    overflow-y: auto;
+    margin-bottom: 100px;
   }
 </style>
