@@ -1447,9 +1447,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), "networkOfferingId");
         }
 
-        if (associatedNetworkId != null && vlanId != null) {
-            throw new InvalidParameterValueException("Associated network and vlanId are mutually exclusive");
-        }
         Network associatedNetwork = null;
         if (associatedNetworkId != null) {
             if (vlanId != null) {
@@ -1460,7 +1457,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             associatedNetwork = implementAssociatedNetwork(associatedNetworkId, caller, owner, zone,
                     aclType == ACLType.Domain ? domainId : null,
-                    aclType == ACLType.Account ? owner.getAccountId() : null);
+                    aclType == ACLType.Account ? owner.getAccountId() : null,
+                    cidr, startIP, endIP);
         }
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
@@ -1478,7 +1476,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
-    private Network implementAssociatedNetwork(Long associatedNetworkId, Account caller, Account owner, DataCenter zone, Long domainId, Long accountId) throws InsufficientCapacityException {
+    private Network implementAssociatedNetwork(Long associatedNetworkId, Account caller, Account owner, DataCenter zone, Long domainId, Long accountId,
+                                               String cidr, String startIp, String endIp) throws InsufficientCapacityException {
         Network associatedNetwork = _networksDao.findById(associatedNetworkId);
         if (associatedNetwork == null) {
             throw new InvalidParameterValueException("Cannot find associated network with id = " + associatedNetworkId);
@@ -1492,6 +1491,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         if (domainId != null && associatedNetwork.getDomainId() != domainId) {
             throw new InvalidParameterValueException("The new network and associated network MUST be in same domain");
+        }
+        if (cidr != null && NetUtils.isNetworksOverlap(cidr, associatedNetwork.getCidr())) {
+            throw new InvalidParameterValueException("The cidr overlaps with associated network: " + associatedNetwork.getName());
+        }
+        List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);
+        for (NetworkDetailVO networkDetailVO : associatedNetworks) {
+            NetworkVO associatedNetwork2 = _networksDao.findById(networkDetailVO.getResourceId());
+            if (associatedNetwork2 != null) {
+                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(associatedNetwork2.getId());
+                if (vlans.isEmpty()) {
+                    continue;
+                }
+                String startIP2 = vlans.get(0).getIpRange().split("-")[0];
+                String endIP2 = vlans.get(0).getIpRange().split("-")[1];
+                if (StringUtils.isNoneBlank(startIp, startIP2) && NetUtils.ipRangesOverlap(startIp, endIp, startIP2, endIP2)) {
+                    throw new InvalidParameterValueException("The startIp/endIp overlaps with network: " + associatedNetwork2.getName());
+                }
+            }
         }
         associatedNetwork = implementedNetworkInCreation(caller, zone, associatedNetwork);
         if (associatedNetwork == null || associatedNetwork.getState() != Network.State.Implemented) {
@@ -2104,8 +2121,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(networkId), null);
-        if (! associatedNetworks.isEmpty()) {
-            NetworkVO associatedNetwork = _networksDao.findById(associatedNetworks.get(0).getResourceId());
+        for (NetworkDetailVO networkDetailVO : associatedNetworks) {
+            NetworkVO associatedNetwork = _networksDao.findById(networkDetailVO.getResourceId());
             if (associatedNetwork != null) {
                 String msg = String.format("Cannot delete network %s which is associated to another network %s", network.getUuid(), associatedNetwork.getUuid());
                 s_logger.debug(msg);
@@ -4683,7 +4700,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         } else if (associatedNetworkId != null) {
             DataCenter zone = _dcDao.findById(pNtwk.getDataCenterId());
-            Network associatedNetwork = implementAssociatedNetwork(associatedNetworkId, caller, owner, zone, null, owner.getAccountId());
+            Network associatedNetwork = implementAssociatedNetwork(associatedNetworkId, caller, owner, zone, null, owner.getAccountId(), cidr, startIp, endIp);
             uriString = associatedNetwork.getBroadcastUri().toString();
         } else {
             throw new InvalidParameterValueException("One of uri and associatedNetworkId must be passed");
