@@ -2115,9 +2115,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
-        // Perform permission check
-        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, network);
-
         if (forced && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new InvalidParameterValueException("Delete network with 'forced' option can only be called by root admins");
         }

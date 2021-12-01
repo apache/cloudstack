@@ -20,6 +20,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -142,6 +143,16 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Network;
     }
 
     @Override
