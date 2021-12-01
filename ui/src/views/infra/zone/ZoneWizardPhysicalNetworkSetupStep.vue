@@ -141,7 +141,7 @@
       :closable="true"
       :footer="null"
       @cancel="() => { showError = false }"
-      v-ctrl-enter="showError = false"
+      v-ctrl-enter="() => { showError = false }"
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
