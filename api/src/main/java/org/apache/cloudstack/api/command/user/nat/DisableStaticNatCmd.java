@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleCmd;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
@@ -38,7 +37,7 @@ import com.cloud.network.IpAddress;
 @APICommand(name = "disableStaticNat", description = "Disables static rule for given IP address", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DisableStaticNatCmd.class.getName());
     private static final String s_name = "disablestaticnatresponse";
 
     /////////////////////////////////////////////////////
