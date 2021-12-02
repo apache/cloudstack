@@ -586,10 +586,13 @@ export default {
       if (this.loadingNic) return
       this.loadingNic = true
       this.showUpdateIpModal = false
-      api('updateVmNicIp', {
-        nicId: this.editIpAddressNic,
-        ipaddress: this.editIpAddressValue
-      }).then(response => {
+      const params = {
+        nicId: this.editIpAddressNic
+      }
+      if (this.editIpAddressValue) {
+        params.ipaddress = this.editIpAddressValue
+      }
+      api('updateVmNicIp', params).then(response => {
         this.$pollJob({
           jobId: response.updatevmnicipresponse.jobid,
           successMessage: this.$t('message.success.update.ipaddress'),
