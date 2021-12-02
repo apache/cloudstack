@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
         responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveSnapshotCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ArchiveSnapshotCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
