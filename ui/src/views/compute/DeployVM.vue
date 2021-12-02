@@ -1651,9 +1651,9 @@ export default {
               }
             }
           }
-          if (this.securitygroupids.length > 0) {
-            deployVmData.securitygroupids = this.securitygroupids.join(',')
-          }
+        }
+        if (this.securitygroupids.length > 0) {
+          deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
         deployVmData.keypair = values.keypair
