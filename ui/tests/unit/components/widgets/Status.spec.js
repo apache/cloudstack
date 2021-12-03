@@ -200,7 +200,7 @@ describe('Components > Widgets > Status.vue', () => {
           }
         })
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-error"></span><span class="ant-badge-status-text">Alert</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-error"></span><span class="ant-badge-status-text">Alert</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -216,7 +216,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Allocated</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Allocated</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -232,7 +232,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Allocated</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Allocated</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -245,7 +245,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -256,7 +256,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -267,7 +267,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -278,7 +278,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
@@ -289,7 +289,7 @@ describe('Components > Widgets > Status.vue', () => {
         await router.isReady()
         await flushPromises()
         const received = wrapper.html()
-        const expected = '<span style="display: flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })

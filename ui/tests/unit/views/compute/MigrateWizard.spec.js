@@ -235,7 +235,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
             command: 'findHostsForMigration',
             virtualmachineid: 'test-id-value',
             keyword: 'test-query-value',
-            page: 2,
+            page: 1,
             pagesize: 20,
             response: 'json'
           }

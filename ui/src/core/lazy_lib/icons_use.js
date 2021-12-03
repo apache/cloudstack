@@ -32,6 +32,7 @@ import {
   BookOutlined,
   BuildOutlined,
   BulbOutlined,
+  BugOutlined,
   CalendarOutlined,
   CameraOutlined,
   CaretDownOutlined,
@@ -169,6 +170,7 @@ export default {
     app.component('BookOutlined', BookOutlined)
     app.component('BuildOutlined', BuildOutlined)
     app.component('BulbOutlined', BulbOutlined)
+    app.component('BugOutlined', BugOutlined)
     app.component('CalendarOutlined', CalendarOutlined)
     app.component('CameraOutlined', CameraOutlined)
     app.component('CaretDownOutlined', CaretDownOutlined)

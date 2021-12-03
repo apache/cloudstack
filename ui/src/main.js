@@ -33,6 +33,7 @@ import {
   apiMetaUtilPlugin,
   showIconPlugin,
   resourceTypePlugin,
+  fileSizeUtilPlugin,
   localesPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
@@ -46,6 +47,7 @@ vueApp.use(configUtilPlugin)
 vueApp.use(apiMetaUtilPlugin)
 vueApp.use(showIconPlugin)
 vueApp.use(resourceTypePlugin)
+vueApp.use(fileSizeUtilPlugin)
 vueApp.use(localesPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)

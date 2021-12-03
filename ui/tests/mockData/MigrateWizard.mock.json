@@ -28,7 +28,10 @@
       "message.success.migrating": "message.success.migrating",
       "message.migrating.failed": "message.migrating.failed",
       "message.migrating.processing": "message.migrating.processing",
-      "error.fetching.async.job.result": "error.fetching.async.job.result"
+      "error.fetching.async.job.result": "error.fetching.async.job.result",
+      "label.hostid": "label.hostid",
+      "message.migrate.instance.to.host": "message.migrate.instance.to.host",
+      "label.cancel": "label.cancel"
     },
     "de": {
       "name": "name-de",
