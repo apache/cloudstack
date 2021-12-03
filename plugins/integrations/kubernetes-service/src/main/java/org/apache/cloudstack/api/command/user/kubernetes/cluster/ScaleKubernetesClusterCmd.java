@@ -51,7 +51,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(StartKubernetesClusterCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ScaleKubernetesClusterCmd.class.getName());
     public static final String APINAME = "scaleKubernetesCluster";
 
     @Inject
