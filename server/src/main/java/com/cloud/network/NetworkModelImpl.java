@@ -1751,46 +1751,50 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (owner.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (network.getAclType() == ACLType.Domain) {
                 // Allow domain admins to operate shared network for their domain.
-                NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(network.getId());
-                if (networkDomainMap == null) {
-                    throw new CloudRuntimeException(String.format("Cannot find domain info for Shared network %s with aclType=Domain", network));
-                }
-                if (!_domainDao.isChildDomain(owner.getDomainId(), networkDomainMap.getDomainId())) {
-                    throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by domain admin %s", network, owner));
+                Long networkDomainId = getDomainIdForSharedNetwork(network);
+                if (!_domainDao.isChildDomain(owner.getDomainId(), networkDomainId)) {
+                    throw new PermissionDeniedException(String.format("Shared network %s belongs to another domain cannot be operated by domain admin %s", network, owner));
                 }
             } else if (network.getAclType() == ACLType.Account) {
                 // Allow domain admins to operate shared network for an account in their domain.
-                NetworkAccountVO networkAccountMap = _networkAccountDao.getAccountNetworkMapByNetworkId(network.getId());
-                if (networkAccountMap == null) {
-                    throw new CloudRuntimeException(String.format("Cannot find account info for Shared network %s with aclType=Account", network));
-                }
-                if (!_domainDao.isChildDomain(owner.getDomainId(), _accountDao.findByIdIncludingRemoved(networkAccountMap.getAccountId()).getDomainId())) {
-                    throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by domain admin %s", network, owner));
+                Long networkAccountId = getAccountIdForSharedNetwork(network);
+                if (!_domainDao.isChildDomain(owner.getDomainId(), _accountDao.findByIdIncludingRemoved(networkAccountId).getDomainId())) {
+                    throw new PermissionDeniedException(String.format("Shared network %s belongs to an account in another domain cannot be operated by domain admin %s", network, owner));
                 }
             }
         } else if (owner.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             // Allow normal users to operate shared network for themselves.
             if (network.getAclType() == ACLType.Account) {
                 // Allow domain admin to operate shared network for an account in its domain.
-                NetworkAccountVO networkAccountMap = _networkAccountDao.getAccountNetworkMapByNetworkId(network.getId());
-                if (networkAccountMap == null) {
-                    throw new CloudRuntimeException(String.format("Cannot find account info for Shared network %s with aclType=Account", network));
-                }
-                Account networkOwner = _accountDao.findByIdIncludingRemoved(networkAccountMap.getAccountId());
+                Long networkAccountId = getAccountIdForSharedNetwork(network);
+                Account networkOwner = _accountDao.findByIdIncludingRemoved(networkAccountId);
                 if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     checkProjectNetworkPermissions(owner, networkOwner, network);
                 } else if (networkOwner.getAccountId() != owner.getAccountId()) {
-                    throw new PermissionDeniedException(String.format("network %s cannot be operated by normal user %s", network, owner));
-                }
-                if (networkAccountMap.getAccountId() != owner.getAccountId()) {
-                    throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by this account %s", network, owner));
+                    throw new PermissionDeniedException(String.format("Shared network %s belongs to another account cannot be operated by normal user %s", network, owner));
                 }
             } else {
-                throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by normal user %s", network, owner));
+                throw new PermissionDeniedException(String.format("Shared network %s belongs to domain cannot be operated by normal user %s", network, owner));
             }
         } else if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by account %s", network, owner));
+            throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by account %s with type = %d", network, owner, owner.getType()));
         }
+    }
+
+    private Long getAccountIdForSharedNetwork(Network network) {
+        NetworkAccountVO networkAccountMap = _networkAccountDao.getAccountNetworkMapByNetworkId(network.getId());
+        if (networkAccountMap == null) {
+            throw new CloudRuntimeException(String.format("Cannot find account info for Shared network %s with aclType=Account", network));
+        }
+        return networkAccountMap.getAccountId();
+    }
+
+    private Long getDomainIdForSharedNetwork(Network network) {
+        NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(network.getId());
+        if (networkDomainMap == null) {
+            throw new CloudRuntimeException(String.format("Cannot find domain info for Shared network %s with aclType=Domain", network));
+        }
+        return networkDomainMap.getDomainId();
     }
 
     @Override
