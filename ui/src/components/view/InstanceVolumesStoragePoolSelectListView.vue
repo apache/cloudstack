@@ -26,15 +26,15 @@
       :dataSource="volumes"
       :pagination="false"
       :rowKey="record => record.id">
-      <div slot="size" slot-scope="record">
+      <template #size="{ record }">
         <span v-if="record.size">
           {{ $bytesToHumanReadableSize(record.size) }}
         </span>
-      </div>
-      <template slot="selectedstorage" slot-scope="record">
+      </template>
+      <template #selectedstorage="{ record }">
         <span>{{ record.selectedstoragename || '' }}</span>
       </template>
-      <template slot="select" slot-scope="record">
+      <template #select="{ record }">
         <div style="display: flex; justify-content: flex-end;"><a-button @click="openVolumeStoragePoolSelector(record)">{{ record.selectedstorageid ? $t('label.change') : $t('label.select') }}</a-button></div>
       </template>
     </a-table>
