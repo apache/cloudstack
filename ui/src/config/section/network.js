@@ -30,13 +30,19 @@ export default {
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
-        var fields = ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'domain', 'account', 'zonename']
-        if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('broadcasturi')
+        var fields = ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domain', 'account', 'zonename']
+        if (!['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
         return fields
       },
-      details: ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain'],
+      details: () => {
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain']
+        if (!['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields = fields.filter(function (e) { return e !== 'broadcasturi' })
+        }
+        return fields
+      },
       filters: ['all', 'isolated', 'shared', 'l2'],
       searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
