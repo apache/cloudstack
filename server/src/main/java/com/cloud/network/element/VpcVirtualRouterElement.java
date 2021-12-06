@@ -348,7 +348,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         //1st time it runs the domain router of the VM shall be returned
         List<DomainRouterVO> routers = super.getRouters(network, dest);
-        if (routers.size() > 0) {
+        if (routers != null && routers.size() > 0) {
             return routers;
         }
 
