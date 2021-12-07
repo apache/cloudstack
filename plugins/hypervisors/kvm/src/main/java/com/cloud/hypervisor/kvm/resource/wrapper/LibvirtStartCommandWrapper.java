@@ -19,8 +19,13 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
@@ -114,6 +119,22 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         if (result) {
                             break;
                         }
+                    }
+
+                    try {
+                        List<String> srcFiles = Arrays.asList(LibvirtComputingResource.srcFiles);
+                        srcFiles = srcFiles.stream()
+                                .map(file -> LibvirtComputingResource.BASEPATH + file)
+                                .collect(Collectors.toList());
+                        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+                        SshHelper.scpTo(controlIp, 3922, "root", pemFile, null,
+                                "/home/cloud/", srcFiles.toArray(new String[0]), "0755");
+                        // TODO: May want to remove this when cert patching logic is moved
+                        Thread.sleep(10000);
+                    } catch (Exception e) {
+                        String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
+                        s_logger.error(errMsg, e);
+                        return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
                     }
                 }
             }

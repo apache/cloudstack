@@ -39,7 +39,7 @@ setup_k8s_node() {
     log_it "Swap disabled"
 
     log_it "Setting up interfaces"
-    setup_common eth0
+#    setup_common eth0
     setup_system_rfc1918_internal
 
     log_it "Setting up entry in hosts"
