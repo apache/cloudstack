@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.PatchSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
@@ -424,5 +425,6 @@ public interface ManagementService {
 
     void cleanupVMReservations();
 
+    Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
 
 }

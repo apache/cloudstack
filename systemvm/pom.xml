@@ -88,6 +88,12 @@
                                         <include>agent.zip</include>
                                     </includes>
                                 </resource>
+                                <resource>
+                                    <directory>${basedir}</directory>
+                                    <includes>
+                                        <include>patch-sysvms.sh</include>
+                                    </includes>
+                                </resource>
                             </resources>
                         </configuration>
                     </execution>

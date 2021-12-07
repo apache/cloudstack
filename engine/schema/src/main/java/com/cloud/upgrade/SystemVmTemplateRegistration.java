@@ -36,6 +36,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.upgrade.dao.BasicTemplateDataStoreDaoImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
@@ -54,7 +55,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.ini4j.Ini;
@@ -64,7 +64,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -348,16 +347,6 @@ public class SystemVmTemplateRegistration {
             } catch (IOException e) {
                 LOGGER.error(String.format("Failed to delete temporary directory: %s", filePath));
             }
-        }
-    }
-
-    private String calculateChecksum(File file) {
-        try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
-            return DigestUtils.md5Hex(is);
-        } catch (IOException e) {
-            String errMsg = "Failed to calculate template checksum";
-            LOGGER.error(errMsg, e);
-            throw new CloudRuntimeException(errMsg, e);
         }
     }
 
@@ -690,7 +679,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    public static void parseMetadataFile() {
+    public static String parseMetadataFile() {
         try {
             Ini ini = new Ini();
             ini.load(new FileReader(METADATA_FILE));
@@ -702,6 +691,8 @@ public class SystemVmTemplateRegistration {
                 NewTemplateChecksum.put(hypervisorType, section.get("checksum"));
                 NewTemplateUrl.put(hypervisorType, section.get("downloadurl"));
             }
+            Ini.Section section = ini.get("default");
+            return section.get("version");
         } catch (Exception e) {
             String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
             LOGGER.error(errMsg, e);
@@ -735,7 +726,7 @@ public class SystemVmTemplateRegistration {
             }
 
             File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
-            String templateChecksum = calculateChecksum(tempFile);
+            String templateChecksum = EncryptionUtil.calculateChecksum(tempFile);
             if (!templateChecksum.equals(NewTemplateChecksum.get(getHypervisorType(hypervisor)))) {
                 LOGGER.error(String.format("Checksum mismatch: %s != %s ", templateChecksum, NewTemplateChecksum.get(getHypervisorType(hypervisor))));
                 templatesFound = false;
@@ -812,9 +803,6 @@ public class SystemVmTemplateRegistration {
     private void updateRegisteredTemplateDetails(Long templateId, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
-        if (Hypervisor.HypervisorType.VMware == templateVO.getHypervisorType()) {
-            templateVO.setDeployAsIs(true);
-        }
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
         if (!updated) {
             String errMsg = String.format("updateSystemVmTemplates:Exception while updating template with id %s to be marked as 'system'", templateId);

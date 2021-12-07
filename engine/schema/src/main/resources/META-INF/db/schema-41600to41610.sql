@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade from 4.16.0.0 to 4.16.1.0
 --;
+
+UPDATE `cloud`.`vm_template` set deploy_as_is = 0 where id = 8;

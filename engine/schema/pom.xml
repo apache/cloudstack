@@ -73,10 +73,11 @@
                         </goals>
                         <configuration>
                             <source>
-                                def projectVersion = project.version
+                                def projectVersion = project.properties['project.systemvm.template.version']
+                                println(projectVersion)
                                 String[] versionParts =  projectVersion.tokenize('.')
-                                pom.properties['cs.version'] = "4.16"
-                                pom.properties['patch.version'] = "0"
+                                pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
+                                pom.properties['patch.version'] = versionParts[2]
                             </source>
                         </configuration>
                     </execution>
@@ -146,7 +147,7 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>templateConfig.sh</argument>
-                                <armument>${project.version}</armument>
+                                <armument>${project.systemvm.template.version}</armument>
                             </arguments>
                         </configuration>
                     </execution>
