@@ -2530,7 +2530,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final boolean vlanSpecified = vlanId != null;
         if (vlanSpecified != ntwkOff.isSpecifyVlan()) {
             if (vlanSpecified) {
-                if (! isSharedNetworkWithoutSpecifyVlan(ntwkOff) && ! isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                if (!isSharedNetworkWithoutSpecifyVlan(ntwkOff) && !isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
                     throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
                 }
             } else {
@@ -3228,7 +3228,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         continue;
                     }
 
-                    if (! networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(networkId), null).isEmpty()) {
+                    if (!networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(networkId), null).isEmpty()) {
                         s_logger.debug(String.format("Network %s is associated to a shared network, skipping", networkId));
                         continue;
                     }

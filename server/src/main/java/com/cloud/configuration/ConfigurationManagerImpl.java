@@ -112,6 +112,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -4329,10 +4330,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final String otherVlanGateway = vlan.getVlanGateway();
             final String otherVlanNetmask = vlan.getVlanNetmask();
             // Continue if it's not IPv4
-            if ( otherVlanGateway == null || otherVlanNetmask == null ) {
-                continue;
-            }
-            if ( vlan.getNetworkId() == null ) {
+            if (ObjectUtils.anyNull(otherVlanGateway, otherVlanNetmask, vlan.getNetworkId())) {
                 continue;
             }
             final String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway, otherVlanNetmask);
@@ -4357,11 +4355,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             + otherVlanGateway + " ,and netmask " + otherVlanNetmask
                             + ", Please specify the gateway/netmask if you want to extend ip range" );
                 }
-                if (!NetUtils.is31PrefixCidr(newCidr)) {
-                    if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                        throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-                                " Please specify a different start IP/end IP.");
-                    }
+                if (!NetUtils.is31PrefixCidr(newCidr) && NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                    throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                            " Please specify a different start IP/end IP.");
                 }
             } else {
                 // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type

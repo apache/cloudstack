@@ -100,7 +100,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
             type = CommandType.UUID,
             entityType = NetworkResponse.class,
             since = "4.17.0",
-            description = "List networks by associated networks. only available if create a Shared network")
+            description = "List networks by associated networks. Only available if create a Shared network.")
     private Long associatedNetworkId;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,

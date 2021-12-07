@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -68,9 +69,6 @@ public class CreatePrivateGatewayByAdminCmd extends CreatePrivateGatewayCmd impl
     }
 
     public Boolean getBypassVlanOverlapCheck() {
-        if (bypassVlanOverlapCheck != null) {
-            return bypassVlanOverlapCheck;
-        }
-        return false;
+        return BooleanUtils.toBoolean(bypassVlanOverlapCheck);
     }
 }
