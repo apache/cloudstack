@@ -44,8 +44,15 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.PatchSystemVmAnswer;
+import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.dao.DomainVlanMapDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.network.Networks;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -225,6 +232,7 @@ import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.PatchSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
@@ -763,6 +771,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
+    private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.DomainRouter };
 
     @Inject
     public AccountManager _accountMgr;
@@ -825,7 +834,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private StoragePoolJoinDao _poolJoinDao;
     @Inject
-    private NetworkDao _networkDao;
+    private NetworkDao networkDao;
     @Inject
     private StorageManager _storageMgr;
     @Inject
@@ -898,6 +907,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private AnnotationDao annotationDao;
     @Inject
     private DomainVlanMapDao _domainVlanMapDao;
+    @Inject
+    private NicDao nicDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -2172,9 +2183,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (ip == null) {
                     throw new InvalidParameterValueException("Please specify a valid ipaddress id");
                 }
-                network = _networkDao.findById(ip.getSourceNetworkId());
+                network = networkDao.findById(ip.getSourceNetworkId());
             } else {
-                network = _networkDao.findById(networkId);
+                network = networkDao.findById(networkId);
             }
             if (network == null || network.getGuestType() != Network.GuestType.Shared) {
                 throw new InvalidParameterValueException("Please specify a valid network id");
@@ -2236,7 +2247,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (associatedNetworkId != null) {
-            _accountMgr.checkAccess(caller, null, false, _networkDao.findById(associatedNetworkId));
+            _accountMgr.checkAccess(caller, null, false, networkDao.findById(associatedNetworkId));
             sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
         }
         if (vpcId != null) {
@@ -2252,7 +2263,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             Long zoneId = zone;
             Account owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
             if (associatedNetworkId != null) {
-                NetworkVO guestNetwork = _networkDao.findById(associatedNetworkId);
+                NetworkVO guestNetwork = networkDao.findById(associatedNetworkId);
                 if (zoneId == null) {
                     zoneId = guestNetwork.getDataCenterId();
                 } else if (zoneId != guestNetwork.getDataCenterId()) {
@@ -3527,6 +3538,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UploadResourceIconCmd.class);
         cmdList.add(DeleteResourceIconCmd.class);
         cmdList.add(ListResourceIconCmd.class);
+        cmdList.add(PatchSystemVMCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3932,7 +3944,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean elasticLoadBalancerEnabled = false;
         boolean KVMSnapshotEnabled = false;
         String supportELB = "false";
-        final List<NetworkVO> networks = _networkDao.listSecurityGroupEnabledNetworks();
+        final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
             final String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
@@ -4631,6 +4643,72 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         _dpMgr.cleanupVMReservations();
+    }
+
+    @Override
+    public Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd) {
+        Long systemVmId = cmd.getId();
+        boolean forced = cmd.isForced();
+
+        if (systemVmId == null) {
+            throw new InvalidParameterValueException("Please provide a valid ID of a system VM to be patched");
+        }
+
+        final VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, systemVmTypes);
+        if (systemVm == null) {
+            throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
+        }
+
+        return updateSystemVM(systemVm, forced);
+    }
+
+
+    private String getControlIp(final long systemVmId) {
+        String controlIpAddress = null;
+        final List<NicVO> nics = nicDao.listByVmId(systemVmId);
+        for (final NicVO n : nics) {
+            final NetworkVO nc = networkDao.findById(n.getNetworkId());
+            if (nc != null && nc.getTrafficType() == Networks.TrafficType.Control) {
+                controlIpAddress = n.getIPv4Address();
+                // router will have only one control IP
+                break;
+            }
+        }
+
+        if (controlIpAddress == null) {
+            s_logger.warn("Unable to find systemVm's control ip in its attached NICs!. systemVmId: " + systemVmId);
+            VMInstanceVO systemVM = _vmInstanceDao.findById(systemVmId);
+            return systemVM.getPrivateIpAddress();
+        }
+
+        return controlIpAddress;
+    }
+
+    private Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced) {
+        return patchSystemVm(systemVM, forced);
+    }
+
+    private Pair<Boolean, String> patchSystemVm(VMInstanceVO systemVM, boolean forced) {
+        PatchSystemVmAnswer answer = new PatchSystemVmAnswer();
+        final PatchSystemVmCommand command = new PatchSystemVmCommand();
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getControlIp(systemVM.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, systemVM.getInstanceName());
+        command.setForced(forced);
+        try {
+            answer = (PatchSystemVmAnswer) _agentMgr.send(systemVM.getHostId(), command);
+            if (!answer.getResult()) {
+                String errMsg = String.format("Failed to patch systemVM %s due to %s", systemVM.getInstanceName(), answer.getDetails());
+                s_logger.error(errMsg);
+                return new Pair<>(false, errMsg);
+            }
+
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errMsg = "SystemVM live patch failed";
+            s_logger.error(errMsg, e);
+            return new Pair<>(false,  String.format("%s due to: %s", errMsg, e.getMessage()));
+        }
+        s_logger.info(String.format("Successfully patch system VM %s", systemVM.getInstanceName()));
+        return new Pair<>(true, answer.getDetails());
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

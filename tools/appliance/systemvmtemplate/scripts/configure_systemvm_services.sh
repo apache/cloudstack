@@ -68,6 +68,7 @@ function install_cloud_scripts() {
   chmod -x /etc/systemd/system/* || true
 
   systemctl daemon-reload
+  systemctl enable cloud-preinit
   systemctl enable cloud-early-config
   systemctl enable cloud-postinit
 }
