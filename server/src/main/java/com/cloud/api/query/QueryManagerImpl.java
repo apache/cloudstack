@@ -270,6 +270,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private static final String ID_FIELD = "id";
 
+    private static final String SYSTEM_USE = "systemUse";
+
     @Inject
     private AccountManager _accountMgr;
 
@@ -2089,7 +2091,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.IN);
+        sb.and().op(SYSTEM_USE, sb.entity().isSystemUse(), SearchCriteria.Op.IN);
         // display UserVM volumes only
         sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.IN);
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
@@ -2118,7 +2120,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         setIdsListToSearchCriteria(sc, ids);
 
-        sc.setParameters("systemUse", 0);
+        sc.setParameters(SYSTEM_USE, 0);
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
@@ -2171,7 +2173,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Display all volumes for ROOT admin
         if (forSystemVms != null && forSystemVms && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            sc.setParameters("systemUse", 0, 1);
+            sc.setParameters(SYSTEM_USE, 0, 1);
             sc.setParameters("type",
                     VirtualMachine.Type.User, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
         }
@@ -2196,7 +2198,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vrIds[i++] = v.getId();
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
-        return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
     }
 
     @Override
@@ -2938,7 +2940,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
                 }
             } else { // domain + all ancestors
-                sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
+                sc.addAnd(SYSTEM_USE, SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
             }
 
         }
@@ -3194,7 +3196,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (isSystem != null) {
             // note that for non-root users, isSystem is always false when
             // control comes to here
-            sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+            sc.addAnd(SYSTEM_USE, SearchCriteria.Op.EQ, isSystem);
         }
 
         if (name != null) {
