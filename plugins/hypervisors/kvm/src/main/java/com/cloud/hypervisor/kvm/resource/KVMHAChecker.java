@@ -22,8 +22,11 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
@@ -34,6 +37,21 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     public KVMHAChecker(List<NfsStoragePool> pools, String host) {
         this.nfsStoragePools = pools;
         this.hostIp = host;
+    }
+
+    public static String getIpAddress(String sourceHost) {
+        try {
+            String[] hostArr = sourceHost.split(",");
+            String sourceHostIP = "";
+            for (String host : hostArr) {
+                InetAddress addr = InetAddress.getByName(host);
+                sourceHostIP += addr.getHostAddress() + ",";
+            }
+            return sourceHostIP;
+        } catch (UnknownHostException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+            return null;
+        }
     }
 
     /*
@@ -50,9 +68,16 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 
         for (NfsStoragePool pool : nfsStoragePools) {
             Script cmd = new Script(s_heartBeatPath, heartBeatCheckerTimeout, s_logger);
-            cmd.add("-i", pool._poolIp);
-            cmd.add("-p", pool._poolMountSourcePath);
-            cmd.add("-m", pool._mountDestPath);
+            if (pool._poolType == StoragePoolType.NetworkFilesystem) {
+                cmd.add("-i", pool._poolIp);
+                cmd.add("-p", pool._poolMountSourcePath);
+                cmd.add("-m", pool._mountDestPath);
+            } else if (pool._poolType == StoragePoolType.RBD) {
+                cmd = new Script(s_heartBeatPathRbd, heartBeatCheckerTimeout, s_logger);
+                cmd.add("-i", getIpAddress(pool._poolSourceHost));
+                cmd.add("-p", pool._poolMountSourcePath);
+                cmd.add("-s", pool._poolAuthSecret);
+            }
             cmd.add("-h", hostIp);
             cmd.add("-r");
             cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));

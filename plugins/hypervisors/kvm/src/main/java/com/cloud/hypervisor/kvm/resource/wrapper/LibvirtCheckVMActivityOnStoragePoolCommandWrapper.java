@@ -43,9 +43,12 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
         final ExecutorService executors = Executors.newSingleThreadExecutor();
         final KVMHAMonitor monitor = libvirtComputingResource.getMonitor();
         final StorageFilerTO pool = command.getPool();
-        if (Storage.StoragePoolType.NetworkFilesystem == pool.getType()){
+        if (Storage.StoragePoolType.NetworkFilesystem == pool.getType() || Storage.StoragePoolType.RBD == pool.getType()){
             final NfsStoragePool nfspool = monitor.getStoragePool(pool.getUuid());
-            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, command.getHost().getPrivateNetwork().getIp(), command.getVolumeList(), libvirtComputingResource.getVmActivityCheckPath(), command.getSuspectTimeInSeconds());
+            String vmActivityCheckPath = "";
+            if (Storage.StoragePoolType.NetworkFilesystem == pool.getType())    vmActivityCheckPath = libvirtComputingResource.getVmActivityCheckPath();
+            else if (Storage.StoragePoolType.RBD == pool.getType())    vmActivityCheckPath = libvirtComputingResource.getVmActivityCheckPathRbd();
+            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, command.getHost().getPrivateNetwork().getIp(), command.getVolumeList(), vmActivityCheckPath, command.getSuspectTimeInSeconds(), pool.getType());
             final Future<Boolean> future = executors.submit(ha);
             try {
                 final Boolean result = future.get();

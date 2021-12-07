@@ -24,6 +24,7 @@ import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
@@ -32,6 +33,7 @@ public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
+    protected static String s_heartBeatPathRbd;
     protected long _heartBeatUpdateTimeout = 60000;
     protected long _heartBeatUpdateFreq = 60000;
     protected long _heartBeatUpdateMaxTries = 5;
@@ -47,13 +49,19 @@ public class KVMHABase {
         String _poolMountSourcePath;
         String _mountDestPath;
         PoolType _type;
+        StoragePoolType _poolType;
+        String _poolAuthSecret;
+        String _poolSourceHost;
 
-        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
+        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, StoragePoolType poolType, String poolAuthSecret, String poolSourceHost) {
             _poolUUID = poolUUID;
             _poolIp = poolIp;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
             _type = type;
+            _poolType = poolType;
+            _poolAuthSecret = poolAuthSecret;
+            _poolSourceHost = poolSourceHost;
         }
     }
 

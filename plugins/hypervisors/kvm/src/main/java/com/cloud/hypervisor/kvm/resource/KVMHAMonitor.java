@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -31,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
 
@@ -40,12 +43,13 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private final String hostPrivateIp;
 
-    public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath) {
+    public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath, String scriptPathRbd) {
         if (pool != null) {
             storagePool.put(pool._poolUUID, pool);
         }
         hostPrivateIp = host;
         configureHeartBeatPath(scriptPath);
+        configureHeartBeatPathRbd(scriptPathRbd);
 
         _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
         rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
@@ -53,6 +57,10 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private static synchronized void configureHeartBeatPath(String scriptPath) {
         KVMHABase.s_heartBeatPath = scriptPath;
+    }
+
+    private static synchronized void configureHeartBeatPathRbd(String scriptPathRbd) {
+        KVMHABase.s_heartBeatPathRbd = scriptPathRbd;
     }
 
     public void addStoragePool(NfsStoragePool pool) {
@@ -80,6 +88,21 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public NfsStoragePool getStoragePool(String uuid) {
         synchronized (storagePool) {
             return storagePool.get(uuid);
+        }
+    }
+
+    public static String getIpAddress(String sourceHost) {
+        try {
+            String[] hostArr = sourceHost.split(",");
+            String sourceHostIP = "";
+            for (String host : hostArr) {
+                InetAddress addr = InetAddress.getByName(host);
+                sourceHostIP += addr.getHostAddress() + ",";
+            }
+            return sourceHostIP;
+        } catch (UnknownHostException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+            return null;
         }
     }
 
@@ -154,9 +177,16 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private Script createHeartBeatCommand(NfsStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
-        cmd.add("-i", primaryStoragePool._poolIp);
-        cmd.add("-p", primaryStoragePool._poolMountSourcePath);
-        cmd.add("-m", primaryStoragePool._mountDestPath);
+        if (primaryStoragePool._poolType == StoragePoolType.NetworkFilesystem) {
+            cmd.add("-i", primaryStoragePool._poolIp);
+            cmd.add("-p", primaryStoragePool._poolMountSourcePath);
+            cmd.add("-m", primaryStoragePool._mountDestPath);
+        } else if (primaryStoragePool._poolType == StoragePoolType.RBD) {
+            cmd = new Script(s_heartBeatPathRbd, _heartBeatUpdateTimeout, s_logger);
+            cmd.add("-i", getIpAddress(primaryStoragePool._poolSourceHost));
+            cmd.add("-p", primaryStoragePool._poolMountSourcePath);
+            cmd.add("-s", primaryStoragePool._poolAuthSecret);
+        }
 
         if (hostValidation) {
             cmd.add("-h", hostPrivateIp);

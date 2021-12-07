@@ -331,7 +331,10 @@ public class KVMStoragePoolManager {
 
         // LibvirtStorageAdaptor-specific statement
         if (type == StoragePoolType.NetworkFilesystem && primaryStorage) {
-            KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(pool.getUuid(), host, path, pool.getLocalPath(), PoolType.PrimaryStorage);
+            KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(pool.getUuid(), host, path, pool.getLocalPath(), PoolType.PrimaryStorage, StoragePoolType.NetworkFilesystem, null, null);
+            _haMonitor.addStoragePool(nfspool);
+        } else if (type == StoragePoolType.RBD && primaryStorage) {
+            KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(pool.getUuid(), host, path, pool.getLocalPath(), PoolType.PrimaryStorage, StoragePoolType.RBD, pool.getAuthSecret(), pool.getSourceHost());
             _haMonitor.addStoragePool(nfspool);
         }
         StoragePoolInformation info = new StoragePoolInformation(name, host, port, path, userInfo, type, primaryStorage);

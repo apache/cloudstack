@@ -288,7 +288,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _resizeVolumePath;
     private String _createTmplPath;
     private String _heartBeatPath;
+    private String _heartBeatPathRbd;
     private String _vmActivityCheckPath;
+    private String _vmActivityCheckPathRbd;
     private String _securityGroupPath;
     private String _ovsPvlanDhcpHostPath;
     private String _ovsPvlanVmPath;
@@ -599,6 +601,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _vmActivityCheckPath;
     }
 
+    public String getVmActivityCheckPathRbd() {
+        return _vmActivityCheckPathRbd;
+    }
+
     public String getOvsPvlanDhcpHostPath() {
         return _ovsPvlanDhcpHostPath;
     }
@@ -872,6 +878,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find kvmheartbeat.sh");
         }
 
+        _heartBeatPathRbd = Script.findScript(kvmScriptsDir, "kvmheartbeat_rbd.sh");
+        if (_heartBeatPathRbd == null) {
+            throw new ConfigurationException("Unable to find kvmheartbeat_rbd.sh");
+        }
+
         _createvmPath = Script.findScript(storageScriptsDir, "createvm.sh");
         if (_createvmPath == null) {
             throw new ConfigurationException("Unable to find the createvm.sh");
@@ -890,6 +901,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _vmActivityCheckPath = Script.findScript(kvmScriptsDir, "kvmvmactivity.sh");
         if (_vmActivityCheckPath == null) {
             throw new ConfigurationException("Unable to find kvmvmactivity.sh");
+        }
+
+        _vmActivityCheckPathRbd = Script.findScript(kvmScriptsDir, "kvmvmactivity_rbd.sh");
+        if (_vmActivityCheckPathRbd == null) {
+            throw new ConfigurationException("Unable to find kvmvmactivity_rbd.sh");
         }
 
         _createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
@@ -1163,7 +1179,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(_privateNic);
 
-        _monitor = new KVMHAMonitor(null, info[0], _heartBeatPath);
+        _monitor = new KVMHAMonitor(null, info[0], _heartBeatPath, _heartBeatPathRbd);
         final Thread ha = new Thread(_monitor);
         ha.start();
 
@@ -3752,7 +3768,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
         } else if (platformEmulator.contains("Ubuntu") ||
-                StringUtils.startsWithAny(platformEmulator,
+        StringUtils.startsWithAny(platformEmulator,
                         "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle", "Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
