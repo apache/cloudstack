@@ -342,6 +342,7 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -1751,35 +1752,33 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-                IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
-                if (oldIP != null) {
-                    oldIP.setVmIp(ipaddr);
-                    _ipAddressDao.persist(oldIP);
+                List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedVmId(vm.getId());
+                for (IPAddressVO publicIp : publicIps) {
+                    if (nicVO.getIPv4Address().equals(publicIp.getVmIp() ) && publicIp.getAssociatedWithNetworkId() == network.getId()) {
+                        publicIp.setVmIp(ipaddr);
+                        _ipAddressDao.persist(publicIp);
+                    }
                 }
             }
-            // implementing the network elements and resources as a part of vm nic ip update if network has services and it is in Implemented state
-            if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && network.getState() == Network.State.Implemented) {
-                User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-                ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
-                DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
-
-                s_logger.debug("Implementing the network " + network + " elements and resources as a part of vm nic ip update");
-                try {
-                    // implement the network elements and rules again
-                    _networkMgr.implementNetworkElementsAndResources(dest, context, network, offering);
-                } catch (Exception ex) {
-                    s_logger.warn("Failed to implement network " + network + " elements and resources as a part of vm nic ip update due to ", ex);
-                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of vm nic ip update");
-                    e.addProxyObject(network.getUuid(), "networkId");
-                    // restore to old ip address
-                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-                        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
-                        if (oldIP != null) {
-                            oldIP.setVmIp(nicVO.getIPv4Address());
-                            _ipAddressDao.persist(oldIP);
-                        }
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
+                List<LoadBalancerVMMapVO> loadBalancerVMMaps = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
+                for (LoadBalancerVMMapVO map : loadBalancerVMMaps) {
+                    long lbId = map.getLoadBalancerId();
+                    FirewallRuleVO rule = _rulesDao.findById(lbId);
+                    if (nicVO.getIPv4Address().equals(map.getInstanceIp()) && network.getId() == rule.getNetworkId()) {
+                        map.setInstanceIp(ipaddr);
+                        _loadBalancerVMMapDao.persist(map);
                     }
-                    throw e;
+                }
+            }
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.PortForwarding)) {
+                List<PortForwardingRuleVO> firewallRules = _portForwardingDao.listByVm(vm.getId());
+                for (PortForwardingRuleVO firewallRule : firewallRules) {
+                    FirewallRuleVO rule = _rulesDao.findById(firewallRule.getId());
+                    if (nicVO.getIPv4Address().equals(firewallRule.getDestinationIpAddress().toString()) && network.getId() == rule.getNetworkId()) {
+                        firewallRule.setDestinationIpAddress(new Ip(ipaddr));
+                        _portForwardingDao.persist(firewallRule);
+                    }
                 }
             }
         } else if (dc.getNetworkType() == NetworkType.Basic || network.getGuestType()  == Network.GuestType.Shared) {
