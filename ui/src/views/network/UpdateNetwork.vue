@@ -106,6 +106,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -156,11 +157,11 @@ export default {
     }
   },
   methods: {
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
     fetchData () {
       this.fetchNetworkOfferingData()
+    },
+    isAdmin () {
+      return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
