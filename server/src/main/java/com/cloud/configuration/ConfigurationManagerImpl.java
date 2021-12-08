@@ -4922,8 +4922,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean releasePublicIpRange(final long vlanDbId, final long userId, final Account caller) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if(vlan == null) {
-            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null. This is NPE situation.");
-            return false;
+            // Nothing to do if vlan can't be found
+            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null.");
+            return true;
         }
 
         // Verify range is dedicated
