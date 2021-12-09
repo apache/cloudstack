@@ -69,11 +69,10 @@
 <script>
 import store from '@/store'
 import RenderIcon from '@/utils/renderIcon'
-import TemplateIsoRadioGroup from '@/views/compute/wizard/TemplateIsoRadioGroup'
 
 export default {
   name: 'HeaderNotice',
-  components: { TemplateIsoRadioGroup, RenderIcon },
+  components: { RenderIcon },
   data () {
     return {
       loading: false,

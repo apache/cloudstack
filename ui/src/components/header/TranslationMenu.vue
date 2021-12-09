@@ -62,7 +62,7 @@ export default {
   },
   mounted () {
     this.language = this.$localStorage.get('LOCALE') || 'en'
-    // this.setLocale(this.language)
+    this.setLocale(this.language)
   },
   methods: {
     moment,
