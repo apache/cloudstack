@@ -238,7 +238,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private ClusterDao _clusterDao;
     @Inject
-    private UserVmDao _userVmDao;
+    protected UserVmDao _userVmDao;
     @Inject
     private VolumeDao _volsDao;
     @Inject
@@ -291,7 +291,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
-    private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
+    protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
     private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<String, VolumeStats>();
     private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<Long, StorageStats>();
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
@@ -618,6 +618,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
                 }
+
+                cleanUpVirtualMachineStats();
 
             } catch (Throwable t) {
                 s_logger.error("Error trying to retrieve VM stats", t);
@@ -1482,6 +1484,32 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             statsInMemory.setTargetMemoryKBs(statsForCurrentIteration.getTargetMemoryKBs());
 
             _VmStats.put(statsForCurrentIteration.getVmId(), statsInMemory);
+        }
+    }
+
+    /**
+     * Removes stats for a given virtual machine.
+     * @param vmId ID of the virtual machine to remove stats.
+     */
+    public void removeVirtualMachineStats(Long vmId) {
+        s_logger.debug(String.format("Removing stats from VM with ID: %s .",vmId));
+        _VmStats.remove(vmId);
+    }
+
+    /**
+     * Removes stats of virtual machines that are not running from memory.
+     */
+    protected void cleanUpVirtualMachineStats() {
+        List<Long> allRunningVmIds = new ArrayList<Long>();
+        for (UserVmVO vm : _userVmDao.listAllRunning()) {
+            allRunningVmIds.add(vm.getId());
+        }
+
+        List<Long> vmIdsToRemoveStats = new ArrayList<Long>(_VmStats.keySet());
+        vmIdsToRemoveStats.removeAll(allRunningVmIds);
+
+        for (Long vmId : vmIdsToRemoveStats) {
+            removeVirtualMachineStats(vmId);
         }
     }
 

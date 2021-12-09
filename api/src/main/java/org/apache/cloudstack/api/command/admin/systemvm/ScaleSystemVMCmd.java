@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -47,7 +46,7 @@ import com.cloud.vm.VirtualMachine;
         + "The system vm must be in a \"Stopped\" state for " + "this command to take effect.", entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ScaleSystemVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ScaleSystemVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";
 
     /////////////////////////////////////////////////////
