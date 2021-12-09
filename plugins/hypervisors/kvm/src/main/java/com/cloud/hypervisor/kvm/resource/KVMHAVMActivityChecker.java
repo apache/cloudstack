@@ -23,8 +23,6 @@ import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
 import java.util.concurrent.Callable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolean> {
     private static final Logger LOG = Logger.getLogger(KVMHAVMActivityChecker.class);
@@ -48,21 +46,6 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
         this.poolType = poolType;
     }
 
-    public static String getIpAddress(String sourceHost) {
-        try {
-            String[] hostArr = sourceHost.split(",");
-            String sourceHostIP = "";
-            for (String host : hostArr) {
-                InetAddress addr = InetAddress.getByName(host);
-                sourceHostIP += addr.getHostAddress() + ",";
-            }
-            return sourceHostIP;
-        } catch (UnknownHostException e) {
-            LOG.debug("Failed to get connection: " + e.getMessage());
-            return null;
-        }
-    }
-
     @Override
     public Boolean checkingHeartBeat() {
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), LOG);
@@ -73,7 +56,7 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
             cmd.add("-m", nfsStoragePool._mountDestPath);
             poolIp = nfsStoragePool._poolIp;
         } else if (poolType == StoragePoolType.RBD) {
-            cmd.add("-i", getIpAddress(rbdStoragePool._poolSourceHost));
+            cmd.add("-i", getRbdMonIpAddress(rbdStoragePool._poolSourceHost));
             cmd.add("-p", rbdStoragePool._poolMountSourcePath);
             cmd.add("-s", rbdStoragePool._poolAuthSecret);
             poolIp = rbdStoragePool._poolIp;

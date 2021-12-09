@@ -24,8 +24,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
@@ -38,21 +36,6 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
         this.nfsStoragePools = nfspools;
         this.rbdStoragePools = rbdpools;
         this.hostIp = host;
-    }
-
-    public static String getIpAddress(String sourceHost) {
-        try {
-            String[] hostArr = sourceHost.split(",");
-            String sourceHostIP = "";
-            for (String host : hostArr) {
-                InetAddress addr = InetAddress.getByName(host);
-                sourceHostIP += addr.getHostAddress() + ",";
-            }
-            return sourceHostIP;
-        } catch (UnknownHostException e) {
-            s_logger.debug("Failed to get connection: " + e.getMessage());
-            return null;
-        }
     }
 
     /*
@@ -92,7 +75,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 
         for (RbdStoragePool pool : rbdStoragePools) {
             Script cmd = new Script(s_heartBeatPathRbd, heartBeatCheckerTimeout, s_logger);
-            cmd.add("-i", getIpAddress(pool._poolSourceHost));
+            cmd.add("-i", getRbdMonIpAddress(pool._poolSourceHost));
             cmd.add("-p", pool._poolMountSourcePath);
             cmd.add("-s", pool._poolAuthSecret);
             cmd.add("-h", hostIp);

@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
 
@@ -113,21 +111,6 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public RbdStoragePool getRbdStoragePool(String uuid) {
         synchronized (rbdstoragePool) {
             return rbdstoragePool.get(uuid);
-        }
-    }
-
-    public static String getIpAddress(String sourceHost) {
-        try {
-            String[] hostArr = sourceHost.split(",");
-            String sourceHostIP = "";
-            for (String host : hostArr) {
-                InetAddress addr = InetAddress.getByName(host);
-                sourceHostIP += addr.getHostAddress() + ",";
-            }
-            return sourceHostIP;
-        } catch (UnknownHostException e) {
-            s_logger.debug("Failed to get connection: " + e.getMessage());
-            return null;
         }
     }
 
@@ -286,7 +269,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private Script createRbdHeartBeatCommand(RbdStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
         Script cmd = new Script(s_heartBeatPathRbd, _heartBeatUpdateTimeout, s_logger);
-        cmd.add("-i", getIpAddress(primaryStoragePool._poolSourceHost));
+        cmd.add("-i", getRbdMonIpAddress(primaryStoragePool._poolSourceHost));
         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
         cmd.add("-s", primaryStoragePool._poolAuthSecret);
 

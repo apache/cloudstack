@@ -17,6 +17,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
@@ -24,7 +26,6 @@ import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
@@ -49,15 +50,13 @@ public class KVMHABase {
         String _poolMountSourcePath;
         String _mountDestPath;
         PoolType _type;
-        StoragePoolType _poolType;
 
-        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, StoragePoolType poolType) {
+        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
             _poolUUID = poolUUID;
             _poolIp = poolIp;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
             _type = type;
-            _poolType = poolType;
         }
     }
 
@@ -67,17 +66,15 @@ public class KVMHABase {
         String _poolMountSourcePath;
         String _mountDestPath;
         PoolType _type;
-        StoragePoolType _poolType;
         String _poolAuthSecret;
         String _poolSourceHost;
 
-        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, StoragePoolType poolType, String poolAuthSecret, String poolSourceHost) {
+        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthSecret, String poolSourceHost) {
             _poolUUID = poolUUID;
             _poolIp = poolIp;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
             _type = type;
-            _poolType = poolType;
             _poolAuthSecret = poolAuthSecret;
             _poolSourceHost = poolSourceHost;
         }
@@ -205,6 +202,21 @@ public class KVMHABase {
         }
 
         return result;
+    }
+
+    public static String getRbdMonIpAddress(String sourceHost) {
+        try {
+            String[] hostArr = sourceHost.split(",");
+            String sourceHostIP = "";
+            for (String host : hostArr) {
+                InetAddress addr = InetAddress.getByName(host);
+                sourceHostIP += addr.getHostAddress() + ",";
+            }
+            return sourceHostIP;
+        } catch (UnknownHostException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+            return null;
+        }
     }
 
     public Boolean checkingHeartBeat() {
