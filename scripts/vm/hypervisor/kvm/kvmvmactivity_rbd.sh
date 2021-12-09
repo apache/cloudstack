@@ -91,8 +91,7 @@ fi
 
 # First check: heartbeat file
 now=$(date +%s)
-#hb=$(rados -p $PoolName get hb_$HostIP hb_$HostIP | cat hb_$HostIP)
-hb=$(rados -p $PoolName get hb_$HostIP -)
+hb=$(rados -p $PoolName get hb-$HostIP -)
 diff=$(expr $now - $hb)
 if [ $diff -lt 61 ]; then
     echo "=====> ALIVE <====="
@@ -114,21 +113,21 @@ for UUID in $(echo $UUIDList | sed 's/,/ /g'); do
 done
 
 latestUpdateTime=$(echo -e $lastestUUIDList 2> /dev/null | sort -nr | head -1)
-obj=$(rados -p $PoolName ls | grep ac_$HostIP)
+obj=$(rados -p $PoolName ls | grep ac-$HostIP)
 if [ $? -gt 0 ]; then
-    rados -p $PoolName create ac_$HostIP
-    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac_$HostIP -
+    rados -p $PoolName create ac-$HostIP
+    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP -
     if [[ $latestUpdateTime -gt $SuspectTime ]]; then
         echo "=====> ALIVE <====="
     else
         echo "=====> Considering host as DEAD due to file [RBD pool] does not exists and condition [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
     fi
 else
-    acTime=$(rados -p $PoolName get ac_$HostIP -)
+    acTime=$(rados -p $PoolName get ac-$HostIP -)
     arrTime=(${acTime//:/ })
     lastSuspectTime=${arrTime[0]}
     lastUpdateTime=${arrTime[1]}
-    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac_$HostIP -
+    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP -
     suspectTimeDiff=$(expr $SuspectTime - $lastSuspectTime)
     if [ $suspectTimeDiff -lt 0 ]; then
         if [[ $latestUpdateTime -gt $SuspectTime ]]; then

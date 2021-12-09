@@ -50,10 +50,28 @@ public class KVMHABase {
         String _mountDestPath;
         PoolType _type;
         StoragePoolType _poolType;
+
+        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, StoragePoolType poolType) {
+            _poolUUID = poolUUID;
+            _poolIp = poolIp;
+            _poolMountSourcePath = poolSourcePath;
+            _mountDestPath = mountDestPath;
+            _type = type;
+            _poolType = poolType;
+        }
+    }
+
+    public static class RbdStoragePool {
+        String _poolUUID;
+        String _poolIp;
+        String _poolMountSourcePath;
+        String _mountDestPath;
+        PoolType _type;
+        StoragePoolType _poolType;
         String _poolAuthSecret;
         String _poolSourceHost;
 
-        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, StoragePoolType poolType, String poolAuthSecret, String poolSourceHost) {
+        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, StoragePoolType poolType, String poolAuthSecret, String poolSourceHost) {
             _poolUUID = poolUUID;
             _poolIp = poolIp;
             _poolMountSourcePath = poolSourcePath;

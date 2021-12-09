@@ -1179,7 +1179,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(_privateNic);
 
-        _monitor = new KVMHAMonitor(null, info[0], _heartBeatPath, _heartBeatPathRbd);
+        _monitor = new KVMHAMonitor(null, null, info[0], _heartBeatPath, _heartBeatPathRbd);
         final Thread ha = new Thread(_monitor);
         ha.start();
 
@@ -3768,7 +3768,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
         } else if (platformEmulator.contains("Ubuntu") ||
-        StringUtils.startsWithAny(platformEmulator,
+            StringUtils.startsWithAny(platformEmulator,
                         "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle", "Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {

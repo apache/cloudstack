@@ -98,11 +98,11 @@ delete_cephConf() {
 write_hbLog() {
 #write the heart beat log
   timestamp=$(date +%s)
-  obj=$(rados -p $PoolName ls | grep hb_$HostIP)
+  obj=$(rados -p $PoolName ls | grep hb-$HostIP)
   if [ $? -gt 0 ]; then
-     rados -p $PoolName create hb_$HostIP
+     rados -p $PoolName create hb-$HostIP
   fi
-  echo $timestamp | rados -p $PoolName put hb_$HostIP -
+  echo $timestamp | rados -p $PoolName put hb-$HostIP -
   if [ $? -gt 0 ]; then
    	printf "Failed to create rbd file"
     return 2
@@ -113,9 +113,8 @@ write_hbLog() {
 check_hbLog() {
 #check the heart beat log
   now=$(date +%s)
-  #$(rados -p $PoolName get hb_$HostIP hb-$HostIP | cat hb-$HostIP)
-  hb=$(rados -p $PoolName get hb_$HostIP -)
-  diff=`expr $now - $hb`
+  hb=$(rados -p $PoolName get hb-$HostIP -)
+  diff=$(expr $now - $hb)
   if [ $diff -gt $interval ]; then
     return $diff
   fi

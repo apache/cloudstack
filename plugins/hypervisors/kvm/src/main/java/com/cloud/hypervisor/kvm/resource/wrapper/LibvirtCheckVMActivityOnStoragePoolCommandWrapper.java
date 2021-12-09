@@ -19,21 +19,22 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.RbdStoragePool;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.hypervisor.kvm.resource.KVMHAVMActivityChecker;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 @ResourceWrapper(handles = CheckVMActivityOnStoragePoolCommand.class)
 public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends CommandWrapper<CheckVMActivityOnStoragePoolCommand, Answer, LibvirtComputingResource> {
@@ -45,10 +46,11 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
         final StorageFilerTO pool = command.getPool();
         if (Storage.StoragePoolType.NetworkFilesystem == pool.getType() || Storage.StoragePoolType.RBD == pool.getType()){
             final NfsStoragePool nfspool = monitor.getStoragePool(pool.getUuid());
+            final RbdStoragePool rbdpool = monitor.getRbdStoragePool(pool.getUuid());
             String vmActivityCheckPath = "";
             if (Storage.StoragePoolType.NetworkFilesystem == pool.getType())    vmActivityCheckPath = libvirtComputingResource.getVmActivityCheckPath();
             else if (Storage.StoragePoolType.RBD == pool.getType())    vmActivityCheckPath = libvirtComputingResource.getVmActivityCheckPathRbd();
-            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, command.getHost().getPrivateNetwork().getIp(), command.getVolumeList(), vmActivityCheckPath, command.getSuspectTimeInSeconds(), pool.getType());
+            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, rbdpool, command.getHost().getPrivateNetwork().getIp(), command.getVolumeList(), vmActivityCheckPath, command.getSuspectTimeInSeconds(), pool.getType());
             final Future<Boolean> future = executors.submit(ha);
             try {
                 final Boolean result = future.get();

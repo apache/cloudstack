@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import java.net.InetAddress;
@@ -31,11 +30,13 @@ import java.net.UnknownHostException;
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
     private List<NfsStoragePool> nfsStoragePools;
+    private List<RbdStoragePool> rbdStoragePools;
     private String hostIp;
     private long heartBeatCheckerTimeout = 360000; // 6 minutes
 
-    public KVMHAChecker(List<NfsStoragePool> pools, String host) {
-        this.nfsStoragePools = pools;
+    public KVMHAChecker(List<NfsStoragePool> nfspools, List<RbdStoragePool> rbdpools, String host) {
+        this.nfsStoragePools = nfspools;
+        this.rbdStoragePools = rbdpools;
         this.hostIp = host;
     }
 
@@ -68,16 +69,32 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 
         for (NfsStoragePool pool : nfsStoragePools) {
             Script cmd = new Script(s_heartBeatPath, heartBeatCheckerTimeout, s_logger);
-            if (pool._poolType == StoragePoolType.NetworkFilesystem) {
-                cmd.add("-i", pool._poolIp);
-                cmd.add("-p", pool._poolMountSourcePath);
-                cmd.add("-m", pool._mountDestPath);
-            } else if (pool._poolType == StoragePoolType.RBD) {
-                cmd = new Script(s_heartBeatPathRbd, heartBeatCheckerTimeout, s_logger);
-                cmd.add("-i", getIpAddress(pool._poolSourceHost));
-                cmd.add("-p", pool._poolMountSourcePath);
-                cmd.add("-s", pool._poolAuthSecret);
+            cmd.add("-i", pool._poolIp);
+            cmd.add("-p", pool._poolMountSourcePath);
+            cmd.add("-m", pool._mountDestPath);
+            cmd.add("-h", hostIp);
+            cmd.add("-r");
+            cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
+            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+            String result = cmd.execute(parser);
+            String parsedLine = parser.getLine();
+
+            s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine,
+                    pool._poolIp));
+
+            if (result == null && parsedLine.contains("DEAD")) {
+                s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned [%s]. [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(),
+                        result, parsedLine, hostIp));
+            } else {
+                validResult = true;
             }
+        }
+
+        for (RbdStoragePool pool : rbdStoragePools) {
+            Script cmd = new Script(s_heartBeatPathRbd, heartBeatCheckerTimeout, s_logger);
+            cmd.add("-i", getIpAddress(pool._poolSourceHost));
+            cmd.add("-p", pool._poolMountSourcePath);
+            cmd.add("-s", pool._poolAuthSecret);
             cmd.add("-h", hostIp);
             cmd.add("-r");
             cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
