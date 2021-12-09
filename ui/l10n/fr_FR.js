@@ -474,6 +474,7 @@ var dictionary = {
     "label.blade.id": "ID Lame",
     "label.blades": "Lames",
     "label.bootable": "Amorçable",
+    "label.bootDelay": "Boot Delay",
     "label.broadcast.domain.range": "Plage du domaine multi-diffusion",
     "label.broadcast.domain.type": "Type de domaine de multi-diffusion",
     "label.broadcast.uri": "URI multi-diffusion",

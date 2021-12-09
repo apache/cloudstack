@@ -474,6 +474,7 @@ var dictionary = {
     "label.blade.id": "ID da Lâmina",
     "label.blades": "Lâminas",
     "label.bootable": "Inicializável",
+    "label.bootDelay": "Boot Delay",
     "label.broadcast.domain.range": "Range do domínio de Broadcast",
     "label.broadcast.domain.type": "Tipo de Domínio Broadcast",
     "label.broadcast.uri": "URI de broadcast",

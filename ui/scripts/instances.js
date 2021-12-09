@@ -747,9 +747,33 @@
                 actions: {
                     start: {
                         label: 'label.action.start.instance',
+                        createForm: {
+                            title: 'label.action.start.instance',
+                            desc: 'message.action.start.instance',
+                            fields: {
+                                bootDelay: {
+                                    docID: 'helpBootDelay',
+                                    label: 'label.bootDelay',
+                                    validation: {
+                                        required: false,
+                                        number: true
+                                    },
+                                    defaultValue: '0'
+                                }
+                            }
+                        },
                         action: function(args) {
+                            var data = {
+                                id: args.context.instances[0].id
+                            }
+                            if (args.data.bootDelay != 0) {
+                                $.extend(data, {
+                                    bootDelay: args.data.bootDelay
+                                });
+                            }
                             $.ajax({
-                                url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
+                                url: createURL("startVirtualMachine"),
+                                data: data,
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {
@@ -836,12 +860,26 @@
                                             });
                                         }
                                     }
+                                },
+                                bootDelay: {
+                                    label: 'label.bootDelay',
+                                    docID: 'helpBootDelay',
+                                    validation: {
+                                        required: false,
+                                        number: true
+                                    },
+                                    defaultValue: '0'
                                 }
                             }
                         },
                         action: function(args) {
                             var data = {
                                 id: args.context.instances[0].id
+                            }
+                            if (args.data.bootDelay != 0) {
+                                $.extend(data, {
+                                    bootDelay: args.data.bootDelay
+                                });
                             }
                             if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
                                 $.extend(data, {
@@ -2336,7 +2374,7 @@
                                 $.extend(dataObj, {
                                     networkIds: args.data.network
                                 });
-                            } 
+                            }
                             if (args.data.securitygroup != null && args.data.securitygroup != '') {
                                 $.extend(dataObj, {
                                     securitygroupIds: args.data.securitygroup

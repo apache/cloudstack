@@ -134,6 +134,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
                 offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
+        if (vmProfile.getParameter(VirtualMachineProfile.Param.BootDelay) != null)
+            s_logger.info("Delaying start of VM " + vm.getId());
+            to.setBootDelay((Integer) vmProfile.getParameter(VirtualMachineProfile.Param.BootDelay));
 
         List<NicProfile> nicProfiles = vmProfile.getNics();
         NicTO[] nics = new NicTO[nicProfiles.size()];

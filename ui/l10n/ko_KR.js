@@ -474,6 +474,7 @@ var dictionary = {
     "label.blade.id": "Blade ID",
     "label.blades": "Blades",
     "label.bootable": "부팅 가능",
+    "label.bootDelay": "Boot Delay",
     "label.broadcast.domain.range": "브로드캐스트 도메인 범위",
     "label.broadcast.domain.type": "브로드캐스트 도메인 종류",
     "label.broadcast.uri": "Broadcast URI",

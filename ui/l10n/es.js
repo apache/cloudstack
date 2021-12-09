@@ -474,6 +474,7 @@ var dictionary = {
     "label.blade.id": "ID de Hoja",
     "label.blades": "Hojas",
     "label.bootable": "Arrancable",
+    "label.bootDelay": "Boot Delay",
     "label.broadcast.domain.range": "Rango del dominio de Broadcast",
     "label.broadcast.domain.type": "Tipo de dominio de difusión",
     "label.broadcast.uri": "URI de Broadcast",

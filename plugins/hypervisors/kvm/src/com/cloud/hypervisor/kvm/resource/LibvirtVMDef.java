@@ -68,6 +68,7 @@ public class LibvirtVMDef {
         private String _uuid;
         private final List<BootOrder> _bootdevs = new ArrayList<BootOrder>();
         private String _machine;
+        private Integer _bootDelay = 0;
 
         public void setGuestType(GuestType type) {
             _type = type;
@@ -104,6 +105,10 @@ public class LibvirtVMDef {
             _uuid = uuid;
         }
 
+        public void setBootDelay(Integer bootDelay) {
+            this._bootDelay = bootDelay;
+        }
+
         @Override
         public String toString() {
             if (_type == GuestType.KVM) {
@@ -132,6 +137,10 @@ public class LibvirtVMDef {
                     }
                 }
                 guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (_bootDelay != null && _bootDelay > 0) {
+                    s_logger.info("Delaying VM start " + this._uuid);
+                    guestDef.append("<bootmenu enable='yes' timeout='" + _bootDelay * 1000 + "'/>");
+                }
                 guestDef.append("</os>\n");
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {

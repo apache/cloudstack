@@ -474,6 +474,7 @@ var dictionary = {
     "label.blade.id": "刀片式服务器 ID",
     "label.blades": "刀片式服务器",
     "label.bootable": "可启动",
+    "label.bootDelay": "Boot Delay",
     "label.broadcast.domain.range": "广播域范围",
     "label.broadcast.domain.type": "广播域类型",
     "label.broadcast.uri": "广播 URI",

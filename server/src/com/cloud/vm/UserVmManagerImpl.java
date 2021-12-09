@@ -2707,7 +2707,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return startVirtualMachine(cmd.getId(), cmd.getHostId(), null, cmd.getDeploymentPlanner()).first();
+        Map<VirtualMachineProfile.Param, Object> additionalParams = null;
+        if (cmd.getBootDelay() != null && cmd.getBootDelay() > 0) {
+            additionalParams = new HashMap<>();
+            additionalParams.put(VirtualMachineProfile.Param.BootDelay, cmd.getBootDelay());
+        }
+        return startVirtualMachine(cmd.getId(), cmd.getHostId(), additionalParams, cmd.getDeploymentPlanner()).first();
     }
 
     @Override

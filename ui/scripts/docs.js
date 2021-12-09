@@ -1363,5 +1363,11 @@ cloudStack.docs = {
     helpL2UserData: {
         desc: 'Pass user and meta data to VMs (via ConfigDrive)',
         externalLink: ''
+    },
+
+    // Start VM
+    helpBootDelay: {
+        desc: 'Number of seconds to wait for input on how to boot VM',
+        externalLink: ''
     }
 };

@@ -51,6 +51,7 @@ public class VirtualMachineTO {
     String os;
     String platformEmulator;
     String bootArgs;
+    Integer bootDelay = 0;
     String[] bootupScripts;
     boolean enableHA;
     boolean limitCpuUse;
@@ -221,6 +222,14 @@ public class VirtualMachineTO {
             buf.append(" ").append(entry.getKey()).append("=").append(entry.getValue());
         }
         bootArgs = buf.toString();
+    }
+
+    public Integer getBootDelay() {
+        return bootDelay;
+    }
+
+    public void setBootDelay(Integer bootDelay) {
+        this.bootDelay = bootDelay;
     }
 
     public String[] getBootupScripts() {

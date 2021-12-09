@@ -2047,6 +2047,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
+        guest.setBootDelay(vmTO.getBootDelay());
 
         vm.addComp(guest);
 
