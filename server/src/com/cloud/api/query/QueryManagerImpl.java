@@ -3057,16 +3057,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             permittedAccounts.add(_accountMgr.getAccount(accountId));
         }
 
+        Long accountId = null;
+        if (cmd.getAccountName() != null) {
+            Account userAccount = _accountDao.findActiveAccount(cmd.getAccountName(), cmd.getDomainId());
+            accountId = userAccount != null ? userAccount.getAccountId() : null;
+        }
+
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId);
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getDomainId(), accountId);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
-            Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId) {
+                                                                           Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
+                                                                           ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Long domainId, Long accountId) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3090,6 +3096,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         }
         SearchCriteria<TemplateJoinVO> sc = sb.create();
+        if (domainId != null) {
+            sc.addAnd("domainId", Op.EQ, domainId);
+        }
+        if (accountId != null) {
+            sc.addAnd("accountId", Op.EQ, accountId);
+        }
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
@@ -3386,10 +3398,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             permittedAccounts.add(_accountMgr.getAccount(accountId));
         }
 
+        Long accountId = null;
+        if (cmd.getAccountName() != null) {
+            Account userAccount = _accountDao.findActiveAccount(cmd.getAccountName(), cmd.getDomainId());
+            accountId = userAccount != null ? userAccount.getAccountId() : null;
+        }
+
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null);
+                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getDomainId(), accountId);
     }
 
     @Override
