@@ -1614,8 +1614,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkOfferingId = cmd.getNetworkOfferingId();
 
         // 1) default is system to false if not specified
-        // 2) reset parameter to false if it's specified by the regular user
-        if ((isSystem == null || _accountMgr.isNormalUser(caller.getId())) && id == null) {
+        // 2) reset parameter to false if it's specified by a non-ROOT user
+        if (isSystem == null || !_accountMgr.isRootAdmin(caller.getId())) {
             isSystem = false;
         }
 
