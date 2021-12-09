@@ -269,6 +269,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -552,6 +553,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper nwHelper;
+    @Inject
+    private StatsCollector statsCollector;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -1385,7 +1388,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account vmOwner = _accountMgr.getAccount(vmInstance.getAccountId());
         _networkModel.checkNetworkPermissions(vmOwner, network);
 
-        checkIfNetExistsForVM(vmInstance, network);
+        List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
+        for (NicVO nic : allNics) {
+            if (nic.getNetworkId() == network.getId()) {
+                throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
+            }
+        }
 
         macAddress = validateOrReplaceMacAddress(macAddress, network.getId());
 
@@ -1452,20 +1460,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
-        s_logger.debug(String.format("Successful addition of %s from %s through %s", network, vmInstance, guestNic));
+        s_logger.debug("Successful addition of " + network + " from " + vmInstance);
         return _vmDao.findById(vmInstance.getId());
-    }
-
-    /**
-     * duplicated in {@see VirtualMachineManagerImpl} for a {@see VMInstanceVO}
-     */
-    private void checkIfNetExistsForVM(VirtualMachine virtualMachine, Network network) {
-        List<NicVO> allNics = _nicDao.listByVmId(virtualMachine.getId());
-        for (NicVO nic : allNics) {
-            if (nic.getNetworkId() == network.getId()) {
-                throw new CloudRuntimeException("A NIC already exists for VM:" + virtualMachine.getInstanceName() + " in network: " + network.getUuid());
-            }
-        }
     }
 
     /**
@@ -5008,6 +5004,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
+        statsCollector.removeVirtualMachineStats(vmId);
+
         _userDao.findById(userId);
         boolean status = false;
         try {
@@ -5312,6 +5310,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.trace("Vm id=" + vmId + " is already destroyed");
             return vm;
         }
+
+        statsCollector.removeVirtualMachineStats(vmId);
 
         boolean status;
         State vmState = vm.getState();
@@ -7655,7 +7655,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public void persistDeviceBusInfo(UserVmVO vm, String rootDiskController) {
         String existingVmRootDiskController = vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER);
-        if (StringUtils.isEmpty(existingVmRootDiskController) && !StringUtils.isEmpty(rootDiskController)) {
+        if (StringUtils.isEmpty(existingVmRootDiskController) && StringUtils.isNotEmpty(rootDiskController)) {
             vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
             _vmDao.saveDetails(vm);
             if (s_logger.isDebugEnabled()) {

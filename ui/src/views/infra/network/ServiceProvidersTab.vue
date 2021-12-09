@@ -1170,7 +1170,7 @@ export default {
         await this.executeConfirmAction()
         return
       }
-      await this.form.validateFields(async (err, values) => {
+      await this.form.validateFieldsAndScroll(async (err, values) => {
         if (err) {
           return
         }

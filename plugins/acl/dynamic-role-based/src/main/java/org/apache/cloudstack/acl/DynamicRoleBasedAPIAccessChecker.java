@@ -36,7 +36,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIAclChecker {
 
@@ -107,7 +107,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     public void addApiToRoleBasedAnnotationsMap(final RoleType roleType, final String commandName) {
-        if (roleType == null || Strings.isNullOrEmpty(commandName)) {
+        if (roleType == null || StringUtils.isEmpty(commandName)) {
             return;
         }
         final Set<String> commands = annotationRoleBasedApisMap.get(roleType);

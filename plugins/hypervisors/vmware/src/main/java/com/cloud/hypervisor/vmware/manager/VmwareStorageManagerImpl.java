@@ -1191,7 +1191,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
-                if (info.getEntityName().equals(cmd.getVmName()) && StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
+                if (info.getEntityName().equals(cmd.getVmName()) && org.apache.commons.lang3.StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
                     if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
                         s_logger.debug("There is already a VM snapshot task running, wait for it");
                         context.getVimClient().waitForTask(taskMor);
@@ -1306,8 +1306,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             // get volume's chain size for this VM snapshot; exclude current volume vdisk
             DataStoreTO store = volumeTO.getDataStore();
             ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, store);
-            long size = getVMSnapshotChainSize(context, hyperHost, baseName + ".vmdk", morDs, newPath);
-            size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath);
+            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath);
 
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
                 // add memory snapshot size
@@ -1406,7 +1405,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
-                if (info.getEntityName().equals(cmd.getVmName()) && StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
+                if (info.getEntityName().equals(cmd.getVmName()) && org.apache.commons.lang3.StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
                 }
