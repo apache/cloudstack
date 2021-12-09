@@ -1246,6 +1246,11 @@
                                     displayName: args.data.displayname
                                 });
                             }
+                            if (args.data.name != args.context.instances[0].name) {
+                                $.extend(data, {
+                                    name: args.data.name
+                                });
+                            }
                             $.ajax({
                                 url: createURL('updateVirtualMachine'),
                                 data: data,
@@ -2569,7 +2574,8 @@
                                 converter: cloudStack.converters.toLocalDate
                             },
                             name: {
-                                label: 'label.name'
+                                label: 'label.name',
+                                isEditable: true
                             },
                             id: {
                                 label: 'label.id'
