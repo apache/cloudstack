@@ -3963,7 +3963,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot usage");
                 if (vmSnapshotVO != null) {
-                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                    builder.append(" Id: ").append(vmSnapshotVO.getUuid());
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
@@ -4006,7 +4006,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot on primary storage usage");
                 if (vmSnapshotVO != null) {
-                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                    builder.append(" Id: ").append(vmSnapshotVO.getUuid());
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
