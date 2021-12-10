@@ -423,12 +423,6 @@ export default {
         this.fetchNetworkOfferingData()
       }
     },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
-    },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },

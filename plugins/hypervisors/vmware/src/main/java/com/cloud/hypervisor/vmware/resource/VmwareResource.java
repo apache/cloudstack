@@ -47,8 +47,6 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.utils.script.Script;
-import com.cloud.hypervisor.vmware.mo.NetworkMO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -233,6 +231,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.NetworkMO;
 import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
 import com.cloud.hypervisor.vmware.mo.StoragepodMO;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
@@ -275,6 +274,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.PropertyMapDynamicBean;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -1743,7 +1743,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // Check if license supports the feature
             VmwareHelper.isFeatureLicensed(hyperHost, FeatureKeyConstants.HOTPLUG);
-            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(), (int) requestedMaxMemoryInMb, ramMb,
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) requestedMaxMemoryInMb, ramMb,
                     vmSpec.getLimitCpuUse());
 
             if (!vmMo.configureVm(vmConfigSpec)) {
