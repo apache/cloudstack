@@ -452,4 +452,42 @@ public class KVMGuruTest {
         Assert.assertEquals(platformEmulator, virtualMachineTo.getPlatformEmulator());
     }
 
+    @Test
+    public void testGetClusterIdFromVMHost() {
+        Mockito.when(vm.getHostId()).thenReturn(123l);
+        HostVO vo = new HostVO("");
+        Long expected = 5l;
+        vo.setClusterId(expected);
+
+        Mockito.when(hostDao.findById(123l)).thenReturn(vo);
+
+        Long clusterId = guru.findClusterOfVm(vm);
+
+        Assert.assertEquals(expected, clusterId);
+    }
+
+    @Test
+    public void testGetClusterIdFromLastVMHost() {
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(321l);
+        HostVO vo = new HostVO("");
+        Long expected = 7l;
+        vo.setClusterId(expected);
+
+        Mockito.when(hostDao.findById(321l)).thenReturn(vo);
+
+        Long clusterId = guru.findClusterOfVm(vm);
+
+        Assert.assertEquals(expected, clusterId);
+    }
+
+    @Test
+    public void testGetNullWhenVMThereIsNoInformationOfUsedHosts() {
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
+
+        Long clusterId = guru.findClusterOfVm(vm);
+
+        Assert.assertNull(clusterId);
+    }
 }

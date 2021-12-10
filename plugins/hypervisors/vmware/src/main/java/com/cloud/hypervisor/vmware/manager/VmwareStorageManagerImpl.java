@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
@@ -1140,12 +1141,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "snapshots/" + accountId + "/" + volumeId;
     }
 
-    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, ManagedObjectReference morDs, String exceptFileName)
-            throws Exception {
+    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, ManagedObjectReference morDs,
+                                        String exceptFileName, String vmName) throws Exception {
         long size = 0;
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
         HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
-        String datastorePath = "[" + dsMo.getName() + "]";
+        String datastorePath = (new DatastoreFile(dsMo.getName(), vmName)).getPath();
         HostDatastoreBrowserSearchSpec searchSpec = new HostDatastoreBrowserSearchSpec();
         FileQueryFlags fqf = new FileQueryFlags();
         fqf.setFileSize(true);
@@ -1306,11 +1307,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             // get volume's chain size for this VM snapshot; exclude current volume vdisk
             DataStoreTO store = volumeTO.getDataStore();
             ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, store);
-            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath);
+            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath, vmName);
 
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
                 // add memory snapshot size
-                size += getVMSnapshotChainSize(context, hyperHost, vmName + "-*.vmsn", morDs, null);
+                size += getVMSnapshotChainSize(context, hyperHost, vmName + "-*.vmsn", morDs, null, vmName);
             }
 
             volumeTO.setSize(size);
