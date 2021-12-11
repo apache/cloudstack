@@ -193,8 +193,8 @@ export default {
     addStep (title, step) {
       this.steps.push({
         index: this.currentStep,
-        title: title,
-        step: step,
+        title,
+        step,
         status: STATUS_PROCESS
       })
       this.setStepStatus(STATUS_PROCESS)
