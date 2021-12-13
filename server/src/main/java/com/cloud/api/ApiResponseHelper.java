@@ -100,6 +100,7 @@ import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkPermissionsResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
@@ -245,6 +246,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkPermission;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -4607,5 +4609,44 @@ public class ApiResponseHelper implements ResponseGenerator {
         guestVlanResponse.setNetworks(networkResponses);
 
         return guestVlanResponse;
+    }
+
+    @Override
+    public NetworkPermissionsResponse createNetworkPermissionsResponse(NetworkPermission permission) {
+        Long networkOwnerDomain = null;
+        Network network = ApiDBUtils.findNetworkById(permission.getNetworkId());
+
+        NetworkPermissionsResponse response = new NetworkPermissionsResponse();
+        response.setNetworkId(network.getUuid());
+
+        Account networkOwner = ApiDBUtils.findAccountById(network.getAccountId());
+        if (networkOwner != null) {
+            networkOwnerDomain = networkOwner.getDomainId();
+            if (networkOwnerDomain != null) {
+                Domain domain = ApiDBUtils.findDomainById(networkOwnerDomain);
+                if (domain != null) {
+                    response.setDomainId(domain.getUuid());
+                    response.setDomainName(domain.getName());
+                }
+            }
+        }
+
+        Account account = ApiDBUtils.findAccountById(permission.getAccountId());
+        response.setAccountName(account.getName());
+        response.setAccountId(account.getUuid());
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // convert account to projectIds
+            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+
+            if (project.getUuid() != null && !project.getUuid().isEmpty()) {
+                response.setProjectId(project.getUuid());
+            } else {
+                response.setProjectId(String.valueOf(project.getId()));
+            }
+            response.setProjectName(project.getName());
+        }
+
+        response.setObjectName("networkpermission");
+        return response;
     }
 }

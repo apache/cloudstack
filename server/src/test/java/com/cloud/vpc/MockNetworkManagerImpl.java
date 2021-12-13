@@ -31,7 +31,11 @@ import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRan
 import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
@@ -56,6 +60,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkPermission;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.TrafficType;
@@ -1008,5 +1013,25 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public Pair<List<? extends GuestVlan>, Integer> listGuestVlans(ListGuestVlansCmd cmd) {
         return null;
+    }
+
+    @Override
+    public List<? extends NetworkPermission> listNetworkPermissions(ListNetworkPermissionsCmd listNetworkPermissionsCmd) {
+        return null;
+    }
+
+    @Override
+    public boolean createNetworkPermissions(CreateNetworkPermissionsCmd createNetworkPermissionsCmd) {
+        return false;
+    }
+
+    @Override
+    public boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd) {
+        return false;
+    }
+
+    @Override
+    public boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd) {
+        return false;
     }
 }

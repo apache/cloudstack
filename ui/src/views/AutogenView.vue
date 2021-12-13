@@ -1413,9 +1413,9 @@ export default {
         query.isofilter = filter
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
-          delete query.type
+          delete query.networkfilter
         } else {
-          query.type = filter
+          query.networkfilter = filter
         }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {

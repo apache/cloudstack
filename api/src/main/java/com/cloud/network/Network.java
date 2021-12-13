@@ -332,6 +332,14 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
     }
 
+    public enum NetworkFilter {
+        account,        // return account networks that have been registered for or created by the calling user
+        domain,         // return domain networks that have been registered for or created by the calling user
+        accountdomain,  // return account and domain networks that have been registered for or created by the calling user
+        shared,         // including networks that have been granted to the calling user by another user
+        all             // all networks (account, domain and shared)
+    }
+
     public class IpAddresses {
         private String ip4Address;
         private String ip6Address;

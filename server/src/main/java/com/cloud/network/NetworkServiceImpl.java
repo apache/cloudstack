@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.commons.lang3.EnumUtils;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -50,7 +53,11 @@ import org.apache.cloudstack.api.command.admin.network.ListNetworksCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
@@ -62,6 +69,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.NetworkPermissionVO;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -254,6 +263,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
+    @Inject
+    NetworkPermissionDao _networkPermissionDao = null;
     @Inject
     NicDao _nicDao = null;
     @Inject
@@ -1714,6 +1725,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Boolean display = cmd.getDisplay();
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long associatedNetworkId = cmd.getAssociatedNetworkId();
+        String networkFilterStr = cmd.getNetworkFilter();
 
         String vlanId = null;
         if (cmd instanceof ListNetworksCmdByAdmin) {
@@ -1725,6 +1737,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (isSystem == null || !_accountMgr.isRootAdmin(caller.getId())) {
             isSystem = false;
         }
+
+        // check network filter
+        if (networkFilterStr != null && !EnumUtils.isValidEnum(Network.NetworkFilter.class, networkFilterStr.toLowerCase())) {
+            throw new InvalidParameterValueException("Invalid value of networkfilter: " + networkFilterStr);
+        }
+        Network.NetworkFilter networkFilter = networkFilterStr != null ? EnumUtils.getEnum(Network.NetworkFilter.class, networkFilterStr.toLowerCase()) : Network.NetworkFilter.all;
 
         // Account/domainId parameters and isSystem are mutually exclusive
         if (isSystem != null && isSystem && (accountName != null || domainId != null)) {
@@ -1853,25 +1871,55 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (isSystem == null || !isSystem) {
             if (!permittedAccounts.isEmpty()) {
-                //get account level networks
-                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts));
-                //get domain level networks
-                if (domainId != null) {
+                if (Network.NetworkFilter.account.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                    //get account level networks
+                    networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts));
+                }
+                if (domainId != null && (Network.NetworkFilter.domain.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter))) {
+                    //get domain level networks
                     networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, domainId, false));
                 }
+                if (Network.NetworkFilter.shared.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                    // get shared networks
+                    Set<Long> networkIds = networksToReturn.stream()
+                            .map(NetworkVO::getId)
+                            .collect(Collectors.toSet());
+                    List<NetworkVO> sharedNetworks = listSharedNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts);
+                    List<NetworkVO> sharedNetworksToReturn = sharedNetworks.stream()
+                            .filter(network -> ! networkIds.contains(network.getId()))
+                            .collect(Collectors.toList());
+                    networksToReturn.addAll(sharedNetworksToReturn);
+                }
             } else {
-                //add account specific networks
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
-                //add domain specific networks of domain + parent domains
-                networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
-                //add networks of subdomains
-                if (domainId == null) {
-                    networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, caller.getDomainId(), true));
+                if (Network.NetworkFilter.account.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                    //add account specific networks
+                    networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
+                }
+                if (Network.NetworkFilter.domain.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                    //add domain specific networks of domain + parent domains
+                    networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
+                    //add networks of subdomains
+                    if (domainId == null) {
+                        networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                                aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, caller.getDomainId(), true));
+                    }
+                }
+                if (Network.NetworkFilter.shared.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                    // get shared networks
+                    Set<Long> networkIds = networksToReturn.stream()
+                            .map(NetworkVO::getId)
+                            .collect(Collectors.toSet());
+                    List<NetworkVO> sharedNetworks = listSharedNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive);
+                    List<NetworkVO> sharedNetworksToReturn = sharedNetworks.stream()
+                            .filter(network -> ! networkIds.contains(network.getId()))
+                            .collect(Collectors.toList());
+                    networksToReturn.addAll(sharedNetworksToReturn);
                 }
             }
         } else {
@@ -2099,6 +2147,38 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         } else {
             return new ArrayList<NetworkVO>();
         }
+    }
+
+    private List<NetworkVO> listSharedNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, List<Long> permittedAccounts) {
+        List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByAccounts(permittedAccounts);
+        if (!sharedNetworkIds.isEmpty()) {
+            SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
+            ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
+            sc.addAnd("id", SearchCriteria.Op.SC, ssc);
+            return _networksDao.search(sc, searchFilter);
+        }
+        return new ArrayList<NetworkVO>();
+    }
+
+    private List<NetworkVO> listSharedNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
+        Set<Long> allowedDomains = new HashSet<Long>();
+        if (path != null) {
+            if (isRecursive) {
+                allowedDomains = _domainMgr.getDomainChildrenIds(path);
+            } else {
+                Domain domain = _domainDao.findDomainByPath(path);
+                allowedDomains.add(domain.getId());
+            }
+        }
+        List<Long> allowedDomainsList = new ArrayList<Long>(allowedDomains);
+        List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByDomains(allowedDomainsList);
+        if (!sharedNetworkIds.isEmpty()) {
+            SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
+            ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
+            sc.addAnd("id", SearchCriteria.Op.SC, ssc);
+            return _networksDao.search(sc, searchFilter);
+        }
+        return new ArrayList<NetworkVO>();
     }
 
     @Override
@@ -4906,6 +4986,162 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Pair<List<DataCenterVnetVO>, Integer> vlans = _dcVnetDao.searchAndCount(vlanSearch, searchFilter);
         return new Pair<List<? extends GuestVlan>, Integer>(vlans.first(), vlans.second());
+    }
+
+    @Override
+    public List<? extends NetworkPermission> listNetworkPermissions(ListNetworkPermissionsCmd cmd) {
+        final Long networkId = cmd.getNetworkId();
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("unable to find network with id " + networkId);
+        }
+        final Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, network);
+
+        List<String> accountNames = new ArrayList<String>();
+        List<NetworkPermissionVO> permissions = _networkPermissionDao.findByNetwork(networkId);
+        return permissions;
+    }
+
+    @Override
+    public boolean createNetworkPermissions(CreateNetworkPermissionsCmd cmd) {
+        final Long id = cmd.getNetworkId();
+        List<String> accountNames = cmd.getAccountNames();
+        List<Long> accountIds = cmd.getAccountIds();
+        List<Long> projectIds = cmd.getProjectIds();
+
+        final Account caller = CallContext.current().getCallingAccount();
+        NetworkVO network = validateNetworkPermissionParameters(caller, id);
+
+        accountIds = populateAccounts(caller, accountIds, network.getDomainId(), accountNames, projectIds);
+
+        final List<Long> accountIdsFinal = accountIds;
+        final Account owner = _accountMgr.getAccount(network.getAccountId());
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (Long accountId : accountIdsFinal) {
+                    Account permittedAccount = _accountDao.findActiveAccountById(accountId, network.getDomainId());
+                    if (permittedAccount != null) {
+                        if (permittedAccount.getId() == owner.getId()) {
+                            continue; // don't grant permission to the network owner, they implicitly have permission
+                        }
+                        NetworkPermissionVO existingPermission = _networkPermissionDao.findByNetworkAndAccount(id, permittedAccount.getId());
+                        if (existingPermission == null) {
+                            NetworkPermissionVO networkPermission = new NetworkPermissionVO(id, permittedAccount.getId());
+                            _networkPermissionDao.persist(networkPermission);
+                        }
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountId + " in the domain of network " + network + ". No permissions is added");
+                    }
+                }
+            }
+        });
+
+        return true;
+    }
+
+    @Override
+    public boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd cmd) {
+        final Long id = cmd.getNetworkId();
+        List<String> accountNames = cmd.getAccountNames();
+        List<Long> accountIds = cmd.getAccountIds();
+        List<Long> projectIds = cmd.getProjectIds();
+
+        final Account caller = CallContext.current().getCallingAccount();
+        NetworkVO network = validateNetworkPermissionParameters(caller, id);
+
+        accountIds = populateAccounts(caller, accountIds, network.getDomainId(), accountNames, projectIds);
+
+        _networkPermissionDao.removePermissions(id, accountIds);
+
+        return true;
+    }
+
+    @Override
+    public boolean resetNetworkPermissions(ResetNetworkPermissionsCmd cmd) {
+
+        final Long id = cmd.getNetworkId();
+
+        final Account caller = CallContext.current().getCallingAccount();
+        NetworkVO network = validateNetworkPermissionParameters(caller, id);
+
+        _networkPermissionDao.removeAllPermissions(id);
+
+        return true;
+    }
+
+    private NetworkVO validateNetworkPermissionParameters(Account caller, Long id) {
+
+        final NetworkVO network = _networksDao.findById(id);
+
+        if (network == null) {
+            throw new InvalidParameterValueException("unable to find network with id " + id);
+        }
+
+        if (network.getAclType() == ACLType.Domain) {
+            throw new InvalidParameterValueException("network is already shared in domain");
+        }
+
+        if (network.getVpcId() != null) {
+            throw new InvalidParameterValueException("VPC tiers cannot be shared");
+        }
+
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, network);
+
+        final Account owner = _accountMgr.getAccount(network.getAccountId());
+        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // Currently project owned networks cannot be shared outside project but is available to all users within project by default.
+            throw new InvalidParameterValueException("Update network permissions is an invalid operation on network " + network.getName()
+                    + ". Project owned networks cannot be shared outside network.");
+        }
+
+        //Only admin or owner of the network should be able to change its permissions
+        if (caller.getId() != owner.getId() && !_accountMgr.isAdmin(caller.getId())) {
+            throw new InvalidParameterValueException("Unable to grant permission to account " + caller.getAccountName() + " as it is neither admin nor owner or the network");
+        }
+
+        return network;
+    }
+
+    private List<Long>  populateAccounts(Account caller, List<Long> accountIds, Long domainId, List<String> accountNames, List<Long> projectIds) {
+        if (accountIds == null) {
+            accountIds = new ArrayList<Long>();
+        }
+        // convert projectIds to accountIds
+        if (projectIds != null) {
+            for (Long projectId : projectIds) {
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                accountIds.add(project.getProjectAccountId());
+            }
+        }
+        // convert accountNames to accountIds
+        final Domain domain = _domainDao.findById(domainId);
+        if (accountNames != null) {
+            for (String accountName : accountNames) {
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
+                if (permittedAccount != null) {
+                    if (permittedAccount.getId() == caller.getId()) {
+                        continue;
+                    }
+                    accountIds.add(permittedAccount.getId());
+                }
+            }
+        }
+        for (Long accountId : accountIds) {
+            Account permittedAccount = _accountDao.findActiveAccountById(accountId, domain.getId());
+            if (permittedAccount == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountId + " in domain id=" + domain.getUuid() + ". No permissions is removed");
+            }
+        }
+        return accountIds;
     }
 
     @Override

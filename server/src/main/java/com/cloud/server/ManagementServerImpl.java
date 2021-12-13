@@ -47,6 +47,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.dao.DomainVlanMapDao;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -407,15 +408,19 @@ import org.apache.cloudstack.api.command.user.nat.ListIpForwardingRulesCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
@@ -2147,7 +2152,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (networkMap == null) {
                     return new Pair<>(addrs, 0);
                 }
-                _accountMgr.checkAccess(caller, null, false, _accountDao.findById(networkMap.getAccountId()));
+                try {
+                    _accountMgr.checkAccess(caller, null, false, _accountDao.findById(networkMap.getAccountId()));
+                } catch (PermissionDeniedException ex) {
+                    s_logger.info("Account " + caller + " do not have permission to access account of network " + network);
+                    _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, false, network);
+                    isAllocated = Boolean.TRUE;
+                }
             } else { // Domain level
                 NetworkDomainVO networkMap = _networkDomainDao.getDomainNetworkMapByNetworkId(network.getId());
                 if (networkMap == null) {
@@ -3228,6 +3239,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListNetworksCmd.class);
         cmdList.add(RestartNetworkCmd.class);
         cmdList.add(UpdateNetworkCmd.class);
+        cmdList.add(CreateNetworkPermissionsCmd.class);
+        cmdList.add(ListNetworkPermissionsCmd.class);
+        cmdList.add(RemoveNetworkPermissionsCmd.class);
+        cmdList.add(ResetNetworkPermissionsCmd.class);
         cmdList.add(ListDiskOfferingsCmd.class);
         cmdList.add(ListServiceOfferingsCmd.class);
         cmdList.add(ActivateProjectCmd.class);

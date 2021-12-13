@@ -53,6 +53,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -318,6 +319,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ResourceManager resourceManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    NetworkPermissionDao networkPermissionDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -3133,6 +3136,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 }
 
                                 networkDetailsDao.removeDetails(networkFinal.getId());
+                                networkPermissionDao.removeAllPermissions(networkFinal.getId());
                             }
 
                             final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());

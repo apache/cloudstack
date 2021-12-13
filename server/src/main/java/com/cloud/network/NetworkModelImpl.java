@@ -41,6 +41,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.network.NetworkPermissionVO;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -170,6 +172,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     VpcGatewayDao _vpcGatewayDao;
     @Inject
     ProjectDao projectDao;
+    @Inject
+    NetworkPermissionDao _networkPermissionDao;
 
     private List<NetworkElement> networkElements;
 
@@ -1672,7 +1676,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 checkProjectNetworkPermissions(owner, networkOwner, network);
             } else {
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
-                if (networkMap == null || networkMap.isEmpty()) {
+                NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), owner.getId());
+                if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
                     throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                         ", permission denied");
                 }

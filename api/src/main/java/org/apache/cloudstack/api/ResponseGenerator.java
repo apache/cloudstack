@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.api.response.GuestVlanResponse;
+import org.apache.cloudstack.api.response.NetworkPermissionsResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
@@ -153,6 +154,7 @@ import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkPermission;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
@@ -494,4 +496,6 @@ public interface ResponseGenerator {
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
     GuestVlanResponse createGuestVlanResponse(GuestVlan vlan);
+
+    NetworkPermissionsResponse createNetworkPermissionsResponse(NetworkPermission permission);
 }

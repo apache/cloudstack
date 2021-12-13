@@ -21,3 +21,12 @@
 
 -- PR#5668 Change the type of the 'ipsec_psk' field to allow large PSK.
 ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
+
+--- table for network permissions
+CREATE TABLE  `cloud`.`network_permissions` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  INDEX `i_network_permission_network_id`(`network_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

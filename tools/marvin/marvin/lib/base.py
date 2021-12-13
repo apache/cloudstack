@@ -5630,3 +5630,40 @@ class ProjectRolePermission:
         cmd.projectid = projectid
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.listProjectRolePermissions(cmd))
+
+class NetworkPermission:
+    """Manage Network Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, **kwargs):
+        """Creates network permissions"""
+        cmd = createNetworkPermissions.createNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.createNetworkPermissions(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, **kwargs):
+        """Removes the network permissions"""
+
+        cmd = removeNetworkPermissions.removeNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.removeNetworkPermissions(cmd))
+
+    @classmethod
+    def reset(cls, apiclient, **kwargs):
+        """Updates the network permissions"""
+
+        cmd = resetNetworkPermissions.resetNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.resetNetworkPermissions(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listNetworkPermissions.listNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listNetworkPermissions(cmd))
