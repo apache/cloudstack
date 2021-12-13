@@ -80,9 +80,36 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
             description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
     private Boolean cleanupDetails;
 
+    @Parameter(name = ApiConstants.IS_PUBLIC,
+               type = CommandType.BOOLEAN,
+               description = "true if template is public")
+    private Boolean isPublic;
+
+    @Parameter(name = ApiConstants.IS_FEATURED,
+               type = CommandType.BOOLEAN,
+               description = "true if template is featured")
+    private Boolean isFeatured;
+
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE,
+               type = CommandType.BOOLEAN,
+               description = "true if template is extractable")
+    private Boolean isExtractable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public Boolean getIsFeatured() {
+        return isFeatured;
+    }
+
+    public Boolean getIsExtractable() {
+        return isExtractable;
+    }
 
     public Boolean getBootable() {
         return bootable;

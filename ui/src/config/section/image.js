@@ -104,7 +104,7 @@ export default {
               record.isready
           },
           args: (record, store) => {
-            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
+            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'ispublic', 'isextractable', 'isfeatured']
             if (['Admin'].includes(store.userInfo.roletype)) {
               fields.push('templatetype')
             }

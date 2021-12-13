@@ -2051,6 +2051,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.getBootable();
         Boolean requiresHvm = cmd.getRequiresHvm();
+        Boolean isFeatured = cmd.getIsFeatured();
+        Boolean isPublic = cmd.getIsPublic();
+        Boolean isExtractable = cmd.getIsExtractable();
         Integer sortKey = cmd.getSortKey();
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
@@ -2111,6 +2114,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
                   templateType == null &&
+                  isFeatured == null &&
+                  isPublic == null &&
+                  isExtractable == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2167,6 +2173,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (passwordEnabled != null) {
             template.setEnablePassword(passwordEnabled);
+        }
+
+        if (isFeatured != null) {
+            template.setFeatured(isFeatured);
+        }
+
+        if (isPublic != null) {
+            template.setPublicTemplate(isPublic);
+        }
+
+        if (isExtractable != null){
+            template.setExtractable(isExtractable);
         }
 
         if (sshKeyEnabled != null) {
