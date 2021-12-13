@@ -419,6 +419,8 @@ class TestNetworkPermissions(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_04_deploy_vm_and_vm_operations_by_other_user(self):
+        """ Testing VM operations of VM on the network by other user"""
+
         # 1. Create network permission for other user, by user
         self.create_network_permission(self.user_apiclient, self.user_network, self.other_user, None, expected=True)
 

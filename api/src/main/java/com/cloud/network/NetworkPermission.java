@@ -20,12 +20,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface NetworkPermission extends InternalIdentity {
 
-    public enum Ops {
-        add,    // grant the access permission to a network
-        remove, // remove the access permission to a network
-        reset   // reset access permissions of a network
-    }
-
     long getNetworkId();
 
     long getAccountId();
