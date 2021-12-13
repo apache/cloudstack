@@ -71,11 +71,27 @@ class TestNetworkPermissions(cloudstackTestCase):
 
         cls.domain = get_domain(cls.apiclient)
 
+        # Create small service offering
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
+        cls._cleanup.append(cls.service_offering)
+
+        # Create network offering for isolated networks
+        cls.network_offering_isolated = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["isolated_network_offering"]
+        )
+        cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.network_offering_isolated)
+
         # Create sub-domain
         cls.sub_domain = Domain.create(
             cls.apiclient,
             cls.services["acl"]["domain1"]
         )
+        cls._cleanup.append(cls.sub_domain)
 
         # Create domain admin and normal user
         cls.domain_admin = Account.create(
@@ -84,16 +100,22 @@ class TestNetworkPermissions(cloudstackTestCase):
             admin=True,
             domainid=cls.sub_domain.id
         )
+        cls._cleanup.append(cls.domain_admin)
+
         cls.network_owner = Account.create(
             cls.apiclient,
             cls.services["acl"]["accountD11A"],
             domainid=cls.sub_domain.id
         )
+        cls._cleanup.append(cls.network_owner)
+
         cls.other_user = Account.create(
             cls.apiclient,
             cls.services["acl"]["accountD11B"],
             domainid=cls.sub_domain.id
         )
+        cls._cleanup.append(cls.other_user)
+
         # Create project
         cls.project = Project.create(
           cls.apiclient,
@@ -101,19 +123,7 @@ class TestNetworkPermissions(cloudstackTestCase):
           account=cls.domain_admin.name,
           domainid=cls.domain_admin.domainid
         )
-
-        # Create small service offering
-        cls.service_offering = ServiceOffering.create(
-            cls.apiclient,
-            cls.services["service_offerings"]["small"]
-        )
-
-        # Create network offering for isolated networks
-        cls.network_offering_isolated = NetworkOffering.create(
-            cls.apiclient,
-            cls.services["isolated_network_offering"]
-        )
-        cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.project)
 
         # Create api clients for domain admin and normal user
         cls.domainadmin_user = cls.domain_admin.user[0]
@@ -160,15 +170,6 @@ class TestNetworkPermissions(cloudstackTestCase):
             accountid=cls.network_owner.name,
             zoneid=cls.zone.id
         )
-
-        cls._cleanup.append(cls.service_offering)
-        cls._cleanup.append(cls.network_offering_isolated)
-
-        cls._cleanup.append(cls.sub_domain)
-        cls._cleanup.append(cls.network_owner)
-        cls._cleanup.append(cls.other_user)
-        cls._cleanup.append(cls.domain_admin)
-        cls._cleanup.append(cls.project)
 
     @classmethod
     def tearDownClass(cls):

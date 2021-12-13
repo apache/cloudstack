@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 
-@APICommand(name = "resetNetworkPermissions", description = "Resets network permissions.",
+@APICommand(name = ResetNetworkPermissionsCmd.APINAME, description = "Resets network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -38,9 +38,9 @@ import com.cloud.user.Account;
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ResetNetworkPermissionsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ResetNetworkPermissionsCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ResetNetworkPermissionsCmd.class.getName());
 
-    private static final String s_name = "resetnetworkpermissionsresponse";
+    public static final String APINAME = "resetNetworkPermissions";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -63,7 +63,7 @@ public class ResetNetworkPermissionsCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 
 import java.util.List;
 
-@APICommand(name = "createNetworkPermissions", description = "Updates network permissions.",
+@APICommand(name = CreateNetworkPermissionsCmd.APINAME, description = "Updates network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -43,9 +43,9 @@ import java.util.List;
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateNetworkPermissionsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkPermissionsCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(CreateNetworkPermissionsCmd.class.getName());
 
-    private static final String s_name = "createnetworkpermissionsresponse";
+    public static final String APINAME = "createNetworkPermissions";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -80,16 +80,10 @@ public class CreateNetworkPermissionsCmd extends BaseCmd {
 
 
     public List<String> getAccountNames() {
-        if (accountIds != null && accountNames != null) {
-            throw new InvalidParameterValueException("Accounts and accountNames can't be specified together");
-        }
         return accountNames;
     }
 
     public List<Long> getAccountIds() {
-        if (accountIds != null && accountNames != null) {
-            throw new InvalidParameterValueException("Accounts and accountNames can't be specified together");
-        }
         return accountIds;
     }
 
@@ -107,11 +101,14 @@ public class CreateNetworkPermissionsCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
     public void execute() {
+        if (accountIds != null && accountNames != null) {
+            throw new InvalidParameterValueException("Accounts and accountNames can't be specified together");
+        }
         boolean result = _networkService.createNetworkPermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

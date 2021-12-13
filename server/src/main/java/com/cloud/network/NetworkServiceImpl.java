@@ -27,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1739,10 +1740,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // check network filter
-        if (networkFilterStr != null && !EnumUtils.isValidEnum(Network.NetworkFilter.class, networkFilterStr.toLowerCase())) {
+        if (networkFilterStr != null && !EnumUtils.isValidEnumIgnoreCase(Network.NetworkFilter.class, networkFilterStr)) {
             throw new InvalidParameterValueException("Invalid value of networkfilter: " + networkFilterStr);
         }
-        Network.NetworkFilter networkFilter = networkFilterStr != null ? EnumUtils.getEnum(Network.NetworkFilter.class, networkFilterStr.toLowerCase()) : Network.NetworkFilter.all;
+        Network.NetworkFilter networkFilter = networkFilterStr != null ? EnumUtils.getEnumIgnoreCase(Network.NetworkFilter.class, networkFilterStr) : Network.NetworkFilter.All;
 
         // Account/domainId parameters and isSystem are mutually exclusive
         if (isSystem != null && isSystem && (accountName != null || domainId != null)) {
@@ -1871,17 +1872,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (isSystem == null || !isSystem) {
             if (!permittedAccounts.isEmpty()) {
-                if (Network.NetworkFilter.account.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                if (Arrays.asList(Network.NetworkFilter.Account, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
                     //get account level networks
                     networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts));
                 }
-                if (domainId != null && (Network.NetworkFilter.domain.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter))) {
+                if (domainId != null && Arrays.asList(Network.NetworkFilter.Domain, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
                     //get domain level networks
                     networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, domainId, false));
                 }
-                if (Network.NetworkFilter.shared.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                if (Arrays.asList(Network.NetworkFilter.Shared, Network.NetworkFilter.All).contains(networkFilter)) {
                     // get shared networks
                     Set<Long> networkIds = networksToReturn.stream()
                             .map(NetworkVO::getId)
@@ -1894,12 +1895,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     networksToReturn.addAll(sharedNetworksToReturn);
                 }
             } else {
-                if (Network.NetworkFilter.account.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                if (Arrays.asList(Network.NetworkFilter.Account, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
                     //add account specific networks
                     networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
                 }
-                if (Network.NetworkFilter.domain.equals(networkFilter) || Network.NetworkFilter.accountdomain.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                if (Arrays.asList(Network.NetworkFilter.Domain, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
                     //add domain specific networks of domain + parent domains
                     networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
@@ -1909,7 +1910,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                 aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, caller.getDomainId(), true));
                     }
                 }
-                if (Network.NetworkFilter.shared.equals(networkFilter) || Network.NetworkFilter.all.equals(networkFilter)) {
+                if (Arrays.asList(Network.NetworkFilter.Shared, Network.NetworkFilter.All).contains(networkFilter)) {
                     // get shared networks
                     Set<Long> networkIds = networksToReturn.stream()
                             .map(NetworkVO::getId)
@@ -5110,35 +5111,47 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // convert projectIds to accountIds
         if (projectIds != null) {
-            for (Long projectId : projectIds) {
-                Project project = _projectMgr.getProject(projectId);
-                if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-                }
-
-                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-                }
-                accountIds.add(project.getProjectAccountId());
-            }
+            accountIds.addAll(convertProjectIdsToAccountIds(caller, projectIds));
         }
         // convert accountNames to accountIds
-        final Domain domain = _domainDao.findById(domainId);
         if (accountNames != null) {
-            for (String accountName : accountNames) {
-                Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
-                if (permittedAccount != null) {
-                    if (permittedAccount.getId() == caller.getId()) {
-                        continue;
-                    }
-                    accountIds.add(permittedAccount.getId());
-                }
-            }
+            accountIds.addAll(convertAccountNamesToAccountIds(caller, domainId, accountNames));
         }
+        final Domain domain = _domainDao.findById(domainId);
         for (Long accountId : accountIds) {
             Account permittedAccount = _accountDao.findActiveAccountById(accountId, domain.getId());
             if (permittedAccount == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountId + " in domain id=" + domain.getUuid() + ". No permissions is removed");
+            }
+        }
+        return accountIds;
+    }
+
+    private List<Long> convertProjectIdsToAccountIds(final Account caller, final List<Long> projectIds) {
+        List<Long> accountIds = new ArrayList<Long>();
+        for (Long projectId : projectIds) {
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            accountIds.add(project.getProjectAccountId());
+        }
+        return accountIds;
+    }
+
+    private List<Long> convertAccountNamesToAccountIds(final Account caller, final Long domainId, final List<String> accountNames) {
+        List<Long> accountIds = new ArrayList<Long>();
+        for (String accountName : accountNames) {
+            Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
+            if (permittedAccount != null) {
+                if (permittedAccount.getId() == caller.getId()) {
+                    continue;
+                }
+                accountIds.add(permittedAccount.getId());
             }
         }
         return accountIds;

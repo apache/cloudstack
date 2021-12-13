@@ -35,16 +35,16 @@ import com.cloud.user.Account;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listNetworkPermissions", description = "List network visibility and all accounts that have permissions to view this network.",
+@APICommand(name = ListNetworkPermissionsCmd.APINAME, description = "List network visibility and all accounts that have permissions to view this network.",
         responseObject = NetworkPermissionsResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListNetworkPermissionsCmd extends BaseCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkPermissionsCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(ListNetworkPermissionsCmd.class.getName());
 
-    protected static final String s_name =  "listnetworkpermissionsresponse";
+    public static final String APINAME = "listNetworkPermissions";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -75,7 +75,7 @@ public class ListNetworkPermissionsCmd extends BaseCmd implements UserCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

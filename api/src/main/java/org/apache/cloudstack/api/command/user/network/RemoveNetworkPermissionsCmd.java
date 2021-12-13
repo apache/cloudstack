@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 
 import java.util.List;
 
-@APICommand(name = "removeNetworkPermissions", description = "Removes network permissions.",
+@APICommand(name = RemoveNetworkPermissionsCmd.APINAME, description = "Removes network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -43,9 +43,9 @@ import java.util.List;
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveNetworkPermissionsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveNetworkPermissionsCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(RemoveNetworkPermissionsCmd.class.getName());
 
-    private static final String s_name = "removenetworkpermissionsresponse";
+    public static final String APINAME = "removeNetworkPermissions";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -79,16 +79,10 @@ public class RemoveNetworkPermissionsCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
 
     public List<String> getAccountNames() {
-        if (accountIds != null && accountNames != null) {
-            throw new InvalidParameterValueException("Accounts and accountNames can't be specified together");
-        }
         return accountNames;
     }
 
     public List<Long> getAccountIds() {
-        if (accountIds != null && accountNames != null) {
-            throw new InvalidParameterValueException("Accounts and accountNames can't be specified together");
-        }
         return accountIds;
     }
 
@@ -106,11 +100,14 @@ public class RemoveNetworkPermissionsCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
     public void execute() {
+        if (accountIds != null && accountNames != null) {
+            throw new InvalidParameterValueException("Accounts and accountNames can't be specified together");
+        }
         boolean result = _networkService.removeNetworkPermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
