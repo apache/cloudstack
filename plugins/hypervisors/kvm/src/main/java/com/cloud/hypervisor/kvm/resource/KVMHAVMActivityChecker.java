@@ -58,6 +58,7 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
         } else if (poolType == StoragePoolType.RBD) {
             cmd.add("-i", getRbdMonIpAddress(rbdStoragePool._poolSourceHost));
             cmd.add("-p", rbdStoragePool._poolMountSourcePath);
+            cmd.add("-n", rbdStoragePool._poolAuthUserName);
             cmd.add("-s", rbdStoragePool._poolAuthSecret);
             poolIp = rbdStoragePool._poolIp;
         }

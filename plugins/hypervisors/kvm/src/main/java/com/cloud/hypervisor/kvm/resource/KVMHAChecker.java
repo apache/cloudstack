@@ -77,6 +77,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             Script cmd = new Script(s_heartBeatPathRbd, heartBeatCheckerTimeout, s_logger);
             cmd.add("-i", getRbdMonIpAddress(pool._poolSourceHost));
             cmd.add("-p", pool._poolMountSourcePath);
+            cmd.add("-n", pool._poolAuthUserName);
             cmd.add("-s", pool._poolAuthSecret);
             cmd.add("-h", hostIp);
             cmd.add("-r");

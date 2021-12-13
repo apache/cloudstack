@@ -19,6 +19,7 @@
 help() {
   printf "Usage: $0 
                     -p rbd pool name
+                    -n pool auth username
                     -s pool auth secret
                     -h host
                     -i source host ip
@@ -29,6 +30,7 @@ help() {
 }
 #set -x
 PoolName=
+PoolAuthUserName=
 PoolAuthSecret=
 HostIP=
 SourceHostIP=
@@ -36,11 +38,14 @@ interval=
 rflag=0
 cflag=0
 
-while getopts 'p:s:h:i:t:rc' OPTION
+while getopts 'p:n:s:h:i:t:rc' OPTION
 do
   case $OPTION in
   p)
      PoolName="$OPTARG"
+     ;;
+  n)
+     PoolAuthUserName="$OPTARG"
      ;;
   s)
      PoolAuthSecret="$OPTARG"
@@ -70,13 +75,13 @@ if [ -z "$PoolName" ]; then
   exit 2
 fi
 
-keyringFile="/etc/ceph/keyring.bin"
+keyringFile="/etc/ceph/keyring"
 confFile="/etc/ceph/ceph.conf"
 
 create_cephConf() {
 #Creating Ceph keyring and conf for executing rados commands
   if [ ! -f $keyringFile ]; then
-    echo -e "[client.admin]\n key=$PoolAuthSecret" > $keyringFile
+    echo -e "[client.$PoolAuthUserName]\n key=$PoolAuthSecret" > $keyringFile
   fi
   
   if [ ! -f $confFile ]; then
@@ -98,11 +103,11 @@ delete_cephConf() {
 write_hbLog() {
 #write the heart beat log
   timestamp=$(date +%s)
-  obj=$(rados -p $PoolName ls | grep hb-$HostIP)
+  obj=$(rados -p $PoolName ls --id $PoolAuthUserName | grep hb-$HostIP)
   if [ $? -gt 0 ]; then
-     rados -p $PoolName create hb-$HostIP
+     rados -p $PoolName create hb-$HostIP --id $PoolAuthUserName
   fi
-  echo $timestamp | rados -p $PoolName put hb-$HostIP -
+  echo $timestamp | rados -p $PoolName put hb-$HostIP - --id $PoolAuthUserName
   if [ $? -gt 0 ]; then
    	printf "Failed to create rbd file"
     return 2
@@ -113,7 +118,7 @@ write_hbLog() {
 check_hbLog() {
 #check the heart beat log
   now=$(date +%s)
-  hb=$(rados -p $PoolName get hb-$HostIP -)
+  hb=$(rados -p $PoolName get hb-$HostIP - --id $PoolAuthUserName)
   diff=$(expr $now - $hb)
   if [ $diff -gt $interval ]; then
     return $diff

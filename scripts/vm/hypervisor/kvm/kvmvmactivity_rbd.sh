@@ -18,6 +18,7 @@
 help() {
   printf "Usage: $0 
                     -p rbd pool name
+                    -n pool auth username
                     -s pool auth secret
                     -h host
                     -i source host ip
@@ -28,6 +29,7 @@ help() {
 }
 #set -x
 PoolName=
+PoolAuthUserName=
 PoolAuthSecret=
 HostIP=
 SourceHostIP=
@@ -35,11 +37,14 @@ UUIDList=
 MSTime=
 SuspectTime=
 
-while getopts 'p:s:h:i:u:t:d:' OPTION
+while getopts 'p:n:s:h:i:u:t:d:' OPTION
 do
   case $OPTION in
   p)
      PoolName="$OPTARG"
+     ;;
+  n)
+     PoolAuthUserName="$OPTARG"
      ;;
   s)
      PoolAuthSecret="$OPTARG"
@@ -78,7 +83,7 @@ keyringFile="/etc/ceph/keyring.bin"
 confFile="/etc/ceph/ceph.conf"
 
 if [ ! -f $keyringFile ]; then
-    echo -e "[client.admin]\n key=$PoolAuthSecret" > $keyringFile
+    echo -e "[client.$PoolAuthUserName]\n key=$PoolAuthSecret" > $keyringFile
 fi
 
 if [ ! -f $confFile ]; then
@@ -91,7 +96,7 @@ fi
 
 # First check: heartbeat file
 now=$(date +%s)
-hb=$(rados -p $PoolName get hb-$HostIP -)
+hb=$(rados -p $PoolName get hb-$HostIP - --id $PoolAuthUserName)
 diff=$(expr $now - $hb)
 if [ $diff -lt 61 ]; then
     echo "=====> ALIVE <====="
@@ -106,28 +111,28 @@ fi
 # Second check: disk activity check
 lastestUUIDList=
 for UUID in $(echo $UUIDList | sed 's/,/ /g'); do
-    time=$(rbd info $UUID | grep modify_timestamp)
+    time=$(rbd info $UUID --id $PoolAuthUserName | grep modify_timestamp)
     time=${time#*modify_timestamp: }
     time=$(date -d "$time" +%s)
     lastestUUIDList+="${time}\n"
 done
 
 latestUpdateTime=$(echo -e $lastestUUIDList 2> /dev/null | sort -nr | head -1)
-obj=$(rados -p $PoolName ls | grep ac-$HostIP)
+obj=$(rados -p $PoolName ls --id $PoolAuthUserName | grep ac-$HostIP)
 if [ $? -gt 0 ]; then
-    rados -p $PoolName create ac-$HostIP
-    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP -
+    rados -p $PoolName create ac-$HostIP --id $PoolAuthUserName
+    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP - --id $PoolAuthUserName
     if [[ $latestUpdateTime -gt $SuspectTime ]]; then
         echo "=====> ALIVE <====="
     else
         echo "=====> Considering host as DEAD due to file [RBD pool] does not exists and condition [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
     fi
 else
-    acTime=$(rados -p $PoolName get ac-$HostIP -)
+    acTime=$(rados -p $PoolName get ac-$HostIP - --id $PoolAuthUserName)
     arrTime=(${acTime//:/ })
     lastSuspectTime=${arrTime[0]}
     lastUpdateTime=${arrTime[1]}
-    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP -
+    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP - --id $PoolAuthUserName
     suspectTimeDiff=$(expr $SuspectTime - $lastSuspectTime)
     if [ $suspectTimeDiff -lt 0 ]; then
         if [[ $latestUpdateTime -gt $SuspectTime ]]; then

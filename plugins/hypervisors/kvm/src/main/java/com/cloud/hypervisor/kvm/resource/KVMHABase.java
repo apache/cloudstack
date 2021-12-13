@@ -66,15 +66,17 @@ public class KVMHABase {
         String _poolMountSourcePath;
         String _mountDestPath;
         PoolType _type;
+        String _poolAuthUserName;
         String _poolAuthSecret;
         String _poolSourceHost;
 
-        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthSecret, String poolSourceHost) {
+        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthUserName, String poolAuthSecret, String poolSourceHost) {
             _poolUUID = poolUUID;
             _poolIp = poolIp;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
             _type = type;
+            _poolAuthUserName = poolAuthUserName;
             _poolAuthSecret = poolAuthSecret;
             _poolSourceHost = poolSourceHost;
         }
@@ -209,8 +211,13 @@ public class KVMHABase {
             String[] hostArr = sourceHost.split(",");
             String sourceHostIP = "";
             for (String host : hostArr) {
-                InetAddress addr = InetAddress.getByName(host);
-                sourceHostIP += addr.getHostAddress() + ",";
+                String ipRegex = "(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])";
+                if (host.matches(ipRegex)) {
+                    sourceHostIP += host + ",";
+                } else {
+                    InetAddress addr = InetAddress.getByName(host);
+                    sourceHostIP += addr.getHostAddress() + ",";
+                }
             }
             return sourceHostIP;
         } catch (UnknownHostException e) {
