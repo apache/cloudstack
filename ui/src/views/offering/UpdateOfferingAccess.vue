@@ -88,6 +88,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -169,7 +170,7 @@ export default {
       this.fetchZoneData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     fetchOfferingData () {
       this.loading = true
@@ -228,7 +229,7 @@ export default {
           }
         }
       } else {
-        if (this.isAdmin()) {
+        if (isAdmin()) {
           this.form.ispublic = true
         }
       }

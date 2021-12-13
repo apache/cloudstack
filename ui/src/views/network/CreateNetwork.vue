@@ -48,6 +48,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import CreateIsolatedNetworkForm from '@/views/network/CreateIsolatedNetworkForm'
 import CreateL2NetworkForm from '@/views/network/CreateL2NetworkForm'
 import CreateSharedNetworkForm from '@/views/network/CreateSharedNetworkForm'
@@ -89,9 +90,6 @@ export default {
     })
   },
   methods: {
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
     fetchActionZoneData () {
       this.loading = true
       const params = {}
@@ -106,6 +104,9 @@ export default {
         this.actionZoneLoading = false
         this.loading = false
       })
+    },
+    isAdmin () {
+      return isAdmin()
     },
     handleRefresh () {
     },

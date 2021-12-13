@@ -464,6 +464,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -541,9 +542,9 @@ export default {
     if (this.$route.meta.name === 'systemoffering') {
       this.isSystem = true
     }
-    this.isPublic = this.isAdmin()
     this.initForm()
     this.fetchData()
+    this.isPublic = isAdmin()
   },
   methods: {
     initForm () {
@@ -614,13 +615,13 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      if (this.isAdmin()) {
+      if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
       }
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
@@ -698,7 +699,7 @@ export default {
       this.selectedDeployementPlanner = planner
       this.plannerModeVisible = false
       if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
-        this.plannerModeVisible = this.isAdmin()
+        this.plannerModeVisible = isAdmin()
       }
     },
     handleGpuChange (val) {

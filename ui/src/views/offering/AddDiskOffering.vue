@@ -285,6 +285,7 @@
 <script>
 import { api } from '@/api'
 import { reactive, ref, toRaw } from 'vue'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -318,7 +319,7 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-    this.isPublic = this.isAdmin()
+    this.isPublic = isAdmin()
     this.initForm()
     this.fetchData()
   },
@@ -362,12 +363,12 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      if (this.isAdmin()) {
+      if (isAdmin()) {
         this.fetchStorageTagData()
       }
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
