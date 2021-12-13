@@ -5275,7 +5275,7 @@ class NIC:
         """Remove secondary Ip from NIC"""
         cmd = removeIpFromNic.removeIpFromNicCmd()
         cmd.id = ipaddressid
-        return (apiclient.addIpToNic(cmd))
+        return (apiclient.removeIpFromNic(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -5287,6 +5287,14 @@ class NIC:
             cmd.listall = True
         return (apiclient.listNics(cmd))
 
+    @classmethod
+    def updateIp(cls, apiclient, id, ipaddress=None):
+        """Update Ip for NIC"""
+        cmd = updateVmNicIp.updateVmNicIpCmd()
+        cmd.nicid = id
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        return (apiclient.updateVmNicIp(cmd))
 
 class SimulatorMock:
     """Manage simulator mock lifecycle"""
