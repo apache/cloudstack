@@ -83,7 +83,7 @@ fi
 
 sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev python-openssl build-essential --no-install-recommends > /dev/null
 
-sudo apt-get -y install python3 python3-pip
+sudo apt-get -y install python3 python3-pip python3-setuptools
 sudo apt-get -y install python3-dev # in order to be able to pip3 install pycrypto
 # for now we need both:
 sudo apt-get -y install python2
