@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -251,10 +252,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             }
             metricsList.add(new ItemVM(zoneName, zoneUuid, state.name().toLowerCase(), count));
         }
-        List<String> allHostTags = new ArrayList<String>();
-        for (final HostVO host : hostDao.listAll()) {
-            allHostTags.addAll(_hostTagsDao.gethostTags(host.getId()));
-        }
+
+        List<String> allHostTags = hostDao.listAll().stream()
+                .flatMap( h -> _hostTagsDao.gethostTags(h.getId()).stream())
+                .distinct()
+                .collect(Collectors.toList());
+
         for (final State state : State.values()) {
             for (final String hosttag : allHostTags) {
                 final Long count = vmDao.countByZoneAndStateAndHostTag(dcId, state, hosttag);
