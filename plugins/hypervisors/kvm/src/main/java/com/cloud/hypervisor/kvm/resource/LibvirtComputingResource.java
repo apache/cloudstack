@@ -281,9 +281,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
-    public static String[] srcFiles = new String[] { "agent.zip", "cloud-scripts.tgz" };
-    public static String[] newSrcFiles = new String[] { "agent.zip", "cloud-scripts.tgz", "patch-sysvms.sh" };
-
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -309,8 +306,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final int NUMMEMSTATS =2;
 
     private KVMHAMonitor _monitor;
-    public static final String SSHKEYSPATH = "/root/.ssh";
-    public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
