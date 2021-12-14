@@ -18,3 +18,21 @@
 --;
 -- Schema upgrade from 4.16.0.0 to 4.16.1.0
 --;
+
+-- Add missing primary keys on tables
+ALTER TABLE `cloud`.`op_user_stats_log` ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `cloud_usage`.`usage_ip_address`
+    DROP INDEX `id`,
+    CHANGE COLUMN `id` `ip_id` BIGINT(20) UNSIGNED NOT NULL,
+    ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST,
+    ADD PRIMARY KEY (`id`),
+    ADD UNIQUE INDEX `id` (`ip_id` ASC, `assigned` ASC);
+
+ALTER TABLE `cloud_usage`.`usage_load_balancer_policy`
+    CHANGE COLUMN `id` `lb_id` BIGINT(20) UNSIGNED NOT NULL,
+    ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST,
+    ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `cloud_usage`.`usage_network_offering`
+    ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
