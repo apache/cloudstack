@@ -49,11 +49,11 @@ public class NetworkPermissionsResponse extends BaseResponse {
     private String accountId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the account the network is available for")
+    @Param(description = "the project the network is available for")
     private String projectName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the ID of account the network is available for")
+    @Param(description = "the ID of project the network is available for")
     private String projectId;
 
 
