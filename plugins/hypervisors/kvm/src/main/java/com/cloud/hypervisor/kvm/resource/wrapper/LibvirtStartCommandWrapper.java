@@ -21,11 +21,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import com.cloud.utils.ssh.SshHelper;
+import com.cloud.utils.FileUtil;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
@@ -122,13 +119,8 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
 
                     try {
-                        List<String> srcFiles = Arrays.asList(LibvirtComputingResource.srcFiles);
-                        srcFiles = srcFiles.stream()
-                                .map(file -> LibvirtComputingResource.BASEPATH + file)
-                                .collect(Collectors.toList());
                         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
-                        SshHelper.scpTo(controlIp, 3922, "root", pemFile, null,
-                                "/home/cloud/", srcFiles.toArray(new String[0]), "0755");
+                        FileUtil.scpPatchFiles(controlIp, "/home/cloud", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.newSrcFiles, LibvirtComputingResource.BASEPATH);
                         // TODO: May want to remove this when cert patching logic is moved
                         Thread.sleep(10000);
                     } catch (Exception e) {

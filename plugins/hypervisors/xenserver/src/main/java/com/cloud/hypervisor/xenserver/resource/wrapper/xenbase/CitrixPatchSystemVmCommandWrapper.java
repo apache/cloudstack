@@ -14,14 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.kvm.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.ExecutionResult;
@@ -35,55 +35,57 @@ import org.apache.log4j.Logger;
 import java.io.File;
 
 @ResourceWrapper(handles = PatchSystemVmCommand.class)
-public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSystemVmCommand, Answer, LibvirtComputingResource> {
-    private static final Logger s_logger = Logger.getLogger(LibvirtPatchSystemVmCommandWrapper.class);
-    private static int sshPort = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
-    private static File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSystemVmCommand, Answer, CitrixResourceBase> {
+    private static final Logger s_logger = Logger.getLogger(CitrixPatchSystemVmCommandWrapper.class);
+    private static int sshPort = CitrixResourceBase.DEFAULTDOMRSSHPORT;
+    private static File pemFile = new File(CitrixResourceBase.SSHPRVKEYPATH);
 
     @Override
-    public Answer execute(PatchSystemVmCommand cmd, LibvirtComputingResource serverResource) {
-        final String controlIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final String sysVMName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+    public Answer execute(PatchSystemVmCommand command, CitrixResourceBase serverResource) {
+        final String controlIp = command.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        final String sysVMName = command.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+
+
         ExecutionResult result;
         try {
             result = getSystemVmVersionAndChecksum(serverResource, controlIp);
-            FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, LibvirtComputingResource.BASEPATH);
+            FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, CitrixResourceBase.BASEPATH);
         } catch (CloudRuntimeException e) {
-            return new PatchSystemVmAnswer(cmd, e.getMessage());
+            return new PatchSystemVmAnswer(command, e.getMessage());
         }
 
         final String[] lines = result.getDetails().split("&");
         // TODO: do we fail, or patch anyway??
         if (lines.length != 2) {
-            return new PatchSystemVmAnswer(cmd, result.getDetails());
+            return new PatchSystemVmAnswer(command, result.getDetails());
         }
 
         String scriptChecksum = lines[1].trim();
         String checksum = serverResource.calculateCurrentChecksum(sysVMName).trim();
 
         if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
-            if (!cmd.isForced()) {
+            if (!command.isForced()) {
                 String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
                 s_logger.info(msg);
-                return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
+                return new PatchSystemVmAnswer(command, msg, lines[0], lines[1]);
             }
         }
-
         Pair<Boolean, String> patchResult = null;
         try {
             patchResult = SshHelper.sshExecute(controlIp, sshPort, "root",
                     pemFile, null, "/home/cloud/patch-sysvms.sh", 10000, 10000, 60000);
         } catch (Exception e) {
-            return new PatchSystemVmAnswer(cmd, e.getMessage());
+            return new PatchSystemVmAnswer(command, e.getMessage());
         }
 
         if (patchResult.first()) {
-            return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
+            return new PatchSystemVmAnswer(command, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
         }
-        return new PatchSystemVmAnswer(cmd, patchResult.second());
+        return new PatchSystemVmAnswer(command, patchResult.second());
+
     }
 
-    private ExecutionResult getSystemVmVersionAndChecksum(LibvirtComputingResource serverResource, String controlIp) {
+    private ExecutionResult getSystemVmVersionAndChecksum(CitrixResourceBase serverResource, String controlIp) {
         ExecutionResult result;
         try {
             result = serverResource.executeInVR(controlIp, VRScripts.VERSION, null);
@@ -99,5 +101,6 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         }
         return result;
     }
-}
 
+
+}

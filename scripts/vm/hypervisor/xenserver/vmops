@@ -235,11 +235,13 @@ def createFileInDomr(session, args):
     src_filepath = args['srcfilepath']
     dst_path = args['dstfilepath']
     domrip = args['domrip']
+    cleanup = 'true' if 'cleanup' not in args else args['cleanup']
     txt=""
     try:
         target = "root@" + domrip + ":" + dst_path
         txt = util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',src_filepath, target])
-        util.pread2(['rm',src_filepath])
+        if cleanup == 'true' or not cleanup:
+            util.pread2(['rm',src_filepath])
         txt = 'succ#' + txt
     except:
         logging.debug("failed to copy file " + src_filepath + " from host to VR with ip " + domrip)

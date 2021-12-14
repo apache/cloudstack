@@ -27,10 +27,18 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 
+import java.io.File;
+
 /**
  * ServerResource is a generic container to execute commands sent
  */
 public interface ServerResource extends Manager {
+
+    String[] srcFiles = new String[] { "agent.zip", "cloud-scripts.tgz" };
+    String[] newSrcFiles = new String[] { "agent.zip", "cloud-scripts.tgz", "patch-sysvms.sh" };
+
+    String SSHKEYSPATH = "/root/.ssh";
+    String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
 
     /**
      * @return Host.Type type of the computing server we have.
