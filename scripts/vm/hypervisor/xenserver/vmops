@@ -249,6 +249,19 @@ def createFileInDomr(session, args):
     return txt
 
 @echo
+def runPatchScriptInDomr(session, args):
+    domrip = args['domrip']
+    txt=""
+    try:
+        target = "root@" + domrip
+        txt = util.pread2(['ssh','-p','3922','-i','/root/.ssh/id_rsa.cloud', target, "/bin/bash","/home/cloud/patch-sysvms.sh"])
+        txt = 'succ#' + txt
+    except:
+        logging.debug("failed to run patch script in systemVM with IP:  " + domrip)
+        txt = 'fail#' + txt
+    return txt
+
+@echo
 def deleteFile(session, args):
     file_path = args["filepath"]
 
@@ -1590,4 +1603,5 @@ if __name__ == "__main__":
                             "cleanup_rules":cleanup_rules,
                             "createFileInDomr":createFileInDomr,
                             "kill_copy_process":kill_copy_process,
-                            "secureCopyToHost":secureCopyToHost})
+                            "secureCopyToHost":secureCopyToHost,
+                            "runPatchScriptInDomr": runPatchScriptInDomr})
