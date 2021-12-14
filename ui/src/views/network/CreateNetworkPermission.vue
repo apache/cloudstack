@@ -127,7 +127,7 @@ export default {
       params.domainid = this.resource.domainid
       this.accountLoading = true
       api('listAccounts', params).then(json => {
-        const listaccounts = json.listaccountsresponse.account
+        const listaccounts = json.listaccountsresponse.account || []
         this.accounts = listaccounts
       }).finally(() => {
         this.accountLoading = false
@@ -142,8 +142,8 @@ export default {
       params.domainid = this.resource.domainid
       this.projectLoading = true
       api('listProjects', params).then(json => {
-        const listProjects = json.listprojectsresponse.project
-        this.projects = this.projects.concat(listProjects)
+        const listProjects = json.listprojectsresponse.project || []
+        this.projects = listProjects
       }).finally(() => {
         this.projectLoading = false
       })
