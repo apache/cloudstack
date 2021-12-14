@@ -1666,8 +1666,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
         // Perform account permission check
-        if ((network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) ||
-                (network.getGuestType() == GuestType.Shared && network.getAclType() == ACLType.Account)) {
+        if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
