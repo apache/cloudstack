@@ -41,6 +41,7 @@ const err = (error) => {
       if (response.config && response.config.params && ['listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
         return
       }
+      const originalPath = router.currentRoute.value.fullPath
       for (const key in response.data) {
         if (key.includes('response')) {
           if (response.data[key].errortext.includes('not available for user')) {
@@ -60,8 +61,8 @@ const err = (error) => {
         duration: 0
       })
       store.dispatch('Logout').then(() => {
-        if (router.currentRoute.path !== '/user/login') {
-          router.push({ path: '/user/login', query: { redirect: router.currentRoute.fullPath } })
+        if (originalPath !== '/user/login') {
+          router.push({ path: '/user/login', query: { redirect: originalPath } })
         }
       })
     }
