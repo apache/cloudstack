@@ -187,6 +187,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -2172,12 +2173,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         List<Long> allowedDomainsList = new ArrayList<Long>(allowedDomains);
-        List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByDomains(allowedDomainsList);
-        if (!sharedNetworkIds.isEmpty()) {
-            SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-            ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
-            sc.addAnd("id", SearchCriteria.Op.SC, ssc);
-            return _networksDao.search(sc, searchFilter);
+
+        if (!allowedDomainsList.isEmpty()) {
+            GenericSearchBuilder<AccountVO, Long> accountIdSearch = _accountDao.createSearchBuilder(Long.class);
+            accountIdSearch.and("domainId", accountIdSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+            accountIdSearch.selectFields(accountIdSearch.entity().getId());
+            accountIdSearch.done();
+            SearchCriteria<Long> scAccount = accountIdSearch.create();
+            scAccount.setParameters("domainId", allowedDomainsList.toArray());
+            List<Long> allowedAccountsList = _accountDao.customSearch(scAccount, null);
+
+            List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByAccounts(allowedAccountsList);
+            if (!sharedNetworkIds.isEmpty()) {
+                SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
+                ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
+                sc.addAnd("id", SearchCriteria.Op.SC, ssc);
+                return _networksDao.search(sc, searchFilter);
+            }
         }
         return new ArrayList<NetworkVO>();
     }

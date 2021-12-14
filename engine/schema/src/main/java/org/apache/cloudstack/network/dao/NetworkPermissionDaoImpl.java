@@ -24,17 +24,10 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.NetworkPermissionVO;
 
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
 
 @Component
 public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO, Long> implements NetworkPermissionDao {
@@ -43,16 +36,8 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
     private SearchBuilder<NetworkPermissionVO> NetworkAndAccountSearch;
     private SearchBuilder<NetworkPermissionVO> NetworkIdSearch;
     private GenericSearchBuilder<NetworkPermissionVO, Long> FindNetworkIdsByAccount;
-    private GenericSearchBuilder<NetworkPermissionVO, Long> FindNetworkIdsByDomain;
-
-    @Inject
-    AccountDao _accountDao;
 
     protected NetworkPermissionDaoImpl() {
-    }
-
-    @PostConstruct
-    public void init() {
         NetworkAndAccountSearch = createSearchBuilder();
         NetworkAndAccountSearch.and("networkId", NetworkAndAccountSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkAndAccountSearch.and("accountId", NetworkAndAccountSearch.entity().getAccountId(), SearchCriteria.Op.IN);
@@ -65,13 +50,6 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         FindNetworkIdsByAccount = createSearchBuilder(Long.class);
         FindNetworkIdsByAccount.select(null, SearchCriteria.Func.DISTINCT, FindNetworkIdsByAccount.entity().getNetworkId());
         FindNetworkIdsByAccount.and("account", FindNetworkIdsByAccount.entity().getAccountId(), SearchCriteria.Op.IN);
-        FindNetworkIdsByAccount.done();
-
-        FindNetworkIdsByDomain = createSearchBuilder(Long.class);
-        FindNetworkIdsByDomain.select(null, SearchCriteria.Func.DISTINCT, FindNetworkIdsByDomain.entity().getNetworkId());
-        SearchBuilder<AccountVO> AccountSearch = _accountDao.createSearchBuilder();
-        AccountSearch.and("domainId", AccountSearch.entity().getDomainId(), SearchCriteria.Op.IN);
-        FindNetworkIdsByDomain.join("accountSearch", AccountSearch, FindNetworkIdsByDomain.entity().getAccountId(), AccountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         FindNetworkIdsByAccount.done();
     }
 
@@ -113,16 +91,6 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         SearchCriteria<Long> sc = FindNetworkIdsByAccount.create();
         if (permittedAccounts != null && !permittedAccounts.isEmpty()) {
             sc.setParameters("account", permittedAccounts.toArray());
-            return customSearch(sc, null);
-        }
-        return new ArrayList<Long>();
-    }
-
-    @Override
-    public List<Long> listPermittedNetworkIdsByDomains(List<Long> allowedDomains) {
-        SearchCriteria<Long> sc = FindNetworkIdsByDomain.create();
-        if (allowedDomains != null && !allowedDomains.isEmpty()) {
-            sc.setJoinParameters("accountSearch", "domainId", allowedDomains.toArray());
             return customSearch(sc, null);
         }
         return new ArrayList<Long>();

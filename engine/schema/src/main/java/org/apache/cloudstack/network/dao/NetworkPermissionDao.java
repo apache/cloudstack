@@ -62,6 +62,4 @@ public interface NetworkPermissionDao extends GenericDao<NetworkPermissionVO, Lo
     List<NetworkPermissionVO> findByNetwork(long networkId);
 
     List<Long> listPermittedNetworkIdsByAccounts(List<Long> permittedAccounts);
-
-    List<Long> listPermittedNetworkIdsByDomains(List<Long> allowedDomains);
 }
