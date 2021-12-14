@@ -52,6 +52,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.resource.ServerResourceBase;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -180,7 +181,7 @@ import com.xensource.xenapi.XenAPIObject;
  * before you do any changes in this code here.
  *
  */
-public abstract class CitrixResourceBase implements ServerResource, HypervisorResource, VirtualRouterDeployer {
+public abstract class CitrixResourceBase extends ServerResourceBase implements ServerResource, HypervisorResource, VirtualRouterDeployer {
     /**
      * used to describe what type of resource a storage device is of
      */
@@ -216,6 +217,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private final static String VM_NAME_ISO_SUFFIX = "-ISO";
 
     private final static String VM_FILE_ISO_SUFFIX = ".iso";
+    public final static int DEFAULTDOMRSSHPORT = 3922;
 
     private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
@@ -226,6 +228,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
 
     public static final String XS_TOOLS_ISO_AFTER_70 = "guest-tools.iso";
+    public static final String BASEPATH = "/opt/xensource/packages/resources/";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
@@ -337,6 +340,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected StorageSubsystemCommandHandler buildStorageHandler() {
         final XenServerStorageProcessor processor = new XenServerStorageProcessor(this);
         return new StorageSubsystemCommandHandlerBase(processor);
+    }
+
+    @Override
+    protected String getDefaultScriptsDir() {
+        return null;
     }
 
     public String callHostPlugin(final Connection conn, final String plugin, final String cmd, final String... params) {
@@ -904,11 +912,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    public String connect(final Connection conn, final String vmname, final String ipAddress) {
-        return connect(conn, vmname, ipAddress, 3922);
+    public String connect(final Connection conn, final String vmname, final String ipAddress, int sleep) {
+        return connect(conn, vmname, ipAddress, DEFAULTDOMRSSHPORT, sleep);
     }
 
-    public String connect(final Connection conn, final String vmName, final String ipAddress, final int port) {
+    public String connect(final Connection conn, final String vmName, final String ipAddress, final int port, int sleep) {
+        if (sleep == 0) {
+            sleep = _sleep;
+        }
+
         for (int i = 0; i <= _retry; i++) {
             try {
                 final Set<VM> vms = VM.getByNameLabel(conn, vmName);
@@ -929,7 +941,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return null;
             }
             try {
-                Thread.sleep(_sleep);
+                Thread.sleep(sleep);
             } catch (final InterruptedException e) {
             }
         }
@@ -974,8 +986,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn("scp VR config file into host " + _host.getIp() + " failed with exception " + e.getMessage().toString());
         }
 
-        final String rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "srcfilepath", hostPath + filename, "dstfilepath", path);
-        s_logger.debug("VR Config file " + filename + " got created in VR, ip " + routerIp + " with content \n" + content);
+        final String rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "srcfilepath", hostPath + filename, "dstfilepath", path, "cleanup", "true");
+        s_logger.debug("VR Config file " + filename + " got created in VR, IP: " + routerIp + " with content \n" + content);
+
+        return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
+    }
+
+    public ExecutionResult copyPatchFilesToVR(final String routerIp, final String path) {
+        final Connection conn = getConnection();
+        final String hostPath = "/opt/xensource/packages/resources/";
+        String rc = "";
+        for (String file: newSrcFiles) {
+            rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "srcfilepath", hostPath.concat(file), "dstfilepath", path, "cleanup", "false");
+            if (rc.startsWith("fail#")) {
+                s_logger.error(String.format("Failed to scp file %s required for patching the systemVM", file));
+                break;
+            }
+        }
+
+        s_logger.debug("VR Config files at " + hostPath + " got created in VR, IP: " + routerIp);
 
         return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
     }
@@ -4885,7 +4914,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     throw new CloudRuntimeException("Unable to authenticate");
                 }
 
-                final String cmd = "mkdir -p /opt/cloud/bin /var/log/cloud";
+                final String cmd = "mkdir -p /opt/cloud/bin /var/log/cloud /opt/xensource/packages/resources/";
                 if (!SSHCmdHelper.sshExecuteCmd(sshConnection, cmd)) {
                     throw new CloudRuntimeException("Cannot create directory /opt/cloud/bin on XenServer hosts");
                 }
