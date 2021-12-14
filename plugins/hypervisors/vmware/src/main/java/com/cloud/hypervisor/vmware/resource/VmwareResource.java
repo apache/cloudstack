@@ -47,6 +47,10 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.PatchSystemVmAnswer;
+import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.resource.ServerResourceBase;
+import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -360,10 +364,11 @@ import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
-public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
+public class VmwareResource extends ServerResourceBase implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
     public static final String VMDK_EXTENSION = ".vmdk";
     private static final String EXECUTING_RESOURCE_COMMAND = "Executing resource command %s: [%s].";
+    public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
     private static final Random RANDOM = new Random(System.nanoTime());
 
@@ -590,7 +595,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((SetupPersistentNetworkCommand) cmd);
             } else if (clz == GetVmVncTicketCommand.class) {
                 answer = execute((GetVmVncTicketCommand) cmd);
-            } else {
+            } else if (clz == PatchSystemVmCommand.class) {
+            answer = execute((PatchSystemVmCommand) cmd);
+        } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
 
@@ -628,6 +635,68 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    private ExecutionResult getSystemVmVersionAndChecksum(String controlIp) {
+        ExecutionResult result;
+        try {
+            result = executeInVR(controlIp, VRScripts.VERSION, null);
+            if (!result.isSuccess()) {
+                String errMsg = String.format("GetSystemVMVersionCmd on %s failed, message %s", controlIp, result.getDetails());
+                s_logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        } catch (final Exception e) {
+            final String msg = "GetSystemVMVersionCmd failed due to " + e;
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        }
+        return result;
+    }
+
+    private Answer execute(PatchSystemVmCommand cmd) {
+        String controlIp = getRouterSshControlIp(cmd);
+        String sysVMName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String homeDir = System.getProperty("user.home");
+        File pemFile = new File(homeDir + "/.ssh/id_rsa");
+
+        ExecutionResult result = getSystemVmVersionAndChecksum(controlIp);
+        try {
+            FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, newSrcFiles, BASEPATH);
+        } catch (CloudRuntimeException e) {
+            return new PatchSystemVmAnswer(cmd, e.getMessage());
+        }
+
+        final String[] lines = result.getDetails().split("&");
+        // TODO: do we fail, or patch anyway??
+        if (lines.length != 2) {
+            return new PatchSystemVmAnswer(cmd, result.getDetails());
+        }
+
+        String scriptChecksum = lines[1].trim();
+        String checksum = calculateCurrentChecksum(sysVMName).trim();
+
+        if (!org.apache.commons.lang3.StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
+            if (!cmd.isForced()) {
+                String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
+                s_logger.info(msg);
+                return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
+            }
+        }
+
+        Pair<Boolean, String> patchResult = null;
+        try {
+            patchResult = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root",
+                    pemFile, null, "/home/cloud/patch-sysvms.sh", 10000, 10000, 60000);
+        } catch (Exception e) {
+            return new PatchSystemVmAnswer(cmd, e.getMessage());
+        }
+
+        if (patchResult.first()) {
+            return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
+        }
+        return new PatchSystemVmAnswer(cmd, patchResult.second());
+
     }
 
     private Answer execute(SetupPersistentNetworkCommand cmd) {
@@ -2072,7 +2141,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo,
-                        String.format("[%s] systemvm/%s", secDsMo.getName(), mgr.getSystemVMIsoFileNameOnDatastore()), secDsMo.getMor(), true, true, ideUnitNumber++, i + 1);
+                        null, secDsMo.getMor(), true, true, ideUnitNumber++, i + 1);
                 deviceConfigSpecArray[i].setDevice(isoInfo.first());
                 if (isoInfo.second()) {
                     if (s_logger.isDebugEnabled())
@@ -2456,6 +2525,29 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             StartAnswer startAnswer = new StartAnswer(cmd);
 
             startAnswer.setIqnToData(iqnToData);
+
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
+                String controlIp = getControlIp(nics);
+                // check if the router is up?
+                for (int count = 0; count < 60; count++) {
+                    final boolean result = _vrResource.connect(controlIp, 1, 5000);
+                    if (result) {
+                        break;
+                    }
+                }
+
+                try {
+                    String homeDir = System.getProperty("user.home");
+                    File pemFile = new File(homeDir + "/.ssh/id_rsa");
+                    FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, newSrcFiles, BASEPATH);
+                    // TODO: May want to remove this when cert patching logic is moved
+                    Thread.sleep(10000);
+                } catch (Exception e) {
+                    String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
+                    s_logger.error(errMsg, e);
+                    return new StartAnswer(cmd, String.format("%s due to: %s", errMsg, e.getMessage()));
+                }
+            }
 
             // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
             if (existingVmName != null && existingVmFileLayout != null) {
@@ -3846,6 +3938,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
         }
+    }
+
+    private String getControlIp(NicTO[] nicTOs) {
+        String controlIpAddress = null;
+        for (NicTO nic : nicTOs) {
+            if ((TrafficType.Management == nic.getType() || TrafficType.Control == nic.getType()) && nic.getIp() != null) {
+                controlIpAddress = nic.getIp();
+                break;
+            }
+        }
+        return controlIpAddress;
     }
 
     private VirtualMachineMO takeVmFromOtherHyperHost(VmwareHypervisorHost hyperHost, String vmName) throws Exception {
@@ -6648,6 +6751,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public String getName() {
         return _name;
+    }
+
+    @Override
+    protected String getDefaultScriptsDir() {
+        return null;
     }
 
     @Override

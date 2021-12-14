@@ -25,10 +25,8 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.ExecutionResult;
-import com.cloud.utils.FileUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SshHelper;
+import com.xensource.xenapi.Connection;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -44,12 +42,13 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
     public Answer execute(PatchSystemVmCommand command, CitrixResourceBase serverResource) {
         final String controlIp = command.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String sysVMName = command.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-
+        final Connection conn = serverResource.getConnection();
 
         ExecutionResult result;
         try {
             result = getSystemVmVersionAndChecksum(serverResource, controlIp);
-            FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, CitrixResourceBase.BASEPATH);
+            serverResource.copyPatchFilesToVR(controlIp, "/home/cloud");
+            //FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, CitrixResourceBase.BASEPATH);
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(command, e.getMessage());
         }
@@ -70,18 +69,18 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
                 return new PatchSystemVmAnswer(command, msg, lines[0], lines[1]);
             }
         }
-        Pair<Boolean, String> patchResult = null;
+        String patchResult = null;
         try {
-            patchResult = SshHelper.sshExecute(controlIp, sshPort, "root",
-                    pemFile, null, "/home/cloud/patch-sysvms.sh", 10000, 10000, 60000);
+            patchResult = serverResource.callHostPlugin(conn, "vmops", "runPatchScriptInDomr", "domrip", controlIp);
         } catch (Exception e) {
             return new PatchSystemVmAnswer(command, e.getMessage());
         }
 
-        if (patchResult.first()) {
+
+        if (patchResult.startsWith("succ#")) {
             return new PatchSystemVmAnswer(command, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
         }
-        return new PatchSystemVmAnswer(command, patchResult.second());
+        return new PatchSystemVmAnswer(command, patchResult.substring(5));
 
     }
 
