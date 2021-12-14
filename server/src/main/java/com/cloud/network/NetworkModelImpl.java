@@ -1719,6 +1719,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network == null) {
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
+        if (owner.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            return;
+        }
         if (network.getGuestType() == GuestType.Shared) {
             checkSharedNetworkOperatePermissions(owner, network);
         } else {
@@ -1728,9 +1731,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     private void checkNonSharedNetworkOperatePermissions(Account owner, Network network) {
         // check on isolated/L2 networks
-        if (owner.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            return;
-        }
         Account networkOwner = _accountDao.findByIdIncludingRemoved(network.getAccountId());
         if (owner.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (!_domainDao.isChildDomain(owner.getDomainId(), networkOwner.getDomainId())) {
