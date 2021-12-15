@@ -213,7 +213,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 @Component
 public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable, StatsCollection {
 
-    public enum ExternalStatsProtocol {
+    public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite"), INFLUXDB("influxdb");
         String _type;
 
@@ -379,7 +379,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private final ConcurrentHashMap<String, ManagementServerHostStats> managementServerHostStats = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Object> dbStats = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<>();
-    protected final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<>();
     private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<>();
