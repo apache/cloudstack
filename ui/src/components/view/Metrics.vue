@@ -41,38 +41,44 @@
       </a-col>
     </a-row>
     <a-divider/>
-    <a-row>
-      <a-col :md="24" :lg="12" :gutter="12">
-        <a-card>
-          <a-table
-            class="metric-card"
-            :columns="columns"
-            :loading="loading"
-            :data-source="dbMetrics"
-            :pagination="{ pageSize: 15}"
-            size="middle"
-          >
-            <template slot="title">
-              <a>{{ $t('label.desc.db.stats') }}</a>
-            </template>
-          </a-table>
-        </a-card>
-      </a-col>
-      <a-col :md="24" :lg="12" :gutter="12">
-        <a-card>
-          <a-table
-            class="metric-card"
-            :columns="columns"
-            :data-source="usageMetrics"
-            :pagination="false"
-            size="middle"
-          >
-            <template slot="title">
-              <a>{{ $t('label.desc.usage.stats') }}</a>
-            </template>
-          </a-table>
-        </a-card>
-      </a-col>
+    <a-row :md="24">
+      <a-card>
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12" :gutter="12">
+            <a-card>
+              <template slot="title">
+                {{ $t('label.desc.db.stats') }}
+              </template>
+              <a-table
+                class="metric-card"
+                :columns="columns"
+                :loading="loading"
+                :data-source="dbMetrics"
+                :pagination="false"
+                size="middle"
+                :rowClassName="getRowClassName"
+              >
+              </a-table>
+            </a-card>
+          </a-col>
+          <a-col :md="24" :lg="12" :gutter="12">
+            <a-card>
+              <template slot="title">
+                {{ $t('label.desc.usage.stats') }}
+              </template>
+              <a-table
+                class="metric-card"
+                :columns="columns"
+                :data-source="usageMetrics"
+                :pagination="false"
+                size="middle"
+                :rowClassName="getRowClassName"
+              >
+              </a-table>
+            </a-card>
+          </a-col>
+        </a-row>
+      </a-card>
     </a-row>
   </div>
 </template>
@@ -100,7 +106,6 @@ export default {
       columns: [
         {
           title: this.$t('label.name'),
-          sorter: true,
           dataIndex: 'name',
           width: '30%'
         },
@@ -145,7 +150,7 @@ export default {
             metric.value = value
             array.push(metric)
           })
-        } else if (key === 'loadaverages') {
+        } else if (key === 'dbloadaverages') {
           map[key].forEach(function (value, i) {
             var metric = {}
             metric.name = 'load-average[' + i + ']'
@@ -179,12 +184,33 @@ export default {
         title: this.$t('label.value'),
         sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
       })
+    },
+    getRowClassName (record, index) {
+      if (index % 2 === 0) {
+        return 'light-row'
+      }
+      return 'dark-row'
     }
   }
 }
 </script>
 
 <style scoped lang="less">
+  /deep/ .ant-table-thead {
+    background-color: #f9f9f9;
+  }
+
+  /deep/ .ant-table-small > .ant-table-content > .ant-table-body {
+    margin: 0;
+  }
+
+  /deep/ .light-row {
+    background-color: #fff;
+  }
+
+  /deep/ .dark-row {
+    background-color: #f9f9f9;
+  }
   .metric-card {
     margin-left: -24px;
     margin-right: -24px;

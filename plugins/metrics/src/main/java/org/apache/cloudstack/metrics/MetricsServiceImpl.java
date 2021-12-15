@@ -656,15 +656,16 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
-            copyStatusToResponse(metricsResponse, status);
+            copyManagementServerStatusToResponse(metricsResponse, status);
         }
     }
 
-    private void copyStatusToResponse(ManagementServerMetricsResponse metricsResponse, ManagementServerHostStats status) {
+    private void copyManagementServerStatusToResponse(ManagementServerMetricsResponse metricsResponse, ManagementServerHostStats status) {
         metricsResponse.setDbLocal(status.isDbLocal());
         metricsResponse.setUsageLocal(status.isUsageLocal());
         metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
         metricsResponse.setAgentCount(status.getAgentCount());
+        metricsResponse.setCollectionTime(status.getCollectionTime());
         metricsResponse.setSessions(status.getSessions());
         metricsResponse.setHeapMemoryUsed(status.getHeapMemoryUsed());
         metricsResponse.setHeapMemoryTotal(status.getHeapMemoryTotal());
@@ -767,6 +768,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     @Override
     public UsageServerMetricsResponse listUsageServerMetrics() {
         UsageServerMetricsResponse response = new UsageServerMetricsResponse();
+        response.setCollectionTime(new Date());
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             response.setLastHeartbeat(usageJobDao.getLastHeartbeat());
@@ -776,7 +778,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                 job = usageJobDao.getLastJob();
             }
             response.setHostname(job == null? "N/A": job.getHost());
-            response.setLastSuccesfulJob(new Date(usageJobDao.getLastJobSuccessDateMillis()));
+            response.setLastSuccessfulJob(new Date(usageJobDao.getLastJobSuccessDateMillis()));
         } finally {
             txn.close();
             TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -798,6 +800,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     public DbMetricsResponse listDbMetrics() {
         DbMetricsResponse response = new DbMetricsResponse();
 
+        response.setCollectionTime(new Date());
         response.setHostname(dbHostName());
         response.setReplicas(dbReplicas());
         getDynamicDataFromDB(response);

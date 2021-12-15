@@ -18,10 +18,14 @@
 //
 package com.cloud.server;
 
+import java.util.Date;
+
 /**
  * management server related stats
  */
 public interface ManagementServerHostStats {
+    Date getCollectionTime();
+
     long getManagementServerHostId();
 
     String getManagementServerHostUuid();

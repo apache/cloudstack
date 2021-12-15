@@ -21,6 +21,8 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.MetricConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
+import java.util.Date;
+
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.AVAILABLE_PROCESSORS)
@@ -91,7 +93,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "the total system cpu capacity")
     private double systemTotalCpuCycles;
 
-    @SerializedName(MetricConstants.LOAD_AVERAGES)
+    @SerializedName(MetricConstants.SYSTEM_LOAD_AVERAGES)
     @Param(description = "the load averages for 1 5 and 15 minutes")
     private double[] systemLoadAverages;
 
@@ -106,6 +108,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @SerializedName(MetricConstants.USAGE_IS_LOCAL)
     @Param(description = "the system has a usage server running locally")
     private boolean usageLocal;
+
+    @SerializedName(MetricConstants.COLLECTION_TIME)
+    @Param(description = "the time these statistics were collected")
+    private Date collectionTime;
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
@@ -189,5 +195,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setUsageLocal(boolean usageLocal) {
         this.usageLocal = usageLocal;
+    }
+
+    public void setCollectionTime(Date collectionTime) {
+        this.collectionTime = collectionTime;
     }
 }

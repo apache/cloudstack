@@ -63,7 +63,7 @@ export default {
     },
     {
       name: 'metric',
-      title: 'label.metrics',
+      title: 'label.db.usage.metrics',
       icon: 'bar-chart',
       docHelp: 'adminguide/management.html#metrics',
       permission: ['listDbMetrics', 'listUsageServerMetrics'],

@@ -24,15 +24,17 @@ export default {
   permission: ['listManagementServersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'version']
-    const metricsFields = ['availableprocessors', 'javadistribution', 'javaversion', 'agentcount']
+    const metricsFields = ['collectiontime', 'availableprocessors', 'javadistribution', 'javaversion', 'agentcount']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     return fields
   },
-  details: ['state', 'usageislocal', 'dbislocal', 'laststart', 'laststop', 'version', 'loginfo', 'systemtotalcpucycles', 'systemloadaverages', 'systemcycleusage', 'systemmemorytotal', 'systemmemoryfree', 'systemmemoryused', 'systemmemoryvirtualsize', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'agentcount', 'sessions', 'heapmemoryused', 'heapmemorytotal', 'threadsblockedcount', 'threadsdeamoncount', 'threadsnewcount', 'threadsrunnablecount', 'threadsterminatedcount', 'threadstotalcount', 'threadswaitingcount'],
-  tabs: [{
-    name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
-  }]
+  details: ['collectiontime', 'usageislocal', 'dbislocal', 'laststart', 'laststop', 'version', 'loginfo', 'systemtotalcpucycles', 'systemloadaverages', 'systemcycleusage', 'systemmemorytotal', 'systemmemoryfree', 'systemmemoryused', 'systemmemoryvirtualsize', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'agentcount', 'sessions', 'heapmemoryused', 'heapmemorytotal', 'threadsblockedcount', 'threadsdeamoncount', 'threadsnewcount', 'threadsrunnablecount', 'threadsterminatedcount', 'threadstotalcount', 'threadswaitingcount'],
+  tabs: [
+    {
+      name: 'details',
+      component: () => import('@/components/view/DetailsTab.vue')
+    }
+  ]
 }

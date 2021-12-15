@@ -24,17 +24,18 @@ public interface MetricConstants {
     String AVAILABLE_PROCESSORS = "availableprocessors";
     String CONNECTIONS = "connections";
     String DATABASE_IS_LOCAL = "dbislocal";
+    String DATABASE_LOAD_AVERAGES = "dbloadaverages";
     String HEAP_MEMORY_USED = "heapmemoryused";
     String HEAP_MEMORY_TOTAL = "heapmemorytotal";
     String LAST_HEARTBEAT = "lastheartbeat";
     String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
-    String LOAD_AVERAGES = "loadaverages";
     String LOG_INFO = "loginfo";
     String REPLICAS = "replicas";
     String SESSIONS = "sessions";
     String SYSTEM = "system";
     String SYSTEM_CYCLES = "systemtotalcpucycles";
     String SYSTEM_CYCLE_USAGE = "systemcycleusage";
+    String SYSTEM_LOAD_AVERAGES = "systemloadaverages";
     String SYSTEM_MEMORY_FREE = "systemmemoryfree";
     String SYSTEM_MEMORY_TOTAL = "systemmemorytotal";
     String SYSTEM_MEMORY_USED = "systemmemoryused";
@@ -50,4 +51,5 @@ public interface MetricConstants {
     String USAGE_IS_LOCAL = "usageislocal";
     String VERSION_COMMENT = "versioncomment";
     String QUERIES = "queries";
+    String COLLECTION_TIME = "collectiontime";
 }

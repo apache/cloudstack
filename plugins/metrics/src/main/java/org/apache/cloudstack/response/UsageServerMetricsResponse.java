@@ -26,6 +26,10 @@ import org.apache.cloudstack.management.ManagementServerHost.State;
 import java.util.Date;
 
 public class UsageServerMetricsResponse  extends BaseResponse {
+    @SerializedName(MetricConstants.COLLECTION_TIME)
+    @Param(description = "the time these statistics were collected")
+    private Date collectionTime;
+
     @SerializedName(ApiConstants.HOST_NAME)
     @Param(description = "the name of the active usage server")
     private String hostname;
@@ -40,7 +44,11 @@ public class UsageServerMetricsResponse  extends BaseResponse {
 
     @SerializedName(MetricConstants.LAST_SUCCESFUL_JOB)
     @Param(description = "the last time a usage job succefully completed")
-    private Date lastSuccesfulJob;
+    private Date lastSuccessfulJob;
+
+    public void setCollectionTime(Date collectionTime) {
+        this.collectionTime = collectionTime;
+    }
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
@@ -54,7 +62,7 @@ public class UsageServerMetricsResponse  extends BaseResponse {
         this.lastHeartbeat = lastHeartbeat;
     }
 
-    public void setLastSuccesfulJob(Date lastSuccesfulJob) {
-        this.lastSuccesfulJob = lastSuccesfulJob;
+    public void setLastSuccessfulJob(Date lastSuccessfulJob) {
+        this.lastSuccessfulJob = lastSuccessfulJob;
     }
 }

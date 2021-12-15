@@ -18,11 +18,14 @@
 //
 package com.cloud.server;
 
+import java.util.Date;
+
 public class ManagementServerHostStatsEntry implements ManagementServerHostStats {
 
     private long managementServerHostId;
     private String managementServerHostUuid;
 
+    private Date collectionTime;
     private long sessions;
     private double cpuUtilization;
     private long totalMemoryBytes;
@@ -62,6 +65,14 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private boolean dbLocal;
     private boolean usageLocal;
 
+    public ManagementServerHostStatsEntry() {
+        this(new Date());
+    }
+
+    public ManagementServerHostStatsEntry(Date date) {
+        collectionTime = date;
+    }
+
     @Override
     public long getManagementServerHostId() {
         return managementServerHostId;
@@ -78,6 +89,11 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setManagementServerHostUuid(String managementServerHostUuid) {
         this.managementServerHostUuid = managementServerHostUuid;
+    }
+
+    @Override
+    public Date getCollectionTime(){
+        return collectionTime;
     }
 
     @Override
