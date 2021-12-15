@@ -41,7 +41,7 @@ public interface MetricConstants {
     String SYSTEM_MEMORY_USED = "systemmemoryused";
     String SYSTEM_MEMORY_VIRTUALSIZE = "systemmemoryvirtualsize";
     String THREADS_BLOCKED_COUNT = "threadsblockedcount";
-    String THREADS_DEAMON_COUNT = "threadsdeamoncount";
+    String THREADS_DAEMON_COUNT = "threadsdaemoncount";
     String THREADS_RUNNABLE_COUNT = "threadsrunnablecount";
     String THREADS_TERMINATED_COUNT = "threadsteminatedcount";
     String THREADS_TOTAL_COUNT = "threadstotalcount";

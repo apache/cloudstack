@@ -49,7 +49,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private long heapMemoryUsed;
     private long heapMemoryTotal;
     private int threadsBlockedCount;
-    private int threadsDeamonCount;
+    private int threadsDaemonCount;
     private int threadsRunnableCount;
     private int threadsTerminatedCount;
     private int threadsTotalCount;
@@ -307,13 +307,13 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return threadsTotalCount;
     }
 
-    public void setThreadsDeamonCount(int threadsDeamonCount) {
-        this.threadsDeamonCount = threadsDeamonCount;
+    public void setThreadsDaemonCount(int threadsDaemonCount) {
+        this.threadsDaemonCount = threadsDaemonCount;
     }
 
     @Override
-    public int getThreadsDeamonCount() {
-        return threadsDeamonCount;
+    public int getThreadsDaemonCount() {
+        return threadsDaemonCount;
     }
 
     public void setThreadsRunnableCount(int threadsRunnableCount) {

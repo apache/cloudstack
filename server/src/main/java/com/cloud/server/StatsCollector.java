@@ -1025,7 +1025,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     metricsEntry.setThreadsTotalCount((Integer) value);
                     break;
                 case "threads.daemon.count":
-                    metricsEntry.setThreadsDeamonCount((Integer) value);
+                    metricsEntry.setThreadsDaemonCount((Integer) value);
                     break;
                 case "threads.runnable.count":
                     metricsEntry.setThreadsRunnableCount((Integer) value);

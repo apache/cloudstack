@@ -670,7 +670,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         metricsResponse.setHeapMemoryUsed(status.getHeapMemoryUsed());
         metricsResponse.setHeapMemoryTotal(status.getHeapMemoryTotal());
         metricsResponse.setThreadsBlockedCount(status.getThreadsBlockedCount());
-        metricsResponse.setThreadsDeamonCount(status.getThreadsDeamonCount());
+        metricsResponse.setThreadsDaemonCount(status.getThreadsDaemonCount());
         metricsResponse.setThreadsRunnableCount(status.getThreadsRunnableCount());
         metricsResponse.setThreadsTerminatedCount(status.getThreadsTerminatedCount());
         metricsResponse.setThreadsTotalCount(status.getThreadsTotalCount());

@@ -76,7 +76,7 @@ public interface ManagementServerHostStats {
 
     int getThreadsTotalCount();
 
-    int getThreadsDeamonCount();
+    int getThreadsDaemonCount();
 
     int getThreadsRunnableCount();
 

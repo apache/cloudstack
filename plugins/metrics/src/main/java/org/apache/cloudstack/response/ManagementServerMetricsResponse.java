@@ -49,9 +49,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "The number of blocked threads")
     private int threadsBlockedCount;
 
-    @SerializedName(MetricConstants.THREADS_DEAMON_COUNT)
-    @Param(description = "The number of deamon threads")
-    private int threadsDeamonCount;
+    @SerializedName(MetricConstants.THREADS_DAEMON_COUNT)
+    @Param(description = "The number of daemon threads")
+    private int threadsDaemonCount;
 
     @SerializedName(MetricConstants.THREADS_RUNNABLE_COUNT)
     @Param(description = "The number of runnable threads")
@@ -137,8 +137,8 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
         this.threadsBlockedCount = threadsBlockedCount;
     }
 
-    public void setThreadsDeamonCount(int threadsDeamonCount) {
-        this.threadsDeamonCount = threadsDeamonCount;
+    public void setThreadsDaemonCount(int threadsDaemonCount) {
+        this.threadsDaemonCount = threadsDaemonCount;
     }
 
     public void setThreadsRunnableCount(int threadsRunnableCount) {
