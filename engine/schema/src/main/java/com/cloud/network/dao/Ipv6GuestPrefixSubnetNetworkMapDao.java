@@ -15,24 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.dc;
+package com.cloud.network.dao;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.List;
 
-public interface PodManagementIp6Range extends InfrastructureEntity, InternalIdentity, Identity {
-    Long getDataCenterId();
+import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMap;
+import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
+import com.cloud.utils.db.GenericDao;
 
-    Long getPodId();
-
-    String getGateway();
-
-    String getCidr();
-
-    Integer getVlan();
-
-    String getStartIp();
-
-    String getEndIp();
+public interface Ipv6GuestPrefixSubnetNetworkMapDao extends GenericDao<Ipv6GuestPrefixSubnetNetworkMapVO, Long> {
+    Ipv6GuestPrefixSubnetNetworkMapVO findFirstAvailable(long prefixId);
+    Ipv6GuestPrefixSubnetNetworkMapVO findLast(long prefixId);
+    Ipv6GuestPrefixSubnetNetworkMapVO findByNetworkId(long networkId);
+    Ipv6GuestPrefixSubnetNetworkMapVO findBySubnet(String subnet);
+    List<Ipv6GuestPrefixSubnetNetworkMapVO> findPrefixesInStates(Ipv6GuestPrefixSubnetNetworkMap.State... states);
+    void deleteByPrefixId(long prefixId);
 }

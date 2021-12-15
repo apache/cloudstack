@@ -19,11 +19,13 @@ package com.cloud.configuration;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIp6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
@@ -51,6 +53,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
@@ -215,9 +218,19 @@ public interface ConfigurationService {
     void updatePodIpRange(UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException;
 
     /**
-     * ToDo
+     * Creates a new IPv6 prefix for a zone. Needs to be >= /64.
      */
-    Pod createPodGuestIp6Prefix(CreateGuestNetworkIp6PrefixCmd cmd);
+    DataCenterGuestIpv6Prefix createDataCenterGuestIpv6Prefix(CreateGuestNetworkIpv6PrefixCmd cmd);
+
+    /**
+     * Lists IPv6 prefixes for a zone.
+     */
+    List<? extends DataCenterGuestIpv6Prefix> listDataCenterGuestIpv6Prefixes(ListGuestNetworkIpv6PrefixesCmd cmd);
+
+    /**
+     * Deletes an existing IPv6 prefix.
+     */
+    boolean deleteDataCenterGuestIpv6Prefix(DeleteGuestNetworkIpv6RangeCmd cmd);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

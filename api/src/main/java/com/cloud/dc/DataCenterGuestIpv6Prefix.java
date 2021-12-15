@@ -15,16 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.dc.dao;
+package com.cloud.dc;
 
-import java.util.List;
+import java.util.Date;
 
-import com.cloud.dc.PodGuestIp6PrefixVO;
-import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface PodGuestIp6PrefixDao extends GenericDao<PodGuestIp6PrefixVO, Long> {
+public interface DataCenterGuestIpv6Prefix extends InfrastructureEntity, InternalIdentity, Identity {
+    Long getDataCenterId();
 
-    List<PodGuestIp6PrefixVO> listByPodId(long podId);
+    Long getPodId();
 
-    List<PodGuestIp6PrefixVO> listByDataCenterId(long dcId);
+    String getPrefix();
+
+    Date getCreated();
 }

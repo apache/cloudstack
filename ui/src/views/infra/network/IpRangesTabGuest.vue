@@ -20,18 +20,18 @@
     IPv6 Ranges
 
     <a-button
-      :disabled="!('createGuestNetworkIp6Prefix' in $store.getters.apis)"
+      :disabled="!('createGuestNetworkIpv6Prefix' in $store.getters.apis)"
       type="dashed"
       icon="plus"
       style="margin-bottom: 20px; width: 100%"
-      @click="addIp6PrefixModal = true">
+      @click="addIpv6PrefixModal = true">
       {{ $t('Add IPv6 Prefix') }}
     </a-button>
     <a-table
       style="overflow-y: auto"
       size="small"
-      :columns="ip6Columns"
-      :dataSource="ip6Prefixes"
+      :columns="ipv6Columns"
+      :dataSource="ipv6Prefixes"
       :rowKey="record => record.id + record.prefix"
       :pagination="false"
     />
@@ -94,32 +94,18 @@
     </a-modal>
 
     <a-modal
-      v-model="addIp6PrefixModal"
+      v-model="addIpv6PrefixModal"
       :title="$t('Add IPv6 Prefix')"
       :maskClosable="false"
       :footer="null"
-      @cancel="addIp6PrefixModal = false"
-      v-ctrl-enter="handleAddIp6Prefix">
+      @cancel="addIpv6PrefixModal = false"
+      v-ctrl-enter="handleAddIpv6Prefix">
       <a-form
         :form="form"
-        @submit="handleAddIp6Prefix"
+        @submit="handleAddIpv6Prefix"
         layout="vertical"
         class="form"
       >
-        <a-form-item :label="$t('label.podid')" class="form__item">
-          <a-select
-            autoFocus
-            v-decorator="['pod', {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="item in pods" :key="item.id" :value="item.id">{{ item.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
         <a-form-item :label="$t('label.prefix')" class="form__item">
           <a-input
             v-decorator="['prefix', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
@@ -127,8 +113,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="addIp6PrefixModal = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleAddIp6Prefix">{{ $t('label.ok') }}</a-button>
+          <a-button @click="addIpv6PrefixModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpv6Prefix">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -192,18 +178,14 @@ export default {
           dataIndex: 'ip6cidr'
         }
       ],
-      ip6Prefixes: [],
-      ip6Columns: [
-        {
-          title: this.$t('label.podid'),
-          dataIndex: 'name'
-        },
+      ipv6Prefixes: [],
+      ipv6Columns: [
         {
           title: this.$t('label.prefix'),
           dataIndex: 'prefix'
         }
       ],
-      addIp6PrefixModal: false
+      addIpv6PrefixModal: false
     }
   },
   beforeCreate () {
@@ -237,30 +219,17 @@ export default {
       }).finally(() => {
         this.componentLoading = false
       })
-      this.fetchPodData()
+      this.fetchGuetsNetworkIpv6PrefixData()
     },
-    fetchPodData () {
+    fetchGuetsNetworkIpv6PrefixData () {
       // this.componentLoading = true
-      api('listPods', {
+      api('listGuestNetworkIpv6Prefixes', {
         zoneid: this.resource.zoneid,
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {
-        this.items = []
-        this.ip6Prefixes = []
-        this.total = response.listpodsresponse.count || 0
-        this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
-        for (const pod of this.pods) {
-          if (pod && pod.guestip6prefix && pod.guestip6prefix.length > 0) {
-            for (var guestip6prefix of pod.guestip6prefix) {
-              this.ip6Prefixes.push({
-                id: pod.id,
-                name: pod.name,
-                prefix: guestip6prefix
-              })
-            }
-          }
-        }
+        this.ipv6Prefixes = response.listguestnetworkipv6prefixesresponse.guestnetworkipv6prefix
+        this.total = response.listguestnetworkipv6prefixesresponse.count || 0
       }).catch(error => {
         console.log(error)
         this.$notifyError(error)
@@ -284,20 +253,20 @@ export default {
       this.pageSize = pageSize
       this.fetchData()
     },
-    handleAddIp6Prefix (e) {
+    handleAddIpv6Prefix (e) {
       if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 
         this.componentLoading = true
-        this.addIp6PrefixModal = false
+        this.addIpv6PrefixModal = false
         var params = {
-          podid: values.pod,
+          zoneid: this.resource.zoneid,
           prefix: values.prefix
         }
-        api('createGuestNetworkIp6Prefix', params).then(response => {
+        api('createGuestNetworkIpv6Prefix', params).then(response => {
           this.$pollJob({
-            jobId: response.createguestnetworkip6prefixresponse.jobid,
+            jobId: response.createguestnetworkipv6prefixresponse.jobid,
             title: this.$t('label.add.ip.range'),
             description: values.pod,
             successMessage: this.$t('message.success.add.iprange'),

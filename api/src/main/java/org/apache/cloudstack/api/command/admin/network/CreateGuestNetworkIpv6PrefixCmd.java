@@ -25,10 +25,12 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.Pod;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -36,26 +38,32 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = CreateGuestNetworkIp6PrefixCmd.APINAME,
-        description = "Creates a Guest network IPv6 prefix.",
-        responseObject = PodResponse.class,
+@APICommand(name = CreateGuestNetworkIpv6PrefixCmd.APINAME,
+        description = "Creates a guest network IPv6 prefix.",
+        responseObject = DataCenterGuestIpv6PrefixResponse.class,
         since = "4.17.0.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class CreateGuestNetworkIp6PrefixCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateGuestNetworkIp6PrefixCmd.class);
+public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateGuestNetworkIpv6PrefixCmd.class);
 
-    public static final String APINAME = "createGuestNetworkIp6Prefix";
+    public static final String APINAME = "createGuestNetworkIpv6Prefix";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            required = true,
+            description = "UUID of zone to which the IPv6 prefix belongs to.",
+            validations = {ApiArgValidator.PositiveNumber})
+    private Long zoneId;
     @Parameter(name = ApiConstants.POD_ID,
             type = CommandType.UUID,
             entityType = PodResponse.class,
-            required = true,
-            description = "UUID of POD, where the IP range belongs to.",
+            description = "UUID of POD to which the IPv6 prefix belongs to.",
             validations = {ApiArgValidator.PositiveNumber})
     private Long podId;
 
@@ -68,6 +76,11 @@ public class CreateGuestNetworkIp6PrefixCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+
+    public Long getZoneId() {
+        return zoneId;
+    }
 
     public Long getPodId() {
         return podId;
@@ -83,19 +96,19 @@ public class CreateGuestNetworkIp6PrefixCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating public IPv6 prefix " + getPrefix() + " for pod=" + getPodId();
+        return "Creating guest IPv6 prefix " + getPrefix() + " for zone=" + getZoneId();
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
-        Pod result = _configService.createPodGuestIp6Prefix(this);
+        DataCenterGuestIpv6Prefix result = _configService.createDataCenterGuestIpv6Prefix(this);
         if (result != null) {
-            PodResponse response = _responseGenerator.createPodResponse(result, false);
+            DataCenterGuestIpv6PrefixResponse response = _responseGenerator.createDataCenterGuestIpv6PrefixResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Pod Public IP6 prefix.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create zone guest IPv6 prefix.");
         }
     }
 

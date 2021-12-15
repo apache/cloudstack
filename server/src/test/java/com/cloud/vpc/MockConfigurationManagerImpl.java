@@ -24,11 +24,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIp6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
@@ -61,6 +63,7 @@ import com.cloud.configuration.ConfigurationService;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -214,9 +217,31 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#createDataCenterGuestIpv6Prefix(org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd)
+     */
     @Override
-    public Pod createPodGuestIp6Prefix(CreateGuestNetworkIp6PrefixCmd cmd) {
+    public DataCenterGuestIpv6Prefix createDataCenterGuestIpv6Prefix(CreateGuestNetworkIpv6PrefixCmd cmd) {
+        // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#listDataCenterGuestIpv6Prefixes(org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd)
+     */
+    @Override
+    public List<? extends DataCenterGuestIpv6Prefix> listDataCenterGuestIpv6Prefixes(ListGuestNetworkIpv6PrefixesCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#deleteDataCenterGuestIpv6Prefix(org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6RangeCmd)
+     */
+    @Override
+    public boolean deleteDataCenterGuestIpv6Prefix(DeleteGuestNetworkIpv6RangeCmd cmd) {
+        // TODO Auto-generated method stub
+        return true;
     }
 
     /* (non-Javadoc)

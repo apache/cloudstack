@@ -23,7 +23,7 @@
 ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
 
 -- For IPv6 guest prefixes.
-CREATE TABLE `cloud`.`pod_ip6_guest_prefix` (
+CREATE TABLE `cloud`.`dc_ip6_guest_prefix` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) DEFAULT NULL,
   `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
@@ -32,9 +32,9 @@ CREATE TABLE `cloud`.`pod_ip6_guest_prefix` (
   `created` datetime default NULL,
   `removed` datetime default NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_pod_ip6_guest_prefix__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
-  CONSTRAINT `fk_pod_ip6_guest_prefix__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`),
-  CONSTRAINT `uc_pod_ip6_guest_prefix__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `fk_dc_ip6_guest_prefix__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_dc_ip6_guest_prefix__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`),
+  CONSTRAINT `uc_dc_ip6_guest_prefix__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`ip6_guest_prefix_subnet_network_map` (
@@ -44,11 +44,12 @@ CREATE TABLE `cloud`.`ip6_guest_prefix_subnet_network_map` (
   `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ipv6 network',
   `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network to which subnet is associated to',
   `state` varchar(255) NOT NULL COMMENT 'state of the subnet network',
+  `updated` datetime default NULL,
   `created` datetime default NULL,
   `removed` datetime default NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__prefix_id` FOREIGN KEY (`prefix_id`) REFERENCES `pod_ip6_guest_prefix`(`id`),
-  CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `network`(`id`),
+  CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__prefix_id` FOREIGN KEY (`prefix_id`) REFERENCES `dc_ip6_guest_prefix`(`id`),
+  CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `uc_ip6_guest_prefix_subnet_network_map__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -63,6 +64,6 @@ CREATE TABLE `cloud`.`public_ip6_address_network_map` (
   `removed` datetime default NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_public_ip6_address_network_map__prefix_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan`(`id`),
-  CONSTRAINT `fk_public_ip6_address_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `network`(`id`),
+  CONSTRAINT `fk_public_ip6_address_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `uc_public_ip6_address_network_map__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

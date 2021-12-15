@@ -30,8 +30,8 @@ import javax.persistence.Table;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = "ip6_guest_prefix_subnet_network_map")
-public class Ip6GuestPrefixSubnetNetworkMapVO implements Ip6GuestPrefixSubnetNetworkMap {
+@Table(name = "public_ip6_address_network_map")
+public class PublicIpv6AddressNetworkMapVO implements PublicIpv6AddressNetworkMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,17 +41,17 @@ public class Ip6GuestPrefixSubnetNetworkMapVO implements Ip6GuestPrefixSubnetNet
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "prefix_id")
-    private Long prefixId;
+    @Column(name = "vlan_db_id")
+    private Long rangeId;
 
-    @Column(name = "subnet")
-    private String subnet;
+    @Column(name = "public_ip_address")
+    private String ip6Address;
 
     @Column(name = "network_id")
     private Long networkId;
 
     @Column(name = "state")
-    private State state;
+    private PublicIpv6AddressNetworkMap.State state;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -59,17 +59,18 @@ public class Ip6GuestPrefixSubnetNetworkMapVO implements Ip6GuestPrefixSubnetNet
     @Column(name= GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    protected Ip6GuestPrefixSubnetNetworkMapVO() {
+    protected PublicIpv6AddressNetworkMapVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    protected Ip6GuestPrefixSubnetNetworkMapVO(long prefixId, String subnet, Long networkId, State state) {
-        this.prefixId = prefixId;
-        this.subnet = subnet;
+    protected PublicIpv6AddressNetworkMapVO(long rangeId, String ip6Address, Long networkId, PublicIpv6AddressNetworkMap.State state) {
+        this.rangeId = rangeId;
+        this.ip6Address = ip6Address;
         this.networkId = networkId;
         this.state = state;
         uuid = UUID.randomUUID().toString();
     }
+
 
     @Override
     public long getId() {
@@ -82,13 +83,13 @@ public class Ip6GuestPrefixSubnetNetworkMapVO implements Ip6GuestPrefixSubnetNet
     }
 
     @Override
-    public long getPrefixId() {
-        return prefixId;
+    public long getRangeId() {
+        return rangeId;
     }
 
     @Override
-    public String getSubnet() {
-        return subnet;
+    public String getIp6Address() {
+        return ip6Address;
     }
 
     @Override
@@ -96,8 +97,16 @@ public class Ip6GuestPrefixSubnetNetworkMapVO implements Ip6GuestPrefixSubnetNet
         return networkId;
     }
 
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
+    }
+
     @Override
     public State getState() {
         return state;
+    }
+
+    public void setState(PublicIpv6AddressNetworkMap.State state) {
+        this.state = state;
     }
 }

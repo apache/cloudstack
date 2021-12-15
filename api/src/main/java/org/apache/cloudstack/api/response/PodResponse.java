@@ -57,10 +57,6 @@ public class PodResponse extends BaseResponseWithAnnotations {
     @Param(description = "the IP ranges for the Pod", responseObject = IpRangeResponse.class, since = "4.16.0")
     private List<IpRangeResponse> ipRanges;
 
-    @SerializedName(ApiConstants.IP6_RANGES)
-    @Param(description = "the IPv6 ranges for the Pod", responseObject = IpRangeResponse.class, since = "4.17.0")
-    private List<IpRangeResponse> ip6Ranges;
-
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.START_IP)
     @Param(description = "the starting IP for the Pod. This parameter is deprecated, please use 'startip' from ipranges parameter.")
@@ -88,10 +84,6 @@ public class PodResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.CAPACITY)
     @Param(description = "the capacity of the Pod", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacities;
-
-    @SerializedName(ApiConstants.GUEST_IP6_PREFIX)
-    @Param(description = "the guest IPv6 prefixes for the Pod", since = "4.17.0")
-    private List<String> publicIp6Prefixes;
 
     public String getId() {
         return id;
@@ -145,10 +137,6 @@ public class PodResponse extends BaseResponseWithAnnotations {
         this.ipRanges = ipRanges;
     }
 
-    public void setIp6Ranges(List<IpRangeResponse> ip6Ranges) {
-        this.ip6Ranges = ip6Ranges;
-    }
-
     public List<String> getStartIp() {
         return startIp;
     }
@@ -195,13 +183,5 @@ public class PodResponse extends BaseResponseWithAnnotations {
 
     public void setCapacities(List<CapacityResponse> capacities) {
         this.capacities = capacities;
-    }
-
-    public List<String> getPublicIp6Prefixes() {
-        return publicIp6Prefixes;
-    }
-
-    public void setPublicIp6Prefixes(List<String> publicIp6Prefixes) {
-        this.publicIp6Prefixes = publicIp6Prefixes;
     }
 }

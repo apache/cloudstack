@@ -30,8 +30,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name = "pod_ip6_guest_prefix")
-public class PodGuestIp6PrefixVO implements PodGuestIp6Prefix {
+@Table(name = "dc_ip6_guest_prefix")
+public class DataCenterGuestIpv6PrefixVO implements DataCenterGuestIpv6Prefix {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -44,7 +44,7 @@ public class PodGuestIp6PrefixVO implements PodGuestIp6Prefix {
     private long dataCenterId;
 
     @Column(name = "pod_id")
-    private long podId;
+    private Long podId;
 
     @Column(name = "prefix")
     private String prefix;
@@ -53,7 +53,7 @@ public class PodGuestIp6PrefixVO implements PodGuestIp6Prefix {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = null;
 
-    public PodGuestIp6PrefixVO(long dcId, long podId, String prefix) {
+    public DataCenterGuestIpv6PrefixVO(long dcId, Long podId, String prefix) {
         this();
         this.dataCenterId = dcId;
         this.podId = podId;
@@ -61,7 +61,7 @@ public class PodGuestIp6PrefixVO implements PodGuestIp6Prefix {
         this.created = new Date();
     }
 
-    protected PodGuestIp6PrefixVO() {
+    protected DataCenterGuestIpv6PrefixVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -101,6 +101,7 @@ public class PodGuestIp6PrefixVO implements PodGuestIp6Prefix {
         this.prefix = prefix;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }

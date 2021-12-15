@@ -15,22 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network;
+package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.network.PublicIpv6AddressNetworkMapVO;
+import com.cloud.utils.db.GenericDao;
 
-public interface Ip6GuestPrefixSubnetNetworkMap extends Identity, InternalIdentity {
-    enum State {
-        Allocated, // The subnet is in use.
-        Free // The subnet is ready to be allocated.
-    }
-
-    long getPrefixId();
-
-    String getSubnet();
-
-    Long getNetworkId();
-
-    State getState();
+public interface PublicIpv6AddressNetworkMapDao extends GenericDao<PublicIpv6AddressNetworkMapVO, Long> {
+    PublicIpv6AddressNetworkMapVO findFirstAvailable(long rangeId);
+    PublicIpv6AddressNetworkMapVO findLast(long rangeId);
+    PublicIpv6AddressNetworkMapVO findByNetworkId(long networkId);
 }

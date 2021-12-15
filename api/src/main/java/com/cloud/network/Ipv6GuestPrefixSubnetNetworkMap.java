@@ -15,16 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.dc.dao;
+package com.cloud.network;
 
-import java.util.List;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.dc.PodManagementIp6RangeVO;
-import com.cloud.utils.db.GenericDao;
+public interface Ipv6GuestPrefixSubnetNetworkMap extends Identity, InternalIdentity {
+    enum State {
+        Allocating, // The subnet will be assigned to a network
+        Allocated, // The subnet is in use.
+        Free // The subnet is ready to be allocated.
+    }
 
-public interface PodManagementIp6RangeDao extends GenericDao<PodManagementIp6RangeVO, Long> {
+    long getPrefixId();
 
-    List<PodManagementIp6RangeVO> listByPodId(long podId);
+    String getSubnet();
 
-    List<PodManagementIp6RangeVO> listByDataCenterId(long dcId);
+    Long getNetworkId();
+
+    State getState();
 }

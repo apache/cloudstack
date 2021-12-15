@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -51,11 +52,13 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIp6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6RangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
@@ -129,6 +132,8 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
+import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -136,7 +141,6 @@ import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
-import com.cloud.dc.PodGuestIp6PrefixVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -145,12 +149,12 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterDetailsDao;
+import com.cloud.dc.dao.DataCenterGuestIpv6PrefixDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.PodGuestIp6PrefixDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
@@ -175,6 +179,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMap;
+import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -191,6 +197,7 @@ import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -416,7 +423,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     UserIpv6AddressDao _ipv6Dao;
     @Inject
-    PodGuestIp6PrefixDao podGuestIp6PrefixDao;
+    DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
+    @Inject
+    Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -1440,16 +1449,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private Pod createPodIp6Range(HostPodVO pod, String gateway, String cidr, String startIp, String endIp, String vlan) {
-        Integer vlanId = null;
-        if (vlan != null && !vlan.equalsIgnoreCase("untagged")) {
-            try {
-                vlanId = Integer.valueOf(vlan);
-            } catch (NumberFormatException nfe) {
-                throw new InvalidParameterValueException("The VLAN is invalid");
-            }
-        }
-        PodManagementIp6RangeVO ip6RangeVO = new PodManagementIp6RangeVO(pod.getDataCenterId(), pod.getId(), gateway, cidr, vlanId, startIp, endIp);
-        podManagementIp6RangeDao.persist(ip6RangeVO);
+//        Integer vlanId = null;
+//        if (vlan != null && !vlan.equalsIgnoreCase("untagged")) {
+//            try {
+//                vlanId = Integer.valueOf(vlan);
+//            } catch (NumberFormatException nfe) {
+//                throw new InvalidParameterValueException("The VLAN is invalid");
+//            }
+//        }
+//        PodManagementIp6RangeVO ip6RangeVO = new PodManagementIp6RangeVO(pod.getDataCenterId(), pod.getId(), gateway, cidr, vlanId, startIp, endIp);
+//        podManagementIp6RangeDao.persist(ip6RangeVO);
         return pod;
     }
 
@@ -1740,30 +1749,63 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public Pod createPodGuestIp6Prefix(final CreateGuestNetworkIp6PrefixCmd cmd) throws ConcurrentOperationException {
-        final long podId = cmd.getPodId();
-        final HostPodVO pod = _podDao.findById(podId);
-        if (pod == null) {
-            throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
+    public DataCenterGuestIpv6Prefix createDataCenterGuestIpv6Prefix(final CreateGuestNetworkIpv6PrefixCmd cmd) throws ConcurrentOperationException {
+        final long zoneId = cmd.getZoneId();
+        final DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id: " + zoneId);
         }
-
+        final Long podId = cmd.getPodId();
+        if (podId != null) {
+            final HostPodVO pod = _podDao.findById(podId);
+            if (pod == null) {
+                throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
+            }
+        }
         final String prefix = cmd.getPrefix();
-
+        DataCenterGuestIpv6Prefix dataCenterGuestIpv6Prefix = null;
         try {
-
-            Transaction.execute(new TransactionCallbackNoReturn() {
+            dataCenterGuestIpv6Prefix = Transaction.execute(new TransactionCallback<DataCenterGuestIpv6Prefix>() {
                 @Override
-                public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    final long zoneId = pod.getDataCenterId();
-                    PodGuestIp6PrefixVO podGuestIp6PrefixVO = new PodGuestIp6PrefixVO(zoneId, podId, prefix);
-                    podGuestIp6PrefixDao.persist(podGuestIp6PrefixVO);
+                public DataCenterGuestIpv6Prefix doInTransaction(TransactionStatus status) {
+                    DataCenterGuestIpv6PrefixVO dataCenterGuestIpv6PrefixVO = new DataCenterGuestIpv6PrefixVO(zoneId, podId, prefix);
+                    dataCenterGuestIpv6PrefixDao.persist(dataCenterGuestIpv6PrefixVO);
+                    return dataCenterGuestIpv6PrefixVO;
                 }
             });
         } catch (final Exception e) {
-            s_logger.error("Unable to update Pod " + podId + " IP range due to " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+            s_logger.error(String.format("Unable to add IPv6 prefix for zone: %s due to %s", zone, e.getMessage()), e);
+            throw new CloudRuntimeException(String.format("Unable to add IPv6 prefix for zone ID: %s. Please contact Cloud Support.", zone.getUuid()));
         }
-        return pod;
+        return dataCenterGuestIpv6Prefix;
+    }
+
+    @Override
+    public List<? extends DataCenterGuestIpv6Prefix> listDataCenterGuestIpv6Prefixes(final ListGuestNetworkIpv6PrefixesCmd cmd) throws ConcurrentOperationException {
+        final long zoneId = cmd.getZoneId();
+        final DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id: " + zoneId);
+        }
+        return dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+    }
+
+    @Override
+    public boolean deleteDataCenterGuestIpv6Prefix(DeleteGuestNetworkIpv6RangeCmd cmd) {
+        final long prefixId = cmd.getId();
+        final DataCenterGuestIpv6PrefixVO prefix = dataCenterGuestIpv6PrefixDao.findById(prefixId);
+        if (prefix == null) {
+            throw new InvalidParameterValueException("Unable to find guest network IPv6 prefix by id: " + prefixId);
+        }
+        List<Ipv6GuestPrefixSubnetNetworkMapVO> prefixSubnets = ipv6GuestPrefixSubnetNetworkMapDao.findPrefixesInStates(Ipv6GuestPrefixSubnetNetworkMap.State.Allocated, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
+        if (CollectionUtils.isNotEmpty(prefixSubnets)) {
+            List<String> usedSubnets = prefixSubnets.stream().map(Ipv6GuestPrefixSubnetNetworkMapVO::getSubnet).collect(Collectors.toList());
+            s_logger.error(String.format("Subnets for guest IPv6 prefix {ID: %s, %s} are in use: %s", prefix.getUuid(), prefix.getPrefix(), String.join(", ", usedSubnets)));
+            throw new CloudRuntimeException("Unable to delete guest network IPv6 prefix ID: %s. Prefix subnets are in use.");
+        }
+        ipv6GuestPrefixSubnetNetworkMapDao.deleteByPrefixId(prefixId);
+        dataCenterGuestIpv6PrefixDao.remove(prefixId);
+        return true;
     }
 
     @Override

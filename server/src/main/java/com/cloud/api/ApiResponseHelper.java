@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
+import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -180,6 +182,7 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -219,15 +222,15 @@ import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
-import com.cloud.dc.PodGuestIp6PrefixVO;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.PodGuestIp6PrefixDao;
+import com.cloud.dc.dao.DataCenterGuestIpv6PrefixDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
@@ -364,7 +367,8 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.commons.lang3.StringUtils;
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -416,7 +420,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     private UserStatisticsDao userStatsDao;
     @Inject
-    PodGuestIp6PrefixDao podGuestIp6PrefixDao;
+    DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -777,8 +781,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            vlanResponse.setGateway(vlan.getVlanGateway());
-            vlanResponse.setNetmask(vlan.getVlanNetmask());
+            String gateway = vlan.getVlanGateway();
+            String netmask = vlan.getVlanNetmask();
+            vlanResponse.setGateway(gateway);
+            vlanResponse.setNetmask(netmask);
+            if (StringUtils.isNotEmpty(gateway) && StringUtils.isNotEmpty(netmask)) {
+                vlanResponse.setCidr(NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask));
+            }
 
             // get start ip and end ip of corresponding vlan
             String ipRange = vlan.getIpRange();
@@ -796,6 +805,20 @@ public class ApiResponseHelper implements ResponseGenerator {
                 String[] range = ip6Range.split("-");
                 vlanResponse.setStartIpv6(range[0]);
                 vlanResponse.setEndIpv6(range[1]);
+
+                IPv6Address first = IPv6Address.fromString(range[0]);
+                IPv6Address last = IPv6Address.fromString(range[1]);
+                IPv6AddressRange ipv6Range = IPv6AddressRange.fromFirstAndLast(first, last);
+                Iterator<IPv6Address> ips = ipv6Range.iterator();
+                int idx = 0;
+                while (ips.hasNext() && idx < 10) {
+                    IPv6Address ip = ips.next();
+                    s_logger.debug(String.format("IPv6Address::%d -- %s", idx, ip.toString()));
+                    if (idx % 2 == 0) {
+                        s_logger.debug(String.format("IPv6Address-added::%s -- %s", ip, ip.add(1)));
+                    }
+                    idx++;
+                }
             }
 
             if (vlan.getNetworkId() != null) {
@@ -1126,18 +1149,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        List<PodManagementIp6RangeVO> ip6Ranges = podManagementIp6RangeDao.listByPodId(pod.getId());
-        List<IpRangeResponse> ip6RangesResponses = new ArrayList<>();
-        for (PodManagementIp6RangeVO ip6Range : ip6Ranges) {
-            IpRangeResponse response = new IpRangeResponse();
-            response.setGateway(ip6Range.getGateway());
-            response.setCidr(ip6Range.getCidr());
-            response.setVlanId(ip6Range.getVlan() != null ? BroadcastDomainType.Vlan.toUri(String.valueOf(ip6Range.getVlan())).toString() : BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
-            response.setStartIp(ip6Range.getStartIp());
-            response.setEndIp(ip6Range.getEndIp());
-            ip6RangesResponses.add(response);
-        }
-
         PodResponse podResponse = new PodResponse();
         podResponse.setId(pod.getUuid());
         podResponse.setName(pod.getName());
@@ -1148,9 +1159,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
         podResponse.setIpRanges(ipRanges);
-        if (CollectionUtils.isNotEmpty(ip6Ranges)) {
-            podResponse.setIp6Ranges(ip6RangesResponses);
-        }
         podResponse.setStartIp(startIps);
         podResponse.setEndIp(endIps);
         podResponse.setForSystemVms(forSystemVms);
@@ -1183,9 +1191,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
             podResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
-
-        List<PodGuestIp6PrefixVO> ip6Prefixes = podGuestIp6PrefixDao.listByPodId(pod.getId());
-        podResponse.setPublicIp6Prefixes(ip6Prefixes.stream().map(PodGuestIp6PrefixVO::getPrefix).collect(Collectors.toList()));
 
         podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
@@ -1251,6 +1256,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         return capacityResponses;
+    }
+
+    @Override
+    public DataCenterGuestIpv6PrefixResponse createDataCenterGuestIpv6PrefixResponse(DataCenterGuestIpv6Prefix prefix) {
+        DataCenterGuestIpv6PrefixResponse response = new DataCenterGuestIpv6PrefixResponse();
+        response.setId(prefix.getUuid());
+        response.setPrefix(prefix.getPrefix());
+        DataCenter dc = ApiDBUtils.findZoneById(prefix.getDataCenterId());
+        response.setZoneId(dc.getUuid());
+        if (prefix.getPodId() != null) {
+            Pod pod = ApiDBUtils.findPodById(prefix.getPodId());
+            response.setPod(pod.getUuid());
+        }
+        response.setCreated(prefix.getCreated());
+        return response;
     }
 
     @Override

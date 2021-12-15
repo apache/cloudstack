@@ -17,6 +17,14 @@
 package com.cloud.network.guru;
 
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
@@ -27,6 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -60,12 +69,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.List;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
@@ -118,6 +121,20 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
+        }
+        if (userSpecified == null) {
+            return config;
+        }
+        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
+                    (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
+            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
+        }
+        if (userSpecified.getIp6Cidr() != null) {
+            config.setIp6Cidr(userSpecified.getIp6Cidr());
+            config.setIp6Gateway(userSpecified.getIp6Gateway());
+        }
+        if (userSpecified.getRouterIpv6() != null) {
+            config.setRouterIpv6(userSpecified.getRouterIpv6());
         }
 
         return config;

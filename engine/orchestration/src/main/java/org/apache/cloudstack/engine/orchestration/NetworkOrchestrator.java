@@ -115,6 +115,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Event;
@@ -318,6 +319,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ResourceManager resourceManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     List<NetworkGuru> networkGurus;
 
@@ -3098,6 +3101,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             throw new CloudRuntimeException("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                         } else {
                             // commit transaction only when ips and vlans for the network are released successfully
+
+                            ipv6Service.releaseIpv6SubnetForNetwork(networkId);
+                            ipv6Service.releasePublicIpv6ForNetwork(networkId);
                             try {
                                 stateTransitTo(networkFinal, Event.DestroyNetwork);
                             } catch (final NoTransitionException e) {

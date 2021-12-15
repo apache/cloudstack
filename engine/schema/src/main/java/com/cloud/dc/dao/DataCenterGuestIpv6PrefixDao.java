@@ -15,12 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network.dao;
+package com.cloud.dc.dao;
 
-import com.cloud.network.Ip6GuestPrefixSubnetNetworkMapVO;
+import java.util.List;
+
+import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface Ip6GuestPrefixSubnetNetworkMapDao extends GenericDao<Ip6GuestPrefixSubnetNetworkMapVO, Long> {
-    Ip6GuestPrefixSubnetNetworkMapVO findFirstAvailable(long prefixId);
-    Ip6GuestPrefixSubnetNetworkMapVO findLast(long prefixId);
+public interface DataCenterGuestIpv6PrefixDao extends GenericDao<DataCenterGuestIpv6PrefixVO, Long> {
+
+    List<DataCenterGuestIpv6PrefixVO> listByPodId(long podId);
+
+    List<DataCenterGuestIpv6PrefixVO> listByDataCenterId(long dcId);
 }

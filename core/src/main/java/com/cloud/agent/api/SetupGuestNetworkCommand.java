@@ -35,6 +35,7 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     String routerIpv6 = null;
     String routerIpv6Gateway = null;
     String routerIpv6Cidr = null;
+    Boolean routerIpv6Firewall = null;
 
     public NicTO getNic() {
         return nic;

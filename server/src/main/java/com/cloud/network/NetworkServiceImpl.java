@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +61,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -74,12 +72,10 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
-import com.cloud.dc.PodGuestIp6PrefixVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
-import com.cloud.dc.dao.PodGuestIp6PrefixDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
@@ -116,7 +112,7 @@ import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.Ip6GuestPrefixSubnetNetworkMapDao;
+import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
@@ -211,8 +207,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.googlecode.ipv6.IPv6Network;
-import com.googlecode.ipv6.IPv6NetworkMask;
+import com.googlecode.ipv6.IPv6Address;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -340,9 +335,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     VirtualMachineManager vmManager;
     @Inject
-    PodGuestIp6PrefixDao podGuestIp6PrefixDao;
+    Ipv6Service ipv6Service;
     @Inject
-    Ip6GuestPrefixSubnetNetworkMapDao ip6GuestPrefixSubnetNetworkMapDao;
+    Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1349,11 +1344,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
-
+        Pair<String, String> ip6GatewayCidr = null;
         if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {
             ipv6 = _networkOfferingDao.isIpv6Supported(ntwkOff.getId());
             if (ipv6) {
-                Pair<String, String> ip6GatewayCidr = getIp6GatewayCidr(ntwkOff.getId(), zoneId, owner.getId());
+                ip6GatewayCidr = ipv6Service.preAllocateIpv6SubnetForNetwork(zone.getId());
                 ip6Gateway = ip6GatewayCidr.first();
                 ip6Cidr = ip6GatewayCidr.second();
             }
@@ -1433,7 +1428,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (!createVlan) {
             // Only support advance shared network in IPv6, which means createVlan is a must
-            if (ipv6) {
+            if (ipv6 && ntwkOff.getGuestType() != GuestType.Isolated) {
                 createVlan = true;
             }
         }
@@ -1449,6 +1444,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
+        }
+
+        if (ip6GatewayCidr != null) {
+            ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
         }
 
         // if the network offering has persistent set to true, implement the network
@@ -1472,31 +1471,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return network;
-    }
-
-    private Pair<String, String> getIp6GatewayCidr(Long networkOfferingId, Long zoneId, Long accountId) {
-        String ip6Gateway = null;
-        String ip6Cidr = null;
-        if (!areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat)) {
-            throw new InvalidParameterValueException("Can only take IPv6 address with isolated networks if SourceNat is supported");
-        }
-        String routerIpv6Gateway = Ipv6Service.routerIpv6Gateway.valueIn(accountId);
-        if (org.apache.commons.lang3.StringUtils.isEmpty(routerIpv6Gateway)) {
-            Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, false);
-            if (ipv6Address == null) {
-                throw new InvalidParameterValueException("cannot take an IPv6 range without router ipv6 address for this network");
-            }
-            ip6Gateway = ipv6Address.getIp6Gateway();
-            ip6Cidr = ipv6Address.getIp6Cidr();
-        } else {
-            Ipv6Address ipv6Address = _ipv6Service.takeIpv6Range(zoneId, true);
-            if (ipv6Address == null) {
-                throw new InvalidParameterValueException("cannot take an IPv6 range with router ipv6 address for this network");
-            }
-            ip6Gateway = ipv6Address.getIp6Gateway();
-            ip6Cidr = ipv6Address.getIp6Cidr();
-        }
-        return new Pair<String, String>(ip6Gateway, ip6Cidr);
     }
 
     /**
@@ -1591,7 +1565,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -2666,10 +2640,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     private void updateNetworkIpv6(NetworkVO network, Long networkOfferingId) {
-        boolean isIpv6Supported = _ipv6Service.isIpv6Supported(network.getNetworkOfferingId());
-        boolean isIpv6SupportedNew = _ipv6Service.isIpv6Supported(networkOfferingId);
+        boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
+        boolean isIpv6SupportedNew = _networkOfferingDao.isIpv6Supported(networkOfferingId);
         if (isIpv6Supported && ! isIpv6SupportedNew) {
-            _ipv6AddressDao.unmark(network.getId(), network.getDomainId(), network.getAccountId());
+//            _ipv6AddressDao.unmark(network.getId(), network.getDomainId(), network.getAccountId());
             network.setIp6Gateway(null);
             network.setIp6Cidr(null);
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
@@ -2680,17 +2654,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 _nicDao.update(nic.getId(), nic);
             }
         } else if (!isIpv6Supported && isIpv6SupportedNew) {
-            Pair<String, String> ip6GatewayCidr = getIp6GatewayCidr(networkOfferingId, network.getDataCenterId(), network.getAccountId());
+            Pair<String, String> ip6GatewayCidr;
+            try {
+                ip6GatewayCidr = ipv6Service.preAllocateIpv6SubnetForNetwork(network.getDataCenterId());
+                ipv6Service.assignIpv6SubnetToNetwork(ip6GatewayCidr.second(), network.getId());
+            } catch (ResourceAllocationException ex) {
+                throw new CloudRuntimeException(String.format("Failed to update network: %s", network.getName()), ex);
+            }
             String ip6Gateway = ip6GatewayCidr.first();
             String ip6Cidr = ip6GatewayCidr.second();
-            _ipv6AddressDao.mark(network.getDataCenterId(), ip6Gateway, ip6Cidr, network.getId(), network.getDomainId(), network.getAccountId());
             network.setIp6Gateway(ip6Gateway);
             network.setIp6Cidr(ip6Cidr);
-            final String ip6Prefix = ip6Gateway.split("::")[0];
+            Ipv6GuestPrefixSubnetNetworkMapVO map = ipv6GuestPrefixSubnetNetworkMapDao.findByNetworkId(network.getId());
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
-                IPv6Address ipv6addr = NetUtils.EUI64Address(ip6Prefix + Ipv6Service.IPV6_CIDR_SUFFIX, nic.getMacAddress());
-                nic.setIPv6Address(ipv6addr.toString());
+                IPv6Address iPv6Address = NetUtils.EUI64Address(map.getSubnet(), nic.getMacAddress());
+                nic.setIPv6Address(iPv6Address.toString());
                 nic.setIPv6Cidr(ip6Cidr);
                 nic.setIPv6Gateway(ip6Gateway);
                 _nicDao.update(nic.getId(), nic);
@@ -4820,47 +4799,4 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress};
     }
-
-
-    private Pair<String, String> getGuestNetworkIp6GatewayAndCidr(long physicalNetworkId) throws ResourceAllocationException {
-        List<VlanVO> vlans = _vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(physicalNetworkId);
-        if (CollectionUtils.isEmpty(vlans)) {
-            throw new ResourceAllocationException("Unable to allocate IPv6 vlan network", Resource.ResourceType.network);
-        }
-        for (VlanVO vlan : vlans) {
-            vlan.
-        }
-        List<PodGuestIp6PrefixVO> prefixes = podGuestIp6PrefixDao.listByPodId(1);
-        if (CollectionUtils.isEmpty(prefixes)) {
-            throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
-        }
-        Ip6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
-        for (PodGuestIp6PrefixVO prefix : prefixes) {
-            ip6Subnet = ip6GuestPrefixSubnetNetworkMapDao.findFirstAvailable(prefix.getId());
-            if (ip6Subnet == null) {
-                Ip6GuestPrefixSubnetNetworkMapVO last = ip6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
-                String lastUsedSubnet = last != null ? last.getSubnet() : null;
-                final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
-                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(64));
-                while (splits.hasNext()) {
-                    IPv6Network i = splits.next();
-                    if (lastUsedSubnet == null) {
-                        ip6Subnet = new Ip6GuestPrefixSubnetNetworkMapVO(prefix.getId(), i.toString(), null, Ip6GuestPrefixSubnetNetworkMap.State.Allocated);
-                        break;
-                    }
-                    if (i.toString().equals(lastUsedSubnet)) {
-                        lastUsedSubnet = null;
-                    }
-                }
-            }
-            if (ip6Subnet != null) {
-                break;
-            }
-        }
-        if (ip6Subnet == null) {
-            throw new ResourceAllocationException("Unable to allocate IPv6 guest subnet for the network", Resource.ResourceType.network);
-        }
-        return new Pair<>(vlanip6Subnet.getSubnet());
-    }
-
 }

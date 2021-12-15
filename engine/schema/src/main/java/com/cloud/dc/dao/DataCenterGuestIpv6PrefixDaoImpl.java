@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.PodGuestIp6PrefixVO;
+import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
@@ -29,21 +29,22 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @DB
-public class PodGuestIp6PrefixDaoImpl extends GenericDaoBase<PodGuestIp6PrefixVO, Long> implements PodGuestIp6PrefixDao {
+public class DataCenterGuestIpv6PrefixDaoImpl extends GenericDaoBase<DataCenterGuestIpv6PrefixVO, Long> implements DataCenterGuestIpv6PrefixDao {
 
-    public PodGuestIp6PrefixDaoImpl() {
+    public DataCenterGuestIpv6PrefixDaoImpl() {
     }
 
     @Override
-    public List<PodGuestIp6PrefixVO> listByPodId(long podId) {
-        QueryBuilder<PodGuestIp6PrefixVO> sc = QueryBuilder.create(PodGuestIp6PrefixVO.class);
-        sc.and(sc.entity().getPodId(), SearchCriteria.Op.EQ, podId);
-        return sc.list();
+    public List<DataCenterGuestIpv6PrefixVO> listByPodId(long podId) {
+        SearchCriteria<DataCenterGuestIpv6PrefixVO> sc = createSearchCriteria();
+        sc.addOr("podId", SearchCriteria.Op.NULL);
+        sc.addOr("podId", SearchCriteria.Op.EQ, podId);
+        return listBy(sc);
     }
 
     @Override
-    public List<PodGuestIp6PrefixVO> listByDataCenterId(long dcId) {
-        QueryBuilder<PodGuestIp6PrefixVO> sc = QueryBuilder.create(PodGuestIp6PrefixVO.class);
+    public List<DataCenterGuestIpv6PrefixVO> listByDataCenterId(long dcId) {
+        QueryBuilder<DataCenterGuestIpv6PrefixVO> sc = QueryBuilder.create(DataCenterGuestIpv6PrefixVO.class);
         sc.and(sc.entity().getDataCenterId(), SearchCriteria.Op.EQ, dcId);
         return sc.list();
     }

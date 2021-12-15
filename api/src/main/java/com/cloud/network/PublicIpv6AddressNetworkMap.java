@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.dc;
+package com.cloud.network;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface PodGuestIp6Prefix extends InfrastructureEntity, InternalIdentity, Identity {
-    Long getDataCenterId();
+public interface PublicIpv6AddressNetworkMap extends Identity, InternalIdentity {
+    enum State {
+        Allocated, // The subnet is in use.
+        Free // The subnet is ready to be allocated.
+    }
 
-    Long getPodId();
+    long getRangeId();
 
-    String getPrefix();
+    String getIp6Address();
+
+    Long getNetworkId();
+
+    PublicIpv6AddressNetworkMap.State getState();
 }

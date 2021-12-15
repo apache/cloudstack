@@ -37,6 +37,9 @@
       <template slot="gateway" slot-scope="record">
         {{ record.gateway || record.ip6gateway }}
       </template>
+      <template slot="cidr" slot-scope="record">
+        {{ record.netmask || record.ip6cidr }}
+      </template>
       <template slot="startip" slot-scope="record">
         {{ record.startip || record.startipv6 }}
       </template>
@@ -393,13 +396,13 @@ export default {
           title: this.$t('label.gateway'),
           scopedSlots: { customRender: 'gateway' }
         },
+        // {
+        //   title: this.$t('label.ip4netmask'),
+        //   dataIndex: 'netmask'
+        // },
         {
-          title: this.$t('label.ip4netmask'),
-          dataIndex: 'netmask'
-        },
-        {
-          title: this.$t('label.ip6cidr'),
-          dataIndex: 'ip6cidr'
+          title: this.$t('label.cidr'),
+          scopedSlots: { customRender: 'cidr' }
         },
         {
           title: this.$t('label.vlan'),

@@ -65,6 +65,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -164,6 +165,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     NetworkDetailsDao networkDetailsDao;
     @Inject
     RouterHealthCheckResultDao _routerHealthCheckResultDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -682,7 +685,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
             if (routerDeploymentDefinition.getGuestNetwork() != null) {
-                _ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
+                ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
             }
             publicConfig.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }
