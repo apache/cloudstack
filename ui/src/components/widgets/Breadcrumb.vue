@@ -84,7 +84,7 @@ export default {
     this.getBreadcrumb()
   },
   watch: {
-    $route () {
+    '$route.fullPath' () {
       this.getBreadcrumb()
     }
   },

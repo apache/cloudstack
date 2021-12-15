@@ -468,12 +468,12 @@ export default {
     }
   },
   watch: {
-    loading (newData, oldData) {
+    loading (newData) {
       if (!newData && this.resource.id) {
         this.handleFetchData()
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setCurrentTab()
     }
   },

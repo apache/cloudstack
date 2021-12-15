@@ -763,7 +763,7 @@ export default {
     }
   },
   watch: {
-    $route: function () {
+    '$route.fullPath': function () {
       this.getIcons()
     },
     resource: {

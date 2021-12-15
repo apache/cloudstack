@@ -101,7 +101,7 @@ export default {
     }
   },
   watch: {
-    $route () {
+    '$route.fullPath' () {
       this.getBreadcrumb()
     }
   }

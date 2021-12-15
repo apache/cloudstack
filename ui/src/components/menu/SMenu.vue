@@ -21,6 +21,7 @@
       :theme="theme"
       v-model:openKeys="openKeys"
       v-model:selectedKeys="selectedKeys"
+      @click="selectMenu"
     >
     <template v-for="(item, index) in menu" :key="index">
       <div v-if="!item.hidden">
@@ -46,7 +47,7 @@
             </a-menu-item>
           </template>
         </a-sub-menu>
-        <a-menu-item v-else :key="item.path" >
+        <a-menu-item v-else :key="item.path">
           <router-link :to="{ name: item.name, target: item.meta.target || null }">
             <render-icon
               v-if="item.meta.icon && typeof (item.meta.icon) === 'string'"
@@ -107,18 +108,16 @@ export default {
   },
   watch: {
     collapsed (val) {
-      if (val) {
-        this.cachedOpenKeys = this.openKeys.concat()
-        this.openKeys = []
-      } else {
-        this.openKeys = this.cachedOpenKeys
-      }
+      this.openKeys = val ? [] : this.cachedOpenKeys
     },
-    $route: function () {
+    '$route.fullPath': function () {
       this.updateMenu()
     }
   },
   methods: {
+    selectMenu (obj) {
+      this.selectedKeys = [obj.key]
+    },
     updateMenu () {
       const routes = this.$route.matched.concat()
 
@@ -137,7 +136,10 @@ export default {
       }
 
       this.cachedPath = this.selectedKeys[0]
-      this.collapsed ? (this.cachedOpenKeys = openKeys) : (this.openKeys = openKeys)
+      this.cachedOpenKeys = openKeys
+      if (!this.collapsed) {
+        this.openKeys = openKeys
+      }
     },
     handleClickParentMenu (menuItem) {
       if (this.cachedPath === menuItem.redirect) {

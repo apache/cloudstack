@@ -403,7 +403,7 @@ export default {
         }
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setCurrentTab()
     }
   },
