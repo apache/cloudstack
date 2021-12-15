@@ -48,7 +48,7 @@ public class LogUtils {
                 DOMConfigurator.configureAndWatch(configFileLocation);
             }
         }
-        if(configFileLocation != null) {
+        if (configFileLocation != null) {
             LOGGER.info("log4j configuration found at " + configFileLocation);
         }
     }
@@ -56,10 +56,10 @@ public class LogUtils {
         Set<String> fileNames = new HashSet<>();
         Enumeration appenders = LOGGER.getRootLogger().getAllAppenders();
         int appenderCount=0;
-        while(appenders.hasMoreElements()) {
+        while (appenders.hasMoreElements()) {
             ++appenderCount;
             Appender currAppender = (Appender) appenders.nextElement();
-            if(currAppender instanceof FileAppender) {
+            if (currAppender instanceof FileAppender) {
                 String fileName =((FileAppender) currAppender).getFile();
                 fileNames.add(fileName);
                 LOGGER.debug(String.format("file for %s : %s", currAppender.getName(), fileName));

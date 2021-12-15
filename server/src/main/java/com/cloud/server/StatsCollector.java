@@ -825,8 +825,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getCpuData(newEntry);
             getMemoryData(newEntry);
             // newEntry must now include a pid!
-            getProcFsData(newEntry);
-            getFsData(newEntry);
+            getProcFileSystemData(newEntry);
+            getFileSystemData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
             gatherAllMetrics(newEntry);
             LOGGER.trace("Metrics collection end!");
@@ -916,9 +916,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         /**
          * As for data from outside the JVM, we only rely on /proc/ contained data.
          *
-         * @param newEntry
+         * @param newEntry item to add the information to
          */
-        private void getProcFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
+        private void getProcFileSystemData(@NotNull ManagementServerHostStatsEntry newEntry) {
             String OS = Script.runSimpleBashScript("cat /proc/version");
             newEntry.setOsDistribution(OS);
             // if we got these from the bean, skip
@@ -976,7 +976,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return totalcpucap;
         }
 
-        private void getFsData(@NotNull ManagementServerHostStatsEntry newEntry) {
+        private void getFileSystemData(@NotNull ManagementServerHostStatsEntry newEntry) {
             Set<String> logFileNames = LogUtils.getLogFileNames();
             StringBuilder logInfoBuilder = new StringBuilder();
             for (String fileName : logFileNames) {

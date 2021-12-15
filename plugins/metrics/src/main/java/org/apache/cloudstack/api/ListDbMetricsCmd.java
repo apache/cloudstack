@@ -31,7 +31,7 @@ import javax.inject.Inject;
 @APICommand(name=ListDbMetricsCmd.APINAME, description = "list the db hosts and statistics",
         responseObject = DbMetricsResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         responseView = ResponseObject.ResponseView.Full, since = "4.17.0", authorized = {RoleType.Admin})
-public class ListDbMetricsCmd extends BaseCmd{
+public class ListDbMetricsCmd extends BaseCmd {
     public static final String APINAME = "listDbMetrics";
 
     @Inject
