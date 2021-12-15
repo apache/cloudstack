@@ -67,7 +67,7 @@ export default {
       icon: 'bar-chart',
       docHelp: 'adminguide/management.html#metrics',
       permission: ['listDbMetrics', 'listUsageServerMetrics'],
-      component: () => import('@/components/view/Metrics.vue')
+      component: () => import('@/views/infra/Metrics.vue')
     },
     {
       name: 'alert',
