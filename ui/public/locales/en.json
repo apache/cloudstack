@@ -776,7 +776,7 @@
 "label.deny": "Deny",
 "label.deployasis":"Read VM settings from OVA",
 "label.deploymentplanner": "Deployment planner",
-"label.desc.db.stats": "DataBase Statistics",
+"label.desc.db.stats": "Database Statistics",
 "label.desc.importexportinstancewizard": "Import and export instances to/from an existing VMware cluster.",
 "label.desc.usage.stats": "Usage Server Statistics",
 "label.description": "Description",
