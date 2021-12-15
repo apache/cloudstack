@@ -60,8 +60,6 @@ import com.cloud.vm.dao.VmStatsDao;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 
-import static org.powermock.api.mockito.PowerMockito.when;
-
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(DataProviderRunner.class)
 @PrepareForTest({InfluxDBFactory.class, BatchPoints.class})
@@ -378,48 +376,5 @@ public class StatsCollectorTest {
         Assert.assertEquals(4.2, result.getDiskWriteKBs(), 0);
         Assert.assertEquals(6.0, result.getDiskReadIOs(), 0);
         Assert.assertEquals(6.2, result.getDiskWriteIOs(), 0);
-    }
-
-    @Test
-    public void testIsDbIpv6Local() {
-        Properties p = new Properties();
-        p.put("db.cloud.host", "::1");
-        when(statsCollector.getDbProperties()).thenReturn(p);
-
-        Assert.assertTrue(statsCollector.isDbLocal());
-    }
-    @Test
-    public void testIsDbIpv4Local() {
-        Properties p = new Properties();
-        p.put("db.cloud.host", "127.0.0.1");
-        when(statsCollector.getDbProperties()).thenReturn(p);
-
-        Assert.assertTrue(statsCollector.isDbLocal());
-    }
-    @Test
-    public void testIsDbSymbolicLocal() {
-        Properties p = new Properties();
-        p.put("db.cloud.host", "localhost");
-        when(statsCollector.getDbProperties()).thenReturn(p);
-
-        Assert.assertTrue(statsCollector.isDbLocal());
-    }
-    @Test
-    public void testIsDbOnSameIp() {
-        Properties p = new Properties();
-        p.put("db.cloud.host", "10.10.10.10");
-        p.put("cluster.node.IP", "10.10.10.10");
-        when(statsCollector.getDbProperties()).thenReturn(p);
-
-        Assert.assertTrue(statsCollector.isDbLocal());
-    }
-    @Test
-    public void testIsDbNotLocal() {
-        Properties p = new Properties();
-        p.put("db.cloud.host", "10.10.10.11");
-        p.put("cluster.node.IP", "10.10.10.10");
-        when(statsCollector.getDbProperties()).thenReturn(p);
-
-        Assert.assertFalse(statsCollector.isDbLocal());
     }
 }
