@@ -1885,15 +1885,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
                 if (Arrays.asList(Network.NetworkFilter.Shared, Network.NetworkFilter.All).contains(networkFilter)) {
                     // get shared networks
-                    Set<Long> networkIds = networksToReturn.stream()
-                            .map(NetworkVO::getId)
-                            .collect(Collectors.toSet());
                     List<NetworkVO> sharedNetworks = listSharedNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts);
-                    List<NetworkVO> sharedNetworksToReturn = sharedNetworks.stream()
-                            .filter(network -> ! networkIds.contains(network.getId()))
-                            .collect(Collectors.toList());
-                    networksToReturn.addAll(sharedNetworksToReturn);
+                    addNetworksToReturnIfNotExist(networksToReturn, sharedNetworks);
+
                 }
             } else {
                 if (Arrays.asList(Network.NetworkFilter.Account, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
@@ -1913,15 +1908,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
                 if (Arrays.asList(Network.NetworkFilter.Shared, Network.NetworkFilter.All).contains(networkFilter)) {
                     // get shared networks
-                    Set<Long> networkIds = networksToReturn.stream()
-                            .map(NetworkVO::getId)
-                            .collect(Collectors.toSet());
                     List<NetworkVO> sharedNetworks = listSharedNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
                             aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive);
-                    List<NetworkVO> sharedNetworksToReturn = sharedNetworks.stream()
-                            .filter(network -> ! networkIds.contains(network.getId()))
-                            .collect(Collectors.toList());
-                    networksToReturn.addAll(sharedNetworksToReturn);
+                    addNetworksToReturnIfNotExist(networksToReturn, sharedNetworks);
                 }
             }
         } else {
@@ -1971,6 +1960,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         return new Pair<List<? extends Network>, Integer>(networksToReturn, networksToReturn.size());
+    }
+
+    private void addNetworksToReturnIfNotExist(final List<NetworkVO> networksToReturn, final List<NetworkVO> sharedNetworks) {
+        Set<Long> networkIds = networksToReturn.stream()
+                .map(NetworkVO::getId)
+                .collect(Collectors.toSet());
+        List<NetworkVO> sharedNetworksToReturn = sharedNetworks.stream()
+                .filter(network -> ! networkIds.contains(network.getId()))
+                .collect(Collectors.toList());
+        networksToReturn.addAll(sharedNetworksToReturn);
     }
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
