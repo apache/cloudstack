@@ -1197,13 +1197,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
 
-        if (currentServiceOffering.getDiskOfferingStrictness() != newServiceOffering.getDiskOfferingStrictness()) {
-            throw new InvalidParameterValueException("Unable to upgrade VM, since disk offering strictness flag is not same for new service offering and old service offering");
-        }
-
-        if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
-            throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
-        }
+        validateDiskOfferingChecks(currentServiceOffering, newServiceOffering);
 
         int newCpu = newServiceOffering.getCpu();
         int newMemory = newServiceOffering.getRamSize();
@@ -1225,11 +1219,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check if the new service offering can be applied to vm instance
         _accountMgr.checkAccess(owner, newServiceOffering, _dcDao.findById(vmInstance.getDataCenterId()));
-        DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(currentServiceOffering.getDiskOfferingId());
+
+        // resize and migrate the root volume if required
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-        if (currentDiskOffering.isComputeOnly() && newDiskOffering.isComputeOnly()) {
-            changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
-        }
+        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
+
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
@@ -1894,20 +1888,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to Scale VM: since dynamic scaling enabled flag is not same for new service offering and old service offering");
         }
 
-        if (currentServiceOffering.getDiskOfferingStrictness() != newServiceOffering.getDiskOfferingStrictness()) {
-           throw new InvalidParameterValueException("Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
-        }
-
-        if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
-            throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
-        }
-
-        DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(currentServiceOffering.getDiskOfferingId());
-        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-
-        if (Boolean.compare(currentDiskOffering.isComputeOnly(), newDiskOffering.isComputeOnly()) != 0) {
-            throw new InvalidParameterValueException("Unable to scale VM, since compute only flags on old and new service offerings are not same");
-        }
+        validateDiskOfferingChecks(currentServiceOffering, newServiceOffering);
 
         int newCpu = newServiceOffering.getCpu();
         int newMemory = newServiceOffering.getRamSize();
@@ -2005,9 +1986,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
 
                     // #3 resize or migrate the root volume if required
-                    if (currentDiskOffering.isComputeOnly() && newDiskOffering.isComputeOnly()) {
-                        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
-                    }
+                    DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
+                    changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
 
                     // #4 scale the vm now
                     vmInstance = _vmInstanceDao.findById(vmId);
@@ -2031,6 +2011,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return success;
+    }
+
+    private void validateDiskOfferingChecks(ServiceOfferingVO currentServiceOffering, ServiceOfferingVO newServiceOffering) {
+        if (currentServiceOffering.getDiskOfferingStrictness() != newServiceOffering.getDiskOfferingStrictness()) {
+            throw new InvalidParameterValueException("Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
+        }
+
+        if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
+            throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
+        }
     }
 
     private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters) throws ResourceAllocationException {
