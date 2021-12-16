@@ -409,13 +409,16 @@ class TestNetworkPermissions(cloudstackTestCase):
         virtual_machine.update_default_nic(self.otheruser_apiclient, vm_new_nic_id)
         virtual_machine.update_default_nic(self.otheruser_apiclient, vm_default_nic_id)
 
-        # 11. Remove nic from vm1
+        # 11. Stop vm1 with forced=true
+        virtual_machine.stop(self.otheruser_apiclient, forced=True)
+
+        # 12. Remove nic from vm1
         virtual_machine.remove_nic(self.otheruser_apiclient, vm_new_nic_id)
 
-        # 12. Destroy vm1
+        # 13. Destroy vm1
         virtual_machine.delete(self.apiclient, expunge=True)
 
-        # 13. Reset network permissions
+        # 14. Reset network permissions
         self.reset_network_permission(self.user_apiclient, self.user_network, expected=True)
 
     @attr(tags=["advanced"], required_hardware="false")
