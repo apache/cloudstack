@@ -1791,7 +1791,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) {
             if (cmd instanceof StartupRoutingCommand) {
                 if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
-                    Map<String, String> params = new HashMap<String, String>();
+                    Map<String, String> params = new HashMap<>();
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
 

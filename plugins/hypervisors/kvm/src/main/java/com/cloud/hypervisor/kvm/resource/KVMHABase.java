@@ -32,11 +32,11 @@ public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
-    protected static long _heartBeatUpdateTimeout = 60000;
-    protected static long _heartBeatUpdateFreq = 60000;
-    protected static long _heartBeatUpdateMaxRetries = 5;
-    protected static long _heartBeatUpdateRetrySleep = 10000;
-    protected static HeartBeatAction _heartBeatFailureAction = HeartBeatAction.HARDRESET;
+    protected static long s_heartBeatUpdateTimeout = 60000;
+    protected static long s_heartBeatUpdateFreq = 60000;
+    protected static long s_heartBeatUpdateMaxRetries = 5;
+    protected static long s_heartBeatUpdateRetrySleep = 10000;
+    protected static HeartBeatAction s_heartBeatFailureAction = HeartBeatAction.HARDRESET;
 
     public static enum PoolType {
         PrimaryStorage, SecondaryStorage

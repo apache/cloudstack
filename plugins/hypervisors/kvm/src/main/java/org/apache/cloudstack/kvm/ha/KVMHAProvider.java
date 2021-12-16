@@ -38,9 +38,26 @@ import org.joda.time.DateTime;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
-    private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
+    private static final Logger LOG = Logger.getLogger(KVMHAProvider.class);
+    private static final Map<HAProviderConfig, ConfigKey<?>> KVM_HA_CONFIG_MAP = new HashMap<>();
+
+    static {
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.HealthCheckTimeout, KVMHAConfig.KvmHAHealthCheckTimeout);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.ActivityCheckTimeout, KVMHAConfig.KvmHAActivityCheckTimeout);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.MaxActivityCheckInterval, KVMHAConfig.KvmHAActivityCheckInterval);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.MaxActivityChecks, KVMHAConfig.KvmHAActivityCheckMaxAttempts);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.ActivityCheckFailureRatio, KVMHAConfig.KvmHAActivityCheckFailureThreshold);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.RecoveryWaitTimeout, KVMHAConfig.KvmHARecoverWaitPeriod);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.RecoveryTimeout, KVMHAConfig.KvmHARecoverTimeout);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.FenceTimeout, KVMHAConfig.KvmHAFenceTimeout);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.MaxRecoveryAttempts, KVMHAConfig.KvmHARecoverAttemptThreshold);
+        KVM_HA_CONFIG_MAP.put(HAProviderConfig.MaxDegradedWaitTimeout, KVMHAConfig.KvmHADegradedMaxPeriod);
+    }
 
     @Inject
     protected KVMHostActivityChecker hostActivityChecker;
@@ -108,30 +125,8 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     @Override
     public Object getConfigValue(final HAProviderConfig name, final Host host) {
         final Long clusterId = host.getClusterId();
-        switch (name) {
-            case HealthCheckTimeout:
-                return KVMHAConfig.KvmHAHealthCheckTimeout.valueIn(clusterId);
-            case ActivityCheckTimeout:
-                return KVMHAConfig.KvmHAActivityCheckTimeout.valueIn(clusterId);
-            case MaxActivityCheckInterval:
-                return KVMHAConfig.KvmHAActivityCheckInterval.valueIn(clusterId);
-            case MaxActivityChecks:
-                return KVMHAConfig.KvmHAActivityCheckMaxAttempts.valueIn(clusterId);
-            case ActivityCheckFailureRatio:
-                return KVMHAConfig.KvmHAActivityCheckFailureThreshold.valueIn(clusterId);
-            case RecoveryWaitTimeout:
-                return KVMHAConfig.KvmHARecoverWaitPeriod.valueIn(clusterId);
-            case RecoveryTimeout:
-                return KVMHAConfig.KvmHARecoverTimeout.valueIn(clusterId);
-            case FenceTimeout:
-                return KVMHAConfig.KvmHAFenceTimeout.valueIn(clusterId);
-            case MaxRecoveryAttempts:
-                return KVMHAConfig.KvmHARecoverAttemptThreshold.valueIn(clusterId);
-            case MaxDegradedWaitTimeout:
-                return KVMHAConfig.KvmHADegradedMaxPeriod.valueIn(clusterId);
-            default:
-                throw new InvalidParameterException("Unknown HAProviderConfig " + name.toString());
-        }
+        return Optional.ofNullable(KVM_HA_CONFIG_MAP.get(name).valueIn(clusterId))
+                .orElseThrow(() -> new InvalidParameterException("Unknown HAProviderConfig " + name.toString()));
     }
 
     @Override

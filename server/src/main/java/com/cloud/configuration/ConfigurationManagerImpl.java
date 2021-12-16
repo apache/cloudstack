@@ -41,7 +41,6 @@ import java.util.Vector;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.Strings;
 import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -575,7 +574,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configKeyMap.put(KVM_HEARTBEAT_FAILURE_ACTION, KVM_HEARTBEAT_FAILURE_ACTION_CK);
         messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (serverAddress, subject, args) -> {
             String globalSettingUpdated = (String) args;
-            if (Strings.isNullOrEmpty(globalSettingUpdated)) {
+            if (StringUtils.isEmpty(globalSettingUpdated)) {
                 return;
             }
             if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
