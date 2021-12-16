@@ -42,7 +42,6 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
     private final Map<String, NfsStoragePool> storagePool = new ConcurrentHashMap<>();
     private Set<String> removedPools = new HashSet<>();
-    private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
     private final Map<String, CheckPoolThread> storagePoolCheckThreads = new HashMap<>();
     private final Map<String, String> storagePoolCheckStatus = new HashMap<>();
     private static final String STATUS_RUNNING = "Running";
@@ -58,7 +57,6 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         configureHeartBeatPath(scriptPath);
 
         s_heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
-        rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
     }
 
     private static synchronized void configureHeartBeatPath(String scriptPath) {
