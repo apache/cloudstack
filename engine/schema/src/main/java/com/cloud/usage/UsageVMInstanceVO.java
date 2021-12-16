@@ -16,17 +16,20 @@
 // under the License.
 package com.cloud.usage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "usage_vm_instance")
-public class UsageVMInstanceVO {
+public class UsageVMInstanceVO implements InternalIdentity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
     @Column(name = "usage_type")
     private int usageType;
@@ -177,5 +180,10 @@ public class UsageVMInstanceVO {
 
     public void setCpuSpeed(Long cpuSpeed) {
         this.cpuSpeed = cpuSpeed;
+    }
+
+    @Override
+    public long getId() {
+        return this.id;
     }
 }

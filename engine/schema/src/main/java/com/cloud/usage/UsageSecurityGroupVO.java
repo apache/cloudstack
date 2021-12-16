@@ -16,17 +16,20 @@
 // under the License.
 package com.cloud.usage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "usage_security_group")
-public class UsageSecurityGroupVO {
+public class UsageSecurityGroupVO implements InternalIdentity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
     @Column(name = "zone_id")
     private long zoneId;
@@ -94,5 +97,10 @@ public class UsageSecurityGroupVO {
 
     public void setDeleted(Date deleted) {
         this.deleted = deleted;
+    }
+
+    @Override
+    public long getId() {
+        return this.id;
     }
 }

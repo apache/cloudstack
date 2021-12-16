@@ -18,17 +18,19 @@ package com.cloud.usage;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "usage_ip_address")
 public class UsageIPAddressVO implements InternalIdentity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
     @Column(name = "account_id")
     private long accountId;
 
@@ -38,8 +40,8 @@ public class UsageIPAddressVO implements InternalIdentity {
     @Column(name = "zone_id")
     private long zoneId;
 
-    @Column(name = "id")
-    private long id;
+    @Column(name = "ip_id")
+    private long ipId;
 
     @Column(name = "public_ip_address")
     private String address = null;
@@ -65,7 +67,7 @@ public class UsageIPAddressVO implements InternalIdentity {
     }
 
     public UsageIPAddressVO(long id, long accountId, long domainId, long zoneId, String address, boolean isSourceNat, boolean isSystem, Date assigned, Date released, boolean isHidden) {
-        this.id = id;
+        this.ipId = id;
         this.accountId = accountId;
         this.domainId = domainId;
         this.zoneId = zoneId;
@@ -127,5 +129,9 @@ public class UsageIPAddressVO implements InternalIdentity {
 
     public boolean isHidden() {
         return isHidden;
+    }
+
+    public long getIpId() {
+        return ipId;
     }
 }

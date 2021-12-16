@@ -18,17 +18,18 @@ package com.cloud.usage;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "usage_port_forwarding")
 public class UsagePortForwardingRuleVO implements InternalIdentity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
     @Column(name = "zone_id")
     private long zoneId;
@@ -39,8 +40,8 @@ public class UsagePortForwardingRuleVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name = "id")
-    private long id;
+    @Column(name = "pf_id")
+    private long pfId;
 
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -57,7 +58,7 @@ public class UsagePortForwardingRuleVO implements InternalIdentity {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.id = id;
+        this.pfId = id;
         this.created = created;
         this.deleted = deleted;
     }
@@ -89,5 +90,9 @@ public class UsagePortForwardingRuleVO implements InternalIdentity {
 
     public void setDeleted(Date deleted) {
         this.deleted = deleted;
+    }
+
+    public long getPfId() {
+        return pfId;
     }
 }

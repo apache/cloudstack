@@ -18,11 +18,7 @@ package com.cloud.usage;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -30,9 +26,14 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "usage_vmsnapshot")
 public class UsageVMSnapshotVO implements InternalIdentity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
+    private Long id;
+
+    @Column(name = "volume_id")
     // volumeId
-    private long id;
+    private long volumeId;
 
     @Column(name = "zone_id")
     private long zoneId;
@@ -71,7 +72,7 @@ public class UsageVMSnapshotVO implements InternalIdentity {
         this.accountId = accountId;
         this.domainId = domainId;
         this.diskOfferingId = diskOfferingId;
-        this.id = id;
+        this.volumeId = id;
         this.size = size;
         this.created = created;
         this.vmId = vmId;
@@ -129,6 +130,10 @@ public class UsageVMSnapshotVO implements InternalIdentity {
 
     public void setVmSnapshotId(Long vmSnapshotId) {
         this.vmSnapshotId = vmSnapshotId;
+    }
+
+    public long getVolumeId() {
+        return volumeId;
     }
 
     @Override
