@@ -1419,7 +1419,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Perform account permission check on network
-        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
+        _accountMgr.checkAccess(vmOwner, AccessType.UseEntry, false, network);
 
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterId()) {
@@ -1529,9 +1529,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (nic.getInstanceId() != vmId) {
             throw new InvalidParameterValueException(nic + " is not a nic on " + vmInstance);
         }
-
-        // Perform account permission check on network
-        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
 
         // don't delete default NIC on a user VM
         if (nic.isDefaultNic() && vmInstance.getType() == VirtualMachine.Type.User) {
