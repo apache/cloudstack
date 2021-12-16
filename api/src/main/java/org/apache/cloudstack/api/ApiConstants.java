@@ -237,8 +237,8 @@ public class ApiConstants {
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LAST_BOOT = "lastboottime";
-    public static final String LAST_STOP = "laststop";
-    public static final String LAST_START = "laststart";
+    public static final String LAST_SERVER_START = "lastserverstart";
+    public static final String LAST_SERVER_STOP = "lastserverstop";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
     public static final String LIMIT_CPU_USE = "limitcpuuse";

@@ -56,13 +56,13 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the name of the OS distribution running on the management server")
     private String osDistribution;
 
-    @SerializedName(ApiConstants.LAST_START)
+    @SerializedName(ApiConstants.LAST_SERVER_START)
     @Param(description = "the last time this Management Server was started")
-    private Date lastStart;
+    private Date lastServerStart;
 
-    @SerializedName(ApiConstants.LAST_STOP)
+    @SerializedName(ApiConstants.LAST_SERVER_STOP)
     @Param(description = "the last time this Management Server was stopped")
-    private Date lastStop;
+    private Date lastServerStop;
 
     @SerializedName(ApiConstants.LAST_BOOT)
     @Param(description = "the last time the host on which this Management Server runs, was booted")
@@ -96,12 +96,12 @@ public class ManagementServerResponse extends BaseResponse {
         return osDistribution;
     }
 
-    public Date getLastStart() {
-        return lastStart;
+    public Date getLastServerStart() {
+        return lastServerStart;
     }
 
-    public Date getLastStop() {
-        return lastStop;
+    public Date getLastServerStop() {
+        return lastServerStop;
     }
 
     public Date getLastBoot() {
@@ -136,12 +136,12 @@ public class ManagementServerResponse extends BaseResponse {
         this.osDistribution = osDistribution;
     }
 
-    public void setLastStart(Date lastStart) {
-        this.lastStart = lastStart;
+    public void setLastServerStart(Date lastServerStart) {
+        this.lastServerStart = lastServerStart;
     }
 
-    public void setLastStop(Date lastStop) {
-        this.lastStop = lastStop;
+    public void setLastServerStop(Date lastServerStop) {
+        this.lastServerStop = lastServerStop;
     }
 
     public void setLastBoot(Date lastBoot) {
