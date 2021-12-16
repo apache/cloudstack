@@ -1300,6 +1300,7 @@
 "label.lang.spanish": "Spanish",
 "label.last.updated": "Last Update",
 "label.lastannotated": "Last annotation date",
+"label.lastboottime": "Boot time of the management server machine",
 "label.lastname": "Last Name",
 "label.lastname.lower": "lastname",
 "label.laststart": "Last start time for this management server",

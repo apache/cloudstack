@@ -26,6 +26,8 @@ import java.util.Date;
 public interface ManagementServerHostStats {
     Date getCollectionTime();
 
+    Date getSystemBootTime();
+
     long getManagementServerHostId();
 
     String getManagementServerHostUuid();
@@ -40,9 +42,9 @@ public interface ManagementServerHostStats {
 
     double getProcessMemoryBytes();
 
-    long getUptime();
+    long getJvmUptime();
 
-    long getStartTime();
+    long getJvmStartTime();
 
     int getAvailableProcessors();
 

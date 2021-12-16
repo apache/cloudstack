@@ -236,6 +236,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
+    public static final String LAST_BOOT = "lastboottime";
     public static final String LAST_STOP = "laststop";
     public static final String LAST_START = "laststart";
     public static final String LEVEL = "level";

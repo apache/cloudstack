@@ -44,20 +44,16 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
     private String msId;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_start")
-    private Date lastStart;
+    @Column(name="last_jvm_start")
+    private Date lastJvmStart;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_stop")
-    private Date lastStop;
+    @Column(name="last_jvm_stop")
+    private Date lastJvmStop;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_boot")
-    private Date lastBoot;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_down")
-    private Date lastDown;
+    @Column(name="last_system_boot")
+    private Date lastSystemBoot;
 
     @Column(name="os_distribution")
     private String osDistribution;
@@ -101,39 +97,30 @@ public class ManagementServerStatusVO implements ManagementServerStatus {
     }
 
     @Override
-    public Date getLastStart() {
-        return lastStart;
+    public Date getLastJvmStart() {
+        return lastJvmStart;
     }
 
-    public void setLastStart(Date lastStart) {
-        this.lastStart = lastStart;
-    }
-
-    @Override
-    public Date getLastStop() {
-        return lastStop;
-    }
-
-    public void setLastStop(Date lastStop) {
-        this.lastStop = lastStop;
+    public void setLastJvmStart(Date lastJvmStart) {
+        this.lastJvmStart = lastJvmStart;
     }
 
     @Override
-    public Date getLastBoot() {
-        return lastBoot;
+    public Date getLastJvmStop() {
+        return lastJvmStop;
     }
 
-    public void setLastBoot(Date lastBoot) {
-        this.lastBoot = lastBoot;
+    public void setLastJvmStop(Date lastJvmStop) {
+        this.lastJvmStop = lastJvmStop;
     }
 
     @Override
-    public Date getLastDown() {
-        return lastDown;
+    public Date getLastSystemBoot() {
+        return lastSystemBoot;
     }
 
-    public void setLastDown(Date lastDown) {
-        this.lastDown = lastDown;
+    public void setLastSystemBoot(Date lastSystemBoot) {
+        this.lastSystemBoot = lastSystemBoot;
     }
 
     @Override

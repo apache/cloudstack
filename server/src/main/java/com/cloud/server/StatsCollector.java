@@ -23,12 +23,15 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -801,11 +804,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             msStats.setOsDistribution(hostStatsEntry.getOsDistribution()); // for now just the bunch details come later
             msStats.setJavaName(hostStatsEntry.getJvmVendor());
             msStats.setJavaVersion(hostStatsEntry.getJvmVersion());
-            Date startTime = new Date(hostStatsEntry.getStartTime());
+            Date startTime = new Date(hostStatsEntry.getJvmStartTime());
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("reporting starttime %s", startTime));
             }
-            msStats.setLastStart(startTime);
+            msStats.setLastJvmStart(startTime);
+            msStats.setLastSystemBoot(hostStatsEntry.getSystemBootTime());
             msStats.setUpdated(new Date());
             managementServerStatusDao.persist(msStats);
         }
@@ -882,8 +886,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         private void getRuntimeData(@NotNull ManagementServerHostStatsEntry newEntry) {
             final RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
-            newEntry.setUptime(mxBean.getUptime());
-            newEntry.setStartTime(mxBean.getStartTime());
+            newEntry.setJvmUptime(mxBean.getUptime());
+            newEntry.setJvmStartTime(mxBean.getStartTime());
             newEntry.setProcessId(mxBean.getPid());
             newEntry.setJvmName(mxBean.getName());
             newEntry.setJvmVendor(mxBean.getVmVendor());
@@ -891,8 +895,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format(
                         "Metrics uptime - %d , starttime - %d",
-                        newEntry.getUptime(),
-                        newEntry.getStartTime()));
+                        newEntry.getJvmUptime(),
+                        newEntry.getJvmStartTime()));
             }
         }
 
@@ -936,6 +940,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 String used = Script.runSimpleBashScript(String.format("ps -o rss= %d", newEntry.getPid()));
                 newEntry.setSystemMemoryUsed(Long.parseLong(used));
                 LOGGER.info(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
+            }
+            try {
+                String bootTime = Script.runSimpleBashScript("uptime -s");
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.ENGLISH);
+                Date date = formatter.parse(bootTime);
+                newEntry.setSystemBootTime(date);
+            } catch (ParseException e) {
+                LOGGER.error("can not retrieve system uptime");
             }
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse));

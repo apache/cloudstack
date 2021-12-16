@@ -25,13 +25,11 @@ public interface ManagementServerStatus extends InternalIdentity {
 
     String getMsId();
 
-    Date getLastStart();
+    Date getLastJvmStart();
 
-    Date getLastStop();
+    Date getLastJvmStop();
 
-    Date getLastBoot();
-
-    Date getLastDown();
+    Date getLastSystemBoot();
 
     String getOsDistribution();
 

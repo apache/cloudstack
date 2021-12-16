@@ -61,8 +61,12 @@ public class ManagementServerResponse extends BaseResponse {
     private Date lastStart;
 
     @SerializedName(ApiConstants.LAST_STOP)
-    @Param(description = "the last time this Management Server was started")
+    @Param(description = "the last time this Management Server was stopped")
     private Date lastStop;
+
+    @SerializedName(ApiConstants.LAST_BOOT)
+    @Param(description = "the last time the host on which this Management Server runs, was booted")
+    private Date lastBoot;
 
     public String getId() {
         return this.id;
@@ -100,6 +104,10 @@ public class ManagementServerResponse extends BaseResponse {
         return lastStop;
     }
 
+    public Date getLastBoot() {
+        return lastBoot;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -134,5 +142,9 @@ public class ManagementServerResponse extends BaseResponse {
 
     public void setLastStop(Date lastStop) {
         this.lastStop = lastStop;
+    }
+
+    public void setLastBoot(Date lastBoot) {
+        this.lastBoot = lastBoot;
     }
 }

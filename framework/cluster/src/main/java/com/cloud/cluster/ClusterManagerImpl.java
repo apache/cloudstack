@@ -1052,7 +1052,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             final ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
             final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
             mshost.setState(ManagementServerHost.State.Down);
-            mshostStatus.setLastStop(new Date());
+            mshostStatus.setLastJvmStop(new Date());
             _mshostDao.update(_mshostId, mshost);
             mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
         }

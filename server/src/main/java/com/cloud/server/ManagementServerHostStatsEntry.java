@@ -31,8 +31,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private long totalMemoryBytes;
     private double freeMemoryBytes;
     private double processMemoryBytes;
-    private long uptime;
-    private long startTime;
+    private long jvmUptime;
+    private long jvmStartTime;
     private int availableProcessors;
     private double loadAverage;
     long totalInit;
@@ -64,6 +64,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private double[] systemCyclesUsage;
     private boolean dbLocal;
     private boolean usageLocal;
+
+    private Date systemBootTime;
 
     public ManagementServerHostStatsEntry() {
         this(new Date());
@@ -122,13 +124,13 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
-    public long getUptime() {
-        return uptime;
+    public long getJvmUptime() {
+        return jvmUptime;
     }
 
     @Override
-    public long getStartTime() {
-        return startTime;
+    public long getJvmStartTime() {
+        return jvmStartTime;
     }
 
     @Override
@@ -225,12 +227,12 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         assert totalMemoryBytes - processMemoryBytes > freeMemoryBytes;
     }
 
-    public void setUptime(long uptime) {
-        this.uptime = uptime;
+    public void setJvmUptime(long jvmUptime) {
+        this.jvmUptime = jvmUptime;
     }
 
-    public void setStartTime(long startTime) {
-        this.startTime = startTime;
+    public void setJvmStartTime(long jvmStartTime) {
+        this.jvmStartTime = jvmStartTime;
     }
 
     public void setAvailableProcessors(int availableProcessors) {
@@ -431,5 +433,14 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     @Override
     public boolean isUsageLocal() {
         return usageLocal;
+    }
+
+    @Override
+    public Date getSystemBootTime() {
+        return systemBootTime;
+    }
+
+    public void setSystemBootTime(Date systemBootTime) {
+        this.systemBootTime = systemBootTime;
     }
 }
