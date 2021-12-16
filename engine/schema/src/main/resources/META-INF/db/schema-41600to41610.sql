@@ -19,20 +19,72 @@
 -- Schema upgrade from 4.16.0.0 to 4.16.1.0
 --;
 
--- Add missing primary keys on tables
-ALTER TABLE `cloud`.`op_user_stats_log` ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
+-- Stored procedures to handle cloud and cloud_schema changes
 
-ALTER TABLE `cloud_usage`.`usage_ip_address`
-    DROP INDEX `id`,
-    CHANGE COLUMN `id` `ip_id` BIGINT(20) UNSIGNED NOT NULL,
-    ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST,
-    ADD PRIMARY KEY (`id`),
-    ADD UNIQUE INDEX `id` (`ip_id` ASC, `assigned` ASC);
+-- Idempotent ADD COLUMN
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
-ALTER TABLE `cloud_usage`.`usage_load_balancer_policy`
-    CHANGE COLUMN `id` `lb_id` BIGINT(20) UNSIGNED NOT NULL,
-    ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST,
-    ADD PRIMARY KEY (`id`);
+-- Idempotent ADD COLUMN
+DROP PROCEDURE IF EXISTS `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`;
+CREATE PROCEDURE `cloud_usage`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
-ALTER TABLE `cloud_usage`.`usage_network_offering`
-    ADD COLUMN `id` BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
+-- Idempotent DROP INDEX
+DROP PROCEDURE IF EXISTS `cloud_usage`.`IDEMPOTENT_DROP_INDEX`;
+CREATE PROCEDURE `cloud_usage`.`IDEMPOTENT_DROP_INDEX` (
+    IN in_index_name VARCHAR(200)
+, IN in_table_name VARCHAR(200)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('DROP INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', ' ON ') ; SET @ddl = CONCAT(@ddl, ' ', in_table_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent ADD UNIQUE INDEX
+DROP PROCEDURE IF EXISTS `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`;
+CREATE PROCEDURE `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX` (
+    IN in_table_name VARCHAR(200)
+, IN in_index_name VARCHAR(200)
+, IN in_index_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD UNIQUE INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_index_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent CHANGE COLUMN
+DROP PROCEDURE IF EXISTS `cloud_usage`.`IDEMPOTENT_CHANGE_COLUMN`;
+CREATE PROCEDURE `cloud_usage`.`IDEMPOTENT_CHANGE_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_old_column_name VARCHAR(200)
+, IN in_new_column_name VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_old_column_name); SET @ddl = CONCAT(@ddl, ' ', in_new_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Invoke stored procedures to add primary keys on missing tables
+
+-- Add PK to cloud.op_user_stats_log
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_user_stats_log', 'id', 'BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)');
+
+-- Add PK to cloud_usage.usage_ip_address
+CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id','cloud_usage.usage_ip_address');
+CALL `cloud_usage`.`IDEMPOTENT_CHANGE_COLUMN`('cloud_usage.usage_ip_address', 'id', 'ip_id', 'BIGINT(20) UNSIGNED NOT NULL');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_ip_address', 'id', 'BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_ip_address', 'id', '(ip_id ASC, assigned ASC)');
+
+-- Add PK to usage_load_balancer_policy
+CALL `cloud_usage`.`IDEMPOTENT_CHANGE_COLUMN`('cloud_usage.usage_load_balancer_policy', 'id', 'lb_id', 'BIGINT(20) UNSIGNED NOT NULL');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_load_balancer_policy', 'id', 'BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)');
+
+-- Add PK to cloud_usage.usage_network_offering
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'id', 'BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)');
