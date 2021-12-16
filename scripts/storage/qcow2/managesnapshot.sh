@@ -215,15 +215,23 @@ backup_snapshot() {
      ( printf "${qemu_img} failed to create backup of snapshot ${snapshotname} for disk ${disk} to ${destPath}.\n" >&2; return 2 )
 
   elif [ -f ${disk} ]; then
+
+    # Localizing this to just this branch since it is specific to our setup
+    local forceSharedWrite=""
+    if $qemu_img -h | grep '\[-U]' >& /dev/null
+    then
+      forceSharedWrite="-U"
+    fi
+
     # Does the snapshot exist?
-    $qemu_img snapshot -l $disk|grep -w "$snapshotname" >& /dev/null
+    $qemu_img snapshot $forceSharedWrite -l $disk|grep -w "$snapshotname" >& /dev/null
     if [ $? -gt 0 ]
     then
       printf "there is no $snapshotname on disk $disk\n" >&2
       return 1
     fi
 
-    $qemu_img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+    $qemu_img convert $forceSharedWrite -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
     if [ $? -gt 0 ]
     then
       printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2

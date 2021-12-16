@@ -178,7 +178,14 @@ resizeqcow2() {
   fi
   ##### end sanity #####
 
-  actualsize=`qemu-img info $path | grep "virtual size" | sed -re  's/^.*\(([0-9]+).*$/\1/g'`
+  # Localizing this to just this branch since it is specific to our setup
+  local forceSharedWrite=""
+  if qemu-img -h | grep '\[-U]' >& /dev/null
+  then
+    forceSharedWrite="-U"
+  fi
+
+  actualsize=`qemu-img info $forceSharedWrite $path | grep "virtual size" | sed -re  's/^.*\(([0-9]+).*$/\1/g'`
 
   if [ $actualsize -ne $currentsize ]
   then
