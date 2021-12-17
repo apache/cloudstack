@@ -68,7 +68,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="this.isObjectEmpty(this.zone) && this.isAdmin()" >
+          <a-form-item v-if="this.isObjectEmpty(this.zone) && isAdmin()" >
             <tooltip-label slot="label" :title="$t('label.physicalnetworkid')" :tooltip="apiParams.physicalnetworkid.description"/>
             <a-select
               v-decorator="['physicalnetworkid', {}]"
@@ -92,10 +92,10 @@
               }]"
               buttonStyle="solid"
               @change="selected => { this.handleScopeTypeChange(selected.target.value) }">
-              <a-radio-button value="all" v-if="this.isAdmin()">
+              <a-radio-button value="all" v-if="isAdmin()">
                 {{ $t('label.all') }}
               </a-radio-button>
-              <a-radio-button value="domain" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled') && this.isAdminOrDomainAdmin()">
+              <a-radio-button value="domain" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled') && isAdminOrDomainAdmin()">
                 {{ $t('label.domain') }}
               </a-radio-button>
               <a-radio-button value="account" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
@@ -106,7 +106,7 @@
               </a-radio-button>
             </a-radio-group>
           </a-form-item>
-          <a-form-item v-if="this.scopeType !== 'all' && this.isAdminOrDomainAdmin()">
+          <a-form-item v-if="this.scopeType !== 'all' && isAdminOrDomainAdmin()">
             <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
             <a-select
               v-decorator="['domainid', {
@@ -134,11 +134,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="this.scopeType === 'domain' && this.isAdminOrDomainAdmin()">
+          <a-form-item v-if="this.scopeType === 'domain' && isAdminOrDomainAdmin()">
             <tooltip-label slot="label" :title="$t('label.subdomainaccess')" :tooltip="apiParams.subdomainaccess.description"/>
             <a-switch v-decorator="['subdomainaccess']" />
           </a-form-item>
-          <a-form-item v-if="this.scopeType === 'account' && this.isAdminOrDomainAdmin()">
+          <a-form-item v-if="this.scopeType === 'account' && isAdminOrDomainAdmin()">
             <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
             <a-select
               v-decorator="['accountid', {
@@ -218,7 +218,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && this.isAdmin()">
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
             <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             <a-input
               v-decorator="['vlanid', {
@@ -226,11 +226,11 @@
               }]"
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && this.isAdmin()">
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
             <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && this.isAdmin()">
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
             <tooltip-label slot="label" :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
             <a-radio-group
               v-decorator="['isolatedpvlantype', {
@@ -315,7 +315,7 @@
               </a-form-item>
             </a-col>
           </a-row>
-          <a-form-item v-if="isVirtualRouterForAtLeastOneService && this.isAdmin()">
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService && isAdmin()">
             <tooltip-label slot="label" :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
             <a-input
               v-decorator="['routerip', {}]"
@@ -357,7 +357,7 @@
               </a-form-item>
             </a-col>
           </a-row>
-          <a-form-item v-if="isVirtualRouterForAtLeastOneService && this.isAdmin()">
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService && isAdmin()">
             <tooltip-label slot="label" :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
             <a-input
               v-decorator="['routeripv6', {}]"
@@ -395,6 +395,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -411,10 +412,6 @@ export default {
     },
     zone: {
       type: Object,
-      default: null
-    },
-    physicalNetworks: {
-      type: Array,
       default: null
     },
     resource: {
@@ -472,6 +469,12 @@ export default {
         this.fetchNetworkOfferingData()
       }
     },
+    isAdmin () {
+      return isAdmin()
+    },
+    isAdminOrDomainAdmin () {
+      return isAdminOrDomainAdmin()
+    },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
@@ -525,7 +528,7 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
-      if (this.isAdmin()) {
+      if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
         this.fetchNetworkOfferingData()
@@ -534,38 +537,33 @@ export default {
     fetchPhysicalNetworkData () {
       this.formSelectedPhysicalNetwork = {}
       this.formPhysicalNetworks = []
-      if (this.physicalNetworks != null) {
-        this.formPhysicalNetworks = this.physicalNetworks
-        this.selectFirstPhysicalNetwork()
-      } else {
-        if (this.selectedZone === null || this.selectedZone === undefined) {
-          return
-        }
-        const promises = []
-        const params = {
-          zoneid: this.selectedZone.id
-        }
-        this.formPhysicalNetworkLoading = true
-        api('listPhysicalNetworks', params).then(json => {
-          var networks = json.listphysicalnetworksresponse.physicalnetwork
-          if (this.arrayHasItems(networks)) {
-            for (const network of networks) {
-              promises.push(this.addPhysicalNetworkForGuestTrafficType(network))
-            }
-          } else {
-            this.formPhysicalNetworkLoading = false
-          }
-        }).finally(() => {
-          if (this.arrayHasItems(promises)) {
-            Promise.all(promises).catch(error => {
-              this.$notifyError(error)
-            }).finally(() => {
-              this.formPhysicalNetworkLoading = false
-              this.selectFirstPhysicalNetwork()
-            })
-          }
-        })
+      if (this.selectedZone === null || this.selectedZone === undefined) {
+        return
       }
+      const promises = []
+      const params = {
+        zoneid: this.selectedZone.id
+      }
+      this.formPhysicalNetworkLoading = true
+      api('listPhysicalNetworks', params).then(json => {
+        var networks = json.listphysicalnetworksresponse.physicalnetwork
+        if (this.arrayHasItems(networks)) {
+          for (const network of networks) {
+            promises.push(this.addPhysicalNetworkForGuestTrafficType(network))
+          }
+        } else {
+          this.formPhysicalNetworkLoading = false
+        }
+      }).finally(() => {
+        if (this.arrayHasItems(promises)) {
+          Promise.all(promises).catch(error => {
+            this.$notifyError(error)
+          }).finally(() => {
+            this.formPhysicalNetworkLoading = false
+            this.selectFirstPhysicalNetwork()
+          })
+        }
+      })
     },
     selectFirstPhysicalNetwork () {
       if (this.arrayHasItems(this.formPhysicalNetworks)) {
@@ -612,7 +610,7 @@ export default {
         }
         case 'project':
         {
-          if (this.isAdminOrDomainAdmin()) {
+          if (isAdminOrDomainAdmin()) {
             this.fetchDomainData()
           } else {
             this.fetchNetworkOfferingData()
@@ -622,7 +620,7 @@ export default {
         }
         case 'account':
         {
-          if (this.isAdminOrDomainAdmin()) {
+          if (isAdminOrDomainAdmin()) {
             this.fetchDomainData()
           } else {
             this.fetchNetworkOfferingData()
@@ -632,7 +630,7 @@ export default {
         }
         default:
         {
-          if (this.isAdminOrDomainAdmin()) {
+          if (isAdminOrDomainAdmin()) {
             this.fetchDomainData()
           } else {
             this.fetchNetworkOfferingData()
@@ -649,7 +647,7 @@ export default {
         zoneid: this.selectedZone.id,
         state: 'Enabled'
       }
-      if (!this.isAdmin()) {
+      if (!isAdmin()) {
         params.specifyvlan = false
       }
       if (!this.isObjectEmpty(this.formSelectedPhysicalNetwork) &&
