@@ -17,69 +17,56 @@
 
 <template>
   <div>
-    <a-row :gutter="12">
-      <a-col :md="24">
-        <a-card class="breadcrumb-card">
-          <a-row>
-            <a-col :span="24" style="padding-left: 12px">
-              <breadcrumb>
-                <a-tooltip placement="bottom" slot="end">
-                  <template slot="title">{{ $t('label.refresh') }}</template>
-                  <a-button
-                    style="margin-top: 4px"
-                    :loading="loading"
-                    shape="round"
-                    size="small"
-                    icon="reload"
-                    @click="fetchDetails()"
-                  >{{ $t('label.refresh') }}</a-button>
-                </a-tooltip>
-              </breadcrumb>
-            </a-col>
-          </a-row>
-        </a-card>
-      </a-col>
-    </a-row>
-    <a-divider/>
-    <a-row :md="24">
-      <a-card>
-        <a-row :gutter="12">
-          <a-col :md="24" :lg="12" :gutter="12">
-            <a-card>
-              <template slot="title">
-                {{ $t('label.desc.db.stats') }}
-              </template>
-              <a-table
-                class="metric-card"
-                :columns="columns"
-                :loading="loading"
-                :data-source="dbMetrics"
-                :pagination="false"
-                size="middle"
-                :rowClassName="getRowClassName"
-              >
-              </a-table>
-            </a-card>
-          </a-col>
-          <a-col :md="24" :lg="12" :gutter="12">
-            <a-card>
-              <template slot="title">
-                {{ $t('label.desc.usage.stats') }}
-              </template>
-              <a-table
-                class="metric-card"
-                :columns="columns"
-                :data-source="usageMetrics"
-                :pagination="false"
-                size="middle"
-                :rowClassName="getRowClassName"
-              >
-              </a-table>
-            </a-card>
-          </a-col>
-        </a-row>
-      </a-card>
-    </a-row>
+    <a-card class="breadcrumb-card">
+      <breadcrumb>
+        <a-tooltip placement="bottom" slot="end">
+          <template slot="title">{{ $t('label.refresh') }}</template>
+          <a-button
+            style="margin-top: 4px"
+            :loading="loading"
+            shape="round"
+            size="small"
+            icon="reload"
+            @click="fetchDetails()"
+          >{{ $t('label.refresh') }}</a-button>
+        </a-tooltip>
+      </breadcrumb>
+    </a-card>
+    <a-card>
+      <a-row :gutter="12">
+        <a-col :md="24" :lg="12" :gutter="12">
+          <a-card>
+            <template slot="title">
+              {{ $t('label.desc.db.stats') }}
+            </template>
+            <a-table
+              class="metric-card"
+              :columns="columns"
+              :loading="loading"
+              :data-source="dbMetrics"
+              :pagination="false"
+              size="middle"
+              :rowClassName="getRowClassName"
+            />
+          </a-card>
+        </a-col>
+        <a-col :md="24" :lg="12" :gutter="12">
+          <a-card>
+            <template slot="title">
+              {{ $t('label.desc.usage.stats') }}
+            </template>
+            <a-table
+              class="metric-card"
+              :columns="columns"
+              :data-source="usageMetrics"
+              :pagination="false"
+              size="middle"
+              :rowClassName="getRowClassName"
+            />
+          </a-card>
+        </a-col>
+      </a-row>
+    </a-card>
   </div>
 </template>
 
@@ -196,6 +183,13 @@ export default {
 </script>
 
 <style scoped lang="less">
+  .breadcrumb-card {
+    margin-left: -24px;
+    margin-right: -24px;
+    margin-top: -18px;
+    margin-bottom: 12px;
+  }
+
   /deep/ .ant-table-thead {
     background-color: #f9f9f9;
   }
