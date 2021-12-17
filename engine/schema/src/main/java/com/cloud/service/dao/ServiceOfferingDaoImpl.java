@@ -56,6 +56,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicCpuRamSearch;
+    protected final SearchBuilder<ServiceOfferingVO> SearchComputeOfferingByComputeOnlyDiskOffering;
 
     public ServiceOfferingDaoImpl() {
         super();
@@ -75,6 +76,10 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         PublicCpuRamSearch.and("ram", PublicCpuRamSearch.entity().getRamSize(), SearchCriteria.Op.EQ);
         PublicCpuRamSearch.and("system_use", PublicCpuRamSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         PublicCpuRamSearch.done();
+
+        SearchComputeOfferingByComputeOnlyDiskOffering = createSearchBuilder();
+        SearchComputeOfferingByComputeOnlyDiskOffering.and("disk_offering_id", SearchComputeOfferingByComputeOnlyDiskOffering.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
+        SearchComputeOfferingByComputeOnlyDiskOffering.done();
     }
 
     @Override
@@ -276,5 +281,16 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         sc.setParameters("ram", memory);
         sc.setParameters("system_use", false);
         return listBy(sc);
+    }
+
+    @Override
+    public ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(long diskOfferingId) {
+        SearchCriteria<ServiceOfferingVO> sc = SearchComputeOfferingByComputeOnlyDiskOffering.create();
+        sc.setParameters("disk_offering_id", diskOfferingId);
+        List<ServiceOfferingVO> vos = listBy(sc);
+        if (vos.size() == 0) {
+            return null;
+        }
+        return vos.get(0);
     }
 }

@@ -1043,6 +1043,14 @@ public class ApiDBUtils {
         return null;
     }
 
+    public static DiskOfferingVO findComputeOnlyDiskOfferingById(Long diskOfferingId) {
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (off.isComputeOnly()) {
+            return off;
+        }
+        return null;
+    }
+
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
         DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
         if (!off.isComputeOnly()) {
@@ -1051,6 +1059,10 @@ public class ApiDBUtils {
         return null;
     }
 
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+        return off;
+    }
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
     }
