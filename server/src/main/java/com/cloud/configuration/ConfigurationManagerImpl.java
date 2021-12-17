@@ -1765,8 +1765,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final String prefix = cmd.getPrefix();
         IPv6Network prefixNet = IPv6Network.fromString(prefix);
-        if (prefixNet.getNetmask().asPrefixLength() < 64) {
-            throw new InvalidParameterValueException("IPv6 prefix must be /64 or higher");
+        if (prefixNet.getNetmask().asPrefixLength() > 64) {
+            throw new InvalidParameterValueException("IPv6 prefix must be /64 or lesser");
         }
         List<DataCenterGuestIpv6PrefixVO> existingPrefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
         for (DataCenterGuestIpv6PrefixVO existingPrefix : existingPrefixes) {
