@@ -302,6 +302,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
@@ -419,6 +420,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private AnnotationDao annotationDao;
     @Inject
     private UserStatisticsDao userStatsDao;
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
     @Inject
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
 
@@ -2517,6 +2520,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesReceived(bytesReceived);
         response.setBytesSent(bytesSent);
 
+        if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+            response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
+            response.setIpv6Routing("Static");
+            response.setIpv6Firewall(networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -4584,5 +4593,40 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon) {
         return  ApiDBUtils.newResourceIconResponse(resourceIcon);
+    }
+
+    @Override
+    public FirewallRuleResponse createIpv6FirewallRuleResponse(FirewallRule fwRule) {
+        FirewallRuleResponse response = new FirewallRuleResponse();
+
+        response.setId(fwRule.getUuid());
+        response.setProtocol(fwRule.getProtocol());
+
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
+
+        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+        response.setNetworkId(network.getUuid());
+
+        FirewallRule.State state = fwRule.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+
+        response.setForDisplay(fwRule.isDisplay());
+
+        // set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
+        }
+        response.setTags(tagResponses);
+
+        response.setState(stateToSet);
+        response.setObjectName("firewallrule");
+        return response;
     }
 }

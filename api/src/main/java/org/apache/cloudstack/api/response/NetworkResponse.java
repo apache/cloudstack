@@ -263,6 +263,18 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "the total number of network traffic bytes sent")
     private Long bytesSent;
 
+    @SerializedName(ApiConstants.INTERNET_PROTOCOL)
+    @Param(description = "The internet protocol of network offering")
+    private String internetProtocol;
+
+    @SerializedName(ApiConstants.IPV6_ROUTING)
+    @Param(description = "The routing mode of network offering")
+    private String ipv6Routing;
+
+    @SerializedName(ApiConstants.IPV6_FIREWALL)
+    @Param(description = "Whether enable firewall for IPv6 in isolated networks or VPCs")
+    private Boolean ipv6Firewall;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -527,5 +539,17 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setBytesSent(final Long bytesSent) {
         this.bytesSent = bytesSent;
+    }
+
+    public void setInternetProtocol(String internetProtocol) {
+        this.internetProtocol = internetProtocol;
+    }
+
+    public void setIpv6Routing(String ipv6Routing) {
+        this.ipv6Routing = ipv6Routing;
+    }
+
+    public void setIpv6Firewall(Boolean ipv6Firewall) {
+        this.ipv6Firewall = ipv6Firewall;
     }
 }

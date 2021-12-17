@@ -17,6 +17,7 @@
 
 package com.cloud.network;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +29,10 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.DeleteIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -36,6 +40,7 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterGuestIpv6PrefixDao;
 import com.cloud.dc.dao.VlanDao;
@@ -44,7 +49,9 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.PublicIpv6AddressNetworkMapDao;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -73,25 +80,11 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Inject
     PublicIpv6AddressNetworkMapDao publicIpv6AddressNetworkMapDao;
     @Inject
-    FirewallRulesDao firewallRulesDao;
+    NetworkOfferingDetailsDao _networkOfferingDetailsDao;
     @Inject
-    FirewallService firewallservice;
-
-
-    @Override
-    public boolean start() {
-        _ipv6GuestPrefixSubnetNetworkMapStateScanner.scheduleWithFixedDelay(new Ipv6GuestPrefixSubnetNetworkMapStateScanner(), 300, 30*60, TimeUnit.SECONDS);
-        return true;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        _configParams = params;
-        _ipv6GuestPrefixSubnetNetworkMapStateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-Cluster-State-Scanner"));
-
-        return true;
-    }
+    FirewallRulesDao _firewallDao;
+    @Inject
+    public FirewallService _firewallService;
 
     private IPv6AddressRange getIpv6AddressRangeFromIpv6Vlan(VlanVO vlanVO) {
         String[] rangeArr = vlanVO.getIp6Range().split("-");
@@ -117,13 +110,28 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    public String getConfigComponentName() {
-        return Ipv6Service.class.getSimpleName();
+    public boolean start() {
+        _ipv6GuestPrefixSubnetNetworkMapStateScanner.scheduleWithFixedDelay(new Ipv6GuestPrefixSubnetNetworkMapStateScanner(), 300, 30*60, TimeUnit.SECONDS);
+        return true;
     }
 
     @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {};
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        _configParams = params;
+        _ipv6GuestPrefixSubnetNetworkMapStateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-Cluster-State-Scanner"));
+
+        return true;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateIpv6FirewallRuleCmd.class);
+        cmdList.add(ListIpv6FirewallRulesCmd.class);
+        cmdList.add(UpdateIpv6FirewallRuleCmd.class);
+        cmdList.add(DeleteIpv6FirewallRuleCmd.class);
+        return cmdList;
     }
 
     public Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException {
@@ -193,7 +201,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    public Pair<PublicIpv6AddressNetworkMapVO, VlanVO> assignPublicIpv6ToNetwork(Network network) {
+    public Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> assignPublicIpv6ToNetwork(Network network) {
         PublicIpv6AddressNetworkMapVO ip6NetworkMap = null;
         VlanVO selectedVlan = null;
         final List<VlanVO> ranges = vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(network.getPhysicalNetworkId());
@@ -243,9 +251,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
         boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         if (nic.getIPv6Address() == null && isIpv6Supported) {
-            Pair<PublicIpv6AddressNetworkMapVO, VlanVO> publicIpv6AddressNetworkMapVlanPair = assignPublicIpv6ToNetwork(network);
-            final PublicIpv6AddressNetworkMapVO publicIpv6AddressNetworkMapVO = publicIpv6AddressNetworkMapVlanPair.first();
-            final VlanVO vlan = publicIpv6AddressNetworkMapVlanPair.second();
+            Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> publicIpv6AddressNetworkMapVlanPair = assignPublicIpv6ToNetwork(network);
+            final PublicIpv6AddressNetworkMap publicIpv6AddressNetworkMapVO = publicIpv6AddressNetworkMapVlanPair.first();
+            final Vlan vlan = publicIpv6AddressNetworkMapVlanPair.second();
             final String routerIpv6 = publicIpv6AddressNetworkMapVO.getIp6Address();
             final String routerIpv6Gateway = vlan.getIp6Gateway();
             final String routerIpv6Cidr = vlan.getIp6Cidr();
@@ -310,5 +318,36 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 s_logger.warn("Caught exception while running Ipv6GuestPrefixSubnetNetworkMap state scanner: ", e);
             }
         }
+    }
+
+    public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd) {
+        // TODO
+        return _firewallDao.findById(updateIpv6FirewallRuleCmd.getId());
+    }
+
+    @Override
+    public Pair<List<? extends FirewallRule>, Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd) {
+        return _firewallService.listFirewallRules(listIpv6FirewallRulesCmd);
+    }
+
+    @Override
+    public boolean revokeIpv6FirewallRule(Long id) {
+        // TODO
+        return true;
+    }
+
+    @Override
+    public FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd) {
+        return null;
+    }
+
+    @Override
+    public FirewallRule getIpv6FirewallRule(Long entityId) {
+        return _firewallDao.findById(entityId);
+    }
+
+    @Override
+    public boolean applyIpv6FirewallRule(long id) {
+        return false;
     }
 }

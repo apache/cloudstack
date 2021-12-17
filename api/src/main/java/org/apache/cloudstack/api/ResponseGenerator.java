@@ -494,4 +494,6 @@ public interface ResponseGenerator {
     RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
+
+    FirewallRuleResponse createIpv6FirewallRuleResponse(FirewallRule acl);
 }

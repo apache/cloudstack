@@ -66,7 +66,7 @@ import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
@@ -79,8 +79,8 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpv6AddressNetworkMapVO;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.PublicIpv6AddressNetworkMap;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpnUser;
@@ -1063,21 +1063,23 @@ public class CommandSetupHelper {
         if (isIpv6Supported) {
             setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
             setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-            PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMapVO = publicIpv6AddressNetworkMapDao.findByNetworkId(network.getId());
-            VlanVO vlanVO = null;
-            if (ipv6AddressNetworkMapVO == null) {
-                Pair<PublicIpv6AddressNetworkMapVO, VlanVO> publicIpv6AddressNetworkMapVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network);
-                ipv6AddressNetworkMapVO = publicIpv6AddressNetworkMapVlanPair.first();
-                vlanVO = publicIpv6AddressNetworkMapVlanPair.second();
+            PublicIpv6AddressNetworkMap ipv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.findByNetworkId(network.getId());
+            Vlan vlan = null;
+            if (ipv6AddressNetworkMap == null) {
+                Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> publicIpv6AddressNetworkMapVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network);
+                ipv6AddressNetworkMap = publicIpv6AddressNetworkMapVlanPair.first();
+                vlan = publicIpv6AddressNetworkMapVlanPair.second();
             }
-            setupCmd.setRouterIpv6(ipv6AddressNetworkMapVO.getIp6Address());
-            if (vlanVO == null) {
-                vlanVO = _vlanDao.findById(ipv6AddressNetworkMapVO.getRangeId());
+            setupCmd.setRouterIpv6(ipv6AddressNetworkMap.getIp6Address());
+            if (vlan == null) {
+                vlan = _vlanDao.findById(ipv6AddressNetworkMap.getRangeId());
             }
-            final String routerIpv6Gateway = vlanVO.getIp6Gateway();
-            final String routerIpv6Cidr = vlanVO.getIp6Cidr();
+            final String routerIpv6Gateway = vlan.getIp6Gateway();
+            final String routerIpv6Cidr = vlan.getIp6Cidr();
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
             setupCmd.setRouterIpv6Cidr(routerIpv6Cidr);
+            boolean isIpv6FirewallEnabled = _networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId());
+            setupCmd.setRouterIpv6Firewall(isIpv6FirewallEnabled);
         }
     }
 

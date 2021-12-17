@@ -275,9 +275,14 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
 
     @Override
-    public boolean isIpv6Supported(Long offeringId) {
+    public NetworkOffering.InternetProtocol getNetworkOfferingInternetProtocol(Long offeringId) {
         String internetProtocolStr = _detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol);
-        NetworkOffering.InternetProtocol internetProtocol = NetworkOffering.InternetProtocol.fromValue(internetProtocolStr);
+        return NetworkOffering.InternetProtocol.fromValue(internetProtocolStr);
+    }
+
+    @Override
+    public boolean isIpv6Supported(Long offeringId) {
+        NetworkOffering.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol( offeringId);
         return ipv6EnabledProtocols.contains(internetProtocol);
     }
 

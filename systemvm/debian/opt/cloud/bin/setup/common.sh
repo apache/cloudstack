@@ -710,6 +710,9 @@ parse_cmd_line() {
         ip6dns2)
             export IP6_NS2=$VALUE
             ;;
+        ip6firewall)
+            export IP6_FIREWALL=$VALUE
+            ;;
         domain)
             export DOMAIN=$VALUE
             ;;

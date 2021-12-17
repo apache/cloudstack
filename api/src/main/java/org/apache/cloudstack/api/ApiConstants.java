@@ -577,7 +577,8 @@ public class ApiConstants {
     public static final String LIST_ALL = "listall";
     public static final String IP_RANGES = "ipranges";
     public static final String IP6_RANGE = "ip6range";
-    public static final String IP6_RANGES = "ip6ranges";
+    public static final String IPV6_FIREWALL = "ip6firewall";
+    public static final String IPV6_ROUTING = "ip6routing";
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
     public static final String IS_SOURCE_NAT = "issourcenat";
     public static final String IS_STATIC_NAT = "isstaticnat";

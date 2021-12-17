@@ -17,6 +17,8 @@
 
 package com.cloud.network.router;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -270,8 +272,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual
@@ -2128,6 +2128,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
 
         final StringBuilder buf = new StringBuilder();
+
+        boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());
+        boolean isIpv6FirewallEnabled = _networkOfferingDao.isIpv6FirewallEnabled(guestNetwork.getNetworkOfferingId());
+        if (isIpv6Supported && isIpv6FirewallEnabled) {
+            buf.append(" ip6firewall=true");
+        }
 
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {

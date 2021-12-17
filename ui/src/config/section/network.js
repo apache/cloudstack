@@ -59,6 +59,10 @@ export default {
         component: () => import('@/views/network/EgressRulesTab.vue'),
         show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listEgressFirewallRules' in store.getters.apis }
       }, {
+        name: 'ipv6.firewall',
+        component: () => import('@/views/network/Ipv6FirewallRulesTab.vue'),
+        show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis }
+      }, {
         name: 'public.ip.addresses',
         component: () => import('@/views/network/IpAddressesTab.vue'),
         show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && !('vpcid' in record) && 'listPublicIpAddresses' in store.getters.apis }

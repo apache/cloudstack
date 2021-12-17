@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -336,11 +337,15 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             sc.setParameters("ip", ipId);
         }
 
-            if (networkId != null) {
-                sc.setParameters("networkId", networkId);
-            }
+        if (networkId != null) {
+            sc.setParameters("networkId", networkId);
+        }
 
-        sc.setParameters("purpose", Purpose.Firewall);
+        if (cmd instanceof ListIpv6FirewallRulesCmd) {
+            sc.setParameters("purpose", Purpose.Ipv6Firewall);
+        } else {
+            sc.setParameters("purpose", Purpose.Firewall);
+        }
         sc.setParameters("trafficType", trafficType);
 
         Pair<List<FirewallRuleVO>, Integer> result = _firewallDao.searchAndCount(sc, filter);

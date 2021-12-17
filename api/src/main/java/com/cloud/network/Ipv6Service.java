@@ -14,22 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package com.cloud.network;
 
-import org.apache.cloudstack.framework.config.Configurable;
+import java.util.List;
+
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.NicProfile;
 
-public interface Ipv6Service extends Configurable {
+public interface Ipv6Service extends PluggableService {
 
     public static final String IPV6_CIDR_SUFFIX = "/64";
-
-    public static final String RouterSlaacIpv6Prefix = "SLAAC-";
 
     Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException;
 
@@ -37,21 +40,21 @@ public interface Ipv6Service extends Configurable {
 
     void releaseIpv6SubnetForNetwork(long networkId);
 
-    Pair<PublicIpv6AddressNetworkMapVO, VlanVO> assignPublicIpv6ToNetwork(Network network);
+    Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> assignPublicIpv6ToNetwork(Network network);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
 
     void releasePublicIpv6ForNetwork(long networkId);
 
-//    FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
-//
-//    Pair<List<? extends FirewallRule>,Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd);
-//
-//    boolean revokeIpv6FirewallRule(Long id);
-//
-//    FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd);
-//
-//    FirewallRule getIpv6FirewallRule(Long entityId);
-//
-//    boolean applyIpv6FirewallRule(long id);
+    FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
+
+    Pair<List<? extends FirewallRule>,Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd);
+
+    boolean revokeIpv6FirewallRule(Long id);
+
+    FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd);
+
+    FirewallRule getIpv6FirewallRule(Long entityId);
+
+    boolean applyIpv6FirewallRule(long id);
 }
