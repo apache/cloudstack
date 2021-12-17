@@ -1012,7 +1012,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
 
-            Account vmOwner = _accountMgr.getAccount(vm.getAccountId());
+            Account vmOwner = _accountDao.findById(vm.getAccountId());
             Network network = _networkDao.findById(loadBalancer.getNetworkId());
             _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
