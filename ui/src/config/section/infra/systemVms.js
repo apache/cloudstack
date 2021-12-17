@@ -116,7 +116,7 @@ export default {
           value: (record) => { return record.id }
         },
         type: {
-          options: ['ping', 'traceroute', 'arping']
+          options: ['ping', 'ping6', 'traceroute', 'traceroute6', 'arping']
         }
       },
       response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${result.diagnostics.stdout}<br/><strong>Error</strong>: ${result.diagnostics.stderr}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
