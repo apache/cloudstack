@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
@@ -36,22 +36,22 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = DeleteGuestNetworkIpv6RangeCmd.APINAME,
+@APICommand(name = DeleteGuestNetworkIpv6PrefixCmd.APINAME,
         description = "Deletes an existing guest network IPv6 prefix.",
         responseObject = SuccessResponse.class,
         since = "4.17.0.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class DeleteGuestNetworkIpv6RangeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteGuestNetworkIpv6RangeCmd.class);
-    public static final String APINAME = "deleteNetworkDevice";
+public class DeleteGuestNetworkIpv6PrefixCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteGuestNetworkIpv6PrefixCmd.class);
+    public static final String APINAME = "deleteGuestNetworkIpv6Prefix";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "Id of the guest network IPv6 prefix")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DataCenterGuestIpv6PrefixResponse.class, required = true, description = "Id of the guest network IPv6 prefix")
     private Long id;
 
     public Long getId() {

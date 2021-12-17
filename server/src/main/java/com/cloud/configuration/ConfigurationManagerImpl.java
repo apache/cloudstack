@@ -55,7 +55,7 @@ import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6RangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
@@ -276,6 +276,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6Network;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -1763,6 +1764,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         final String prefix = cmd.getPrefix();
+        IPv6Network prefixNet = IPv6Network.fromString(prefix);
+        if (prefixNet.getNetmask().asPrefixLength() < 64) {
+            throw new InvalidParameterValueException("IPv6 prefix must be /64 or higher");
+        }
+        List<DataCenterGuestIpv6PrefixVO> existingPrefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+        for (DataCenterGuestIpv6PrefixVO existingPrefix : existingPrefixes) {
+            IPv6Network existingPrefixNet = IPv6Network.fromString(existingPrefix.getPrefix());
+            if (NetUtils.ipv6NetworksOverlap(existingPrefixNet, prefixNet)) {
+                throw new InvalidParameterValueException(String.format("IPv6 prefix %s overlaps with the existing IPv6 prefix %s", prefixNet, existingPrefixNet));
+            }
+        }
         DataCenterGuestIpv6Prefix dataCenterGuestIpv6Prefix = null;
         try {
             dataCenterGuestIpv6Prefix = Transaction.execute(new TransactionCallback<DataCenterGuestIpv6Prefix>() {
@@ -1791,7 +1803,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public boolean deleteDataCenterGuestIpv6Prefix(DeleteGuestNetworkIpv6RangeCmd cmd) {
+    public boolean deleteDataCenterGuestIpv6Prefix(DeleteGuestNetworkIpv6PrefixCmd cmd) {
         final long prefixId = cmd.getId();
         final DataCenterGuestIpv6PrefixVO prefix = dataCenterGuestIpv6PrefixDao.findById(prefixId);
         if (prefix == null) {

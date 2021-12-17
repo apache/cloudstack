@@ -271,6 +271,10 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "The routing mode of network offering")
     private String ipv6Routing;
 
+    @SerializedName(ApiConstants.IPV6_ROUTING)
+    @Param(description = "The routing message for the network to ease adding route in upstream router")
+    private String ipv6RoutingMessage;
+
     @SerializedName(ApiConstants.IPV6_FIREWALL)
     @Param(description = "Whether enable firewall for IPv6 in isolated networks or VPCs")
     private Boolean ipv6Firewall;
@@ -545,11 +549,15 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
         this.internetProtocol = internetProtocol;
     }
 
+    public void setIpv6Firewall(Boolean ipv6Firewall) {
+        this.ipv6Firewall = ipv6Firewall;
+    }
+
     public void setIpv6Routing(String ipv6Routing) {
         this.ipv6Routing = ipv6Routing;
     }
 
-    public void setIpv6Firewall(Boolean ipv6Firewall) {
-        this.ipv6Firewall = ipv6Firewall;
+    public void setIpv6RoutingMessage(String ipv6RoutingMessage) {
+        this.ipv6RoutingMessage = ipv6RoutingMessage;
     }
 }

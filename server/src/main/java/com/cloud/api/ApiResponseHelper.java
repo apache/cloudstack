@@ -2524,6 +2524,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
             response.setIpv6Routing("Static");
             response.setIpv6Firewall(networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
+            if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
+
+                response.setIpv6RoutingMessage(String.format("Add route in upstream router"));
+            }
         }
 
         response.setObjectName("network");

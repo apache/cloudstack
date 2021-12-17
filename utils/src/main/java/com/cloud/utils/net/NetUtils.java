@@ -33,6 +33,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Collections;
 import java.util.Random;
@@ -1675,6 +1676,23 @@ public class NetUtils {
             }
         }
         return isIpv4;
+    }
+
+    public static boolean ipv6NetworksOverlap(IPv6Network n1, IPv6Network n2) {
+        IPv6Network higher = n1;
+        IPv6Network lower = n2;
+        if (lower.getNetmask().asPrefixLength() > higher.getNetmask().asPrefixLength()) {
+            lower = n1;
+            higher = n2;
+        }
+        Iterator<IPv6Network> splits = higher.split(lower.getNetmask());
+        while (splits.hasNext()) {
+            IPv6Network i = splits.next();
+            if (i.equals(lower)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

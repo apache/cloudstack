@@ -25,7 +25,7 @@
       icon="plus"
       style="margin-bottom: 20px; width: 100%"
       @click="addIpv6PrefixModal = true">
-      {{ $t('Add IPv6 Prefix') }}
+      {{ $t('label.add.ip.v6.prefix') }}
     </a-button>
     <a-table
       style="overflow-y: auto"
@@ -34,8 +34,19 @@
       :dataSource="ipv6Prefixes"
       :rowKey="record => record.id + record.prefix"
       :pagination="false"
-    />
-
+    >
+      <template slot="actions" slot-scope="record">
+        <div class="actions">
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.remove.ip.v6.prefix')"
+            icon="delete"
+            type="danger"
+            @click="handleDeleteIpv6Prefix(record)"
+            :disabled="!('deleteGuestNetworkIpv6Prefix' in $store.getters.apis)" />
+        </div>
+      </template>
+    </a-table>
     <br>
     <br>
 
@@ -126,12 +137,14 @@
 import { api } from '@/api'
 import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'IpRangesTabGuest',
   components: {
     CreateNetwork,
-    ResourceIcon
+    ResourceIcon,
+    TooltipButton
   },
   props: {
     resource: {
@@ -183,6 +196,10 @@ export default {
         {
           title: this.$t('label.prefix'),
           dataIndex: 'prefix'
+        },
+        {
+          title: this.$t('label.action'),
+          scopedSlots: { customRender: 'actions' }
         }
       ],
       addIpv6PrefixModal: false
@@ -219,9 +236,9 @@ export default {
       }).finally(() => {
         this.componentLoading = false
       })
-      this.fetchGuetsNetworkIpv6PrefixData()
+      this.fetchIpv6PrefixData()
     },
-    fetchGuetsNetworkIpv6PrefixData () {
+    fetchIpv6PrefixData () {
       // this.componentLoading = true
       api('listGuestNetworkIpv6Prefixes', {
         zoneid: this.resource.zoneid,
@@ -292,6 +309,19 @@ export default {
           this.componentLoading = false
           this.fetchData()
         })
+      })
+    },
+    handleDeleteIpv6Prefix (prefix) {
+      this.componentLoading = true
+      api('deleteGuestNetworkIpv6Prefix', { id: prefix.id }).then(() => {
+        this.$notification.success({
+          message: this.$t('message.ip.v6.prefix.removed') + ' ' + prefix.prefix
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.componentLoading = false
+        this.fetchIpv6PrefixData()
       })
     }
   }

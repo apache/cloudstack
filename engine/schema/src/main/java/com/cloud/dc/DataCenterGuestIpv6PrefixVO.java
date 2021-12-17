@@ -26,8 +26,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "dc_ip6_guest_prefix")
@@ -49,9 +49,11 @@ public class DataCenterGuestIpv6PrefixVO implements DataCenterGuestIpv6Prefix {
     @Column(name = "prefix")
     private String prefix;
 
-    @Column(name = "created")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    private Date created = null;
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+    @Column(name= GenericDao.REMOVED_COLUMN)
+    private Date removed;
 
     public DataCenterGuestIpv6PrefixVO(long dcId, Long podId, String prefix) {
         this();
@@ -105,4 +107,6 @@ public class DataCenterGuestIpv6PrefixVO implements DataCenterGuestIpv6Prefix {
     public Date getCreated() {
         return created;
     }
+
+
 }

@@ -57,7 +57,7 @@ public class Ipv6GuestPrefixSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv6G
         SubnetSearch.and("subnet", SubnetSearch.entity().getSubnet(), SearchCriteria.Op.EQ);
         SubnetSearch.done();
         StatesSearch = createSearchBuilder();
-        StatesSearch.and("state", StatesSearch.entity().getSubnet(), SearchCriteria.Op.IN);
+        StatesSearch.and("state", StatesSearch.entity().getState(), SearchCriteria.Op.IN);
         StatesSearch.done();
     }
 
