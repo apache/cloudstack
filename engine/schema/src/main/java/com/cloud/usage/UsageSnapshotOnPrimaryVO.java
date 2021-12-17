@@ -39,7 +39,6 @@ public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
     private Long id;
 
     @Column(name = "volume_id")
-    // volumeId
     private long volumeId;
 
     @Column(name = "zone_id")
