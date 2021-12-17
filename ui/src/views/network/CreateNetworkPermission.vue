@@ -23,7 +23,7 @@
           :form="form"
           @submit="handleSubmit"
           layout="vertical">
-          <a-form-item>
+          <a-form-item v-if="isAdminOrDomainAdmin()">
             <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.accountids.description"/>
             <a-select
               v-decorator="['accountids']"
@@ -44,7 +44,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
+          <a-form-item v-if="isAdminOrDomainAdmin()">
             <tooltip-label slot="label" :title="$t('label.project')" :tooltip="apiParams.projectids.description"/>
             <a-select
               v-decorator="['projectids']"
@@ -64,6 +64,12 @@
                 </span>
               </a-select-option>
             </a-select>
+          </a-form-item>
+          <a-form-item v-if="!isAdminOrDomainAdmin()">
+            <tooltip-label slot="label" :title="$t('label.accountnames')" :tooltip="apiParams.accounts.description"/>
+            <a-input
+              v-decorator="['accounts', {}]"
+              :placeholder="apiParams.accounts.description"/>
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button
@@ -87,6 +93,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdminOrDomainAdmin } from '@/role'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -115,6 +122,9 @@ export default {
     this.fetchData()
   },
   methods: {
+    isAdminOrDomainAdmin () {
+      return isAdminOrDomainAdmin()
+    },
     async fetchData () {
       this.fetchAccountData()
       this.fetchProjectData()
@@ -182,6 +192,10 @@ export default {
         }
         if (projectId) {
           params.projectids = projectId
+        }
+
+        if (values.accounts && values.accounts.length > 0) {
+          params.accounts = values.accounts
         }
 
         this.loading = true
