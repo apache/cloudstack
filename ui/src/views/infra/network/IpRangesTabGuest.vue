@@ -284,9 +284,9 @@ export default {
         api('createGuestNetworkIpv6Prefix', params).then(response => {
           this.$pollJob({
             jobId: response.createguestnetworkipv6prefixresponse.jobid,
-            title: this.$t('label.add.ip.range'),
+            title: this.$t('label.add.ip.v6.prefix'),
             description: values.pod,
-            successMessage: this.$t('message.success.add.iprange'),
+            successMessage: this.$t('message.success.add.ip.v6.prefix'),
             successMethod: () => {
               this.componentLoading = false
               this.fetchData()
@@ -296,7 +296,7 @@ export default {
               this.componentLoading = false
               this.fetchData()
             },
-            loadingMessage: this.$t('message.add.iprange.processing'),
+            loadingMessage: this.$t('message.add.ip.v6.prefix.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.componentLoading = false
