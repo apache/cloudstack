@@ -221,26 +221,29 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "bla"], required_hardware="false")
     def test_list_management_server_metrics(self):
         cmd = listManagementServersMetrics.listManagementServersMetricsCmd()
-        list = self.apiclient.listManagementServersMetrics(cmd)
+        listMSMs = self.apiclient.listManagementServersMetrics(cmd)
         cmd = listManagementServers.listManagementServersCmd()
-        listMs= self.apiclient.listManagementServers(cmd)
+        listMSs= self.apiclient.listManagementServers(cmd)
 
-        self.assertEqual(len(list), len(listMs))
+        self.assertEqual(len(listMSMs), len(listMSs))
 
-        metrics = list[0]
+        metrics = listMSMs[0]
         self.assertTrue(hasattr(metrics, 'availableprocessors'))
         self.assertTrue(isinstance(metrics.availableprocessors, int))
         self.assertTrue(hasattr(metrics, 'agentcount'))
         self.assertTrue(isinstance(metrics.agentcount, int))
         self.assertTrue(hasattr(metrics, 'sessions'))
         self.assertTrue(isinstance(metrics.sessions, int))
+
         self.assertTrue(hasattr(metrics, 'heapmemoryused'))
         self.assertTrue(isinstance(metrics.heapmemoryused, int))
         self.assertTrue(hasattr(metrics, 'heapmemorytotal'))
         self.assertTrue(isinstance(metrics.heapmemorytotal, int))
+        self.assertTrue(metrics.heapmemoryused <= metrics.heapmemorytotal)
+
         self.assertTrue(hasattr(metrics, 'threadsblockedcount'))
         self.assertTrue(isinstance(metrics.threadsblockedcount, int))
         self.assertTrue(hasattr(metrics, 'threadsdaemoncount'))
@@ -253,20 +256,34 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(isinstance(metrics.threadstotalcount, int))
         self.assertTrue(hasattr(metrics, 'threadswaitingcount'))
         self.assertTrue(isinstance(metrics.threadswaitingcount, int))
+        self.assertTrue(metrics.threadsblockedcount   <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadsdaemoncount    <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadsrunnablecount  <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadsteminatedcount <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadswaitingcount   <= metrics.threadstotalcount)
+
         self.assertTrue(hasattr(metrics, 'systemmemorytotal'))
         self.assertTrue(isinstance(metrics.systemmemorytotal, int))
         self.assertTrue(hasattr(metrics, 'systemmemoryfree'))
         self.assertTrue(isinstance(metrics.systemmemoryfree, int))
+        self.assertTrue(metrics.systemmemoryfree <= metrics.systemmemorytotal)
+        # it might be (metrics.systemmemoryused <= metrics.systemmemorytotal) because it is virtual committed memory :(
+        # not sure if we can validate this somehow
         self.assertTrue(hasattr(metrics, 'systemmemoryused'))
         self.assertTrue(isinstance(metrics.systemmemoryused, int))
+
         self.assertTrue(hasattr(metrics, 'systemmemoryvirtualsize'))
+        self.assertTrue(isinstance(metrics.systemmemoryvirtualsize, int))
+
         self.assertTrue(hasattr(metrics, 'loginfo'))
         self.assertTrue(isinstance(metrics.loginfo, str))
         self.assertTrue(hasattr(metrics, 'systemtotalcpucycles'))
         self.assertTrue(isinstance(metrics.systemtotalcpucycles, float))
         self.assertTrue(hasattr(metrics, 'systemloadaverages'))
+        self.assertTrue(isinstance(metrics.systemloadaverages, list))
         self.assertEqual(len(metrics.systemloadaverages), 3)
         self.assertTrue(hasattr(metrics, 'systemcycleusage'))
+        self.assertTrue(isinstance(metrics.systemcycleusage, list))
         self.assertEqual(len(metrics.systemcycleusage), 3)
         self.assertTrue(hasattr(metrics, 'dbislocal'))
         self.assertTrue(isinstance(metrics.dbislocal, bool))
@@ -274,6 +291,7 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(isinstance(metrics.usageislocal, bool))
         self.assertTrue(hasattr(metrics, 'collectiontime'))
         self.assertTrue(isinstance(metrics.collectiontime, str))
+        self.assertTrue(self.valid_date(metrics.collectiontime))
         self.assertTrue(hasattr(metrics, 'id'))
         self.assertTrue(isinstance(metrics.id, str))
         self.assertTrue(hasattr(metrics, 'name'))
@@ -290,10 +308,13 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(isinstance(metrics.osdistribution, str))
         self.assertTrue(hasattr(metrics, 'lastserverstart'))
         self.assertTrue(isinstance(metrics.lastserverstart, str))
+        self.assertTrue(self.valid_date(metrics.lastserverstart))
         self.assertTrue(hasattr(metrics, 'lastserverstop'))
         self.assertTrue(isinstance(metrics.lastserverstop, str))
+        self.assertTrue(self.valid_date(metrics.lastserverstop))
         self.assertTrue(hasattr(metrics, 'lastboottime'))
         self.assertTrue(isinstance(metrics.lastboottime, str))
+        self.assertTrue(self.valid_date(metrics.lastboottime))
 
         return
 
@@ -304,12 +325,15 @@ class TestMetrics(cloudstackTestCase):
 
         self.assertTrue(hasattr(metrics,'collectiontime'))
         self.assertTrue(isinstance(metrics.collectiontime, str))
+        self.assertTrue(self.valid_date(metrics.collectiontime))
         self.assertTrue(hasattr(metrics, 'hostname'))
         self.assertTrue(isinstance(metrics.hostname, str))
         self.assertTrue(hasattr(metrics, 'lastheartbeat'))
         self.assertTrue(isinstance(metrics.lastheartbeat, str))
+        self.assertTrue(self.valid_date(metrics.lastheartbeat))
         self.assertTrue(hasattr(metrics, 'lastsuccesfuljob'))
         self.assertTrue(isinstance(metrics.lastsuccesfuljob, str))
+        self.assertTrue(self.valid_date(metrics.lastsuccesfuljob))
         self.assertTrue(hasattr(metrics, 'state'))
         self.assertTrue(metrics.state == 'Up' or metrics.state == 'Down')
 
@@ -322,10 +346,18 @@ class TestMetrics(cloudstackTestCase):
 
         self.assertTrue(hasattr(metrics,'collectiontime'))
         self.assertTrue(isinstance(metrics.collectiontime, str))
+        self.assertTrue(self.valid_date(metrics.collectiontime))
         self.assertTrue(hasattr(metrics, 'connections'))
         self.assertTrue(isinstance(metrics.connections, int))
+
+        cmd = listConfigurations.listConfigurationsCmd()
+        cmd.name = 'database.server.stats.retention'
+        configuration = self.apiclient.listConfigurations(cmd)
+        retention = int(configuration[0].value)
         self.assertTrue(hasattr(metrics, 'dbloadaverages'))
         self.assertTrue(isinstance(metrics.dbloadaverages, list))
+        self.assertTrue(len(metrics.dbloadaverages) <= retention)
+
         self.assertTrue(hasattr(metrics, 'hostname'))
         self.assertTrue(isinstance(metrics.hostname, str))
         self.assertTrue(hasattr(metrics, 'queries'))
@@ -340,3 +372,11 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(isinstance(metrics.versioncomment, str))
 
         return
+
+    def valid_date(cls, date_text):
+        try:
+            datetime.datetime.strptime(date_text, '%Y-%m-%dT%H:%M:%S%z')
+            return True
+        except ValueError:
+            return False
+
