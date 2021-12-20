@@ -1090,7 +1090,7 @@ class ConfigDriveUtils:
 
         vm.details = vm_new_ssh.details
 
-        # reset SSH key also remove the password (see https://github.com/apache/cloudstack/pull/4819)
+        # reset SSH key also removes the password (see https://github.com/apache/cloudstack/pull/4819)
         vm.password_test = ConfigDriveUtils.PasswordTest(expect_pw=False)
         vm.key_pair = self.keypair
 
