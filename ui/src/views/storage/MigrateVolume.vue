@@ -101,7 +101,7 @@ export default {
         this.fetchDiskOfferings()
       }
     }
-  }
+  },
   created () {
     this.fetchStoragePools()
   },
