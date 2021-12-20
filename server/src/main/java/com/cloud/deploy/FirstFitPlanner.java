@@ -373,7 +373,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
                 String warnMessageForClusterReachedCapacityThreshold = String.format(
-                        "Cannot allocate cluster list %s for vm creation since their allocated percentage crosses the disable capacity threshold defined at each cluster at"
+                        "Cannot allocate cluster list %s for VM creation since their allocated percentage crosses the disable capacity threshold defined at each cluster at"
                         + " Global Settings Configuration [name: %s, value: %s] for capacity Type : %s, skipping these clusters", clustersCrossingThreshold.toString(),
                         configurationName, String.valueOf(configurationValue), CapacityVO.getCapacityName(capacity));
                 s_logger.warn(warnMessageForClusterReachedCapacityThreshold);
