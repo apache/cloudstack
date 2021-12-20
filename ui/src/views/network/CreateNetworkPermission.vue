@@ -66,7 +66,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!isAdminOrDomainAdmin()">
-            <tooltip-label slot="label" :title="$t('label.accountnames')" :tooltip="apiParams.accounts.description"/>
+            <tooltip-label slot="label" :title="$t('label.accounts')" :tooltip="apiParams.accounts.description"/>
             <a-input
               v-decorator="['accounts', {}]"
               :placeholder="apiParams.accounts.description"/>
