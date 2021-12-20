@@ -296,3 +296,21 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(isinstance(lmsm.lastboottime, str))
 
         return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "bla"], required_hardware="false")
+    def test_list_usage_server_metrics(self):
+        cmd = listUsageServerMetrics.listUsageServerMetricsCmd()
+        list = self.apiclient.listUsageServerMetrics(cmd)
+
+        self.assertTrue(hasattr(list,'collectiontime'))
+        self.assertTrue(isinstance(list.collectiontime, str))
+        self.assertTrue(hasattr(list, 'hostname'))
+        self.assertTrue(isinstance(list.hostname, str))
+        self.assertTrue(hasattr(list, 'lastheartbeat'))
+        self.assertTrue(isinstance(list.lastheartbeat, str))
+        self.assertTrue(hasattr(list, 'lastsuccesfuljob'))
+        self.assertTrue(isinstance(list.lastsuccesfuljob, str))
+        self.assertTrue(hasattr(list, 'state'))
+        self.assertTrue(list.state == 'Up' or list.state == 'Down')
+
+        return
