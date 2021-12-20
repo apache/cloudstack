@@ -255,6 +255,7 @@ import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.PublicIpv6AddressNetworkMapVO;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -277,6 +278,7 @@ import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.PublicIpv6AddressNetworkMapDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -422,6 +424,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private UserStatisticsDao userStatsDao;
     @Inject
     NetworkOfferingDao networkOfferingDao;
+    @Inject
+    PublicIpv6AddressNetworkMapDao publicIpv6AddressNetworkMapDao;
     @Inject
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
 
@@ -2525,8 +2529,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIpv6Routing("Static");
             response.setIpv6Firewall(networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
-
-                response.setIpv6RoutingMessage(String.format("Add route in upstream router"));
+                PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.findByNetworkId(network.getId());
+                NetworkResponse.Ipv6Route route = new NetworkResponse.Ipv6Route(network.getIp6Cidr(), ipv6AddressNetworkMaps.getIp6Address());
+                response.addIpv6Route(route);
             }
         }
 

@@ -32,7 +32,7 @@ import com.cloud.vm.NicProfile;
 
 public interface Ipv6Service extends PluggableService {
 
-    public static final String IPV6_CIDR_SUFFIX = "/64";
+    public static final int IPV6_GUEST_SUBNET_NETMASK = 64;
 
     Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException;
 

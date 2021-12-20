@@ -38,6 +38,11 @@
             {{ resource.rootdisksize }} GB
           </div>
         </div>
+        <div v-else-if="item === 'ip6routes'">
+          <div v-for="(route, idx) in resource[item]" :key="idx">
+            {{ 'Add upstream IPv6 route for ' + route.source + ' via ' + route.destination }}
+          </div>
+        </div>
         <div v-else-if="['name', 'type'].includes(item)">
           <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource[item])">{{ $t(resource[item].toLowerCase()) }}</span>
           <span v-else>{{ resource[item] }}</span>

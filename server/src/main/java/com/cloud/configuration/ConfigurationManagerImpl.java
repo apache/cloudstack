@@ -183,6 +183,7 @@ import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMap;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -1765,8 +1766,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final String prefix = cmd.getPrefix();
         IPv6Network prefixNet = IPv6Network.fromString(prefix);
-        if (prefixNet.getNetmask().asPrefixLength() > 64) {
-            throw new InvalidParameterValueException("IPv6 prefix must be /64 or less");
+        if (prefixNet.getNetmask().asPrefixLength() > Ipv6Service.IPV6_GUEST_SUBNET_NETMASK) {
+            throw new InvalidParameterValueException(String.format("IPv6 prefix must be /%d or less", Ipv6Service.IPV6_GUEST_SUBNET_NETMASK));
         }
         List<DataCenterGuestIpv6PrefixVO> existingPrefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
         for (DataCenterGuestIpv6PrefixVO existingPrefix : existingPrefixes) {

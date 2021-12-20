@@ -47,11 +47,12 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PublicIpv6AddressNetworkMapDao;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -69,6 +70,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
 
     ScheduledExecutorService _ipv6GuestPrefixSubnetNetworkMapStateScanner;
 
+    ScheduledExecutorService _ipv6GuestNetworkRoutesLogger;
+
     @Inject
     NetworkOfferingDao networkOfferingDao;
     @Inject
@@ -80,11 +83,11 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Inject
     PublicIpv6AddressNetworkMapDao publicIpv6AddressNetworkMapDao;
     @Inject
-    NetworkOfferingDetailsDao _networkOfferingDetailsDao;
+    FirewallRulesDao firewallDao;
     @Inject
-    FirewallRulesDao _firewallDao;
+    FirewallService firewallService;
     @Inject
-    public FirewallService _firewallService;
+    NetworkDao networkDao;
 
     private IPv6AddressRange getIpv6AddressRangeFromIpv6Vlan(VlanVO vlanVO) {
         String[] rangeArr = vlanVO.getIp6Range().split("-");
@@ -112,6 +115,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public boolean start() {
         _ipv6GuestPrefixSubnetNetworkMapStateScanner.scheduleWithFixedDelay(new Ipv6GuestPrefixSubnetNetworkMapStateScanner(), 300, 30*60, TimeUnit.SECONDS);
+        _ipv6GuestNetworkRoutesLogger.scheduleWithFixedDelay(new Ipv6GuestNetworkRoutesLogger(), 2*60, 60, TimeUnit.SECONDS);
         return true;
     }
 
@@ -119,7 +123,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         _configParams = params;
-        _ipv6GuestPrefixSubnetNetworkMapStateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-Cluster-State-Scanner"));
+        _ipv6GuestPrefixSubnetNetworkMapStateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Ipv6GuestPrefixSubnet-State-Scanner"));
+        _ipv6GuestNetworkRoutesLogger = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Ipv6GuestNetwork-Routes-Logger"));
 
         return true;
     }
@@ -147,7 +152,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 Ipv6GuestPrefixSubnetNetworkMapVO last = ipv6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
                 String lastUsedSubnet = last != null ? last.getSubnet() : null;
                 final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
-                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(64));
+                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_GUEST_SUBNET_NETMASK));
                 if (splits.hasNext()) {
                     splits.next();
                 }
@@ -281,6 +286,37 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
+    public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd) {
+        // TODO
+        return firewallDao.findById(updateIpv6FirewallRuleCmd.getId());
+    }
+
+    @Override
+    public Pair<List<? extends FirewallRule>, Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd) {
+        return firewallService.listFirewallRules(listIpv6FirewallRulesCmd);
+    }
+
+    @Override
+    public boolean revokeIpv6FirewallRule(Long id) {
+        // TODO
+        return true;
+    }
+
+    @Override
+    public FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd) {
+        return null;
+    }
+
+    @Override
+    public FirewallRule getIpv6FirewallRule(Long entityId) {
+        return firewallDao.findById(entityId);
+    }
+
+    @Override
+    public boolean applyIpv6FirewallRule(long id) {
+        return false;
+    }
+
     public class Ipv6GuestPrefixSubnetNetworkMapStateScanner extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -320,34 +356,37 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
-    public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd) {
-        // TODO
-        return _firewallDao.findById(updateIpv6FirewallRuleCmd.getId());
-    }
+    public class Ipv6GuestNetworkRoutesLogger extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            GlobalLock gcLock = GlobalLock.getInternLock("Ipv6GuestPrefixSubnetNetworkMap.State.Scanner.Lock");
+            try {
+                if (gcLock.lock(3)) {
+                    try {
+                        reallyRun();
+                    } finally {
+                        gcLock.unlock();
+                    }
+                }
+            } finally {
+                gcLock.releaseRef();
+            }
+        }
 
-    @Override
-    public Pair<List<? extends FirewallRule>, Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd) {
-        return _firewallService.listFirewallRules(listIpv6FirewallRulesCmd);
-    }
-
-    @Override
-    public boolean revokeIpv6FirewallRule(Long id) {
-        // TODO
-        return true;
-    }
-
-    @Override
-    public FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd) {
-        return null;
-    }
-
-    @Override
-    public FirewallRule getIpv6FirewallRule(Long entityId) {
-        return _firewallDao.findById(entityId);
-    }
-
-    @Override
-    public boolean applyIpv6FirewallRule(long id) {
-        return false;
+        public void reallyRun() {
+            try {
+                List<NetworkVO> isolatedNetworks = networkDao.listByGuestType(Network.GuestType.Isolated);
+                for (NetworkVO network : isolatedNetworks) {
+                    if (Network.State.Implemented.equals(network.getState()) && networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+                        PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.findByNetworkId(network.getId());
+                        if (ipv6AddressNetworkMap != null && s_logger.isInfoEnabled()) {
+                            s_logger.info(String.format("Add upstream IPv6 route for %s via: %s", network.getIp6Cidr(), ipv6AddressNetworkMap.getIp6Address()));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.warn("Caught exception while logging IPv6 guest network routes: ", e);
+            }
+        }
     }
 }

@@ -105,6 +105,7 @@ public class ApiConstants {
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DESCRIPTION = "description";
+    public static final String DESTINATION = "destination";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
@@ -579,7 +580,7 @@ public class ApiConstants {
     public static final String IP6_RANGE = "ip6range";
     public static final String IPV6_FIREWALL = "ip6firewall";
     public static final String IPV6_ROUTING = "ip6routing";
-    public static final String IPV6_ROUTING_MESSAGE = "ip6routingmessage";
+    public static final String IPV6_ROUTES = "ip6routes";
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
     public static final String IS_SOURCE_NAT = "issourcenat";
     public static final String IS_STATIC_NAT = "isstaticnat";

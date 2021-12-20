@@ -17,12 +17,14 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
@@ -267,17 +269,21 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "The internet protocol of network offering")
     private String internetProtocol;
 
+    @SerializedName(ApiConstants.IPV6_FIREWALL)
+    @Param(description = "Whether enable firewall for IPv6 in isolated networks or VPCs", since = "4.17.0")
+    private Boolean ipv6Firewall;
+
     @SerializedName(ApiConstants.IPV6_ROUTING)
-    @Param(description = "The routing mode of network offering")
+    @Param(description = "The routing mode of network offering", since = "4.17.0")
     private String ipv6Routing;
 
-    @SerializedName(ApiConstants.IPV6_ROUTING)
-    @Param(description = "The routing message for the network to ease adding route in upstream router")
-    private String ipv6RoutingMessage;
+    @SerializedName(ApiConstants.IPV6_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    private Set<Ipv6Route> ipv6Routes;
 
-    @SerializedName(ApiConstants.IPV6_FIREWALL)
-    @Param(description = "Whether enable firewall for IPv6 in isolated networks or VPCs")
-    private Boolean ipv6Firewall;
+    public NetworkResponse() {
+        this.ipv6Routes = new LinkedHashSet<Ipv6Route>();
+    }
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -557,7 +563,39 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
         this.ipv6Routing = ipv6Routing;
     }
 
-    public void setIpv6RoutingMessage(String ipv6RoutingMessage) {
-        this.ipv6RoutingMessage = ipv6RoutingMessage;
+    public void addIpv6Route(Ipv6Route ipv6Route) {
+        this.ipv6Routes.add(ipv6Route);
+    }
+
+    public static class Ipv6Route extends BaseResponse {
+
+        @SerializedName(ApiConstants.SOURCE)
+        @Param(description = "the source IPv6 guest cidr for route")
+        private String source;
+
+        @SerializedName(ApiConstants.DESTINATION)
+        @Param(description = "the destination outbound IPv6 address for route")
+        private String destination;
+
+        public Ipv6Route(String source, String destination) {
+            this.source = source;
+            this.destination = destination;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
+        }
+
+        public String getDestination() {
+            return destination;
+        }
+
+        public void setDestination(String destination) {
+            this.destination = destination;
+        }
     }
 }
