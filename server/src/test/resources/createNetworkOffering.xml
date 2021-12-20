@@ -42,6 +42,7 @@
         <property name="name" value="ConfigurationManager"/>
     </bean>
     <bean id="dataCenterGuestIpv6PrefixDaoImpl" class="com.cloud.dc.dao.DataCenterGuestIpv6PrefixDaoImpl" />
+    <bean id="ipv6GuestPrefixSubnetNetworkMapDaoImpl" class="com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDaoImpl" />
     <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
     <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
