@@ -68,7 +68,7 @@ cat $cfg | while read line; do
             if [ "$line" == "</file>" ]; then
                 break
             fi
-            echo $line >> $file
+            echo "$line" >> $file
         done
         log_it "VR config: create file success"
 

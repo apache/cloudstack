@@ -77,6 +77,7 @@ import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
@@ -137,6 +138,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
@@ -267,6 +269,10 @@ public interface ResponseGenerator {
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
+
+    LoadBalancerConfigResponse createLoadBalancerConfigResponse(LoadBalancerConfig config);
+
+    List<LoadBalancerConfigResponse> createLoadBalancerConfigResponse(List<? extends LoadBalancerConfig> configs);
 
     LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb);
 
