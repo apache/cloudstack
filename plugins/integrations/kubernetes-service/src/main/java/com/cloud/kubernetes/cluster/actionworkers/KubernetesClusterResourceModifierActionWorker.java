@@ -17,6 +17,8 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -74,9 +76,9 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
-import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
@@ -97,8 +99,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
 
@@ -212,6 +212,36 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             k8sNodeConfig = k8sNodeConfig.replace(dockerEmailKey, "\"" + dockerRegistryEmail + "\"");
         }
         return k8sNodeConfig;
+    }
+
+    private Pair<ApiConstants.BootType, ApiConstants.BootMode> getClusterBootTypeAndMode() {
+        ApiConstants.BootType bootType = ApiConstants.BootType.BIOS;
+        ApiConstants.BootMode bootMode = ApiConstants.BootMode.LEGACY;
+        ClusterDetailsVO clusterDetail = clusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.BOOT_TYPE);
+        if (clusterDetail != null && clusterDetail.getValue() != null && ApiConstants.BootType.UEFI.toString().equals(clusterDetail.getValue())) {
+            bootType = ApiConstants.BootType.UEFI;
+        }
+        if (ApiConstants.BootType.UEFI.equals(bootType)) {
+            clusterDetail = clusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.BOOT_MODE);
+            if (clusterDetail != null && clusterDetail.getValue() != null && ApiConstants.BootMode.SECURE.toString().equals(clusterDetail.getValue())) {
+                bootMode = ApiConstants.BootMode.SECURE;
+            }
+        }
+        return new Pair<>(bootType, bootMode);
+    }
+
+    protected Map<String, String> getClusterVmCustomParameters() {
+        Map<String, String> customParameterMap = new HashMap<String, String>();
+        long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
+        if (rootDiskSize > 0) {
+            customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
+        }
+        // ToDo: check if template is deploy-as-is on VMware
+        Pair<ApiConstants.BootType, ApiConstants.BootMode> bootTypeAndMode = getClusterBootTypeAndMode();
+        if (ApiConstants.BootType.UEFI.equals(bootTypeAndMode.first())) {
+            customParameterMap.put(bootTypeAndMode.first().toString(), bootTypeAndMode.second().toString());
+        }
+        return customParameterMap;
     }
 
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
@@ -364,11 +394,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
-        long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
-        Map<String, String> customParameterMap = new HashMap<String, String>();
-        if (rootDiskSize > 0) {
-            customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
-        }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sNodeConfig = null;
@@ -381,7 +406,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE);
+                null, addrs, null, null, null, getClusterVmCustomParameters(), null, null, null, null, true, UserVmManager.CKS_NODE);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }
