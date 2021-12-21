@@ -76,7 +76,8 @@ restart_services() {
 
 cleanup_systemVM() {
   rm -rf $backupfolder
-  rm -rf "$newpath""cloud-scripts.tgz" "$newpath""agent.zip" "$newpath""patch-sysvms.sh"
+  mv "$newpath"cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
+  rm -rf "$newpath""agent.zip" "$newpath""patch-sysvms.sh"
 }
 
 patch_systemvm() {

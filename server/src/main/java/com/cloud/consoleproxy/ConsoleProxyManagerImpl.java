@@ -29,7 +29,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -221,6 +223,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private IndirectAgentLB indirectAgentLB;
+    @Inject
+    private CAManager caManager;
+    @Inject
+    private NetworkOrchestrationService networkMgr;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -1274,6 +1280,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" dns2=").append(dc.getDns2());
         }
 
+        buf.append(" keystore_password=").append(PasswordGenerator.generateRandomPassword(16));
+        buf.append(" validity=").append(CAManager.CertValidityPeriod.value());
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
