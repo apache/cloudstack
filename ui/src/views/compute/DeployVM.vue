@@ -1133,6 +1133,10 @@ export default {
         this.vm.disksizetotalgb = this.diskSize
       }
 
+      if (this.serviceOffering.rootdisksize) {
+        this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
+      }
+
       if (this.networks) {
         this.vm.networks = this.networks
         this.vm.defaultnetworkid = this.defaultnetworkid
