@@ -1495,8 +1495,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (associatedNetwork == null) {
             throw new InvalidParameterValueException("Cannot find associated network with id = " + associatedNetworkId);
         }
-        if (associatedNetwork.getGuestType() != GuestType.Isolated) {
-            throw new InvalidParameterValueException("Associated network MUST be an Isolated network");
+        if (associatedNetwork.getGuestType() != GuestType.Isolated && associatedNetwork.getGuestType() != GuestType.L2) {
+            throw new InvalidParameterValueException("Associated network MUST be an Isolated or L2 network");
         }
         _accountMgr.checkAccess(caller, null, true, associatedNetwork);
         if (accountId != null && associatedNetwork.getAccountId() != accountId) {
@@ -1505,7 +1505,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (domainId != null && associatedNetwork.getDomainId() != domainId) {
             throw new InvalidParameterValueException("The new network and associated network MUST be in same domain");
         }
-        if (cidr != null && NetUtils.isNetworksOverlap(cidr, associatedNetwork.getCidr())) {
+        if (cidr != null && associatedNetwork.getCidr() != null && NetUtils.isNetworksOverlap(cidr, associatedNetwork.getCidr())) {
             throw new InvalidParameterValueException("The cidr overlaps with associated network: " + associatedNetwork.getName());
         }
         List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);

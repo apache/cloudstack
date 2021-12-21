@@ -699,8 +699,7 @@ export default {
       }
       this.networkLoading = true
       var params = {
-        zoneid: this.selectedZone.id,
-        type: 'Isolated'
+        zoneid: this.selectedZone.id
       }
       if (this.formSelectedPhysicalNetwork) {
         params.physicalnetworkid = this.formSelectedPhysicalNetwork.id
@@ -729,7 +728,12 @@ export default {
       this.handleNetworkChange(null)
       this.networks = []
       api('listNetworks', params).then(json => {
-        this.networks = json.listnetworksresponse.network
+        var networks = json.listnetworksresponse.network
+        for (const network of networks) {
+          if (network.type === 'Isolated' || network.type === 'L2') {
+            this.networks.push(network)
+          }
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
