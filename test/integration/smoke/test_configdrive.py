@@ -60,7 +60,6 @@ import tempfile
 import time
 from contextlib import contextmanager
 from nose.plugins.attrib import attr
-from retry import retry
 
 VPC_SERVICES = 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns'
 ISO_SERVICES = 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns'
@@ -1118,7 +1117,7 @@ class ConfigDriveUtils:
                     cipher = PKCS1_v1_5.new(key)
                 new_password = cipher.decrypt(b64decode(password_), None)
                 if new_password:
-                    vm.password = new_password
+                    vm.password = new_password.decode()
                 else:
                     self.fail("Failed to decrypt new password")
             except ImportError:
@@ -1510,7 +1509,6 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         tries = 1 if negative_test else 3
         private_key_file_location = keypair.private_key_file if keypair else None
 
-        @retry(tries=tries)
         def retry_ssh():
             ssh_client = vm.get_ssh_client(
                 ipaddress=public_ip.ipaddress.ipaddress,
