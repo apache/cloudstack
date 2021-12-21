@@ -772,7 +772,8 @@ export default {
       this.showKeys = false
       this.setData()
 
-      if ('tags' in this.resource) {
+      console.log(this.resourceType)
+      if ('tags' in this.resource && !['PrimaryStorage'].includes(this.resourceType)) {
         this.tags = this.resource.tags
       } else if (this.resourceType) {
         this.getTags()
