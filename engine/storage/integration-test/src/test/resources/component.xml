@@ -188,5 +188,5 @@
   -->
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
   </bean>
-  
+
 </beans>

@@ -96,6 +96,10 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -294,6 +298,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     EntityManager _entityMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ConfigurationGroupDao _configGroupDao;
+    @Inject
+    ConfigurationSubGroupDao _configSubGroupDao;
     @Inject
     ConfigDepot _configDepot;
     @Inject
@@ -7475,6 +7483,101 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN
         };
+    }
+
+    @Override
+    public String getConfigurationType(final String configName) {
+        final ConfigurationVO cfg = _configDao.findByName(configName);
+        if (cfg == null) {
+            s_logger.error("Configuration " + configName + " not found");
+            return Configuration.ValueType.String.name();
+        }
+
+        if (weightBasedParametersForValidation.contains(configName)) {
+            return Configuration.ValueType.Range.name();
+        }
+
+        Class<?> type = null;
+        final Config c = Config.getConfig(configName);
+        if (c == null) {
+            s_logger.warn("Configuration " + configName + " no found. Perhaps moved to ConfigDepot");
+            final ConfigKey<?> configKey = _configDepot.get(configName);
+            if (configKey == null) {
+                s_logger.warn("Couldn't find configuration " + configName + " in ConfigDepot too.");
+                return null;
+            }
+            type = configKey.type();
+        } else {
+            type = c.getType();
+        }
+
+        return getInputType(type);
+    }
+
+    private String getInputType(Class<?> type) {
+        if (type == null) {
+            return Configuration.ValueType.String.name();
+        }
+
+        if (type == String.class || type == Character.class) {
+            return Configuration.ValueType.String.name();
+        } else if (type == Integer.class || type == Long.class || type == Short.class) {
+            return Configuration.ValueType.Number.name();
+        } else if (type == Float.class || type == Double.class) {
+            return Configuration.ValueType.Decimal.name();
+        } else if (type == Boolean.class) {
+            return Configuration.ValueType.Boolean.name();
+        //} else if (type == Date.class) {
+        //    return Configuration.InputType.Date.name();
+        } else {
+            return Configuration.ValueType.String.name();
+        }
+    }
+
+    @Override
+    public Pair<String, String> getConfigurationGroup(final String configName) {
+        if (configName != null) {
+            final ConfigurationVO cfg = _configDao.findByName(configName);
+            if (cfg != null) {
+                if (cfg.getSubGroupId() != 0) {
+                    ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findById(cfg.getSubGroupId());
+                    if (configSubGroup != null) {
+                        String subGroupName = configSubGroup.getName();
+                        ConfigurationGroupVO configGroup = _configGroupDao.findById(configSubGroup.getGroupId());
+                        String groupName = configGroup != null ? configGroup.getName() : "Misc";
+                        return new Pair<String, String>(groupName, subGroupName);
+                    }
+                }
+
+                String[] nameWords = configName.split("\\.");
+                if (nameWords.length > 0) {
+                    for (int index = 0; index < nameWords.length; index++) {
+                        ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findByName(nameWords[index]);
+                        if (configSubGroup == null) {
+                            configSubGroup = _configSubGroupDao.findByKeyword(nameWords[index]);
+                        }
+
+                        if (configSubGroup != null) {
+                            String subGroupName = configSubGroup.getName();
+                            ConfigurationGroupVO configGroup = _configGroupDao.findById(configSubGroup.getGroupId());
+                            String groupName = configGroup != null ? configGroup.getName() : "Misc";
+                            return new Pair<String, String>(groupName, subGroupName);
+                        }
+                    }
+                }
+            } else {
+                s_logger.warn("Configuration " + configName + " not found");
+            }
+        }
+
+        s_logger.debug("Returning default configuration group for config: " + configName);
+        return new Pair<String, String>("Others", "Misc");
+    }
+
+    @Override
+    public List<ConfigurationSubGroupVO> getConfigurationSubGroups(final Long groupId) {
+        List<ConfigurationSubGroupVO> configSubGroups = _configSubGroupDao.findByGroup(groupId);
+        return configSubGroups;
     }
 
     static class ParamCountPair {

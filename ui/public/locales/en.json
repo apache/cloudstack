@@ -761,6 +761,7 @@
 "label.fwdevicestate": "Status",
 "label.gateway": "Gateway",
 "label.global.settings": "Global settings",
+"label.preferences": "Preferences",
 "label.globo.dns": "GloboDNS",
 "label.globo.dns.configuration": "GloboDNS configuration",
 "label.glustervolume": "Volume",

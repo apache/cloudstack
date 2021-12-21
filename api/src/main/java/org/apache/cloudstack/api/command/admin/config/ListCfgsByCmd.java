@@ -19,7 +19,10 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -90,6 +93,15 @@ public class ListCfgsByCmd extends BaseListCmd {
             description = "the ID of the Image Store to update the parameter value for corresponding image store")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration by group name", since = "4.17.0")
+    private String groupName;
+
+    @Parameter(name = ApiConstants.SUBGROUP, type = CommandType.STRING, description = "lists configuration by subgroup name", since = "4.17.0")
+    private String subGroupName;
+
+    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "lists configuration by parent name", since = "4.17.0")
+    private String parentName;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -126,6 +138,26 @@ public class ListCfgsByCmd extends BaseListCmd {
         return imageStoreId;
     }
 
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public String getSubGroupName() {
+        return subGroupName;
+    }
+
+    public String getParentName() {
+        return parentName;
+    }
+
+    @Override
+    public Integer getPageSize() {
+        if (StringUtils.isNotEmpty(getGroupName())) {
+            return Integer.valueOf(s_pageSizeUnlimited.intValue());
+        }
+        return super.getPageSize();
+    }
+
     @Override
     public Long getPageSizeVal() {
         Long defaultPageSize = 500L;
@@ -151,11 +183,15 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     @Override
     public void execute() {
+        validateParameters();
         Pair<List<? extends Configuration>, Integer> result = _mgr.searchForConfigurations(this);
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (Configuration cfg : result.first()) {
             ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
+            if (!matchesConfigurationGroup(cfgResponse)) {
+                continue;
+            }
             cfgResponse.setObjectName("configuration");
             if (getZoneId() != null) {
                 cfgResponse.setScope("zone");
@@ -178,8 +214,32 @@ public class ListCfgsByCmd extends BaseListCmd {
             configResponses.add(cfgResponse);
         }
 
-        response.setResponses(configResponses, result.second());
+        if (StringUtils.isNotEmpty(getGroupName())) {
+            response.setResponses(configResponses, configResponses.size());
+        } else {
+            response.setResponses(configResponses, result.second());
+        }
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    private void validateParameters() {
+        if (StringUtils.isNotEmpty(getSubGroupName()) && StringUtils.isEmpty(getGroupName())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Configuration group name must be specified with the subgroup name");
+        }
+    }
+
+    private boolean matchesConfigurationGroup(ConfigurationResponse cfgResponse) {
+        if (StringUtils.isNotEmpty(getGroupName())) {
+            if (!(getGroupName().equalsIgnoreCase(cfgResponse.getGroup()))) {
+                return false;
+            }
+            if (StringUtils.isNotEmpty(getSubGroupName())) {
+                if (!(getSubGroupName().equalsIgnoreCase(cfgResponse.getSubGroup()))) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

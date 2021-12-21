@@ -17,8 +17,10 @@
 package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;
@@ -27,7 +29,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.UUID;
+import java.util.List;
 
 public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
@@ -63,6 +67,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         fixWrongDatastoreClusterPoolUuid(conn);
+        updateConfigurationGroups(conn);
     }
 
     @Override
@@ -112,5 +117,97 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.error(errorMsg,ex);
             throw new CloudRuntimeException(errorMsg, ex);
         }
+    }
+
+    private void updateConfigurationGroups(Connection conn) {
+        LOG.debug("Updating configuration groups");
+        try {
+            String stmt = "SELECT name FROM `cloud`.`configuration`";
+            PreparedStatement pstmt = conn.prepareStatement(stmt);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String configName = rs.getString(1);
+                if (StringUtils.isBlank(configName)) {
+                    continue;
+                }
+
+                // Get words from the dot notation in the configuration
+                String[] nameWords = configName.split("\\.");
+                if (nameWords.length <= 0) {
+                    continue;
+                }
+
+                for (int index = 0; index < nameWords.length; index++) {
+                    Pair<Long, Long> configGroup = getConfigurationGroup(conn, nameWords[index]);
+                    if (configGroup.first() != 0 && configGroup.second() != 0) {
+                        stmt = "UPDATE `cloud`.`configuration` SET subgroup_id = ? , group_id = ? WHERE name = ?";
+                        pstmt = conn.prepareStatement(stmt);
+                        pstmt.setLong(1, configGroup.first());
+                        pstmt.setLong(2, configGroup.second());
+                        pstmt.setString(3, configName);
+                        pstmt.executeUpdate();
+                    }
+                }
+            }
+
+            rs.close();
+            pstmt.close();
+            LOG.debug("Successfully updated configuration groups.");
+        } catch (SQLException e) {
+            String errorMsg = "Failed to update configuration groups due to " + e.getMessage();
+            LOG.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg, e);
+        }
+    }
+
+    private Pair<Long, Long> getConfigurationGroup(Connection conn, String subGroupName) {
+        Long subGroupId = 0L;
+        Long groupId = 0L;
+        try {
+            String stmt = "SELECT id, group_id FROM `cloud`.`configuration_subgroup` WHERE name = ?";
+            PreparedStatement pstmt = conn.prepareStatement(stmt);
+            pstmt.setString(1, subGroupName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                subGroupId = rs.getLong(1);
+                groupId = rs.getLong(2);
+            } else {
+                // Try with keywords in the configuration subgroup
+                stmt = "SELECT id, group_id, keywords FROM `cloud`.`configuration_subgroup`";
+                pstmt = conn.prepareStatement(stmt);
+                ResultSet rsConfigurationSubGroups = pstmt.executeQuery();
+                while (rsConfigurationSubGroups.next()) {
+                    subGroupId = rsConfigurationSubGroups.getLong(1);
+                    groupId = rsConfigurationSubGroups.getLong(2);
+                    String keywords = rsConfigurationSubGroups.getString(3);
+                    if(StringUtils.isBlank(keywords)) {
+                        continue;
+                    }
+
+                    String[] configKeywords = keywords.split(",");
+                    if (configKeywords.length <= 0) {
+                        continue;
+                    }
+
+                    List<String> keywordsList = Arrays.asList(configKeywords);
+                    for (String configKeyword : keywordsList) {
+                        if (StringUtils.isNotBlank(configKeyword)) {
+                            configKeyword = configKeyword.strip();
+                            if (configKeyword.equalsIgnoreCase(subGroupName) || configKeyword.toLowerCase().startsWith(subGroupName.toLowerCase())) {
+                                break;
+                            }
+                        }
+                    }
+                }
+                rsConfigurationSubGroups.close();
+            }
+            rs.close();
+            pstmt.close();
+        } catch (SQLException e) {
+            LOG.error("Failed to get configuration subgroup due to " + e.getMessage(), e);
+        }
+
+        return new Pair<Long, Long>(subGroupId, groupId);
     }
 }

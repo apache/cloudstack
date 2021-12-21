@@ -16,15 +16,29 @@
 // under the License.
 package org.apache.cloudstack.config;
 
+//import java.util.ArrayList;
+
+//import java.util.Arrays;
 import java.util.Date;
+//import java.util.List;
+
+//import org.apache.commons.lang3.StringUtils;
 
 /**
  * Configuration represents one global configuration parameter for CloudStack.
  * Its scope should indicate whether this parameter can be set at different
  * organization levels in CloudStack.
- *
  */
 public interface Configuration {
+    enum ValueType {
+        Boolean,
+        Number,
+        Decimal,
+        Range, // Min and Max (Percentage - 0 to 100)
+        String,
+        List, // Set of values
+        Date;
+    }
 
     /**
      * @return Category of the parameter.
@@ -83,8 +97,21 @@ public interface Configuration {
     Date getUpdated();
 
     /**
-     *
      * @return returns true if the configuration is encrypted else false.
      */
     boolean isEncrypted();
+
+    /**
+     * @return Parent of the configuration.
+     */
+    String getParent();
+
+    /**
+     * @return Display text of the configuration.
+     */
+    String getDisplayText();
+
+    Long getGroupId();
+
+    Long getSubGroupId();
 }

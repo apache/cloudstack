@@ -187,6 +187,7 @@ public class ApiConstants {
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
+    public static final String SUBGROUP = "subgroup";
     public static final String GROUP_ID = "groupid";
     public static final String GSLB_LB_METHOD = "gslblbmethod";
     public static final String GSLB_SERVICE_DOMAIN_NAME = "gslbdomainname";
@@ -306,6 +307,7 @@ public class ApiConstants {
     public static final String OUTPUT = "output";
     public static final String PROPERTIES = "properties";
     public static final String PARAMS = "params";
+    public static final String PARENT = "parent";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
@@ -327,6 +329,7 @@ public class ApiConstants {
     public static final String POSITION = "position";
     public static final String POST_URL = "postURL";
     public static final String POWER_STATE = "powerstate";
+    public static final String PRECEDENCE = "precedence";
     public static final String PRIVATE_INTERFACE = "privateinterface";
     public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";

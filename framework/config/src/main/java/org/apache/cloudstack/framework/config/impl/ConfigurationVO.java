@@ -65,6 +65,18 @@ public class ConfigurationVO implements Configuration {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date updated;
 
+    @Column(name = "group_id")
+    private Long groupId = 0L;
+
+    @Column(name = "subgroup_id")
+    private Long subGroupId = 0L;
+
+    @Column(name = "parent")
+    private String parent;
+
+    @Column(name = "display_text", length = 255)
+    private String displayText;
+
     protected ConfigurationVO() {
     }
 
@@ -185,5 +197,41 @@ public class ConfigurationVO implements Configuration {
 
     public void setUpdated(Date updated) {
         this.updated = updated;
+    }
+
+    @Override
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
+
+    @Override
+    public Long getSubGroupId() {
+        return subGroupId;
+    }
+
+    public void setSubGroupId(Long subGroupId) {
+        this.subGroupId = subGroupId;
+    }
+
+    @Override
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
+    }
+
+    @Override
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
     }
 }

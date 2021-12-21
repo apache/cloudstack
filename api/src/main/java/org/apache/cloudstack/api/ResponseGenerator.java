@@ -22,6 +22,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.response.ConfigurationGroupResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
+import org.apache.cloudstack.api.response.GuestVlanResponse;
+import org.apache.cloudstack.api.response.NetworkPermissionsResponse;
+import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
+import com.cloud.resource.RollingMaintenanceManager;
+import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
+import org.apache.cloudstack.config.ConfigurationGroup;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -243,6 +259,8 @@ public interface ResponseGenerator {
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
 
     ConfigurationResponse createConfigurationResponse(Configuration cfg);
+
+    ConfigurationGroupResponse createConfigurationGroupResponse(ConfigurationGroup cfgGroup);
 
     SnapshotResponse createSnapshotResponse(Snapshot snapshot);
 
