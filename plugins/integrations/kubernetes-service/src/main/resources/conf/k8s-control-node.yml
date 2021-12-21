@@ -138,7 +138,7 @@ write_files:
               fi
               retval=0
               set +e
-              docker load < "${BINARIES_DIR}/docker/$line"
+              ctr image import "${BINARIES_DIR}/docker/$line"
               retval=$?
               set -e
               if [ $retval -eq 0 ]; then
@@ -187,7 +187,7 @@ write_files:
       fi
 
       systemctl enable kubelet && systemctl start kubelet
-      modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+      modprobe overlay && modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
 
       if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
         crucial_cmd_attempts=1
@@ -198,7 +198,7 @@ write_files:
           fi
           retval=0
           set +e
-          kubeadm config images pull
+          kubeadm config images pull --cri-socket /run/containerd/containerd.sock
           retval=$?
           set -e
           if [ $retval -eq 0 ]; then
@@ -216,7 +216,7 @@ write_files:
         fi
         retval=0
         set +e
-        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }}
+        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
         retval=$?
         set -e
         if [ $retval -eq 0 ]; then
@@ -275,8 +275,8 @@ write_files:
     owner: root:root
     content: |
       [Unit]
-      Requires=docker.service
-      After=docker.service
+      Requires=containerd.service
+      After=containerd.service
 
       [Service]
       Type=simple

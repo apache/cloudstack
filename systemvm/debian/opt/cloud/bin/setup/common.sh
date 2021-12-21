@@ -762,6 +762,12 @@ parse_cmd_line() {
         authorized_key)
             export AUTHORIZED_KEYS=$VALUE
             ;;
+        keystore_password)
+            export KEYSTORE_PSSWD=$VALUE
+            ;;
+        validity)
+          export VALIDITY=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}

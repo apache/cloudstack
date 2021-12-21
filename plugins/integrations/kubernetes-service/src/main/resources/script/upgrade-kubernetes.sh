@@ -93,7 +93,7 @@ if [ -d "$BINARIES_DIR" ]; then
   output=`ls ${BINARIES_DIR}/docker/`
   if [ "$output" != "" ]; then
     while read -r line; do
-        docker load < "${BINARIES_DIR}/docker/$line"
+        ctr image import "${BINARIES_DIR}/docker/$line"
     done <<< "$output"
   fi
   if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
