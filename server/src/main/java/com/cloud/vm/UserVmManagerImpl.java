@@ -1802,40 +1802,43 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void updatePublicIpDnatVmIp(long vmId, long networkId, String oldIp, String newIp) {
-        if (_networkModel.areServicesSupportedInNetwork(networkId, Service.StaticNat)) {
-            List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedVmId(vmId);
-            for (IPAddressVO publicIp : publicIps) {
-                if (oldIp.equals(publicIp.getVmIp()) && publicIp.getAssociatedWithNetworkId() == networkId) {
-                    publicIp.setVmIp(newIp);
-                    _ipAddressDao.persist(publicIp);
-                }
+        if (!_networkModel.areServicesSupportedInNetwork(networkId, Service.StaticNat)) {
+            return;
+        }
+        List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedVmId(vmId);
+        for (IPAddressVO publicIp : publicIps) {
+            if (oldIp.equals(publicIp.getVmIp()) && publicIp.getAssociatedWithNetworkId() == networkId) {
+                publicIp.setVmIp(newIp);
+                _ipAddressDao.persist(publicIp);
             }
         }
     }
 
     private void updateLoadBalancerRulesVmIp(long vmId, long networkId, String oldIp, String newIp) {
-        if (_networkModel.areServicesSupportedInNetwork(networkId, Service.Lb)) {
-            List<LoadBalancerVMMapVO> loadBalancerVMMaps = _loadBalancerVMMapDao.listByInstanceId(vmId);
-            for (LoadBalancerVMMapVO map : loadBalancerVMMaps) {
-                long lbId = map.getLoadBalancerId();
-                FirewallRuleVO rule = _rulesDao.findById(lbId);
-                if (oldIp.equals(map.getInstanceIp()) && networkId == rule.getNetworkId()) {
-                    map.setInstanceIp(newIp);
-                    _loadBalancerVMMapDao.persist(map);
-                }
+        if (!_networkModel.areServicesSupportedInNetwork(networkId, Service.Lb)) {
+            return;
+        }
+        List<LoadBalancerVMMapVO> loadBalancerVMMaps = _loadBalancerVMMapDao.listByInstanceId(vmId);
+        for (LoadBalancerVMMapVO map : loadBalancerVMMaps) {
+            long lbId = map.getLoadBalancerId();
+            FirewallRuleVO rule = _rulesDao.findById(lbId);
+            if (oldIp.equals(map.getInstanceIp()) && networkId == rule.getNetworkId()) {
+                map.setInstanceIp(newIp);
+                _loadBalancerVMMapDao.persist(map);
             }
         }
     }
 
     private void updatePortForwardingRulesVmIp(long vmId, long networkId, String oldIp, String newIp) {
-        if (_networkModel.areServicesSupportedInNetwork(networkId, Service.PortForwarding)) {
-            List<PortForwardingRuleVO> firewallRules = _portForwardingDao.listByVm(vmId);
-            for (PortForwardingRuleVO firewallRule : firewallRules) {
-                FirewallRuleVO rule = _rulesDao.findById(firewallRule.getId());
-                if (oldIp.equals(firewallRule.getDestinationIpAddress().toString()) && networkId == rule.getNetworkId()) {
-                    firewallRule.setDestinationIpAddress(new Ip(newIp));
-                    _portForwardingDao.persist(firewallRule);
-                }
+        if (!_networkModel.areServicesSupportedInNetwork(networkId, Service.PortForwarding)) {
+            return;
+        }
+        List<PortForwardingRuleVO> firewallRules = _portForwardingDao.listByVm(vmId);
+        for (PortForwardingRuleVO firewallRule : firewallRules) {
+            FirewallRuleVO rule = _rulesDao.findById(firewallRule.getId());
+            if (oldIp.equals(firewallRule.getDestinationIpAddress().toString()) && networkId == rule.getNetworkId()) {
+                firewallRule.setDestinationIpAddress(new Ip(newIp));
+                _portForwardingDao.persist(firewallRule);
             }
         }
     }
