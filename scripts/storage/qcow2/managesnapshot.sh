@@ -152,8 +152,8 @@ destroy_snapshot() {
     fi
     lvm lvremove -f "${vg}/${snapshotname}-cow"
   elif [ -f $disk ]; then
-     #delete all the existing snapshots
-     $qemu_img snapshot -l $disk |tail -n +3|awk '{print $1}'|xargs -I {} $qemu_img snapshot -d {} $disk >&2
+     #delete all the existing disk snapshots
+     $qemu_img snapshot -l $disk |tail -n +3| grep -i '[0-9a-z]\{8\}-[0-9a-z]\{4\}' | awk '{print $1}'|xargs -I {} $qemu_img snapshot -d {} $disk >&2
      if [ $? -gt 0 ]
      then
        failed=2
