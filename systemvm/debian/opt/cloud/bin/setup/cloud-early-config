@@ -54,7 +54,7 @@ patch() {
   fi
 
   eval $(validate_checksums $md5file $oldpatchfile)
-  if [ "$oldmd5" == "$newmd5" ] && [ ! -f ${patchfile} ]; then
+  if [ "$oldmd5" == "$newmd5" ] && [ -d /usr/local/cloud/systemvm ] && [ "$(ls -A /usr/local/cloud/systemvm)" ]; then
     log_it "Checksum matches, do need to patch"
     return 0
   fi
