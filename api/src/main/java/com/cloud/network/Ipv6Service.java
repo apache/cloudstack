@@ -40,11 +40,15 @@ public interface Ipv6Service extends PluggableService {
 
     void releaseIpv6SubnetForNetwork(long networkId);
 
-    Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> assignPublicIpv6ToNetwork(Network network);
+    Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> checkExistingOrAssignPublicIpv6ToNetwork(Network network, String nicMacAddress);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
 
     void releasePublicIpv6ForNetwork(long networkId);
+
+    void releasePublicIpv6ForNic(long networkId, String nicMacAddress);
+
+    void releaseUnusedPublicIpv6ForNetwork(Network network);
 
     FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
 

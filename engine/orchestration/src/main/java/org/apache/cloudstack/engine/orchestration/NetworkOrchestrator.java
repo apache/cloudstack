@@ -2345,6 +2345,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         s_logger.debug("Removed nic id=" + nic.getId());
+        // release assigned IPv6 for Isolated Network VR NIC
+
+        if (Type.DomainRouter.equals(vm.getType())
+                && TrafficType.Guest.equals(network.getTrafficType())
+                && GuestType.Isolated.equals(network.getGuestType())) {
+            ipv6Service.releasePublicIpv6ForNic(nic.getNetworkId(), nic.getMacAddress());
+        }
+
         //remove the secondary ip addresses corresponding to to this nic
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
             s_logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");

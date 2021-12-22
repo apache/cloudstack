@@ -83,11 +83,8 @@
             <a-radio-button value="ipv4">
               {{ $t('label.ip.v4') }}
             </a-radio-button>
-            <a-radio-button value="ipv6">
-              {{ $t('label.ip.v6') }}
-            </a-radio-button>
             <a-radio-button value="dualstack">
-              {{ $t('label.dual.stack') }}
+              {{ $t('label.ip.v4.v6') }}
             </a-radio-button>
           </a-radio-group>
         </a-form-item>

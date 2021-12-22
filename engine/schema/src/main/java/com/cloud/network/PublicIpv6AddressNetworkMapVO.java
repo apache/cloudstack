@@ -50,6 +50,9 @@ public class PublicIpv6AddressNetworkMapVO implements PublicIpv6AddressNetworkMa
     @Column(name = "network_id")
     private Long networkId;
 
+    @Column(name = "nic_mac_address")
+    private String nicMacAddress;
+
     @Column(name = "state")
     private PublicIpv6AddressNetworkMap.State state;
 
@@ -63,10 +66,11 @@ public class PublicIpv6AddressNetworkMapVO implements PublicIpv6AddressNetworkMa
         uuid = UUID.randomUUID().toString();
     }
 
-    protected PublicIpv6AddressNetworkMapVO(long rangeId, String ip6Address, Long networkId, PublicIpv6AddressNetworkMap.State state) {
+    protected PublicIpv6AddressNetworkMapVO(long rangeId, String ip6Address, Long networkId, String nicMacAddress, State state) {
         this.rangeId = rangeId;
         this.ip6Address = ip6Address;
         this.networkId = networkId;
+        this.nicMacAddress = nicMacAddress;
         this.state = state;
         uuid = UUID.randomUUID().toString();
     }
@@ -99,6 +103,15 @@ public class PublicIpv6AddressNetworkMapVO implements PublicIpv6AddressNetworkMa
 
     public void setNetworkId(Long networkId) {
         this.networkId = networkId;
+    }
+
+    @Override
+    public String getNicMacAddress() {
+        return nicMacAddress;
+    }
+
+    public void setNicMacAddress(String nicMacAddress) {
+        this.nicMacAddress = nicMacAddress;
     }
 
     @Override

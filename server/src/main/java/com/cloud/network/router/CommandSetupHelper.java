@@ -1039,7 +1039,7 @@ public class CommandSetupHelper {
 
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
-            updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic.getMacAddress(), defaultIp6Dns1, defaultIp6Dns2);
+            updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic, defaultIp6Dns1, defaultIp6Dns2);
         }
 
         final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
@@ -1058,22 +1058,15 @@ public class CommandSetupHelper {
         return setupCmd;
     }
 
-    private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, String macAddress, String defaultIp6Dns1, String defaultIp6Dns2) {
+    private void updateSetupGuestNetworkCommandIpv6(SetupGuestNetworkCommand setupCmd, Network network, Nic nic, String defaultIp6Dns1, String defaultIp6Dns2) {
         boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         if (isIpv6Supported) {
             setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
             setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-            PublicIpv6AddressNetworkMap ipv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.findByNetworkId(network.getId());
-            Vlan vlan = null;
-            if (ipv6AddressNetworkMap == null) {
-                Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> publicIpv6AddressNetworkMapVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network);
-                ipv6AddressNetworkMap = publicIpv6AddressNetworkMapVlanPair.first();
-                vlan = publicIpv6AddressNetworkMapVlanPair.second();
-            }
+            Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> publicIpv6AddressNetworkMapVlanPair = ipv6Service.checkExistingOrAssignPublicIpv6ToNetwork(network, nic.getMacAddress());
+            PublicIpv6AddressNetworkMap ipv6AddressNetworkMap = publicIpv6AddressNetworkMapVlanPair.first();
+            Vlan vlan = publicIpv6AddressNetworkMapVlanPair.second();
             setupCmd.setRouterIpv6(ipv6AddressNetworkMap.getIp6Address());
-            if (vlan == null) {
-                vlan = _vlanDao.findById(ipv6AddressNetworkMap.getRangeId());
-            }
             final String routerIpv6Gateway = vlan.getIp6Gateway();
             final String routerIpv6Cidr = vlan.getIp6Cidr();
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);

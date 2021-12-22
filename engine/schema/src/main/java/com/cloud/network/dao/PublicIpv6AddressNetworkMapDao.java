@@ -17,11 +17,14 @@
 
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import com.cloud.network.PublicIpv6AddressNetworkMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface PublicIpv6AddressNetworkMapDao extends GenericDao<PublicIpv6AddressNetworkMapVO, Long> {
     PublicIpv6AddressNetworkMapVO findFirstAvailable(long rangeId);
     PublicIpv6AddressNetworkMapVO findLast(long rangeId);
-    PublicIpv6AddressNetworkMapVO findByNetworkId(long networkId);
+    List<PublicIpv6AddressNetworkMapVO> listByNetworkId(long networkId);
+    PublicIpv6AddressNetworkMapVO findByNetworkIdAndNicMacAddress(long networkId, String macAddress);
 }

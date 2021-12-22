@@ -39,8 +39,9 @@
           </div>
         </div>
         <div v-else-if="item === 'ip6routes'">
+          {{ 'Add upstream IPv6 route for:' }}
           <div v-for="(route, idx) in resource[item]" :key="idx">
-            {{ 'Add upstream IPv6 route for ' + route.source + ' via ' + route.destination }}
+            {{ route.subnet + ' via ' + route.gateway }}
           </div>
         </div>
         <div v-else-if="['name', 'type'].includes(item)">

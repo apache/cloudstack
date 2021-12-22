@@ -569,33 +569,33 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public static class Ipv6Route extends BaseResponse {
 
-        @SerializedName(ApiConstants.SOURCE)
-        @Param(description = "the source IPv6 guest cidr for route")
-        private String source;
+        @SerializedName(ApiConstants.SUBNET)
+        @Param(description = "the guest IPv6 cidr for route")
+        private String subnet;
 
-        @SerializedName(ApiConstants.DESTINATION)
-        @Param(description = "the destination outbound IPv6 address for route")
-        private String destination;
+        @SerializedName(ApiConstants.GATEWAY)
+        @Param(description = "the outbound IPv6 gateway")
+        private String gateway;
 
-        public Ipv6Route(String source, String destination) {
-            this.source = source;
-            this.destination = destination;
+        public Ipv6Route(String subnet, String gateway) {
+            this.subnet = subnet;
+            this.gateway = gateway;
         }
 
-        public String getSource() {
-            return source;
+        public String getSubnet() {
+            return subnet;
         }
 
-        public void setSource(String source) {
-            this.source = source;
+        public void setSubnet(String subnet) {
+            this.subnet = subnet;
         }
 
-        public String getDestination() {
-            return destination;
+        public String getGateway() {
+            return gateway;
         }
 
-        public void setDestination(String destination) {
-            this.destination = destination;
+        public void setGateway(String gateway) {
+            this.gateway = gateway;
         }
     }
 }

@@ -59,6 +59,7 @@ CREATE TABLE `cloud`.`public_ip6_address_network_map` (
   `vlan_db_id` bigint(20) unsigned NOT NULL COMMENT 'id of the vlan to which this address belong to',
   `public_ip_address` varchar(255) NOT NULL COMMENT 'ipv6 address',
   `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network to which this address is associated to',
+  `nic_mac_address` varchar(17) DEFAULT NULL COMMENT 'mac address of the nic to which this address is assigned to',
   `state` varchar(255) NOT NULL COMMENT 'state of the address',
   `created` datetime default NULL,
   `removed` datetime default NULL,

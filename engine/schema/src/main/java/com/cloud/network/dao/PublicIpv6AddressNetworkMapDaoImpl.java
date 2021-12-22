@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMap;
 import com.cloud.network.PublicIpv6AddressNetworkMapVO;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -38,6 +39,7 @@ public class PublicIpv6AddressNetworkMapDaoImpl extends GenericDaoBase<PublicIpv
     protected SearchBuilder<PublicIpv6AddressNetworkMapVO> FreeAddressSearch;
     protected SearchBuilder<PublicIpv6AddressNetworkMapVO> RangeIdSearch;
     protected SearchBuilder<PublicIpv6AddressNetworkMapVO> NetworkIdSearch;
+    protected SearchBuilder<PublicIpv6AddressNetworkMapVO> NetworkIdNicMacAddressSearch;
 
     @PostConstruct
     public void init() {
@@ -51,6 +53,10 @@ public class PublicIpv6AddressNetworkMapDaoImpl extends GenericDaoBase<PublicIpv
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.and("networkId", NetworkIdSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkIdSearch.done();
+        NetworkIdNicMacAddressSearch = createSearchBuilder();
+        NetworkIdNicMacAddressSearch.and("networkId", NetworkIdNicMacAddressSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkIdNicMacAddressSearch.and("nicMacAddress", NetworkIdNicMacAddressSearch.entity().getNicMacAddress(), SearchCriteria.Op.EQ);
+        NetworkIdNicMacAddressSearch.done();
     }
 
     @Override
@@ -58,21 +64,32 @@ public class PublicIpv6AddressNetworkMapDaoImpl extends GenericDaoBase<PublicIpv
         SearchCriteria<PublicIpv6AddressNetworkMapVO> sc = FreeAddressSearch.create();
         sc.setParameters("prefixId", prefixId);
         sc.setParameters("state", Ipv6GuestPrefixSubnetNetworkMap.State.Free);
-        return findOneBy(sc);
+        Filter searchFilter = new Filter(PublicIpv6AddressNetworkMapVO.class, "id", true, null, 1L);
+        List<PublicIpv6AddressNetworkMapVO> list = listBy(sc, searchFilter);
+        return CollectionUtils.isNotEmpty(list) ? list.get(0) : null;
     }
 
     @Override
     public PublicIpv6AddressNetworkMapVO findLast(long prefixId) {
         SearchCriteria<PublicIpv6AddressNetworkMapVO> sc = RangeIdSearch.create();
         sc.setParameters("prefixId", prefixId);
-        List<PublicIpv6AddressNetworkMapVO> list = listBy(sc);
-        return CollectionUtils.isNotEmpty(list) ? list.get(list.size() - 1) : null;
+        Filter searchFilter = new Filter(PublicIpv6AddressNetworkMapVO.class, "id", false, null, 1L);
+        List<PublicIpv6AddressNetworkMapVO> list = listBy(sc, searchFilter);
+        return CollectionUtils.isNotEmpty(list) ? list.get(0) : null;
     }
 
     @Override
-    public PublicIpv6AddressNetworkMapVO findByNetworkId(long networkId) {
+    public List<PublicIpv6AddressNetworkMapVO> listByNetworkId(long networkId) {
         SearchCriteria<PublicIpv6AddressNetworkMapVO> sc = NetworkIdSearch.create();
         sc.setParameters("networkId", networkId);
+        return listBy(sc);
+    }
+
+    @Override
+    public PublicIpv6AddressNetworkMapVO findByNetworkIdAndNicMacAddress(long networkId, String nicMacAddress) {
+        SearchCriteria<PublicIpv6AddressNetworkMapVO> sc = NetworkIdNicMacAddressSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("nicMacAddress", nicMacAddress);
         return findOneBy(sc);
     }
 }

@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMap;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -66,15 +67,18 @@ public class Ipv6GuestPrefixSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv6G
         SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = FreeSubnetSearch.create();
         sc.setParameters("prefixId", prefixId);
         sc.setParameters("state", Ipv6GuestPrefixSubnetNetworkMap.State.Free);
-        return findOneBy(sc);
+        Filter searchFilter = new Filter(Ipv6GuestPrefixSubnetNetworkMapVO.class, "id", true, null, 1L);
+        List<Ipv6GuestPrefixSubnetNetworkMapVO> list = listBy(sc, searchFilter);
+        return CollectionUtils.isNotEmpty(list) ? list.get(0) : null;
     }
 
     @Override
     public Ipv6GuestPrefixSubnetNetworkMapVO findLast(long prefixId) {
         SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = PrefixIdSearch.create();
         sc.setParameters("prefixId", prefixId);
-        List<Ipv6GuestPrefixSubnetNetworkMapVO> list = listBy(sc);
-        return CollectionUtils.isNotEmpty(list) ? list.get(list.size() - 1) : null;
+        Filter searchFilter = new Filter(Ipv6GuestPrefixSubnetNetworkMapVO.class, "id", false, null, 1L);
+        List<Ipv6GuestPrefixSubnetNetworkMapVO> list = listBy(sc, searchFilter);
+        return CollectionUtils.isNotEmpty(list) ? list.get(0) : null;
     }
 
     @Override

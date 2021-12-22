@@ -32,5 +32,7 @@ public interface PublicIpv6AddressNetworkMap extends Identity, InternalIdentity 
 
     Long getNetworkId();
 
+    String getNicMacAddress();
+
     PublicIpv6AddressNetworkMap.State getState();
 }

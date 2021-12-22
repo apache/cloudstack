@@ -2529,9 +2529,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIpv6Routing("Static");
             response.setIpv6Firewall(networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
-                PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.findByNetworkId(network.getId());
-                NetworkResponse.Ipv6Route route = new NetworkResponse.Ipv6Route(network.getIp6Cidr(), ipv6AddressNetworkMaps.getIp6Address());
-                response.addIpv6Route(route);
+                List<PublicIpv6AddressNetworkMapVO> ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.listByNetworkId(network.getId());
+                for (PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap : ipv6AddressNetworkMaps) {
+                    NetworkResponse.Ipv6Route route = new NetworkResponse.Ipv6Route(network.getIp6Cidr(), ipv6AddressNetworkMap.getIp6Address());
+                    response.addIpv6Route(route);
+                }
             }
         }
 
