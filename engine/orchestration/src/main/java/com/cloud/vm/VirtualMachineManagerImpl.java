@@ -192,7 +192,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
