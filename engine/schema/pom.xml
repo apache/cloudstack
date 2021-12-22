@@ -90,7 +90,9 @@
                         <configuration>
                             <source>
                                 def csVersion = pom.properties['cs.version']
+                                println(csVersion)
                                 def patch = pom.properties['patch.version']
+                                println(patch)
                                 def templateList = []
                                 templateList.add("systemvmtemplate-${csVersion}.${patch}-kvm")
                                 templateList.add("systemvmtemplate-${csVersion}.${patch}-vmware")
@@ -123,7 +125,8 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
+<!--                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>-->
+                            <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/md5sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                             <skipCache>true</skipCache>
                             <overwrite>true</overwrite>
@@ -182,7 +185,8 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
+<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>-->
+                                        <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
@@ -194,7 +198,8 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
+<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${vmware.checksum}</md5>
                                 </configuration>
@@ -206,7 +211,8 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
+<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${xen.checksum}</md5>
                                 </configuration>

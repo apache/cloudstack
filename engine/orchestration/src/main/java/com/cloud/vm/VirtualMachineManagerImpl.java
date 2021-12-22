@@ -992,6 +992,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(csr)) {
             final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+            for (Map.Entry<String,String> e : ipAddressDetails.entrySet()) {
+                s_logger.info("PEARL - k = " + e.getKey() + " v: "+ e.getValue());
+            }
             ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
             final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
                     new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
