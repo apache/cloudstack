@@ -250,7 +250,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         } else {
             message = "Migration completed";
-            if (migrationPolicy == MigrationPolicy.COMPLETE && skipped != 0) {
+            if (migrationPolicy == MigrationPolicy.COMPLETE && skipped > 0) {
                 message += ". Not all data objects were migrated. Some were probably skipped due to lack of storage capacity.";
                 success = false;
             }
