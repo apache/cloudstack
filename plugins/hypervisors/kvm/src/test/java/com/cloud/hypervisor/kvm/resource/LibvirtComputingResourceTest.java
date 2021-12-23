@@ -417,25 +417,6 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testCreateDevicesWithSCSIDisk() {
-        VirtualMachineTO to = createDefaultVM(false);
-        to.setDetails(new HashMap<>());
-        libvirtComputingResourceSpy._guestCpuArch = "aarch64";
-
-        GuestDef guest = new GuestDef();
-        guest.setGuestType(GuestType.KVM);
-
-        DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, guest, to.getCpus() + 1, false);
-        verifyDevices(devicesDef, to);
-
-        Document domainDoc = parse(devicesDef.toString());
-        assertNodeExists(domainDoc, "/devices/controller[@type='scsi']");
-        assertNodeExists(domainDoc, "/devices/controller[@model='virtio-scsi']");
-        assertNodeExists(domainDoc, "/devices/controller/address[@type='pci']");
-        assertNodeExists(domainDoc, "/devices/controller/driver[@queues='" + (to.getCpus() + 1) + "']");
-    }
-
-    @Test
     public void testConfigureGuestAndSystemVMToUseKVM() {
         VirtualMachineTO to = createDefaultVM(false);
         libvirtComputingResourceSpy._hypervisorLibvirtVersion = 100;

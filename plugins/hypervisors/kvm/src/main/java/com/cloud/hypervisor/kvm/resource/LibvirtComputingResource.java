@@ -3756,6 +3756,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
+        } else if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+            return DiskDef.DiskBus.SCSI;
         } else {
             return DiskDef.DiskBus.IDE;
         }
