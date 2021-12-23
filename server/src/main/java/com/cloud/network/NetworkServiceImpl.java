@@ -1390,10 +1390,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             } else if (ntwkOff.getGuestType() == GuestType.Shared && ! ntwkOff.isSpecifyVlan()) {
                 s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s] with specifyVlan=%s.",
                         TrafficType.Guest, GuestType.Shared, ntwkOff.isSpecifyVlan()));
+            } else if (ntwkOff.getGuestType() == GuestType.L2) {
+                s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s].",
+                        TrafficType.Guest, GuestType.L2));
             } else {
                 throw new InvalidParameterValueException(
-                        String.format("Regular users can only create an %s network with a service [%s] enabled, or a %s network with specifyVlan=false.",
-                                GuestType.Isolated, Service.SourceNat.getName(), GuestType.Shared));
+                        String.format("Regular users can only create an %s network with a service [%s] enabled, a %s network or a %s network with specifyVlan=false.",
+                                GuestType.Isolated, Service.SourceNat.getName(), GuestType.L2, GuestType.Shared));
             }
         }
 
