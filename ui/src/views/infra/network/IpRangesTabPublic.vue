@@ -224,12 +224,12 @@
           </a-form-item>
           <a-form-item :label="$t('label.startipv6')" class="form__item">
             <a-input
-              v-decorator="['startipv6', { rules: [{ message: `${$t('label.required')}` }] }]">
+              v-decorator="['startipv6']">
             </a-input>
           </a-form-item>
           <a-form-item :label="$t('label.endipv6')" class="form__item">
             <a-input
-              v-decorator="['endipv6', { rules: [{ message: `${$t('label.required')}` }] }]">
+              v-decorator="['endipv6']">
             </a-input>
           </a-form-item>
         </div>
