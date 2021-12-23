@@ -178,7 +178,7 @@
                   :filterOption="(input, option) => {
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="(opt, optIndex) in this.isolatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
+                  <a-select-option v-for="(opt, optIndex) in this.associatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
                     <span>
                       <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                       <a-icon type="user" style="margin-right: 5px" />
@@ -379,7 +379,7 @@ export default {
     return {
       fetchLoading: false,
       privateGateways: [],
-      isolatedNetworks: [],
+      associatedNetworks: [],
       vpnGateways: [],
       vpnConnections: [],
       networkAcls: [],
@@ -558,9 +558,14 @@ export default {
         domainid: this.resource.domainid,
         account: this.resource.account,
         listAll: true,
-        type: 'Isolated'
+        networkfilter: 'Account'
       }).then(json => {
-        this.isolatedNetworks = json.listnetworksresponse.network
+        var networks = json.listnetworksresponse.network
+        for (const network of networks) {
+          if (network.type === 'Isolated' || network.type === 'L2') {
+            this.associatedNetworks.push(network)
+          }
+        }
       }).catch(error => {
         this.$notifyError(error)
       })

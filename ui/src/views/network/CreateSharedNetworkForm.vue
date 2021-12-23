@@ -699,7 +699,8 @@ export default {
       }
       this.networkLoading = true
       var params = {
-        zoneid: this.selectedZone.id
+        zoneid: this.selectedZone.id,
+        networkfilter: 'Account'
       }
       if (this.formSelectedPhysicalNetwork) {
         params.physicalnetworkid = this.formSelectedPhysicalNetwork.id
@@ -712,12 +713,13 @@ export default {
         }
         case 'project':
         {
+          params.domainid = this.selectedProject.domainid
           params.projectid = this.selectedProject.id
           break
         }
         case 'account':
         {
-          params.domainid = this.selectedDomain.id
+          params.domainid = this.selectedAccount.domainid
           params.account = this.selectedAccount.name
           break
         }
@@ -846,6 +848,7 @@ export default {
     },
     handleProjectChange (project) {
       this.selectedProject = project
+      this.fetchNetworkData()
     },
     handleSubmit (e) {
       if (this.actionLoading) return
@@ -899,9 +902,11 @@ export default {
           params.domainid = this.selectedDomain.id
           params.acltype = this.scopeType
           if (this.scopeType === 'account') { // account-specific
+            params.domainid = this.selectedAccount.domainid
             params.account = this.selectedAccount.name
           } else if (this.scopeType === 'project') { // project-specific
             params.acltype = 'account'
+            params.domainid = this.selectedProject.domainid
             params.projectid = this.selectedProject.id
           } else { // domain-specific
             params.subdomainaccess = this.parseBooleanValueForKey(values, 'subdomainaccess')
