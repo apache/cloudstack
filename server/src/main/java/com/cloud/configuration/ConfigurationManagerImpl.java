@@ -468,13 +468,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             true, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Long> KVM_HEARTBEAT_UPDATE_RETRY_SLEEP_CK =  new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_RETRY_SLEEP, "10000",
-            "The sleep time, in milliseconds, between two kvm heartbeats to write to storage",
+            "The sleep time, in milliseconds, between two KVM heartbeats to write to storage",
             true, ConfigKey.Scope.Global);
     public static final ConfigKey<Long> KVM_HEARTBEAT_UPDATE_TIMEOUT_CK = new ConfigKey<>("Advanced", Long.class, KVM_HEARTBEAT_UPDATE_TIMEOUT, "60000",
-            "Timeout(in milliseconds) that kvm heartbeat to write to storage",
+            "Timeout, in milliseconds to KVM heartbeat writes to storage",
             true, ConfigKey.Scope.Global);
     public static final ConfigKey<String> KVM_HEARTBEAT_FAILURE_ACTION_CK = new ConfigKey<>("Advanced", String.class, KVM_HEARTBEAT_FAILURE_ACTION, "hardreset",
-            "The action for heartbeat write failures on KVM host. The valid value are 'hardreset' (default), 'stopagent', 'destroyvms'",
+            "The action for heartbeat write failures on KVM host. The valid value are 'hardreset' (default), 'stopagent', 'destroyvms', 'noaction'",
             true, ConfigKey.Scope.Global);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
