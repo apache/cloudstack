@@ -4923,7 +4923,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if(vlan == null) {
             // Nothing to do if vlan can't be found
-            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null.");
+            s_logger.warn(String.format("Skipping the process for releasing public IP range as could not find a VLAN with ID '%s' for Account '%s' and User '%s'."
+                    ,vlanDbId, caller, userId));
             return true;
         }
 
