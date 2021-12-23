@@ -199,7 +199,7 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "the ID of the Network associated with this network")
     private String associatedNetworkId;
 
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
     @Param(description = "the name of the Network associated with this network")
     private String associatedNetworkName;
 

@@ -3206,6 +3206,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setAclName(acl.getName());
         }
 
+        final NetworkDetailVO detail = networkDetailsDao.findDetail(result.getNetworkId(), Network.AssociatedNetworkId);
+        if (detail != null) {
+            Long associatedNetworkId = Long.valueOf(detail.getValue());
+            NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
+            if (associatedNetwork != null) {
+                response.setAssociatedNetworkId(associatedNetwork.getUuid());
+                response.setAssociatedNetworkName(associatedNetwork.getName());
+            }
+        }
+
         response.setObjectName("privategateway");
 
         return response;
