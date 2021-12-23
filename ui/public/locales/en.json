@@ -2203,7 +2203,7 @@
 "label.system.vm.scaled.up": "System VM Scaled Up",
 "label.system.vms": "System VMs",
 "label.system.wide.capacity": "System-wide capacity",
-"label.systemcycleusage": "User-, System and Idle Cycles",
+"label.systemcycleusage": "User, System and Idle Cycles",
 "label.systemloadaverages": "1, 5 and 15 mintute load averages",
 "label.systemmemoryfree": "Free System Memory",
 "label.systemmemorytotal": "Total System Memory",
