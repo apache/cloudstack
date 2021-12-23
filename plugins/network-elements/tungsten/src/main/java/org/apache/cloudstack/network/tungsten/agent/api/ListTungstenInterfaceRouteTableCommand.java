@@ -18,12 +18,12 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class ListTungstenInterfaceRouteTableCommand extends TungstenCommand {
     final private String tungstenInterfaceRouteTableUuid;
-    final private String vmUuid;
+    final private String vmiUuid;
     final private boolean isAttachedToInterface;
 
-    public ListTungstenInterfaceRouteTableCommand(String tungstenInterfaceRouteTableUuid, String vmUuid, boolean isAttachedToInterface) {
+    public ListTungstenInterfaceRouteTableCommand(String tungstenInterfaceRouteTableUuid, String vmiUuid, boolean isAttachedToInterface) {
         this.tungstenInterfaceRouteTableUuid = tungstenInterfaceRouteTableUuid;
-        this.vmUuid = vmUuid;
+        this.vmiUuid = vmiUuid;
         this.isAttachedToInterface = isAttachedToInterface;
     }
 
@@ -31,8 +31,8 @@ public class ListTungstenInterfaceRouteTableCommand extends TungstenCommand {
         return tungstenInterfaceRouteTableUuid;
     }
 
-    public String getVmUuid() {
-        return vmUuid;
+    public String getVmiUuid() {
+        return vmiUuid;
     }
 
     public boolean isAttachedToInterface() {

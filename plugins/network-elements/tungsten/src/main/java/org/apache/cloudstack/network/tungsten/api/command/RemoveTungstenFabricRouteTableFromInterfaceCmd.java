@@ -46,8 +46,8 @@ public class RemoveTungstenFabricRouteTableFromInterfaceCmd extends BaseAsyncCmd
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_MACHINE_UUID, type = CommandType.STRING, required = true, description = "the UUID of vm")
-    private String vmUuid;
+    @Parameter(name = ApiConstants.TUNGSTEN_VM_INTERFACE_UUID, type = CommandType.STRING, required = true, description = "the UUID of vm")
+    private String vmiUuid;
 
     @Parameter(name = ApiConstants.TUNGSTEN_INTERFACE_ROUTE_TABLE_UUID, type = CommandType.STRING, required = true, description = "the uuid of the Tungsten-Fabric interface route table")
     private String tungstenInterfaceRouteTableUuid;
@@ -57,7 +57,7 @@ public class RemoveTungstenFabricRouteTableFromInterfaceCmd extends BaseAsyncCmd
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        boolean result = tungstenService.removeTungstenFabricRouteTableFromInterface(zoneId, vmUuid, tungstenInterfaceRouteTableUuid);
+        boolean result = tungstenService.removeTungstenFabricRouteTableFromInterface(zoneId, vmiUuid, tungstenInterfaceRouteTableUuid);
         if(result){
             SuccessResponse successResponse = new SuccessResponse(getCommandName());
             this.setResponseObject(successResponse);

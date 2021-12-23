@@ -47,8 +47,8 @@ public class ListTungstenFabricInterfaceRouteTableCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_MACHINE_UUID, type = CommandType.STRING, description = "the UUID of network")
-    private String vmUuid;
+    @Parameter(name = ApiConstants.TUNGSTEN_VM_INTERFACE_UUID, type = CommandType.STRING, description = "the UUID of network")
+    private String vmiUuid;
 
     @Parameter(name = ApiConstants.TUNGSTEN_INTERFACE_ROUTE_TABLE_UUID, type = CommandType.STRING, description = "the UUID of Tungsten-Fabric interface route table")
     private String tungstenInterfaceRouteTableUuid;
@@ -62,7 +62,7 @@ public class ListTungstenFabricInterfaceRouteTableCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         List<TungstenFabricInterfaceRouteTableResponse> routeTableRespones = tungstenService.listTungstenFabricInterfaceRouteTables(
-                zoneId, tungstenInterfaceRouteTableUuid, vmUuid, isAttachedToInterface);
+                zoneId, tungstenInterfaceRouteTableUuid, vmiUuid, isAttachedToInterface);
         ListResponse<TungstenFabricInterfaceRouteTableResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(routeTableRespones);
         listResponse.setResponseName(getCommandName());

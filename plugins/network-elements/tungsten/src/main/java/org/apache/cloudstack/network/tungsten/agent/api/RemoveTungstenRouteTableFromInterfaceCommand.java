@@ -18,18 +18,18 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class RemoveTungstenRouteTableFromInterfaceCommand extends TungstenCommand {
     private final String routeTableUuid;
-    private final String vmUuid;
+    private final String vmiUuid;
 
-    public RemoveTungstenRouteTableFromInterfaceCommand(String vmUuid, String routeTableUuid) {
+    public RemoveTungstenRouteTableFromInterfaceCommand(String vmiUuid, String routeTableUuid) {
         this.routeTableUuid = routeTableUuid;
-        this.vmUuid = vmUuid;
+        this.vmiUuid = vmiUuid;
     }
 
     public String getRouteTableUuid() {
         return routeTableUuid;
     }
 
-    public String getVmUuid() {
-        return vmUuid;
+    public String getVmiUuid() {
+        return vmiUuid;
     }
 }

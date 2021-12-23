@@ -2541,10 +2541,10 @@ public class TungstenApi {
     }
 
     public List<InterfaceRouteTable> filterTungstenRouteTableByInterface(List<InterfaceRouteTable> routeTables,
-        String vmUuid, boolean isAttachedToInterface) {
+        String vmiUuid, boolean isAttachedToInterface) {
         List<InterfaceRouteTable> routeTablesAttachedToInterface = new ArrayList<>();
         boolean interfaceFounded = false;
-        VirtualMachineInterface vmi = getGuestInterfaceFromGuestVm(vmUuid);
+        VirtualMachineInterface vmi = (VirtualMachineInterface) getTungstenObject(VirtualMachineInterface.class, vmiUuid);
         if(vmi != null) {
             for (InterfaceRouteTable item : routeTables) {
                 if (item.getVirtualMachineInterfaceBackRefs() != null) {
@@ -2559,12 +2559,14 @@ public class TungstenApi {
                     }
                 }
             }
-        }
-        if (isAttachedToInterface) {
-            return routeTablesAttachedToInterface;
+            if (isAttachedToInterface) {
+                return routeTablesAttachedToInterface;
+            } else {
+                routeTables.removeAll(routeTablesAttachedToInterface);
+                return routeTables;
+            }
         } else {
-            routeTables.removeAll(routeTablesAttachedToInterface);
-            return routeTables;
+            return null;
         }
     }
 
@@ -2748,20 +2750,9 @@ public class TungstenApi {
         }
     }
 
-    public InterfaceRouteTable addRouteTableToInterface(String vmUuid, String routeTableUuid) {
+    public InterfaceRouteTable addRouteTableToInterface(String vmiUuid, String routeTableUuid) {
         try {
-            VirtualMachineInterface virtualMachineInterface = null;
-            VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
-            if(virtualMachine == null && virtualMachine.getVirtualMachineInterfaceBackRefs() == null) {
-                return null;
-            }
-            for(ObjectReference<ApiPropertyBase> item : virtualMachine.getVirtualMachineInterfaceBackRefs()) {
-                VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(
-                        VirtualMachineInterface.class, item.getUuid());
-                if(vmi.getName().startsWith("vmi")) {
-                    virtualMachineInterface = vmi;
-                }
-            }
+            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, vmiUuid);
             InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
                     InterfaceRouteTable.class, routeTableUuid);
             if (virtualMachineInterface == null || interfaceRouteTable == null) {
@@ -2793,23 +2784,9 @@ public class TungstenApi {
         }
     }
 
-    public boolean removeRouteTableFromInterface(String vmUuid, String routeTableUuid) {
+    public boolean removeRouteTableFromInterface(String vmiUuid, String routeTableUuid) {
         try {
-            VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
-            if (virtualMachine == null) {
-                return false;
-            }
-            if (virtualMachine.getVirtualMachineInterfaceBackRefs() == null){
-                return false;
-            }
-            VirtualMachineInterface virtualMachineInterface = null;
-            for(ObjectReference<ApiPropertyBase> item : virtualMachine.getVirtualMachineInterfaceBackRefs()) {
-                VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(
-                        VirtualMachineInterface.class, item.getUuid());
-                if(vmi.getName().startsWith("vmi")) {
-                    virtualMachineInterface = vmi;
-                }
-            }
+            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) getTungstenObject(VirtualMachineInterface.class, vmiUuid);
             InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
                     InterfaceRouteTable.class, routeTableUuid);
             if (virtualMachineInterface == null || interfaceRouteTable == null) {

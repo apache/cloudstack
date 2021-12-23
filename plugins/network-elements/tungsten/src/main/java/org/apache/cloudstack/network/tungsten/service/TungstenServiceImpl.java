@@ -2439,9 +2439,9 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     @Override
     public List<TungstenFabricInterfaceRouteTableResponse> listTungstenFabricInterfaceRouteTables(final long zoneId,
-        final String interfaceRouteTableUuid, final String vmUuid, final boolean isAttachedToInterface) {
+        final String interfaceRouteTableUuid, final String vmiUuid, final boolean isAttachedToInterface) {
         TungstenCommand tungstenCommand = new ListTungstenInterfaceRouteTableCommand(interfaceRouteTableUuid,
-                vmUuid, isAttachedToInterface);
+                vmiUuid, isAttachedToInterface);
         TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
         if (tungstenAnswer.getResult()) {
             List<TungstenFabricInterfaceRouteTableResponse> routeTableRespones = new ArrayList<>();
@@ -2557,8 +2557,8 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     @Override
     public TungstenFabricInterfaceRouteTableResponse addTungstenFabricRouteTableToInterface(final long zoneId,
-        final String vmUuid, final String routeTableUuid) {
-        TungstenCommand tungstenCommand = new AddTungstenRouteTableToInterfaceCommand(routeTableUuid, vmUuid);
+        final String vmiUuid, final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new AddTungstenRouteTableToInterfaceCommand(routeTableUuid, vmiUuid);
         TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
         return new TungstenFabricInterfaceRouteTableResponse((InterfaceRouteTable) tungstenAnswer.getApiObjectBase());
     }
@@ -2572,9 +2572,9 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     }
 
     @Override
-    public boolean removeTungstenFabricRouteTableFromInterface(final long zoneId, final String vmUuid,
+    public boolean removeTungstenFabricRouteTableFromInterface(final long zoneId, final String vmiUuid,
         final String routeTableUuid) {
-        TungstenCommand tungstenCommand = new RemoveTungstenRouteTableFromInterfaceCommand(vmUuid, routeTableUuid);
+        TungstenCommand tungstenCommand = new RemoveTungstenRouteTableFromInterfaceCommand(vmiUuid, routeTableUuid);
         TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
         return tungstenAnswer.getResult();
     }
