@@ -89,9 +89,10 @@ public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
     public String getPrefix() {
         return prefix;
     }
+
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_PUBLIC_IP6_PREFIX_CREATE;
+        return EventTypes.EVENT_GUEST_IP6_PREFIX_CREATE;
     }
 
     @Override

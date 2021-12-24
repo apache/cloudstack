@@ -45,6 +45,8 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterGuestIpv6PrefixDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
@@ -108,6 +110,15 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         return range;
     }
 
+    protected void releaseIpv6Subnet(long subnetId) {
+        Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(subnetId);
+        ipv6GuestPrefixSubnetNetworkMapVO.setState(Ipv6GuestPrefixSubnetNetworkMap.State.Free);
+        ipv6GuestPrefixSubnetNetworkMapVO.setNetworkId(null);
+        ipv6GuestPrefixSubnetNetworkMapVO.setUpdated(new Date());
+        ipv6GuestPrefixSubnetNetworkMapDao.update(ipv6GuestPrefixSubnetNetworkMapVO.getId(), ipv6GuestPrefixSubnetNetworkMapVO);
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_RELEASE, eventDescription = "releasing public IPv6", create = true)
     private void releasePublicIpv6(PublicIpv6AddressNetworkMapVO publicIpv6AddressNetworkMap) {
         if (publicIpv6AddressNetworkMap != null) {
             publicIpv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.createForUpdate(publicIpv6AddressNetworkMap.getId());
@@ -118,14 +129,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
-    protected void releaseIpv6Subnet(long subnetId) {
-        Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(subnetId);
-        ipv6GuestPrefixSubnetNetworkMapVO.setState(Ipv6GuestPrefixSubnetNetworkMap.State.Free);
-        ipv6GuestPrefixSubnetNetworkMapVO.setNetworkId(null);
-        ipv6GuestPrefixSubnetNetworkMapVO.setUpdated(new Date());
-        ipv6GuestPrefixSubnetNetworkMapDao.update(ipv6GuestPrefixSubnetNetworkMapVO.getId(), ipv6GuestPrefixSubnetNetworkMapVO);
-    }
-
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_ASSIGN, eventDescription = "releasing public IPv6", create = true)
     private Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress) {
         PublicIpv6AddressNetworkMapVO ip6NetworkMap = null;
         VlanVO selectedVlan = null;
@@ -175,6 +179,15 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             publicIpv6AddressNetworkMapDao.persist(ip6NetworkMap);
         }
         return new Pair<>(ip6NetworkMap, selectedVlan);
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_UPDATE, eventDescription = "releasing public IPv6", create = true)
+    private PublicIpv6AddressNetworkMapVO updatePublicIpv6NicMacAddress(long id, String nicMacAddress) {
+        PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.createForUpdate(id);
+        ipv6AddressNetworkMap.setState(PublicIpv6AddressNetworkMap.State.Allocated);
+        ipv6AddressNetworkMap.setNicMacAddress(nicMacAddress);
+        publicIpv6AddressNetworkMapDao.update(ipv6AddressNetworkMap.getId(), ipv6AddressNetworkMap);
+        return ipv6AddressNetworkMap;
     }
 
     @Override
@@ -275,13 +288,10 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap = null;
         List<PublicIpv6AddressNetworkMapVO> ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.listByNetworkId(network.getId());
         for (PublicIpv6AddressNetworkMapVO map : ipv6AddressNetworkMaps) {
-            if (StringUtils.isEmpty(map.getNicMacAddress()) || nicMacAddress.equals(map.getNicMacAddress())) { // || nicDao.findByNetworkIdAndMacAddress(network.getId(), nicMacAddress) == null) {
+            if (StringUtils.isEmpty(map.getNicMacAddress()) || nicMacAddress.equals(map.getNicMacAddress())) {
                 ipv6AddressNetworkMap = map;
                 if (!nicMacAddress.equals(map.getNicMacAddress())) {
-                    ipv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.createForUpdate(ipv6AddressNetworkMap.getId());
-                    ipv6AddressNetworkMap.setState(PublicIpv6AddressNetworkMap.State.Allocated);
-                    ipv6AddressNetworkMap.setNicMacAddress(nicMacAddress);
-                    publicIpv6AddressNetworkMapDao.update(ipv6AddressNetworkMap.getId(), ipv6AddressNetworkMap);
+                    ipv6AddressNetworkMap = updatePublicIpv6NicMacAddress(map.getId(), nicMacAddress);
                 }
                 break;
             }

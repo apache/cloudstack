@@ -21,13 +21,14 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -43,7 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class DeleteGuestNetworkIpv6PrefixCmd extends BaseCmd {
+public class DeleteGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteGuestNetworkIpv6PrefixCmd.class);
     public static final String APINAME = "deleteGuestNetworkIpv6Prefix";
 
@@ -56,6 +57,16 @@ public class DeleteGuestNetworkIpv6PrefixCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_GUEST_IP6_PREFIX_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Deleting guest IPv6 prefix " + getId();
     }
 
     @Override
