@@ -554,13 +554,14 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      this.associatedNetworks = []
       api('listNetworks', {
         domainid: this.resource.domainid,
         account: this.resource.account,
         listAll: true,
         networkfilter: 'Account'
       }).then(json => {
-        var networks = json.listnetworksresponse.network
+        var networks = json.listnetworksresponse.network || []
         for (const network of networks) {
           if (network.type === 'Isolated' || network.type === 'L2') {
             this.associatedNetworks.push(network)

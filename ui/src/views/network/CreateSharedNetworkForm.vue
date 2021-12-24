@@ -730,7 +730,7 @@ export default {
       this.handleNetworkChange(null)
       this.networks = []
       api('listNetworks', params).then(json => {
-        var networks = json.listnetworksresponse.network
+        var networks = json.listnetworksresponse.network || []
         for (const network of networks) {
           if (network.type === 'Isolated' || network.type === 'L2') {
             this.networks.push(network)
