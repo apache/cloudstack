@@ -36,6 +36,8 @@ setup_console_proxy() {
   enable_fwding 0
   enable_irqbalance 0
   rm -f /etc/logrotate.d/cloud
+
+  setup_certificates
 }
 
 setup_console_proxy
