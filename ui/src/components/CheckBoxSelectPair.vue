@@ -32,7 +32,6 @@
           :label="selectLabel">
           <a-select
             v-decorator="[selectDecorator, { initialValue: selectedOption ? selectedOption : getSelectInitialValue()}]"
-            :defaultValue="selectDecorator ? undefined : selectedOption ? selectedOption : getSelectInitialValue()"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
@@ -97,11 +96,20 @@ export default {
   data () {
     return {
       checked: false,
-      selectedOption: null
+      selectedOption: null,
+      selectOptionsTimer: null
     }
   },
   created () {
     this.checked = this.defaultCheckBoxValue
+  },
+  watch: {
+    selectOptions () {
+      clearTimeout(this.selectOptionsTimer)
+      this.selectOptionsTimer = setTimeout(() => {
+        this.handleSelectOptionsUpdated()
+      }, 50)
+    }
   },
   computed: {
     selectSource () {
@@ -130,6 +138,14 @@ export default {
     handleSelectChange (val) {
       this.selectedOption = val
       this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
+    },
+    handleSelectOptionsUpdated () {
+      if (!this.checked) return
+      var enabledOptions = this.selectSource?.filter(x => x.enabled !== false) || []
+      if (!enabledOptions.includes(this.selectedOption)) {
+        this.selectedOption = enabledOptions[0]?.id || ''
+        this.handleSelectChange(this.selectedOption)
+      }
     }
   }
 }
