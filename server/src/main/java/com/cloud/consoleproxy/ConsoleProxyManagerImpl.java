@@ -29,11 +29,11 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -1210,8 +1210,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-//        final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(profile.getHostName(), profile.getInstanceName()),
-//                new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+        final Map<String, String> sshAccessDetails = networkMgr.getSystemVMAccessDetails(profile.getVirtualMachine());
+        final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+        ipAddressDetails.remove("router.name");
+        final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(profile.getHostName(), profile.getInstanceName()),
+                new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
         ConsoleProxyVO vm = consoleProxyDao.findById(profile.getId());
         Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
@@ -1281,17 +1284,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" dns2=").append(dc.getDns2());
         }
 
-//        try {
-//            buf.append(" certificate=").append(CertUtils.x509CertificateToPem(certificate.getClientCertificate()));
-//            buf.append(" cacertificate=").append(CertUtils.x509CertificatesToPem(certificate.getCaCertificates()));
-//            if (certificate.getPrivateKey() != null) {
-//                buf.append(" privatekey=").append(CertUtils.privateKeyToPem(certificate.getPrivateKey()));
-//            }
-//        } catch (IOException e) {
-//            throw new CloudRuntimeException("Failed to transform X509 cert to PEM format", e);
-//        }
-        buf.append(" keystore_password=").append(PasswordGenerator.generateRandomPassword(16));
-        buf.append(" validity=").append(CAManager.CertValidityPeriod.value());
+        VirtualMachineGuru.appendCertificateDetails(buf, certificate);
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);

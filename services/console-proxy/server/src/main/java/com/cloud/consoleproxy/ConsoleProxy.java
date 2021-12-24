@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
+import com.google.gson.Gson;
+import com.sun.net.httpserver.HttpServer;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.log4j.xml.DOMConfigurator;
+import org.eclipse.jetty.websocket.api.Session;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -30,15 +39,6 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-
-import com.cloud.utils.StringUtils;
-import org.apache.log4j.xml.DOMConfigurator;
-import org.eclipse.jetty.websocket.api.Session;
-
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
-import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpServer;
 
 /**
  *
@@ -74,6 +74,7 @@ public class ConsoleProxy {
     static boolean standaloneStart = false;
 
     static String encryptorPassword = "Dummy";
+    static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
 
     private static void configLog4j() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -108,7 +109,9 @@ public class ConsoleProxy {
     private static void configProxy(Properties conf) {
         s_logger.info("Configure console proxy...");
         for (Object key : conf.keySet()) {
-            s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
+            if (!ArrayUtils.contains(skipProperties, key)) {
+                s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
+            }
         }
 
         String s = conf.getProperty("consoleproxy.httpListenPort");
@@ -247,7 +250,9 @@ public class ConsoleProxy {
 
         if (conf != null) {
             for (Object key : conf.keySet()) {
-                s_logger.info("Context property " + (String)key + ": " + conf.getProperty((String)key));
+                if (!ArrayUtils.contains(skipProperties, key)) {
+                    s_logger.info("Context property " + (String) key + ": " + conf.getProperty((String) key));
+                }
             }
         }
 
