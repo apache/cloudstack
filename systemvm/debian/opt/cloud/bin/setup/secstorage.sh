@@ -66,6 +66,7 @@ CORS
   setup_ntp
 
   rm -f /etc/logrotate.d/cloud
+  setup_certificates
 }
 
 setup_secstorage

@@ -593,6 +593,17 @@ routing_svcs() {
    fi
 }
 
+setup_certificates() {
+  certificate=$(echo "$CERTIFICATE" | base64 -d)
+  cacertificate=$(echo "$CACERTIFICATE" | base64 -d)
+  privatekey=$(echo "$PRIVATEKEY" | base64 -d)
+  kspass=$(echo "$KEYSTORE_PSSWD"| base64 -d)
+  ksvalidity="$KS_VALIDITY"
+  /opt/cloud/bin/keystore-cert-import /usr/local/cloud/systemvm/conf/agent.properties $kspass $ksvalidity \
+      /usr/local/cloud/systemvm/conf/cloud.jks ssh /usr/local/cloud/systemvm/conf/cloud.crt \
+      $certificate /usr/local/cloud/systemvm/conf/cloud.ca.crt $cacertificate /usr/local/cloud/systemvm/conf/cloud.key $privatekey
+}
+
 parse_cmd_line() {
   CMDLINE=$(cat /var/cache/cloud/cmdline)
   TYPE="unknown"
@@ -766,7 +777,16 @@ parse_cmd_line() {
             export KEYSTORE_PSSWD=$VALUE
             ;;
         validity)
-          export VALIDITY=$VALUE
+          export KS_VALIDITY=$VALUE
+          ;;
+        certificate)
+          export CERTIFICATE=$VALUE
+          ;;
+        cacertificate)
+          export CACERTIFICATE=$VALUE
+          ;;
+        privatekey)
+          export PRIVATEKEY=$VALUE
           ;;
       esac
   done
