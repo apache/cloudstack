@@ -99,7 +99,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.SYSTEM_CYCLE_USAGE)
     @Param(description = "the system load for user = and system processes, and the system idle cycles")
-    private double[] systemCycleUsage;
+    private long[] systemCycleUsage;
 
     @SerializedName(MetricConstants.DATABASE_IS_LOCAL)
     @Param(description = "the system is running against a local database")
@@ -108,6 +108,10 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @SerializedName(MetricConstants.USAGE_IS_LOCAL)
     @Param(description = "the system has a usage server running locally")
     private boolean usageLocal;
+
+    @SerializedName(MetricConstants.CPULOAD)
+    @Param(description = "the current cpu load")
+    private String cpuLoad;
 
     @SerializedName(MetricConstants.COLLECTION_TIME)
     @Param(description = "the time these statistics were collected")
@@ -185,7 +189,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
         this.systemLoadAverages = systemLoadAverages;
     }
 
-    public void setSystemCycleUsage(double[] systemCycleUsage) {
+    public void setSystemCycleUsage(long[] systemCycleUsage) {
         this.systemCycleUsage = systemCycleUsage;
     }
 
@@ -199,5 +203,9 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setCollectionTime(Date collectionTime) {
         this.collectionTime = collectionTime;
+    }
+
+    public void setCpuLoad(double cpuLoad) {
+        this.cpuLoad = String.format("%.2f %%",cpuLoad);
     }
 }

@@ -734,9 +734,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                  getDynamicDataFromDB();
                  int interval = (Integer) dbStats.get(uptime) - lastUptime;
                  int activity = (Integer) dbStats.get(queries) - lastQueries;
-                 loadHistory.add(Double.valueOf(activity / interval));
-                 while (loadHistory.size() > DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER.value()) {
-                     loadHistory.remove(0);
+                 loadHistory.add(0, Double.valueOf(activity / interval));
+                 int maxsize = DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER.value();
+                 while (loadHistory.size() > maxsize) {
+                     loadHistory.remove(maxsize - 1);
                  }
              } catch (Throwable e) {
                  // pokemon catch to make sure the thread stays running
@@ -954,7 +955,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
             newEntry.setSystemTotalCpuCycles(getSystemCpuCyclesTotal());
             newEntry.setSystemLoadAverages(getCpuLoads());
-            newEntry.setSystemCyclesUsage(getSystemCpuUsage(newEntry));
+
+            newEntry.setSystemCyclesUsage(getSystemCpuUsage());
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(
                         String.format("cpu\ncapacities: %f\n     loads: %s ; %s ; %s\n     stats: %f ; %f ; %f",
@@ -973,9 +975,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return cpuloads;
         }
 
-        private double [] getSystemCpuUsage(@NotNull ManagementServerHostStatsEntry newEntry) {
+        private long [] getSystemCpuUsage() {
             String[] cpustats = Script.runSimpleBashScript("cat /proc/stat | grep \"cpu \" | tr -d \"cpu\"").trim().split(" ");
-            double [] cycleUsage = {Double.parseDouble(cpustats[0]) + Double.parseDouble(cpustats[1]), Double.parseDouble(cpustats[2]), Double.parseDouble(cpustats[3])};
+            long [] cycleUsage = {Long.parseLong(cpustats[0]) + Long.parseLong(cpustats[1]), Long.parseLong(cpustats[2]), Long.parseLong(cpustats[3])};
             return cycleUsage;
         }
 

@@ -103,7 +103,7 @@ public interface ManagementServerHostStats {
 
     double[] getSystemLoadAverages();
 
-    double[] getSystemCyclesUsage();
+    long[] getSystemCyclesUsage();
 
     boolean isDbLocal();
 

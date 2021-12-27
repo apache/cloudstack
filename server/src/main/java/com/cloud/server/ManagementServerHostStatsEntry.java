@@ -61,7 +61,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private String logInfo;
     private double systemTotalCpuCycles;
     private double[] systemLoadAverages;
-    private double[] systemCyclesUsage;
+    private long[] systemCyclesUsage;
     private boolean dbLocal;
     private boolean usageLocal;
 
@@ -408,12 +408,12 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         return systemLoadAverages;
     }
 
-    public void setSystemCyclesUsage(double[] systemCyclesUsage) {
+    public void setSystemCyclesUsage(long[] systemCyclesUsage) {
         this.systemCyclesUsage = systemCyclesUsage;
     }
 
     @Override
-    public double[] getSystemCyclesUsage() {
+    public long[] getSystemCyclesUsage() {
         return systemCyclesUsage;
     }
 

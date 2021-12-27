@@ -682,7 +682,10 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         metricsResponse.setLogInfo(status.getLogInfo());
         metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
         metricsResponse.setSystemLoadAverages(status.getSystemLoadAverages());
-        metricsResponse.setSystemCycleUsage(status.getSystemCyclesUsage());
+        long[] cycles = status.getSystemCyclesUsage();
+        metricsResponse.setSystemCycleUsage(cycles);
+        double currentLoad = 100.0 * (cycles[0] + cycles[1]) / (cycles[0] + cycles[1] + cycles[2]);
+        metricsResponse.setCpuLoad(currentLoad);
     }
 
     @Override

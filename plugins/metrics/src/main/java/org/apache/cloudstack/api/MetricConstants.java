@@ -52,4 +52,5 @@ public interface MetricConstants {
     String VERSION_COMMENT = "versioncomment";
     String QUERIES = "queries";
     String COLLECTION_TIME = "collectiontime";
+    String CPULOAD = "cpuload";
 }
