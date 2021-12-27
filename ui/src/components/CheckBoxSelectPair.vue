@@ -20,7 +20,6 @@
     <a-row :gutter="6">
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
         <a-checkbox
-          v-decorator="[checkBoxDecorator, {}]"
           :checked="checked"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
@@ -31,7 +30,7 @@
           v-if="reversed != checked"
           :label="selectLabel">
           <a-select
-            v-decorator="[selectDecorator, { initialValue: selectedOption ? selectedOption : getSelectInitialValue()}]"
+            v-model="selectedOption"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
@@ -68,10 +67,6 @@ export default {
       type: String,
       required: true
     },
-    checkBoxDecorator: {
-      type: String,
-      default: ''
-    },
     defaultCheckBoxValue: {
       type: Boolean,
       default: false
@@ -81,10 +76,6 @@ export default {
       required: true
     },
     selectLabel: {
-      type: String,
-      default: ''
-    },
-    selectDecorator: {
       type: String,
       default: ''
     },
@@ -126,13 +117,16 @@ export default {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
-    getSelectInitialValue () {
-      const initialValue = this.selectSource?.filter(x => x.enabled !== false)?.[0]?.id || ''
+    getSelectInitialValue (selectSource) {
+      const initialValue = selectSource?.filter(x => x.enabled !== false)?.[0]?.id || ''
       this.handleSelectChange(initialValue)
       return initialValue
     },
     handleCheckChange (e) {
       this.checked = e.target.checked
+      if (this.checked && !this.selectedOption) {
+        this.selectedOption = this.selectSource[0]?.id || null
+      }
       this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
     },
     handleSelectChange (val) {
@@ -142,7 +136,7 @@ export default {
     handleSelectOptionsUpdated () {
       if (!this.checked) return
       var enabledOptions = this.selectSource?.filter(x => x.enabled !== false) || []
-      if (!enabledOptions.includes(this.selectedOption)) {
+      if (this.selectedOption && !enabledOptions.includes(this.selectedOption)) {
         this.selectedOption = enabledOptions[0]?.id || ''
         this.handleSelectChange(this.selectedOption)
       }
