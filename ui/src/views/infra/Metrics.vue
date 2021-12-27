@@ -132,7 +132,7 @@ export default {
         if (key === 'replicas') {
           map[key].forEach(function (value, i) {
             var metric = {}
-            var name = 'replica[' + i + ']'
+            var name = 'replica no. ' + (i + 1)
             metric.name = name
             metric.value = value
             array.push(metric)
@@ -140,7 +140,11 @@ export default {
         } else if (key === 'dbloadaverages') {
           map[key].forEach(function (value, i) {
             var metric = {}
-            metric.name = 'load-average[' + i + ']'
+            if (i === 0) {
+              metric.name = 'newest load-average '
+            } else {
+              metric.name = 'load-average-' + (i + 1)
+            }
             metric.value = value
             array.push(metric)
           })
