@@ -241,6 +241,9 @@ export default {
                     title: this.$t(this.action.label),
                     description: this.resource.name,
                     successMethod: result => {
+                      if (this.action.api === 'deleteDomain') {
+                        this.parentFetchData()
+                      }
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)
                         if (description) {

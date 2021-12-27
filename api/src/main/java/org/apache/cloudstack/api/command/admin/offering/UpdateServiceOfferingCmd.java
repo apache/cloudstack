@@ -63,7 +63,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
