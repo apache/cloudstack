@@ -108,4 +108,6 @@ public interface ManagementServerHostStats {
     boolean isDbLocal();
 
     boolean isUsageLocal();
+
+    String getKernelVersion();
 }

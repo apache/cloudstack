@@ -924,8 +924,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          * @param newEntry item to add the information to
          */
         private void getProcFileSystemData(@NotNull ManagementServerHostStatsEntry newEntry) {
-            String OS = Script.runSimpleBashScript("cat /proc/version");
+            // this should be taken from ("cat /proc/version"), not sure how standard this /etc entry is
+            String OS = Script.runSimpleBashScript("cat /etc/os-release | grep PRETTY_NAME | cut -f2 -d '=' | tr -d '\"'");
             newEntry.setOsDistribution(OS);
+            String kernel = Script.runSimpleBashScript("uname -r");
+            newEntry.setKernelVersion(kernel);
             // if we got these from the bean, skip
             if (newEntry.getSystemMemoryTotal() == 0) {
                 String mem = Script.runSimpleBashScript("cat /proc/meminfo | grep MemTotal | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
@@ -994,9 +997,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             Set<String> logFileNames = LogUtils.getLogFileNames();
             StringBuilder logInfoBuilder = new StringBuilder();
             for (String fileName : logFileNames) {
-                String du = Script.runSimpleBashScript(String.format("du -sk %s", fileName));
-                String df = Script.runSimpleBashScript(String.format("df -h %s | grep -v Filesystem", fileName));
-                logInfoBuilder.append(fileName).append('\n').append("usage: ").append(du).append(" kb\n").append("disk :").append(df);
+                String du = Script.runSimpleBashScript(String.format("du -sh %s | cut -f '1'", fileName));
+                String df = Script.runSimpleBashScript(String.format("df -h %s | grep -v Filesystem | awk '{print \"on disk \" $1 \" mounted on \" $6 \" (\" $5 \" full)\"}'", fileName));
+                logInfoBuilder.append(fileName).append(" using: ").append(du).append('\n').append(df);
             }
             newEntry.setLogInfo(logInfoBuilder.toString());
             if (LOGGER.isTraceEnabled()) {

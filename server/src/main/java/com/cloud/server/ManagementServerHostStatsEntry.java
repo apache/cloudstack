@@ -66,6 +66,7 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private boolean usageLocal;
 
     private Date systemBootTime;
+    private String kernelVersion;
 
     public ManagementServerHostStatsEntry() {
         this(new Date());
@@ -442,5 +443,14 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setSystemBootTime(Date systemBootTime) {
         this.systemBootTime = systemBootTime;
+    }
+
+    public void setKernelVersion(String kernelVersion) {
+        this.kernelVersion = kernelVersion;
+    }
+
+    @Override
+    public String getKernelVersion() {
+        return kernelVersion;
     }
 }

@@ -68,6 +68,10 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the last time the host on which this Management Server runs, was booted")
     private Date lastBoot;
 
+    @SerializedName(ApiConstants.KERNEL_VERSION)
+    @Param(description = "the running os kernel version for this Management Server")
+    private String kernelVersion;
+
     public String getId() {
         return this.id;
     }
@@ -146,5 +150,9 @@ public class ManagementServerResponse extends BaseResponse {
 
     public void setLastBoot(Date lastBoot) {
         this.lastBoot = lastBoot;
+    }
+
+    public void setKernelVersion(String kernelVersion) {
+        this.kernelVersion = kernelVersion;
     }
 }

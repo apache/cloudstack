@@ -1253,6 +1253,7 @@
 "label.javaversion": "Java Runtime Version",
 "label.keep": "Keep",
 "label.keep.colon": "Keep:",
+"label.kernelversion": "Kernel Version",
 "label.key": "Key",
 "label.keyboard": "Keyboard language",
 "label.keyboardtype": "Keyboard type",
