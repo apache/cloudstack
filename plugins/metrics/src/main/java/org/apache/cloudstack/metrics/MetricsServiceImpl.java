@@ -31,7 +31,7 @@ import java.util.Properties;
 import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.server.StatsCollection;
+import com.cloud.server.DbStatsCollection;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.DbProperties;
@@ -822,11 +822,11 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private void getQueryHistory(DbMetricsResponse response) {
         Map<String, Object> dbStats = ApiDBUtils.getDbStatistics();
         if (dbStats != null) {
-            response.setQueries((Integer)dbStats.get(StatsCollection.queries));
-            response.setUptime((Integer)dbStats.get(StatsCollection.uptime));
+            response.setQueries((Integer)dbStats.get(DbStatsCollection.queries));
+            response.setUptime((Integer)dbStats.get(DbStatsCollection.uptime));
         }
 
-        List<Double> loadHistory = (List<Double>) dbStats.get(StatsCollection.loadAvarages);
+        List<Double> loadHistory = (List<Double>) dbStats.get(DbStatsCollection.loadAvarages);
         double[] loadAverages = new double[loadHistory.size()];
 
         int index =0;
@@ -838,15 +838,15 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     private void getStaticDataFromDB(DbMetricsResponse response) {
-        Map<String, String> vars = DbUtil.getDbInfo(StatsCollection.variables, StatsCollection.version, StatsCollection.versionComment);
-        response.setVersion(vars.get(StatsCollection.version));
-        response.setVersionComment(vars.get(StatsCollection.versionComment));
+        Map<String, String> vars = DbUtil.getDbInfo(DbStatsCollection.variables, DbStatsCollection.version, DbStatsCollection.versionComment);
+        response.setVersion(vars.get(DbStatsCollection.version));
+        response.setVersionComment(vars.get(DbStatsCollection.versionComment));
     }
 
     private void getDynamicDataFromDB(DbMetricsResponse response) {
-        Map<String, String> stats = DbUtil.getDbInfo(StatsCollection.status, StatsCollection.connections, StatsCollection.currentTlsVersion);
-        response.setConnections(Integer.parseInt(stats.get(StatsCollection.connections)));
-        response.setTlsVersions(stats.get(StatsCollection.currentTlsVersion));
+        Map<String, String> stats = DbUtil.getDbInfo(DbStatsCollection.status, DbStatsCollection.connections, DbStatsCollection.currentTlsVersion);
+        response.setConnections(Integer.parseInt(stats.get(DbStatsCollection.connections)));
+        response.setTlsVersions(stats.get(DbStatsCollection.currentTlsVersion));
     }
 
     private String dbHostName() {

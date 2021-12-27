@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-public interface StatsCollection {
+public interface DbStatsCollection {
     String queries = "Queries";
     String uptime = "Uptime";
     String loadAvarages = "loadAverages";

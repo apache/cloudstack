@@ -214,7 +214,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
  * @enduml
  */
 @Component
-public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable, StatsCollection {
+public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable, DbStatsCollection {
 
     public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite"), INFLUXDB("influxdb");
