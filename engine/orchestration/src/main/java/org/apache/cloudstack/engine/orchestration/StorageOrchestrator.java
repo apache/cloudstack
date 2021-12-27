@@ -198,7 +198,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destDatastoreId).first()) {
-                s_logger.debug(String.format("%s: %s too large to be migrated to %s", getObjectType(chosenFileForMigration), chosenFileForMigration.getUuid(), destDatastoreId));
+                s_logger.debug(String.format("%s: %s too large to be migrated to %s",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId));
                 skipped += 1;
                 continue;
             }
@@ -217,19 +217,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         Date end = new Date();
         handleSnapshotMigration(srcDataStoreId, start, end, migrationPolicy, futures, storageCapacities, executor);
         return handleResponse(futures, migrationPolicy, message, success);
-    }
-
-    private String getObjectType(DataObject dataObject) {
-        if (dataObject instanceof VolumeInfo) {
-            return "volume";
-        }
-        if (dataObject instanceof SnapshotInfo) {
-            return "snapshot";
-        }
-        if (dataObject instanceof TemplateInfo) {
-            return "template";
-        }
-        return "file";
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
@@ -276,7 +263,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             task.setSnapshotChains(snapshotChains);
         }
         futures.add((executor.submit(task)));
-        s_logger.debug(String.format("Migration of %s: %s is initiated. ", getObjectType(chosenFileForMigration), chosenFileForMigration.getUuid()));
+        s_logger.debug(String.format("Migration of %s: %s is initiated. ", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid()));
         return storageCapacities;
     }
 
