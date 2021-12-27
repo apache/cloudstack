@@ -25,6 +25,10 @@ import org.apache.cloudstack.api.MetricConstants;
 import java.util.Date;
 
 public class DbMetricsResponse extends BaseResponse {
+    @SerializedName(MetricConstants.COLLECTION_TIME)
+    @Param(description = "the time these statistics were collected")
+    private Date collectionTime;
+
     @SerializedName(ApiConstants.HOST_NAME)
     @Param(description = "the name of the active usage server")
     private String hostname;
@@ -60,10 +64,6 @@ public class DbMetricsResponse extends BaseResponse {
     @SerializedName(MetricConstants.DATABASE_LOAD_AVERAGES)
     @Param(description = "the last measured load averages on the DB")
     private double[] loadAverages;
-
-    @SerializedName(MetricConstants.COLLECTION_TIME)
-    @Param(description = "the time these statistics were collected")
-    private Date collectionTime;
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
