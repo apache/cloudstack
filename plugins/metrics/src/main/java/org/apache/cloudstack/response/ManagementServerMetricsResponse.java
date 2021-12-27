@@ -98,7 +98,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     private double[] systemLoadAverages;
 
     @SerializedName(MetricConstants.SYSTEM_CYCLE_USAGE)
-    @Param(description = "the system load for user = and system processes, and the system idle cycles")
+    @Param(description = "the system load for user -, and system processes, and the system idle cycles")
     private long[] systemCycleUsage;
 
     @SerializedName(MetricConstants.DATABASE_IS_LOCAL)
