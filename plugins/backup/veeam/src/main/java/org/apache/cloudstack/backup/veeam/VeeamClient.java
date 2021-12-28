@@ -465,7 +465,7 @@ public class VeeamClient {
             if (repositoryRef == null) {
                 throw new CloudRuntimeException(String.format("Failed to clone backup job because couldn't find any "
                         + "repository associated with backup job [id: %s, uid: %s, backupServerId: %s, name: %s].",
-                        parentJob.getId(), parentJob.getBackupServerId(), parentJob.getUid(), parentJob.getName()));
+                        parentJob.getId(), parentJob.getUid(), parentJob.getBackupServerId(), parentJob.getName()));
             }
             final BackupJobCloneInfo cloneInfo = new BackupJobCloneInfo();
             cloneInfo.setJobName(clonedJobName);
