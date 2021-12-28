@@ -39,6 +39,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmDetailVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -327,6 +328,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
+    private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -1381,6 +1383,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
+            if (userVm != null) {
+                UserVmDetailVO userVmDetailVO = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+                if (userVmDetailVO != null) {
+                    userVmDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
+                    userVmDetailsDao.update(userVmDetailVO.getId(), userVmDetailVO);
+                }
+            }
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {

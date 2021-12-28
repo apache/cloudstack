@@ -1202,6 +1202,7 @@ export default {
       if (this.rootDiskSelected?.id) {
         instanceConfig.overridediskofferingid = this.rootDiskSelected.id
       }
+      console.log('overrided value ' + instanceConfig.overridediskofferingid)
       if (instanceConfig.overridediskofferingid) {
         this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
       } else {
