@@ -283,7 +283,7 @@
                         @change="val => { updateOverrideRootDiskShowParam(val) }"
                         style="margin-left: 10px;"/>
                     </span>
-                    <span v-if="tabKey!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption">
+                    <span v-if="tabKey!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness">
                       <a-step
                         :status="zoneSelected ? 'process' : 'wait'"
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
@@ -303,6 +303,7 @@
                         <template slot="description">
                           <div v-if="zoneSelected">
                             <disk-offering-selection
+                              v-if="showOverrideDiskOfferingOption"
                               :items="options.diskOfferings"
                               :row-count="rowCount.diskOfferings"
                               :zoneId="zoneId"
@@ -320,11 +321,11 @@
                               input-decorator="rootdisksize"
                               :preFillContent="dataPreFill"
                               :minDiskSize="dataPreFill.minrootdisksize"
-                              :rootDiskSelected="rootDiskSelected"
+                              :rootDiskSelected="overrideDiskOffering"
                               :isCustomized="overrideDiskOffering.iscustomized"
                               @handler-error="handlerError"
-                              @update-root-disk-iops-value="updateIOPSValue"
-                              @update-disk-size="updateFieldValue"/>
+                              @update-disk-size="updateFieldValue"
+                              @update-root-disk-iops-value="updateIOPSValue"/>
                             <a-form-item class="form-item-hidden">
                               <a-input v-decorator="['rootdisksize']"/>
                             </a-form-item>
@@ -1188,19 +1189,23 @@ export default {
       }
 
       this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
-      if (this.serviceOffering && this.serviceOffering.diskofferingid) {
+      if (this.serviceOffering?.diskofferingid) {
         if (iso) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
         } else {
           instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
         }
-      } else {
-        if (!iso) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        }
+      }
+      if (!iso && this.diskSelected) {
+        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+      }
+      if (this.rootDiskSelected?.id) {
+        instanceConfig.overridediskofferingid = this.rootDiskSelected.id
       }
       if (instanceConfig.overridediskofferingid) {
         this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
+      } else {
+        this.overrideDiskOffering = null
       }
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
@@ -1448,6 +1453,8 @@ export default {
     updateOverrideRootDiskShowParam (val) {
       if (val) {
         this.showRootDiskSizeChanger = false
+      } else {
+        this.rootDiskSelected = null
       }
       this.showOverrideDiskOfferingOption = val
     },
@@ -1728,7 +1735,7 @@ export default {
           deployVmData.templateid = values.isoid
         }
 
-        if ((this.showRootDiskSizeChanger || this.rootDiskSelected?.iscustomized) && values.rootdisksize && values.rootdisksize > 0) {
+        if (values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
         } else if (this.rootDiskSizeFixed > 0) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
