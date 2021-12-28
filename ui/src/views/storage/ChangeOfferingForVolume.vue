@@ -91,18 +91,16 @@
     </span>
     <a-form-item :label="$t('label.automigrate.volume')">
       <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
-      <a-checkbox
-        :checked="autoMigrate"
+      <a-switch
         v-decorator="['autoMigrate']"
-        @change="handleAutoMigrateCheckChange"
-      ></a-checkbox>
+        :checked="autoMigrate"
+        @change="val => { autoMigrate = val }"/>
     </a-form-item>
     <a-form-item :label="$t('label.shrinkok')">
-      <a-checkbox
-        :checked="shrinkOk"
+      <a-switch
         v-decorator="['shrinkOk']"
-        @change="handleShrinkOkCheckChange"
-      ></a-checkbox>
+        :checked="shrinkOk"
+        @change="val => { shrinkOk = val }"/>
     </a-form-item>
     <a-divider />
     <div class="actions">
@@ -220,12 +218,6 @@ export default {
       const offering = this.diskOfferings.filter(x => x.id === id)
       this.customDiskOffering = offering[0]?.iscustomized || false
       this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
-    },
-    handleAutoMigrateCheckChange (e) {
-      this.autoMigrate = e.target.checked
-    },
-    handleShrinkOkCheckChange (e) {
-      this.shrinkOk = e.target.checked
     }
   }
 }

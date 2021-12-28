@@ -50,11 +50,10 @@
 
     <a-form-item :label="$t('label.automigrate.volume')">
       <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
-      <a-checkbox
-        :checked="autoMigrate"
+      <a-switch
         v-decorator="['autoMigrate']"
-        @change="handleAutoMigrateCheckChange"
-      ></a-checkbox>
+        :checked="autoMigrate"
+        @change="val => { autoMigrate = val }"/>
     </a-form-item>
 
     <div :span="24" class="action-button">
@@ -160,9 +159,6 @@ export default {
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]
       this.params.automigrate = this.autoMigrate
-    },
-    handleAutoMigrateCheckChange (e) {
-      this.autoMigrate = e.target.checked
     },
     updateFieldValue (name, value) {
       this.params[name] = value

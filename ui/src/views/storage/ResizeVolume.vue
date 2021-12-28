@@ -39,7 +39,10 @@
         </a-form-item>
       </div>
       <a-form-item :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
-        <a-checkbox v-decorator="['shrinkok']" />
+        <a-switch
+          v-decorator="['shrinkOk']"
+          :checked="shrinkOk"
+          @change="val => { shrinkOk = val }"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>

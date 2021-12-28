@@ -35,7 +35,10 @@
         <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
           {{ $t('label.usenewdiskoffering') }}
         </p>
-        <a-checkbox v-model="replaceDiskOffering" />
+        <a-switch
+          v-decorator="['replaceDiskOffering']"
+          :checked="replaceDiskOffering"
+          @change="val => { replaceDiskOffering = val }"/>
 
         <template v-if="replaceDiskOffering">
           <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
