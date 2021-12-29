@@ -1313,8 +1313,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String gateway = cmd.getGateWay();
         final String netmask = cmd.getNetmask();
         final String startIp = cmd.getStartIp();
-        final String ip6Cidr = cmd.getCidr();
-        final boolean isIp6Range = cmd.isIp6Range();
         String endIp = cmd.getEndIp();
         final boolean forSystemVms = cmd.isForSystemVms();
         String vlan = cmd.getVlan();
@@ -1337,7 +1335,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("The gateway IP address is invalid.");
         }
 
-        if(!isIp6Range && !NetUtils.isValidIp4Netmask(netmask)) {
+        if(!NetUtils.isValidIp4Netmask(netmask)) {
             throw new InvalidParameterValueException("The netmask IP address is invalid.");
         }
 
@@ -1345,18 +1343,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             endIp = startIp;
         }
 
-        final String cidr = isIp6Range ? ip6Cidr : NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
 
-        if(!isIp6Range && !NetUtils.isValidIp4Cidr(cidr)) {
+        if(!NetUtils.isValidIp4Cidr(cidr)) {
             throw new InvalidParameterValueException("The CIDR is invalid " + cidr);
-        }
-
-        if(isIp6Range && !NetUtils.isValidIp6Cidr(cidr)) {
-            throw new InvalidParameterValueException("The CIDR is invalid " + cidr);
-        }
-
-        if (isIp6Range) {
-            return createPodIp6Range(pod, gateway, cidr, startIp, endIp, cmd.getVlan());
         }
 
         final String cidrAddress = pod.getCidrAddress();
@@ -1447,20 +1437,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Failed to create Pod IP range. Please contact Cloud Support.");
         }
 
-        return pod;
-    }
-
-    private Pod createPodIp6Range(HostPodVO pod, String gateway, String cidr, String startIp, String endIp, String vlan) {
-//        Integer vlanId = null;
-//        if (vlan != null && !vlan.equalsIgnoreCase("untagged")) {
-//            try {
-//                vlanId = Integer.valueOf(vlan);
-//            } catch (NumberFormatException nfe) {
-//                throw new InvalidParameterValueException("The VLAN is invalid");
-//            }
-//        }
-//        PodManagementIp6RangeVO ip6RangeVO = new PodManagementIp6RangeVO(pod.getDataCenterId(), pod.getId(), gateway, cidr, vlanId, startIp, endIp);
-//        podManagementIp6RangeDao.persist(ip6RangeVO);
         return pod;
     }
 

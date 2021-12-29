@@ -67,13 +67,9 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.NETMASK,
             type = CommandType.STRING,
+            required = true,
             description = "The netmask for the management network.")
     private String netmask;
-
-    @Parameter(name = ApiConstants.CIDR,
-            type = CommandType.STRING,
-            description = "The CIDR for the management network.")
-    private String cidr;
 
     @Parameter(name = ApiConstants.START_IP,
             type = CommandType.STRING,
@@ -96,11 +92,6 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             description = "Optional. The vlan id the ip range sits on, default to Null when it is not specified which means you network is not on any Vlan")
     private String vlan;
 
-    @Parameter(name = ApiConstants.IP6_RANGE,
-            type = CommandType.BOOLEAN,
-            description = "Optional. Specify if the range is for IPv6. Default value is false")
-    private Boolean ip6Range;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,10 +106,6 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     public String getNetmask() {
         return netmask;
-    }
-
-    public String getCidr() {
-        return cidr;
     }
 
     public String getStartIp() {
@@ -138,10 +125,6 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             vlan = "untagged";
         }
         return vlan;
-    }
-
-    public boolean isIp6Range() {
-        return Boolean.TRUE.equals(ip6Range);
     }
 
     @Override
