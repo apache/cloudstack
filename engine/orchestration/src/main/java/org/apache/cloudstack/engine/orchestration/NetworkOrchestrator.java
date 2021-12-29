@@ -244,6 +244,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.googlecode.ipv6.IPv6Address;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -2347,10 +2348,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         s_logger.debug("Removed nic id=" + nic.getId());
         // release assigned IPv6 for Isolated Network VR NIC
 
-        if (Type.DomainRouter.equals(vm.getType())
-                && TrafficType.Guest.equals(network.getTrafficType())
-                && GuestType.Isolated.equals(network.getGuestType())) {
-            ipv6Service.releasePublicIpv6ForNic(nic.getNetworkId(), nic.getMacAddress());
+        if (GuestType.Isolated.equals(network.getGuestType())
+                && _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+            if (Type.DomainRouter.equals(vm.getType())
+                    && TrafficType.Guest.equals(network.getTrafficType())) {
+                ipv6Service.releasePublicIpv6ForNic(nic.getNetworkId(), nic.getMacAddress());
+            }
+            if (Type.User.equals(vm.getType())) {
+                final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), 0L,
+                        nic.getIPv6Address(), false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
+                        IPv6Address.class.getName(), null);
+            }
         }
 
         //remove the secondary ip addresses corresponding to to this nic

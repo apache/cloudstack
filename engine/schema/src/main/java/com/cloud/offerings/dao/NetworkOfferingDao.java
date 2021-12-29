@@ -70,9 +70,9 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      */
     void persistDefaultL2NetworkOfferings();
 
-    NetworkOffering.InternetProtocol getNetworkOfferingInternetProtocol(Long offeringId);
+    NetworkOffering.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId);
 
-    boolean isIpv6Supported(Long offeringId);
+    boolean isIpv6Supported(long offeringId);
 
-    boolean isIpv6FirewallEnabled(Long offeringId);
+    boolean isIpv6FirewallEnabled(long offeringId);
 }
