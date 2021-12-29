@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -1293,7 +1294,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             fromIndex += onClause.length();
         }
 
-        str.delete(str.length() - 4, str.length());
+        int diff =  str.toString().trim().toLowerCase(Locale.ROOT).endsWith("where") ? 6 : 4;
+        str.delete(str.length() - diff, str.length());
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
