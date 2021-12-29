@@ -62,13 +62,18 @@ restart_services() {
   while IFS= read -r line
     do
       echo "$line"
-      systemctl restart "$line"
-      sleep 5
-      systemctl is-active --quiet "$line"
-      if [ $? -gt 0 ]; then
-        echo "Failed to start "$line" service. Patch Failed. Restoring backup" >> $logfile
-        restore_backup
-        patchfailed=1
+      for svc in ${line}; do
+        systemctl restart "$svc"
+        sleep 5
+        systemctl is-active --quiet "$svc"
+        if [ $? -gt 0 ]; then
+          echo "Failed to start "$svc" service. Patch Failed. Retrying again" >> $logfile
+          restore_backup
+          patchfailed=1
+          break
+        fi
+      done	
+      if [ $patchfailed == 1 ]; then
         break
       fi
     done < "$svcfile"

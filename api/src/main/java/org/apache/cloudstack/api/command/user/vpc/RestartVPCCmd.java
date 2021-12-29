@@ -54,6 +54,9 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.MAKEREDUNDANT, type = CommandType.BOOLEAN, required = false, description = "Turn a single VPC into a redundant one.")
     private Boolean makeredundant = false;
 
+    @Parameter(name = ApiConstants.LIVE_PATCH, type = CommandType.BOOLEAN, required = false, description = "Live Patch the router before restarting it", since = "4.16.1")
+    private Boolean livePatch = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,6 +72,8 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     public Boolean getMakeredundant() {
         return makeredundant;
     }
+
+    public Boolean getLivePatch() { return livePatch; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

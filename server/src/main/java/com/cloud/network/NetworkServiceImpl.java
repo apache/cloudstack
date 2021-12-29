@@ -2031,7 +2031,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throwInvalidIdException("Network with specified id doesn't exist", networkId.toString(), "networkId");
@@ -2061,7 +2061,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             cleanup = true;
         }
 
-        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, user, cleanup);
+        if (cleanup) {
+            livePatch = false;
+        }
+        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, user, cleanup, livePatch);
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
         } else {
@@ -2078,8 +2081,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkId = cmd.getNetworkId();
         boolean cleanup = cmd.getCleanup();
         boolean makeRedundant = cmd.getMakeRedundant();
+        boolean livePatch = cmd.getLivePatch();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        return restartNetwork(networkId, cleanup, makeRedundant, callerUser);
+        return restartNetwork(networkId, cleanup, makeRedundant, livePatch, callerUser);
     }
 
     @Override

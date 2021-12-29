@@ -423,13 +423,13 @@ public class AgentShell implements IAgentShell, Daemon {
             } catch (final ClassNotFoundException e) {
                 throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
             } catch (final SecurityException e) {
-                throw new ConfigurationException("Security excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Security exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final NoSuchMethodException e) {
-                throw new ConfigurationException("Method not found excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Method not found exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final IllegalArgumentException e) {
-                throw new ConfigurationException("Illegal argument excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Illegal argument exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final InstantiationException e) {
-                throw new ConfigurationException("Instantiation excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Instantiation exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final IllegalAccessException e) {
                 throw new ConfigurationException("Illegal access exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final InvocationTargetException e) {
