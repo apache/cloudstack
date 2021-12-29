@@ -320,7 +320,7 @@ public class Script implements Callable<String> {
         try {
             _logger.trace("Checking exit value of process");
             _process.exitValue();
-            _logger.trace("Script ran within the alloted time");
+            _logger.trace("Script ran within the allocated time");
         } catch (IllegalThreadStateException e) {
             _logger.warn("Interrupting script.");
             _isTimeOut = true;

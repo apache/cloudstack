@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -305,7 +306,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     VMNetworkMapDao _vmNetworkMapDao;
     @Inject
-    DomainRouterDao _routerDao;
+    DomainRouterDao routerDao;
     @Inject
     RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject
@@ -318,6 +319,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ResourceManager resourceManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    public ManagementServer mgr;
 
     List<NetworkGuru> networkGurus;
 
@@ -1622,7 +1625,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 throw new UnsupportedOperationException("Cannot update the network resources in sequence when providers other than virtualrouter are used");
         }
         //check if routers are in correct state before proceeding with the update
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+        List<DomainRouterVO> routers = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
         for (DomainRouterVO router : routers){
             if (router.getRedundantState() == VirtualRouter.RedundantState.UNKNOWN) {
                 if (!forced) {
@@ -3273,7 +3276,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean restartNetwork(final Long networkId, final Account callerAccount, final User callerUser, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean restartNetwork(final Long networkId, final Account callerAccount, final User callerUser, final boolean cleanup, final boolean livePatch) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
         boolean status = true;
         boolean restartRequired = false;
@@ -3292,6 +3295,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             setRestartRequired(network, restartRequired);
             return status;
+        } else if (livePatch) {
+            List<DomainRouterVO> domainRouters = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+            for (DomainRouterVO router: domainRouters) {
+                try {
+                    VMInstanceVO instanceVO = _vmDao.findById(router.getId());
+                    Pair<Boolean, String> patched = mgr.updateSystemVM(instanceVO, true);
+                    if (patched.first()) {
+                        s_logger.info(String.format("Successfully patched router %s", router));
+                    }
+                } catch (CloudRuntimeException e) {
+                    throw new CloudRuntimeException(String.format("Failed to live patch router: %s", router), e);
+                }
+
+            }
         }
 
         s_logger.debug("Implementing the network " + network + " elements and resources as a part of network restart without cleanup");
@@ -3401,10 +3418,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return false;
         }
         s_logger.debug("Performing rolling restart of routers of network " + network);
-        destroyExpendableRouters(_routerDao.findByNetwork(network.getId()), context);
+        destroyExpendableRouters(routerDao.findByNetwork(network.getId()), context);
 
         final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-        final List<DomainRouterVO> oldRouters = _routerDao.findByNetwork(network.getId());
+        final List<DomainRouterVO> oldRouters = routerDao.findByNetwork(network.getId());
 
         // Deploy a new router
         if (oldRouters.size() > 0) {
@@ -3436,7 +3453,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             implementNetworkElementsAndResources(dest, context, network, offering);
         }
 
-        return areRoutersRunning(_routerDao.findByNetwork(network.getId()));
+        return areRoutersRunning(routerDao.findByNetwork(network.getId()));
     }
 
     private void setRestartRequired(final NetworkVO network, final boolean restartRequired) {

@@ -59,6 +59,9 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.MAKEREDUNDANT, type = CommandType.BOOLEAN, required = false, description = "Turn the network into a network with redundant routers.", since = "4.11.1")
     private Boolean makeRedundant = false;
 
+    @Parameter(name = ApiConstants.LIVE_PATCH, type = CommandType.BOOLEAN, required = false, description = "Live Patch the router before restarting it", since = "4.16.1")
+    private Boolean livePatch = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,6 +82,8 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     public Boolean getMakeRedundant() {
         return makeRedundant;
     }
+
+    public Boolean getLivePatch() { return livePatch; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

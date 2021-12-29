@@ -44,14 +44,21 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.Networks;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -766,12 +773,14 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
+    protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
-    private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.DomainRouter };
+    private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
+    //, VirtualMachine.Type.DomainRouter };
 
     @Inject
     public AccountManager _accountMgr;
@@ -909,10 +918,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private DomainVlanMapDao _domainVlanMapDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    DomainRouterDao routerDao;
+    @Inject
+    public UUIDManager uuidMgr;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
+    private static final int patchCommandTimeout = 600000;
 
     private Map<String, String> _configs;
 
@@ -952,6 +966,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public ManagementServerImpl() {
         setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
+        setStateMachine();
     }
 
     public List<UserAuthenticator> getUserAuthenticators() {
@@ -1008,6 +1023,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         supportedHypervisors.add(HypervisorType.XenServer);
 
         return true;
+    }
+
+    private void setStateMachine() {
+        _stateMachine = VirtualMachine.State.getStateMachine();
     }
 
     @Override
@@ -4656,7 +4675,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, systemVmTypes);
         if (systemVm == null) {
-            throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
+            throw new InvalidParameterValueException(String.format("Unable to find SystemVm with id %s. patchSystemVm API can be used to patch CPVM / SSVM only.", systemVmId));
         }
 
         return updateSystemVM(systemVm, forced);
@@ -4676,7 +4695,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (controlIpAddress == null) {
-            s_logger.warn("Unable to find systemVm's control ip in its attached NICs!. systemVmId: " + systemVmId);
+            s_logger.warn(String.format("Unable to find systemVm's control ip in its attached NICs!. systemVmId: %s", systemVmId));
             VMInstanceVO systemVM = _vmInstanceDao.findById(systemVmId);
             return systemVM.getPrivateIpAddress();
         }
@@ -4684,30 +4703,53 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return controlIpAddress;
     }
 
-    private Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced) {
+    public Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced) {
+        String msg = String.format("Unable to patch SystemVM: %s as it is not in Running state. Please destroy and recreate the SystemVM.", systemVM);
+        if (systemVM.getState() != State.Running) {
+            s_logger.error(msg);
+            return new Pair<>(false, msg);
+        }
         return patchSystemVm(systemVM, forced);
     }
 
+    private boolean updateRouterDetails(Long routerId, String scriptVersion, String templateVersion) {
+        DomainRouterVO router = routerDao.findById(routerId);
+        if (router == null) {
+            throw new CloudRuntimeException(String.format("Failed to find router with id: %s", routerId));
+        }
+        router.setTemplateVersion(templateVersion);
+        router.setScriptsVersion(scriptVersion);
+        return routerDao.update(routerId, router);
+    }
+
     private Pair<Boolean, String> patchSystemVm(VMInstanceVO systemVM, boolean forced) {
-        PatchSystemVmAnswer answer = new PatchSystemVmAnswer();
+        PatchSystemVmAnswer answer;
         final PatchSystemVmCommand command = new PatchSystemVmCommand();
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getControlIp(systemVM.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, systemVM.getInstanceName());
         command.setForced(forced);
         try {
-            answer = (PatchSystemVmAnswer) _agentMgr.send(systemVM.getHostId(), command);
+            Commands cmds = new Commands(Command.OnError.Stop);
+            cmds.addCommand(command);
+            Answer[] answers = _agentMgr.send(systemVM.getHostId(), cmds, patchCommandTimeout);
+            answer = (PatchSystemVmAnswer) answers[0];
             if (!answer.getResult()) {
                 String errMsg = String.format("Failed to patch systemVM %s due to %s", systemVM.getInstanceName(), answer.getDetails());
                 s_logger.error(errMsg);
                 return new Pair<>(false, errMsg);
             }
-
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String errMsg = "SystemVM live patch failed";
             s_logger.error(errMsg, e);
             return new Pair<>(false,  String.format("%s due to: %s", errMsg, e.getMessage()));
         }
-        s_logger.info(String.format("Successfully patch system VM %s", systemVM.getInstanceName()));
+        s_logger.info(String.format("Successfully patched system VM %s", systemVM.getInstanceName()));
+        if (systemVM.getType() == VirtualMachine.Type.DomainRouter) {
+            boolean updated = updateRouterDetails(systemVM.getId(), answer.getScriptsVersion(), answer.getTemplateVersion());
+            if (!updated) {
+                s_logger.warn("Failed to update router's script and template version details");
+            }
+        }
         return new Pair<>(true, answer.getDetails());
     }
 

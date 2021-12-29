@@ -48,7 +48,6 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
         try {
             result = getSystemVmVersionAndChecksum(serverResource, controlIp);
             serverResource.copyPatchFilesToVR(controlIp, "/home/cloud");
-            //FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, CitrixResourceBase.BASEPATH);
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(command, e.getMessage());
         }
