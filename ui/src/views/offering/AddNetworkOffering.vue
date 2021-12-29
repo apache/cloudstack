@@ -89,25 +89,10 @@
         </a-row>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
-          <a-switch v-decorator="['forvpc', {initialValue: forVpc}]" :defaultChecked="forVpc" @change="val => { handleForVpcChange(val) }" />
+          <a-switch v-decorator="['forvpc']" :checked="forVpc" @change="val => { handleForVpcChange(val) }" />
         </a-form-item>
         <a-form-item :label="$t('label.userdatal2')" v-if="guestType === 'l2'">
           <a-switch v-decorator="['userdatal2', {initialValue: false}]" />
-        </a-form-item>
-        <a-form-item :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
-          <a-radio-group
-            v-decorator="['lbType', {
-              initialValue: lbType
-            }]"
-            buttonStyle="solid"
-            @change="e => { handleLbTypeChange(e.target.value) }" >
-            <a-radio-button value="publicLb">
-              {{ $t('label.public.lb') }}
-            </a-radio-button>
-            <a-radio-button value="internalLb">
-              {{ $t('label.internal.lb') }}
-            </a-radio-button>
-          </a-radio-group>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
@@ -208,6 +193,21 @@
               </a-list-item>
             </a-list>
           </div>
+        </a-form-item>
+        <a-form-item :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
+          <a-radio-group
+            v-decorator="['lbType', {
+              initialValue: lbType
+            }]"
+            buttonStyle="solid"
+            @change="e => { handleLbTypeChange(e.target.value) }" >
+            <a-radio-button value="publicLb">
+              {{ $t('label.public.lb') }}
+            </a-radio-button>
+            <a-radio-button value="internalLb">
+              {{ $t('label.internal.lb') }}
+            </a-radio-button>
+          </a-radio-group>
         </a-form-item>
         <a-form-item v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
           <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
@@ -463,6 +463,8 @@ export default {
       sourceNatServiceChecked: false,
       lbServiceChecked: false,
       lbServiceProvider: '',
+      registeredServicePackages: [],
+      registeredServicePackageLoading: false,
       isElasticIp: false,
       staticNatServiceChecked: false,
       staticNatServiceProvider: '',
@@ -531,6 +533,27 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
+      if (val === 'l2') {
+        this.forVpc = false
+        this.lbType = 'publicLb'
+        this.isVirtualRouterForAtLeastOneService = false
+        this.isVpcVirtualRouterForAtLeastOneService = false
+        this.serviceOfferings = []
+        this.serviceOfferingLoading = false
+        this.sourceNatServiceChecked = false
+        this.lbServiceChecked = false
+        this.lbServiceProvider = ''
+        this.registeredServicePackages = []
+        this.registeredServicePackageLoading = false
+        this.isElasticIp = false
+        this.staticNatServiceChecked = false
+        this.staticNatServiceProvider = ''
+        this.connectivityServiceChecked = false
+        this.firewallServiceChecked = false
+        this.firewallServiceProvider = ''
+        this.selectedServiceProviderMap = {}
+        this.updateSupportedServices()
+      }
     },
     fetchSupportedServiceData () {
       const params = {}

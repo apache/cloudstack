@@ -117,15 +117,10 @@ export default {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
-    getSelectInitialValue (selectSource) {
-      const initialValue = selectSource?.filter(x => x.enabled !== false)?.[0]?.id || ''
-      this.handleSelectChange(initialValue)
-      return initialValue
-    },
     handleCheckChange (e) {
       this.checked = e.target.checked
       if (this.checked && !this.selectedOption) {
-        this.selectedOption = this.selectSource[0]?.id || null
+        this.selectedOption = this.selectSource?.filter(x => x.enabled !== false)?.[0]?.id || null
       }
       this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
     },
@@ -137,8 +132,7 @@ export default {
       if (!this.checked) return
       var enabledOptions = this.selectSource?.filter(x => x.enabled !== false) || []
       if (this.selectedOption && !enabledOptions.includes(this.selectedOption)) {
-        this.selectedOption = enabledOptions[0]?.id || ''
-        this.handleSelectChange(this.selectedOption)
+        this.handleSelectChange(enabledOptions[0]?.id || null)
       }
     }
   }
