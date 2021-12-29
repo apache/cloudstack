@@ -316,11 +316,6 @@ export default {
         podid: this.podId
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
-        this.clustersList.push({
-          id: '123123123',
-          name: 'BareMetal',
-          hypervisortype: 'BareMetal'
-        })
         this.clusterId = this.clustersList[0].id || null
         if (this.clusterId) {
           this.handleChangeCluster(this.clusterId)
