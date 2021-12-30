@@ -321,7 +321,8 @@ export default {
             config.configdata !== '') {
             this.clusterConfig = config.configdata
           } else {
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: this.$t('message.request.failed'),
               description: this.$t('message.error.retrieve.kubeconfig')
             })

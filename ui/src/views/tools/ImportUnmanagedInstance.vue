@@ -631,7 +631,8 @@ export default {
           displayname: values.displayname
         }
         if (!this.computeOffering || !this.computeOffering.id) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.2.continue')
           })
@@ -642,7 +643,8 @@ export default {
           var details = [this.cpuNumberKey, this.cpuSpeedKey, this.memoryKey]
           for (var detail of details) {
             if (!(values[detail] || this.computeOffering[detail])) {
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + detail.toLowerCase())
               })
@@ -657,7 +659,8 @@ export default {
           var iopsDetails = [this.minIopsKey, this.maxIopsKey]
           for (var iopsDetail of iopsDetails) {
             if (!values[iopsDetail] || values[iopsDetail] < 0) {
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + iopsDetail.toLowerCase())
               })
@@ -666,7 +669,8 @@ export default {
             params['details[0].' + iopsDetail] = values[iopsDetail]
           }
           if (values[this.minIopsKey] > values[this.maxIopsKey]) {
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: this.$t('message.request.failed'),
               description: this.$t('error.form.message')
             })
@@ -684,7 +688,8 @@ export default {
         var diskOfferingIndex = 0
         for (var diskId in this.dataDisksOfferingsMapping) {
           if (!this.dataDisksOfferingsMapping[diskId]) {
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: this.$t('message.request.failed'),
               description: this.$t('message.select.disk.offering') + ': ' + diskId
             })
@@ -698,7 +703,8 @@ export default {
         var nicIpIndex = 0
         for (var nicId in this.nicsNetworksMapping) {
           if (!this.nicsNetworksMapping[nicId].network) {
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: this.$t('message.request.failed'),
               description: this.$t('message.select.nic.network') + ': ' + nicId
             })
@@ -709,7 +715,8 @@ export default {
           nicNetworkIndex++
           if ('ipAddress' in this.nicsNetworksMapping[nicId]) {
             if (!this.nicsNetworksMapping[nicId].ipAddress) {
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.enter.valid.nic.ip') + ': ' + nicId
               })
