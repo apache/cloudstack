@@ -52,19 +52,3 @@ CREATE TABLE `cloud`.`ip6_guest_prefix_subnet_network_map` (
   CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `uc_ip6_guest_prefix_subnet_network_map__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`public_ip6_address_network_map` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `uuid` varchar(40) DEFAULT NULL,
-  `vlan_db_id` bigint(20) unsigned NOT NULL COMMENT 'id of the vlan to which this address belong to',
-  `public_ip_address` varchar(255) NOT NULL COMMENT 'ipv6 address',
-  `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network to which this address is associated to',
-  `nic_mac_address` varchar(17) DEFAULT NULL COMMENT 'mac address of the nic to which this address is assigned to',
-  `state` varchar(255) NOT NULL COMMENT 'state of the address',
-  `created` datetime default NULL,
-  `removed` datetime default NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_public_ip6_address_network_map__prefix_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan`(`id`),
-  CONSTRAINT `fk_public_ip6_address_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
-  CONSTRAINT `uc_public_ip6_address_network_map__uuid` UNIQUE (`uuid`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

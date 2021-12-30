@@ -80,7 +80,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.PublicIpv6AddressNetworkMap;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpnUser;
@@ -90,7 +89,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpv6AddressNetworkMapDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -185,8 +183,6 @@ public class CommandSetupHelper {
     private HostDao _hostDao;
     @Inject
     private Ipv6Service ipv6Service;
-    @Inject
-    private PublicIpv6AddressNetworkMapDao publicIpv6AddressNetworkMapDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1063,10 +1059,9 @@ public class CommandSetupHelper {
         if (isIpv6Supported) {
             setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
             setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-            Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> publicIpv6AddressNetworkMapVlanPair = ipv6Service.checkExistingOrAssignPublicIpv6ToNetwork(network, nic.getMacAddress());
-            PublicIpv6AddressNetworkMap ipv6AddressNetworkMap = publicIpv6AddressNetworkMapVlanPair.first();
-            Vlan vlan = publicIpv6AddressNetworkMapVlanPair.second();
-            setupCmd.setRouterIpv6(ipv6AddressNetworkMap.getIp6Address());
+            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network, nic.getMacAddress());
+            Vlan vlan = publicIpv6AddressVlanPair.second();
+            setupCmd.setRouterIpv6(publicIpv6AddressVlanPair.first());
             final String routerIpv6Gateway = vlan.getIp6Gateway();
             final String routerIpv6Cidr = vlan.getIp6Cidr();
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);

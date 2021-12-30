@@ -230,7 +230,6 @@ import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.DataCenterGuestIpv6PrefixDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
@@ -242,6 +241,7 @@ import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -255,7 +255,6 @@ import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.PublicIpv6AddressNetworkMapVO;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -278,7 +277,6 @@ import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.PublicIpv6AddressNetworkMapDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -425,9 +423,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     NetworkOfferingDao networkOfferingDao;
     @Inject
-    PublicIpv6AddressNetworkMapDao publicIpv6AddressNetworkMapDao;
-    @Inject
-    DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
+    Ipv6Service ipv6Service;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2529,9 +2525,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIpv6Routing("Static");
             response.setIpv6Firewall(networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
-                List<PublicIpv6AddressNetworkMapVO> ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.listByNetworkId(network.getId());
-                for (PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap : ipv6AddressNetworkMaps) {
-                    NetworkResponse.Ipv6Route route = new NetworkResponse.Ipv6Route(network.getIp6Cidr(), ipv6AddressNetworkMap.getIp6Address());
+                List<String> ipv6Addresses = ipv6Service.getPublicIpv6AddressesForNetwork(network);
+                for (String address : ipv6Addresses) {
+                    NetworkResponse.Ipv6Route route = new NetworkResponse.Ipv6Route(network.getIp6Cidr(), address);
                     response.addIpv6Route(route);
                 }
             }

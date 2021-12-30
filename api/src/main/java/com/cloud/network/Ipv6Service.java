@@ -32,7 +32,7 @@ import com.cloud.vm.NicProfile;
 
 public interface Ipv6Service extends PluggableService {
 
-    public static final int IPV6_GUEST_SUBNET_NETMASK = 64;
+    public static final int IPV6_SLAAC_CIDR_NETMASK = 64;
 
     Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException;
 
@@ -40,15 +40,13 @@ public interface Ipv6Service extends PluggableService {
 
     void releaseIpv6SubnetForNetwork(long networkId);
 
-    Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> checkExistingOrAssignPublicIpv6ToNetwork(Network network, String nicMacAddress);
+    Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
 
-    void releasePublicIpv6ForNetwork(long networkId);
+    void releasePublicIpv6ForNic(Network network, String nicIpv6Address);
 
-    void releasePublicIpv6ForNic(long networkId, String nicMacAddress);
-
-    void releaseUnusedPublicIpv6ForNetwork(Network network);
+    List<String> getPublicIpv6AddressesForNetwork(Network network);
 
     FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
 

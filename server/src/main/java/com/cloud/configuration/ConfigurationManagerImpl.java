@@ -1742,8 +1742,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final String prefix = cmd.getPrefix();
         IPv6Network prefixNet = IPv6Network.fromString(prefix);
-        if (prefixNet.getNetmask().asPrefixLength() > Ipv6Service.IPV6_GUEST_SUBNET_NETMASK) {
-            throw new InvalidParameterValueException(String.format("IPv6 prefix must be /%d or less", Ipv6Service.IPV6_GUEST_SUBNET_NETMASK));
+        if (prefixNet.getNetmask().asPrefixLength() > Ipv6Service.IPV6_SLAAC_CIDR_NETMASK) {
+            throw new InvalidParameterValueException(String.format("IPv6 prefix must be /%d or less", Ipv6Service.IPV6_SLAAC_CIDR_NETMASK));
         }
         List<DataCenterGuestIpv6PrefixVO> existingPrefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
         for (DataCenterGuestIpv6PrefixVO existingPrefix : existingPrefixes) {
@@ -3867,6 +3867,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // if end ip is not specified, default it to startIp
             if (endIPv6 == null && startIPv6 != null) {
                 endIPv6 = startIPv6;
+            }
+
+            if (startIPv6 == null && endIPv6 == null) {
+                IPv6Network iPv6Network = IPv6Network.fromString(ip6Cidr);
+                if (iPv6Network.getNetmask().asPrefixLength() > Ipv6Service.IPV6_SLAAC_CIDR_NETMASK) {
+                    throw new InvalidParameterValueException(String.format("For IPv6 range, prefix must be /%d or less", Ipv6Service.IPV6_SLAAC_CIDR_NETMASK));
+                }
             }
         }
 

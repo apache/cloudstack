@@ -260,7 +260,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         PhysicalNetworkVlanIp6Search.and("physicalNetworkId", PhysicalNetworkVlanIp6Search.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
         PhysicalNetworkVlanIp6Search.and("ip6Gateway", PhysicalNetworkVlanIp6Search.entity().getIp6Gateway(), SearchCriteria.Op.NNULL);
         PhysicalNetworkVlanIp6Search.and("ip6Cidr", PhysicalNetworkVlanIp6Search.entity().getIp6Cidr(), SearchCriteria.Op.NNULL);
-        PhysicalNetworkVlanIp6Search.and("ip6range", PhysicalNetworkVlanIp6Search.entity().getIp6Range(), SearchCriteria.Op.NNULL);
         PhysicalNetworkVlanIp6Search.done();
 
         return result;

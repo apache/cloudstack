@@ -2073,11 +2073,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             s_logger.warn("Network id=" + networkId + " failed to restart.");
         }
 
-        if (TrafficType.Guest.equals(network.getTrafficType())
-                && GuestType.Isolated.equals(network.getGuestType())) {
-            ipv6Service.releaseUnusedPublicIpv6ForNetwork(network);
-        }
-
         return success;
     }
 

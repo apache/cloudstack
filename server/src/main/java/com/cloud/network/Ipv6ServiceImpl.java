@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -54,7 +55,6 @@ import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpv6AddressNetworkMapDao;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -63,10 +63,13 @@ import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
 import com.googlecode.ipv6.IPv6NetworkMask;
 
@@ -87,8 +90,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
     @Inject
-    PublicIpv6AddressNetworkMapDao publicIpv6AddressNetworkMapDao;
-    @Inject
     FirewallRulesDao firewallDao;
     @Inject
     FirewallService firewallService;
@@ -98,21 +99,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao nicDao;
-
-    private IPv6AddressRange getIpv6AddressRangeFromIpv6Vlan(VlanVO vlanVO) {
-        String[] rangeArr = vlanVO.getIp6Range().split("-");
-        String firstStr = rangeArr[0].trim();
-        String lastStr = rangeArr[1].trim();
-        IPv6AddressRange range = null;
-        try {
-            IPv6Address first = IPv6Address.fromString(firstStr);
-            IPv6Address last = IPv6Address.fromString(lastStr);
-            range = IPv6AddressRange.fromFirstAndLast(first, last);
-        } catch (IllegalArgumentException ex) {
-            s_logger.warn(String.format("Unable to retrieve IPv6 address range for vlan ID: %d, range: %s", vlanVO.getId(), vlanVO.getIp6Range()), ex);
-        }
-        return range;
-    }
+    @Inject
+    DomainRouterDao domainRouterDao;
 
     protected void releaseIpv6Subnet(long subnetId) {
         Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(subnetId);
@@ -120,92 +108,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         ipv6GuestPrefixSubnetNetworkMapVO.setNetworkId(null);
         ipv6GuestPrefixSubnetNetworkMapVO.setUpdated(new Date());
         ipv6GuestPrefixSubnetNetworkMapDao.update(ipv6GuestPrefixSubnetNetworkMapVO.getId(), ipv6GuestPrefixSubnetNetworkMapVO);
-    }
-
-    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_RELEASE, eventDescription = "releasing public IPv6", create = true)
-    private void releasePublicIpv6(PublicIpv6AddressNetworkMapVO publicIpv6AddressNetworkMap) {
-        if (publicIpv6AddressNetworkMap != null) {
-            Long networkId = publicIpv6AddressNetworkMap.getNetworkId();
-            long vlanId = publicIpv6AddressNetworkMap.getRangeId();
-            publicIpv6AddressNetworkMap.setState(PublicIpv6AddressNetworkMap.State.Free);
-            publicIpv6AddressNetworkMap.setNetworkId(null);
-            publicIpv6AddressNetworkMap.setNicMacAddress(null);
-            publicIpv6AddressNetworkMapDao.update(publicIpv6AddressNetworkMap.getId(), publicIpv6AddressNetworkMap);
-            if (networkId != null) {
-                VlanVO vlan = vlanDao.findById(vlanId);
-                String guestType = vlan.getVlanType().toString();
-                Network network = networkDao.findById(networkId);
-                final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), publicIpv6AddressNetworkMap.getId(),
-                        publicIpv6AddressNetworkMap.getIp6Address(), false, guestType, false, usageHidden,
-                        publicIpv6AddressNetworkMap.getClass().getName(), publicIpv6AddressNetworkMap.getUuid());
-            }
-        }
-    }
-
-    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_ASSIGN, eventDescription = "releasing public IPv6", create = true)
-    private Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress) {
-        PublicIpv6AddressNetworkMapVO ip6NetworkMap = null;
-        VlanVO selectedVlan = null;
-        final List<VlanVO> ranges = vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(network.getPhysicalNetworkId());
-        if (ranges == null) {
-            s_logger.error(String.format("Unable to find IPv6 range for the zone ID: %d", network.getDataCenterId()));
-            throw new CloudRuntimeException(String.format("Cannot find IPv6 address for network %s", network.getName()));
-        }
-        for (VlanVO range : ranges) {
-            ip6NetworkMap = publicIpv6AddressNetworkMapDao.findFirstAvailable(range.getId());
-            if (ip6NetworkMap == null) {
-                PublicIpv6AddressNetworkMapVO last = publicIpv6AddressNetworkMapDao.findLast(range.getId());
-                String lastUsedIp6Address = last != null ? last.getIp6Address() : null;
-                final IPv6AddressRange ip6Range = getIpv6AddressRangeFromIpv6Vlan(range);
-                IPv6Address ip = null;
-                if (ip6Range != null) {
-                    if (lastUsedIp6Address == null) {
-                        ip = ip6Range.getFirst();
-                    } else {
-                        IPv6Address lastAddress = IPv6Address.fromString(lastUsedIp6Address);
-                        lastAddress = lastAddress.add(1);
-                        if (ip6Range.contains(lastAddress)) {
-                            ip = lastAddress;
-                        }
-                    }
-                    if (ip != null) {
-                        ip6NetworkMap = new PublicIpv6AddressNetworkMapVO(range.getId(), ip.toString(), network.getId(), nicMacAddress, PublicIpv6AddressNetworkMap.State.Allocated);
-                    }
-                }
-            }
-            if (ip6NetworkMap != null) {
-                selectedVlan = range;
-                break;
-            }
-        }
-        if (ip6NetworkMap == null) {
-            s_logger.error(String.format("Unable to find an IPv6 address available for allocation for network %s in zone ID: %d", network.getName(), network.getDataCenterId()));
-            throw new CloudRuntimeException(String.format("Cannot find available IPv6 address for network %s", network.getName()));
-        }
-        if (PublicIpv6AddressNetworkMap.State.Free.equals(ip6NetworkMap.getState())) {
-            ip6NetworkMap.setState(PublicIpv6AddressNetworkMap.State.Allocated);
-            ip6NetworkMap.setNetworkId(network.getId());
-            ip6NetworkMap.setNicMacAddress(nicMacAddress);
-            publicIpv6AddressNetworkMapDao.update(ip6NetworkMap.getId(), ip6NetworkMap);
-        } else {
-            publicIpv6AddressNetworkMapDao.persist(ip6NetworkMap);
-        }
-        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-        final String guestType = selectedVlan.getVlanType().toString();
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_ASSIGN, network.getAccountId(), network.getDataCenterId(), ip6NetworkMap.getId(),
-                ip6NetworkMap.getIp6Address(), false, guestType, false, usageHidden,
-                ip6NetworkMap.getClass().getName(), ip6NetworkMap.getUuid());
-        return new Pair<>(ip6NetworkMap, selectedVlan);
-    }
-
-    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_UPDATE, eventDescription = "releasing public IPv6", create = true)
-    private PublicIpv6AddressNetworkMapVO updatePublicIpv6NicMacAddress(long id, String nicMacAddress) {
-        PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.createForUpdate(id);
-        ipv6AddressNetworkMap.setState(PublicIpv6AddressNetworkMap.State.Allocated);
-        ipv6AddressNetworkMap.setNicMacAddress(nicMacAddress);
-        publicIpv6AddressNetworkMapDao.update(ipv6AddressNetworkMap.getId(), ipv6AddressNetworkMap);
-        return ipv6AddressNetworkMap;
     }
 
     @Override
@@ -248,7 +150,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 Ipv6GuestPrefixSubnetNetworkMapVO last = ipv6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
                 String lastUsedSubnet = last != null ? last.getSubnet() : null;
                 final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
-                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_GUEST_SUBNET_NETMASK));
+                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
                 if (splits.hasNext()) {
                     splits.next();
                 }
@@ -301,34 +203,42 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
-    @Override
-    public Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> checkExistingOrAssignPublicIpv6ToNetwork(Network network, String nicMacAddress) {
-        PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap = null;
-        List<PublicIpv6AddressNetworkMapVO> ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.listByNetworkId(network.getId());
-        for (PublicIpv6AddressNetworkMapVO map : ipv6AddressNetworkMaps) {
-            if (StringUtils.isEmpty(map.getNicMacAddress()) || nicMacAddress.equals(map.getNicMacAddress())) {
-                ipv6AddressNetworkMap = map;
-                if (!nicMacAddress.equals(map.getNicMacAddress())) {
-                    ipv6AddressNetworkMap = updatePublicIpv6NicMacAddress(map.getId(), nicMacAddress);
-                }
-                break;
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_ASSIGN, eventDescription = "releasing public IPv6", create = true)
+    public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress) {
+        final List<VlanVO> ranges = vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(network.getPhysicalNetworkId());
+        if (CollectionUtils.isEmpty(ranges)) {
+            s_logger.error(String.format("Unable to find IPv6 range for the zone ID: %d", network.getDataCenterId()));
+            throw new CloudRuntimeException(String.format("Cannot find IPv6 address for network %s", network.getName()));
+        }
+        Collections.shuffle(ranges);
+        VlanVO selectedVlan = ranges.get(0);
+        IPv6Network iPv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
+        if (iPv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
+            Iterator<IPv6Network> splits = iPv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+            if (splits.hasNext()) {
+                splits.next();
+            }
+            if (splits.hasNext()) {
+                iPv6Network = splits.next();
             }
         }
-        if (ipv6AddressNetworkMap == null) {
-            return assignPublicIpv6ToNetwork(network, nicMacAddress);
-        }
-        Vlan vlan = vlanDao.findById(ipv6AddressNetworkMap.getRangeId());
-        return new Pair<>(ipv6AddressNetworkMap, vlan);
+        IPv6Address ipv6Addr = NetUtils.EUI64Address(iPv6Network, nicMacAddress);
+        s_logger.info("Calculated IPv6 address " + ipv6Addr + " using EUI-64 for NIC with MAC " + nicMacAddress);
+        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+        final String guestType = selectedVlan.getVlanType().toString();
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_ASSIGN, network.getAccountId(), network.getDataCenterId(), 0l,
+                ipv6Addr.toString(), false, guestType, false, usageHidden,
+                IPv6Network.class.getName(), null);
+        return new Pair<>(ipv6Addr.toString(), selectedVlan);
     }
 
     @Override
     public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
         boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         if (nic.getIPv6Address() == null && isIpv6Supported) {
-            Pair<? extends PublicIpv6AddressNetworkMap, ? extends Vlan> publicIpv6AddressNetworkMapVlanPair = checkExistingOrAssignPublicIpv6ToNetwork(network, nic.getMacAddress());
-            final PublicIpv6AddressNetworkMap publicIpv6AddressNetworkMapVO = publicIpv6AddressNetworkMapVlanPair.first();
-            final Vlan vlan = publicIpv6AddressNetworkMapVlanPair.second();
-            final String routerIpv6 = publicIpv6AddressNetworkMapVO.getIp6Address();
+            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = assignPublicIpv6ToNetwork(network, nic.getMacAddress());
+            final Vlan vlan = publicIpv6AddressVlanPair.second();
+            final String routerIpv6 = publicIpv6AddressVlanPair.first();
             final String routerIpv6Gateway = vlan.getIp6Gateway();
             final String routerIpv6Cidr = vlan.getIp6Cidr();
             nic.setIPv6Address(routerIpv6);
@@ -345,32 +255,26 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    public void releasePublicIpv6ForNetwork(long networkId) {
-        List<PublicIpv6AddressNetworkMapVO> publicIpv6AddressNetworkMaps  = publicIpv6AddressNetworkMapDao.listByNetworkId(networkId);
-        for (PublicIpv6AddressNetworkMapVO publicIpv6AddressNetworkMap : publicIpv6AddressNetworkMaps) {
-            releasePublicIpv6(publicIpv6AddressNetworkMap);
-        }
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_RELEASE, eventDescription = "releasing public IPv6", create = true)
+    public void releasePublicIpv6ForNic(Network network, String nicIpv6Address) {
+        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), 0L,
+                nicIpv6Address, false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
+                IPv6Address.class.getName(), null);
     }
 
     @Override
-    public void releasePublicIpv6ForNic(long networkId, String nicMacAddress) {
-        PublicIpv6AddressNetworkMapVO publicIpv6AddressNetworkMap  = publicIpv6AddressNetworkMapDao.findByNetworkIdAndNicMacAddress(networkId, nicMacAddress);
-        if (publicIpv6AddressNetworkMap != null) {
-            publicIpv6AddressNetworkMap = publicIpv6AddressNetworkMapDao.createForUpdate(publicIpv6AddressNetworkMap.getId());
-            publicIpv6AddressNetworkMap.setNicMacAddress(null);
-            publicIpv6AddressNetworkMapDao.update(publicIpv6AddressNetworkMap.getId(), publicIpv6AddressNetworkMap);
-        }
-    }
-
-    @Override
-    public void releaseUnusedPublicIpv6ForNetwork(Network network) {
-        List<PublicIpv6AddressNetworkMapVO> publicIpv6AddressNetworkMaps  = publicIpv6AddressNetworkMapDao.listByNetworkId(network.getId());
-        for (PublicIpv6AddressNetworkMapVO publicIpv6AddressNetworkMap : publicIpv6AddressNetworkMaps) {
-            if (StringUtils.isEmpty(publicIpv6AddressNetworkMap.getNicMacAddress()) ||
-                    nicDao.findByNetworkIdAndMacAddress(network.getPhysicalNetworkId(), publicIpv6AddressNetworkMap.getNicMacAddress()) == null) {
-                releasePublicIpv6(publicIpv6AddressNetworkMap);
+    public List<String> getPublicIpv6AddressesForNetwork(Network network) {
+        List<String> addresses = new ArrayList<>();
+        List<DomainRouterVO> routers = domainRouterDao.findByNetwork(network.getId());
+        for (DomainRouterVO router : routers) {
+            NicVO nic = nicDao.findByNtwkIdAndInstanceId(network.getPhysicalNetworkId(), router.getId());
+            String address = nic.getIPv6Address();
+            if (StringUtils.isNotEmpty(address)) {
+                addresses.add(nic.getIPv6Address());
             }
         }
+        return addresses;
     }
 
     public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd) {
@@ -465,11 +369,10 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 List<NetworkVO> isolatedNetworks = networkDao.listByGuestType(Network.GuestType.Isolated);
                 for (NetworkVO network : isolatedNetworks) {
                     if (Network.State.Implemented.equals(network.getState()) && networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
-                        List<PublicIpv6AddressNetworkMapVO> ipv6AddressNetworkMaps = publicIpv6AddressNetworkMapDao.listByNetworkId(network.getId());
-                        for (PublicIpv6AddressNetworkMapVO ipv6AddressNetworkMap : ipv6AddressNetworkMaps) {
-                            VlanVO vlan = vlanDao.findById(ipv6AddressNetworkMap.getRangeId());
+                        List<String> ipv6Addresses = getPublicIpv6AddressesForNetwork(network);
+                        for (String address : ipv6Addresses) {
                             if (s_logger.isInfoEnabled()) {
-                                s_logger.info(String.format("Add upstream IPv6 route for %s via: %s for network: %s with vlan: %s", network.getIp6Cidr(), ipv6AddressNetworkMap.getIp6Address(), network, vlan));
+                                s_logger.info(String.format("Add upstream IPv6 route for %s via: %s for network: %s", network.getIp6Cidr(), address, network));
                             }
                         }
                     }

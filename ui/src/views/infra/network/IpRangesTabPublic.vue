@@ -222,16 +222,6 @@
               v-decorator="['ip6cidr', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
             </a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.startipv6')" class="form__item">
-            <a-input
-              v-decorator="['startipv6']">
-            </a-input>
-          </a-form-item>
-          <a-form-item :label="$t('label.endipv6')" class="form__item">
-            <a-input
-              v-decorator="['endipv6']">
-            </a-input>
-          </a-form-item>
         </div>
         <div v-else>
           <a-form-item :label="$t('label.gateway')" class="form__item">
@@ -580,7 +570,7 @@ export default {
         this.addIpRangeModal = false
         var ipRangeKeys = ['gateway', 'netmask', 'startip', 'endip']
         if (values.iptype === 'ip6') {
-          ipRangeKeys = ['ip6gateway', 'ip6cidr', 'startipv6', 'endipv6']
+          ipRangeKeys = ['ip6gateway', 'ip6cidr']
         }
         var params = {}
         for (const key of ipRangeKeys) {

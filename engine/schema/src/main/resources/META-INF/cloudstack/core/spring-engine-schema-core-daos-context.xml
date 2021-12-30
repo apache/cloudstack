@@ -108,7 +108,6 @@
   <bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
   <bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
   <bean id="iPAddressDaoImpl" class="com.cloud.network.dao.IPAddressDaoImpl" />
-  <bean id="publicIpv6AddressNetworkMapDaoImpl" class="com.cloud.network.dao.PublicIpv6AddressNetworkMapDaoImpl" />
   <bean id="ip6GuestPrefixSubnetNetworkMapDaoImpl" class="com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDaoImpl" />
   <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
   <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl" />

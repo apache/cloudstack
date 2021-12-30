@@ -53,6 +53,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -156,6 +157,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.RouterNetworkDao;
 import com.cloud.network.element.AggregatedCommandExecutor;
 import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.network.element.DhcpServiceProvider;
@@ -169,6 +171,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.guru.NetworkGuruAdditionalFunctions;
+import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallManager;
@@ -322,6 +325,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private AnnotationDao annotationDao;
     @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    RouterNetworkDao routerNetworkDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -2348,18 +2353,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         s_logger.debug("Removed nic id=" + nic.getId());
         // release assigned IPv6 for Isolated Network VR NIC
 
-        if (GuestType.Isolated.equals(network.getGuestType())
-                && _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
-            if (Type.DomainRouter.equals(vm.getType())
-                    && TrafficType.Guest.equals(network.getTrafficType())) {
-                ipv6Service.releasePublicIpv6ForNic(nic.getNetworkId(), nic.getMacAddress());
+        if (Type.DomainRouter.equals(vm.getType()) && PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver())
+                && StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            List<Long> routerNetworks = routerNetworkDao.getRouterNetworks(vm.getId());
+            if (CollectionUtils.isNotEmpty(routerNetworks)) {
+                Network guestNetwork = _networksDao.findById(routerNetworks.get(0));
+                ipv6Service.releasePublicIpv6ForNic(guestNetwork, nic.getIPv6Address());
             }
-            if (Type.User.equals(vm.getType())) {
-                final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), 0L,
-                        nic.getIPv6Address(), false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
-                        IPv6Address.class.getName(), null);
-            }
+        }
+
+        if (Type.User.equals(vm.getType()) && GuestType.Isolated.equals(network.getGuestType())
+                && _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId()) && StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), 0L,
+                    nic.getIPv6Address(), false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
+                    IPv6Address.class.getName(), null);
         }
 
         //remove the secondary ip addresses corresponding to to this nic
@@ -3120,7 +3128,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             // commit transaction only when ips and vlans for the network are released successfully
 
                             ipv6Service.releaseIpv6SubnetForNetwork(networkId);
-                            ipv6Service.releasePublicIpv6ForNetwork(networkId);
                             try {
                                 stateTransitTo(networkFinal, Event.DestroyNetwork);
                             } catch (final NoTransitionException e) {
