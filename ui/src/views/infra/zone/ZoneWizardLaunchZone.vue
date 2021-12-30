@@ -1547,7 +1547,8 @@ export default {
         this.$emit('refresh-data')
       } catch (e) {
         this.loading = false
-        await this.$notification.error({
+        await this.$showNotification({
+          type: 'error',
           message: this.$t('message.request.failed'),
           description: e
         })

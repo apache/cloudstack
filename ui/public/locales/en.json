@@ -577,6 +577,7 @@
 "label.cks.cluster.size": "Cluster size (Worker nodes)",
 "label.cleanup": "Clean up",
 "label.clear": "Clear",
+"label.clear.notification": "Clear notification",
 "label.clear.list": "Clear list",
 "label.close": "Close",
 "label.cloud.console": "Cloud Management Console",

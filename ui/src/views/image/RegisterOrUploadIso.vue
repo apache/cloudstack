@@ -265,7 +265,8 @@ export default {
     handleUpload () {
       const { fileList } = this
       if (this.fileList.length > 1) {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('message.upload.iso.failed'),
           description: this.$t('message.error.upload.iso.description'),
           duration: 0
@@ -290,14 +291,16 @@ export default {
           },
           timeout: 86400000
         }).then((json) => {
-        this.$notification.success({
+        this.$showNotification({
+          type: 'success',
           message: this.$t('message.success.upload'),
           description: this.$t('message.success.upload.description')
         })
         this.closeAction()
         this.$emit('refresh-data')
       }).catch(e => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('message.upload.failed'),
           description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
           duration: 0
@@ -342,7 +345,8 @@ export default {
         if (this.currentForm === 'Create') {
           this.loading = true
           api('registerIso', params).then(json => {
-            this.$notification.success({
+            this.$showNotification({
+              type: 'success',
               message: this.$t('label.action.register.iso'),
               description: `${this.$t('message.success.register.iso')} ${params.name}`
             })
@@ -363,7 +367,8 @@ export default {
             this.uploadParams = (json.postuploadisoresponse && json.postuploadisoresponse.getuploadparams) ? json.postuploadisoresponse.getuploadparams : ''
             const response = this.handleUpload()
             if (response === 'upload successful') {
-              this.$notification.success({
+              this.$showNotification({
+                type: 'success',
                 message: this.$t('message.success.upload'),
                 description: this.$t('message.success.upload.iso.description')
               })

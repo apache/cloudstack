@@ -17,6 +17,12 @@
 
 <template>
   <div id="userLayout" :class="['user-layout', device]">
+    <a-button
+      v-if="showClear"
+      type="default"
+      size="small"
+      class="button-clear-notification"
+      @click="onClearNotification">{{ $t('label.clear.notification') }}</a-button>
     <div class="user-layout-container">
       <div class="user-layout-header">
         <img
@@ -48,7 +54,9 @@ export default {
   components: { RouteView },
   mixins: [mixinDevice],
   data () {
-    return {}
+    return {
+      showClear: false
+    }
   },
   watch: {
     '$store.getters.darkMode' (darkMode) {
@@ -56,6 +64,12 @@ export default {
         document.body.classList.add('dark-mode')
       } else {
         document.body.classList.remove('dark-mode')
+      }
+    },
+    '$store.getters.countNotify' (countNotify) {
+      this.showClear = false
+      if (countNotify && countNotify > 0) {
+        this.showClear = true
       }
     }
   },
@@ -69,6 +83,12 @@ export default {
   beforeDestroy () {
     document.body.classList.remove('userLayout')
     document.body.classList.remove('dark-mode')
+  },
+  methods: {
+    onClearNotification () {
+      this.$notification.destroy()
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
+    }
   }
 }
 </script>

@@ -300,7 +300,8 @@ export default {
               this.actionLoading = false
             } catch (error) {
               this.actionLoading = false
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
               })
@@ -336,7 +337,8 @@ export default {
             this.actionLoading = false
           } catch (error) {
             this.actionLoading = false
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: this.$t('message.request.failed'),
               description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
             })
