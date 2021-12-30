@@ -31,6 +31,9 @@
       </div>
       <route-view></route-view>
     </div>
+    <div class="user-layout-footer" v-if="$config.loginFooter">
+      <label v-html="$config.loginFooter"></label>
+    </div>
   </div>
 </template>
 
@@ -95,6 +98,26 @@ export default {
     .mobile & {
       max-width: 300px;
       margin-bottom: 1rem;
+    }
+  }
+
+  &-footer {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    bottom: 20px;
+    text-align: center;
+    width: 100%;
+
+    @media (max-height: 600px) {
+      position: relative;
+      margin-top: 50px;
+    }
+
+    label {
+      width: 368px;
+      font-weight: 500;
+      margin: 0 auto;
     }
   }
 }
