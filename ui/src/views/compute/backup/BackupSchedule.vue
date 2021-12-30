@@ -157,7 +157,8 @@ export default {
       this.actionLoading = true
       api('deleteBackupSchedule', params).then(json => {
         if (json.deletebackupscheduleresponse.success) {
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.scheduled.backups'),
             description: this.$t('message.success.delete.backup.schedule')
           })

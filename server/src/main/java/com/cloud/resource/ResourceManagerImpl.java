@@ -165,7 +165,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -695,9 +695,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
         }
         List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
-        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT)) &&
-                (StringUtils.isAnyEmpty(username, password))) {
-            throw new InvalidParameterValueException("Username and Password need to be provided.");
+        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT))) {
+            if (HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
+                if (StringUtils.isBlank(username)) {
+                    throw new InvalidParameterValueException("Username need to be provided.");
+                }
+            } else {
+                if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
+                    throw new InvalidParameterValueException("Username and Password need to be provided.");
+                }
+            }
         }
 
         if (clusterId != null) {
@@ -2731,8 +2738,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
         if (sshToAgent) {
-            Pair<String, String> credentials = getHostCredentials(host);
-            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second());
+            Ternary<String, String, String> credentials = getHostCredentials(host);
+            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second(), credentials.third());
         } else {
             throw new CloudRuntimeException("SSH access is disabled, cannot cancel maintenance mode as " +
                     "host agent is not connected");
@@ -2743,22 +2750,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Get host credentials
      * @throws CloudRuntimeException if username or password are not found
      */
-    protected Pair<String, String> getHostCredentials(HostVO host) {
+    protected Ternary<String, String, String> getHostCredentials(HostVO host) {
         _hostDao.loadDetails(host);
         final String password = host.getDetail("password");
         final String username = host.getDetail("username");
-        if (password == null || username == null) {
-            throw new CloudRuntimeException("SSH to agent is enabled, but username/password credentials are not found");
+        final String privateKey = _configDao.getValue("ssh.privatekey");
+        if ((password == null && privateKey == null) || username == null) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but username and password or private key are not found");
         }
-        return new Pair<>(username, password);
+        return new Ternary<>(username, password, privateKey);
     }
 
     /**
      * True if agent is restarted via SSH. Assumes kvm.ssh.to.agent = true and host status is not Up
      */
-    protected void connectAndRestartAgentOnHost(HostVO host, String username, String password) {
+    protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password);
+                host.getPrivateIpAddress(), 22, username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }

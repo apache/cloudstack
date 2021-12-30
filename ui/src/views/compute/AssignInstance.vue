@@ -294,7 +294,8 @@ export default {
         [variableKey]: variableValue,
         networkids: this.selectedNetwork
       }).then(response => {
-        this.$notification.success({
+        this.$showNotification({
+          type: 'success',
           message: this.$t('label.loadbalancerinstance')
         })
         this.$parent.$parent.close()

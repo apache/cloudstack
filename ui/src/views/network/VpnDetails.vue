@@ -132,7 +132,8 @@ export default {
           jobId: response.createremoteaccessvpnresponse.jobid,
           successMethod: result => {
             const res = result.jobresult.remoteaccessvpn
-            this.$notification.success({
+            this.$showNotification({
+              type: 'success',
               message: this.$t('label.status'),
               description:
                 `${this.$t('message.enabled.vpn')} ${res.publicip}. ${this.$t('message.enabled.vpn.ip.sec')} ${res.presharedkey}`,

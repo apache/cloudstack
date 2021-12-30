@@ -4921,7 +4921,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean releasePublicIpRange(final long vlanDbId, final long userId, final Account caller) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if(vlan == null) {
-            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null. This is NPE situation.");
+            // Nothing to do if vlan can't be found
+            s_logger.warn(String.format("Skipping the process for releasing public IP range as could not find a VLAN with ID '%s' for Account '%s' and User '%s'."
+                    ,vlanDbId, caller, userId));
+            return true;
         }
 
         // Verify range is dedicated
@@ -4988,13 +4991,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
-            return true;
+            success = true;
         } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
-            return true;
+            success = true;
         } else {
-            return false;
+            success = false;
         }
+
+        return success;
     }
 
     @DB
@@ -5445,7 +5450,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (service == Service.SecurityGroup) {
                 // allow security group service for Shared networks only
                 if (guestType != GuestType.Shared) {
-                    throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+                    throw new InvalidParameterValueException("Security group service is supported for network offerings with guest ip type " + GuestType.Shared);
                 }
                 final Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
                 sgProviders.add(Provider.SecurityGroupProvider);
