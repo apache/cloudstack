@@ -40,7 +40,8 @@ const getters = {
   domainStore: state => state.user.domainStore,
   darkMode: state => state.user.darkMode,
   themeSetting: state => state.user.themeSetting,
-  defaultListViewPageSize: state => state.user.defaultListViewPageSize
+  defaultListViewPageSize: state => state.user.defaultListViewPageSize,
+  countNotify: state => state.user.countNotify
 }
 
 export default getters

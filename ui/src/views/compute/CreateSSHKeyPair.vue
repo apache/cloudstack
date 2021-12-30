@@ -198,7 +198,8 @@ export default {
       this.hiddenElement.click()
     },
     notifyCopied () {
-      this.$notification.info({
+      this.$showNotification({
+        type: 'info',
         message: this.$t('message.success.copy.clipboard')
       })
     },

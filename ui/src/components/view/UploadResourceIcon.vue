@@ -234,13 +234,15 @@ export default {
       }).then(json => {
         console.log(this.resource)
         if (json?.uploadresourceiconresponse?.success) {
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.upload.icon'),
             description: `${this.$t('message.success.upload.icon')} ${resourceType}: ` + (this.resource.name || this.resource.username || resourceid)
           })
         }
       }).catch((error) => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('label.upload.icon'),
           description: error?.response?.data?.uploadresourceiconresponse?.errortext || '',
           duration: 0
@@ -264,13 +266,15 @@ export default {
         resourceids: resourceid
       }).then(json => {
         if (json?.deleteresourceiconresponse?.success) {
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.delete.icon'),
             description: `${this.$t('message.success.delete.icon')} ${resourceType}: ` + (this.resource.name || this.resource.username || resourceid)
           })
         }
       }).catch((error) => {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('label.delete.icon'),
           description: error?.response?.data?.deleteresourceiconresponse?.errortext || '',
           duration: 0
