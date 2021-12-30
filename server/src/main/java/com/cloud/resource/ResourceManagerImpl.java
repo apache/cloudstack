@@ -166,7 +166,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -698,11 +697,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
         if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT))) {
             if (HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
-                if (org.apache.commons.lang3.StringUtils.isBlank(username)) {
+                if (StringUtils.isBlank(username)) {
                     throw new InvalidParameterValueException("Username need to be provided.");
                 }
             } else {
-                if (org.apache.commons.lang3.StringUtils.isBlank(username) || org.apache.commons.lang3.StringUtils.isBlank(password)) {
+                if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
                     throw new InvalidParameterValueException("Username and Password need to be provided.");
                 }
             }

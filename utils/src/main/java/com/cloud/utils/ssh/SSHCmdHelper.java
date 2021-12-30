@@ -26,7 +26,6 @@ import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import org.apache.commons.lang3.StringUtils;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Session;
 
