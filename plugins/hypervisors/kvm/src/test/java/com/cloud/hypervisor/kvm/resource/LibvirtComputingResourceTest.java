@@ -420,7 +420,7 @@ public class LibvirtComputingResourceTest {
     public void testCreateDevicesWithSCSIDisk() {
         VirtualMachineTO to = createDefaultVM(false);
         to.setDetails(new HashMap<>());
-        libvirtComputingResourceSpy._guestCpuArch = "aarch64";
+        to.setPlatformEmulator("Other PV Virtio-SCSI");
 
         GuestDef guest = new GuestDef();
         guest.setGuestType(GuestType.KVM);
