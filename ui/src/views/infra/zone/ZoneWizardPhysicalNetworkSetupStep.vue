@@ -287,10 +287,10 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
+      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled?.value || false)
     },
     networkOfferingSelected () {
       return this.prefillContent.networkOfferingSelected
