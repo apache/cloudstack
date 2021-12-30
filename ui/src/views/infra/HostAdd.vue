@@ -142,6 +142,37 @@
             <a-input
               v-decorator="['agentport', { initialValue: agentport }]"
               :placeholder="$t('label.agentport')"></a-input>
+          </a-form-item><a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+          <tooltip-label slot="label" :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
+          <a-input
+            v-decorator="['baremetalcpucores', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+            :placeholder="$t('label.baremetalcpucores')"></a-input>
+        </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalcpu')" :tooltip="$t('label.baremetalcpu')"/>
+            <a-input
+              v-decorator="['baremetalcpu', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalcpu')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalmemory')" :tooltip="$t('label.baremetalmemory')"/>
+            <a-input
+              v-decorator="['baremetalmemory', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalmemory')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalmac')" :tooltip="$t('label.baremetalmac')"/>
+            <a-input
+              v-decorator="['baremetalmac', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalmac')"></a-input>
           </a-form-item>
           <a-form-item>
             <tooltip-label slot="label" :title="$t('label.hosttags')" :tooltip="placeholder.hosttags"/>
@@ -167,38 +198,6 @@
               @accountChange="id => dedicatedAccount = id"
               :error="domainError" />
           </template>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
-            <a-input
-              v-decorator="['baremetalcpucores', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalcpucores')"></a-input>
-          </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalcpu')" :tooltip="$t('label.baremetalcpu')"/>
-            <a-input
-              v-decorator="['baremetalcpu', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalcpu')"></a-input>
-          </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalmemory')" :tooltip="$t('label.baremetalmemory')"/>
-            <a-input
-              v-decorator="['baremetalmemory', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalmemory')"></a-input>
-          </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalmac')" :tooltip="$t('label.baremetalmac')"/>
-            <a-input
-              v-decorator="['baremetalmac', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalmac')"></a-input>
-          </a-form-item>
 
           <a-divider></a-divider>
 
