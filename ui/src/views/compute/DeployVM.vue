@@ -394,7 +394,8 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.sshkeypairs')"
+                v-if="isUserAllowedToListSshKeys"
+                :title="this.$t('label.sshkeypairs')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
@@ -1014,6 +1015,9 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    isUserAllowedToListSshKeys () {
+      return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'

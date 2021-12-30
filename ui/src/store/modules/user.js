@@ -16,7 +16,6 @@
 // under the License.
 
 import Cookies from 'js-cookie'
-import md5 from 'md5'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 
@@ -200,11 +199,6 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            if ('email' in result) {
-              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
-            } else {
-              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
-            }
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -246,11 +240,6 @@ const user = {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
-          if ('email' in result) {
-            commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
-          } else {
-            commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
-          }
         }).catch(error => {
           reject(error)
         })
