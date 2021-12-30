@@ -142,14 +142,15 @@
             <a-input
               v-decorator="['agentport', { initialValue: agentport }]"
               :placeholder="$t('label.agentport')"></a-input>
-          </a-form-item><a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-          <tooltip-label slot="label" :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
-          <a-input
-            v-decorator="['baremetalcpucores', {
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
+            <a-input
+              v-decorator="['baremetalcpucores', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]"
-            :placeholder="$t('label.baremetalcpucores')"></a-input>
-        </a-form-item>
+              :placeholder="$t('label.baremetalcpucores')"></a-input>
+          </a-form-item>
           <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
             <tooltip-label slot="label" :title="$t('label.baremetalcpu')" :tooltip="$t('label.baremetalcpu')"/>
             <a-input
@@ -184,7 +185,9 @@
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              v-decorator="['hosttags']">
+              v-decorator="['hosttags', {
+                rules: hostTagRules
+              }]">
               <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
             </a-select>
           </a-form-item>
@@ -266,6 +269,16 @@ export default {
         hosttags: null,
         isdedicated: null
       }
+    }
+  },
+  computed: {
+    hostTagRules () {
+      let rules = []
+      if (this.selectedClusterHyperVisorType === 'BareMetal') {
+        rules = [{ required: true, message: this.$t('message.error.select') }]
+      }
+
+      return rules
     }
   },
   beforeCreate () {
