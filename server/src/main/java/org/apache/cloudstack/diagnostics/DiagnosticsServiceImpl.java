@@ -74,7 +74,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 
 public class DiagnosticsServiceImpl extends ManagerBase implements PluggableService, DiagnosticsService, Configurable {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsServiceImpl.class);
@@ -141,7 +140,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         final String shellCmd = prepareShellCmd(cmdType, ipAddress, optionalArguments);
 
-        if (Strings.isNullOrEmpty(shellCmd)) {
+        if (StringUtils.isEmpty(shellCmd)) {
             throw new IllegalArgumentException("Optional parameters contain unwanted characters: " + optionalArguments);
         }
 
@@ -150,7 +149,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final DiagnosticsCommand command = new DiagnosticsCommand(shellCmd, vmManager.getExecuteInSequence(hypervisorType));
         final Map<String, String> accessDetails = networkManager.getSystemVMAccessDetails(vmInstance);
 
-        if (Strings.isNullOrEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
+        if (StringUtils.isEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
             throw new CloudRuntimeException("Unable to set system vm ControlIP for system vm with ID: " + vmId);
         }
 
@@ -169,7 +168,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     }
 
     protected boolean hasValidChars(String optionalArgs) {
-        if (Strings.isNullOrEmpty(optionalArgs)) {
+        if (StringUtils.isEmpty(optionalArgs)) {
             return true;
         } else {
             final String regex = "^[\\w\\-\\s.]+$";
@@ -180,7 +179,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
     protected String prepareShellCmd(String cmdType, String ipAddress, String optionalParams) {
         final String CMD_TEMPLATE = String.format("%s %s", cmdType, ipAddress);
-        if (Strings.isNullOrEmpty(optionalParams)) {
+        if (StringUtils.isEmpty(optionalParams)) {
             return CMD_TEMPLATE;
         } else {
             if (hasValidChars(optionalParams)) {

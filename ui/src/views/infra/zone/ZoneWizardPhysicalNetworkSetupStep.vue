@@ -141,7 +141,7 @@
       :closable="true"
       :footer="null"
       @cancel="() => { showError = false }"
-      v-ctrl-enter="showError = false"
+      v-ctrl-enter="() => { showError = false }"
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
@@ -489,7 +489,7 @@ export default {
       this.emitPhysicalNetworks()
     },
     updateTrafficLabel (trafficInEdit) {
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (!err) {
           this.showEditTraffic = false
           if (this.hypervisor === 'VMware') {

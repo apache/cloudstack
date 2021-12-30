@@ -136,7 +136,7 @@
                 <a-button @click="this.sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
-                <a-button type="primary" ref="submit" :loading="sslFormSubmitting">
+                <a-button @click="this.handleSslFormSubmit" type="primary" ref="submit" :loading="sslFormSubmitting">
                   {{ $t('label.submit' ) }}
                 </a-button>
               </a-form-item>
@@ -265,7 +265,7 @@ export default {
       if (this.sslFormSubmitting) return
       this.sslFormSubmitting = true
 
-      this.form.validateFields(errors => {
+      this.form.validateFieldsAndScroll(errors => {
         if (errors) {
           this.sslFormSubmitting = false
           return

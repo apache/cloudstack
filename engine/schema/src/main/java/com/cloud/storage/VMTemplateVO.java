@@ -31,6 +31,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -551,15 +553,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         return uniqueName.hashCode();
     }
 
-    @Transient
-    String toString;
-
     @Override
     public String toString() {
-        if (toString == null) {
-            toString = new StringBuilder("Tmpl[").append(id).append("-").append(format).append("-").append(uniqueName).toString();
-        }
-        return toString;
+        return String.format("Template %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uniqueName", "format"));
     }
 
     public void setRemoved(Date removed) {

@@ -28,7 +28,7 @@ import org.apache.cloudstack.cloudian.CloudianConnector;
 import org.apache.cloudstack.cloudian.response.CloudianSsoLoginResponse;
 
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = CloudianSsoLoginCmd.APINAME, description = "Generates single-sign-on login url for logged-in CloudStack user to access the Cloudian Management Console",
         responseObject = CloudianSsoLoginResponse.class,
@@ -58,7 +58,7 @@ public class CloudianSsoLoginCmd extends BaseCmd {
     @Override
     public void execute() {
         final String ssoUrl = connector.generateSsoUrl();
-        if (Strings.isNullOrEmpty(ssoUrl)) {
+        if (StringUtils.isEmpty(ssoUrl)) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate Cloudian single-sign on URL for the user");
         }
         final CloudianSsoLoginResponse response = new CloudianSsoLoginResponse();

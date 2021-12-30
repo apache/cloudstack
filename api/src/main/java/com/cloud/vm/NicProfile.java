@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.net.URI;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
@@ -147,7 +148,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         return networkId;
     }
 
-    public void setNetworId(long networkId){
+    public void setNetworkId(long networkId){
         this.networkId = networkId;
     }
 
@@ -430,16 +431,6 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     @Override
     public String toString() {
-        return new StringBuilder("NicProfile[").append(id)
-                .append("-")
-                .append(vmId)
-                .append("-")
-                .append(reservationId)
-                .append("-")
-                .append(iPv4Address)
-                .append("-")
-                .append(broadcastUri)
-                .append("]")
-                .toString();
+        return String.format("NicProfile %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "vmId", "reservationId", "iPv4Address", "broadcastUri"));
     }
 }

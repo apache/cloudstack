@@ -433,6 +433,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -498,7 +499,7 @@ export default {
       this.fetchServiceOfferingData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     isSupportedServiceObject (obj) {
       return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
@@ -707,7 +708,12 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }

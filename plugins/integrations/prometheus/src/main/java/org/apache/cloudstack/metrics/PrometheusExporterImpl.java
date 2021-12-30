@@ -62,7 +62,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class PrometheusExporterImpl extends ManagerBase implements PrometheusExporter, Manager {
     private static final Logger LOG = Logger.getLogger(PrometheusExporterImpl.class);
@@ -464,7 +464,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         @Override
         public String toMetricsString() {
-            if (Strings.isNullOrEmpty(hostName) && Strings.isNullOrEmpty(ip)) {
+            if (StringUtils.isAllEmpty(hostName, ip)) {
                 return String.format("%s{zone=\"%s\",filter=\"%s\"} %d", name, zoneName, filter, core);
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",filter=\"%s\",dedicated=\"%d\"} %d", name, zoneName, hostName, ip, filter, isDedicated, core);
@@ -495,7 +495,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         @Override
         public String toMetricsString() {
-            if (Strings.isNullOrEmpty(hostName) && Strings.isNullOrEmpty(ip)) {
+            if (StringUtils.isAllEmpty(hostName, ip)) {
                 return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, mhertz);
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",overprovisioningfactor=\"%s\",filter=\"%s\"} %.2f", name, zoneName, hostName, ip, overProvisioningFactor, filter, mhertz);
@@ -528,7 +528,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         @Override
         public String toMetricsString() {
-            if (Strings.isNullOrEmpty(hostName) && Strings.isNullOrEmpty(ip)) {
+            if (StringUtils.isAllEmpty(hostName, ip)) {
                 return String.format("%s{zone=\"%s\",filter=\"%s\"} %.2f", name, zoneName, filter, miBytes);
             }
             return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\",overprovisioningfactor=\"%s\",filter=\"%s\",dedicated=\"%d\"} %.2f", name, zoneName, hostName, ip, overProvisioningFactor, filter, isDedicated, miBytes);
@@ -583,7 +583,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
         @Override
         public String toMetricsString() {
-            if (Strings.isNullOrEmpty(overProvisioningFactor)) {
+            if (StringUtils.isEmpty(overProvisioningFactor)) {
                 return String.format("%s{zone=\"%s\",name=\"%s\",address=\"%s\",type=\"%s\",filter=\"%s\"} %.2f", name, zoneName, pname, address, type, filter, total);
             }
             return String.format("%s{zone=\"%s\",name=\"%s\",address=\"%s\",type=\"%s\",overprovisioningfactor=\"%s\",filter=\"%s\"} %.2f", name, zoneName, pname, address, type, overProvisioningFactor, filter, total);

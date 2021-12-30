@@ -21,7 +21,7 @@ package com.cloud.utils.log;
 
 import java.lang.reflect.Method;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
