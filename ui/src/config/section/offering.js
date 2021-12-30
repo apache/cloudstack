@@ -207,6 +207,11 @@ export default {
       permission: ['listBackupOfferings', 'listInfrastructure'],
       columns: ['name', 'description', 'zonename'],
       details: ['name', 'id', 'description', 'externalid', 'zone', 'allowuserdrivenbackups', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'backupofferingid'
+      }],
       actions: [{
         api: 'importBackupOffering',
         icon: 'plus',
