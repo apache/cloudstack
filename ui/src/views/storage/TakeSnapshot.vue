@@ -173,7 +173,7 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
+              title,
               description: values.name || this.resource.id,
               successMethod: result => {},
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${description}`,

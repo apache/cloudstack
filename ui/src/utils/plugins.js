@@ -62,8 +62,8 @@ export const pollJobPlugin = {
 
       store.dispatch('AddHeaderNotice', {
         key: jobId,
-        title: title,
-        description: description,
+        title,
+        description,
         status: 'progress'
       })
 
@@ -96,14 +96,14 @@ export const pollJobPlugin = {
             content = content + ' - ' + name
           }
           message.success({
-            content: content,
+            content,
             key: jobId,
             duration: 2
           })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
-            title: title,
-            description: description,
+            title,
+            description,
             status: 'done',
             duration: 2
           })
@@ -141,7 +141,7 @@ export const pollJobPlugin = {
           }
           store.dispatch('AddHeaderNotice', {
             key: jobId,
-            title: title,
+            title,
             description: desc,
             status: 'failed',
             duration: 2
