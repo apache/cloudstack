@@ -38,6 +38,7 @@ import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
@@ -71,6 +72,8 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     NicSecondaryIpDao nicSecondaryIpDao;
     @Inject
     IPAddressDao ipAddressDao;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -216,8 +219,8 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
                 } else {
                     nic.setFormat(Networks.AddressFormat.Ip6);
                 }
-                if (network.getGuestType().equals(Network.GuestType.Isolated)) {
-                    final boolean usageHidden = false; // isNetworkUsageHidden(network.getId());
+                if (Network.GuestType.Isolated.equals(network.getGuestType())) {
+                    final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_ASSIGN, network.getAccountId(), network.getDataCenterId(), 0L,
                             ipv6addr.toString(), false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
                             IPv6Address.class.getName(), null);
