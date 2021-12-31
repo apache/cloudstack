@@ -2130,7 +2130,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                     throw new Exception(msg);
                 }
-                mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
@@ -4461,10 +4460,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (secStoreUrl == null) {
                     String msg = String.format("Secondary storage for dc %s is not ready yet?", _dcId);
                     throw new Exception(msg);
-                }
-
-                if (vm.getType() != VirtualMachine.Type.User) {
-                    mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
                 }
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
@@ -7428,7 +7423,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                     throw new Exception(msg);
                 }
-                mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
                 if (morSecDs == null) {
                     throw new Exception(String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl));
