@@ -91,9 +91,6 @@ export default {
       selectOptionsTimer: null
     }
   },
-  created () {
-    this.checked = this.defaultCheckBoxValue
-  },
   watch: {
     selectOptions () {
       clearTimeout(this.selectOptionsTimer)

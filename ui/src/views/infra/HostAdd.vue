@@ -112,7 +112,9 @@
         </a-radio-group>
         <span v-if="authMethod === 'sshkey'">
           <a-alert type="warning">
-            <span style="display:block;width:300px;word-wrap:break-word;" slot="message" v-html="$t('message.add.host.sshkey')" />
+            <template #message>
+              <span style="display:block;width:300px;word-wrap:break-word;" v-html="$t('message.add.host.sshkey')" />
+            </template>
           </a-alert>
         </span>
       </div>
