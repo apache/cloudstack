@@ -143,7 +143,7 @@ export default {
       this.diskOfferingLoading = true
       if (this.resource.virtualmachineid) {
         api('listDiskOfferings', {
-          storageid: this.selectedStoragePool,
+          storageid: this.selectedStoragePool.id,
           listall: true
         }).then(response => {
           this.diskOfferings = response.listdiskofferingsresponse.diskoffering
