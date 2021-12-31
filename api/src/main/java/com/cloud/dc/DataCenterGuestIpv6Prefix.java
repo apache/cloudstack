@@ -26,8 +26,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface DataCenterGuestIpv6Prefix extends InfrastructureEntity, InternalIdentity, Identity {
     Long getDataCenterId();
 
-    Long getPodId();
-
     String getPrefix();
 
     Date getCreated();

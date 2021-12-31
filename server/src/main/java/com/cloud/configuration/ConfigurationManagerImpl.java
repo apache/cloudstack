@@ -1733,13 +1733,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id: " + zoneId);
         }
-        final Long podId = cmd.getPodId();
-        if (podId != null) {
-            final HostPodVO pod = _podDao.findById(podId);
-            if (pod == null) {
-                throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
-            }
-        }
         final String prefix = cmd.getPrefix();
         IPv6Network prefixNet = IPv6Network.fromString(prefix);
         if (prefixNet.getNetmask().asPrefixLength() > Ipv6Service.IPV6_SLAAC_CIDR_NETMASK) {
@@ -1757,7 +1750,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             dataCenterGuestIpv6Prefix = Transaction.execute(new TransactionCallback<DataCenterGuestIpv6Prefix>() {
                 @Override
                 public DataCenterGuestIpv6Prefix doInTransaction(TransactionStatus status) {
-                    DataCenterGuestIpv6PrefixVO dataCenterGuestIpv6PrefixVO = new DataCenterGuestIpv6PrefixVO(zoneId, podId, prefix);
+                    DataCenterGuestIpv6PrefixVO dataCenterGuestIpv6PrefixVO = new DataCenterGuestIpv6PrefixVO(zoneId, prefix);
                     dataCenterGuestIpv6PrefixDao.persist(dataCenterGuestIpv6PrefixVO);
                     return dataCenterGuestIpv6PrefixVO;
                 }

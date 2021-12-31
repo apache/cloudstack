@@ -35,14 +35,6 @@ public class DataCenterGuestIpv6PrefixDaoImpl extends GenericDaoBase<DataCenterG
     }
 
     @Override
-    public List<DataCenterGuestIpv6PrefixVO> listByPodId(long podId) {
-        SearchCriteria<DataCenterGuestIpv6PrefixVO> sc = createSearchCriteria();
-        sc.addOr("podId", SearchCriteria.Op.NULL);
-        sc.addOr("podId", SearchCriteria.Op.EQ, podId);
-        return listBy(sc);
-    }
-
-    @Override
     public List<DataCenterGuestIpv6PrefixVO> listByDataCenterId(long dcId) {
         QueryBuilder<DataCenterGuestIpv6PrefixVO> sc = QueryBuilder.create(DataCenterGuestIpv6PrefixVO.class);
         sc.and(sc.entity().getDataCenterId(), SearchCriteria.Op.EQ, dcId);

@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
-import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -60,12 +59,6 @@ public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
             description = "UUID of zone to which the IPv6 prefix belongs to.",
             validations = {ApiArgValidator.PositiveNumber})
     private Long zoneId;
-    @Parameter(name = ApiConstants.POD_ID,
-            type = CommandType.UUID,
-            entityType = PodResponse.class,
-            description = "UUID of POD to which the IPv6 prefix belongs to.",
-            validations = {ApiArgValidator.PositiveNumber})
-    private Long podId;
 
     @Parameter(name = ApiConstants.PREFIX,
             type = CommandType.STRING,
@@ -80,10 +73,6 @@ public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public Long getPodId() {
-        return podId;
     }
 
     public String getPrefix() {

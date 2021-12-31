@@ -24,7 +24,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterGuestIpv6PrefixDao extends GenericDao<DataCenterGuestIpv6PrefixVO, Long> {
 
-    List<DataCenterGuestIpv6PrefixVO> listByPodId(long podId);
-
     List<DataCenterGuestIpv6PrefixVO> listByDataCenterId(long dcId);
 }

@@ -43,9 +43,6 @@ public class DataCenterGuestIpv6PrefixVO implements DataCenterGuestIpv6Prefix {
     @Column(name = "data_center_id")
     private long dataCenterId;
 
-    @Column(name = "pod_id")
-    private Long podId;
-
     @Column(name = "prefix")
     private String prefix;
 
@@ -55,10 +52,9 @@ public class DataCenterGuestIpv6PrefixVO implements DataCenterGuestIpv6Prefix {
     @Column(name= GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    public DataCenterGuestIpv6PrefixVO(long dcId, Long podId, String prefix) {
+    public DataCenterGuestIpv6PrefixVO(long dcId, String prefix) {
         this();
         this.dataCenterId = dcId;
-        this.podId = podId;
         this.prefix = prefix;
         this.created = new Date();
     }
@@ -84,15 +80,6 @@ public class DataCenterGuestIpv6PrefixVO implements DataCenterGuestIpv6Prefix {
 
     public void setDataCenterId(long dcId) {
         this.dataCenterId = dcId;
-    }
-
-    @Override
-    public Long getPodId() {
-        return podId;
-    }
-
-    public void setPodId(long podId) {
-        this.podId = podId;
     }
 
     public String getPrefix() {

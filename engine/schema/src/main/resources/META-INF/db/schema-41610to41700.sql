@@ -27,13 +27,11 @@ CREATE TABLE `cloud`.`dc_ip6_guest_prefix` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) DEFAULT NULL,
   `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
-  `pod_id` bigint(20) unsigned DEFAULT NULL COMMENT 'pod it belongs to',
   `prefix` varchar(255) NOT NULL COMMENT 'prefix of the ipv6 network',
   `created` datetime default NULL,
   `removed` datetime default NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_dc_ip6_guest_prefix__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
-  CONSTRAINT `fk_dc_ip6_guest_prefix__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`),
   CONSTRAINT `uc_dc_ip6_guest_prefix__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -41,10 +41,6 @@ public class DataCenterGuestIpv6PrefixResponse extends BaseResponse {
     @Param(description = "id of zone to which the IPv6 prefix belongs to." )
     private String zoneId;
 
-    @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "id of pod to which the IPv6 prefix belongs to." )
-    private String pod;
-
     @SerializedName(ApiConstants.CREATED)
     @Param(description = " date when this IPv6 prefix was created." )
     private Date created;
@@ -59,10 +55,6 @@ public class DataCenterGuestIpv6PrefixResponse extends BaseResponse {
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
-    }
-
-    public void setPod(String pod) {
-        this.pod = pod;
     }
 
     public void setCreated(Date created) {

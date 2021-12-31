@@ -1268,10 +1268,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPrefix(prefix.getPrefix());
         DataCenter dc = ApiDBUtils.findZoneById(prefix.getDataCenterId());
         response.setZoneId(dc.getUuid());
-        if (prefix.getPodId() != null) {
-            Pod pod = ApiDBUtils.findPodById(prefix.getPodId());
-            response.setPod(pod.getUuid());
-        }
         response.setCreated(prefix.getCreated());
         return response;
     }
