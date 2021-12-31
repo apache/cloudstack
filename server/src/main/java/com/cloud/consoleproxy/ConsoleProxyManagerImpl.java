@@ -1284,7 +1284,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" dns2=").append(dc.getDns2());
         }
 
-        VirtualMachineGuru.appendCertificateDetails(buf, certificate);
+        //VirtualMachineGuru.appendCertificateDetails(buf, certificate);
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);

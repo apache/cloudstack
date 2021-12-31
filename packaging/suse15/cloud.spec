@@ -584,7 +584,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
 %attr(0755,root,root) /usr/bin/cloudstack-sccs
 # TODO: Remove systemvm.iso
-%attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
+#%attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/agent.zip
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/cloud-scripts.tgz
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/patch-sysvms.sh

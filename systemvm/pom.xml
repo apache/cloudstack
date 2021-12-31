@@ -144,31 +144,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>${mkisofs}</executable>
-                    <workingDirectory>dist</workingDirectory>
-                    <arguments>
-                        <argument>-quiet</argument>
-                        <argument>-r</argument>
-                        <argument>-o</argument>
-                        <argument>systemvm.iso</argument>
-                        <argument>agent.zip</argument>
-                        <argument>cloud-scripts.tgz</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
     <profiles>

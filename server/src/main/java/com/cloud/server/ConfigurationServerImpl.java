@@ -742,13 +742,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         s_logger.info("Trying to copy private keys to hosts");
         String injectScript = getInjectScript();
         String scriptPath = Script.findScript("", injectScript);
-        String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
         if (scriptPath == null) {
             throw new CloudRuntimeException("Unable to find key inject script " + injectScript);
         }
-        if (systemVmIsoPath == null) {
-            throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
-        }
+
         Script command = null;
         if(isOnWindows()) {
             command = new Script("python", s_logger);
