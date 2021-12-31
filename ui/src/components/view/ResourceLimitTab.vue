@@ -116,7 +116,8 @@ export default {
         this.form = form
         this.formLoading = false
       } catch (e) {
-        this.$notification.error({
+        this.$showNotification({
+          type: 'error',
           message: this.$t('message.request.failed'),
           description: e
         })

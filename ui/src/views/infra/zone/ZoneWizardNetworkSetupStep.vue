@@ -373,7 +373,7 @@ export default {
   created () {
     this.physicalNetworks = this.prefillContent.physicalNetworks
     this.steps = this.filteredSteps()
-    this.currentStep = this.prefillContent.networkStep ? this.prefillContent.networkStep : 0
+    this.currentStep = this.prefillContent?.networkStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.formKey === this.stepChild)
     }

@@ -160,7 +160,7 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
+              title,
               description: values.volumeid,
               successMethod: result => {
                 this.closeAction()

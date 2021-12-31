@@ -196,8 +196,8 @@ export default {
     addStep (title, step) {
       this.steps.push({
         index: this.currentStep,
-        title: title,
-        step: step,
+        title,
+        step,
         status: STATUS_PROCESS
       })
       this.setStepStatus(STATUS_PROCESS)
@@ -971,7 +971,7 @@ export default {
       this.currentStep++
       this.addStep('message.configuring.storage.traffic', 'storageTraffic')
 
-      this.stepData.tasks = this.stepData.tasks ? this.stepData.tasks : []
+      this.stepData.tasks = this.stepData?.tasks || []
       await this.prefillContent['storage-ipranges'].map(async (storageIpRange, index) => {
         const params = {}
         params.vlan = storageIpRange.vlan
@@ -1549,7 +1549,8 @@ export default {
         this.$emit('refresh-data')
       } catch (e) {
         this.loading = false
-        await this.$notification.error({
+        await this.$showNotification({
+          type: 'error',
           message: this.$t('message.request.failed'),
           description: e
         })

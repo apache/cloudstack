@@ -314,7 +314,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -921,6 +921,8 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
+      }).finally(() => {
+        this.closeModal()
       })
     },
     handleDeleteStickinessPolicy () {
@@ -992,6 +994,7 @@ export default {
       })
     },
     handleStickinessMethodSelectChange (e) {
+      this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {

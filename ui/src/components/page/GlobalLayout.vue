@@ -92,6 +92,13 @@
         />
       </a-affix>
 
+      <a-button
+        v-if="showClear"
+        type="default"
+        size="small"
+        class="button-clear-notification"
+        @click="onClearNotification">{{ $t('label.clear.notification') }}</a-button>
+
       <!-- layout content -->
       <a-layout-content class="layout-content" :class="{'is-header-fixed': fixedHeader}">
         <slot></slot>
@@ -129,7 +136,8 @@ export default {
     return {
       collapsed: false,
       menus: [],
-      showSetting: false
+      showSetting: false,
+      showClear: false
     }
   },
   computed: {
@@ -161,6 +169,12 @@ export default {
         document.body.classList.add('dark-mode')
       } else {
         document.body.classList.remove('dark-mode')
+      }
+    },
+    '$store.getters.countNotify' (countNotify) {
+      this.showClear = false
+      if (countNotify && countNotify > 0) {
+        this.showClear = true
       }
     }
   },
@@ -213,6 +227,10 @@ export default {
     },
     toggleSetting (showSetting) {
       this.showSetting = showSetting
+    },
+    onClearNotification () {
+      this.$notification.destroy()
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
     }
   }
 }

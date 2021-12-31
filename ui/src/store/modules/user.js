@@ -57,7 +57,8 @@ const user = {
     domainStore: {},
     darkMode: false,
     themeSetting: {},
-    defaultListViewPageSize: 20
+    defaultListViewPageSize: 20,
+    countNotify: 0
   },
 
   mutations: {
@@ -123,6 +124,9 @@ const user = {
     },
     SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
       state.defaultListViewPageSize = defaultListViewPageSize
+    },
+    SET_COUNT_NOTIFY (state, number) {
+      state.countNotify = number
     }
   },
 

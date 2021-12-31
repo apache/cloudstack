@@ -38,9 +38,7 @@ mocks = {
   $message: {
     error: jest.fn((message) => {})
   },
-  $notification: {
-    error: jest.fn((message) => {})
-  },
+  $showNotification: jest.fn((obj) => {}),
   $pollJob: jest.fn((obj) => {
     switch (obj.jobId) {
       case 'test-job-id-case-1':
@@ -590,8 +588,9 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
         await flushPromises()
 
-        expect(mocks.$notification.error).toHaveBeenCalled()
-        expect(mocks.$notification.error).toHaveBeenCalledWith({
+        expect(mocks.$showNotification).toHaveBeenCalled()
+        expect(mocks.$showNotification).toHaveBeenCalledWith({
+          type: 'error',
           message: i18n.global.t('message.request.failed'),
           description: 'Error: throw error message',
           duration: 0

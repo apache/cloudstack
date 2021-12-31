@@ -155,7 +155,8 @@ export default {
           this.traffictype = this.trafficTypes[0].traffictype || undefined
           this.fillEditFromFieldValues()
         }).catch(error => {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.errorresponse.errortext
           })
@@ -184,8 +185,8 @@ export default {
         api('updateTrafficType', params).then(response => {
           this.$pollJob({
             jobId: response.updatetraffictyperesponse.jobid,
-            title: title,
-            description: description,
+            title,
+            description,
             successMessage: `${this.$t('label.update.traffic.label')} ${this.traffictype} ${this.$t('label.success')}`,
             loadingMessage: `${title} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result')

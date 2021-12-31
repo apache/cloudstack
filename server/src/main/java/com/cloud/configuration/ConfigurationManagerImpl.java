@@ -5450,7 +5450,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (service == Service.SecurityGroup) {
                 // allow security group service for Shared networks only
                 if (guestType != GuestType.Shared) {
-                    throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+                    throw new InvalidParameterValueException("Security group service is supported for network offerings with guest ip type " + GuestType.Shared);
                 }
                 final Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
                 sgProviders.add(Provider.SecurityGroupProvider);

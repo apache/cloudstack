@@ -395,7 +395,7 @@
               </a-step>
               <a-step
                 v-if="isUserAllowedToListSshKeys"
-                :title="this.$t('label.sshkeypairs')"
+                :title="$t('label.sshkeypairs')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
@@ -1083,10 +1083,10 @@ export default {
           this.vm.podname = pod.name
         }
 
-        const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
-        if (cluster) {
-          this.vm.clusterid = cluster.id
-          this.vm.clustername = cluster.name
+        if (this.serviceOffering.rootdisksize) {
+          this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
+        } else if (this.diskSize) {
+          this.vm.disksizetotalgb = this.diskSize
         }
 
         const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
@@ -1479,27 +1479,31 @@ export default {
         const values = toRaw(this.form)
 
         if (!values.templateid && !values.isoid) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('message.request.failed'),
             description: this.$t('message.template.iso')
           })
           return
         } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.3.continue')
           })
           return
         }
         if (!values.computeofferingid) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.2.continue')
           })
           return
         }
         if (this.error) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
           })
@@ -1612,7 +1616,8 @@ export default {
                 }
               }
             } else {
-              this.$notification.error({
+              this.$showNotification({
+                type: 'error',
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.step.4.continue')
               })
@@ -1674,7 +1679,8 @@ export default {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
                 if (vm.password) {
-                  this.$notification.success({
+                  this.$showNotification({
+                    type: 'success',
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
                     duration: 0

@@ -20,7 +20,6 @@
     <a-row :gutter="6">
       <a-col :md="24" :lg="layout === 'horizontal' ? 10 : 24">
         <a-checkbox
-          v-model:checked="fields[checkBoxDecorator]"
           :checked="checked"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
@@ -31,8 +30,7 @@
           v-if="reversed !== checked"
           :label="selectLabel">
           <a-select
-            v-model:value="fields[selectDecorator]"
-            :defaultValue="selectDecorator ? undefined : selectedOption ? selectedOption : getSelectInitialValue()"
+            v-model="selectedOption"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -69,10 +67,6 @@ export default {
       type: String,
       required: true
     },
-    checkBoxDecorator: {
-      type: String,
-      default: ''
-    },
     defaultCheckBoxValue: {
       type: Boolean,
       default: false
@@ -85,10 +79,6 @@ export default {
       type: String,
       default: ''
     },
-    selectDecorator: {
-      type: String,
-      default: ''
-    },
     reversed: {
       type: Boolean,
       default: false
@@ -98,7 +88,18 @@ export default {
     return {
       checked: false,
       selectedOption: null,
-      fields: {}
+      selectOptionsTimer: null
+    }
+  },
+  created () {
+    this.checked = this.defaultCheckBoxValue
+  },
+  watch: {
+    selectOptions () {
+      clearTimeout(this.selectOptionsTimer)
+      this.selectOptionsTimer = setTimeout(() => {
+        this.handleSelectOptionsUpdated()
+      }, 50)
     }
   },
   computed: {
@@ -122,18 +123,23 @@ export default {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
-    getSelectInitialValue () {
-      const initialValue = this.selectSource?.filter(x => x.enabled !== false)?.[0]?.id || ''
-      this.handleSelectChange(initialValue)
-      return initialValue
-    },
     handleCheckChange (e) {
       this.checked = e.target.checked
+      if (this.checked && !this.selectedOption) {
+        this.selectedOption = this.selectSource?.filter(x => x.enabled !== false)?.[0]?.id || null
+      }
       this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
     },
     handleSelectChange (val) {
       this.selectedOption = val
       this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
+    },
+    handleSelectOptionsUpdated () {
+      if (!this.checked) return
+      var enabledOptions = this.selectSource?.filter(x => x.enabled !== false) || []
+      if (this.selectedOption && !enabledOptions.includes(this.selectedOption)) {
+        this.handleSelectChange(enabledOptions[0]?.id || null)
+      }
     }
   }
 }

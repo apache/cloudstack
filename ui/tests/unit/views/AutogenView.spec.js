@@ -110,21 +110,14 @@ mocks = {
   $notifyError: jest.fn((error) => {
     return error
   }),
-  $notification: {
-    info: jest.fn((option) => {
-      return {
-        message: option.message,
-        description: 'test-description',
-        duration: option.duration
-      }
-    }),
-    success: jest.fn((option) => {
-      return {
-        message: option.message,
-        description: option.description
-      }
-    })
-  },
+  $showNotification: jest.fn((option) => {
+    return {
+      type: option.type,
+      message: option.message,
+      description: 'test-description',
+      duration: option.duration
+    }
+  }),
   $message: {
     success: jest.fn((obj) => {
       return obj
@@ -1506,7 +1499,7 @@ describe('Views > AutogenView.vue', () => {
     })
 
     describe('pollActionCompletion()', () => {
-      it('check $notification, fetchData() when pollActionCompletion() is called with action is empty', async (done) => {
+      it('check $showNotification when pollActionCompletion() is called with action is empty', async (done) => {
         originalFunc.fetchData = wrapper.vm.fetchData
         wrapper.vm.fetchData = jest.fn((args) => {})
 
@@ -1524,7 +1517,7 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(fetchData).toHaveBeenCalled()
-        expect(mocks.$notification.info).not.toHaveBeenCalled()
+        expect(mocks.$showNotification).not.toHaveBeenCalled()
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
@@ -1539,7 +1532,7 @@ describe('Views > AutogenView.vue', () => {
         done()
       })
 
-      it('check $notification, fetchData() when pollActionCompletion() is called with action is not empty', async (done) => {
+      it('check $showNotification when pollActionCompletion() is called with action is not empty', async (done) => {
         originalFunc.fetchData = wrapper.vm.fetchData
         wrapper.vm.fetchData = jest.fn((args) => {})
         const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
@@ -1561,8 +1554,9 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(fetchData).toHaveBeenCalled()
-        expect(mocks.$notification.info).toHaveBeenCalled()
-        expect(mocks.$notification.info).toHaveLastReturnedWith({
+        expect(mocks.$showNotification).toHaveBeenCalled()
+        expect(mocks.$showNotification).toHaveLastReturnedWith({
+          type: 'info',
           message: 'test-name-en',
           description: 'test-description',
           duration: 0

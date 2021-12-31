@@ -166,7 +166,8 @@ export default {
           this.$pollJob({
             jobId,
             successMethod: result => {
-              this.$notification.success({
+              this.$showNotification({
+                type: 'success',
                 message: this.$t('message.success.change.offering')
               })
             },

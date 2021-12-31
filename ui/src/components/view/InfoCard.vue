@@ -651,7 +651,7 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="!isStatic && resourceType && 'listTags' in $store.getters.apis">
+      <div class="account-center-tags" v-if="!isStatic && resourceType && tagsSupportingResourceTypes.includes(this.resourceType) && 'listTags' in $store.getters.apis">
         <a-divider/>
         <a-spin :spinning="loadingTags">
           <div class="title">{{ $t('label.tags') }}</div>
@@ -775,15 +775,15 @@ export default {
         this.showKeys = false
         this.setData()
 
+      if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
         if ('tags' in this.resource) {
           this.tags = this.resource.tags
         } else if (this.resourceType) {
           this.getTags()
         }
-        if ('apikey' in this.resource) {
-          this.getUserKeys()
-        }
-        this.getIcons()
+      }
+      if ('apikey' in this.resource) {
+        this.getUserKeys()
       }
     },
     async templateIcon () {
@@ -798,6 +798,12 @@ export default {
     this.getIcons()
   },
   computed: {
+    tagsSupportingResourceTypes () {
+      return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'Network',
+        'LoadBalancer', 'PortForwardingRule', 'FirewallRule', 'SecurityGroup', 'SecurityGroupRule',
+        'PublicIpAddress', 'Project', 'Account', 'Vpc', 'NetworkACL', 'StaticRoute', 'VMSnapshot',
+        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
+    },
     name () {
       return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype

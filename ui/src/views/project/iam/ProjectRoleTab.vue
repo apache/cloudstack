@@ -230,7 +230,8 @@ export default {
           params[key] = input
         }
         api('updateProjectRole', params).then(response => {
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.update.project.role'),
             description: this.$t('label.update.project.role')
           })
@@ -269,7 +270,8 @@ export default {
           params[key] = input
         }
         api('createProjectRole', params).then(response => {
-          this.$notification.success({
+          this.$showNotification({
+            type: 'success',
             message: this.$t('label.create.project.role'),
             description: this.$t('label.create.project.role')
           })
@@ -290,7 +292,8 @@ export default {
         projectid: this.resource.id,
         id: role.id
       }).then(response => {
-        this.$notification.success({
+        this.$showNotification({
+          type: 'success',
           message: this.$t('label.delete.project.role'),
           description: this.$t('label.delete.project.role')
         })
