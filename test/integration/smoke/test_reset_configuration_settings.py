@@ -44,12 +44,8 @@ class TestRestConfigurationSettings(cloudstackTestCase):
         return
 
     @classmethod
-    def tearDownClass(self):
-        try:
-            # Cleanup resources used
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+    def tearDownClass(cls):
+        super(TestRestConfigurationSettings, cls).tearDownClass()
         return
 
     def setUp(self):
