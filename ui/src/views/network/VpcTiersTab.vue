@@ -664,8 +664,7 @@ export default {
         }
 
         api('createNetwork', params).then(() => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
           })
         }).catch(error => {

@@ -1491,7 +1491,7 @@ export default {
       this.form.validateFieldsAndScroll(options, async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
-            this.$showNotification({
+            this.$notification.error({
               type: 'error',
               message: this.$t('message.license.agreements.not.accepted'),
               description: this.$t('message.step.license.agreements.continue')
@@ -1499,8 +1499,7 @@ export default {
             return
           }
 
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
           })
@@ -1508,31 +1507,27 @@ export default {
         }
 
         if (!values.templateid && !values.isoid) {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.template.iso')
           })
           return
         } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.3.continue')
           })
           return
         }
         if (!values.computeofferingid) {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.2.continue')
           })
           return
         }
         if (this.error) {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
           })
@@ -1645,8 +1640,7 @@ export default {
                 }
               }
             } else {
-              this.$showNotification({
-                type: 'error',
+              this.$notification.error({
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.step.4.continue')
               })
@@ -1708,8 +1702,7 @@ export default {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
                 if (vm.password) {
-                  this.$showNotification({
-                    type: 'success',
+                  this.$notification.error({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
                     duration: 0

@@ -164,8 +164,7 @@ export default {
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('label.error'),
           description: this.$t('message.error.try.save.setting')
         })

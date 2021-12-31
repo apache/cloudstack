@@ -154,14 +154,12 @@ export default {
           const success = result.imagestore.success || false
           const message = result.imagestore.message || ''
           if (success) {
-            this.$showNotification({
-              type: 'success',
+            this.$notification.success({
               message: title,
               description: message
             })
           } else {
-            this.$showNotification({
-              type: 'error',
+            this.$notification.error({
               message: title,
               description: message,
               duration: 0

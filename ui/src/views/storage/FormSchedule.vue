@@ -385,8 +385,7 @@ export default {
         this.actionLoading = true
         api('createSnapshotPolicy', params).then(json => {
           this.$emit('refresh')
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.action.recurring.snapshot'),
             description: this.$t('message.success.recurring.snapshot')
           })
