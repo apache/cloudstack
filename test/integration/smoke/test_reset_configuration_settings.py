@@ -60,11 +60,7 @@ class TestRestConfigurationSettings(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestRestConfigurationSettings, self).tearDown()
         return
 
     @attr(tags=["advanced", "advancedsg"], required_hardware="false")
