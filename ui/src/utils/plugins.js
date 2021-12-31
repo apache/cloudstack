@@ -237,7 +237,7 @@ export const notifierPlugin = {
       })
     }
 
-    Vue.prototype.$showNotification = function (config) {
+    app.config.globalProperties.$showNotification = function (config) {
       let countNotify = store.getters.countNotify
       countNotify++
       store.commit('SET_COUNT_NOTIFY', countNotify)

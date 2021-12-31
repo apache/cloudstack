@@ -775,15 +775,16 @@ export default {
         this.showKeys = false
         this.setData()
 
-      if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
-        if ('tags' in this.resource) {
-          this.tags = this.resource.tags
-        } else if (this.resourceType) {
-          this.getTags()
+        if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
+          if ('tags' in this.resource) {
+            this.tags = this.resource.tags
+          } else if (this.resourceType) {
+            this.getTags()
+          }
         }
-      }
-      if ('apikey' in this.resource) {
-        this.getUserKeys()
+        if ('apikey' in this.resource) {
+          this.getUserKeys()
+        }
       }
     },
     async templateIcon () {
@@ -1034,7 +1035,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
 :deep(.ant-card-body) {
   padding: 30px;
 }

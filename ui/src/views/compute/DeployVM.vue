@@ -1083,16 +1083,22 @@ export default {
           this.vm.podname = pod.name
         }
 
-        if (this.serviceOffering.rootdisksize) {
-          this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
-        } else if (this.diskSize) {
-          this.vm.disksizetotalgb = this.diskSize
+        const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
+        if (cluster) {
+          this.vm.clusterid = cluster.id
+          this.vm.clustername = cluster.name
         }
 
         const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
         if (host) {
           this.vm.hostid = host.id
           this.vm.hostname = host.name
+        }
+
+        if (this.serviceOffering.rootdisksize) {
+          this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
+        } else if (this.diskSize) {
+          this.vm.disksizetotalgb = this.diskSize
         }
 
         if (this.diskSize) {
