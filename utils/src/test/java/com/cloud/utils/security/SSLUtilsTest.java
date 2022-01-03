@@ -54,24 +54,26 @@ public class SSLUtilsTest {
 
     @Test
     public void getSSLContextTest() throws NoSuchAlgorithmException {
-        Assert.assertEquals("TLSv1.2", spySSLUtils.getSSLContext().getProtocol());
+        Assert.assertEquals("TLSv1.3", spySSLUtils.getSSLContext().getProtocol());
     }
 
     @Test
     public void getSSLContextTestStringAsParameter() throws NoSuchAlgorithmException, NoSuchProviderException {
-        Assert.assertEquals("TLSv1.2", spySSLUtils.getSSLContext("SunJSSE").getProtocol());
+        Assert.assertEquals("TLSv1.3", spySSLUtils.getSSLContext("SunJSSE").getProtocol());
     }
 
     @Test
     public void getSupportedProtocolsTest() {
-        ArrayList<String> protocolsList = new ArrayList<>(Arrays.asList(spySSLUtils.getSupportedProtocols(new String[] { "TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3", "SSLv2Hello" })));
+        ArrayList<String> protocolsList = new ArrayList<>(Arrays.asList(spySSLUtils.getSupportedProtocols(new String[] { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3", "SSLv3", "SSLv2Hello" })));
         verifyProtocols(protocolsList);
     }
 
     private void verifyProtocols(ArrayList<String> protocolsList) {
-        Assert.assertTrue(protocolsList.contains("TLSv1"));
-        Assert.assertTrue(protocolsList.contains("TLSv1.1"));
+        System.out.println(protocolsList);
+        Assert.assertTrue(protocolsList.contains("TLSv1.3"));
         Assert.assertTrue(protocolsList.contains("TLSv1.2"));
+        Assert.assertFalse(protocolsList.contains("TLSv1.1"));
+        Assert.assertFalse(protocolsList.contains("TLSv1"));
         Assert.assertFalse(protocolsList.contains("SSLv3"));
         Assert.assertFalse(protocolsList.contains("SSLv2Hello"));
     }

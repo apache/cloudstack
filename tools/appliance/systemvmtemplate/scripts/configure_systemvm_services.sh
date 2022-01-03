@@ -28,7 +28,7 @@ function configure_apache2() {
    # Backup stock apache configuration since we may modify it in Secondary Storage VM
    cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/default.orig
    cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.orig
-   sed -i 's/SSLProtocol .*$/SSLProtocol TLSv1.2/g' /etc/apache2/mods-available/ssl.conf
+   sed -i 's/SSLProtocol .*$/SSLProtocol TLSv1.3/g' /etc/apache2/mods-available/ssl.conf
 }
 
 function configure_strongswan() {
