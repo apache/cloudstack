@@ -5645,7 +5645,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
             if (pendingWorkJobs.size() > 1) {
-                s_logger.warn(String.format("The number of jobs to add network %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
+                throw new CloudRuntimeException(String.format("The number of jobs to add network %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
             }
             workJob = pendingWorkJobs.get(0);
         } else {
