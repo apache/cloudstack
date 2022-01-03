@@ -69,7 +69,6 @@ public class SSLUtilsTest {
     }
 
     private void verifyProtocols(ArrayList<String> protocolsList) {
-        System.out.println(protocolsList);
         Assert.assertTrue(protocolsList.contains("TLSv1.3"));
         Assert.assertTrue(protocolsList.contains("TLSv1.2"));
         Assert.assertFalse(protocolsList.contains("TLSv1.1"));
