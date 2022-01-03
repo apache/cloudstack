@@ -58,7 +58,7 @@ public class DbMetricsResponse extends BaseResponse {
     private String versionComment;
 
     @SerializedName(MetricConstants.QUERIES)
-    @Param(description = "the number of queroes performed on the DB")
+    @Param(description = "the number of queries performed on the DB")
     private int queries;
 
     @SerializedName(MetricConstants.DATABASE_LOAD_AVERAGES)
