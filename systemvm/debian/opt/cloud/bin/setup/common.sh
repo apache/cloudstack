@@ -599,7 +599,7 @@ setup_certificates() {
   privatekey=$(echo "$PRIVATEKEY" | base64 -d)
   kspass=$(echo "$KEYSTORE_PSSWD"| base64 -d)
   ksvalidity="$KS_VALIDITY"
-  /opt/cloud/bin/keystore-cert-import /usr/local/cloud/systemvm/conf/agent.properties $kspass $ksvalidity \
+  timeout 600 /opt/cloud/bin/keystore-cert-import /usr/local/cloud/systemvm/conf/agent.properties $kspass $ksvalidity \
       /usr/local/cloud/systemvm/conf/cloud.jks ssh /usr/local/cloud/systemvm/conf/cloud.crt \
       $certificate /usr/local/cloud/systemvm/conf/cloud.ca.crt $cacertificate /usr/local/cloud/systemvm/conf/cloud.key $privatekey
 }

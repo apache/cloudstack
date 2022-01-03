@@ -66,7 +66,7 @@ CORS
   setup_ntp
 
   rm -f /etc/logrotate.d/cloud
-  timeout 600 setup_certificates <( setup_certificates )
+  setup_certificates
   if [ $? -gt 0 ]; then
       log_it "Failed to setup CA Certificate for $TYPE"
   fi
