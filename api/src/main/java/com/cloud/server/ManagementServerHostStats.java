@@ -97,7 +97,7 @@ public interface ManagementServerHostStats {
     String getLogInfo();
 
     /**
-     * @return in mega herz
+     * @return in mega hertz
      */
     double getSystemTotalCpuCycles();
 
