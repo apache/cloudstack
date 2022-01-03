@@ -241,8 +241,8 @@ public class SSHCmdHelper {
             }
             return result;
         } catch (Exception e) {
-            s_logger.debug("Ssh executed failed", e);
-            throw new SshException("Ssh executed failed " + e.getMessage());
+            s_logger.debug("SSH execution failed", e);
+            throw new SshException("SSH execution failed " + e.getMessage());
         } finally {
             if (sshSession != null)
                 sshSession.close();
