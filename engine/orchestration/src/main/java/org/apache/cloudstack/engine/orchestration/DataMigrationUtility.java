@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -60,8 +61,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import org.apache.log4j.Logger;
 
 public class DataMigrationUtility {
+    private static Logger LOGGER = Logger.getLogger(DataMigrationUtility.class);
+
     @Inject
     SecondaryStorageVmDao secStorageVmDao;
     @Inject
@@ -88,19 +92,22 @@ public class DataMigrationUtility {
      *  the migration is terminated.
      */
     private boolean filesReadyToMigrate(Long srcDataStoreId) {
-        String[] validStates = new String[]{"Ready", "Allocated", "Destroying", "Destroyed", "Failed"};
+        State[] validStates = {State.Ready, State.Allocated, State.Destroying, State.Destroyed, State.Failed};
         boolean isReady = true;
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         for (TemplateDataStoreVO template : templates) {
-            isReady &= (Arrays.asList(validStates).contains(template.getState().toString()));
+            isReady &= (Arrays.asList(validStates).contains(template.getState()));
+            LOGGER.trace(String.format("template state: ", template.getState()));
         }
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
-            isReady &= (Arrays.asList(validStates).contains(snapshot.getState().toString()));
+            isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
+            LOGGER.trace(String.format("snapshot state: ", snapshot.getState()));
         }
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
         for (VolumeDataStoreVO volume : volumes) {
-            isReady &= (Arrays.asList(validStates).contains(volume.getState().toString()));
+            isReady &= (Arrays.asList(validStates).contains(volume.getState()));
+            LOGGER.trace(String.format("volume state: ", volume.getState()));
         }
         return isReady;
     }
