@@ -289,8 +289,7 @@ export default {
         featured: this.resource.featured,
         op: this.selectedOperation.toLowerCase()
       }).then(response => {
-        this.$showNotification({
-          type: 'success',
+        this.$notification.success({
           message: `${this.$t('label.success.updated')} ${resourceType} ${this.$t('label.permissions')}`
         })
         this.closeModal()

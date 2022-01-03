@@ -1128,8 +1128,7 @@ export default {
             if (action.response) {
               const description = action.response(result.jobresult)
               if (description) {
-                this.$showNotification({
-                  type: 'info',
+                this.$notification.info({
                   message: this.$t(action.label),
                   description: (<span domPropsInnerHTML={description}></span>),
                   duration: 0

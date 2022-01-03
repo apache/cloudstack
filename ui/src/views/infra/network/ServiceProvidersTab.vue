@@ -1219,8 +1219,7 @@ export default {
           this.onCloseAction()
         } catch (error) {
           this.actionLoading = false
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: error
           })
@@ -1356,8 +1355,7 @@ export default {
         this.onCloseAction()
       } catch (message) {
         this.actionLoading = false
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('message.request.failed'),
           description: message
         })

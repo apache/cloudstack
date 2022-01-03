@@ -191,8 +191,7 @@ export default {
           this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
           const { fileList } = this
           if (this.fileList.length > 1) {
-            this.$showNotification({
-              type: 'error',
+            this.$notification.error({
               message: this.$t('message.upload.volume.failed'),
               description: this.$t('message.upload.file.limit'),
               duration: 0
@@ -217,15 +216,13 @@ export default {
               },
               timeout: 86400000
             }).then((json) => {
-            this.$showNotification({
-              type: 'success',
+            this.$notification.success({
               message: this.$t('message.success.upload'),
               description: this.$t('message.success.upload.volume.description')
             })
             this.closeAction()
           }).catch(e => {
-            this.$showNotification({
-              type: 'error',
+            this.$notification.error({
               message: this.$t('message.upload.failed'),
               description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
               duration: 0

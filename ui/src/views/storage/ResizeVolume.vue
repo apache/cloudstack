@@ -125,8 +125,7 @@ export default {
           })
           this.closeModal()
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.errorresponse.errortext,
             duration: 0

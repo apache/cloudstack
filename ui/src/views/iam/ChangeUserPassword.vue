@@ -128,8 +128,7 @@ export default {
           params.currentpassword = values.currentpassword
         }
         api('updateUser', {}, 'POST', params).then(json => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.action.change.password'),
             description: `${this.$t('message.success.change.password')} ${this.resource.username}`
           })

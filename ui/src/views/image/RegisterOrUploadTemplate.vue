@@ -511,16 +511,14 @@ export default {
           },
           timeout: 86400000
         }).then((json) => {
-        this.$showNotification({
-          type: 'success',
+        this.$notification.success({
           message: this.$t('message.success.upload'),
           description: this.$t('message.success.upload.template.description')
         })
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(e => {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('message.upload.failed'),
           description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
           duration: 0
@@ -889,8 +887,7 @@ export default {
         if (this.currentForm === 'Create') {
           this.loading = true
           api('registerTemplate', params).then(json => {
-            this.$showNotification({
-              type: 'success',
+            this.$notification.success({
               message: this.$t('label.register.template'),
               description: `${this.$t('message.success.register.template')} ${params.name}`
             })
@@ -904,8 +901,7 @@ export default {
         } else {
           this.loading = true
           if (this.fileList.length > 1) {
-            this.$showNotification({
-              type: 'error',
+            this.$notification.error({
               message: this.$t('message.error.upload.template'),
               description: this.$t('message.error.upload.template.description'),
               duration: 0
