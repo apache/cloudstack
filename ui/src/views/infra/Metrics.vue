@@ -141,9 +141,9 @@ export default {
           map[key].forEach(function (value, i) {
             var metric = {}
             if (i === 0) {
-              metric.name = 'newest load-average '
+              metric.name = 'newest load-average (queries/second)'
             } else {
-              metric.name = 'load-average-' + (i + 1)
+              metric.name = 'load-average-' + (i + 1) + ' (q/s)'
             }
             metric.value = value
             array.push(metric)

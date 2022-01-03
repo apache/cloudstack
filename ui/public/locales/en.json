@@ -708,7 +708,7 @@
 "label.day": "Day",
 "label.day.of.month": "Day of Month",
 "label.day.of.week": "Day of Week",
-"label.db.usage.metrics": "DB/Usage Server Metrics",
+"label.db.usage.metrics": "DB/Usage Server",
 "label.dbislocal": "The db runs locally",
 "label.dc.name": "DC Name",
 "label.decline.invitation": "Decline invitation",
