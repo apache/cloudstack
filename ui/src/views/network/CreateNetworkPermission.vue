@@ -97,7 +97,7 @@ import { isAdminOrDomainAdmin } from '@/role'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'createNetworkPermissions',
+  name: 'CreateNetworkPermissions',
   components: {
     TooltipLabel
   },
