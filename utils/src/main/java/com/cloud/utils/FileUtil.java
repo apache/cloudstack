@@ -38,18 +38,22 @@ public class FileUtil {
     }
 
     public static void scpPatchFiles(String controlIp, String destPath, int sshPort, File pemFile, String[] files, String basePath) {
-        try {
-            List<String> srcFiles = Arrays.asList(files);
-            srcFiles = srcFiles.stream()
-                    .map(file -> basePath + file) // Using Lambda notation to update the entries
-                    .collect(Collectors.toList());
-            String[] newSrcFiles = srcFiles.toArray(new String[0]);
-            SshHelper.scpTo(controlIp, sshPort, "root", pemFile, null,
-                    destPath, newSrcFiles, "0755");
-        } catch (Exception e) {
-            String errMsg = "Failed to scp files to system VM";
-            s_logger.error(errMsg, e);
-            throw new CloudRuntimeException(errMsg, e);
+        String errMsg = "Failed to scp files to system VM";
+        List<String> srcFiles = Arrays.asList(files);
+        srcFiles = srcFiles.stream()
+                .map(file -> basePath + file) // Using Lambda notation to update the entries
+                .collect(Collectors.toList());
+        String[] newSrcFiles = srcFiles.toArray(new String[0]);
+        for (int retries = 3; retries > 0; retries--) {
+            try {
+                SshHelper.scpTo(controlIp, sshPort, "root", pemFile, null,
+                        destPath, newSrcFiles, "0755");
+                return;
+            } catch (Exception e) {
+                errMsg += ", retrying";
+                s_logger.error(errMsg, e);
+            }
         }
+        throw new CloudRuntimeException(errMsg);
     }
 }

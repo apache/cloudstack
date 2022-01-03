@@ -34,6 +34,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
@@ -174,11 +176,13 @@ public class VirtualRoutingResource {
     }
 
     private Answer execute(final SetupCertificateCommand cmd) {
-        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties " +
+        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties %s %s " +
                         "/usr/local/cloud/systemvm/conf/%s %s " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\"",
+                PasswordGenerator.generateRandomPassword(16),
+                CAManager.CertValidityPeriod.value(),
                 KeyStoreUtils.KS_FILENAME,
                 KeyStoreUtils.SSH_MODE,
                 KeyStoreUtils.CERT_FILENAME,
