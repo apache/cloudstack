@@ -89,24 +89,10 @@
         </a-row>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
-          <a-switch v-decorator="['forvpc', {initialValue: forVpc}]" :defaultChecked="forVpc" @change="val => { handleForVpcChange(val) }" />
+          <a-switch v-decorator="['forvpc']" :checked="forVpc" @change="val => { handleForVpcChange(val) }" />
         </a-form-item>
         <a-form-item :label="$t('label.userdatal2')" v-if="guestType === 'l2'">
           <a-switch v-decorator="['userdatal2', {initialValue: false}]" />
-        </a-form-item>
-        <a-form-item :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
-          <a-radio-group
-            v-decorator="[' ', {
-              initialValue: 'publicLb'
-            }]"
-            buttonStyle="solid">
-            <a-radio-button value="publicLb">
-              {{ $t('label.public.lb') }}
-            </a-radio-button>
-            <a-radio-button value="internalLb">
-              {{ $t('label.internal.lb') }}
-            </a-radio-button>
-          </a-radio-group>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
@@ -202,15 +188,28 @@
                   v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
                   :checkBoxLabel="item.description"
-                  :checkBoxDecorator="'service.' + item.name"
-                  :selectOptions="item.provider"
-                  :selectDecorator="item.name + '.provider'"
+                  :selectOptions="!supportedServiceLoading ? item.provider: []"
                   @handle-checkselectpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+        <a-form-item :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
+          <a-radio-group
+            v-decorator="['lbType', {
+              initialValue: lbType
+            }]"
+            buttonStyle="solid"
+            @change="e => { handleLbTypeChange(e.target.value) }" >
+            <a-radio-button value="publicLb">
+              {{ $t('label.public.lb') }}
+            </a-radio-button>
+            <a-radio-button value="internalLb">
+              {{ $t('label.internal.lb') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
           <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             v-decorator="['serviceofferingid', {
@@ -453,6 +452,7 @@ export default {
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
+      lbType: 'publicLb',
       macLearningValue: '',
       supportedServices: [],
       supportedServiceLoading: false,
@@ -463,6 +463,8 @@ export default {
       sourceNatServiceChecked: false,
       lbServiceChecked: false,
       lbServiceProvider: '',
+      registeredServicePackages: [],
+      registeredServicePackageLoading: false,
       isElasticIp: false,
       staticNatServiceChecked: false,
       staticNatServiceProvider: '',
@@ -531,6 +533,27 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
+      if (val === 'l2') {
+        this.forVpc = false
+        this.lbType = 'publicLb'
+        this.isVirtualRouterForAtLeastOneService = false
+        this.isVpcVirtualRouterForAtLeastOneService = false
+        this.serviceOfferings = []
+        this.serviceOfferingLoading = false
+        this.sourceNatServiceChecked = false
+        this.lbServiceChecked = false
+        this.lbServiceProvider = ''
+        this.registeredServicePackages = []
+        this.registeredServicePackageLoading = false
+        this.isElasticIp = false
+        this.staticNatServiceChecked = false
+        this.staticNatServiceProvider = ''
+        this.connectivityServiceChecked = false
+        this.firewallServiceChecked = false
+        this.firewallServiceProvider = ''
+        this.selectedServiceProviderMap = {}
+        this.updateSupportedServices()
+      }
     },
     fetchSupportedServiceData () {
       const params = {}
@@ -594,18 +617,21 @@ export default {
           this.supportedServices[i].provider = providers
           this.supportedServices[i].description = serviceDisplayName
         }
+      }).finally(() => {
+        this.supportedServiceLoading = false
+        this.updateSupportedServices()
       })
     },
     fetchServiceOfferingData () {
       const params = {}
       params.issystem = true
       params.systemvmtype = 'domainrouter'
-      this.supportedServiceLoading = true
+      this.serviceOfferingLoading = true
       api('listServiceOfferings', params).then(json => {
         const listServiceOfferings = json.listserviceofferingsresponse.serviceoffering
         this.serviceOfferings = this.serviceOfferings.concat(listServiceOfferings)
       }).finally(() => {
-        this.supportedServiceLoading = false
+        this.serviceOfferingLoading = false
       })
     },
     fetchRegisteredServicePackageData () {
@@ -627,32 +653,41 @@ export default {
         this.registeredServicePackageLoading = false
       })
     },
-    handleForVpcChange (forVpc) {
+    updateSupportedServices () {
+      this.supportedServiceLoading = true
+      var supportedServices = this.supportedServices
       var self = this
-      this.forVpc = forVpc
-      this.supportedServices.forEach(function (svc, index) {
-        if (svc !== 'Connectivity') {
+      supportedServices.forEach(function (svc, index) {
+        if (svc.name !== 'Connectivity') {
           var providers = svc.provider
           providers.forEach(function (provider, providerIndex) {
             if (self.forVpc) { // *** vpc ***
-              if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter' || provider.name === 'Netscaler' || provider.name === 'BigSwitchBcf' || provider.name === 'ConfigDrive') {
-                provider.enabled = true
-              } else {
-                provider.enabled = false
+              var enabledProviders = ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive']
+              if (self.lbType === 'internalLb') {
+                enabledProviders.push('InternalLbVm')
               }
+              provider.enabled = enabledProviders.includes(provider.name)
             } else { // *** non-vpc ***
-              if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter') {
-                provider.enabled = false
-              } else {
-                provider.enabled = true
-              }
+              provider.enabled = !['InternalLbVm', 'VpcVirtualRouter'].includes(provider.name)
             }
             providers[providerIndex] = provider
           })
           svc.provider = providers
-          self.supportedServices[index] = svc
+          supportedServices[index] = svc
         }
       })
+      setTimeout(() => {
+        self.supportedServices = supportedServices
+        self.supportedServiceLoading = false
+      }, 50)
+    },
+    handleForVpcChange (forVpc) {
+      this.forVpc = forVpc
+      this.updateSupportedServices()
+    },
+    handleLbTypeChange (lbType) {
+      this.lbType = lbType
+      this.updateSupportedServices()
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (service === 'SourceNat') {
@@ -696,12 +731,13 @@ export default {
       providers.forEach(function (prvdr, idx) {
         if (prvdr === 'VirtualRouter') {
           self.isVirtualRouterForAtLeastOneService = true
-          if (self.serviceOfferings.length === 0) {
-            self.fetchServiceOfferingData()
-          }
         }
         if (prvdr === 'VpcVirtualRouter') {
           self.isVpcVirtualRouterForAtLeastOneService = true
+        }
+        if ((self.isVirtualRouterForAtLeastOneService || self.isVpcVirtualRouterForAtLeastOneService) &&
+          self.serviceOfferings.length === 0) {
+          self.fetchServiceOfferingData()
         }
       })
     },
@@ -724,7 +760,7 @@ export default {
         var selectedServices = null
         var keys = Object.keys(values)
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
-        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
           if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
