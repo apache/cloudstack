@@ -48,7 +48,7 @@ public class KvmHaAgentClientTest {
 
     private HostVO host = Mockito.mock(HostVO.class);
     private static final String CHECK_NEIGHBOUR = "check-neighbour";
-    private static final int DEFAULT_PORT = 8080;
+    private static final int DEFAULT_PORT = 8443;
     private static final String PRIVATE_IP_ADDRESS = "1.2.3.4";
     private static final String JSON_STRING_EXAMPLE_3VMs = "{\"count\":3,\"virtualmachines\":[\"r-123-VM\",\"v-134-VM\",\"s-111-VM\"]}";
     private static final int EXPECTED_RUNNING_VMS_EXAMPLE_3VMs = 3;
@@ -56,14 +56,13 @@ public class KvmHaAgentClientTest {
     private static final String JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP = "{\"status\": \"Up\"}";
     private static final String JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_DOWN = "{\"status\": \"Down\"}";
     private static final int EXPECTED_RUNNING_VMS_EXAMPLE_0VMs = 0;
-    private static final String EXPECTED_URL = String.format("http://%s:%d", PRIVATE_IP_ADDRESS, DEFAULT_PORT);
+    private static final String EXPECTED_URL = String.format("https://%s:%d", PRIVATE_IP_ADDRESS, DEFAULT_PORT);
     private static final String EXPECTED_URL_CHECK_NEIGHBOUR = String
-            .format("http://%s:%d/%s/%s:%d", PRIVATE_IP_ADDRESS, DEFAULT_PORT, CHECK_NEIGHBOUR, PRIVATE_IP_ADDRESS, DEFAULT_PORT);
+            .format("https://%s:%d/%s/%s:%d", PRIVATE_IP_ADDRESS, DEFAULT_PORT, CHECK_NEIGHBOUR, PRIVATE_IP_ADDRESS, DEFAULT_PORT);
     private static final HttpRequestBase HTTP_REQUEST_BASE = new HttpGet(EXPECTED_URL);
     private static final String VMS_COUNT = "count";
     private static final String VIRTUAL_MACHINES = "virtualmachines";
     private static final int MAX_REQUEST_RETRIES = 2;
-    private static final int KVM_HA_WEBSERVICE_PORT = 8080;
 
     @Spy
     @InjectMocks
@@ -214,7 +213,7 @@ public class KvmHaAgentClientTest {
 
     @Test
     public void getKvmHaMicroservicePortValueTestDefault() {
-        Assert.assertEquals(KVM_HA_WEBSERVICE_PORT, kvmHaAgentClient.getKvmHaMicroservicePortValue(host));
+        Assert.assertEquals(DEFAULT_PORT, kvmHaAgentClient.getKvmHaMicroservicePortValue(host));
     }
 
     @Test
@@ -239,7 +238,7 @@ public class KvmHaAgentClientTest {
 
     private void prepareAndRunisTargetHostReachableTest(CloseableHttpResponse response,  boolean expected) throws IOException {
         Mockito.when(host.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
-        Mockito.when(kvmHaAgentClient.getKvmHaMicroservicePortValue(Mockito.any())).thenReturn(8080);
+        Mockito.when(kvmHaAgentClient.getKvmHaMicroservicePortValue(Mockito.any())).thenReturn(DEFAULT_PORT);
         Mockito.doReturn(response).when(kvmHaAgentClient).executeHttpRequest(EXPECTED_URL_CHECK_NEIGHBOUR);
 
         boolean result = kvmHaAgentClient.isHostReachableByNeighbour(host, host);

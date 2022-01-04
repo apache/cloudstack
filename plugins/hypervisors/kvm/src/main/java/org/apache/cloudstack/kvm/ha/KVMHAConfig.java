@@ -53,8 +53,8 @@ public class KVMHAConfig {
     public static final ConfigKey<Long> KvmHAFenceTimeout = new ConfigKey<>("Advanced", Long.class, "kvm.ha.fence.timeout", "60",
             "The maximum length of time, in seconds, expected for a fence operation to complete.", true, ConfigKey.Scope.Cluster);
 
-    public static final ConfigKey<Integer> KvmHaWebservicePort = new ConfigKey<Integer>("Advanced", Integer.class, "kvm.ha.webservice.port", "8080",
-            "It sets the port used to communicate with the KVM HA Agent Microservice that is running on KVM nodes. Default value is 8080.",
+    public static final ConfigKey<Integer> KvmHaWebservicePort = new ConfigKey<Integer>("Advanced", Integer.class, "kvm.ha.webservice.port", "8443",
+            "It sets the port used to communicate with the KVM HA Agent Microservice that is running on KVM nodes. Default value is 8443.",
             true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Boolean> IsKvmHaWebserviceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "kvm.ha.webservice.enabled", "false",

@@ -75,7 +75,7 @@ public class KvmHaAgentClient {
      *  Returns the number of VMs running on the KVM host according to Libvirt.
      */
     public int countRunningVmsOnAgent(Host host) {
-        String url = String.format("http://%s:%d", host.getPrivateIpAddress(), getKvmHaMicroservicePortValue(host));
+        String url = String.format("https://%s:%d", host.getPrivateIpAddress(), getKvmHaMicroservicePortValue(host));
         HttpResponse response = executeHttpRequest(url);
 
         if (response == null)
@@ -109,7 +109,6 @@ public class KvmHaAgentClient {
      */
     public List<VMInstanceVO> listVmsOnHost(Host host) {
         List<VMInstanceVO> listByHostAndStates = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating);
-
         if (LOGGER.isTraceEnabled()) {
             List<VMInstanceVO> listByHostAndStateStarting = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Starting);
             int startingVMs = listByHostAndStateStarting.size();
@@ -121,7 +120,6 @@ public class KvmHaAgentClient {
                     String.format("%s has (%d Starting) %d Running, %d Stopping, %d Migrating. Total listed via DB %d / %d (via libvirt)", host.getName(), startingVMs, runningVMs,
                             stoppingVms, migratingVms, listByHostAndStates.size(), countRunningVmsOnAgent));
         }
-
         return listByHostAndStates;
     }
 
@@ -133,7 +131,7 @@ public class KvmHaAgentClient {
         String neighbourHostAddress = neighbour.getPrivateIpAddress();
         String targetHostAddress = target.getPrivateIpAddress();
         int port = getKvmHaMicroservicePortValue(neighbour);
-        String url = String.format("http://%s:%d/%s/%s:%d", neighbourHostAddress, port, CHECK_NEIGHBOUR, targetHostAddress, port);
+        String url = String.format("https://%s:%d/%s/%s:%d", neighbourHostAddress, port, CHECK_NEIGHBOUR, targetHostAddress, port);
         HttpResponse response = executeHttpRequest(url);
 
         if (response == null)

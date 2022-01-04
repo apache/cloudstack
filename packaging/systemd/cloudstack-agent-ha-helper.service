@@ -24,7 +24,7 @@ After=libvirtd.service
 [Service]
 Type=simple
 EnvironmentFile=/etc/default/cloudstack-agent-ha-helper
-ExecStart=/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/agent-ha-helper.py $PORT
+ExecStart=/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/agent-ha-helper.py $PORT $SECURITY_MODE
 Restart=always
 RestartSec=10s
 

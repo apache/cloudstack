@@ -29,16 +29,22 @@ root_path = "/"
 check_path = "/check-neighbour/"
 cloud_key = '/etc/cloudstack/agent/cloud.key'
 cloud_cert = '/etc/cloudstack/agent/cloud.crt'
+log_path = '/var/log/cloudstack/agent/agent-ha-helper.log'
 http_ok = 200
 http_multiple_choices = 300
 http_not_found = 404
 server_side = True
+bind = ''
+insecure = False
+port=8443
 
 class Libvirt():
     def __init__(self):
         self.conn = libvirt.openReadOnly("qemu:///system")
         if not self.conn:
-            raise Exception('Failed to open connection to libvirt')
+            libvirt_error = 'Failed to open connection to libvirt'
+            logging.error(libvirt_error)
+            raise Exception(libvirt_error)
 
     def running_vms(self):
         alldomains = [domain for domain in map(self.conn.lookupByID, self.conn.listDomainsID())]
@@ -111,25 +117,45 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
-def run(port=443):
-    server_address = ('', port)
-    if os.path.isfile(cloud_key) & os.path.isfile(cloud_cert):
-        httpd = HTTPServerV6(server_address, CloudStackAgentHAHelper)
-        httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=cloud_key, certfile=cloud_cert, server_side=True)
-        httpd.serve_forever()
+def run():
+    server_address_and_port = (bind, port)
+    httpd = HTTPServerV6((server_address_and_port), CloudStackAgentHAHelper)
+
+    if insecure:
+        logging.warning('Creating HTTP Server on insecure mode (HTTP, no SSL) exposed at port {}.'.format(port))
+    elif not os.path.isfile(cloud_key) or not os.path.isfile(cloud_cert):
+        error_message = 'Failed to run HTTPS server, cannot find certificate or key files: "{}" or "{}".'.format(cloud_key, cloud_cert)
+        logging.error(error_message)
+        raise Exception(error_message)
     else:
-        logging.error('Failed to run HTTPS server, cannot open file {}.'.format(filepath))
-
-
-
+        logging.debug('Creating HTTPs Server at port {}.'.format(port))
+        httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=cloud_key, certfile=cloud_cert)
+    httpd.serve_forever()
 
 if __name__ == "__main__":
-    from sys import argv
-    logging.basicConfig(filename='/var/log/cloudstack/agent/agent-ha-helper.log', format='%(asctime)s - %(message)s', level=logging.DEBUG)
+    import argparse, sys
+    logging.basicConfig(filename=log_path, format='%(asctime)s - %(message)s', level=logging.DEBUG)
     try:
-        if len(argv) == 2:
-            run(port=int(argv[1]))
+        parser = argparse.ArgumentParser(prog='agent-ha-helper',
+                                         usage='%(prog)s [-h] [-i] -p <port>',
+                                         description='The agent-ha-helper.py provides a HTTP server '
+                                                     'which handles API requests to identify '
+                                                     'if the host (or a neighbour host) is healthy.')
+        parser.add_argument('-i', '--insecure', help='Allows to run the HTTP server without SSL', action='store_true')
+        parser.add_argument('-p', '--port', help='Port to be used by the agent-ha-helper server', type=int)
+        args = parser.parse_args()
+
+        if not len(sys.argv) > 1:
+            parser.print_help(sys.stderr)
+            logging.warning('Note: no arguments have been passed. Using default values [bind: "::", port: {}, insecure: {}].'.format(port, insecure))
         else:
-            run()
+            if args.insecure:
+                insecure = True
+                port = 8080
+                print("insecure turned on")
+
+            if args.port is not None:
+                port = args.port
+        run()
     except KeyboardInterrupt:
         pass
