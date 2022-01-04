@@ -176,7 +176,7 @@ export default {
         } else {
           api('createSSHKeyPair', params).then(json => {
             this.$message.success(this.$t('message.success.create.keypair') + ' ' + values.name)
-            if (json.createsshkeypairresponse && json.createsshkeypairresponse.keypair && json.createsshkeypairresponse.keypair.privatekey) {
+            if (json.createsshkeypairresponse?.keypair?.privatekey) {
               this.isSubmitted = true
               const key = json.createsshkeypairresponse.keypair.privatekey
               this.hiddenElement = document.createElement('a')
