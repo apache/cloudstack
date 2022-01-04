@@ -27,7 +27,7 @@ import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
 import './utils/shortkey' // keyboard shortcuts
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin } from './utils/plugins'
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin, fileSizeUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import './utils/directives'
 
@@ -61,3 +61,4 @@ fetch('config.json').then(response => response.json()).then(config => {
 
 Vue.use(configUtilPlugin)
 Vue.use(apiMetaUtilPlugin)
+Vue.use(fileSizeUtilPlugin)

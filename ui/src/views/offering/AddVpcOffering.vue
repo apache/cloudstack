@@ -48,9 +48,7 @@
                   v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
                   :checkBoxLabel="item.description"
-                  :checkBoxDecorator="'service.' + item.name"
                   :selectOptions="item.provider"
-                  :selectDecorator="item.name + '.provider'"
                   @handle-checkselectpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>
@@ -142,6 +140,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -190,7 +189,7 @@ export default {
       this.fetchSupportedServiceData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     isSupportedServiceObject (obj) {
       return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)

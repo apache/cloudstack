@@ -126,7 +126,7 @@ export default {
       message: 'message.action.cancel.maintenance.mode',
       docHelp: 'adminguide/hosts.html#maintaining-hypervisors-on-hosts',
       dataView: true,
-      show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' }
+      show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' || record.resourcestate === 'ErrorInPrepareForMaintenance' }
     },
     {
       api: 'configureOutOfBandManagement',
@@ -153,8 +153,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return !(record.outofbandmanagement && record.outofbandmanagement.enabled &&
-          record.outofbandmanagement.enabled === true)
+        return !(record?.outofbandmanagement?.enabled === true)
       },
       args: ['hostid'],
       mapping: {
@@ -171,8 +170,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record.outofbandmanagement && record.outofbandmanagement.enabled &&
-          record.outofbandmanagement.enabled === true
+        return record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid'],
       mapping: {
@@ -189,8 +187,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record.outofbandmanagement && record.outofbandmanagement.enabled &&
-          record.outofbandmanagement.enabled === true
+        return record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid', 'action'],
       mapping: {
@@ -210,8 +207,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record.outofbandmanagement && record.outofbandmanagement.enabled &&
-          record.outofbandmanagement.enabled === true
+        return record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid', 'password'],
       mapping: {
@@ -246,8 +242,7 @@ export default {
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
       dataView: true,
       show: (record) => {
-        return !(record.hostha && record.hostha.haenable &&
-          record.hostha.haenable === true)
+        return !(record?.hostha?.haenable === true)
       },
       args: ['hostid'],
       mapping: {

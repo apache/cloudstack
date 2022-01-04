@@ -150,6 +150,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
 import FirewallRules from '@/views/network/FirewallRules'
@@ -230,7 +231,7 @@ export default {
         dataIndex: 'zonename'
       }
     ]
-    if (!this.isAdmin()) {
+    if (!isAdmin()) {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
     this.handleFetchData()
@@ -279,12 +280,6 @@ export default {
         }).join('&')
       )
     },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
-    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
@@ -304,7 +299,7 @@ export default {
     fetchComments () {
       this.clusterConfigLoading = true
       api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+        if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       }).catch(error => {
@@ -326,7 +321,8 @@ export default {
             config.configdata !== '') {
             this.clusterConfig = config.configdata
           } else {
-            this.$notification.error({
+            this.$showNotification({
+              type: 'error',
               message: this.$t('message.request.failed'),
               description: this.$t('message.error.retrieve.kubeconfig')
             })

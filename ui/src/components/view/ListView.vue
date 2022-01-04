@@ -514,7 +514,8 @@ export default {
           json.updateconfigurationresponse.configuration &&
           !json.updateconfigurationresponse.configuration.isdynamic &&
           ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
+          this.$showNotification({
+            type: 'warning',
             message: this.$t('label.status'),
             description: this.$t('message.restart.mgmt.server')
           })

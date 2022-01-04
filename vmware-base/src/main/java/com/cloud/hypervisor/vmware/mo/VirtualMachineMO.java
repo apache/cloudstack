@@ -127,6 +127,7 @@ import com.vmware.vim25.VirtualSCSISharing;
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
     private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
+    private static final Gson GSON = new Gson();
 
     public static final String ANSWER_YES = "0";
     public static final String ANSWER_NO = "1";
@@ -1402,7 +1403,7 @@ public class VirtualMachineMO extends BaseMO {
 
         if(s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
-                            + new Gson().toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
+                            + GSON.toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
         int controllerKey = 0;
         int unitNumber = 0;
 
@@ -1800,7 +1801,7 @@ public class VirtualMachineMO extends BaseMO {
         Pair<VmdkFileDescriptor, byte[]> result = new Pair<VmdkFileDescriptor, byte[]>(descriptor, content);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("vCenter API trace - getVmdkFileInfo() done");
-            s_logger.trace("VMDK file descriptor: " + new Gson().toJson(result.first()));
+            s_logger.trace("VMDK file descriptor: " + GSON.toJson(result.first()));
         }
         return result;
     }

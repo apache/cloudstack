@@ -62,8 +62,8 @@ export const pollJobPlugin = {
 
       store.dispatch('AddHeaderNotice', {
         key: jobId,
-        title: title,
-        description: description,
+        title,
+        description,
         status: 'progress'
       })
 
@@ -96,14 +96,14 @@ export const pollJobPlugin = {
             content = content + ' - ' + name
           }
           message.success({
-            content: content,
+            content,
             key: jobId,
             duration: 2
           })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
-            title: title,
-            description: description,
+            title,
+            description,
             status: 'done',
             duration: 2
           })
@@ -132,16 +132,25 @@ export const pollJobPlugin = {
             desc = `(${name}) ${desc}`
           }
           if (!bulkAction) {
+            let countNotify = store.getters.countNotify
+            countNotify++
+            store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
+              top: '65px',
               message: errMessage,
               description: desc,
               key: jobId,
-              duration: 0
+              duration: 0,
+              onClose: () => {
+                let countNotify = store.getters.countNotify
+                countNotify > 0 ? countNotify-- : countNotify = 0
+                store.commit('SET_COUNT_NOTIFY', countNotify)
+              }
             })
           }
           store.dispatch('AddHeaderNotice', {
             key: jobId,
-            title: title,
+            title,
             description: desc,
             status: 'failed',
             duration: 2
@@ -168,10 +177,19 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
+        let countNotify = store.getters.countNotify
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
         notification.error({
+          top: '65px',
           message: i18n.t('label.error'),
           description: catchMessage,
-          duration: 0
+          duration: 0,
+          onClose: () => {
+            let countNotify = store.getters.countNotify
+            countNotify > 0 ? countNotify-- : countNotify = 0
+            store.commit('SET_COUNT_NOTIFY', countNotify)
+          }
         })
         catchMethod && catchMethod()
       })
@@ -203,11 +221,49 @@ export const notifierPlugin = {
           }
         }
       }
+      let countNotify = store.getters.countNotify
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
       notification.error({
+        top: '65px',
         message: msg,
         description: desc,
-        duration: 0
+        duration: 0,
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
       })
+    }
+
+    Vue.prototype.$showNotification = function (config) {
+      let countNotify = store.getters.countNotify
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
+      const defaultConfig = {
+        top: '65px',
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
+      }
+      config = Object.assign({}, defaultConfig, config)
+      switch (config.type) {
+        case 'info':
+          notification.info(config)
+          break
+        case 'error':
+          notification.error(config)
+          break
+        case 'success':
+          notification.success(config)
+          break
+        case 'warning':
+          notification.warning(config)
+          break
+      }
     }
   }
 }
@@ -296,6 +352,33 @@ export const apiMetaUtilPlugin = {
         }
       }
       return apiParams
+    }
+  }
+}
+
+const KB = 1024
+const MB = 1024 * KB
+const GB = 1024 * MB
+const TB = 1024 * GB
+
+export const fileSizeUtilPlugin = {
+  install (Vue) {
+    Vue.prototype.$bytesToHumanReadableSize = function (bytes) {
+      if (bytes == null) {
+        return ''
+      }
+      if (bytes < KB && bytes >= 0) {
+        return bytes + ' bytes'
+      }
+      if (bytes < MB) {
+        return (bytes / KB).toFixed(2) + ' KB'
+      } else if (bytes < GB) {
+        return (bytes / MB).toFixed(2) + ' MB'
+      } else if (bytes < TB) {
+        return (bytes / GB).toFixed(2) + ' GB'
+      } else {
+        return (bytes / TB).toFixed(2) + ' TB'
+      }
     }
   }
 }

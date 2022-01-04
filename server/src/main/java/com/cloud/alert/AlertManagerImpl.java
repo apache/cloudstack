@@ -78,10 +78,11 @@ import java.util.Set;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
+    protected Logger logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
@@ -226,7 +227,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         try {
             clearAlert(alertType.getType(), dataCenterId, podId);
         } catch (Exception ex) {
-            s_logger.error("Problem clearing email alert", ex);
+            logger.error("Problem clearing email alert", ex);
         }
     }
 
@@ -242,11 +243,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             if (mailSender != null) {
                 sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
-                s_logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
+                logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
                         " | message:: " + subject + " | body:: " + body);
             }
         } catch (Exception ex) {
-            s_logger.error("Problem sending email alert", ex);
+            logger.error("Problem sending email alert", ex);
         }
     }
 
@@ -261,9 +262,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         try {
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("recalculating system capacity");
-                s_logger.debug("Executing cpu/ram capacity update");
+            if (logger.isDebugEnabled()) {
+                logger.debug("recalculating system capacity");
+                logger.debug("Executing cpu/ram capacity update");
             }
 
             // Calculate CPU and RAM capacities
@@ -280,9 +281,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                     _capacityMgr.updateCapacityForHost(host, offeringsMap);
                 }
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done executing cpu/ram capacity update");
-                s_logger.debug("Executing storage capacity update");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done executing cpu/ram capacity update");
+                logger.debug("Executing storage capacity update");
             }
             // Calculate storage pool capacity
             List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
@@ -295,9 +296,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 }
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done executing storage capacity update");
-                s_logger.debug("Executing capacity updates for public ip and Vlans");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done executing storage capacity update");
+                logger.debug("Executing capacity updates for public ip and Vlans");
             }
 
             List<DataCenterVO> datacenters = _dcDao.listAll();
@@ -324,9 +325,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 }
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done capacity updates for public ip and Vlans");
-                s_logger.debug("Executing capacity updates for private ip");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done capacity updates for public ip and Vlans");
+                logger.debug("Executing capacity updates for private ip");
             }
 
             // Calculate new Private IP capacity
@@ -338,13 +339,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 createOrUpdateIpCapacity(dcId, podId, Capacity.CAPACITY_TYPE_PRIVATE_IP, _configMgr.findPodAllocationState(pod));
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done executing capacity updates for private ip");
-                s_logger.debug("Done recalculating system capacity");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done executing capacity updates for private ip");
+                logger.debug("Done recalculating system capacity");
             }
 
         } catch (Throwable t) {
-            s_logger.error("Caught exception in recalculating capacity", t);
+            logger.error("Caught exception in recalculating capacity", t);
         }
     }
 
@@ -419,11 +420,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug("Running Capacity Checker ... ");
+                logger.debug("Running Capacity Checker ... ");
                 checkForAlerts();
-                s_logger.debug("Done running Capacity Checker ... ");
+                logger.debug("Done running Capacity Checker ... ");
             } catch (Throwable t) {
-                s_logger.error("Exception in CapacityChecker", t);
+                logger.error("Exception in CapacityChecker", t);
             }
         }
     }
@@ -628,13 +629,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
 
         try {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(msgSubject);
-                s_logger.debug(msgContent);
+            if (logger.isDebugEnabled()) {
+                logger.debug(msgSubject);
+                logger.debug(msgContent);
             }
             sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
-            s_logger.error("Exception in CapacityChecker", ex);
+            logger.error("Exception in CapacityChecker", ex);
         }
     }
 
@@ -682,7 +683,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content)
             throws MessagingException, UnsupportedEncodingException {
-        s_logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
+        logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
         AlertVO alert = null;
         if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
@@ -706,14 +707,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             newAlert.setName(alertType.getName());
             _alertDao.persist(newAlert);
         } else {
-            if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
-                }
+            logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
             return;
         }
 
-        if (recipients == null) {
-            s_logger.warn(String.format("No recipients set in 'alert.email.addresses', skipping sending alert with subject: %s and content: %s", subject, content));
+        if (ArrayUtils.isEmpty(recipients)) {
+            logger.warn(String.format("No recipients set in global setting 'alert.email.addresses', "
+                    + "skipping sending alert with subject [%s] and content [%s].", subject, content));
             return;
         }
 
@@ -734,7 +734,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     }
 
-    private void sendMessage(SMTPMailProperties mailProps) {
+    protected void sendMessage(SMTPMailProperties mailProps) {
         _executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -770,7 +770,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             sendAlert(alertType, dataCenterId, podId, msg, msg);
             return true;
         } catch (Exception ex) {
-            s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
+            logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
     }

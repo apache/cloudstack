@@ -143,7 +143,8 @@ export default {
       api('listPods', params).then(json => {
         this.pods = json.listpodsresponse.pod || []
         if (this.pods.length === 0) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: 'No pods found',
             duration: 0
           })
@@ -162,7 +163,8 @@ export default {
       api('listClusters', params).then(json => {
         this.clusters = json.listclustersresponse.cluster || []
         if (this.clusters.length === 0) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: 'No clusters found',
             duration: 0
           })
@@ -184,7 +186,8 @@ export default {
       api('listHosts', params).then(json => {
         this.hosts = json.listhostsresponse.host || []
         if (this.hosts.length === 0) {
-          this.$notification.error({
+          this.$showNotification({
+            type: 'error',
             message: 'No hosts found',
             duration: 0
           })

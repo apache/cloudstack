@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import org.apache.commons.lang3.StringUtils;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Session;
 
@@ -77,8 +77,33 @@ public class SSHCmdHelper {
     }
 
     public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password) {
+        return acquireAuthorizedConnection(ip, 22, username, password, null);
+    }
+
+    public static boolean acquireAuthorizedConnectionWithPublicKey(final com.trilead.ssh2.Connection sshConnection, final String username, final String privateKey) {
+        if (StringUtils.isNotBlank(privateKey)) {
+            try {
+                if (!sshConnection.authenticateWithPublicKey(username, privateKey.toCharArray(), null)) {
+                    s_logger.warn("Failed to authenticate with ssh key");
+                    return false;
+                }
+                return true;
+            } catch (IOException e) {
+                s_logger.warn("An exception occurred when authenticate with ssh key");
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password, String privateKey) {
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(ip, port);
         try {
+            sshConnection.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
+            if (acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
+                return sshConnection;
+            };
+            sshConnection = new com.trilead.ssh2.Connection(ip, port);
             sshConnection.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
             if (!sshConnection.authenticateWithPassword(username, password)) {
                 String[] methods = sshConnection.getRemainingAuthMethods(username);

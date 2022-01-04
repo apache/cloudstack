@@ -269,6 +269,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -341,6 +342,7 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -552,6 +554,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper nwHelper;
+    @Inject
+    private StatsCollector statsCollector;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -1078,7 +1082,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     params = new HashMap();
                     params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
                 }
-                return startVirtualMachine(vmId, null, null, hostId, params, null).first();
+                return startVirtualMachine(vmId, null, null, hostId, params, null, false).first();
             }
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to reboot the VM: " + vmId, e);
@@ -1747,38 +1751,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
             }
 
-            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-                IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
-                if (oldIP != null) {
-                    oldIP.setVmIp(ipaddr);
-                    _ipAddressDao.persist(oldIP);
-                }
+            if (nicVO.getIPv4Address() != null) {
+                updatePublicIpDnatVmIp(vm.getId(), network.getId(), nicVO.getIPv4Address(), ipaddr);
+                updateLoadBalancerRulesVmIp(vm.getId(), network.getId(), nicVO.getIPv4Address(), ipaddr);
+                updatePortForwardingRulesVmIp(vm.getId(), network.getId(), nicVO.getIPv4Address(), ipaddr);
             }
-            // implementing the network elements and resources as a part of vm nic ip update if network has services and it is in Implemented state
-            if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && network.getState() == Network.State.Implemented) {
-                User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-                ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
-                DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
 
-                s_logger.debug("Implementing the network " + network + " elements and resources as a part of vm nic ip update");
-                try {
-                    // implement the network elements and rules again
-                    _networkMgr.implementNetworkElementsAndResources(dest, context, network, offering);
-                } catch (Exception ex) {
-                    s_logger.warn("Failed to implement network " + network + " elements and resources as a part of vm nic ip update due to ", ex);
-                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of vm nic ip update");
-                    e.addProxyObject(network.getUuid(), "networkId");
-                    // restore to old ip address
-                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-                        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
-                        if (oldIP != null) {
-                            oldIP.setVmIp(nicVO.getIPv4Address());
-                            _ipAddressDao.persist(oldIP);
-                        }
-                    }
-                    throw e;
-                }
-            }
         } else if (dc.getNetworkType() == NetworkType.Basic || network.getGuestType()  == Network.GuestType.Shared) {
             //handle the basic networks here
             //for basic zone, need to provide the podId to ensure proper ip alloation
@@ -1824,6 +1802,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _nicDao.persist(nicVO);
 
         return vm;
+    }
+
+    private void updatePublicIpDnatVmIp(long vmId, long networkId, String oldIp, String newIp) {
+        if (!_networkModel.areServicesSupportedInNetwork(networkId, Service.StaticNat)) {
+            return;
+        }
+        List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedVmId(vmId);
+        for (IPAddressVO publicIp : publicIps) {
+            if (oldIp.equals(publicIp.getVmIp()) && publicIp.getAssociatedWithNetworkId() == networkId) {
+                publicIp.setVmIp(newIp);
+                _ipAddressDao.persist(publicIp);
+            }
+        }
+    }
+
+    private void updateLoadBalancerRulesVmIp(long vmId, long networkId, String oldIp, String newIp) {
+        if (!_networkModel.areServicesSupportedInNetwork(networkId, Service.Lb)) {
+            return;
+        }
+        List<LoadBalancerVMMapVO> loadBalancerVMMaps = _loadBalancerVMMapDao.listByInstanceId(vmId);
+        for (LoadBalancerVMMapVO map : loadBalancerVMMaps) {
+            long lbId = map.getLoadBalancerId();
+            FirewallRuleVO rule = _rulesDao.findById(lbId);
+            if (oldIp.equals(map.getInstanceIp()) && networkId == rule.getNetworkId()) {
+                map.setInstanceIp(newIp);
+                _loadBalancerVMMapDao.persist(map);
+            }
+        }
+    }
+
+    private void updatePortForwardingRulesVmIp(long vmId, long networkId, String oldIp, String newIp) {
+        if (!_networkModel.areServicesSupportedInNetwork(networkId, Service.PortForwarding)) {
+            return;
+        }
+        List<PortForwardingRuleVO> firewallRules = _portForwardingDao.listByVm(vmId);
+        for (PortForwardingRuleVO firewallRule : firewallRules) {
+            FirewallRuleVO rule = _rulesDao.findById(firewallRule.getId());
+            if (oldIp.equals(firewallRule.getDestinationIpAddress().toString()) && networkId == rule.getNetworkId()) {
+                firewallRule.setDestinationIpAddress(new Ip(newIp));
+                _portForwardingDao.persist(firewallRule);
+            }
+        }
     }
 
     @Override
@@ -5001,6 +5021,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
+        statsCollector.removeVirtualMachineStats(vmId);
+
         _userDao.findById(userId);
         boolean status = false;
         try {
@@ -5063,6 +5085,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
             Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        return startVirtualMachine(vmId, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, true);
+    }
+
+    @Override
+    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
+            Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         // Input validation
         final Account callerAccount = CallContext.current().getCallingAccount();
         UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
@@ -5118,7 +5147,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
         Pod destinationPod = getDestinationPod(podId, isRootAdmin);
         Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
-        Host destinationHost = getDestinationHost(hostId, isRootAdmin);
+        Host destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
         DataCenterDeployment plan = null;
         boolean deployOnGivenHost = false;
         if (destinationHost != null) {
@@ -5271,10 +5300,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return destinationCluster;
     }
 
-    private Host getDestinationHost(Long hostId, boolean isRootAdmin) {
+    private Host getDestinationHost(Long hostId, boolean isRootAdmin, boolean isExplicitHost) {
         Host destinationHost = null;
         if (hostId != null) {
-            if (!isRootAdmin) {
+            if (isExplicitHost && !isRootAdmin) {
                 throw new PermissionDeniedException(
                         "Parameter " + ApiConstants.HOST_ID + " can only be specified by a Root Admin, permission denied");
             }
@@ -5305,6 +5334,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.trace("Vm id=" + vmId + " is already destroyed");
             return vm;
         }
+
+        statsCollector.removeVirtualMachineStats(vmId);
 
         boolean status;
         State vmState = vm.getState();
@@ -5615,7 +5646,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isRootAdmin = _accountService.isRootAdmin(callerId);
 
         Long hostId = cmd.getHostId();
-        getDestinationHost(hostId, isRootAdmin);
+        getDestinationHost(hostId, isRootAdmin, true);
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();

@@ -69,7 +69,8 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
             description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
-            since = "4.13")
+            since = "4.13",
+            length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,

@@ -156,7 +156,8 @@ export default {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
               const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
+              obj.$showNotification({
+                type: 'success',
                 message: `${obj.$t('label.reinstall.vm')}: ` + name,
                 description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
                 duration: 0
@@ -305,7 +306,7 @@ export default {
           label: 'label.scale.vm',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
+          show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC') },
           disabled: (record) => { return record.state === 'Running' && !record.isdynamicallyscalable },
           popup: true,
           component: () => import('@/views/compute/ScaleVM.vue')
@@ -365,7 +366,8 @@ export default {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
               const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
+              obj.$showNotification({
+                type: 'success',
                 message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
                 description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
                 duration: 0

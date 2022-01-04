@@ -207,7 +207,7 @@
 
     <a-modal
       :title="$t('label.configure.sticky.policy')"
-      v-model="stickinessModalVisible"
+      :visible="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
@@ -288,7 +288,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -890,6 +890,8 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
+      }).finally(() => {
+        this.closeModal()
       })
     },
     handleDeleteStickinessPolicy () {
@@ -962,6 +964,7 @@ export default {
       })
     },
     handleStickinessMethodSelectChange (e) {
+      this.stickinessPolicyForm.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {

@@ -130,10 +130,10 @@ export default {
   },
   computed: {
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     hypervisor () {
-      return this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      return this.prefillContent.hypervisor?.value || null
     },
     localstorageenabled () {
       return this.prefillContent?.localstorageenabled?.value || false
@@ -143,7 +143,7 @@ export default {
     },
     steps () {
       const steps = []
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
@@ -713,7 +713,7 @@ export default {
     }
   },
   created () {
-    this.currentStep = this.prefillContent.resourceStep ? this.prefillContent.resourceStep : 0
+    this.currentStep = this.prefillContent.resourceStep?.resourceStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.fromKey === this.stepChild)
     }
@@ -791,7 +791,7 @@ export default {
       }
     },
     fetchScope () {
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       const scope = []
       if (['KVM', 'VMware', 'Hyperv'].includes(hypervisor)) {
         scope.push({
@@ -812,7 +812,7 @@ export default {
       this.$forceUpdate()
     },
     fetchProtocol () {
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       const protocols = []
       if (hypervisor === 'KVM') {
         protocols.push({
@@ -903,7 +903,7 @@ export default {
       this.$forceUpdate()
     },
     async fetchConfigurationSwitch () {
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       this.$emit('fieldsChanged', { dvSwitchEnabled: { value: false } })
       this.$emit('fieldsChanged', { vSwitchEnabled: { value: false } })
       if (hypervisor && hypervisor === 'VMware') {
