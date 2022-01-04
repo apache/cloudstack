@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+// $message.success(`${$t('label.copied.clipboard')} : ${name}`)
 <template>
   <a-spin :spinning="loading">
     <a-card class="spin-content" :bordered="bordered" :title="title">
@@ -23,12 +23,21 @@
           <div class="resource-details__name">
             <div
               class="avatar"
-              @click="$message.success(`${$t('label.copied.clipboard')} : ${name}`)"
+              @click="showUploadModal(true)"
               v-clipboard:copy="name" >
+              <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
+              <div class="ant-upload-preview" v-if="$showIcon()">
+                <a-icon type="camera" class="upload-icon"/>
+              </div>
               <slot name="avatar">
-                <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
-                <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon" />
-                <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
+                <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
+                  <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
+                </span>
+                <span v-else>
+                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => resource.ostypename = name"/>
+                  <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon"/>
+                  <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
+                </span>
               </slot>
             </div>
             <slot name="name">
@@ -121,7 +130,10 @@
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
           <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
           <div class="resource-detail-item__details">
-            <os-logo :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+            <span v-if="resource.icon && resource.icon.base64image || images.template || images.iso">
+              <resource-icon :image="getImage(images.template || images.iso)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
           </div>
         </div>
@@ -328,7 +340,10 @@
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="project" />
+            <span v-if="images.project">
+              <resource-icon :image="getImage(images.project)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="project" />
             <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
             <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
           </div>
@@ -392,10 +407,25 @@
         <div class="resource-detail-item" v-if="resource.vpcid">
           <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="deployment-unit" />
+            <span v-if="images.vpc">
+              <resource-icon :image="getImage(images.vpc)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="deployment-unit" />
             <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
           </div>
         </div>
+
+        <div class="resource-detail-item" v-if="resource.aclid">
+          <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
+          <div class="resource-detail-item__details">
+            <span v-if="images.acl">
+              <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="deployment-unit" />
+            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
+          </div>
+        </div>
+
         <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.affinitygroup') }}</div>
           <a-icon type="swap" />
@@ -410,7 +440,8 @@
         <div class="resource-detail-item" v-if="resource.templateid">
           <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="picture" />
+            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="picture" />
             <div v-if="resource.isoid">
               <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
             </div>
@@ -496,7 +527,10 @@
         <div class="resource-detail-item" v-if="resource.zoneid">
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="global" />
+            <span v-if="images.zone">
+              <resource-icon :image="getImage(images.zone)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="global" />
             <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
@@ -519,7 +553,10 @@
         <div class="resource-detail-item" v-if="resource.account && !resource.account.startsWith('PrjAcct-')">
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="user" />
+            <span v-if="images.account">
+              <resource-icon :image="getImage(images.account)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="user" />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
             <span v-else>{{ resource.account }}</span>
           </div>
@@ -535,7 +572,8 @@
         <div class="resource-detail-item" v-if="resource.domainid">
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="block" />
+            <resource-icon v-if="images.domain" :image="getImage(images.domain)" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="block" />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid + '?tab=details' }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
@@ -652,57 +690,6 @@
           </div>
         </a-spin>
       </div>
-
-      <div class="account-center-team" v-if="!isStatic && annotationType && 'listAnnotations' in $store.getters.apis">
-        <a-divider :dashed="true"/>
-        <a-spin :spinning="loadingAnnotations">
-          <div class="title">
-            {{ $t('label.comments') }} ({{ notes.length }})
-          </div>
-          <a-list
-            v-if="notes.length"
-            :dataSource="notes"
-            itemLayout="horizontal"
-            size="small" >
-            <a-list-item slot="renderItem" slot-scope="item">
-              <a-comment
-                :content="item.annotation"
-                :datetime="$toLocaleDate(item.created)" >
-                <a-button
-                  v-if="'removeAnnotation' in $store.getters.apis"
-                  slot="avatar"
-                  type="danger"
-                  shape="circle"
-                  size="small"
-                  @click="deleteNote(item)">
-                  <a-icon type="delete"/>
-                </a-button>
-              </a-comment>
-            </a-list-item>
-          </a-list>
-
-          <a-comment v-if="'addAnnotation' in $store.getters.apis">
-            <a-avatar
-              slot="avatar"
-              icon="edit"
-              @click="showNotesInput = true" />
-            <div slot="content">
-              <a-textarea
-                rows="4"
-                @change="handleNoteChange"
-                :value="annotation"
-                :placeholder="$t('label.add.note')" />
-              <a-button
-                style="margin-top: 10px"
-                @click="saveNote"
-                type="primary"
-              >
-                {{ $t('label.save') }}
-              </a-button>
-            </div>
-          </a-comment>
-        </a-spin>
-      </div>
     </a-card>
   </a-spin>
 </template>
@@ -714,6 +701,9 @@ import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import UploadResourceIcon from '@/components/view/UploadResourceIcon'
+import eventBus from '@/config/eventBus'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'InfoCard',
@@ -721,7 +711,9 @@ export default {
     Console,
     OsLogo,
     Status,
-    TooltipButton
+    TooltipButton,
+    UploadResourceIcon,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -749,58 +741,57 @@ export default {
     return {
       ipaddress: '',
       resourceType: '',
-      annotationType: '',
       inputVisible: false,
       inputKey: '',
       inputValue: '',
       tags: [],
-      notes: [],
-      annotation: '',
       showKeys: false,
       showNotesInput: false,
       loadingTags: false,
-      loadingAnnotations: false
+      loadingAnnotations: false,
+      showUpload: false,
+      images: {
+        zone: '',
+        template: '',
+        iso: '',
+        domain: '',
+        account: '',
+        project: '',
+        vpc: '',
+        network: ''
+      }
     }
   },
   watch: {
+    $route: function () {
+      this.getIcons()
+    },
     resource: function (newItem, oldItem) {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
-      this.annotationType = ''
       this.showKeys = false
       this.setData()
-
-      switch (this.resourceType) {
-        case 'UserVm':
-          this.annotationType = 'VM'
-          break
-        case 'Domain':
-          this.annotationType = 'DOMAIN'
-          // Domain resource type is not supported for tags
-          this.resourceType = ''
-          break
-        case 'Host':
-          this.annotationType = 'HOST'
-          // Host resource type is not supported for tags
-          this.resourceType = ''
-          break
-      }
 
       if ('tags' in this.resource) {
         this.tags = this.resource.tags
       } else if (this.resourceType) {
         this.getTags()
       }
-      if (this.annotationType) {
-        this.getNotes()
-      }
       if ('apikey' in this.resource) {
         this.getUserKeys()
       }
+      this.getIcons()
+    },
+    async templateIcon () {
+      this.getIcons()
     }
   },
-  created () {
+  async created () {
     this.setData()
+    eventBus.$on('handle-close', (showModal) => {
+      this.showUploadModal(showModal)
+    })
+    await this.getIcons()
   },
   computed: {
     name () {
@@ -813,9 +804,106 @@ export default {
       }
 
       return null
+    },
+    templateIcon () {
+      return this.resource.templateid
+    },
+    resourceIcon () {
+      if (this.$showIcon() && this.resource?.icon?.base64image) {
+        return this.resource.icon.base64image
+      }
+      return null
     }
   },
+  async mounted () {
+    this.getIcons()
+  },
   methods: {
+    showUploadModal (show) {
+      if (show) {
+        if (this.$showIcon()) {
+          this.showUpload = true
+        }
+      } else {
+        this.showUpload = false
+      }
+    },
+    getImage (image) {
+      return (image || this.resource?.icon?.base64image)
+    },
+    async getIcons () {
+      this.images = {
+        zone: '',
+        template: '',
+        iso: '',
+        domain: '',
+        account: '',
+        project: '',
+        vpc: '',
+        network: ''
+      }
+      if (this.resource.templateid) {
+        await this.fetchResourceIcon(this.resource.templateid, 'template')
+      }
+      if (this.resource.isoid) {
+        await this.fetchResourceIcon(this.resource.isoid, 'iso')
+      }
+      if (this.resource.zoneid) {
+        await this.fetchResourceIcon(this.resource.zoneid, 'zone')
+      }
+      if (this.resource.domainid) {
+        await this.fetchResourceIcon(this.resource.domainid, 'domain')
+      }
+      if (this.resource.account) {
+        await this.fetchAccount()
+      }
+      if (this.resource.projectid) {
+        await this.fetchResourceIcon(this.resource.projectid, 'project')
+      }
+      if (this.resource.vpcid) {
+        await this.fetchResourceIcon(this.resource.vpcid, 'vpc')
+      }
+      if (this.resource.networkid) {
+        await this.fetchResourceIcon(this.resource.networkid, 'network')
+      }
+    },
+    fetchAccount () {
+      return new Promise((resolve, reject) => {
+        api('listAccounts', {
+          name: this.resource.account,
+          domainid: this.resource.domainid,
+          showicon: true
+        }).then(async json => {
+          const response = json?.listaccountsresponse?.account || []
+          if (response?.[0]?.icon) {
+            this.images.account = response[0].icon.base64image
+          }
+        })
+      })
+    },
+    fetchResourceIcon (resourceid, type) {
+      if (resourceid) {
+        return new Promise((resolve, reject) => {
+          api('listResourceIcon', {
+            resourceids: resourceid,
+            resourcetype: type
+          }).then(json => {
+            const response = json.listresourceiconresponse.icon || []
+            if (response?.[0]) {
+              this.images[type] = response[0].base64image
+              resolve(this.images)
+            } else {
+              this.images[type] = ''
+              resolve(this.images)
+            }
+          }).catch(error => {
+            reject(error)
+          })
+        })
+      } else {
+        this.images.type = ''
+      }
+    },
     setData () {
       if (this.resource.nic && this.resource.nic.length > 0) {
         this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')
@@ -866,20 +954,6 @@ export default {
         this.loadingTags = false
       })
     },
-    getNotes () {
-      if (!('listAnnotations' in this.$store.getters.apis)) {
-        return
-      }
-      this.loadingAnnotations = true
-      this.notes = []
-      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
-          this.notes = json.listannotationsresponse.annotation
-        }
-      }).finally(() => {
-        this.loadingAnnotations = false
-      })
-    },
     isAdminOrOwner () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
@@ -923,34 +997,6 @@ export default {
       api('deleteTags', args).then(json => {
       }).finally(e => {
         this.getTags()
-      })
-    },
-    handleNoteChange (e) {
-      this.annotation = e.target.value
-    },
-    saveNote () {
-      if (this.annotation.length < 1) {
-        return
-      }
-      this.loadingAnnotations = true
-      this.showNotesInput = false
-      const args = {}
-      args.entityid = this.resource.id
-      args.entitytype = this.annotationType
-      args.annotation = this.annotation
-      api('addAnnotation', args).then(json => {
-      }).finally(e => {
-        this.getNotes()
-      })
-      this.annotation = ''
-    },
-    deleteNote (annotation) {
-      this.loadingAnnotations = true
-      const args = {}
-      args.id = annotation.id
-      api('removeAnnotation', args).then(json => {
-      }).finally(e => {
-        this.getNotes()
       })
     }
   }
@@ -1036,31 +1082,6 @@ export default {
   }
 
 }
-.account-center-team {
-  .members {
-    a {
-      display: block;
-      margin: 12px 0;
-      line-height: 24px;
-      height: 24px;
-      .member {
-        font-size: 14px;
-        color: rgba(0, 0, 0, 0.65);
-        line-height: 24px;
-        max-width: 100px;
-        vertical-align: top;
-        margin-left: 12px;
-        transition: all 0.3s;
-        display: inline-block;
-      }
-      &:hover {
-        span {
-          color: #1890ff;
-        }
-      }
-    }
-  }
-}
 .title {
   margin-bottom: 5px;
   font-weight: bold;
@@ -1092,5 +1113,17 @@ export default {
     margin-left: 5px;
   }
 
+}
+
+.upload-icon {
+  position: absolute;
+  top: 70px;
+  opacity: 0.75;
+  left: 70px;
+  font-size: 0.75em;
+  padding: 0.25rem;
+  background: rgba(247, 245, 245, 0.767);
+  border-radius: 50%;
+  border: 1px solid rgba(177, 177, 177, 0.788);
 }
 </style>

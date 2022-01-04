@@ -46,6 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.configuration.Config;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -173,7 +174,6 @@ import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -184,7 +184,7 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
 
@@ -278,6 +278,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private static final String AARCH64 = "aarch64";
 
+    public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
+
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -356,6 +358,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _migrateSpeed;
     protected int _migrateDowntime;
     protected int _migratePauseAfter;
+    protected int _migrateWait;
     protected boolean _diskActivityCheckEnabled;
     protected RollingMaintenanceExecutor rollingMaintenanceExecutor;
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
@@ -538,6 +541,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public int getMigratePauseAfter() {
         return _migratePauseAfter;
+    }
+
+    public int getMigrateWait() {
+        return _migrateWait;
     }
 
     public int getMigrateSpeed() {
@@ -805,12 +812,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
-        if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
+        if (StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
             directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
         }
 
         cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
-        if (org.apache.commons.lang.StringUtils.isBlank(cachePath)) {
+        if (StringUtils.isBlank(cachePath)) {
             cachePath = getDefaultCachePath();
         }
 
@@ -1052,12 +1059,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _rngEnable = true;
 
             value = (String) params.get("vm.rng.model");
-            if (!Strings.isNullOrEmpty(value)) {
+            if (StringUtils.isNotEmpty(value)) {
                 _rngBackendModel = RngBackendModel.valueOf(value.toUpperCase());
             }
 
             value = (String) params.get("vm.rng.path");
-            if (!Strings.isNullOrEmpty(value)) {
+            if (StringUtils.isNotEmpty(value)) {
                 _rngPath = value;
             }
 
@@ -1069,12 +1076,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         value = (String) params.get("vm.watchdog.model");
-        if (!Strings.isNullOrEmpty(value)) {
+        if (StringUtils.isNotEmpty(value)) {
             _watchDogModel = WatchDogModel.valueOf(value.toUpperCase());
         }
 
         value = (String) params.get("vm.watchdog.action");
-        if (!Strings.isNullOrEmpty(value)) {
+        if (StringUtils.isNotEmpty(value)) {
             _watchDogAction = WatchDogAction.valueOf(value.toUpperCase());
         }
 
@@ -1125,7 +1132,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final String cpuArchOverride = (String)params.get("guest.cpu.arch");
-        if (!Strings.isNullOrEmpty(cpuArchOverride)) {
+        if (StringUtils.isNotEmpty(cpuArchOverride)) {
             _guestCpuArch = cpuArchOverride;
             s_logger.info("Using guest CPU architecture: " + _guestCpuArch);
         }
@@ -1228,6 +1235,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("vm.migrate.pauseafter");
         _migratePauseAfter = NumbersUtil.parseInt(value, -1);
 
+        value = (String) params.get("vm.migrate.wait");
+        _migrateWait = NumbersUtil.parseInt(value, -1);
+
         configureAgentHooks(params);
 
         value = (String)params.get("vm.migrate.speed");
@@ -1289,6 +1299,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String value = (String)params.get("router.aggregation.command.each.timeout");
             Long longValue = NumbersUtil.parseLong(value, 600);
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
+        }
+
+        if (params.get(Config.MigrateWait.toString()) != null) {
+            String value = (String)params.get(Config.MigrateWait.toString());
+            Integer intValue = NumbersUtil.parseInt(value, -1);
+            storage.persist("vm.migrate.wait", String.valueOf(intValue));
+            _migrateWait = intValue;
         }
 
         return true;
@@ -1788,7 +1805,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public synchronized boolean configureTunnelNetwork(final long networkId,
+    public synchronized boolean configureTunnelNetwork(final Long networkId,
                                                        final long hostId, final String nwName) {
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
@@ -1894,6 +1911,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 || poolType == StoragePoolType.Gluster)
                 && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
+        } else if (poolType == StoragePoolType.Linstor) {
+            return RESIZE_NOTIFY_ONLY;
         }
         throw new CloudRuntimeException("Cannot determine resize type from pool type " + pool.getType());
     }
@@ -2107,7 +2126,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 nicNum = macAddressToNicNum.get(ip.getVifMacAddress());
 
-                if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
+                if (StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
                     // in isolated network eth2 is the default public interface. We don't want to delete it.
                     if (nicNum != 2) {
                         vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
@@ -2407,7 +2426,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         devices.addDevice(createChannelDef(vmTO));
         devices.addDevice(createWatchDogDef());
-        devices.addDevice(createVideoDef());
+        devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
         devices.addDevice(createTabletInputDef());
@@ -2468,8 +2487,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ConsoleDef(PTY, null, null, (short)0);
     }
 
-    protected VideoDef createVideoDef() {
-        return new VideoDef(_videoHw, _videoRam);
+    protected VideoDef createVideoDef(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        String videoHw = _videoHw;
+        int videoRam = _videoRam;
+        if (details != null) {
+            if (details.containsKey(VmDetailConstants.VIDEO_HARDWARE)) {
+                videoHw = details.get(VmDetailConstants.VIDEO_HARDWARE);
+            }
+            if (details.containsKey(VmDetailConstants.VIDEO_RAM)) {
+                String value = details.get(VmDetailConstants.VIDEO_RAM);
+                videoRam = NumbersUtil.parseInt(value, videoRam);
+            }
+        }
+        return new VideoDef(videoHw, videoRam);
     }
 
     protected RngDef createRngDef() {
@@ -2482,7 +2513,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected ClockDef createClockDef(final VirtualMachineTO vmTO) {
         ClockDef clock = new ClockDef();
-        if (org.apache.commons.lang.StringUtils.startsWith(vmTO.getOs(), WINDOWS)) {
+        if (StringUtils.startsWith(vmTO.getOs(), WINDOWS)) {
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
             clock.setTimer(HYPERVCLOCK, null, null);
         } else if ((vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) && _hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_MODE) {
@@ -2658,7 +2689,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             String comp = extraConfigBuilder.toString();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(comp)) {
+            if (StringUtils.isNotBlank(comp)) {
                 vm.addComp(comp);
             }
         }
@@ -3727,10 +3758,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
         } else if (platformEmulator.contains("Ubuntu") ||
-                org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator,
+                StringUtils.startsWithAny(platformEmulator,
                         "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle", "Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
-        } else if (isUefiEnabled && org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
+        } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
         } else {
             return DiskDef.DiskBus.IDE;
@@ -4451,7 +4482,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String getVlanIdFromBridgeName(String brName) {
-        if (org.apache.commons.lang.StringUtils.isNotBlank(brName)) {
+        if (StringUtils.isNotBlank(brName)) {
             String[] s = brName.split("-");
             if (s.length > 1) {
                 return s[1];
@@ -4558,8 +4589,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Map<String, String> info = qemu.info(file);
             String backingFilePath = info.get(QemuImg.BACKING_FILE);
             String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(backingFilePath)
-                    && org.apache.commons.lang.StringUtils.isBlank(backingFileFormat)) {
+            if (StringUtils.isNotBlank(backingFilePath) && StringUtils.isBlank(backingFileFormat)) {
                 // VMs which are created in CloudStack 4.14 and before cannot be started or migrated
                 // in latest Linux distributions due to missing backing file format
                 // Please refer to https://libvirt.org/kbase/backing_chains.html#vm-refuses-to-start-due-to-misconfigured-backing-store-format

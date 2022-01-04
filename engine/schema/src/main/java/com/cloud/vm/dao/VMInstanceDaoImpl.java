@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -125,6 +126,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             "INNER JOIN `cloud`.`host` ON vm.host_id = host.id WHERE vm.state = 'Running' AND host.data_center_id = ? ";
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
             "GROUP BY offering.service_offering_id) results GROUP BY pci, type";
+
+    private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
 
     @Inject
     protected HostDao _hostDao;
@@ -940,5 +943,24 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 update(instance, sc);
             }
         });
+    }
+
+
+    @Override
+    public void updateSystemVmTemplateId(long templateId, Hypervisor.HypervisorType hypervisorType) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+        StringBuilder sql = new StringBuilder(UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR);
+        try {
+            PreparedStatement updateStatement = txn.prepareAutoCloseStatement(sql.toString());
+            updateStatement.setLong(1, templateId);
+            updateStatement.setString(2, hypervisorType.toString());
+            updateStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+
     }
 }

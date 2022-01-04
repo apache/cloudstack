@@ -46,7 +46,7 @@ public class ConsoleProxyInfo {
             }
 
         } else {
-            proxyImageUrl = "http://" + proxyAddress;
+            proxyImageUrl = "//" + proxyAddress;
             if (proxyUrlPort != 80) {
                 proxyImageUrl += ":" + proxyUrlPort;
             }

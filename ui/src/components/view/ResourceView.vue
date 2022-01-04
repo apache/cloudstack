@@ -135,27 +135,8 @@ export default {
       this.$emit('onTabChange', key)
     },
     showTab (tab) {
-      if ('networkServiceFilter' in tab) {
-        if (this.resource && this.resource.virtualmachineid && !this.resource.vpcid && tab.name !== 'firewall') {
-          return false
-        }
-        if (this.resource && this.resource.virtualmachineid && this.resource.vpcid) {
-          return false
-        }
-        // dont display any option for source NAT IP of VPC
-        if (this.resource && this.resource.vpcid && !this.resource.issourcenat && tab.name !== 'firewall') {
-          return true
-        }
-        // display LB and PF options for isolated networks if static nat is disabled
-        if (this.resource && !this.resource.vpcid) {
-          if (!this.resource.isstaticnat) {
-            return true
-          } else if (tab.name === 'firewall') {
-            return true
-          }
-        }
-        return this.networkService && this.networkService.service &&
-          tab.networkServiceFilter(this.networkService.service)
+      if (this.networkService && this.networkService.service && tab.networkServiceFilter) {
+        return tab.networkServiceFilter(this.networkService.service)
       } else if ('show' in tab) {
         return tab.show(this.resource, this.$route, this.$store.getters.userInfo)
       } else {

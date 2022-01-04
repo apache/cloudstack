@@ -21,6 +21,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -71,6 +74,10 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
                collectionType = CommandType.STRING,
                description = "comma separated list of project details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
+
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for projects")
+    private Boolean showIcon;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -124,6 +131,10 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
         return dv;
     }
 
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -133,5 +144,19 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
         ListResponse<ProjectResponse> response = _queryService.listProjects(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateProjectResponse(response.getResponses());
+        }
+    }
+
+    private void updateProjectResponse(List<ProjectResponse> response) {
+        for (ProjectResponse projectResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Project, projectResponse.getId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            projectResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }

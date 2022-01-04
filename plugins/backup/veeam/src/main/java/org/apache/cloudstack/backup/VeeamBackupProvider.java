@@ -24,17 +24,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.backup.veeam.api.Job;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -149,7 +152,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         for (final BackupOffering job : client.listJobs()) {
             if (job.getName().equals(clonedJobName)) {
                 final Job clonedJob = client.listJob(job.getExternalId());
-                if (clonedJob.getScheduleConfigured() && !clonedJob.getScheduleEnabled()) {
+                if (BooleanUtils.isTrue(clonedJob.getScheduleConfigured()) && !clonedJob.getScheduleEnabled()) {
                     client.toggleJobSchedule(clonedJob.getId());
                 }
                 LOG.debug("Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " found, now trying to assign the VM to the job.");
@@ -216,15 +219,24 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(final Long zoneId, final List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        if (vms == null || vms.isEmpty()) {
+        if (CollectionUtils.isEmpty(vms)) {
+            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
             return metrics;
         }
+
+        List<String> vmUuids = vms.stream().filter(Objects::nonNull).map(VirtualMachine::getUuid).collect(Collectors.toList());
+        LOG.debug(String.format("Get Backup Metrics for VMs: [%s].", String.join(", ", vmUuids)));
+
         final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
         for (final VirtualMachine vm : vms) {
             if (vm == null || !backendMetrics.containsKey(vm.getUuid())) {
                 continue;
             }
-            metrics.put(vm, backendMetrics.get(vm.getUuid()));
+
+            Metric metric = backendMetrics.get(vm.getUuid());
+            LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
+                    vm.getInstanceName(), metric.getBackupSize(), metric.getDataSize()));
+            metrics.put(vm, metric);
         }
         return metrics;
     }
@@ -237,7 +249,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         List<Backup.RestorePoint> restorePoints = listRestorePoints(vm);
-        if (restorePoints == null || restorePoints.isEmpty()) {
+        if (CollectionUtils.isEmpty(restorePoints)) {
+            LOG.debug(String.format("Can't find any restore point to VM: [uuid: %s, name: %s].", vm.getUuid(), vm.getInstanceName()));
             return;
         }
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -252,6 +265,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                             backupExists = true;
                             removeList.remove(backup.getId());
                             if (metric != null) {
+                                LOG.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                                        backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
+
                                 ((BackupVO) backup).setSize(metric.getBackupSize());
                                 ((BackupVO) backup).setProtectedSize(metric.getDataSize());
                                 backupDao.update(backup.getId(), ((BackupVO) backup));
@@ -276,9 +292,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                     backup.setAccountId(vm.getAccountId());
                     backup.setDomainId(vm.getDomainId());
                     backup.setZoneId(vm.getDataCenterId());
+
+                    LOG.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
+                            + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
+                            backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId()));
                     backupDao.persist(backup);
                 }
                 for (final Long backupIdToRemove : removeList) {
+                    LOG.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
                     backupDao.remove(backupIdToRemove);
                 }
             }

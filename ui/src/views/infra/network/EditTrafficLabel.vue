@@ -28,7 +28,12 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="typeLoading"
             :placeholder="apiParams.id.description"
-            @change="onChangeTrafficType">
+            @change="onChangeTrafficType"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="type in trafficTypes" :key="type.id">
               {{ type.traffictype }}
             </a-select-option>
@@ -145,7 +150,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

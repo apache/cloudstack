@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.BufferedReader;
@@ -51,6 +52,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
@@ -61,6 +63,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.joda.time.Duration;
@@ -132,7 +135,6 @@ import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -652,7 +654,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 // there is only one ip in this public vlan and removing it, so
                 // remove the nic
-                if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
+                if (StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
                     final VIF correctVif = getCorrectVif(conn, router, network);
                     // in isolated network eth2 is the default public interface. We don't want to delete it.
                     if (correctVif != null && !correctVif.getDevice(conn).equals("2")) {
@@ -782,11 +784,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
                         continue; // Skip DOM0
                     }
-                    final String platform = StringUtils.mapToString(record.platform);
+                    final String platform = com.cloud.utils.StringUtils.mapToString(record.platform);
                     if (platform.isEmpty()) {
                         continue; //Skip if platform is null
                     }
-                    vmMetaDatum.put(record.nameLabel, StringUtils.mapToString(record.platform));
+                    vmMetaDatum.put(record.nameLabel, com.cloud.utils.StringUtils.mapToString(record.platform));
                 }
             }
         } catch (final Throwable e) {
@@ -882,33 +884,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             // Invoke plugin to setup the bridge which will be used by this
             // network
             final String bridge = nw.getBridge(conn);
-            final Map<String, String> nwOtherConfig = nw.getOtherConfig(conn);
-            final String configuredHosts = nwOtherConfig.get("ovs-host-setup");
-            boolean configured = false;
-            if (configuredHosts != null) {
-                final String hostIdsStr[] = configuredHosts.split(",");
-                for (final String hostIdStr : hostIdsStr) {
-                    if (hostIdStr.equals(((Long)hostId).toString())) {
-                        configured = true;
-                        break;
-                    }
-                }
+            String result;
+            if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
+                result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id",
+                        ((Long)hostId).toString());
+            } else {
+                result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id", ((Long)hostId).toString());
             }
 
-            if (!configured) {
-                String result;
-                if (bridgeName.startsWith("OVS-DR-VPC-Bridge")) {
-                    result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge_for_distributed_routing", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id",
-                            ((Long)hostId).toString());
-                } else {
-                    result = callHostPlugin(conn, "ovstunnel", "setup_ovs_bridge", "bridge", bridge, "key", bridgeName, "xs_nw_uuid", nw.getUuid(conn), "cs_host_id", ((Long)hostId).toString());
-                }
-
-                // Note down the fact that the ovs bridge has been setup
-                final String[] res = result.split(":");
-                if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
-                    throw new CloudRuntimeException("Unable to pre-configure OVS bridge " + bridge);
-                }
+            // Note down the fact that the ovs bridge has been setup
+            final String[] res = result.split(":");
+            if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
+                throw new CloudRuntimeException("Unable to pre-configure OVS bridge " + bridge);
             }
             return nw;
         } catch (final Exception e) {
@@ -1438,6 +1425,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
         }
+        try {
+            String bootMode = StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
+            String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
+            setVmBootDetails(vm, conn, bootType, bootMode);
+        } catch (final XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+        }
         return vm;
     }
 
@@ -1784,6 +1778,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.getProductVersion());
+            if (isUefiSupported(_host.getProductVersion())) {
+                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));
@@ -1908,7 +1905,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (details != null) {
             final String platformstring = details.get(VmDetailConstants.PLATFORM);
             if (platformstring != null && !platformstring.isEmpty()) {
-                final Map<String, String> platform = StringUtils.stringToMap(platformstring);
+                final Map<String, String> platform = com.cloud.utils.StringUtils.stringToMap(platformstring);
                 vm.setPlatform(conn, platform);
             } else {
                 final String timeoffset = details.get(VmDetailConstants.TIME_OFFSET);
@@ -1940,6 +1937,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.info("Appending user extra configuration settings to VM");
             ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
+    }
+
+    protected void setVmBootDetails(final VM vm, final Connection conn, String bootType, String bootMode) throws XenAPIException, XmlRpcException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Setting boottype=%s and bootmode=%s for VM: %s", bootType, bootMode, vm.getUuid(conn)));
+        }
+        Boolean isSecure = bootType.equals(ApiConstants.BootType.UEFI.toString()) &&
+                ApiConstants.BootMode.SECURE.toString().equals(bootMode);
+        final Map<String, String> bootParams = vm.getHVMBootParams(conn);
+        bootParams.replace("firmware", bootType.toLowerCase());
+        vm.setHVMBootParams(conn, bootParams);
+        final Map<String, String> platform = vm.getPlatform(conn);
+        platform.put("secureboot", isSecure.toString());
+        vm.setPlatform(conn, platform);
     }
 
     /**
@@ -2128,7 +2139,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected String getGuestOsType(String platformEmulator) {
-        if (org.apache.commons.lang.StringUtils.isBlank(platformEmulator)) {
+        if (StringUtils.isBlank(platformEmulator)) {
             s_logger.debug("no guest OS type, start it as HVM guest");
             platformEmulator = "Other install media";
         }
@@ -2406,7 +2417,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 deviceConfig.put("target", target);
                 deviceConfig.put("targetIQN", targetiqn);
 
-                if (StringUtils.isNotBlank(chapInitiatorUsername) && StringUtils.isNotBlank(chapInitiatorPassword)) {
+                if (StringUtils.isNoneBlank(chapInitiatorUsername, chapInitiatorPassword)) {
                     deviceConfig.put("chapuser", chapInitiatorUsername);
                     deviceConfig.put("chappassword", chapInitiatorPassword);
                 }
@@ -3698,7 +3709,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             for (PBD pbd : pbds) {
                 Host host = pbd.getHost(conn);
-                if (!isRefNull(host) && org.apache.commons.lang3.StringUtils.equals(host.getUuid(conn), _host.getUuid())) {
+                if (!isRefNull(host) && StringUtils.equals(host.getUuid(conn), _host.getUuid())) {
                     if (!pbd.getCurrentlyAttached(conn)) {
                         s_logger.debug(String.format("PBD [%s] of local SR [%s] was unplugged, pluggin it now", pbd.getUuid(conn), srRec.uuid));
                         pbd.plug(conn);
@@ -5661,7 +5672,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
             String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
-            if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
+            if (StringUtils.isBlank(mountPoint)) {
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
             }
 
@@ -5700,7 +5711,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
         String result = callHostPlugin(conn, "cloud-plugin-storage", "umountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
-        if (org.apache.commons.lang.StringUtils.isBlank(result)) {
+        if (StringUtils.isBlank(result)) {
             String errMsg = "Could not umount secondary storage " + remoteDir + " on host " + localDir;
             s_logger.warn(errMsg);
         }

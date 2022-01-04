@@ -218,4 +218,9 @@ public class AccountVO implements Account {
     public Class<?> getEntityType() {
         return Account.class;
     }
+
+    @Override
+    public String getName() {
+        return accountName;
+    }
 }

@@ -25,7 +25,10 @@
     </label>
     <a-dropdown>
       <span class="user-menu-dropdown action">
-        <a-avatar class="user-menu-avatar avatar" size="small" :src="avatar()"/>
+        <span v-if="image">
+          <resource-icon :image="image" size="2x" style="margin-right: 5px"/>
+        </span>
+        <a-avatar v-else class="user-menu-avatar avatar" size="small" :src="avatar()"/>
         <span>{{ nickname() }}</span>
       </span>
       <a-menu slot="overlay" class="user-menu-wrapper">
@@ -70,16 +73,36 @@
 
 <script>
 import Vue from 'vue'
+import { api } from '@/api'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import eventBus from '@/config/eventBus'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 
 export default {
   name: 'UserMenu',
   components: {
     TranslationMenu,
-    HeaderNotice
+    HeaderNotice,
+    ResourceIcon
+  },
+  data () {
+    return {
+      image: ''
+    }
+  },
+  created () {
+    this.getIcon()
+    eventBus.$on('refresh-header', () => {
+      this.getIcon()
+    })
+  },
+  watch: {
+    image () {
+      this.getIcon()
+    }
   },
   computed: {
     server () {
@@ -94,6 +117,25 @@ export default {
     },
     toggleShowShortkey () {
       this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
+    },
+    async getIcon () {
+      await this.fetchResourceIcon(this.$store.getters.userInfo.id)
+    },
+    fetchResourceIcon (id) {
+      return new Promise((resolve, reject) => {
+        api('listUsers', {
+          id: id,
+          showicon: true
+        }).then(json => {
+          const response = json.listusersresponse.user || []
+          if (response?.[0]) {
+            this.image = response[0]?.icon?.base64image || ''
+            resolve(this.image)
+          }
+        }).catch(error => {
+          reject(error)
+        })
+      })
     },
     handleLogout () {
       return this.Logout({}).then(() => {

@@ -54,6 +54,7 @@ export default {
     title: 'label.secondary.storage',
     param: 'zoneid'
   }],
+  resourceType: 'Zone',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
@@ -69,6 +70,9 @@ export default {
   }, {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   actions: [
     {

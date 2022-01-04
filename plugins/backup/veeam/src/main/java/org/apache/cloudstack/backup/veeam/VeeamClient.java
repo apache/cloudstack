@@ -56,7 +56,6 @@ import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -80,7 +79,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -138,7 +137,7 @@ public class VeeamClient {
             final HttpResponse response = httpClient.execute(request);
             checkAuthFailure(response);
             veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
-            if (Strings.isNullOrEmpty(veeamSessionId)) {
+            if (StringUtils.isEmpty(veeamSessionId)) {
                 throw new CloudRuntimeException("Veeam Session ID is not available to perform API requests");
             }
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
@@ -163,7 +162,7 @@ public class VeeamClient {
         if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
                 response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) &&
                 response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-            LOG.debug("HTTP request failed, status code is " + response.getStatusLine().getStatusCode() + ", response is: " + response.toString());
+            LOG.debug(String.format("HTTP request failed, status code is [%s], response is: [%s].", response.getStatusLine().getStatusCode(), response.toString()));
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Got invalid API status code returned by the Veeam server");
         }
     }
@@ -175,10 +174,13 @@ public class VeeamClient {
     }
 
     private HttpResponse get(final String path) throws IOException {
-        final HttpGet request = new HttpGet(apiURI.toString() + path);
+        String url = apiURI.toString() + path;
+        final HttpGet request = new HttpGet(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
         final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
+
+        LOG.debug(String.format("Response received in GET request is: [%s] for URL: [%s].", response.toString(), url));
         return response;
     }
 
@@ -193,7 +195,8 @@ public class VeeamClient {
             xml = xml.replace(" xmlns=\"\"", "");
         }
 
-        final HttpPost request = new HttpPost(apiURI.toString() + path);
+        String url = apiURI.toString() + path;
+        final HttpPost request = new HttpPost(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
         request.setHeader("Content-type", "application/xml");
         if (StringUtils.isNotBlank(xml)) {
@@ -202,14 +205,19 @@ public class VeeamClient {
 
         final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
+
+        LOG.debug(String.format("Response received in POST request with body [%s] is: [%s] for URL [%s].", xml, response.toString(), url));
         return response;
     }
 
     private HttpResponse delete(final String path) throws IOException {
-        final HttpDelete request = new HttpDelete(apiURI.toString() + path);
+        String url = apiURI.toString() + path;
+        final HttpDelete request = new HttpDelete(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
         final HttpResponse response = httpClient.execute(request);
         checkAuthFailure(response);
+
+        LOG.debug(String.format("Response received in DELETE request is: [%s] for URL [%s].", response.toString(), url));
         return response;
     }
 
@@ -524,11 +532,18 @@ public class VeeamClient {
      */
     protected Pair<Boolean, String> executePowerShellCommands(List<String> cmds) {
         try {
-            Pair<Boolean, String> pairResult = SshHelper.sshExecute(veeamServerIp, veeamServerPort,
+            String commands = transformPowerShellCommandList(cmds);
+            Pair<Boolean, String> response = SshHelper.sshExecute(veeamServerIp, veeamServerPort,
                     veeamServerUsername, null, veeamServerPassword,
-                    transformPowerShellCommandList(cmds),
-                    120000, 120000, 3600000);
-            return pairResult;
+                    commands, 120000, 120000, 3600000);
+
+            if (response == null || !response.first()) {
+                LOG.error(String.format("Veeam PowerShell commands [%s] failed due to: [%s].", commands, response != null ? response.second() : "no PowerShell output returned"));
+            } else {
+                LOG.debug(String.format("Veeam response for PowerShell commands [%s] is: [%s].", commands, response.second()));
+            }
+
+            return response;
         } catch (Exception e) {
             throw new CloudRuntimeException("Error while executing PowerShell commands due to: " + e.getMessage());
         }
@@ -595,6 +610,7 @@ public class VeeamClient {
     }
 
     private Backup.RestorePoint getRestorePointFromBlock(String[] parts) {
+        LOG.debug(String.format("Processing block of restore points: [%s].", StringUtils.join(parts, ", ")));
         String id = null;
         String created = null;
         String type = null;
@@ -616,18 +632,20 @@ public class VeeamClient {
     public List<Backup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
         final List<String> cmds = Arrays.asList(
                 String.format("$backup = Get-VBRBackup -Name \"%s\"", backupName),
-                String.format("if ($backup) { (Get-VBRRestorePoint -Backup:$backup -Name \"%s\" ^| Where-Object {$_.IsConsistent -eq $true}) }", vmInternalName)
+                String.format("if ($backup) { $restore = (Get-VBRRestorePoint -Backup:$backup -Name \"%s\" ^| Where-Object {$_.IsConsistent -eq $true})", vmInternalName),
+                "if ($restore) { $restore ^| Format-List } }"
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
         final List<Backup.RestorePoint> restorePoints = new ArrayList<>();
         if (response == null || !response.first()) {
-            LOG.debug("Veeam restore point listing failed due to: " + (response != null ? response.second() : "no powershell output returned"));
             return restorePoints;
         }
+
         for (final String block : response.second().split("\r\n\r\n")) {
             if (block.isEmpty()) {
                 continue;
             }
+            LOG.debug(String.format("Found restore points from [backupName: %s, vmInternalName: %s] which is: [%s].", backupName, vmInternalName, block));
             final String[] parts = block.split("\r\n");
             restorePoints.add(getRestorePointFromBlock(parts));
         }

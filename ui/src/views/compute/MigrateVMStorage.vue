@@ -28,7 +28,12 @@
             :loading="loading"
             v-decorator="['storageid', {
               rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]">
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
               {{ storagePool.name || storagePool.id }}
             </a-select-option>
@@ -117,7 +122,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -171,7 +176,7 @@ export default {
         } else if (migrateApi === 'migrateSystemVm') {
           jobId = response.migratesystemvmresponse.jobid
         } else {
-          jobId = response.migratevirtualmachine.jobid
+          jobId = response.migratevirtualmachineresponse.jobid
         }
         this.$pollJob({
           title: `${this.$t('label.migrating')} ${this.resource.name}`,

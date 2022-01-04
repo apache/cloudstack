@@ -171,4 +171,9 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     public Class<?> getEntityType() {
         return ProjectInvitation.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

@@ -69,7 +69,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -1047,7 +1047,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
 
                 if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-                    if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                    if (copyCmdAnswer != null && StringUtils.isNotEmpty(copyCmdAnswer.getDetails())) {
                         errMsg = copyCmdAnswer.getDetails();
 
                         if (needCache) {
@@ -1282,7 +1282,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-                if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                if (copyCmdAnswer != null && StringUtils.isNotEmpty(copyCmdAnswer.getDetails())) {
                     throw new CloudRuntimeException(copyCmdAnswer.getDetails());
                 }
                 else {
@@ -1610,7 +1610,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             copyCmdAnswer = copyImageToVolume(srcVolumeInfo, destVolumeInfo, hostVO);
 
             if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-                if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                if (copyCmdAnswer != null && StringUtils.isNotEmpty(copyCmdAnswer.getDetails())) {
                     throw new CloudRuntimeException(copyCmdAnswer.getDetails());
                 }
                 else {
@@ -2062,30 +2062,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             handleQualityOfServiceForVolumeMigration(destVolumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.NO_MIGRATION);
 
             if (success) {
-                srcVolumeInfo.processEvent(Event.OperationSuccessed);
-                destVolumeInfo.processEvent(Event.OperationSuccessed);
-
-                _volumeDao.updateUuid(srcVolumeInfo.getId(), destVolumeInfo.getId());
-
                 VolumeVO volumeVO = _volumeDao.findById(destVolumeInfo.getId());
-
                 volumeVO.setFormat(ImageFormat.QCOW2);
-
                 _volumeDao.update(volumeVO.getId(), volumeVO);
 
-                try {
-                    _volumeService.destroyVolume(srcVolumeInfo.getId());
+                _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSuccessed, null, srcVolumeInfo, destVolumeInfo, false);
 
-                    srcVolumeInfo = _volumeDataFactory.getVolume(srcVolumeInfo.getId());
-
-                    AsyncCallFuture<VolumeApiResult> destroyFuture = _volumeService.expungeVolumeAsync(srcVolumeInfo);
-
-                    if (destroyFuture.get().isFailed()) {
-                        LOGGER.debug("Failed to clean up source volume on storage");
-                    }
-                } catch (Exception e) {
-                    LOGGER.debug("Failed to clean up source volume on storage", e);
-                }
 
                 // Update the volume ID for snapshots on secondary storage
                 if (!_snapshotDao.listByVolumeId(srcVolumeInfo.getId()).isEmpty()) {
@@ -2414,7 +2396,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 handleQualityOfServiceForVolumeMigration(volumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.NO_MIGRATION);
 
                 if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-                    if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                    if (copyCmdAnswer != null && StringUtils.isNotEmpty(copyCmdAnswer.getDetails())) {
                         errMsg = copyCmdAnswer.getDetails();
                     }
                     else {
@@ -2729,7 +2711,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             MigrateVolumeAnswer migrateVolumeAnswer = (MigrateVolumeAnswer)agentManager.send(hostVO.getId(), migrateVolumeCommand);
 
             if (migrateVolumeAnswer == null || !migrateVolumeAnswer.getResult()) {
-                if (migrateVolumeAnswer != null && !StringUtils.isEmpty(migrateVolumeAnswer.getDetails())) {
+                if (migrateVolumeAnswer != null && StringUtils.isNotEmpty(migrateVolumeAnswer.getDetails())) {
                     throw new CloudRuntimeException(migrateVolumeAnswer.getDetails());
                 }
                 else {
@@ -2797,7 +2779,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             CopyVolumeAnswer copyVolumeAnswer = (CopyVolumeAnswer)agentManager.send(hostVO.getId(), copyVolumeCommand);
 
             if (copyVolumeAnswer == null || !copyVolumeAnswer.getResult()) {
-                if (copyVolumeAnswer != null && !StringUtils.isEmpty(copyVolumeAnswer.getDetails())) {
+                if (copyVolumeAnswer != null && StringUtils.isNotEmpty(copyVolumeAnswer.getDetails())) {
                     throw new CloudRuntimeException(copyVolumeAnswer.getDetails());
                 }
                 else {

@@ -20,6 +20,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 /**
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
@@ -60,4 +64,12 @@ public interface VirtualMachineGuru {
     void prepareStop(VirtualMachineProfile profile);
 
     void finalizeUnmanage(VirtualMachine vm);
+
+    static String getEncodedMsPublicKey(String pubKey) {
+        String base64EncodedPublicKey = null;
+        if (pubKey != null) {
+            base64EncodedPublicKey = Base64.getEncoder().encodeToString(pubKey.getBytes(StandardCharsets.UTF_8));
+        }
+        return base64EncodedPublicKey;
+    }
 }

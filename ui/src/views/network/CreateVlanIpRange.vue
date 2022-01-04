@@ -31,7 +31,11 @@
                 initialValue: this.pods && this.pods.length > 0 ? this.pods[0].id : '',
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>
@@ -220,7 +224,7 @@ export default {
       e.preventDefault()
 
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

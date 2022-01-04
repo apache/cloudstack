@@ -57,7 +57,8 @@ const user = {
     showshortkeys: false,
     domainStore: {},
     darkMode: false,
-    themeSetting: {}
+    themeSetting: {},
+    defaultListViewPageSize: 20
   },
 
   mutations: {
@@ -124,6 +125,9 @@ const user = {
     SET_THEME_SETTING (state, setting) {
       state.themeSetting = setting
       Vue.ls.set(THEME_SETTING, setting)
+    },
+    SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
+      state.defaultListViewPageSize = defaultListViewPageSize
     }
   },
 
@@ -259,6 +263,9 @@ const user = {
         api('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           commit('SET_FEATURES', result)
+          if (result && result.defaultuipagesize) {
+            commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
+          }
         }).catch(error => {
           reject(error)
         })

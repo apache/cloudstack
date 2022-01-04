@@ -25,7 +25,7 @@ import java.io.InputStream;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Session;
 
@@ -201,7 +201,7 @@ public class SSHCmdHelper {
             }
 
             final SSHCmdResult result = new SSHCmdResult(-1, sbStdoutResult.toString(), sbStdErrResult.toString());
-            if (!Strings.isNullOrEmpty(result.getStdOut()) || !Strings.isNullOrEmpty(result.getStdErr())) {
+            if (!StringUtils.isAllEmpty(result.getStdOut(), result.getStdErr())) {
                 s_logger.debug("SSH command: " + cmd.split(KeyStoreUtils.KS_FILENAME)[0] + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
             }
 
