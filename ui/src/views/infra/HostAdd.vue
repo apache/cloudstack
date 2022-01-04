@@ -415,7 +415,7 @@ export default {
           clustertype: this.selectedCluster.clustertype,
           hosttags: values.hosttags ? values.hosttags.join() : null,
           username: values.username,
-          password: this.authmethod !== 'password' ? '' : values.password,
+          password: this.authMethod !== 'password' ? '' : values.password,
           url: this.url,
           agentusername: values.agentusername,
           agentpassword: values.agentpassword,
@@ -429,22 +429,23 @@ export default {
         }
         Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
         this.loading = true
-        api('addHost', {}, 'POST', args).then(response => {
-          const host = response.addhostresponse.host[0] || {}
-          if (host.id && this.showDedicated) {
-            this.dedicateHost(host.id)
-          }
-          this.parentFetchData()
-          this.closeAction()
-        }).catch(error => {
-          this.$notification.error({
-            message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.addhostresponse.errortext,
-            duration: 0
-          })
-        }).finally(() => {
-          this.loading = false
-        })
+        console.log(args)
+        // api('addHost', {}, 'POST', args).then(response => {
+        //   const host = response.addhostresponse.host[0] || {}
+        //   if (host.id && this.showDedicated) {
+        //     this.dedicateHost(host.id)
+        //   }
+        //   this.parentFetchData()
+        //   this.closeAction()
+        // }).catch(error => {
+        //   this.$notification.error({
+        //     message: `${this.$t('label.error')} ${error.response.status}`,
+        //     description: error.response.data.addhostresponse.errortext,
+        //     duration: 0
+        //   })
+        // }).finally(() => {
+        //   this.loading = false
+        // })
       })
     },
     dedicateHost (hostId) {
