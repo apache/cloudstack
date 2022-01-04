@@ -258,7 +258,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             final String rscName = getLinstorRscName(volumePath);
 
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
-            rma.setDiskful(true);
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
 

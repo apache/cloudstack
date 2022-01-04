@@ -94,7 +94,30 @@
         <a-input :placeholder="placeholder.username" v-model="username"></a-input>
       </div>
 
-      <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
+      <div class="form__item" v-if="selectedClusterHyperVisorType !== 'VMware'">
+        <div class="form__label"><span class="required">* </span>{{ $t('label.authentication.method') }}</div>
+        <a-radio-group
+          v-decorator="['authmethod', {
+            initialValue: authMethod
+          }]"
+          buttonStyle="solid"
+          :defaultValue="authMethod"
+          @change="selected => { handleAuthMethodChange(selected.target.value) }">
+          <a-radio-button value="password">
+            {{ $t('label.password') }}
+          </a-radio-button>
+          <a-radio-button value="sshkey" v-if="selectedClusterHyperVisorType === 'KVM'">
+            {{ $t('label.authentication.sshkey') }}
+          </a-radio-button>
+        </a-radio-group>
+        <span v-if="authMethod === 'sshkey'">
+          <a-alert type="warning">
+            <span style="display:block;width:300px;word-wrap:break-word;" slot="message" v-html="$t('message.add.host.sshkey')" />
+          </a-alert>
+        </span>
+      </div>
+
+      <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware' && authMethod === 'password'">
         <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
         <span class="required required-label">{{ $t('label.required') }}</span>
         <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
@@ -190,6 +213,7 @@ export default {
       agentusername: null,
       agentpassword: null,
       agentport: null,
+      authMethod: 'password',
       selectedCluster: null,
       selectedClusterHyperVisorType: null,
       showDedicated: false,
@@ -280,6 +304,9 @@ export default {
       this.dedicatedAccount = null
       this.showDedicated = !this.showDedicated
     },
+    handleAuthMethodChange (val) {
+      this.authMethod = val
+    },
     handleSubmitForm () {
       if (this.loading) return
       const requiredFields = document.querySelectorAll('.required-field')
@@ -304,6 +331,10 @@ export default {
         this.url = `http://${this.hostname}`
       } else {
         this.url = this.hostname
+      }
+
+      if (this.authMethod !== 'password') {
+        this.password = ''
       }
 
       const args = {
