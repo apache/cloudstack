@@ -191,12 +191,9 @@
                         label: 'label.vmsnapshot.memory',
                         docID: 'helpCreateInstanceSnapshotMemory',
                         isBoolean: true,
-                        isChecked: false,
+                        isChecked: true,
                         isHidden: function(args) {
-                            if (args.context.instances[0].vgpu != undefined) {
-                                return true;
-                            }
-                            return false;
+                            return true;
                         },
                         isDisabled: function(args){
                             if(args.context.instances[0].state == 'Stopped'){
