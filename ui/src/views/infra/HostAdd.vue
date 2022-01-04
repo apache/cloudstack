@@ -117,6 +117,28 @@
               :placeholder="placeholder.username"></a-input>
           </a-form-item>
           <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware'">
+            <tooltip-label slot="label" :title="$t('label.authentication.method')" :tooltip="$t('label.authentication.method')"/>
+            <a-radio-group
+              v-decorator="['authmethod', {
+                initialValue: authMethod
+              }]"
+              buttonStyle="solid"
+              :defaultValue="authMethod"
+              @change="selected => { handleAuthMethodChange(selected.target.value) }">
+              <a-radio-button value="password">
+                {{ $t('label.password') }}
+              </a-radio-button>
+              <a-radio-button value="sshkey" v-if="selectedClusterHyperVisorType === 'KVM'">
+                {{ $t('label.authentication.sshkey') }}
+              </a-radio-button>
+            </a-radio-group>
+            <div v-if="authMethod === 'sshkey'">
+              <a-alert type="warning">
+                <span style="display:block;width:300px;word-wrap:break-word;" slot="message" v-html="$t('message.add.host.sshkey')" />
+              </a-alert>
+            </div>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware' && authMethod === 'password'">
             <tooltip-label slot="label" :title="$t('label.password')" :tooltip="placeholder.password"/>
             <a-input-password
               v-decorator="['password', {
@@ -252,6 +274,7 @@ export default {
       agentusername: null,
       agentpassword: null,
       agentport: null,
+      authMethod: 'password',
       selectedCluster: null,
       selectedClusterHyperVisorType: null,
       showDedicated: false,
@@ -370,6 +393,9 @@ export default {
       this.dedicatedAccount = null
       this.showDedicated = !this.showDedicated
     },
+    handleAuthMethodChange (val) {
+      this.authMethod = val
+    },
     handleSubmitForm () {
       if (this.loading) return
       this.form.validateFieldsAndScroll((err, values) => {
@@ -389,7 +415,7 @@ export default {
           clustertype: this.selectedCluster.clustertype,
           hosttags: values.hosttags ? values.hosttags.join() : null,
           username: values.username,
-          password: values.password,
+          password: this.authmethod !== 'password' ? '' : values.password,
           url: this.url,
           agentusername: values.agentusername,
           agentpassword: values.agentpassword,

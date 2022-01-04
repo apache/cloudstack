@@ -30,11 +30,23 @@ const service = axios.create({
 
 const err = (error) => {
   const response = error.response
+  let countNotify = store.getters.countNotify
   if (response) {
     console.log(response)
     if (response.status === 403) {
       const data = response.data
-      notification.error({ message: i18n.t('label.forbidden'), description: data.message })
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
+      notification.error({
+        top: '65px',
+        message: i18n.t('label.forbidden'),
+        description: data.message,
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
+      })
     }
     if (response.status === 401) {
       if (response.config && response.config.params && ['listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
@@ -43,20 +55,36 @@ const err = (error) => {
       for (const key in response.data) {
         if (key.includes('response')) {
           if (response.data[key].errortext.includes('not available for user')) {
+            countNotify++
+            store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
+              top: '65px',
               message: 'Error',
               description: response.data[key].errortext + ' ' + i18n.t('error.unable.to.proceed'),
-              duration: 0
+              duration: 0,
+              onClose: () => {
+                let countNotify = store.getters.countNotify
+                countNotify > 0 ? countNotify-- : countNotify = 0
+                store.commit('SET_COUNT_NOTIFY', countNotify)
+              }
             })
             return
           }
         }
       }
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
       notification.error({
+        top: '65px',
         message: i18n.t('label.unauthorized'),
         description: i18n.t('message.authorization.failed'),
         key: 'http-401',
-        duration: 0
+        duration: 0,
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
       })
       store.dispatch('Logout').then(() => {
         if (router.history.current.path !== '/user/login') {
@@ -65,15 +93,34 @@ const err = (error) => {
       })
     }
     if (response.status === 404) {
-      notification.error({ message: i18n.t('label.not.found'), description: i18n.t('message.resource.not.found') })
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
+      notification.error({
+        top: '65px',
+        message: i18n.t('label.not.found'),
+        description: i18n.t('message.resource.not.found'),
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
+      })
       router.push({ path: '/exception/404' })
     }
   }
   if (error.isAxiosError && !error.response) {
+    countNotify++
+    store.commit('SET_COUNT_NOTIFY', countNotify)
     notification.warn({
+      top: '65px',
       message: error.message || i18n.t('message.network.error'),
       description: i18n.t('message.network.error.description'),
-      key: 'network-error'
+      key: 'network-error',
+      onClose: () => {
+        let countNotify = store.getters.countNotify
+        countNotify > 0 ? countNotify-- : countNotify = 0
+        store.commit('SET_COUNT_NOTIFY', countNotify)
+      }
     })
   }
   return Promise.reject(error)

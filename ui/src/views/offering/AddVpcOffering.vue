@@ -48,9 +48,7 @@
                   v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
                   :checkBoxLabel="item.description"
-                  :checkBoxDecorator="'service.' + item.name"
                   :selectOptions="item.provider"
-                  :selectDecorator="item.name + '.provider'"
                   @handle-checkselectpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>

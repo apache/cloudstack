@@ -2136,6 +2136,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (hostIds.isEmpty()) {
             return null;
         }
+        Collections.shuffle(hostIds);
 
         for (Long hostId : hostIds) {
             Host host = _hostDao.findById(hostId);

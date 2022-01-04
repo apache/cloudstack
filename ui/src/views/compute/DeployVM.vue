@@ -1133,7 +1133,9 @@ export default {
         this.vm.hostname = host.name
       }
 
-      if (this.diskSize) {
+      if (this.serviceOffering.rootdisksize) {
+        this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
+      } else if (this.diskSize) {
         this.vm.disksizetotalgb = this.diskSize
       }
 
@@ -1490,6 +1492,7 @@ export default {
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({
+              type: 'error',
               message: this.$t('message.license.agreements.not.accepted'),
               description: this.$t('message.step.license.agreements.continue')
             })
@@ -1699,7 +1702,7 @@ export default {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
                 if (vm.password) {
-                  this.$notification.success({
+                  this.$notification.error({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
                     duration: 0
