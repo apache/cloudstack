@@ -52,6 +52,7 @@ import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -69,6 +70,26 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class OVFHelper {
     private static final Logger s_logger = Logger.getLogger(OVFHelper.class);
+
+    protected List<String> getSupportedNamespaces(Document doc) {
+        List<String> list = new LinkedList<>();
+        if (doc != null && doc.getDocumentElement() != null) {
+            UrlValidator urlValidator = new UrlValidator();
+            NamedNodeMap attributes = doc.getDocumentElement().getAttributes();
+            if (attributes != null) {
+                for (int i = 0; i < attributes.getLength(); i++) {
+                    Node node = attributes.item(i);
+                    String prefix = node.getLocalName();
+                    String schemaUrl = node.getNodeValue();
+                    if (urlValidator.isValid(schemaUrl)) {
+                        s_logger.debug("Adding supported namespace " + schemaUrl + " for prefix: " + prefix);
+                        list.add(schemaUrl);
+                    }
+                }
+            }
+        }
+        return list;
+    }
 
     /**
      * Get disk virtual size given its values on fields: 'ovf:capacity' and 'ovf:capacityAllocationUnits'
@@ -281,7 +302,7 @@ public class OVFHelper {
         File ovfFile = new File(ovfFilePath);
         List<OVFVirtualHardwareItemTO> hardwareItems = getVirtualHardwareItemsFromDocumentTree(doc);
         List<OVFFile> files = extractFilesFromOvfDocumentTree(ovfFile, doc);
-        List<OVFDisk> disks = extractDisksFromOvfDocumentTree(doc);
+        List<OVFDisk> disks = extractDisksFromOvfDocumentTree(doc, new LinkedList<>());
 
         List<OVFVirtualHardwareItemTO> diskHardwareItems = hardwareItems.stream()
                 .filter(x -> x.getResourceType() == OVFVirtualHardwareItemTO.HardwareResourceType.DiskDrive &&
@@ -366,21 +387,25 @@ public class OVFHelper {
                 isIso, bootable, controller, controllerSubType, diskNumber, configuration);
     }
 
-    protected List<OVFDisk> extractDisksFromOvfDocumentTree(Document doc) {
-        NodeList disks = doc.getElementsByTagName("Disk");
-        NodeList ovfDisks = doc.getElementsByTagName("ovf:Disk");
-        NodeList items = doc.getElementsByTagName("Item");
+    protected NodeList getElementByTagNameAndSupportedNamespaces(Document doc, List<String> namespaces, String tagName) {
+        NodeList nodeList = null;
+        for (String namespace : namespaces) {
+            nodeList = doc.getElementsByTagNameNS(namespace, tagName);
+            if (nodeList.getLength() > 0) {
+                break;
+            }
+        }
+        return nodeList;
+    }
 
-        int totalDisksLength = disks.getLength() + ovfDisks.getLength();
+    protected List<OVFDisk> extractDisksFromOvfDocumentTree(Document doc, List<String> supportedNamespaces) {
+        NodeList disks = getElementByTagNameAndSupportedNamespaces(doc, supportedNamespaces, "Disk");
+        NodeList items = getElementByTagNameAndSupportedNamespaces(doc, supportedNamespaces, "Item");
+
+        int totalDisksLength = disks.getLength();
         ArrayList<OVFDisk> vd = new ArrayList<>();
         for (int i = 0; i < totalDisksLength; i++) {
-            Element disk;
-            if (i >= disks.getLength()) {
-                int pos = i - disks.getLength();
-                disk = (Element) ovfDisks.item(pos);
-            } else {
-                disk = (Element) disks.item(i);
-            }
+            Element disk = (Element) disks.item(i);
 
             if (disk == null) {
                 continue;
