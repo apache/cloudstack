@@ -47,7 +47,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
-import org.xml.sax.SAXException;
 
 /**
  * processes the content of an OVA for registration of a template
@@ -104,7 +103,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
      */
     private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
         String ovfFilePath = getOVFFilePath(templateFileFullPath);
-        Document doc = ovfHelper.getOvfParser().parseOVF(ovfFilePath);
+        Document doc = ovfHelper.getOvfParser().parseOVFFile(ovfFilePath);
 
         OVFInformationTO ovfInformationTO = createOvfInformationTO(ovfHelper, doc, ovfFilePath);
         info.ovfInformationTO = ovfInformationTO;
@@ -238,7 +237,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             throw new InternalErrorException(msg);
         }
         try {
-            Document ovfDoc = ovfHelper.getOvfParser().parseOVF(ovfFileName);
+            Document ovfDoc = ovfHelper.getOvfParser().parseOVFFile(ovfFileName);
             NodeList diskElements = ovfHelper.getOvfParser().getElementsFromOVFDocument(ovfDoc, "Disk");
             for (int i = 0; i < diskElements.getLength(); i++) {
                 Element disk = (Element)diskElements.item(i);

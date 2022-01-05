@@ -714,49 +714,49 @@ public class OVFHelperTest {
     private OVFHelper ovfHelper = new OVFHelper();
 
     @Test
-    public void testGetOVFPropertiesValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFPropertiesValidOVF() throws IOException, SAXException {
         List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesFromXmlString(ovfFileProductSection);
         Assert.assertEquals(2, props.size());
     }
 
     @Test(expected = SAXParseException.class)
-    public void testGetOVFPropertiesInvalidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFPropertiesInvalidOVF() throws IOException, SAXException {
         ovfHelper.getOVFPropertiesFromXmlString(ovfFileProductSection + "xxxxxxxxxxxxxxxxx");
     }
 
     @Test
-    public void testGetOVFDeploymentOptionsValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFDeploymentOptionsValidOVF() throws IOException, SAXException {
         List<OVFConfigurationTO> options = ovfHelper.getOVFDeploymentOptionsFromXmlString(ovfFileDeploymentOptionsSection);
         Assert.assertEquals(3, options.size());
     }
 
     @Test
-    public void testGetOVFVirtualHardwareSectionValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFVirtualHardwareSectionValidOVF() throws IOException, SAXException {
         List<OVFVirtualHardwareItemTO> items = ovfHelper.getOVFVirtualHardwareSectionFromXmlString(ovfFileVirtualHardwareSection);
         Assert.assertEquals(20, items.size());
     }
 
     @Test
-    public void testGetOVFEulaSectionValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFEulaSectionValidOVF() throws IOException, SAXException {
         List<OVFEulaSectionTO> eulas = ovfHelper.getOVFEulaSectionFromXmlString(eulaSections);
         Assert.assertEquals(2, eulas.size());
     }
 
     @Test
-    public void testGetOVFPropertiesWithCategories() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFPropertiesWithCategories() throws IOException, SAXException {
         List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesFromXmlString(productSectionWithCategories);
         Assert.assertEquals(18, props.size());
     }
 
     @Test
-    public void testGetOperatingSystemInfo() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOperatingSystemInfo() throws IOException, SAXException {
         Pair<String, String> guestOsPair = ovfHelper.getOperatingSystemInfoFromXmlString(ovfFileVirtualHardwareSection);
         Assert.assertEquals("other26xLinux64Guest", guestOsPair.first());
         Assert.assertEquals("Other 2.6x Linux (64-bit)", guestOsPair.second());
     }
 
     @Test
-    public void testGetMinimumHardwareVersion() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetMinimumHardwareVersion() throws IOException, SAXException {
         OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromXmlString(ovfFileVirtualHardwareSection);
         Assert.assertEquals("vmx-08", hardwareSection.getMinimiumHardwareVersion());
     }

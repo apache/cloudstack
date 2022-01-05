@@ -59,11 +59,16 @@ import org.w3c.dom.traversal.NodeIterator;
 
 import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.xml.sax.SAXException;
 
 public class OVFHelper {
     private static final Logger s_logger = Logger.getLogger(OVFHelper.class);
 
-    private final OVFParser ovfParser = new OVFParser();
+    private final OVFParser ovfParser;
+
+    public OVFHelper() {
+        ovfParser = new OVFParser();
+    }
 
     public OVFParser getOvfParser() {
         return this.ovfParser;
@@ -163,32 +168,32 @@ public class OVFHelper {
     /**
      * Get properties from OVF XML string
      */
-    protected List<OVFPropertyTO> getOVFPropertiesFromXmlString(final String ovfString) {
+    protected List<OVFPropertyTO> getOVFPropertiesFromXmlString(final String ovfString) throws IOException, SAXException {
         final Document doc = ovfParser.parseOVF(ovfString);
         return getConfigurableOVFPropertiesFromDocument(doc);
     }
 
-    protected Pair<String, String> getOperatingSystemInfoFromXmlString(final String ovfString) {
+    protected Pair<String, String> getOperatingSystemInfoFromXmlString(final String ovfString) throws IOException, SAXException {
         final Document doc = ovfParser.parseOVF(ovfString);
         return getOperatingSystemInfoFromDocument(doc);
     }
 
-    protected List<OVFConfigurationTO> getOVFDeploymentOptionsFromXmlString(final String ovfString) {
+    protected List<OVFConfigurationTO> getOVFDeploymentOptionsFromXmlString(final String ovfString) throws IOException, SAXException {
         final Document doc = ovfParser.parseOVF(ovfString);
         return getDeploymentOptionsFromDocumentTree(doc);
     }
 
-    protected List<OVFVirtualHardwareItemTO> getOVFVirtualHardwareSectionFromXmlString(final String ovfString) {
+    protected List<OVFVirtualHardwareItemTO> getOVFVirtualHardwareSectionFromXmlString(final String ovfString) throws IOException, SAXException {
         final Document doc = ovfParser.parseOVF(ovfString);
         return getVirtualHardwareItemsFromDocumentTree(doc);
     }
 
-    protected OVFVirtualHardwareSectionTO getVirtualHardwareSectionFromXmlString(final String ovfString) {
+    protected OVFVirtualHardwareSectionTO getVirtualHardwareSectionFromXmlString(final String ovfString) throws IOException, SAXException {
         final Document doc = ovfParser.parseOVF(ovfString);
         return getVirtualHardwareSectionFromDocument(doc);
     }
 
-    protected List<OVFEulaSectionTO> getOVFEulaSectionFromXmlString(final String ovfString) {
+    protected List<OVFEulaSectionTO> getOVFEulaSectionFromXmlString(final String ovfString) throws IOException, SAXException {
         final Document doc = ovfParser.parseOVF(ovfString);
         return getEulaSectionsFromDocument(doc);
     }
@@ -197,7 +202,7 @@ public class OVFHelper {
         if (StringUtils.isBlank(ovfFilePath)) {
             return new ArrayList<>();
         }
-        Document doc = ovfParser.parseOVF(ovfFilePath);
+        Document doc = ovfParser.parseOVFFile(ovfFilePath);
 
         return getOVFVolumeInfoFromFile(ovfFilePath, doc, configurationId);
     }
@@ -434,7 +439,7 @@ public class OVFHelper {
     }
 
     public void rewriteOVFFileForSingleDisk(final String origOvfFilePath, final String newOvfFilePath, final String diskName) {
-        final Document doc = ovfParser.parseOVF(origOvfFilePath);
+        final Document doc = ovfParser.parseOVFFile(origOvfFilePath);
 
         NodeList disks = ovfParser.getElementsFromOVFDocument(doc, "Disk");
         NodeList files = ovfParser.getElementsFromOVFDocument(doc, "File");
