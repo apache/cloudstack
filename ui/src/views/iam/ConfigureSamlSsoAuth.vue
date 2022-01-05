@@ -108,16 +108,14 @@ export default {
           userid: this.resource.id,
           entityid: values.samlEntity
         }).then(response => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: values.samlEnable ? this.$t('label.saml.enable') : this.$t('label.saml.disable'),
             description: values.samlEnable ? `${this.$t('message.success.enable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
               : `${this.$t('message.success.disable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
           })
           this.handleClose()
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
             duration: 0

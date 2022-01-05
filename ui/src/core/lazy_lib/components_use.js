@@ -72,7 +72,6 @@ export default {
   install: (app) => {
     app.config.globalProperties.$confirm = Modal.confirm
     app.config.globalProperties.$message = message
-    app.config.globalProperties.$notification = notification
     app.config.globalProperties.$info = Modal.info
     app.config.globalProperties.$success = Modal.success
     app.config.globalProperties.$error = Modal.error

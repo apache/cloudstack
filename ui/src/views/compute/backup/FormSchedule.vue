@@ -263,8 +263,7 @@ export default {
         }
         this.actionLoading = true
         api('createBackupSchedule', params).then(json => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.scheduled.backups'),
             description: this.$t('message.success.config.backup.schedule')
           })

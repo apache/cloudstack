@@ -461,8 +461,7 @@ export default {
           }
         }
         api('createNetwork', params).then(json => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: 'Network',
             description: this.$t('message.success.create.isolated.network')
           })

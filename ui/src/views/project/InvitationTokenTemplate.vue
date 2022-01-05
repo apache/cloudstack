@@ -106,9 +106,9 @@ export default {
               hasJobId = true
               const jobId = json[obj][res]
               this.$pollJob({
-                title: title,
-                jobid: jobId,
-                description: description,
+                title,
+                jobId,
+                description,
                 showLoading: false
               })
             }

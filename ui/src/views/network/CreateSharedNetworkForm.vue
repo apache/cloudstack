@@ -683,8 +683,7 @@ export default {
             !this.isValidTextValueForKey(values, 'ip6gateway') && !this.isValidTextValueForKey(values, 'ip6cidr') &&
             !this.isValidTextValueForKey(values, 'startipv6') && !this.isValidTextValueForKey(values, 'endipv6'))
         ) {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.add.guest.network')
           })
@@ -769,8 +768,7 @@ export default {
           params.hideipaddressusage = true
         }
         api('createNetwork', params).then(json => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.network'),
             description: this.$t('message.success.add.guest.network')
           })

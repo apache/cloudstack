@@ -64,6 +64,12 @@
             v-if="editableValueKey === index"
             iconType="CheckCircleTwoTone"
             iconTwoToneColor="#52c41a" />
+          <tooltip-button
+            :tooltip="$t('label.reset.config.value')"
+            @onClick="resetConfig(item)"
+            v-if="editableValueKey !== index"
+            icon="reload-outlined"
+            :disabled="!('updateConfiguration' in $store.getters.apis)" />
         </template>
       </a-list-item>
     </a-list>
@@ -166,8 +172,7 @@ export default {
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('label.error'),
           description: this.$t('message.error.try.save.setting')
         })
@@ -185,6 +190,28 @@ export default {
     handleSearch (value) {
       this.filter = value
       this.fetchData()
+    },
+    resetConfig (item) {
+      this.tabLoading = true
+      api('resetConfiguration', {
+        [this.scopeKey]: this.resource.id,
+        name: item.name
+      }).then(() => {
+        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        this.$message.success(message)
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.reset.config'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.reset.config')
+        })
+      }).finally(() => {
+        this.tabLoading = false
+        this.fetchData(() => {
+          this.editableValueKey = null
+        })
+      })
     }
   }
 }

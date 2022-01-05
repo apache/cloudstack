@@ -237,33 +237,47 @@ export const notifierPlugin = {
       })
     }
 
-    app.config.globalProperties.$showNotification = function (config) {
-      let countNotify = store.getters.countNotify
-      countNotify++
-      store.commit('SET_COUNT_NOTIFY', countNotify)
-      const defaultConfig = {
+    app.config.globalProperties.$notification = {
+      defaultConfig: {
         top: '65px',
         onClose: () => {
           let countNotify = store.getters.countNotify
           countNotify > 0 ? countNotify-- : countNotify = 0
           store.commit('SET_COUNT_NOTIFY', countNotify)
         }
-      }
-      config = Object.assign({}, defaultConfig, config)
-      switch (config.type) {
-        case 'info':
-          notification.info(config)
-          break
-        case 'error':
-          notification.error(config)
-          break
-        case 'success':
-          notification.success(config)
-          break
-        case 'warning':
-          notification.warning(config)
-          break
-      }
+      },
+      setCountNotify: () => {
+        let countNotify = store.getters.countNotify
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
+      },
+      info: (config) => {
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
+        notification.info(config)
+      },
+      error: (config) => {
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
+        notification.error(config)
+      },
+      success: (config) => {
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
+        notification.success(config)
+      },
+      warning: (config) => {
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
+        notification.warning(config)
+      },
+      warn: (config) => {
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
+        notification.warn(config)
+      },
+      close: (key) => notification.close(key),
+      destroy: () => notification.destroy()
     }
   }
 }
