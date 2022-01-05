@@ -102,7 +102,7 @@ public class DataMigrationUtility {
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
             isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
-            LOGGER.trace(String.format("snapshot state: ", snapshot.getState()));
+            LOGGER.trace(String.format("template state: %s", template.getState()));
         }
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
         for (VolumeDataStoreVO volume : volumes) {
