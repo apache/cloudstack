@@ -283,9 +283,6 @@ public class UriUtils {
                 if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
                     throw new IllegalArgumentException("Illegal host specified in url");
                 }
-                if (hostAddr instanceof Inet6Address) {
-                    throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-                }
             } catch (UnknownHostException uhe) {
                 throw new IllegalArgumentException("Unable to resolve " + host);
             }
