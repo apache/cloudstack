@@ -112,16 +112,32 @@ mocks = {
   }),
   $notification: {
     error: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-error',
+        duration: option.duration
+      }
     }),
     info: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-info',
+        duration: option.duration
+      }
     }),
     success: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-success',
+        duration: option.duration
+      }
     }),
     warning: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-warning',
+        duration: option.duration
+      }
     })
   },
   $message: {
@@ -1563,7 +1579,7 @@ describe('Views > AutogenView.vue', () => {
         expect(mocks.$notification.info).toHaveBeenCalled()
         expect(mocks.$notification.info).toHaveLastReturnedWith({
           message: 'test-name-en',
-          description: 'test-description',
+          description: 'test-description-info',
           duration: 0
         })
         expect(mockAxios).toHaveBeenCalled()
