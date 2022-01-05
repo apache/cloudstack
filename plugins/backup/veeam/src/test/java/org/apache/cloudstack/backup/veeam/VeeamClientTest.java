@@ -102,7 +102,7 @@ public class VeeamClientTest {
             Assert.assertEquals("Failed to get Repository Name from Job [name: TEST-BACKUP].", e.getMessage());
         }
     }
-    
+
     @Test
     public void getRepositoryNameFromJobTestExceptionCmdWithFalseResult() {
         String backupName = "TEST-BACKUP2";
@@ -116,7 +116,7 @@ public class VeeamClientTest {
             Assert.assertEquals("Failed to get Repository Name from Job [name: TEST-BACKUP2].", e.getMessage());
         }
     }
-    
+
     @Test
     public void getRepositoryNameFromJobTestExceptionWhenResultIsInWrongFormat() {
         String backupName = "TEST-BACKUP3";
@@ -130,7 +130,7 @@ public class VeeamClientTest {
             Assert.assertEquals("Can't find any repository name for Job [name: TEST-BACKUP3].", e.getMessage());
         }
     }
-    
+
     @Test
     public void getRepositoryNameFromJobTestSuccess() throws Exception {
         String backupName = "TEST-BACKUP3";
