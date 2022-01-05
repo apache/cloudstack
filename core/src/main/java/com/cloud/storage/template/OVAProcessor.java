@@ -243,7 +243,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         try {
             Document ovfDoc = null;
             ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFileName));
-            NodeList diskElements = new OVFHelper().getElementsByTagNameAndPrefix(ovfDoc, "Disk", "ovf");
+            NodeList diskElements = new OVFHelper().getElementsFromOVFDocument(ovfDoc, "Disk");
             for (int i = 0; i < diskElements.getLength(); i++) {
                 Element disk = (Element)diskElements.item(i);
                 String diskSizeValue = disk.getAttribute("ovf:capacity");
