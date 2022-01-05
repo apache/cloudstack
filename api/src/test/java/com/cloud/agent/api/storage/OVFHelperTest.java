@@ -34,6 +34,7 @@ import java.util.List;
 public class OVFHelperTest {
 
     private String ovfFileProductSection =
+        "<Envelope xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
         "<ProductSection>" +
             "<Info>VM Arguments</Info>" +
             "<Property ovf:key=\"va-ssh-public-key\" ovf:type=\"string\" ovf:userConfigurable=\"true\" ovf:value=\"\">" +
@@ -44,9 +45,11 @@ public class OVFHelperTest {
                 "<Label>User data to be made available inside the instance</Label>" +
                 "<Description>This allows to pass any text to the appliance. The value should be encoded in base64</Description>" +
             "</Property>" +
-        "</ProductSection>";
+        "</ProductSection>" +
+        "</Envelope>";
 
     private String ovfFileDeploymentOptionsSection =
+            "<Envelope xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
             "<DeploymentOptionSection>\n" +
                     "    <Info>Deployment Configuration information</Info>\n" +
                     "    <Configuration ovf:id=\"ASAv5\">\n" +
@@ -61,9 +64,11 @@ public class OVFHelperTest {
                     "      <Label>2 Gbps (ASAv30)</Label>\n" +
                     "      <Description>Use this option to deploy an ASAv with a maximum throughput of 2 Gbps (uses 4 vCPUs and 8 GB of memory).</Description>\n" +
                     "    </Configuration>\n" +
-                    "  </DeploymentOptionSection>";
+                    "  </DeploymentOptionSection>" +
+            "</Envelope>";
 
     private String ovfFileVirtualHardwareSection =
+            "<Envelope xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
             "<VirtualSystem>\n" +
             "<OperatingSystemSection ovf:id=\"100\" vmw:osType=\"other26xLinux64Guest\">\n" +
             "      <Info>The kind of installed guest operating system</Info>\n" +
@@ -267,9 +272,11 @@ public class OVFHelperTest {
             "      </Item>\n" +
             "      <vmw:ExtraConfig vmw:key=\"monitor_control.pseudo_perfctr\" vmw:value=\"TRUE\"></vmw:ExtraConfig>\n" +
             "    </VirtualHardwareSection>\n" +
-            "</VirtualSystem>";
+            "</VirtualSystem>" +
+            "</Envelope>";
 
     private String eulaSections =
+            "<Envelope xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
             "<VirtualSystem>\n" +
             "<EulaSection>\n" +
             "      <Info>end-user license agreement</Info>\n" +
@@ -392,9 +399,11 @@ public class OVFHelperTest {
             "5. Customer may also use the Software under the terms of this Agreement to deliver hosted information technology services to Customer affiliates, subject to payment of the required license fee(s).\n" +
             "6. If the Software is subject to Cisco's Smart Licensing program, Cisco will be able to assess if Customer is using the Software within the limits and entitlements paid for by Customer. If the Smart Licensing program is applicable, Customer will be required to enter into a separate terms of service agreement relating to Smart Licensing.</License>\n" +
             "</EulaSection>\n" +
-            "</VirtualSystem>";
+            "</VirtualSystem>" +
+            "</Envelope>";
 
     private String productSectionWithCategories =
+            "<Envelope xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
             "<VirtualSystem ovf:id=\"VMware-vCenter-Server-Appliance\">\n" +
             "<ProductSection ovf:required=\"false\">\n" +
             "      <Info>Appliance ISV branding information</Info>\n" +
@@ -699,7 +708,8 @@ public class OVFHelperTest {
             "      <Info>VM specific properties</Info>\n" +
             "      <Property ovf:key=\"vmname\" ovf:type=\"string\" ovf:value=\"VMware-vCenter-Server-Appliance\"/>\n" +
             "</ProductSection>\n" +
-            "</VirtualSystem>";
+            "</VirtualSystem>" +
+            "</Envelope>";
 
     private OVFHelper ovfHelper = new OVFHelper();
 

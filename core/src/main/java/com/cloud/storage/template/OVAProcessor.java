@@ -20,13 +20,10 @@
 package com.cloud.storage.template;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
@@ -58,6 +55,7 @@ import org.xml.sax.SAXException;
 public class OVAProcessor extends AdapterBase implements Processor {
     private static final Logger LOGGER = Logger.getLogger(OVAProcessor.class);
     StorageLayer _storage;
+    private OVFHelper ovfHelper = new OVFHelper();
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
@@ -106,8 +104,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
      */
     private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
         String ovfFilePath = getOVFFilePath(templateFileFullPath);
-        OVFHelper ovfHelper = new OVFHelper();
-        Document doc = ovfHelper.getDocumentFromFile(ovfFilePath);
+        Document doc = ovfHelper.getOvfParser().parseOVF(ovfFilePath);
 
         OVFInformationTO ovfInformationTO = createOvfInformationTO(ovfHelper, doc, ovfFilePath);
         info.ovfInformationTO = ovfInformationTO;
@@ -241,9 +238,8 @@ public class OVAProcessor extends AdapterBase implements Processor {
             throw new InternalErrorException(msg);
         }
         try {
-            Document ovfDoc = null;
-            ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFileName));
-            NodeList diskElements = new OVFHelper().getElementsFromOVFDocument(ovfDoc, "Disk");
+            Document ovfDoc = ovfHelper.getOvfParser().parseOVF(ovfFileName);
+            NodeList diskElements = ovfHelper.getOvfParser().getElementsFromOVFDocument(ovfDoc, "Disk");
             for (int i = 0; i < diskElements.getLength(); i++) {
                 Element disk = (Element)diskElements.item(i);
                 String diskSizeValue = disk.getAttribute("ovf:capacity");
@@ -262,7 +258,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
                 virtualSize += diskSize;
             }
             return virtualSize;
-        } catch (InternalErrorException | IOException | NumberFormatException | ParserConfigurationException | SAXException e) {
+        } catch (InternalErrorException  | NumberFormatException e) {
             String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
             LOGGER.error(msg);
             throw new InternalErrorException(msg);
