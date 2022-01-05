@@ -26,6 +26,7 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
 import java.io.File;
 
@@ -36,6 +37,7 @@ public interface ServerResource extends Manager {
 
     String[] srcFiles = new String[] { "agent.zip", "cloud-scripts.tgz" };
     String[] newSrcFiles = new String[] { "agent.zip", "cloud-scripts.tgz", "patch-sysvms.sh" };
+    String[] certificateFiles = new String[] {KeyStoreUtils.CERT_FILENAME, KeyStoreUtils.CACERT_FILENAME, KeyStoreUtils.PKEY_FILENAME};
 
     String SSHKEYSPATH = "/root/.ssh";
     String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";

@@ -655,7 +655,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private Answer execute(PatchSystemVmCommand cmd) {
-        String controlIp = getRouterSshControlIp(cmd);
+        String controlIp = cmd.getAccessDetail((NetworkElementCommand.ROUTER_IP));
         String sysVMName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String homeDir = System.getProperty("user.home");
         File pemFile = new File(homeDir + "/.ssh/id_rsa");
@@ -674,7 +674,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
 
         String scriptChecksum = lines[1].trim();
-        String checksum = calculateCurrentChecksum(sysVMName).trim();
+        String checksum = calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
         if (!org.apache.commons.lang3.StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
             if (!cmd.isForced()) {
@@ -693,7 +693,17 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
 
         if (patchResult.first()) {
-            return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
+            String scriptVersion = lines[1];
+            if (patchResult.second() != null) {
+                String res = patchResult.second().replace("\n", " ");
+                String[] output = res.split(":");
+                if (output.length != 2) {
+                    s_logger.warn("Failed to get the latest script version");
+                } else {
+                    scriptVersion = output[1].split(" ")[0];
+                }
+            }
+            return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], scriptVersion);
         }
         return new PatchSystemVmAnswer(cmd, patchResult.second());
 

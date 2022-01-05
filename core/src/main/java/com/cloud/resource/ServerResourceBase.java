@@ -310,8 +310,8 @@ public abstract class ServerResourceBase implements ServerResource {
         return true;
     }
 
-    public String calculateCurrentChecksum(String name) {
-        String cloudScriptsPath = Script.findScript("", "vms/cloud-scripts.tgz");
+    public String calculateCurrentChecksum(String name, String path) {
+        String cloudScriptsPath = Script.findScript("", path);
         if (cloudScriptsPath == null) {
             throw new CloudRuntimeException(String.format("Unable to find cloudScripts path, cannot update SystemVM %s", name));
         }

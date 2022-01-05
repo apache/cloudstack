@@ -29,6 +29,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -1283,8 +1284,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
-
-        VirtualMachineGuru.appendCertificateDetails(buf, certificate);
+        buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+//        VirtualMachineGuru.appendCertificateDetails(buf, certificate);
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);

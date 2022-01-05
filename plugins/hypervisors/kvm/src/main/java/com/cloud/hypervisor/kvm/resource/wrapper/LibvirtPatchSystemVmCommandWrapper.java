@@ -47,7 +47,6 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         ExecutionResult result;
         try {
             result = getSystemVmVersionAndChecksum(serverResource, controlIp);
-            FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, LibvirtComputingResource.BASEPATH);
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(cmd, e.getMessage());
         }
@@ -59,7 +58,7 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         }
 
         String scriptChecksum = lines[1].trim();
-        String checksum = serverResource.calculateCurrentChecksum(sysVMName).trim();
+        String checksum = serverResource.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
         if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
             if (!cmd.isForced()) {
@@ -71,6 +70,7 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
 
         Pair<Boolean, String> patchResult = null;
         try {
+            FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.newSrcFiles, LibvirtComputingResource.BASEPATH);
             patchResult = SshHelper.sshExecute(controlIp, sshPort, "root",
                     pemFile, null, "/home/cloud/patch-sysvms.sh", 10000, 10000, 600000);
         } catch (Exception e) {
@@ -78,7 +78,17 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         }
 
         if (patchResult.first()) {
-            return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
+            String scriptVersion = lines[1];
+            if (patchResult.second() != null) {
+                String res = patchResult.second().replace("\n", " ");
+                String[] output = res.split(":");
+                if (output.length != 2) {
+                    s_logger.warn("Failed to get the latest script version");
+                } else {
+                    scriptVersion = output[1].split(" ")[0];
+                }
+            }
+            return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], scriptVersion);
         }
         return new PatchSystemVmAnswer(cmd, patchResult.second());
     }
