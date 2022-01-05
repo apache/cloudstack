@@ -107,7 +107,7 @@ public class DataMigrationUtility {
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
         for (VolumeDataStoreVO volume : volumes) {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
-            LOGGER.trace(String.format("volume state: ", volume.getState()));
+            LOGGER.trace(String.format("template state: %s", template.getState()));
         }
         return isReady;
     }
