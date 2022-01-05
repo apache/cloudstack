@@ -341,9 +341,6 @@ public class VeeamClient {
         LOG.debug(String.format("Trying to list backup repository for backup job [name: %s] in server [id: %s].", backupName, backupServerId));
         try {
             String repositoryName = getRepositoryNameFromJob(backupName);
-            if (StringUtils.isEmpty(repositoryName)) {
-                throw new CloudRuntimeException(String.format("Can't find any repository name for Job [name: %s].", backupName));
-            }
             final HttpResponse response = get(String.format("/backupServers/%s/repositories", backupServerId));
             checkResponseOK(response);
             final ObjectMapper objectMapper = new XmlMapper();
@@ -360,7 +357,7 @@ public class VeeamClient {
         return null;
     }
 
-    private String getRepositoryNameFromJob(String backupName) {
+    protected String getRepositoryNameFromJob(String backupName) {
         final List<String> cmds = Arrays.asList(
                 String.format("$Job = Get-VBRJob -name \"%s\"", backupName),
                 "$Job.GetBackupTargetRepository() ^| select Name | Format-List"
@@ -375,7 +372,7 @@ public class VeeamClient {
                return block.split(":")[1].trim();
            }
         }
-        return null;
+        throw new CloudRuntimeException(String.format("Can't find any repository name for Job [name: %s].", backupName));
     }
 
     public void listAllBackups() {
