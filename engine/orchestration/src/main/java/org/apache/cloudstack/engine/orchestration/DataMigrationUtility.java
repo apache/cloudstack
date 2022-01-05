@@ -97,7 +97,7 @@ public class DataMigrationUtility {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         for (TemplateDataStoreVO template : templates) {
             isReady &= (Arrays.asList(validStates).contains(template.getState()));
-            LOGGER.trace(String.format("template state: ", template.getState()));
+            LOGGER.trace(String.format("template state: %s", template.getState()));
         }
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
