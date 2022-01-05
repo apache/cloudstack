@@ -155,6 +155,7 @@ class TestNetworkPermissions(cloudstackTestCase):
             projectid=cls.project.id,
             zoneid=cls.zone.id
         )
+        cls._cleanup.append(cls.project_network)
 
         cls.services["network"]["name"] = "Test Network Isolated - Domain admin"
         cls.domainadmin_network = Network.create(
@@ -165,6 +166,7 @@ class TestNetworkPermissions(cloudstackTestCase):
             accountid=cls.domain_admin.name,
             zoneid=cls.zone.id
         )
+        cls._cleanup.append(cls.domainadmin_network)
 
         cls.services["network"]["name"] = "Test Network Isolated - Normal user"
         cls.user_network = Network.create(
@@ -175,17 +177,18 @@ class TestNetworkPermissions(cloudstackTestCase):
             accountid=cls.network_owner.name,
             zoneid=cls.zone.id
         )
+        cls._cleanup.append(cls.user_network)
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
+        super(TestNetworkPermissions, cls).tearDownClass()
 
     def setUp(self):
         self.cleanup = []
         self.virtual_machine = None
 
     def tearDown(self):
-        super().tearDown()
+        super(TestNetworkPermissions, self).tearDown()
 
     def list_network(self, apiclient, account, network, project, network_filter=None, expected=True):
         # List networks by apiclient, account, network, project and network network_filter
@@ -371,7 +374,7 @@ class TestNetworkPermissions(cloudstackTestCase):
             networkofferingid=self.network_offering_isolated.id,
             zoneid=self.zone.id
         )
-        self.cleanup = [otheruser_network]
+        self.cleanup.append(otheruser_network)
 
         # 2. Deploy vm1 on other user's network
         self.virtual_machine = VirtualMachine.create(
@@ -720,7 +723,7 @@ class TestNetworkPermissions(cloudstackTestCase):
             self.apiclient,
             self.services["service_offerings"]["big"]
         )
-        self.cleanup = [self.service_offering_new]
+        self.cleanup.append(self.service_offering_new)
         command = """self.virtual_machine.scale_virtualmachine({apiclient}, self.service_offering_new.id)"""
         self.exec_command("self.user_apiclient", command, expected=False)
         self.exec_command("self.otheruser_apiclient", command, expected=True)

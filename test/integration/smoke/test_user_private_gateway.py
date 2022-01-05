@@ -72,37 +72,12 @@ class TestUserPrivateGateways(cloudstackTestCase):
 
         cls.domain = get_domain(cls.apiclient)
 
-        # Create sub-domain
-        cls.sub_domain = Domain.create(
-            cls.apiclient,
-            cls.services["acl"]["domain1"]
-        )
-
-        # Create domain admin and normal user
-        cls.domain_admin = Account.create(
-            cls.apiclient,
-            cls.services["acl"]["accountD1A"],
-            admin=True,
-            domainid=cls.sub_domain.id
-        )
-        cls.normal_user = Account.create(
-            cls.apiclient,
-            cls.services["acl"]["accountD1B"],
-            domainid=cls.sub_domain.id
-        )
-        # Create project
-        cls.project = Project.create(
-          cls.apiclient,
-          cls.services["project"],
-          account=cls.domain_admin.name,
-          domainid=cls.domain_admin.domainid
-        )
-
         # Create small service offering
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         # Create network offering for isolated networks
         cls.network_offering_isolated = NetworkOffering.create(
@@ -110,12 +85,14 @@ class TestUserPrivateGateways(cloudstackTestCase):
             cls.services["network_offering"]
         )
         cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.network_offering_isolated)
 
         # Create vpc offering
         cls.vpc_offering = VpcOffering.create(
             cls.apiclient,
             cls.services["vpc_offering_multi_lb"])
         cls.vpc_offering.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.vpc_offering)
 
         # Create network offering for vpc tiers
         cls.network_offering_vpc = NetworkOffering.create(
@@ -124,6 +101,39 @@ class TestUserPrivateGateways(cloudstackTestCase):
             conservemode=False
         )
         cls.network_offering_vpc.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.network_offering_vpc)
+
+        # Create sub-domain
+        cls.sub_domain = Domain.create(
+            cls.apiclient,
+            cls.services["acl"]["domain1"]
+        )
+        cls._cleanup.append(cls.sub_domain)
+
+        # Create domain admin and normal user
+        cls.domain_admin = Account.create(
+            cls.apiclient,
+            cls.services["acl"]["accountD1A"],
+            admin=True,
+            domainid=cls.sub_domain.id
+        )
+        cls._cleanup.append(cls.domain_admin)
+
+        cls.normal_user = Account.create(
+            cls.apiclient,
+            cls.services["acl"]["accountD1B"],
+            domainid=cls.sub_domain.id
+        )
+        cls._cleanup.append(cls.normal_user)
+
+        # Create project
+        cls.project = Project.create(
+          cls.apiclient,
+          cls.services["project"],
+          account=cls.domain_admin.name,
+          domainid=cls.domain_admin.domainid
+        )
+        cls._cleanup.append(cls.project)
 
         # Create api clients for domain admin and normal user
         cls.domainadmin_user = cls.domain_admin.user[0]
@@ -134,16 +144,6 @@ class TestUserPrivateGateways(cloudstackTestCase):
         cls.normaluser_apiclient = cls.testClient.getUserApiClient(
             cls.normaluser_user.username, cls.sub_domain.name
         )
-
-        cls._cleanup.append(cls.service_offering)
-        cls._cleanup.append(cls.network_offering_isolated)
-        cls._cleanup.append(cls.vpc_offering)
-        cls._cleanup.append(cls.network_offering_vpc)
-
-        cls._cleanup.append(cls.sub_domain)
-        cls._cleanup.append(cls.normal_user)
-        cls._cleanup.append(cls.domain_admin)
-        cls._cleanup.append(cls.project)
 
     @classmethod
     def tearDownClass(cls):
