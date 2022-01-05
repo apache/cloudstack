@@ -386,9 +386,9 @@
         iconTwoToneColor="#52c41a" />
       <tooltip-button
         :tooltip="$t('label.reset.config.value')"
-        @click="resetConfig(record)"
+        @onClick="resetConfig(record)"
         v-if="editableValueKey !== record.key"
-        icon="reload"
+        icon="reload-outlined"
         :disabled="!('updateConfiguration' in $store.getters.apis)" />
     </template>
     <template #tariffActions="{ record }">
