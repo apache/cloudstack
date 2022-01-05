@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.VpcGateway;
@@ -27,7 +27,7 @@ import com.cloud.serializer.Param;
 
 @EntityReference(value = VpcGateway.class)
 @SuppressWarnings("unused")
-public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse {
+public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the private gateway")
@@ -104,14 +104,6 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @SerializedName(ApiConstants.ACL_NAME)
     @Param(description = "ACL name set for private gateway")
     private String aclName;
-
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
-    @Param(description = "the ID of the Network associated with this private gateway")
-    private String associatedNetworkId;
-
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
-    @Param(description = "the name of the Network associated with this private gateway")
-    private String associatedNetworkName;
 
     @Override
     public String getObjectId() {
@@ -197,13 +189,5 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
 
     public void setAclName(String aclName) {
         this.aclName = aclName;
-    }
-
-    public void setAssociatedNetworkId(String associatedNetworkId) {
-        this.associatedNetworkId = associatedNetworkId;
-    }
-
-    public void setAssociatedNetworkName(String associatedNetworkName) {
-        this.associatedNetworkName = associatedNetworkName;
     }
 }

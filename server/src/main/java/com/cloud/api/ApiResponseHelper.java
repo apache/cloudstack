@@ -44,6 +44,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -2432,15 +2433,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        final NetworkDetailVO detail = networkDetailsDao.findDetail(network.getId(), Network.AssociatedNetworkId);
-        if (detail != null) {
-            Long associatedNetworkId = Long.valueOf(detail.getValue());
-            NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
-            if (associatedNetwork != null) {
-                response.setAssociatedNetworkId(associatedNetwork.getUuid());
-                response.setAssociatedNetworkName(associatedNetwork.getName());
-            }
-        }
+        setResponseAssociatedNetworkInformation(response, network.getId());
 
         response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
 
@@ -2494,6 +2487,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("network");
         return response;
+    }
+
+    private void setResponseAssociatedNetworkInformation(BaseResponseWithAssociatedNetwork response, Long networkId) {
+        final NetworkDetailVO detail = networkDetailsDao.findDetail(networkId, Network.AssociatedNetworkId);
+        if (detail != null) {
+            Long associatedNetworkId = Long.valueOf(detail.getValue());
+            NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
+            if (associatedNetwork != null) {
+                response.setAssociatedNetworkId(associatedNetwork.getUuid());
+                response.setAssociatedNetworkName(associatedNetwork.getName());
+            }
+        }
     }
 
     @Override
@@ -3206,15 +3211,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setAclName(acl.getName());
         }
 
-        final NetworkDetailVO detail = networkDetailsDao.findDetail(result.getNetworkId(), Network.AssociatedNetworkId);
-        if (detail != null) {
-            Long associatedNetworkId = Long.valueOf(detail.getValue());
-            NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
-            if (associatedNetwork != null) {
-                response.setAssociatedNetworkId(associatedNetwork.getUuid());
-                response.setAssociatedNetworkName(associatedNetwork.getName());
-            }
-        }
+        setResponseAssociatedNetworkInformation(response, result.getNetworkId());
 
         response.setObjectName("privategateway");
 
