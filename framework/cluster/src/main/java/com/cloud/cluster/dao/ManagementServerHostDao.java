@@ -48,7 +48,7 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     List<ManagementServerHostVO> listBy(ManagementServerHost.State... states);
 
     /**
-     * actually lists msids for whihc hosts are orphaned, i.e. misids that hosts refer as their owning ms whilst no mshost entry exists with those msids
+     * actually lists msids for which hosts are orphaned, i.e. msids that hosts refer as their owning ms whilst no mshost entry exists with those msids
      *
      * @return a list of non existing MS IDs
      */
