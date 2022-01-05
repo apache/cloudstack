@@ -1860,75 +1860,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
-        // Validate vlanId and associatedNetworkId
-        if (broadcastUri == null && associatedNetworkId == null) {
-            throw new InvalidParameterValueException("One of vlanId and associatedNetworkId must be specified");
-        }
-        if (broadcastUri != null && associatedNetworkId != null) {
-            throw new InvalidParameterValueException("vlanId and associatedNetworkId are mutually exclusive");
-        }
-
-        // Validate network offering
-        NetworkOfferingVO ntwkOff = null;
-        if (networkOfferingIdPassed != null) {
-            ntwkOff = _networkOfferingDao.findById(networkOfferingIdPassed);
-            if (ntwkOff == null) {
-                throw new InvalidParameterValueException("Unable to find network offering by id specified");
-            }
-            if (! TrafficType.Guest.equals(ntwkOff.getTrafficType())) {
-                throw new InvalidParameterValueException("The network offering cannot be used to create Guest network");
-            }
-            if (! GuestType.Isolated.equals(ntwkOff.getGuestType())) {
-                throw new InvalidParameterValueException("The network offering cannot be used to create Isolated network");
-            }
-        } else if (broadcastUri != null) {
-            ntwkOff = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering);
-        } else {
-            ntwkOff = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan);
-        }
+        NetworkOfferingVO ntwkOff = getVpcPrivateGatewayNetworkOffering(networkOfferingIdPassed, broadcastUri);
         final Long networkOfferingId = ntwkOff.getId();
 
-        Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || broadcastUri != null || bypassVlanOverlapCheck)) {
-            throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
-        }
-        if (ntwkOff.isSpecifyVlan() && broadcastUri == null) {
-            throw new InvalidParameterValueException("vlanId must be specified for this network offering");
-        }
-        if (! ntwkOff.isSpecifyVlan() && associatedNetworkId == null) {
-            throw new InvalidParameterValueException("associatedNetworkId must be specified for this network offering");
-        }
+        validateVpcPrivateGatewayAssociateNetworkId(ntwkOff, broadcastUri, associatedNetworkId, bypassVlanOverlapCheck);
 
         final Long dcId = vpc.getZoneId();
-        PhysicalNetwork physNet = null;
-        // Validate physical network
-        if (associatedNetworkId != null) {
-            Network associatedNetwork = _entityMgr.findById(Network.class, associatedNetworkId);
-            if (associatedNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find network by ID " + associatedNetworkId);
-            }
-            if (physicalNetworkId != null && !physicalNetworkId.equals(associatedNetwork.getPhysicalNetworkId())) {
-                throw new InvalidParameterValueException("The network can only be created on the same physical network as the associated network");
-            } else if (physicalNetworkId == null) {
-                physicalNetworkId = associatedNetwork.getPhysicalNetworkId();
-            }
-        }
-        if (physicalNetworkId == null) {
-            // Determine the physical network by network offering tags
-            physicalNetworkId = _ntwkSvc.findPhysicalNetworkId(dcId, ntwkOff.getTags(), ntwkOff.getTrafficType());
-        }
-        if (physicalNetworkId == null) {
-            final List<? extends PhysicalNetwork> pNtwks = _ntwkModel.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
-            if (pNtwks.isEmpty() || pNtwks.size() != 1) {
-                throw new InvalidParameterValueException("Physical network can't be determined; pass physical network id");
-            }
-            physNet = pNtwks.get(0);
-            physicalNetworkId = physNet.getId();
-        }
-
-        if (physNet == null) {
-            physNet = _entityMgr.findById(PhysicalNetwork.class, physicalNetworkId);
-        }
+        physicalNetworkId = validateVpcPrivateGatewayPhysicalNetworkId(dcId, physicalNetworkId, associatedNetworkId, ntwkOff);
+        PhysicalNetwork physNet = _entityMgr.findById(PhysicalNetwork.class, physicalNetworkId);;
 
         final Long physicalNetworkIdFinal = physicalNetworkId;
         final PhysicalNetwork physNetFinal = physNet;
@@ -2015,6 +1954,75 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         CallContext.current().setEventDetails("Private Gateway Id: " + gatewayVO.getId());
         return getVpcPrivateGateway(gatewayVO.getId());
+    }
+
+    private void validateVpcPrivateGatewayAssociateNetworkId(NetworkOfferingVO ntwkOff, String broadcastUri, Long associatedNetworkId, Boolean bypassVlanOverlapCheck) {
+        // Validate vlanId and associatedNetworkId
+        if (broadcastUri == null && associatedNetworkId == null) {
+            throw new InvalidParameterValueException("One of vlanId and associatedNetworkId must be specified");
+        }
+        if (broadcastUri != null && associatedNetworkId != null) {
+            throw new InvalidParameterValueException("vlanId and associatedNetworkId are mutually exclusive");
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || broadcastUri != null || bypassVlanOverlapCheck)) {
+            throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
+        }
+        if (ntwkOff.isSpecifyVlan() && broadcastUri == null) {
+            throw new InvalidParameterValueException("vlanId must be specified for this network offering");
+        }
+        if (! ntwkOff.isSpecifyVlan() && associatedNetworkId == null) {
+            throw new InvalidParameterValueException("associatedNetworkId must be specified for this network offering");
+        }
+    }
+
+    private NetworkOfferingVO getVpcPrivateGatewayNetworkOffering(Long networkOfferingIdPassed, String broadcastUri) {
+        // Validate network offering
+        NetworkOfferingVO ntwkOff = null;
+        if (networkOfferingIdPassed != null) {
+            ntwkOff = _networkOfferingDao.findById(networkOfferingIdPassed);
+            if (ntwkOff == null) {
+                throw new InvalidParameterValueException("Unable to find network offering by id specified");
+            }
+            if (! TrafficType.Guest.equals(ntwkOff.getTrafficType())) {
+                throw new InvalidParameterValueException("The network offering cannot be used to create Guest network");
+            }
+            if (! GuestType.Isolated.equals(ntwkOff.getGuestType())) {
+                throw new InvalidParameterValueException("The network offering cannot be used to create Isolated network");
+            }
+        } else if (broadcastUri != null) {
+            ntwkOff = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering);
+        } else {
+            ntwkOff = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan);
+        }
+        return ntwkOff;
+    }
+
+    private Long validateVpcPrivateGatewayPhysicalNetworkId(Long dcId, Long physicalNetworkId, Long associatedNetworkId, NetworkOfferingVO ntwkOff) {
+        // Validate physical network
+        if (associatedNetworkId != null) {
+            Network associatedNetwork = _entityMgr.findById(Network.class, associatedNetworkId);
+            if (associatedNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find network by ID " + associatedNetworkId);
+            }
+            if (physicalNetworkId != null && !physicalNetworkId.equals(associatedNetwork.getPhysicalNetworkId())) {
+                throw new InvalidParameterValueException("The network can only be created on the same physical network as the associated network");
+            } else if (physicalNetworkId == null) {
+                physicalNetworkId = associatedNetwork.getPhysicalNetworkId();
+            }
+        }
+        if (physicalNetworkId == null) {
+            // Determine the physical network by network offering tags
+            physicalNetworkId = _ntwkSvc.findPhysicalNetworkId(dcId, ntwkOff.getTags(), ntwkOff.getTrafficType());
+        }
+        if (physicalNetworkId == null) {
+            final List<? extends PhysicalNetwork> pNtwks = _ntwkModel.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Guest);
+            if (pNtwks.isEmpty() || pNtwks.size() != 1) {
+                throw new InvalidParameterValueException("Physical network can't be determined; pass physical network id");
+            }
+            physicalNetworkId = pNtwks.get(0).getId();
+        }
+        return physicalNetworkId;
     }
 
     @Override
