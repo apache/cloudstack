@@ -162,8 +162,7 @@ export default {
       this.actionLoading = true
       api('deleteSnapshotPolicies', params).then(json => {
         if (json.deletesnapshotpoliciesresponse.success) {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.delete.snapshot.policy'),
             description: this.$t('message.success.delete.snapshot.policy')
           })

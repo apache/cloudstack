@@ -709,8 +709,7 @@ export default {
         }
         this.loading = true
         api('createStoragePool', {}, 'POST', params).then(json => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.add.primary.storage'),
             description: this.$t('label.add.primary.storage')
           })

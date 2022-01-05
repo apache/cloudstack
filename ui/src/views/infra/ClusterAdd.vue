@@ -257,8 +257,7 @@ export default {
             }
             this.addCluster()
           }).catch(error => {
-            this.$showNotification({
-              type: 'error',
+            this.$notification.error({
               message: `${this.$t('label.error')} ${error.response.status}`,
               description: error.response.data.listvmwaredcsresponse.errortext,
               duration: 0
@@ -309,8 +308,7 @@ export default {
         this.parentToggleLoading()
         this.$parent.$parent.close()
       }).catch(error => {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.addclusterresponse.errortext,
           duration: 0
@@ -345,8 +343,7 @@ export default {
           }
         })
       }).catch(error => {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext,
           duration: 0

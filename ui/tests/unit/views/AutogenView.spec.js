@@ -52,14 +52,20 @@ mocks = {
   $notifyError: jest.fn((error) => {
     return error
   }),
-  $showNotification: jest.fn((option) => {
-    return {
-      type: option.type,
-      message: option.message,
-      description: 'test-description',
-      duration: option.duration
-    }
-  }),
+  $notification: {
+    error: jest.fn((option) => {
+      return option
+    }),
+    info: jest.fn((option) => {
+      return option
+    }),
+    success: jest.fn((option) => {
+      return option
+    }),
+    warning: jest.fn((option) => {
+      return option
+    })
+  },
   $message: {
     success: jest.fn((obj) => {
       return obj
@@ -1570,7 +1576,7 @@ describe('Views > AutogenView.vue', () => {
     })
 
     describe('pollActionCompletion()', () => {
-      it('check $showNotification when pollActionCompletion() is called with action is empty', (done) => {
+      it('check $notification when pollActionCompletion() is called with action is empty', (done) => {
         const mockData = {
           queryasyncjobresultresponse: {
             jobstatus: 1,
@@ -1588,7 +1594,7 @@ describe('Views > AutogenView.vue', () => {
         wrapper.vm.pollActionCompletion(jobId, action)
 
         setTimeout(() => {
-          expect(mocks.$showNotification).not.toHaveBeenCalled()
+          expect(mocks.$notification.info).not.toHaveBeenCalled()
           expect(mockAxios).toHaveBeenCalled()
           expect(mockAxios).toHaveBeenCalledWith({
             url: '/',
@@ -1605,7 +1611,7 @@ describe('Views > AutogenView.vue', () => {
         })
       })
 
-      it('check $showNotification when pollActionCompletion() is called with action is not empty', (done) => {
+      it('check $notification when pollActionCompletion() is called with action is not empty', (done) => {
         const mockData = {
           queryasyncjobresultresponse: {
             jobstatus: 1,
@@ -1626,9 +1632,8 @@ describe('Views > AutogenView.vue', () => {
         wrapper.vm.pollActionCompletion(jobId, action)
 
         setTimeout(() => {
-          expect(mocks.$showNotification).toHaveBeenCalled()
-          expect(mocks.$showNotification).toHaveLastReturnedWith({
-            type: 'info',
+          expect(mocks.$notification.info).toHaveBeenCalled()
+          expect(mocks.$notification.info).toHaveLastReturnedWith({
             message: 'test-name-en',
             description: 'test-description',
             duration: 0

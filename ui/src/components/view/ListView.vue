@@ -348,6 +348,12 @@
         v-if="editableValueKey === record.key"
         iconType="check-circle"
         iconTwoToneColor="#52c41a" />
+      <tooltip-button
+        :tooltip="$t('label.reset.config.value')"
+        @click="resetConfig(record)"
+        v-if="editableValueKey !== record.key"
+        icon="reload"
+        :disabled="!('updateConfiguration' in $store.getters.apis)" />
     </template>
     <template slot="tariffActions" slot-scope="text, record">
       <tooltip-button
@@ -514,8 +520,7 @@ export default {
           json.updateconfigurationresponse.configuration &&
           !json.updateconfigurationresponse.configuration.isdynamic &&
           ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$showNotification({
-            type: 'warning',
+          this.$notification.warning({
             message: this.$t('label.status'),
             description: this.$t('message.restart.mgmt.server')
           })
@@ -523,6 +528,23 @@ export default {
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
+      }).finally(() => {
+        this.$emit('refresh')
+      })
+    },
+    resetConfig (item) {
+      api('resetConfiguration', {
+        name: item.name
+      }).then(() => {
+        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        this.$message.success(message)
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.reset.config'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.reset.config')
+        })
       }).finally(() => {
         this.$emit('refresh')
       })

@@ -297,8 +297,7 @@ export default {
         this.loading = true
         api('update' + this.offeringType, params).then(json => {
           this.$emit('refresh-data')
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.action.update.offering.access'),
             description: this.$t('label.action.update.offering.access')
           })

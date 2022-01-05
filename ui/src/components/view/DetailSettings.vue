@@ -219,8 +219,7 @@ export default {
         apiName = 'updateTemplate'
       }
       if (!(apiName in this.$store.getters.apis)) {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('error.execute.api.failed') + ' ' + apiName,
           description: this.$t('message.user.not.permitted.api')
         })

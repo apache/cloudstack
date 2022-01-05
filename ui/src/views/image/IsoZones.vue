@@ -455,8 +455,7 @@ export default {
             catchMessage: this.$t('error.fetching.async.job.result')
           })
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })

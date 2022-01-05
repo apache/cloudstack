@@ -29,7 +29,20 @@ mocks = {
   $message: {
     error: jest.fn((message) => {})
   },
-  $showNotification: jest.fn((obj) => {}),
+  $notification: {
+    error: jest.fn((option) => {
+      return option
+    }),
+    info: jest.fn((option) => {
+      return option
+    }),
+    success: jest.fn((option) => {
+      return option
+    }),
+    warning: jest.fn((option) => {
+      return option
+    })
+  },
   $pollJob: jest.fn((obj) => {
     switch (obj.jobId) {
       case 'test-job-id-case-1':
@@ -752,9 +765,8 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(mocks.$showNotification).toHaveBeenCalled()
-          expect(mocks.$showNotification).toHaveBeenCalledWith({
-            type: 'error',
+          expect(mocks.$notification.error).toHaveBeenCalled()
+          expect(mocks.$notification.error).toHaveBeenCalledWith({
             message: i18n.t('message.request.failed'),
             description: 'Error: throw error message',
             duration: 0
