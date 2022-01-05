@@ -4717,6 +4717,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (router == null) {
             throw new CloudRuntimeException(String.format("Failed to find router with id: %s", routerId));
         }
+
         router.setTemplateVersion(templateVersion);
         router.setScriptsVersion(scriptVersion);
         return routerDao.update(routerId, router);

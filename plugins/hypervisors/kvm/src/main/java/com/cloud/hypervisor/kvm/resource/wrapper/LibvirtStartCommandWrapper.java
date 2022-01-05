@@ -121,6 +121,16 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     try {
                         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
                         FileUtil.scpPatchFiles(controlIp, "/home/cloud", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.newSrcFiles, LibvirtComputingResource.BASEPATH);
+//                        if (Arrays.asList((new VirtualMachine.Type[]{VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm})).contains(vmSpec.getType())) {
+////                            for (String certFile : LibvirtComputingResource.certificateFiles) {
+////                                libvirtComputingResource.createFileInVR(controlIp, "/usr/local/cloud/systemvm/conf/", certFile, command.getCertificate());
+////                            }
+//                            if (VirtualMachine.Type.ConsoleProxy == vmSpec.getType() || VirtualMachine.Type.SecondaryStorageVm == vmSpec.getType()) {
+//                                libvirtComputingResource.
+//                                libvirtComputingResource.createFileInVR(controlIp, "/home/cloud", KeyStoreUtils.CACERT_FILENAME, command.getCaCertificates());
+//                                libvirtComputingResource.createFileInVR(controlIp, "/home/cloud", KeyStoreUtils.PKEY_FILENAME, command.getPrivateKey());
+//                            }
+//                        }
                         // TODO: May want to remove this when cert patching logic is moved
                         Thread.sleep(10000);
                     } catch (Exception e) {
@@ -157,6 +167,28 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             }
         }
     }
+
+//    /**
+//     * Create temporary file and return its path
+//     */
+//    private String createTemporaryFile(String certificateName, String certificate, String filePrefix) {
+//        String tempCerFilePath = String.format("/tmp/%s-%s",
+//               filePrefix, certificateName);
+//        s_logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
+//        int result = Script.runSimpleBashScriptForExitValue(String.format("echo '%s' > %s", certificate, tempCerFilePath));
+//        if (result != 0) {
+//            throw new CloudRuntimeException("Could not create the certificate file on path: " + tempCerFilePath);
+//        }
+//        return tempCerFilePath;
+//    }
+//
+//    /**
+//     * Remove temporary file
+//     */
+//    private void cleanupTemporaryFile(String temporaryFile) {
+//        s_logger.debug("Cleaning up temporary certificate file");
+//        Script.runSimpleBashScript("rm -f " + temporaryFile);
+//    }
 
     private void performAgentStartHook(String vmName, LibvirtComputingResource libvirtComputingResource) {
         try {

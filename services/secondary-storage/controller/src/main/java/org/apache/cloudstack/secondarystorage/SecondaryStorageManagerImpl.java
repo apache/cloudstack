@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -1166,8 +1167,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStore.getId()) : null;
         buf.append(" nfsVersion=").append(nfsVersion);
-
-        VirtualMachineGuru.appendCertificateDetails(buf, certificate);
+        buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+        //VirtualMachineGuru.appendCertificateDetails(buf, certificate);
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));

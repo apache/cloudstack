@@ -1121,9 +1121,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     _host.setSystemvmisouuid(vdi.getRecord(conn).uuid);
                 }
             }
-            if (_host.getSystemvmisouuid() == null) {
-                throw new CloudRuntimeException("can not find systemvmiso");
-            }
         }
 
         final VBD.Record cdromVBDR = new VBD.Record();
@@ -1133,10 +1130,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         cdromVBDR.userdevice = "3";
         cdromVBDR.mode = Types.VbdMode.RO;
         cdromVBDR.type = Types.VbdType.CD;
-        final VBD cdromVBD = VBD.create(conn, cdromVBDR);
-        cdromVBD.insert(conn, VDI.getByUuid(conn, _host.getSystemvmisouuid()));
 
-        return cdromVBD;
+        return VBD.create(conn, cdromVBDR);
     }
 
     protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder) {
@@ -1425,7 +1420,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 final DiskTO[] disks = vmSpec.getDisks();
                 for (final DiskTO disk : disks) {
                     if (disk.getType() == Volume.Type.ISO) {
-                        final TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+                        final TemplateObjectTO iso = (TemplateObjectTO) disk.getData();
                         final String osType = iso.getGuestOsType();
                         if (osType != null) {
                             final String isoGuestOsName = getGuestOsType(vmSpec.getPlatformEmulator());

@@ -47,7 +47,6 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
         ExecutionResult result;
         try {
             result = getSystemVmVersionAndChecksum(serverResource, controlIp);
-            serverResource.copyPatchFilesToVR(controlIp, "/home/cloud");
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(command, e.getMessage());
         }
@@ -59,8 +58,7 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
         }
 
         String scriptChecksum = lines[1].trim();
-        String checksum = serverResource.calculateCurrentChecksum(sysVMName).trim();
-
+        String checksum = serverResource.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
         if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
             if (!command.isForced()) {
                 String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
@@ -70,14 +68,23 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
         }
         String patchResult = null;
         try {
+            serverResource.copyPatchFilesToVR(controlIp, "/home/cloud");
             patchResult = serverResource.callHostPlugin(conn, "vmops", "runPatchScriptInDomr", "domrip", controlIp);
         } catch (Exception e) {
             return new PatchSystemVmAnswer(command, e.getMessage());
         }
 
-
         if (patchResult.startsWith("succ#")) {
-            return new PatchSystemVmAnswer(command, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], lines[1]);
+            String scriptVersion = lines[1];
+            String res = patchResult.replace("\n", " ");
+            String[] output = res.split(":");
+            if (output.length != 2) {
+                s_logger.warn("Failed to get the latest script version");
+            } else {
+                scriptVersion = output[1].split(" ")[0];
+            }
+
+            return new PatchSystemVmAnswer(command, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], scriptVersion);
         }
         return new PatchSystemVmAnswer(command, patchResult.substring(5));
 

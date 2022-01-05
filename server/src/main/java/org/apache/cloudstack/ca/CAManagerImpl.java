@@ -39,6 +39,7 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.ca.IssueCertificateCmd;
@@ -184,11 +185,14 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         }
         CallContext.current().setEventDetails("host id: " + host.getId());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
-        final String csr;
+        String csr = null;
+
         try {
-            csr = generateKeyStoreAndCsr(host, null);
-            if (StringUtils.isEmpty(csr)) {
-                return false;
+            if (host.getType() != Host.Type.ConsoleProxy && host.getType() != Host.Type.SecondaryStorageVM) {
+                csr = generateKeyStoreAndCsr(host, null);
+                if (Strings.isNullOrEmpty(csr)) {
+                    return false;
+                }
             }
             final Certificate certificate = issueCertificate(csr, Arrays.asList(host.getName(), host.getPrivateIpAddress()), Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
             return deployCertificate(host, certificate, reconnect, null);
@@ -207,6 +211,11 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         CallContext.current().setEventDetails("generating keystore and CSR for host id: " + host.getId());
         final SetupKeystoreAnswer answer = (SetupKeystoreAnswer)agentManager.send(host.getId(), cmd);
         return answer.getCsr();
+    }
+
+    private boolean isValidSystemVMType(Host.Type type) {
+        return Host.Type.SecondaryStorageVM.equals(type) ||
+                Host.Type.ConsoleProxy.equals(type);
     }
 
     @Override

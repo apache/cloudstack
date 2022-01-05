@@ -16,8 +16,12 @@
 // under the License.
 package com.cloud.agent.api;
 
-public class PatchSystemVmCommand extends GetDomRVersionCmd {
+import java.util.HashMap;
+import java.util.Map;
+
+public class PatchSystemVmCommand extends Command {
     boolean forced;
+    HashMap<String, String> accessDetails = new HashMap<String, String>(0);
 
     public boolean isForced() {
         return forced;
@@ -25,5 +29,30 @@ public class PatchSystemVmCommand extends GetDomRVersionCmd {
 
     public void setForced(boolean forced) {
         this.forced = forced;
+    }
+
+    public void setAccessDetail(final Map<String, String> details) {
+        if (details == null) {
+            return;
+        }
+        for (final Map.Entry<String, String> detail : details.entrySet()) {
+            if (detail == null) {
+                continue;
+            }
+            setAccessDetail(detail.getKey(), detail.getValue());
+        }
+    }
+
+    public void setAccessDetail(final String name, final String value) {
+        accessDetails.put(name, value);
+    }
+
+    public String getAccessDetail(final String name) {
+        return accessDetails.get(name);
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }

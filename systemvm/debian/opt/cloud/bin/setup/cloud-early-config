@@ -96,6 +96,9 @@ patch() {
 cleanup() {
   rm -rf /home/cloud/agent.zip
   mv /home/cloud/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
+  if [ -f /home/cloud/cloud.crt ]; then
+      mv /home/cloud/cloud.crt /home/cloud/cloud.ca.crt /home/cloud/cloud.key /usr/local/cloud/systemvm/conf/
+  fi
 }
 
 start() {

@@ -594,14 +594,10 @@ routing_svcs() {
 }
 
 setup_certificates() {
-  certificate=$(echo "$CERTIFICATE" | base64 -d)
-  cacertificate=$(echo "$CACERTIFICATE" | base64 -d)
-  privatekey=$(echo "$PRIVATEKEY" | base64 -d)
   kspass=$(echo "$KEYSTORE_PSSWD"| base64 -d)
-  ksvalidity="$KS_VALIDITY"
-  timeout 600 /opt/cloud/bin/keystore-cert-import /usr/local/cloud/systemvm/conf/agent.properties $kspass $ksvalidity \
-      /usr/local/cloud/systemvm/conf/cloud.jks ssh /usr/local/cloud/systemvm/conf/cloud.crt \
-      $certificate /usr/local/cloud/systemvm/conf/cloud.ca.crt $cacertificate /usr/local/cloud/systemvm/conf/cloud.key $privatekey
+  timeout 600 /opt/cloud/bin/keystore-cert-import /usr/local/cloud/systemvm/conf/agent.properties "$kspass" \
+      /usr/local/cloud/systemvm/conf/cloud.jks ssh /usr/local/cloud/systemvm/conf/cloud.crt "" \
+      /usr/local/cloud/systemvm/conf/cloud.ca.crt "" /usr/local/cloud/systemvm/conf/cloud.key ""
 }
 
 parse_cmd_line() {

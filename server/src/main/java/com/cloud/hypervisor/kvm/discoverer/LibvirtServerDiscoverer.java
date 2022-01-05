@@ -186,14 +186,13 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         final SetupCertificateCommand certificateCommand = new SetupCertificateCommand(certificate);
         final SSHCmdHelper.SSHCmdResult setupCertResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
                 String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
-                                "/etc/cloudstack/agent/agent.properties %s %s " +
-                                " /etc/cloudstack/agent/%s %s " +
+                                "/etc/cloudstack/agent/agent.properties %s " +
+                                "/etc/cloudstack/agent/%s %s " +
                                 "/etc/cloudstack/agent/%s \"%s\" " +
                                 "/etc/cloudstack/agent/%s \"%s\" " +
                                 "/etc/cloudstack/agent/%s \"%s\"",
                         KeyStoreUtils.KS_IMPORT_SCRIPT,
                         keystorePassword,
-                        validityPeriod,
                         KeyStoreUtils.KS_FILENAME,
                         KeyStoreUtils.SSH_MODE,
                         KeyStoreUtils.CERT_FILENAME,
@@ -257,7 +256,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 }
             }
 
-            s_logger.info("PEARL - agent IP: "+  agentIp);
             sshConnection = new Connection(agentIp, 22);
 
             sshConnection.connect(null, 60000, 60000);

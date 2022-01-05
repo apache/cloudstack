@@ -80,7 +80,7 @@ public interface VirtualMachineGuru {
         return base64EncodedPublicKey;
     }
 
-    private static String getEncodedString(String certificate) {
+    public static String getEncodedString(String certificate) {
         return Base64.getEncoder().encodeToString(certificate.replace("\n", KeyStoreUtils.CERT_NEWLINE_ENCODER).replace(" ", KeyStoreUtils.CERT_SPACE_ENCODER).getBytes(StandardCharsets.UTF_8));
     }
 

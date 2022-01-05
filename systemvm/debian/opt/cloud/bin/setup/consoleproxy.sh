@@ -37,10 +37,13 @@ setup_console_proxy() {
   enable_irqbalance 0
   rm -f /etc/logrotate.d/cloud
 
-  setup_certificates
-  if [ $? -gt 0 ]; then
-    log_it "Failed to setup CA Certificate for $TYPE"
-  fi
+#  if [ -f /home/cloud/cloud.crt ]; then
+#    mv /home/cloud/cloud.crt /home/cloud/cloud.ca.crt /home/cloud/cloud.key /usr/local/cloud/systemvm/conf/
+#  fi
+#  setup_certificates
+#  if [ $? -gt 0 ]; then
+#    log_it "Failed to setup CA Certificate for $TYPE"
+#  fi
 }
 
 setup_console_proxy

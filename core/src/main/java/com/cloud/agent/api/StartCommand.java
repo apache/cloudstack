@@ -29,6 +29,12 @@ public class StartCommand extends Command {
     String hostIp;
     boolean executeInSequence = false;
     String secondaryStorage;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private String certificate;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private String privateKey = "";
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private String caCertificates;
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
@@ -63,5 +69,29 @@ public class StartCommand extends Command {
 
     public void setSecondaryStorage(String secondary) {
         this.secondaryStorage = secondary;
+    }
+
+    public void setCertificate(String certificate) {
+        this.certificate = certificate;
+    }
+
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    public void setCaCertificates(String caCertificates) {
+        this.caCertificates = caCertificates;
+    }
+
+    public String getCertificate() {
+        return certificate;
+    }
+
+    public String getPrivateKey() {
+        return privateKey;
+    }
+
+    public String getCaCertificates() {
+        return caCertificates;
     }
 }
