@@ -5657,15 +5657,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("job %s to add network %s for vm %s processed", workJob.toString(), network, vm));
-        }
-        if (workJob.getStep() == VmWorkJobVO.Step.Done ||
-            workJob.getStep() == VmWorkJobVO.Step.Error ||
-            workJob.getStep() == VmWorkJobVO.Step.Release) {
-            _workJobDao.expunge(workJob.getId());
-        }
-
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
     }
 
