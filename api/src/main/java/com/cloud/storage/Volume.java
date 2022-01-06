@@ -48,7 +48,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
         Expunged("The volume has been expunged"),
-        Destroy("The volume is destroyed, and can't be recovered."),
+        Destroy("The volume is destroyed, and can be recovered."),
         Destroying("The volume is destroying, and can't be recovered."),
         UploadOp("The volume upload operation is in progress or in short the volume is on secondary storage"),
         Copying("Volume is copying from image store to primary, in case it's an uploaded volume"),
