@@ -1336,7 +1336,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
 
             if (!ipv4 && ntwkOff.getGuestType() == GuestType.Shared && _networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)) {
-                throw new InvalidParameterValueException("Currently IPv6-only Shared network with Virtual Router provider is not supported");
+                throw new InvalidParameterValueException("Currently IPv6-only Shared network with Virtual Router provider is not supported.");
             }
         }
 
