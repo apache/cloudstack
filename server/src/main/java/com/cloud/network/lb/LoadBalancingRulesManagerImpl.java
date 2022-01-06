@@ -339,7 +339,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+            throw new InvalidParameterValueException("Global setting endpoint.url has to be set to the Management Server's API end point");
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
