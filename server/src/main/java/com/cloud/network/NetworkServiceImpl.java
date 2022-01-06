@@ -64,7 +64,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -1254,7 +1253,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         boolean ipv4 = false, ipv6 = false;
-        if (StringUtils.isNoneBlank(gateway, netmask)) {
+        if (org.apache.commons.lang3.StringUtils.isNoneBlank(gateway, netmask)) {
             ipv4 = true;
         }
         if (isNotBlank(ip6Cidr) && isNotBlank(ip6Gateway)) {
