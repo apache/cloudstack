@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -161,7 +162,7 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + getId());
         FirewallRule rules = ipv6Service.updateIpv6FirewallRule(this);
-        FirewallRuleResponse ruleResponse = _responseGenerator.createIpv6FirewallRuleResponse(rules);
+        FirewallResponse ruleResponse = _responseGenerator.createIpv6FirewallRuleResponse(rules);
         setResponseObject(ruleResponse);
         ruleResponse.setResponseName(getCommandName());
     }

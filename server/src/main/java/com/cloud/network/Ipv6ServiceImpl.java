@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.DeleteIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +50,8 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
@@ -56,12 +59,19 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -101,6 +111,12 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     NicDao nicDao;
     @Inject
     DomainRouterDao domainRouterDao;
+    @Inject
+    AccountManager accountManager;
+    @Inject
+    NetworkModel networkModel;
+    @Inject
+    FirewallManager firewallManager;
 
     protected void releaseIpv6Subnet(long subnetId) {
         Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(subnetId);
@@ -277,25 +293,128 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         return addresses;
     }
 
-    public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd) {
-        // TODO
-        return firewallDao.findById(updateIpv6FirewallRuleCmd.getId());
-    }
-
     @Override
     public Pair<List<? extends FirewallRule>, Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd) {
         return firewallService.listFirewallRules(listIpv6FirewallRulesCmd);
     }
 
     @Override
-    public boolean revokeIpv6FirewallRule(Long id) {
-        // TODO
-        return true;
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating IPv6 firewall rule", create = true)
+    public FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd cmd) throws NetworkRuleConflictException {
+        final Account caller = CallContext.current().getCallingAccount();
+        final long networkId = cmd.getNetworkId();
+        final Integer portStart = cmd.getSourcePortStart();
+        final Integer portEnd = cmd.getSourcePortEnd();
+        final FirewallRule.TrafficType trafficType = cmd.getTrafficType();
+        final String protocol = cmd.getProtocol();
+        final Integer icmpCode = cmd.getIcmpCode();
+        final Integer icmpType = cmd.getIcmpType();
+        final boolean forDisplay = cmd.isDisplay();
+        final FirewallRule.FirewallRuleType type = FirewallRule.FirewallRuleType.User;
+        final List<String> sourceCidrList = cmd.getSourceCidrList();
+        final List<String> destinationCidrList = cmd.getDestinationCidrList();
+
+        if (portStart != null && !NetUtils.isValidPort(portStart)) {
+            throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
+        }
+        if (portEnd != null && !NetUtils.isValidPort(portEnd)) {
+            throw new InvalidParameterValueException("Public port range is an invalid value: " + portEnd);
+        }
+
+        // start port can't be bigger than end port
+        if (portStart != null && portEnd != null && portStart > portEnd) {
+            throw new InvalidParameterValueException("Start port can't be bigger than end port");
+        }
+
+        Network network = networkModel.getNetwork(networkId);
+        assert network != null : "Can't create rule as network is null?";
+
+        final long accountId = network.getAccountId();
+        final long domainId = network.getDomainId();
+
+        if (FirewallRule.TrafficType.Egress.equals(trafficType)) {
+            accountManager.checkAccess(caller, null, true, network);
+        }
+
+        // Verify that the network guru supports the protocol specified
+        Map<Network.Capability, String> caps = networkModel.getNetworkServiceCapabilities(network.getId(), Network.Service.Firewall);
+
+        if (caps != null) {
+            String supportedProtocols;
+            String supportedTrafficTypes = null;
+            supportedTrafficTypes = caps.get(Network.Capability.SupportedTrafficDirection).toLowerCase();
+
+            if (trafficType == FirewallRule.TrafficType.Egress) {
+                supportedProtocols = caps.get(Network.Capability.SupportedEgressProtocols).toLowerCase();
+            } else {
+                supportedProtocols = caps.get(Network.Capability.SupportedProtocols).toLowerCase();
+            }
+
+            if (!supportedProtocols.contains(protocol.toLowerCase())) {
+                throw new InvalidParameterValueException(String.format("Protocol %s is not supported in zone", protocol));
+            } else if (!supportedTrafficTypes.contains(trafficType.toString().toLowerCase())) {
+                throw new InvalidParameterValueException("Traffic Type " + trafficType + " is currently supported by Firewall in network " + networkId);
+            }
+        }
+
+        // icmp code and icmp type can't be passed in for any other protocol rather than icmp
+        if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
+            throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
+        }
+
+        if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
+            throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
+        }
+
+        return Transaction.execute(new TransactionCallbackWithException<FirewallRuleVO, NetworkRuleConflictException>() {
+            @Override
+            public FirewallRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
+                FirewallRuleVO newRule =
+                        new FirewallRuleVO(null, null, portStart, portEnd, protocol.toLowerCase(), networkId, accountId, domainId, FirewallRule.Purpose.Ipv6Firewall,
+                                sourceCidrList, destinationCidrList, icmpCode, icmpType, null, trafficType);
+                newRule.setType(type);
+                newRule.setDisplay(forDisplay);
+                newRule = firewallDao.persist(newRule);
+
+                if (FirewallRule.FirewallRuleType.User.equals(type)) {
+                    firewallManager.detectRulesConflict(newRule);
+                }
+
+                if (!firewallDao.setStateToAdd(newRule)) {
+                    throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+                }
+                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+
+                return newRule;
+            }
+        });
     }
 
     @Override
-    public FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd) {
-        return null;
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking IPv6 firewall rule", create = true)
+    public boolean revokeIpv6FirewallRule(Long id) {
+        FirewallRuleVO rule = firewallDao.findById(id);
+        if (rule == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find IPv6 firewall rule with id %d", id));
+        }
+        if (FirewallRule.TrafficType.Ingress.equals(rule.getTrafficType())) {
+            return firewallManager.revokeIngressFirewallRule(rule.getId(), true);
+        }
+        return firewallManager.revokeEgressFirewallRule(rule.getId(), true);
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_UPDATE, eventDescription = "updating IPv6 firewall rule", create = true)
+    public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd cmd) {
+        final long id = cmd.getId();
+        final boolean forDisplay = cmd.isDisplay();
+        FirewallRuleVO rule = firewallDao.findById(id);
+        if (rule == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find IPv6 firewall rule with id %d", id));
+        }
+        if (FirewallRule.TrafficType.Ingress.equals(rule.getTrafficType())) {
+            return firewallManager.updateIngressFirewallRule(rule.getId(), null, forDisplay);
+        }
+        return firewallManager.updateEgressFirewallRule(rule.getId(), null, forDisplay);
     }
 
     @Override
@@ -305,7 +424,18 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
 
     @Override
     public boolean applyIpv6FirewallRule(long id) {
-        return false;
+        FirewallRuleVO rule = firewallDao.findById(id);
+        if (rule == null) {
+            s_logger.error(String.format("Unable to find IPv6 firewall rule with ID: %d", id));
+            return false;
+        }
+        if (!FirewallRule.Purpose.Ipv6Firewall.equals(rule.getPurpose())) {
+            s_logger.error(String.format("Cannot apply IPv6 firewall rule with ID: %d as purpose %s is not %s", id, rule.getPurpose(), FirewallRule.Purpose.Ipv6Firewall));
+        }
+        s_logger.debug(String.format("Applying IPv6 firewall rules for rule with ID: %s", rule.getUuid()));
+        List<FirewallRuleVO> rules = firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
+        rules.addAll(firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), FirewallRule.Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
+        return firewallManager.applyFirewallRules(rules, false, CallContext.current().getCallingAccount());
     }
 
     public class Ipv6GuestPrefixSubnetNetworkMapStateScanner extends ManagedContextRunnable {

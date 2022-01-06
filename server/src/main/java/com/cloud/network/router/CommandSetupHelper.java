@@ -44,6 +44,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
@@ -444,6 +445,47 @@ public class CommandSetupHelper {
         cmds.addCommand(cmd);
     }
 
+    public void createApplyIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
+        final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+        String systemRule = null;
+        Boolean defaultEgressPolicy = false;
+        if (rules != null) {
+            if (rules.size() > 0) {
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
+                    systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
+                }
+            }
+            for (final FirewallRule rule : rules) {
+                _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                final FirewallRule.TrafficType trafficType = rule.getTrafficType();
+                if (trafficType == FirewallRule.TrafficType.Ingress) {
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, trafficType);
+                    rulesTO.add(ruleTO);
+                } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    final NetworkVO network = _networkDao.findById(guestNetworkId);
+                    final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                    defaultEgressPolicy = offering.isEgressDefaultPolicy();
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Ipv6Firewall, trafficType, defaultEgressPolicy);
+                    rulesTO.add(ruleTO);
+                }
+            }
+        }
+
+        final SetIpv6FirewallRulesCommand cmd = new SetIpv6FirewallRulesCommand(rulesTO);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        if (systemRule != null) {
+            cmd.setAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT, systemRule);
+        } else {
+            cmd.setAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT, String.valueOf(defaultEgressPolicy));
+        }
+
+        cmds.addCommand(cmd);
+    }
+
     public void createFirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         String systemRule = null;
@@ -474,6 +516,48 @@ public class CommandSetupHelper {
         }
 
         final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        if (systemRule != null) {
+            cmd.setAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT, systemRule);
+        } else {
+            cmd.setAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT, String.valueOf(defaultEgressPolicy));
+        }
+
+        cmds.addCommand(cmd);
+    }
+
+    public void createIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
+        final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+        String systemRule = null;
+        Boolean defaultEgressPolicy = false;
+        if (rules != null) {
+            if (rules.size() > 0) {
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
+                    systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
+                }
+            }
+            for (final FirewallRule rule : rules) {
+                _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
+                final FirewallRule.TrafficType traffictype = rule.getTrafficType();
+                if (traffictype == FirewallRule.TrafficType.Ingress) {
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Firewall, traffictype);
+                    rulesTO.add(ruleTO);
+                } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    final NetworkVO network = _networkDao.findById(guestNetworkId);
+                    final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                    defaultEgressPolicy = offering.isEgressDefaultPolicy();
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
+                    rulesTO.add(ruleTO);
+                }
+            }
+        }
+
+        final SetIpv6FirewallRulesCommand cmd = new SetIpv6FirewallRulesCommand(rulesTO);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

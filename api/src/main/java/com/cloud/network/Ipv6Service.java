@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
@@ -54,7 +55,7 @@ public interface Ipv6Service extends PluggableService {
 
     boolean revokeIpv6FirewallRule(Long id);
 
-    FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd);
+    FirewallRule createIpv6FirewallRule(CreateIpv6FirewallRuleCmd createIpv6FirewallRuleCmd) throws NetworkRuleConflictException;
 
     FirewallRule getIpv6FirewallRule(Long entityId);
 

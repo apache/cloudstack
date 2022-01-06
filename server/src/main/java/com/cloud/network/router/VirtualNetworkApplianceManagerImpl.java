@@ -2424,18 +2424,28 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
         final List<FirewallRule> firewallRulesEgress = new ArrayList<FirewallRule>();
+        final List<FirewallRule> ipv6firewallRules = new ArrayList<>();
 
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
             firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall, FirewallRule.TrafficType.Egress));
             //create egress default rule for VR
             createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
+
+            ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Egress));
+            createDefaultEgressIpv6FirewallRule(firewallRulesEgress, guestNetworkId);
+            ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
         }
 
         // Re-apply firewall Egress rules
         s_logger.debug("Found " + firewallRulesEgress.size() + " firewall Egress rule(s) to apply as a part of domR " + router + " start.");
         if (!firewallRulesEgress.isEmpty()) {
             _commandSetupHelper.createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId);
+        }
+
+        s_logger.debug(String.format("Found %d Ipv6 firewall rule(s) to apply as a part of domR %s start.", ipv6firewallRules.size(), router));
+        if (!ipv6firewallRules.isEmpty()) {
+            _commandSetupHelper.createIpv6FirewallRulesCommands(ipv6firewallRules, router, cmds, guestNetworkId);
         }
 
         if (publicIps != null && !publicIps.isEmpty()) {
@@ -2581,6 +2591,28 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             rules.add(rule);
         } else {
             s_logger.debug("Egress policy for the Network " + networkId + " is already defined as Deny. So, no need to default the rule to Allow. ");
+        }
+    }
+
+    private void createDefaultEgressIpv6FirewallRule(final List<FirewallRule> rules, final long networkId) {
+        final NetworkVO network = _networkDao.findById(networkId);
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        final Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();
+
+        // The default on the router is set to Deny all. So, if the default configuration in the offering is set to true (Allow), we change the Egress here
+        if (defaultEgressPolicy) {
+            final List<String> sourceCidr = new ArrayList<String>();
+            final List<String> destCidr = new ArrayList<String>();
+
+            sourceCidr.add(network.getCidr());
+            destCidr.add(NetUtils.ALL_IP6_CIDRS);
+
+            final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Ipv6Firewall, sourceCidr,
+                    destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
+
+            rules.add(rule);
+        } else {
+            s_logger.debug("Egress policy for the Network " + networkId + " is already defined as Deny. So, no need to default the IPv6 rule to Allow. ");
         }
     }
 

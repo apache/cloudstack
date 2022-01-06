@@ -222,6 +222,16 @@ class CsNetfilters(object):
         The rule will not actually be removed on the host """
         self.rules[:] = [x for x in self.rules if not x == rule]
 
+    def apply_ip6_rules(self, list):
+        address_family = 'ip6'
+        table = 'ip6_firewall'
+        chain = 'fw_chain'
+        CsHelper.execute("nft add table %s %s" % (address_family, table))
+        CsHelper.execute("nft add chain %s %s %s '{type filter hook input priority 0; policy drop; }'" % (address_family, table, chain))
+        for fw in list:
+            logging.info("Add: rule=%s in address_family=%s table=%s chain=%s", fw, address_family, table, chain)
+            CsHelper.execute("nft add rule ip6 ip6_firewall fw_chain %s" % fw)
+
 
 class CsNetfilter(object):
 

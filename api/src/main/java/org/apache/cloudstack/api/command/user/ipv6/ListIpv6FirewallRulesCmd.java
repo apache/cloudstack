@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
+import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -122,11 +123,11 @@ public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd impleme
     @Override
     public void execute() {
         Pair<List<? extends FirewallRule>, Integer> result = ipv6Service.listIpv6FirewallRules(this);
-        ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
-        List<FirewallRuleResponse> ruleResponses = new ArrayList<FirewallRuleResponse>();
+        ListResponse<FirewallResponse> response = new ListResponse<>();
+        List<FirewallResponse> ruleResponses = new ArrayList<>();
 
         for (FirewallRule rule : result.first()) {
-            FirewallRuleResponse ruleData = _responseGenerator.createIpv6FirewallRuleResponse(rule);
+            FirewallResponse ruleData = _responseGenerator.createIpv6FirewallRuleResponse(rule);
             ruleResponses.add(ruleData);
         }
         response.setResponses(ruleResponses, result.second());

@@ -333,6 +333,84 @@ class CsAcl(CsDataBag):
                 self.AclIP(self.dbag[item], self.config).create()
 
 
+class CsIpv6Firewall(CsDataBag):
+    """
+        Deal with IPv6 Firewall
+    """
+
+    def flushAllRules(self):
+        logging.info("Flush all IPv6 firewall rules")
+        address_family = 'ip6'
+        table = 'ip6_firewall'
+        tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
+        if any(table in t for t in tables):
+            CsHelper.execute("nft delete table %s %s" % (address_family, table))
+
+    def process(self):
+        logging.info("Processing IPv6 firewall rules %s" % self.dbag)
+        fw = self.config.get_ipv6_fw()
+        for item in self.dbag:
+            if item == "id":
+                continue
+            rule = self.dbag[item]
+            rstr = ""
+
+            saddr = ""
+            if 'source_cidr_list' in rule:
+                source_cidrs = rule['source_cidr_list']
+                if len(source_cidrs) == 1:
+                    source_cidrs = source_cidrs[0]
+                else:
+                    source_cidrs = "{" + (",".join(source_cidrs)) + "}"
+                saddr = "ip6 saddr " + source_cidrs
+            daddr = ""
+            if 'dest_cidr_list' in rule:
+                dest_cidrs = rule['dest_cidr_list']
+                if len(dest_cidrs) == 1:
+                    dest_cidrs = dest_cidrs[0]
+                else:
+                    dest_cidrs = "{" + (",".join(dest_cidrs)) + "}"
+                saddr = "ip6 daddr " + dest_cidrs
+
+            proto = ""
+            protocol = rule['protocol']
+            if protocol != "all":
+                icmp_type = ""
+                proto = protocol
+                if protocol == "icmp":
+                    protocol = "icmpv6"
+                    icmp_type = "any"
+                if 'icmp_type' in rule and rule['icmp_type'] != -1:
+                    icmp_type = rule['icmp_type']
+                if proto and icmp_type:
+                    proto = proto + " type " + icmp_type
+                if 'icmp_code' in rule and rule['icmp_code'] != -1:
+                    proto = proto + " code " + rule['icmp_code']
+                first_port = ""
+                last_port = ""
+                if 'src_port_range' in rule:
+                    first_port = rule['src_port_range'][0]
+                    last_port = rule['src_port_range'][1]
+                port = ""
+                if first_port:
+                    port = first_port
+                if last_port and port and \
+                   last_port != first_port:
+                    port = "{%s-%s}" % (port, last_port)
+                proto = "%s dport %s" % (proto, port)
+
+            action = "accept"
+
+            rstr = saddr
+            if rstr and daddr:
+                rstr = rstr + " " + daddr
+            if rstr and proto:
+                rstr = rstr + " " + proto
+            rstr = rstr + " " + action
+            logging.debug("Process IPv6 firewall rule %s" % rstr)
+            fw.append(rstr)
+
+
 class CsVmMetadata(CsDataBag):
 
     def process(self):
@@ -1027,6 +1105,10 @@ class IpTablesExecutor:
         acls.flushAllowAllEgressRules()
         acls.process()
 
+        ip6_fw = CsIpv6Firewall('ipv6firewallrules', self.config)
+        ip6_fw.flushAllRules()
+        ip6_fw.process()
+
         fwd = CsForwardingRules("forwardingrules", self.config)
         fwd.process()
 
@@ -1042,6 +1124,10 @@ class IpTablesExecutor:
         logging.debug("Configuring iptables rules")
         nf = CsNetfilters()
         nf.compare(self.config.get_fw())
+
+        logging.info("Configuring nftables IPv6 rules %s" % self.config.get_ipv6_fw())
+        nf = CsNetfilters()
+        nf.apply_ip6_rules(self.config.get_ipv6_fw())
 
         logging.debug("Configuring iptables rules done ...saving rules")
 
@@ -1070,22 +1156,23 @@ def main(argv):
     config.address().compare()
     config.address().process()
 
-    databag_map = OrderedDict([("guest_network",     {"process_iptables": True,  "executor": [CsVpcGuestNetwork("guestnetwork", config)]}),
-                               ("ip_aliases",        {"process_iptables": True,  "executor": []}),
-                               ("vm_password",       {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
-                               ("vm_metadata",       {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),
-                               ("network_acl",       {"process_iptables": True,  "executor": []}),
-                               ("firewall_rules",    {"process_iptables": True,  "executor": []}),
-                               ("forwarding_rules",  {"process_iptables": True,  "executor": []}),
-                               ("staticnat_rules",   {"process_iptables": True,  "executor": []}),
-                               ("site_2_site_vpn",   {"process_iptables": True,  "executor": []}),
-                               ("remote_access_vpn", {"process_iptables": True,  "executor": []}),
-                               ("vpn_user_list",     {"process_iptables": False, "executor": [CsVpnUser("vpnuserlist", config)]}),
-                               ("vm_dhcp_entry",     {"process_iptables": False, "executor": [CsDhcp("dhcpentry", config)]}),
-                               ("dhcp",              {"process_iptables": False, "executor": [CsDhcp("dhcpentry", config)]}),
-                               ("load_balancer",     {"process_iptables": True,  "executor": []}),
-                               ("monitor_service",   {"process_iptables": False, "executor": [CsMonitor("monitorservice", config)]}),
-                               ("static_routes",     {"process_iptables": False, "executor": [CsStaticRoutes("staticroutes", config)]})
+    databag_map = OrderedDict([("guest_network",       {"process_iptables": True,  "executor": [CsVpcGuestNetwork("guestnetwork", config)]}),
+                               ("ip_aliases",          {"process_iptables": True,  "executor": []}),
+                               ("vm_password",         {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
+                               ("vm_metadata",         {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),
+                               ("network_acl",         {"process_iptables": True,  "executor": []}),
+                               ("firewall_rules",      {"process_iptables": True,  "executor": []}),
+                               ("ipv6_firewall_rules", {"process_iptables": True,  "executor": []}),
+                               ("forwarding_rules",    {"process_iptables": True,  "executor": []}),
+                               ("staticnat_rules",     {"process_iptables": True,  "executor": []}),
+                               ("site_2_site_vpn",     {"process_iptables": True,  "executor": []}),
+                               ("remote_access_vpn",   {"process_iptables": True,  "executor": []}),
+                               ("vpn_user_list",       {"process_iptables": False, "executor": [CsVpnUser("vpnuserlist", config)]}),
+                               ("vm_dhcp_entry",       {"process_iptables": False, "executor": [CsDhcp("dhcpentry", config)]}),
+                               ("dhcp",                {"process_iptables": False, "executor": [CsDhcp("dhcpentry", config)]}),
+                               ("load_balancer",       {"process_iptables": True,  "executor": []}),
+                               ("monitor_service",     {"process_iptables": False, "executor": [CsMonitor("monitorservice", config)]}),
+                               ("static_routes",       {"process_iptables": False, "executor": [CsStaticRoutes("staticroutes", config)]})
                                ])
 
     def execDatabag(key, db):

@@ -19,11 +19,11 @@
   <div>
     <div>
       <div class="form" v-ctrl-enter="addRule">
-        <div class="form__item">
+        <div class="form__item" v-if="newRule.traffictype === 'ingress'">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist" autoFocus></a-input>
         </div>
-        <div class="form__item">
+        <div class="form__item" v-if="newRule.traffictype === 'egress'">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
           <a-input v-model="newRule.destcidrlist"></a-input>
         </div>
@@ -86,7 +86,7 @@
       icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
-      {{ $t('label.action.bulk.delete.ipv6.firewall.rules') }}
+      {{ $t('label.action.bulk.delete.ip.v6.firewall.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -176,8 +176,8 @@ export default {
       filterColumns: ['Action'],
       showConfirmationAction: false,
       message: {
-        title: this.$t('label.action.bulk.delete.ipv6.firewall.rules'),
-        confirmMessage: this.$t('label.confirm.delete.ipv6.firewall.rules')
+        title: this.$t('label.action.bulk.delete.ip.v6.firewall.rules'),
+        confirmMessage: this.$t('label.confirm.delete.ip.v6.firewall.rules')
       },
       loading: true,
       ipv6Rules: [],
@@ -322,24 +322,24 @@ export default {
         const jobId = response.deleteipv6firewallruleresponse.jobid
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
-          title: this.$t('label.action.delete.ipv6.firewall'),
+          title: this.$t('label.action.delete.ip.v6.firewall'),
           description: rule.id,
           jobId: jobId,
-          successMessage: this.$t('message.success.remove.ipv6.rule'),
+          successMessage: this.$t('message.remove.ip.v6.firewall.rule.success'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
               eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
             }
             this.fetchData()
           },
-          errorMessage: this.$t('message.remove.ipv6.rule.failed'),
+          errorMessage: this.$t('message.remove.ip.v6.firewall.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
               eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
             }
             this.fetchData()
           },
-          loadingMessage: this.$t('message.remove.ipv6.rule.processing'),
+          loadingMessage: this.$t('message.remove.ip.v6.firewall.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData(),
           bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
@@ -357,17 +357,17 @@ export default {
       api('createIpv6FirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createipv6firewallruleresponse.jobid,
-          successMessage: this.$t('message.success.add.ipv6.rule'),
+          successMessage: this.$t('message.add.ip.v6.firewall.rule.success'),
           successMethod: () => {
             this.resetAllRules()
             this.fetchData()
           },
-          errorMessage: this.$t('message.add.ipv6.rule.failed'),
+          errorMessage: this.$t('message.add.ip.v6.firewall.rule.failed'),
           errorMethod: () => {
             this.resetAllRules()
             this.fetchData()
           },
-          loadingMessage: this.$t('message.add.ipv6.rule.processing'),
+          loadingMessage: this.$t('message.add.ip.v6.firewall.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.resetAllRules()

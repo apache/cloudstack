@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -36,6 +37,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.rules.FirewallRule;
@@ -63,8 +65,11 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of Ipv6 firewall rule")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to allow traffic from/to. Multiple entries must be separated by a single comma character (,).")
-    private List<String> cidrlist;
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the source CIDR list to allow traffic from. Multiple entries must be separated by a single comma character (,).")
+    private List<String> sourceCidrList;
+
+    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the destination CIDR list to allow traffic to. Multiple entries must be separated by a single comma character (,).")
+    private List<String> destinationCidrlist;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
     private Integer icmpType;
@@ -72,10 +77,10 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the VM the Ipv6 firewall rule will be created for")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the VM the Ipv6 firewall rule will be created for", required = true)
     private Long networkId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the Ipv6 firewall rule," + "can be ingress or egress, defaulted to ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the Ipv6 firewall rule, can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", authorized = {RoleType.Admin})
@@ -107,11 +112,21 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
-            return cidrlist;
+        if (sourceCidrList != null) {
+            return sourceCidrList;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
-            oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
+            oneCidrList.add(NetUtils.ALL_IP6_CIDRS);
+            return oneCidrList;
+        }
+    }
+
+    public List<String> getDestinationCidrList() {
+        if (destinationCidrlist != null) {
+            return destinationCidrlist;
+        } else {
+            List<String> oneCidrList = new ArrayList<String>();
+            oneCidrList.add(NetUtils.ALL_IP6_CIDRS);
             return oneCidrList;
         }
     }
@@ -194,9 +209,14 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() {
-        FirewallRule result = ipv6Service.createIpv6FirewallRule(this);
-        setEntityId(result.getId());
-        setEntityUuid(result.getUuid());
+        try {
+            FirewallRule result = ipv6Service.createIpv6FirewallRule(this);
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
+        } catch (NetworkRuleConflictException e) {
+            s_logger.trace("Network Rule Conflict: ", e);
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -209,7 +229,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
             // State is different after the rule is applied, so get new object here
             rule = ipv6Service.getIpv6FirewallRule(getEntityId());
-            FirewallRuleResponse ruleResponse = new FirewallRuleResponse();
+            FirewallResponse ruleResponse = new FirewallResponse();
             if (rule != null) {
                 ruleResponse = _responseGenerator.createIpv6FirewallRuleResponse(rule);
                 setResponseObject(ruleResponse);

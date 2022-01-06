@@ -4599,14 +4599,21 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public FirewallRuleResponse createIpv6FirewallRuleResponse(FirewallRule fwRule) {
-        FirewallRuleResponse response = new FirewallRuleResponse();
+    public FirewallResponse createIpv6FirewallRuleResponse(FirewallRule fwRule) {
+        FirewallResponse response = new FirewallResponse();
 
         response.setId(fwRule.getUuid());
         response.setProtocol(fwRule.getProtocol());
-
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
+        List<String> destinationCidrs = ApiDBUtils.findFirewallDestCidrs(fwRule.getId());
+        response.setDestCidr(StringUtils.join(destinationCidrs, ","));
+        response.setTrafficType(fwRule.getTrafficType().toString());
+        response.setProtocol(fwRule.getProtocol());
+        response.setStartPort(fwRule.getSourcePortStart());
+        response.setEndPort(fwRule.getSourcePortEnd());
+        response.setIcmpCode(fwRule.getIcmpCode());
+        response.setIcmpType(fwRule.getIcmpType());
 
         Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(network.getUuid());
