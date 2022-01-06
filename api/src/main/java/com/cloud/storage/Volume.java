@@ -47,7 +47,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         RevertSnapshotting("There is a snapshot created on this volume, the volume is being reverting from snapshot"),
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
-        Expunged("The volume has been expunged"),
+        Expunged("The volume has been expunged, and can no longer be recovered"),
         Destroy("The volume is destroyed, and can be recovered."),
         Destroying("The volume is destroying, and can't be recovered."),
         UploadOp("The volume upload operation is in progress or in short the volume is on secondary storage"),
