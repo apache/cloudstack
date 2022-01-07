@@ -85,7 +85,7 @@ public class StorageUsageParser {
 
         // loop through all the usage volumes, create a usage record for each
         for (UsageStorageVO usageStorage : usageUsageStorages) {
-            long storageId = usageStorage.getId();
+            long storageId = usageStorage.getEntityId();
             int storage_type = usageStorage.getStorageType();
             long size = usageStorage.getSize();
             Long virtualSize = usageStorage.getVirtualSize();
