@@ -74,7 +74,7 @@ public class VMSnapshotUsageParser {
         Map<String, UsageVMSnapshotVO> unprocessedUsage = new HashMap<String, UsageVMSnapshotVO>();
         for (UsageVMSnapshotVO usageRec : usageUsageVMSnapshots) {
             long zoneId = usageRec.getZoneId();
-            Long volId = usageRec.getId();
+            Long volId = usageRec.getVolumeId();
             long vmId = usageRec.getVmId();
             String key = vmId + ":" + volId;
             if (usageRec.getCreated().before(startDate)) {

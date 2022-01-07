@@ -82,7 +82,7 @@ public class IPAddressUsageParser {
 
         // loop through all the usage IPs, create a usage record for each
         for (UsageIPAddressVO usageIp : usageIPAddress) {
-            long IpId = usageIp.getId();
+            long IpId = usageIp.getIpId();
 
             String key = "" + IpId;
 

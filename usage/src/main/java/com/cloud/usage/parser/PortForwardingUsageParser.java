@@ -81,7 +81,7 @@ public class PortForwardingUsageParser {
 
         // loop through all the port forwarding rule, create a usage record for each
         for (UsagePortForwardingRuleVO usagePF : usagePFs) {
-            long pfId = usagePF.getId();
+            long pfId = usagePF.getPfId();
             String key = "" + pfId;
 
             pfMap.put(key, new PFInfo(pfId, usagePF.getZoneId()));

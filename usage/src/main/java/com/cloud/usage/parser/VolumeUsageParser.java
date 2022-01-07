@@ -82,7 +82,7 @@ public class VolumeUsageParser {
 
         // loop through all the usage volumes, create a usage record for each
         for (UsageVolumeVO usageVol : usageUsageVols) {
-            long volId = usageVol.getId();
+            long volId = usageVol.getVolumeId();
             Long doId = usageVol.getDiskOfferingId();
             long zoneId = usageVol.getZoneId();
             Long templateId = usageVol.getTemplateId();

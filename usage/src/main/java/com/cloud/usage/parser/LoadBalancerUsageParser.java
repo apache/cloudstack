@@ -81,7 +81,7 @@ public class LoadBalancerUsageParser {
 
         // loop through all the load balancer policies, create a usage record for each
         for (UsageLoadBalancerPolicyVO usageLB : usageLBs) {
-            long lbId = usageLB.getId();
+            long lbId = usageLB.getLbId();
             String key = "" + lbId;
 
             lbMap.put(key, new LBInfo(lbId, usageLB.getZoneId()));
