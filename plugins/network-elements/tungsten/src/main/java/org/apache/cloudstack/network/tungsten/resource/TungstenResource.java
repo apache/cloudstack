@@ -589,6 +589,10 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(DeleteTungstenVmCommand cmd, int numRetries) {
+        VirtualMachine vm = (VirtualMachine) tungstenApi.getTungstenObject(VirtualMachine.class, cmd.getVirtualMachineUuid());
+        if(vm != null && vm.getVirtualMachineInterfaceBackRefs() != null) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric virtual machine is not deleted because there are nics attached to this vm");
+        }
         boolean deleted = tungstenApi.deleteTungstenObject(VirtualMachine.class, cmd.getVirtualMachineUuid());
         if (deleted)
             return new TungstenAnswer(cmd, true, "Tungsten-Fabric virtual machine deleted");

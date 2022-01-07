@@ -1285,6 +1285,7 @@
 
                             if (args.context.networks[0].broadcastdomaintype != "Tungsten" || args.context.networks[0].state != "Implemented") {
                                 hiddenTabs.push("routeTables");
+                                hiddenTabs.push("routingPolicies")
                                 hiddenTabs.push("logicalRouter");
                             }
 
@@ -1823,6 +1824,8 @@
                                             },
                                             createForm: {
                                                 label: "label.tungsten.add.route.table.to.network",
+                                                title: "label.tungsten.add.route.table.to.network",
+                                                desc: "message.tungsten.route.table.add.to.network",
                                                 fields: {
                                                     tungstenRouteTable: {
                                                         label: "label.tungsten.network.route.table",
@@ -2015,6 +2018,8 @@
                                             },
                                             createForm: {
                                                 label: "label.tungsten.add.routing.policy.to.network",
+                                                title: "label.tungsten.add.routing.policy.to.network",
+                                                desc: "message.tungsten.routing.policy.add.to.network",
                                                 fields: {
                                                     tungstenRoutingPolicy: {
                                                         label: "label.tungsten.network.routing.policy",

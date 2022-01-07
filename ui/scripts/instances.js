@@ -881,10 +881,6 @@
                         hiddenTabs.push("securityGroups");
                     }
 
-                    if (args.context.instances[0].nic[0].broadcasturi != "tf://tf") {
-                        hiddenTabs.push("routeTables");
-                    }
-
                     return hiddenTabs;
                 },
                 actions: {
