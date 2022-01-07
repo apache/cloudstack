@@ -54,7 +54,6 @@ import com.cloud.utils.script.Script;
 public class OVAProcessor extends AdapterBase implements Processor {
     private static final Logger LOGGER = Logger.getLogger(OVAProcessor.class);
     StorageLayer _storage;
-    private OVFHelper ovfHelper = new OVFHelper();
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
@@ -103,6 +102,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
      */
     private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
         String ovfFilePath = getOVFFilePath(templateFileFullPath);
+        OVFHelper ovfHelper = new OVFHelper();
         Document doc = ovfHelper.getOvfParser().parseOVFFile(ovfFilePath);
 
         OVFInformationTO ovfInformationTO = createOvfInformationTO(ovfHelper, doc, ovfFilePath);
@@ -231,6 +231,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String templateFileFullPath = templatePath.endsWith(File.separator) ? templatePath : templatePath + File.separator;
         templateFileFullPath += templateName.endsWith(ImageFormat.OVA.getFileExtension()) ? templateName : templateName + "." + ImageFormat.OVA.getFileExtension();
         String ovfFileName = getOVFFilePath(templateFileFullPath);
+        OVFHelper ovfHelper = new OVFHelper();
         if (ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath;
             LOGGER.error(msg);

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,12 +43,12 @@ public class OVFParser {
             "osType", VMW_SCHEMA
     );
 
-    private static final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
     private DocumentBuilder documentBuilder;
 
     public OVFParser() {
-        documentBuilderFactory.setNamespaceAware(true);
         try {
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            documentBuilderFactory.setNamespaceAware(true);
             documentBuilder = documentBuilderFactory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             s_logger.error("Cannot start the OVF parser: " + e.getMessage(), e);
@@ -60,6 +61,9 @@ public class OVFParser {
     }
 
     public Document parseOVFFile(String ovfFilePath) {
+        if (StringUtils.isBlank(ovfFilePath)) {
+            return null;
+        }
         try {
             return documentBuilder.parse(new File(ovfFilePath));
         } catch (SAXException | IOException e) {
