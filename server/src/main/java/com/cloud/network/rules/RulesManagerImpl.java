@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -630,7 +631,13 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     }
 
     protected void applyUserData(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
-        UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
+        UserDataServiceProvider element = null;
+        try {
+            element = _networkModel.getUserDataUpdateProvider(network);
+        } catch (UnsupportedServiceException ex) {
+            s_logger.info(String.format("%s is not supported by network %s, skipping", Service.UserData.getName(), network));
+            return;
+        }
         if (element == null) {
             s_logger.error("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
         } else {
