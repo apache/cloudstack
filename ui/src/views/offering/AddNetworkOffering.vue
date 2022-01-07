@@ -253,7 +253,7 @@
         <a-form-item :label="$t('label.service.lb.elasticlbcheckbox')" v-if="guestType == 'shared' && lbServiceChecked && lbServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticlb', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="(guestType === 'shared' || guestType === 'isolated') && lbServiceChecked && firewallServiceChecked && lbServiceProvider === 'F5BigIp' && firewallServiceProvider === 'JuniperSRX'">
+        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="['shared', 'isolated'].includes(guestType) && lbServiceChecked && firewallServiceChecked && ['F5BigIp', 'Netscaler'].includes(lbServiceProvider) && ['JuniperSRX'].includes(firewallServiceProvider)">
           <a-radio-group
             v-decorator="['inlinemode', {
               initialValue: 'false'
