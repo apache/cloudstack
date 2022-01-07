@@ -102,8 +102,10 @@
                                 File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
                                 def lines = file.readLines()
                                 for (template in templateList) {
+                                    println(template)
                                     def data = lines.findAll { it.contains(template) }
                                     if (data != null) {
+                                        println(template)
                                         def hypervisor =  template.tokenize('-')[-1]
                                         pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
                                     }

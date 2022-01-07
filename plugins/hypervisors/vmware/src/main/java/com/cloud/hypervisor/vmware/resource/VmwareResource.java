@@ -692,17 +692,18 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return new PatchSystemVmAnswer(cmd, e.getMessage());
         }
 
-        if (patchResult.first()) {
-            String scriptVersion = lines[1];
-            if (patchResult.second() != null) {
-                String res = patchResult.second().replace("\n", " ");
-                String[] output = res.split(":");
-                if (output.length != 2) {
-                    s_logger.warn("Failed to get the latest script version");
-                } else {
-                    scriptVersion = output[1].split(" ")[0];
-                }
+        String scriptVersion = lines[1];
+        if (patchResult.second() != null) {
+            String res = patchResult.second().replace("\n", " ");
+            String[] output = res.split(":");
+            if (output.length != 2) {
+                s_logger.warn("Failed to get the latest script version");
+            } else {
+                scriptVersion = output[1].split(" ")[0];
             }
+
+        }
+        if (patchResult.first()) {
             return new PatchSystemVmAnswer(cmd, String.format("Successfully patched systemVM %s ", sysVMName), lines[0], scriptVersion);
         }
         return new PatchSystemVmAnswer(cmd, patchResult.second());

@@ -31,8 +31,8 @@ setup_k8s_node() {
     systemctl restart ssh
 
     # Prevent root login
-    > /root/.ssh/authorized_keys
-    passwd -l root
+#    > /root/.ssh/authorized_keys
+#    passwd -l root
     #sed -i 's#root:x:0:0:root:/root:/bin/bash#root:x:0:0:root:/root:/sbin/nologin#' /etc/passwd
 
     # Update containerd configuration
@@ -66,7 +66,7 @@ setup_k8s_node() {
 
     log_it "Starting cloud-init services"
     systemctl enable --now --no-block containerd
-    if [ -f /home/core/success ]; then
+    if [ -f /home/cloud/success ]; then
       systemctl stop cloud-init cloud-config cloud-final
       systemctl disable cloud-init cloud-config cloud-final
     else

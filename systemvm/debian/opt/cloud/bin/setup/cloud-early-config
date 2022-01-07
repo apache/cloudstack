@@ -59,38 +59,42 @@ patch() {
     return 0
   fi
 
+  CMDLINE=/var/cache/cloud/cmdline
+  export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
   retry=60
   local patched=false
-  while [ $retry -gt 0 ]
-  do
-    if [ -f $patchfile ]; then
-      eval $(validate_checksums $md5file $patchfile)
-      if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
-      then
-        tar xzf $patchfile -C /
-        ls -lrt /opt/cloud/bin/keystore*
-        echo ${newmd5} > ${md5file}
-        log_it "Patched scripts using $patchfile"
-        touch /var/cache/cloud/patch.required
+  if [ "$TYPE" != "cksnode" ]; then
+    while [ $retry -gt 0 ]
+    do
+      if [ -f $patchfile ]; then
+        eval $(validate_checksums $md5file $patchfile)
+        if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+        then
+          tar xzf $patchfile -C /
+          ls -lrt /opt/cloud/bin/keystore*
+          echo ${newmd5} > ${md5file}
+          log_it "Patched scripts using $patchfile"
+          touch /var/cache/cloud/patch.required
+        fi
+
+        if [ -f $privkey ]; then
+          cp -f $privkey /root/.ssh/
+          chmod go-rwx /root/.ssh/authorized_keys
+        fi
+        patched=true
+        break
       fi
 
-      if [ -f $privkey ]; then
-        cp -f $privkey /root/.ssh/
-        chmod go-rwx /root/.ssh/authorized_keys
-      fi
-      patched=true
-      break
+      sleep 2
+      retry=$(($retry-1))
+      log_it "Could not find patch file, retrying"
+    done
+
+    if [ $retry -eq 0 ] && [ "$patched" == "false" ]; then
+      return 2
     fi
-
-    sleep 2
-    retry=$(($retry-1))
-    log_it "Could not find patch file, retrying"
-  done
-
-  if [ $retry -eq 0 ] && [ "$patched" == "false" ]; then
-    return 2
+    return 0
   fi
-  return 0
 }
 
 cleanup() {

@@ -189,7 +189,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             // optional or conditionally applied
             String dockerConfigString = "write_files:\n" +
                     "  - path: /.docker/config.json\n" +
-                    "    owner: core:core\n" +
+                    "    owner: cloud:cloud\n" +
                     "    permissions: '0644'\n" +
                     "    content: |\n" +
                     "      {\n" +

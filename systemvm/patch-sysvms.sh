@@ -29,13 +29,17 @@ backuprestored=0
 
 backup_old_package() {
   mkdir -p $backupfolder
-  echo "Backing up keystore file and certificates" > $logfile 2>&1
-  mkdir -p $backupfolder/conf
-  cp -r /usr/local/cloud/systemvm/conf/* $backupfolder/conf
-  echo "Backing up agent package" >> $logfile 2>&1
-  cd /usr/local/cloud/systemvm/
-  zip -r $backupfolder/agent.zip * >> $logfile 2>&1 2>&1
-  cd -
+  if [ -d /usr/local/cloud/systemvm/conf/ ]; then
+    echo "Backing up keystore file and certificates" > $logfile 2>&1
+    mkdir -p $backupfolder/conf
+    cp -r /usr/local/cloud/systemvm/conf/* $backupfolder/conf
+  fi
+  if [ -d /usr/local/cloud/systemvm/ ]; then
+    echo "Backing up agent package" >> $logfile 2>&1
+    cd /usr/local/cloud/systemvm/
+    zip -r $backupfolder/agent.zip * >> $logfile 2>&1 2>&1
+    cd -
+  fi
   cp $md5file $backupfolder
   echo "Backing up cloud-scripts file" >> $logfile 2>&1
   tar -zcvf $backupfolder/cloud-scripts.tgz /etc/ /var/ /opt/ /root/  >> $logfile 2>&1
@@ -45,10 +49,12 @@ restore_backup() {
   echo "Restoring cloud scripts" >> $logfile 2>&1
   tar -xvf $backupfolder/cloud-scripts.tar -C / >> $logfile 2>&1
   echo "Restoring agent package" >> $logfile 2>&1
-  unzip $backupfolder/agent.zip -d /usr/local/cloud/systemvm/ >> $logfile 2>&1
-  echo "Restore keystore file and certificates" >> $logfile 2>&1
-  mkdir -p "/usr/local/cloud/systemvm/conf/"
-  cp -r $backupfolder/conf/* /usr/local/cloud/systemvm/conf/
+  if [ -f $backupfolder/agent.zip ]; then
+    unzip $backupfolder/agent.zip -d /usr/local/cloud/systemvm/ >> $logfile 2>&1
+    echo "Restore keystore file and certificates" >> $logfile 2>&1
+    mkdir -p "/usr/local/cloud/systemvm/conf/"
+    cp -r $backupfolder/conf/* /usr/local/cloud/systemvm/conf/
+  fi
   backuprestored=1
   restart_services
   cp $backupfolder/cloud-scripts-signature $md5file
@@ -95,9 +101,11 @@ cleanup_systemVM() {
 patch_systemvm() {
   rm -rf /usr/local/cloud/systemvm
   mkdir -p /usr/local/cloud/systemvm
-  echo "All" | unzip $newpath/agent.zip -d /usr/local/cloud/systemvm >> $logfile 2>&1
-  find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
 
+  if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]; then
+    echo "All" | unzip $newpath/agent.zip -d /usr/local/cloud/systemvm >> $logfile 2>&1
+    find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
+  fi
   echo "Extracting cloud scripts" >> $logfile 2>&1
   tar -xvf $newpath/cloud-scripts.tgz -C / >> $logfile 2>&1
 

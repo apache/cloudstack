@@ -18,7 +18,7 @@
 
 ---
 users:
-  - name: core
+  - name: cloud
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     ssh_authorized_keys:
@@ -31,7 +31,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -192,7 +192,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -210,8 +210,8 @@ write_files:
       fi
       kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --discovery-token-unsafe-skip-ca-verification
 
-      sudo touch /home/core/success
-      echo "true" > /home/core/success
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
 
   - path: /etc/systemd/system/setup-kube-system.service
     permissions: '0755'
