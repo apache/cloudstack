@@ -298,6 +298,7 @@ write_files:
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
+  - chown -R cloud:cloud /home/cloud/.ssh
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
 
