@@ -606,7 +606,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 // enable static nat on the backend
                 s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
                 if (applyStaticNatForIp(ipId, false, caller, false)) {
-                    applyUserData(vmId, network, guestNic);
+                    applyUserDataIfNeeded(vmId, network, guestNic);
                     performedIpAssoc = false; // ignor unassignIPFromVpcNetwork in finally block
                     return true;
                 } else {
@@ -630,7 +630,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         return false;
     }
 
-    protected void applyUserData(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
+    protected void applyUserDataIfNeeded(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
         UserDataServiceProvider element = null;
         try {
             element = _networkModel.getUserDataUpdateProvider(network);
@@ -1151,7 +1151,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             Nic guestNic = _networkModel.getNicInNetwork(vmId, guestNetwork.getId());
             if (applyStaticNatForIp(ipId, false, caller, true)) {
                 if (ipAddress.getState() == IpAddress.State.Releasing) {
-                    applyUserData(vmId, guestNetwork, guestNic);
+                    applyUserDataIfNeeded(vmId, guestNetwork, guestNic);
                 }
             } else {
                 success = false;
@@ -1296,7 +1296,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (disableStaticNat(ipId, caller, ctx.getCallingUserId(), false)) {
             Nic guestNic = _networkModel.getNicInNetworkIncludingRemoved(vmId, guestNetwork.getId());
-            applyUserData(vmId, guestNetwork, guestNic);
+            applyUserDataIfNeeded(vmId, guestNetwork, guestNic);
             return true;
         }
         return false;
