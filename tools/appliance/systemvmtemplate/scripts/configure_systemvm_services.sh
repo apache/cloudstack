@@ -50,9 +50,11 @@ function configure_cacerts() {
   CDIR=$(pwd)
   cd /tmp
   # Add LetsEncrypt ca-cert
-  wget https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.der
-  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx3cross -file lets-encrypt-x3-cross-signed.der
-  rm -f lets-encrypt-x3-cross-signed.der
+  wget https://letsencrypt.org/certs/lets-encrypt-r3.der
+  wget https://letsencrypt.org/certs/isrgrootx1.der
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityr3 -file lets-encrypt-r3.der
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx1 -file isrgrootx1.der
+  rm -f lets-encrypt-r3.der isrgrootx1.der
   cd $CDIR
 }
 
