@@ -635,7 +635,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         try {
             element = _networkModel.getUserDataUpdateProvider(network);
         } catch (UnsupportedServiceException ex) {
-            s_logger.info(String.format("%s is not supported by network %s, skipping", Service.UserData.getName(), network));
+            s_logger.info(String.format("%s is not supported by network %s, skipping.", Service.UserData.getName(), network));
             return;
         }
         if (element == null) {
