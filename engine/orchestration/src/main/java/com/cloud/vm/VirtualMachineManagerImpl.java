@@ -5694,7 +5694,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             throw e;
         }
-        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
         return workJob;
     }
