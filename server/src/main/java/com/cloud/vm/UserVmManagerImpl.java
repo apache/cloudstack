@@ -4416,6 +4416,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             value = DBEncryptionUtil.encrypt(value);
                         }
                     }
+                } else if (value == null) {
+                    value = "";
                 }
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("setting property '%s' as '%s' with value '%s'", key, detailKey, value));
