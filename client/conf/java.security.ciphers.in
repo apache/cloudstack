@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-jdk.tls.disabledAlgorithms=SSLv2Hello, SSLv3, TLSv1, TLSv1.1, DH keySize < 128, RSA keySize < 128, DES keySize < 128, SHA1 keySize < 128, MD5 keySize < 128, RC4
+jdk.tls.disabledAlgorithms=SSLv2Hello, SSLv3, DH keySize < 128, RSA keySize < 128, DES keySize < 128, SHA1 keySize < 128, MD5 keySize < 128, RC4
