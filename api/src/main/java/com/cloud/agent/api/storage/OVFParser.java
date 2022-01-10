@@ -95,15 +95,16 @@ public class OVFParser {
      * </Node>
      */
     public String getChildNodeValue(Node node, String childNodeName) {
-        if (node != null && node.hasChildNodes()) {
-            NodeList childNodes = node.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-                Node value = childNodes.item(i);
-                // Also match if the child's name has a suffix:
-                // Example: <rasd:AllocationUnits>
-                if (value != null && (value.getNodeName().equals(childNodeName)) || value.getNodeName().endsWith(":" + childNodeName)) {
-                    return value.getTextContent();
-                }
+        if (node == null || !node.hasChildNodes()) {
+            return null;
+        }
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node value = childNodes.item(i);
+            // Also match if the child's name has a suffix:
+            // Example: <rasd:AllocationUnits>
+            if (value != null && (value.getNodeName().equals(childNodeName)) || value.getNodeName().endsWith(":" + childNodeName)) {
+                return value.getTextContent();
             }
         }
         return null;
