@@ -57,7 +57,11 @@ mocks = {
       return option
     }),
     info: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description',
+        duration: option.duration
+      }
     }),
     success: jest.fn((option) => {
       return option
