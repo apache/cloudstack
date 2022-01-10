@@ -253,8 +253,7 @@ export default {
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)
                         if (description) {
-                          this.$showNotification({
-                            type: 'info',
+                          this.$notification.info({
                             message: this.$t(this.action.label),
                             description: (<span domPropsInnerHTML={description}></span>),
                             duration: 0
@@ -290,8 +289,7 @@ export default {
           }
           this.parentCloseAction()
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })

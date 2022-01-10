@@ -299,7 +299,7 @@ export default {
     fetchComments () {
       this.clusterConfigLoading = true
       api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+        if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       }).catch(error => {
@@ -321,8 +321,7 @@ export default {
             config.configdata !== '') {
             this.clusterConfig = config.configdata
           } else {
-            this.$showNotification({
-              type: 'error',
+            this.$notification.error({
               message: this.$t('message.request.failed'),
               description: this.$t('message.error.retrieve.kubeconfig')
             })

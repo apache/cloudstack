@@ -48,7 +48,7 @@
             :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
         </a-form-item>
       </div>
-      <a-form-item :label="$t('label.shrinkok')">
+      <a-form-item :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
         <a-checkbox v-decorator="['shrinkok']" />
       </a-form-item>
       <div :span="24" class="action-button">
@@ -125,8 +125,7 @@ export default {
           })
           this.closeModal()
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.errorresponse.errortext,
             duration: 0

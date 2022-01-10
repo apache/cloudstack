@@ -504,8 +504,7 @@ export default {
     handleDeleteIpRange (id) {
       this.componentLoading = true
       api('deleteVlanIpRange', { id }).then(() => {
-        this.$showNotification({
-          type: 'success',
+        this.$notification.success({
           message: 'Removed IP Range'
         })
       }).catch(error => {
@@ -541,13 +540,11 @@ export default {
           params.networkid = this.network.id
         }
         api('createVlanIpRange', params).then(() => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('message.success.add.iprange')
           })
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.createvlaniprangeresponse
               ? error.response.data.createvlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,
@@ -575,13 +572,11 @@ export default {
           forsystemvms: values.forsystemvms
         }
         api('updateVlanIpRange', params).then(() => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('message.success.update.iprange')
           })
         }).catch(error => {
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.updatevlaniprangeresponse
               ? error.response.data.updatevlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,

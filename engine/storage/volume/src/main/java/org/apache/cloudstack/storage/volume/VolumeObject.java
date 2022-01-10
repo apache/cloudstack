@@ -232,6 +232,15 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public long getPhysicalSize() {
+        VolumeDataStoreVO volumeDataStoreVO = volumeStoreDao.findByVolume(volumeVO.getId());
+        if (volumeDataStoreVO != null) {
+            return volumeDataStoreVO.getPhysicalSize();
+        }
+        return volumeVO.getSize();
+    }
+
+    @Override
     public Long getBytesReadRate() {
         return getLongValueFromDiskOfferingVoMethod(DiskOfferingVO::getBytesReadRate);
     }

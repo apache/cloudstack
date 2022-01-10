@@ -160,8 +160,7 @@ export default {
           this.loading = false
         } catch (error) {
           this.loading = false
-          this.$showNotification({
-            type: 'error',
+          this.$notification.error({
             message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })

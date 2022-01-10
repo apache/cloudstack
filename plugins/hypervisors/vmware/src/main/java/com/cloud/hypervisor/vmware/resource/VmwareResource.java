@@ -784,8 +784,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (newSize < oldSize) {
-                throw new Exception(
-                        "VMware doesn't support shrinking volume from larger size: " + oldSize / ResourceType.bytesToMiB + " GB to a smaller size: " + newSize / ResourceType.bytesToMiB + " GB");
+                String errorMsg = String.format("VMware doesn't support shrinking volume from larger size [%s] GB to a smaller size [%s] GB. Can't resize volume of VM [name: %s].",
+                        oldSize / Float.valueOf(ResourceType.bytesToMiB), newSize / Float.valueOf(ResourceType.bytesToMiB), vmName);
+                s_logger.error(errorMsg);
+                throw new Exception(errorMsg);
             } else if (newSize == oldSize) {
                 return new ResizeVolumeAnswer(cmd, true, "success", newSize * ResourceType.bytesToKiB);
             }
@@ -827,11 +829,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
 
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist in VMware datacenter";
-
-                s_logger.error(msg);
-
-                throw new Exception(msg);
+                String errorMsg = String.format("VM [name: %s] does not exist in VMware datacenter.", vmName);
+                s_logger.error(errorMsg);
+                throw new Exception(errorMsg);
             }
 
 
@@ -894,7 +894,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
             if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure VM to resize disk. vmName: " + vmName);
+                throw new Exception(String.format("Failed to configure VM [name: %s] to resize disk.", vmName));
             }
 
             ResizeVolumeAnswer answer = new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
@@ -909,11 +909,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             return answer;
         } catch (Exception e) {
-            s_logger.error("Unable to resize volume", e);
-
-            String error = "Failed to resize volume: " + e.getMessage();
-
-            return new ResizeVolumeAnswer(cmd, false, error);
+            String errorMsg = String.format("Failed to resize volume of VM [name: %s] due to: [%s].", vmName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            return new ResizeVolumeAnswer(cmd, false, errorMsg);
         } finally {
             // OfflineVmwareMigration: 6. check if a worker was used and destroy it if needed
             try {
@@ -924,7 +922,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.destroy();
                 }
             } catch (Throwable e) {
-                s_logger.info("Failed to destroy worker VM: " + vmName);
+                s_logger.error(String.format("Failed to destroy worker VM [name: %s] due to: [%s].", vmName, e.getMessage()), e);
             }
         }
     }
@@ -932,26 +930,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private VirtualDisk getDiskAfterResizeDiskValidations(VirtualMachineMO vmMo, String volumePath) throws Exception {
         Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(volumePath);
         if (vdisk == null) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("resize volume done (failed)");
-            }
-            throw new Exception("No such disk device: " + volumePath);
+            String errorMsg = String.format("Resize volume of VM [name: %s] failed because disk device [path: %s] doesn't exist.", vmMo.getVmName(), volumePath);
+            s_logger.error(errorMsg);
+            throw new Exception(errorMsg);
         }
 
         // IDE virtual disk cannot be re-sized if VM is running
-        if (vdisk.second() != null && vdisk.second().contains("ide")) {
-            throw new Exception("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. " +
-                    "Please re-try when virtual disk is attached to a VM using a SCSI controller.");
+        if (vdisk.second() != null && vdisk.second().toLowerCase().contains("ide")) {
+            String errorMsg = String.format("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. "
+                    + "Please re-try when virtual disk is attached to VM [name: %s] using a SCSI controller.", vmMo.getVmName());
+            s_logger.error(errorMsg);
+            throw new Exception(errorMsg);
         }
 
-        if (vdisk.second() != null && !vdisk.second().toLowerCase().startsWith("scsi")) {
-            s_logger.error("Unsupported disk device bus " + vdisk.second());
-            throw new Exception("Unsupported disk device bus " + vdisk.second());
-        }
         VirtualDisk disk = vdisk.first();
         if ((VirtualDiskFlatVer2BackingInfo) disk.getBacking() != null && ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent() != null) {
-            s_logger.error("Resize is not supported because Disk device has Parent " + ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent().getUuid());
-            throw new Exception("Resize is not supported because Disk device has Parent " + ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent().getUuid());
+            String errorMsg = String.format("Resize of volume in VM [name: %s] is not supported because Disk device [path: %s] has Parents: [%s].",
+                    vmMo.getVmName(), volumePath, ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent().getUuid());
+            s_logger.error(errorMsg);
+            throw new Exception(errorMsg);
         }
         return disk;
     }
