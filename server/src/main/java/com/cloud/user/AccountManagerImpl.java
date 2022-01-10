@@ -100,6 +100,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -247,6 +248,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IPAddressDao _ipAddressDao;
     @Inject
     private VpcManager _vpcMgr;
+    @Inject
+    private NetworkModel _networkModel;
     @Inject
     private Site2SiteVpnManager _vpnMgr;
     @Inject
@@ -829,6 +832,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     }
                 });
                 for (NetworkVO network : networks) {
+                    if (_networkModel.isPrivateGateway(network.getId())) {
+                        continue;
+                    }
 
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
