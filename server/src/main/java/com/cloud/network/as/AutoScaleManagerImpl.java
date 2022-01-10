@@ -327,7 +327,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpoint.url has to be set to the Management Server's API end point");
+            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
         }
 
         vmProfile = _autoScaleVmProfileDao.persist(vmProfile);
