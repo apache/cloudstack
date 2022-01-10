@@ -593,13 +593,6 @@ routing_svcs() {
    fi
 }
 
-setup_certificates() {
-  kspass=$(echo "$KEYSTORE_PSSWD"| base64 -d)
-  timeout 600 /opt/cloud/bin/keystore-cert-import /usr/local/cloud/systemvm/conf/agent.properties "$kspass" \
-      /usr/local/cloud/systemvm/conf/cloud.jks ssh /usr/local/cloud/systemvm/conf/cloud.crt "" \
-      /usr/local/cloud/systemvm/conf/cloud.ca.crt "" /usr/local/cloud/systemvm/conf/cloud.key ""
-}
-
 parse_cmd_line() {
   CMDLINE=$(cat /var/cache/cloud/cmdline)
   TYPE="unknown"

@@ -74,7 +74,6 @@
                         <configuration>
                             <source>
                                 def projectVersion = project.properties['project.systemvm.template.version']
-                                println(projectVersion)
                                 String[] versionParts =  projectVersion.tokenize('.')
                                 pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
                                 pom.properties['patch.version'] = versionParts[2]
@@ -90,9 +89,7 @@
                         <configuration>
                             <source>
                                 def csVersion = pom.properties['cs.version']
-                                println(csVersion)
                                 def patch = pom.properties['patch.version']
-                                println(patch)
                                 def templateList = []
                                 templateList.add("systemvmtemplate-${csVersion}.${patch}-kvm")
                                 templateList.add("systemvmtemplate-${csVersion}.${patch}-vmware")
@@ -102,10 +99,8 @@
                                 File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
                                 def lines = file.readLines()
                                 for (template in templateList) {
-                                    println(template)
                                     def data = lines.findAll { it.contains(template) }
                                     if (data != null) {
-                                        println(template)
                                         def hypervisor =  template.tokenize('-')[-1]
                                         pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
                                     }
@@ -193,32 +188,32 @@
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
                             </execution>
-                            <execution>
-                                <id>download-vmware-template</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <checkSignature>true</checkSignature>
-<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>-->
-                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
-                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${vmware.checksum}</md5>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-xenserver-template</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <checkSignature>true</checkSignature>
-<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>-->
-                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
-                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${xen.checksum}</md5>
-                                </configuration>
-                            </execution>
+<!--                            <execution>-->
+<!--                                <id>download-vmware-template</id>-->
+<!--                                <goals>-->
+<!--                                    <goal>wget</goal>-->
+<!--                                </goals>-->
+<!--                                <configuration>-->
+<!--                                    <checkSignature>true</checkSignature>-->
+<!--&lt;!&ndash;                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>&ndash;&gt;-->
+<!--                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>-->
+<!--                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>-->
+<!--                                    <md5>${vmware.checksum}</md5>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                            <execution>-->
+<!--                                <id>download-xenserver-template</id>-->
+<!--                                <goals>-->
+<!--                                    <goal>wget</goal>-->
+<!--                                </goals>-->
+<!--                                <configuration>-->
+<!--                                    <checkSignature>true</checkSignature>-->
+<!--&lt;!&ndash;                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>&ndash;&gt;-->
+<!--                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>-->
+<!--                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>-->
+<!--                                    <md5>${xen.checksum}</md5>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
                         </executions>
                     </plugin>
                 </plugins>
