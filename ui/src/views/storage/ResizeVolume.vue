@@ -55,7 +55,7 @@
             v-focus="customDiskOffering || resource.type === 'ROOT'"/>
         </a-form-item>
       </div>
-      <a-form-item :label="$t('label.shrinkok')" name="shrinkok" ref="shrinkok">
+      <a-form-item :label="$t('label.shrinkok')" name="shrinkok" ref="shrinkok" v-if="!['XenServer'].includes(resource.hypervisor)">
         <a-checkbox v-model:checked="form.shrinkok" />
       </a-form-item>
       <div :span="24" class="action-button">
