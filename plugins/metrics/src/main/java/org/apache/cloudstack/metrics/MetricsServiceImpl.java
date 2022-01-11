@@ -569,7 +569,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
             metricsResponse.setResources(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
-            // add CPU and Memory metrics
             addHostCpuMetricsToResponse(metricsResponse, clusterId, hostMetrics);
             addHostMemoryMetricsToResponse(metricsResponse, clusterId, hostMetrics);
 
