@@ -22,7 +22,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import com.cloud.utils.component.Manager;
 
 /**
- * the definition of the framework for inter MS communication
+ * The definition of the framework for inter MS communication.
  */
 public interface ClusterManager extends Manager {
     static final String ALERT_SUBJECT = "cluster-alert";
