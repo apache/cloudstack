@@ -641,7 +641,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     /**
-     * get the transient/in memory data
+     * Get the transient/in memory data.
      * @param metricsResponse
      * @param managementServerResponse
      */
