@@ -654,7 +654,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             LOGGER.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
+                LOGGER.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
             copyManagementServerStatusToResponse(metricsResponse, status);
         }
