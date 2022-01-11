@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -99,7 +100,9 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -291,6 +294,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public TaggedResourceService taggedResourceService;
     @Inject
     VirtualMachineManager virtualMachineManager;
+    @Inject
+    DiskOfferingJoinDao diskOfferingJoinDao;
 
     protected Gson _gson;
 
@@ -489,9 +494,28 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return UUID.randomUUID().toString();
     }
 
+    private Long getCustomDiskOfferingForVolumeUpload(long zoneId) {
+        DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
+        if (diskOfferingVO != null) {
+            DiskOfferingJoinVO diskOfferingJoinVO = diskOfferingJoinDao.findById(diskOfferingVO.getId());
+            if (org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
+                return diskOfferingJoinVO.getId();
+            }
+            List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
+            if (zoneIds.contains(String.valueOf(zoneId))) {
+                return diskOfferingJoinVO.getId();
+            }
+        }
+        List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomIopsOfferingsByZoneId(zoneId);
+        if (CollectionUtils.isNotEmpty(offerings)) {
+            return offerings.get(0).getId();
+        }
+        return null;
+    }
+
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url, final String format, final Long diskOfferingId, final Volume.State state) {
-        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<VolumeVO, CloudRuntimeException>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
                 VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
@@ -505,11 +529,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
 
                 if (diskOfferingId == null) {
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
-                    if (diskOfferingVO != null) {
-                        long defaultDiskOfferingId = diskOfferingVO.getId();
-                        volume.setDiskOfferingId(defaultDiskOfferingId);
+                    Long customDiskOfferingId = getCustomDiskOfferingForVolumeUpload(zoneId);
+                    if (customDiskOfferingId == null) {
+                        DataCenter zone = _dcDao.findById(zoneId);
+                        throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
                     }
+                    volume.setDiskOfferingId(customDiskOfferingId);
                 } else {
                     volume.setDiskOfferingId(diskOfferingId);
 
