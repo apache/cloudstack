@@ -269,7 +269,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     private static final ConfigKey<Integer> MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
             Integer.class, "management.server.stats.interval", "60",
-            "time interval for management servers stats. Set to <= 0 to disable management servers stats", false);
+            "Time interval for management servers stats. Set to <= 0 to disable management servers stats.", false);
     private static final ConfigKey<Integer> USAGE_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
             Integer.class, "usage.server.stats.interval", "60",
             "time interval for usage servers stats. Set to <= 0 to disable usage servers stats", false);
