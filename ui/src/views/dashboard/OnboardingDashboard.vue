@@ -27,6 +27,7 @@
         <div class="subtitle">{{ $t('label.introduction.to.cloudstack') }}</div>
         <p>{{ $t('message.installwizard.copy.whatiscloudstack') }}</p>
         <img class="center" src="assets/bg-what-is-cloudstack.png">
+        <pre>{{ $t('message.installwizard.cloudstack.helptext') }}</pre>
         <a-button @click="() => { this.step = 1 }" type="primary">
           {{ $t('label.continue.install') }}
           <a-icon type="double-right"/>
@@ -135,6 +136,14 @@ p {
   font-size: 15px;
   line-height: 23px;
   white-space: pre-line;
+}
+
+pre {
+  font-family: sans-serif;
+  text-align: justify;
+  font-size: 15px;
+  line-height: 23px;
+  white-space: pre-wrap;
 }
 
 .center {

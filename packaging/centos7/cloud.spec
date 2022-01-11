@@ -458,6 +458,12 @@ chown -R cloud:cloud /var/log/cloudstack/management
 
 systemctl daemon-reload
 
+%posttrans management
+# Print help message
+if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+fi
+
 %preun agent
 /sbin/service cloudstack-agent stop || true
 if [ "$1" == "0" ] ; then
@@ -496,6 +502,12 @@ fi
 
 systemctl daemon-reload
 
+%posttrans agent
+# Print help message
+if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+fi
+
 %pre usage
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
@@ -522,6 +534,12 @@ fi
 
 if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
+fi
+
+%posttrans usage
+# Print help message
+if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
 fi
 
 %post marvin

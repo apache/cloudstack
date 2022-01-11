@@ -53,6 +53,11 @@ case "$1" in
         fi
         cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
 
+        # Print help message
+        if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+            /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+        fi
+
         ;;
 esac
 
