@@ -114,7 +114,7 @@ public class VMSnapshotUsageParser {
                 created = startDate;
             }
             long duration = (endDate.getTime() - created.getTime()) + 1;
-            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, created, endDate, account, usageRec.getId(), usageRec.getZoneId(), usageRec.getDiskOfferingId(),
+            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, created, endDate, account, usageRec.getVolumeId(), usageRec.getZoneId(), usageRec.getDiskOfferingId(),
                 usageRec.getVmId(), usageRec.getSize(), usageRec.getVmSnapshotId());
         }
 

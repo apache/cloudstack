@@ -108,7 +108,7 @@ public class IPAddressUsageParser {
 
             long currentDuration = (IpReleaseDeleteDate.getTime() - IpAssignDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-            updateIpUsageData(usageMap, key, usageIp.getId(), currentDuration);
+            updateIpUsageData(usageMap, key, usageIp.getIpId(), currentDuration);
         }
 
         for (String ipIdKey : usageMap.keySet()) {

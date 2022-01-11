@@ -105,7 +105,7 @@ public class PortForwardingUsageParser {
 
             long currentDuration = (pfDeleteDate.getTime() - pfCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-            updatePFUsageData(usageMap, key, usagePF.getId(), currentDuration);
+            updatePFUsageData(usageMap, key, usagePF.getPfId(), currentDuration);
         }
 
         for (String pfIdKey : usageMap.keySet()) {
