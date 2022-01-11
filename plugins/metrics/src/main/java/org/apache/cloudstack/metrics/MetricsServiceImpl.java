@@ -870,7 +870,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         String usageStatus = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Active:\"");
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("usage status: %s", usageStatus));
+            LOGGER.trace(String.format("The current usage status is: %s.", usageStatus));
         }
 
         if (StringUtils.isNotBlank(usageStatus)) {
