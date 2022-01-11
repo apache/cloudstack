@@ -63,7 +63,7 @@ public interface ClusterManager extends Manager {
     void registerDispatcher(Dispatcher dispatcher);
 
     /**
-     * register a listener for incoming status changes of ManagementServers
+     * Registers a listener for incoming status changes of ManagementServers.
      *
      * @param administrator the object administrating statuses
      */
