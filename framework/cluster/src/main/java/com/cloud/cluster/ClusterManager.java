@@ -32,7 +32,7 @@ public interface ClusterManager extends Manager {
         "Threshold before self-fence the management server", true);
 
     /**
-     * adds a new packet to the incoming queue
+     * Adds a new packet to the incoming queue.
      * @param pdu protocol data unit
      */
     void OnReceiveClusterServicePdu(ClusterServicePdu pdu);
