@@ -641,8 +641,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
 
     /**
      * Get the transient/in memory data.
-     * @param metricsResponse
-     * @param managementServerResponse
      */
     private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
         if (LOGGER.isDebugEnabled()) {
