@@ -160,6 +160,9 @@ public class VolumeVO implements Volume {
     @Column(name = "iso_id")
     private Long isoId;
 
+    @Column(name = "external_uuid")
+    private String externalUuid = null;
+
     @Transient
     // @Column(name="reservation")
     String reservationId;
@@ -266,6 +269,7 @@ public class VolumeVO implements Volume {
         provisioningType = that.getProvisioningType();
         uuid = UUID.randomUUID().toString();
         deployAsIs = that.isDeployAsIs();
+        externalUuid = that.getExternalUuid();
     }
 
     @Override
@@ -648,4 +652,15 @@ public class VolumeVO implements Volume {
     public String getVolumeDescription(){
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
     }
+
+    @Override
+    public String getExternalUuid() {
+        return externalUuid;
+    }
+
+    @Override
+    public void setExternalUuid(String externalUuid) {
+        this.externalUuid = externalUuid;
+    }
+
 }
