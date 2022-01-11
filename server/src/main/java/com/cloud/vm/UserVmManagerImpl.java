@@ -1389,12 +1389,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account vmOwner = _accountMgr.getAccount(vmInstance.getAccountId());
         _networkModel.checkNetworkPermissions(vmOwner, network);
 
-        List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
-        for (NicVO nic : allNics) {
-            if (nic.getNetworkId() == network.getId()) {
-                throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
-            }
-        }
+        checkIfNetExistsForVM(vmInstance, network);
 
         macAddress = validateOrReplaceMacAddress(macAddress, network.getId());
 
@@ -1461,8 +1456,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
-        s_logger.debug("Successful addition of " + network + " from " + vmInstance);
+        s_logger.debug(String.format("Successful addition of %s from %s through %s", network, vmInstance, guestNic));
         return _vmDao.findById(vmInstance.getId());
+    }
+
+    /**
+     * duplicated in {@see VirtualMachineManagerImpl} for a {@see VMInstanceVO}
+     */
+    private void checkIfNetExistsForVM(VirtualMachine virtualMachine, Network network) {
+        List<NicVO> allNics = _nicDao.listByVmId(virtualMachine.getId());
+        for (NicVO nic : allNics) {
+            if (nic.getNetworkId() == network.getId()) {
+                throw new CloudRuntimeException("A NIC already exists for VM:" + virtualMachine.getInstanceName() + " in network: " + network.getUuid());
+            }
+        }
     }
 
     /**
@@ -4419,6 +4426,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             value = DBEncryptionUtil.encrypt(value);
                         }
                     }
+                } else if (value == null) {
+                    value = "";
                 }
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("setting property '%s' as '%s' with value '%s'", key, detailKey, value));
