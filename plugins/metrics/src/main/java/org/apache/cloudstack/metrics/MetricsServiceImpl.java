@@ -776,7 +776,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             response.setLastHeartbeat(usageJobDao.getLastHeartbeat());
-            response.setState(isUsageRunning()? State.Up : State.Down);
+            response.setState(isUsageRunning() ? State.Up : State.Down);
             UsageJobVO job = usageJobDao.getNextImmediateJob();
             if (job == null) {
                 job = usageJobDao.getLastJob();
