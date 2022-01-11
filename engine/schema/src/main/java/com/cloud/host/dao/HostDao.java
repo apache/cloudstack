@@ -144,7 +144,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listHostsWithActiveVMs(long offeringId);
 
     /**
-     * get the number of hosts/agents this {@see ManagementServer} has responsibility over
+     * Retrieves the number of hosts/agents this {@see ManagementServer} has responsibility over.
      * @param msid the id of the {@see ManagementServer}
      * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
      */
