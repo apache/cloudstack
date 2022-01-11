@@ -40,7 +40,7 @@ public interface ClusterManager extends Manager {
     void publishStatus(String status);
 
     /**
-     * This creates pdu, registers it, notifies listeners, and waits on the pdu to be notified
+     * Creates and registers a PDU, notifies listeners, and waits on the PDU to be notified.
      * @param strPeer destination
      * @param agentId reference to a resource
      * @param cmds any json string (probably containing encoded commands)
