@@ -65,7 +65,7 @@ public class ManagementServerResponse extends BaseResponse {
     private Date lastServerStop;
 
     @SerializedName(ApiConstants.LAST_BOOT)
-    @Param(description = "the last time the host on which this Management Server runs, was booted")
+    @Param(description = "the last time the host on which this Management Server runs was booted")
     private Date lastBoot;
 
     @SerializedName(ApiConstants.KERNEL_VERSION)
