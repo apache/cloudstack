@@ -278,7 +278,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             "time interval for database servers stats. Set to <= 0 to disable database servers stats", false);
     private static final ConfigKey<Integer> DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER = new ConfigKey<>("Advanced",
             Integer.class, "database.server.stats.retention", "10",
-            "the number of load averages to retain in history", true);
+            "The number of load averages to retain in history.", true);
     private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
