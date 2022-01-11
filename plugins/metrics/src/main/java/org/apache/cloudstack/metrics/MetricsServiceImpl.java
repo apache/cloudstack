@@ -630,7 +630,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
                     LOGGER.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response.");
             }
 
             updateManagementServerMetrics(metricsResponse, managementServerResponse);
