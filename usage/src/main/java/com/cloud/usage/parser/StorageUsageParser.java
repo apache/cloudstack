@@ -116,7 +116,7 @@ public class StorageUsageParser {
 
             long currentDuration = (storageDeleteDate.getTime() - storageCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-            updateStorageUsageData(usageMap, key, usageStorage.getId(), currentDuration);
+            updateStorageUsageData(usageMap, key, usageStorage.getEntityId(), currentDuration);
         }
 
         for (String storageIdKey : usageMap.keySet()) {
