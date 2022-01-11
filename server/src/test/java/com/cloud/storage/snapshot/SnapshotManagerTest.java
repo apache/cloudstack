@@ -537,12 +537,11 @@ public class SnapshotManagerTest {
 
     private void getDataStore()
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Method declaredMethod = SnapshotManagerImpl.class.getDeclaredMethod("getDataStoreRole", Snapshot.class, SnapshotDataStoreDao.class, DataStoreManager.class);
+        Method declaredMethod = SnapshotManagerImpl.class.getDeclaredMethod("getDataStoreRole", Snapshot.class);
         declaredMethod.setAccessible(true);
         List<SnapshotDataStoreVO> dataStoreSnapshots = new ArrayList<>();
         dataStoreSnapshots.add(snapshotStoreMock);
         when(snapshotStoreDao.findBySnapshotId(anyLong())).thenReturn(dataStoreSnapshots);
-        Class<SnapshotManagerImpl> snapshotMgrClass = SnapshotManagerImpl.class;
-        when(declaredMethod.invoke(snapshotMgrClass.newInstance(),snapshotMock, snapshotStoreDao, dataStoreManager)).thenReturn(DataStoreRole.Primary);
+        when(declaredMethod.invoke(_snapshotMgr, snapshotMock)).thenReturn(DataStoreRole.Primary);
     }
 }
