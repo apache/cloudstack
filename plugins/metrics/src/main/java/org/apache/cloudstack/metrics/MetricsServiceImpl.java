@@ -616,7 +616,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
         final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
         if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("getting metrics for %d MS hosts", managementServerResponses.size()));
+            LOGGER.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
             if(LOGGER.isDebugEnabled()) {
