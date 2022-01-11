@@ -475,6 +475,7 @@ export default {
 
       Object.keys(fields).forEach(key => {
         this.form.getFieldDecorator([key], { initialValue: fields[key] })
+        this.form.setFieldsValue({ [key]: fields[key] })
       })
     },
     deleteTraffic (key, traffic, $event) {

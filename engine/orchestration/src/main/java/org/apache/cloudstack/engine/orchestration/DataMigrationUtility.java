@@ -32,9 +32,11 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.ImageStoreService;
@@ -59,8 +61,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import org.apache.log4j.Logger;
 
 public class DataMigrationUtility {
+    private static Logger LOGGER = Logger.getLogger(DataMigrationUtility.class);
+
     @Inject
     SecondaryStorageVmDao secStorageVmDao;
     @Inject
@@ -87,19 +92,22 @@ public class DataMigrationUtility {
      *  the migration is terminated.
      */
     private boolean filesReadyToMigrate(Long srcDataStoreId) {
-        String[] validStates = new String[]{"Ready", "Allocated", "Destroying", "Destroyed", "Failed"};
+        State[] validStates = {State.Ready, State.Allocated, State.Destroying, State.Destroyed, State.Failed};
         boolean isReady = true;
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         for (TemplateDataStoreVO template : templates) {
-            isReady &= (Arrays.asList(validStates).contains(template.getState().toString()));
+            isReady &= (Arrays.asList(validStates).contains(template.getState()));
+            LOGGER.trace(String.format("template state: %s", template.getState()));
         }
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
-            isReady &= (Arrays.asList(validStates).contains(snapshot.getState().toString()));
+            isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
+            LOGGER.trace(String.format("snapshot state: %s", snapshot.getState()));
         }
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
         for (VolumeDataStoreVO volume : volumes) {
-            isReady &= (Arrays.asList(validStates).contains(volume.getState().toString()));
+            isReady &= (Arrays.asList(validStates).contains(volume.getState()));
+            LOGGER.trace(String.format("volume state: %s", volume.getState()));
         }
         return isReady;
     }
@@ -113,11 +121,16 @@ public class DataMigrationUtility {
         return;
     }
 
-    protected Long getFileSize(DataObject file, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
-        Long size = file.getSize();
+    protected Long getFileSize(DataObject file, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain, Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain) {
+        Long size = file.getPhysicalSize();
         Pair<List<SnapshotInfo>, Long> chain = snapshotChain.get(file);
+        Pair<List<TemplateInfo>, Long> tempChain = templateChain.get(file);
+
         if (file instanceof SnapshotInfo && chain.first() != null && !chain.first().isEmpty()) {
             size = chain.second();
+        }
+        if (file instanceof TemplateInfo && tempChain.first() != null && !tempChain.first().isEmpty()) {
+            size = tempChain.second();
         }
         return size;
     }
@@ -144,9 +157,10 @@ public class DataMigrationUtility {
         return new ArrayList<>(temp.keySet());
     }
 
-    protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
+    protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
+                                                         Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
         List<DataObject> files = new ArrayList<>();
-        files.addAll(getAllReadyTemplates(srcDataStore));
+        files.addAll(getAllReadyTemplates(srcDataStore, childTemplates));
         files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains));
         files.addAll(getAllReadyVolumes(srcDataStore));
 
@@ -159,8 +173,8 @@ public class DataMigrationUtility {
         Collections.sort(files, new Comparator<DataObject>() {
             @Override
             public int compare(DataObject o1, DataObject o2) {
-                Long size1 = o1.getSize();
-                Long size2 = o2.getSize();
+                Long size1 = o1.getPhysicalSize();
+                Long size2 = o2.getPhysicalSize();
                 if (o1 instanceof SnapshotInfo) {
                     size1 = snapshotChains.get(o1).second();
                 }
@@ -173,19 +187,28 @@ public class DataMigrationUtility {
         return files;
     }
 
-    protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore) {
+    protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
 
-        List<DataObject> files = new LinkedList<>();
+        List<TemplateInfo> files = new LinkedList<>();
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
         for (TemplateDataStoreVO template : templates) {
             VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
             if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && templateVO != null &&
                     (!templateVO.isPublicTemplate() || (templateVO.isPublicTemplate() && templateVO.getUrl() == null)) &&
-                    templateVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
+                    templateVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator && templateVO.getParentTemplateId() == null) {
                 files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
             }
         }
-        return files;
+        for (TemplateInfo template: files) {
+            List<VMTemplateVO> children = templateDao.listByParentTemplatetId(template.getId());
+            List<TemplateInfo> temps = new ArrayList<>();
+            temps.add(template);
+            for(VMTemplateVO child : children) {
+                temps.add(templateFactory.getTemplate(child.getId(), srcDataStore));
+            }
+            childTemplates.put(template, new Pair<>(temps, getTotalChainSize(temps)));
+        }
+        return (List<DataObject>) (List<?>) files;
     }
 
     /** Returns parent snapshots and snapshots that do not have any children; snapshotChains comprises of the snapshot chain info
@@ -217,20 +240,19 @@ public class DataMigrationUtility {
                     chain.addAll(children);
                 }
             }
-            snapshotChains.put(parent, new Pair<List<SnapshotInfo>, Long>(chain, getSizeForChain(chain)));
+            snapshotChains.put(parent, new Pair<List<SnapshotInfo>, Long>(chain, getTotalChainSize(chain)));
         }
 
         return (List<DataObject>) (List<?>) files;
     }
 
-    protected Long getSizeForChain(List<SnapshotInfo> chain) {
+    protected Long getTotalChainSize(List<? extends DataObject> chain) {
         Long size = 0L;
-        for (SnapshotInfo snapshot : chain) {
-            size += snapshot.getSize();
+        for (DataObject dataObject : chain) {
+            size += dataObject.getPhysicalSize();
         }
         return size;
     }
-
 
     protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore) {
         List<DataObject> files = new LinkedList<>();

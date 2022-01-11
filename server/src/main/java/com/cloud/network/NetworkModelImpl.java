@@ -1659,8 +1659,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
         // Perform account permission check
-        if ((network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) ||
-                (network.getGuestType() == GuestType.Shared && network.getAclType() == ACLType.Account)) {
+        if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
@@ -1838,14 +1837,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
-        if (network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) {
-            s_logger.trace("Network id=" + networkId + " is not shared or L2");
+        if (network.getGuestType() != GuestType.Shared) {
+            s_logger.trace("Network id=" + networkId + " is not shared");
             return false;
         }
 
         NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
         if (networkDomainMap == null) {
-            s_logger.trace("Network id=" + networkId + " is shared or L2, but not domain specific");
+            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
             return true;
         } else {
             networkDomainId = networkDomainMap.getDomainId();
