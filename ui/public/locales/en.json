@@ -1299,7 +1299,6 @@
 "label.link.domain.to.ldap": "Link Domain to LDAP",
 "label.linklocalip": "Link Local IP Address",
 "label.linux": "Linux",
-"label.list.all.projects": "All Projects",
 "label.list.ciscoasa1000v": "ASA 1000v",
 "label.list.ciscovnmc": "Cisco VNMC",
 "label.list.nodes": "List nodes",

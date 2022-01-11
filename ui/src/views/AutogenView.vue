@@ -42,8 +42,8 @@
                 <a-switch
                   v-if="!projectView && hasProjectId"
                   style="margin-left: 8px"
-                  :checked-children="$t('label.list.all.projects')"
-                  :un-checked-children="$t('label.list.all.projects')"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
                   @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
