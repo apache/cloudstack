@@ -781,7 +781,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             if (job == null) {
                 job = usageJobDao.getLastJob();
             }
-            response.setHostname(job == null? "N/A": job.getHost());
+            response.setHostname(job == null ? "N/A" : job.getHost());
             response.setLastSuccessfulJob(new Date(usageJobDao.getLastJobSuccessDateMillis()));
         } finally {
             txn.close();
