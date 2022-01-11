@@ -620,7 +620,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
             if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("processing metrics for MS hosts %s", managementServerResponse.getId()));
+                LOGGER.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
             }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 
