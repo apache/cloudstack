@@ -69,7 +69,7 @@ public class ManagementServerResponse extends BaseResponse {
     private Date lastBoot;
 
     @SerializedName(ApiConstants.KERNEL_VERSION)
-    @Param(description = "the running os kernel version for this Management Server")
+    @Param(description = "the running OS kernel version for this Management Server")
     private String kernelVersion;
 
     public String getId() {
