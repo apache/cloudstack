@@ -651,7 +651,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         }
         ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
         if (status == null ) {
-            LOGGER.info(String.format("no status object found for %s - %s", managementServerResponse.getName(), managementServerResponse.getId()));
+            LOGGER.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("status object found for %s - %s", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
