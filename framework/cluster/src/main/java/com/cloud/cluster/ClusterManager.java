@@ -65,7 +65,7 @@ public interface ClusterManager extends Manager {
     /**
      * register a listener for incoming status changes of ManagementServers
      *
-     * @param administrator the object administrating statusses
+     * @param administrator the object administrating statuses
      */
     void registerStatusAdministrator(StatusAdministrator administrator);
 
