@@ -830,7 +830,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         List<Double> loadHistory = (List<Double>) dbStats.get(DbStatsCollection.loadAvarages);
         double[] loadAverages = new double[loadHistory.size()];
 
-        int index =0;
+        int index = 0;
         for (Double d : loadHistory) {
             loadAverages[index++] = d;
         }
