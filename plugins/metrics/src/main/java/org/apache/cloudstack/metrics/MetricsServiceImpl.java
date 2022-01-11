@@ -863,7 +863,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     /**
      * Returns whether a local usage server is running.
      * Note that this might not be the one actually doing the usage aggregation at this moment.
-     * @return true if the service is active
+     * @return true if the service is active.
      */
     protected boolean isUsageRunning() {
         boolean local = false;
