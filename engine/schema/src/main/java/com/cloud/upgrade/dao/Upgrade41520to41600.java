@@ -25,26 +25,18 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.upgrade.RolePermissionChecker;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.acl.RolePermissionEntity;
-import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.Rule;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import javax.inject.Inject;
 
 public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41520to41600.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
-
-    @Inject
-    RoleService roleService;
+    private RolePermissionChecker rolePermissionChecker = new RolePermissionChecker();
 
     public Upgrade41520to41600() {
     }
@@ -90,15 +82,13 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     private void checkAnnotationPermissionExists(Connection conn, RoleType roleType, List<String> rules) {
         LOG.debug("Checking the annotation permissions for the role: " + roleType.getId());
-        for (String ruleString : rules) {
-            Role role = roleService.findRole(roleType.getId());
-            Rule rule = new Rule(ruleString);
-            RolePermission rolePermission = roleService.findRolePermissionByRoleIdAndRule(roleType.getId(), ruleString);
-            if (rolePermission == null) {
-                LOG.debug("Inserting role permission for role: " + roleType.getId() + " and rule: " + ruleString);
-                roleService.createRolePermission(role, rule, RolePermissionEntity.Permission.ALLOW, null);
+        for (String rule : rules) {
+            LOG.debug("Checking the annotation permissions for the role: " + roleType.getId() + " and rule: " + rule);
+            if (!rolePermissionChecker.existsRolePermissionByRoleIdAndRule(conn, roleType.getId(), rule)) {
+                LOG.debug("Inserting role permission for role: " + roleType.getId() + " and rule: " + rule);
+                rolePermissionChecker.insertAnnotationRulePermission(conn, roleType.getId(), rule);
             } else {
-                LOG.debug("Found existing role permission for role: " + roleType.getId() + " and rule: " + ruleString +
+                LOG.debug("Found existing role permission for role: " + roleType.getId() + " and rule: " + rule +
                         ", not updating it");
             }
         }
