@@ -16,13 +16,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
+ACS_VERSION=
+ACL_MINOR_VERSION=$(echo $ACS_VERSION | cut -d'-' -f1)
 printf "\n"
-printf "Thank you for installing Apache CloudStack !\n"
+printf "Thank you for installing Apache CloudStack ${ACS_VERSION:-} !\n"
 printf "\n"
-printf " * Project:          https://cloudstack.apache.org/\n"
-printf " * Documentation:    https://docs.cloudstack.apache.org/\n"
+printf " * Project website:  https://cloudstack.apache.org/\n"
+printf " * Documentation:    https://docs.cloudstack.apache.org/en/${ACL_MINOR_VERSION:-latest}/\n"
+printf " * Release notes:    https://docs.cloudstack.apache.org/en/${ACL_MINOR_VERSION:-latest}/releasenotes/\n"
 printf " * Join us:          https://cloudstack.apache.org/mailing-lists.html\n"
-printf " * Your feedback:    https://cloudstack.apache.org/survey.html\n"
+printf " * Take the survey:  https://cloudstack.apache.org/survey.html\n"
 printf " * Report issues:    https://github.com/apache/cloudstack/issues\n"
-printf " * Latest releases:  https://github.com/apache/cloudstack/releases\n"
 printf "\n"

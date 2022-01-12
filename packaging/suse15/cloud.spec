@@ -446,6 +446,7 @@ systemctl daemon-reload
 %posttrans management
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
     /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
 fi
 
@@ -490,6 +491,7 @@ systemctl daemon-reload
 %posttrans agent
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
     /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
 fi
 
@@ -524,6 +526,7 @@ fi
 %posttrans usage
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
     /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
 fi
 

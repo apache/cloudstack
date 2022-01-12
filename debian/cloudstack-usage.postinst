@@ -43,6 +43,8 @@ case "$1" in
 
         # Print help message
         if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+            acs_version=$(dpkg -l |grep cloudstack-usage |head -n1 |awk '{print $3}')
+            sed -i "s,^ACS_VERSION=.*,ACS_VERSION=$acs_version,g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
             /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
         fi
         ;;
