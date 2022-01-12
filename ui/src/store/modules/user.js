@@ -213,7 +213,7 @@ const user = {
           }).catch(error => {
             reject(error)
           })
-          api('listApis').then(response => {
+          api('listApis', { trim: true }).then(response => {
             const apis = {}
             const apiList = response.listapisresponse.api
             for (var idx = 0; idx < apiList.length; idx++) {
@@ -322,7 +322,7 @@ const user = {
     },
     ProjectView ({ commit }, projectid) {
       return new Promise((resolve, reject) => {
-        api('listApis', { projectid: projectid }).then(response => {
+        api('listApis', { projectid: projectid, trim: true }).then(response => {
           const apis = {}
           const apiList = response.listapisresponse.api
           for (var idx = 0; idx < apiList.length; idx++) {

@@ -70,6 +70,14 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         }
 
         Account userAccount = accountService.getAccount(user.getAccountId());
+        return checkAccess(userAccount, user, apiCommandName, null);
+    }
+
+    @Override
+    public boolean checkAccess(Account userAccount, User user, String apiCommandName, Role role) throws PermissionDeniedException {
+        if (isDisabled()) {
+            return true;
+        }
         Project project = CallContext.current().getProject();
         if (project == null) {
             return true;

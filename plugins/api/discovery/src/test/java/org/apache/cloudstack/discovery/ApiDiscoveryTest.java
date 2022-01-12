@@ -16,10 +16,27 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.utils.component.PluggableService;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -30,22 +47,11 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.PluggableService;
 
 public class ApiDiscoveryTest {
     private static APIChecker s_apiChecker = mock(APIChecker.class);
@@ -55,6 +61,8 @@ public class ApiDiscoveryTest {
     private static Class<?> testCmdClass = ListApisCmd.class;
     private static Class<?> listVMsCmdClass = ListVMsCmd.class;
     private static User testUser;
+    private static Account testAccount;
+    private static Role testAccountRole;
     private static String testApiName;
     private static String listVmsCmdName;
     private static String testApiDescription;
@@ -71,6 +79,8 @@ public class ApiDiscoveryTest {
         testApiSince = testCmdClass.getAnnotation(APICommand.class).since();
         testApiAsync = false;
         testUser = new UserVO();
+        testAccount = new AccountVO();
+        testAccountRole = new RoleVO();
 
         s_discoveryService._apiAccessCheckers = mock(List.class);
         s_discoveryService._services = mock(List.class);
@@ -89,7 +99,7 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListSingleApi() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, testApiName);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testAccount, testUser, testApiName, testAccountRole, false);
         assertNotNull("Responses should not be null", responses);
         if (responses != null) {
             ApiDiscoveryResponse response = responses.getResponses().get(0);
@@ -103,7 +113,7 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListApis() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, null);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testAccount, testUser, null, testAccountRole, false);
         assertNotNull("Responses should not be null", responses);
         if (responses != null) {
             assertTrue("No. of response items > 2", responses.getCount().intValue() == 2);
@@ -116,13 +126,25 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListVirtualMachinesTagsField() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, listVmsCmdName);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testAccount, testUser, listVmsCmdName, testAccountRole, false);
         assertNotNull("Response should not be null", responses);
         if (responses != null) {
             assertEquals("No. of response items should be one", 1, (int) responses.getCount());
             ApiDiscoveryResponse response = responses.getResponses().get(0);
             List<ApiResponseResponse> tagsResponse = response.getApiResponse().stream().filter(resp -> StringUtils.equals(resp.getName(), "tags")).collect(Collectors.toList());
             assertEquals("Tags field should be present in listVirtualMachines response fields", tagsResponse.size(), 1);
+        }
+    }
+
+    @Test
+    public void verifyListApisWithoutResponseParam() throws Exception {
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testAccount, testUser, null, testAccountRole, true);
+        assertNotNull("Responses should not be null", responses);
+        if (responses != null) {
+            assertTrue("No. of response items > 2", responses.getCount().intValue() == 2);
+            for (ApiDiscoveryResponse response : responses.getResponses()) {
+                assertTrue("API response param is not empty", response.getApiResponse().isEmpty());
+            }
         }
     }
 }

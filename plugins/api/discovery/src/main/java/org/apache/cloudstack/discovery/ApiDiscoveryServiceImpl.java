@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -44,6 +45,7 @@ import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.serializer.Param;
+import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
@@ -210,12 +212,30 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         return response;
     }
 
+    private ApiDiscoveryResponse generateApiDiscoveryResponse(ApiDiscoveryResponse response, boolean trim) {
+        if (!trim) {
+            return response;
+        }
+        ApiDiscoveryResponse r = new ApiDiscoveryResponse();
+        r.setName(response.getName());
+        r.setDescription(response.getDescription());
+        r.setSince(response.getSince());
+        r.setAsync(response.getAsync());
+        r.setRelated(response.getRelated());
+        r.setParams(response.getParams());
+        r.setObjectName(response.getObjectName());
+        return r;
+    }
+
     @Override
-    public ListResponse<? extends BaseResponse> listApis(User user, String name) {
+    public ListResponse<? extends BaseResponse> listApis(Account account, User user, String name, Role role, boolean trim) {
         ListResponse<ApiDiscoveryResponse> response = new ListResponse<ApiDiscoveryResponse>();
         List<ApiDiscoveryResponse> responseList = new ArrayList<ApiDiscoveryResponse>();
 
         if (user == null)
+            return null;
+
+        if (account == null)
             return null;
 
         if (name != null) {
@@ -224,31 +244,32 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
             for (APIChecker apiChecker : _apiAccessCheckers) {
                 try {
-                    apiChecker.checkAccess(user, name);
+                    apiChecker.checkAccess(account, user, name, role);
                 } catch (Exception ex) {
                     s_logger.debug("API discovery access check failed for " + name + " with " + ex.getMessage());
                     return null;
                 }
             }
-            responseList.add(s_apiNameDiscoveryResponseMap.get(name));
+            responseList.add(generateApiDiscoveryResponse(s_apiNameDiscoveryResponseMap.get(name), trim));
 
         } else {
             for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
                 boolean isAllowed = true;
                 for (APIChecker apiChecker : _apiAccessCheckers) {
                     try {
-                        apiChecker.checkAccess(user, apiName);
+                        apiChecker.checkAccess(account, user, apiName, role);
                     } catch (Exception ex) {
                         isAllowed = false;
                     }
                 }
                 if (isAllowed)
-                    responseList.add(s_apiNameDiscoveryResponseMap.get(apiName));
+                    responseList.add(generateApiDiscoveryResponse(s_apiNameDiscoveryResponseMap.get(apiName), trim));
             }
         }
         response.setResponses(responseList);
         return response;
     }
+
 
     @Override
     public List<Class<?>> getCommands() {

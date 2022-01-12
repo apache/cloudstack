@@ -76,6 +76,14 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         final Role accountRole = roleService.findRole(account.getRoleId());
+        return checkAccess(account, user, commandName, accountRole);
+    }
+
+    @Override
+    public boolean checkAccess(Account account, User user, String commandName, Role accountRole) throws PermissionDeniedException {
+        if (isDisabled()) {
+            return true;
+        }
         if (accountRole == null || accountRole.getId() < 1L) {
             denyApiAccess(commandName);
         }

@@ -376,6 +376,7 @@ public class ApiConstants {
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
+    public static final String TRIM = "trim";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";

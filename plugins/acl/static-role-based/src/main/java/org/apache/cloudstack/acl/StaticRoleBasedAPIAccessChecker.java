@@ -25,12 +25,11 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.UnavailableCommandException;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.UnavailableCommandException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -80,10 +79,19 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
-        RoleType roleType = accountService.getRoleType(account);
+        final Role accountRole = roleService.findRole(account.getRoleId());
+        return checkAccess(account, user, commandName, accountRole);
+    }
+
+    @Override
+    public boolean checkAccess(Account account, User user, String commandName, Role accountRole) throws PermissionDeniedException {
+        if (isDisabled()) {
+            return true;
+        }
+        RoleType roleType = accountRole.getRoleType();
         boolean isAllowed =
-            commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) : annotationRoleBasedApisMap.get(
-                roleType).contains(commandName);
+                commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) : annotationRoleBasedApisMap.get(
+                        roleType).contains(commandName);
 
         if (isAllowed) {
             return true;

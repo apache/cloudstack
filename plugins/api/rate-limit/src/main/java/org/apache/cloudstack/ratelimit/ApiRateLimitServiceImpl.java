@@ -23,17 +23,14 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.exception.PermissionDeniedException;
@@ -42,6 +39,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
 
 @Component
 public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService {
@@ -145,18 +145,25 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         if (!enabled) {
             return true;
         }
-        Long accountId = user.getAccountId();
-        Account account = _accountService.getAccount(accountId);
+        Account account = _accountService.getAccount(user.getAccountId());
+        return checkAccess(account, user, apiCommandName, null);
+    }
+
+    @Override
+    public boolean checkAccess(Account account, User user, String apiCommandName, Role role) throws PermissionDeniedException {
+        if (!enabled) {
+            return true;
+        }
         if (_accountService.isRootAdmin(account.getId())) {
             // no API throttling on root admin
             return true;
         }
-        StoreEntry entry = _store.get(accountId);
+        StoreEntry entry = _store.get(account.getId());
 
         if (entry == null) {
 
             /* Populate the entry, thus unlocking any underlying mutex */
-            entry = _store.create(accountId, timeToLive);
+            entry = _store.create(account.getId(), timeToLive);
         }
 
         /* Increment the client count and see whether we have hit the maximum allowed clients yet. */

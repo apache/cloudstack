@@ -18,9 +18,8 @@ package org.apache.cloudstack.api.command.user.discovery;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,7 +30,9 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
+import org.apache.log4j.Logger;
 
+import com.cloud.user.Account;
 import com.cloud.user.User;
 
 @APICommand(name = "listApis",
@@ -51,11 +52,16 @@ public class ListApisCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "API name")
     private String name;
 
+    @Parameter(name = ApiConstants.TRIM, type = CommandType.BOOLEAN, description = "To return response parameter in API response or not", since = "4.16.1")
+    private Boolean trim;
+
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
             User user = CallContext.current().getCallingUser();
-            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>)_apiDiscoveryService.listApis(user, name);
+            Account account = CallContext.current().getCallingAccount();
+            Role role = roleService.findRole(account.getRoleId());
+            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(account, user, name, role, Boolean.TRUE.equals(trim));
             if (response == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
             }
