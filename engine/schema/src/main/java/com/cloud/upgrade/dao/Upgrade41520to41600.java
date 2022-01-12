@@ -97,9 +97,9 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
             if (rolePermission == null) {
                 LOG.debug("Inserting role permission for role: " + roleType.getId() + " and rule: " + ruleString);
                 roleService.createRolePermission(role, rule, RolePermissionEntity.Permission.ALLOW, null);
-            } else if (RolePermissionEntity.Permission.DENY.equals(rolePermission.getPermission())) {
-                LOG.debug("Updating role permission for role: " + roleType.getId() + " and rule: " + ruleString);
-                roleService.updateRolePermission(role, rolePermission, RolePermissionEntity.Permission.ALLOW);
+            } else {
+                LOG.debug("Found existing role permission for role: " + roleType.getId() + " and rule: " + ruleString +
+                        ", not updating it");
             }
         }
     }
