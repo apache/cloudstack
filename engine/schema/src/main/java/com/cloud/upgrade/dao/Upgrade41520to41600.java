@@ -22,8 +22,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -32,6 +35,13 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     final static Logger LOG = Logger.getLogger(Upgrade41520to41600.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
+
+    private static final String checkAnnotationRulesPermissionPreparedStatement =
+            "SELECT permission FROM `cloud`.`role_permissions` WHERE role_id = ? AND rule = ?";
+    private static final String insertAnnotationRulePermissionPreparedStatement =
+            "INSERT IGNORE INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), ?, ?, 'ALLOW')";
+    private static final String updateAnnotationRulePermissionPreparedStatement =
+            "UPDATE `cloud`.`role_permissions` SET permission = 'ALLOW' WHERE rule = ? AND role_id = ?";
 
     public Upgrade41520to41600() {
     }
@@ -65,6 +75,66 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         generateUuidForExistingSshKeyPairs(conn);
+        generateAnnotationPermissions(conn);
+    }
+
+    private void generateAnnotationPermissions(Connection conn) {
+        List<String> annotationRules = Arrays.asList("listAnnotations", "addAnnotation", "removeAnnotation");
+        checkAnnotationPermissionExists(conn, RoleType.ResourceAdmin, annotationRules);
+        checkAnnotationPermissionExists(conn, RoleType.DomainAdmin, annotationRules);
+        checkAnnotationPermissionExists(conn, RoleType.User, annotationRules);
+    }
+
+    private void checkAnnotationPermissionExists(Connection conn, RoleType roleType, List<String> rules) {
+        LOG.debug("Checking if annotation permissions exists for the role: " + roleType.getId());
+        for (String rule : rules) {
+            try {
+                PreparedStatement pstmt = conn.prepareStatement(checkAnnotationRulesPermissionPreparedStatement);
+                pstmt.setLong(1, roleType.getId());
+                pstmt.setString(2, rule);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs != null && rs.next()) {
+                    String permission = rs.getString(1);
+                    if (!permission.equalsIgnoreCase("allow")) {
+                        updateExistingRulePermission(conn, roleType, rule);
+                    }
+                } else {
+                    insertAnnotationRulePermission(conn, roleType, rule);
+                }
+                if (!rs.isClosed())  {
+                    rs.close();
+                }
+                if (!pstmt.isClosed())  {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                LOG.error("Error on checkAnnotationPermission: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private void updateExistingRulePermission(Connection conn, RoleType roleType, String rule) {
+        LOG.debug("Updating permission rule for: " + rule + " and role: " + roleType.getId());
+        try {
+            PreparedStatement pstmt = conn.prepareStatement(updateAnnotationRulePermissionPreparedStatement);
+            pstmt.setLong(1, roleType.getId());
+            pstmt.setString(2, rule);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            LOG.error("Error on insertAnnotationRulePermission: " + e.getMessage(), e);
+        }
+    }
+
+    private void insertAnnotationRulePermission(Connection conn, RoleType roleType, String rule) {
+        LOG.debug("Inserting permission rule for: " + rule + " and role: " + roleType.getId());
+        try {
+            PreparedStatement pstmt = conn.prepareStatement(insertAnnotationRulePermissionPreparedStatement);
+            pstmt.setLong(1, roleType.getId());
+            pstmt.setString(2, rule);
+            pstmt.executeQuery();
+        } catch (SQLException e) {
+            LOG.error("Error on insertAnnotationRulePermission: " + e.getMessage(), e);
+        }
     }
 
     private void generateUuidForExistingSshKeyPairs(Connection conn) {
