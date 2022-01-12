@@ -220,6 +220,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
     GROUP BY
         `service_offering`.`id`;
 
+
+ALTER TABLE volumes ADD COLUMN external_uuid varchar(40) DEFAULT null;
+
+
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
     SELECT
@@ -240,6 +244,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.format,
         volumes.path,
         volumes.chain_info,
+        volumes.external_uuid,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -272,6 +277,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.display_text disk_offering_display_text,
         disk_offering.use_local_storage,
         service_offering.system_use,
+        disk_offering.system_use,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
@@ -355,6 +361,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`account` resource_tag_account ON resource_tag_account.id = resource_tags.account_id
             left join
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
+
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE
