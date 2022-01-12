@@ -41,7 +41,7 @@
       <template #name="{ record }">
         {{ record.name }}
         <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.volume.pool.auto.assign')" placement="top">
-          <a-icon type="info-circle" class="table-tooltip-icon" />
+          <info-circle-outlined class="table-tooltip-icon" />
         </a-tooltip>
       </template>
       <template #suitability="{ record }">
