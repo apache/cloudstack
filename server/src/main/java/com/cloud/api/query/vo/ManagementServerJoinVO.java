@@ -33,7 +33,7 @@ import javax.persistence.TemporalType;
 import java.util.Date;
 
 /**
- * api response utility join view
+ * The Value object for api response utility view for management server queries
  */
 @Entity
 @Table(name = "mshost_view")

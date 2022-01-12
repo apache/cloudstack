@@ -65,6 +65,7 @@ import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.DbMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
+import org.apache.cloudstack.response.HostMetricsSummary;
 import org.apache.cloudstack.response.InfrastructureResponse;
 import org.apache.cloudstack.response.ManagementServerMetricsResponse;
 import org.apache.cloudstack.response.StoragePoolMetricsResponse;
@@ -578,36 +579,45 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         return metricsResponses;
     }
 
-    private void addHostMemoryMetricsToResponse(ClusterMetricsResponse metricsResponse, Long clusterId, HostMetrics hostMetrics) {
-        metricsResponse.setMemTotal(hostMetrics.getTotalMemory());
-        metricsResponse.setMemAllocated(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory());
-        if (hostMetrics.getMemoryUsed() > 0L) {
-            metricsResponse.setMemUsed(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory());
-            metricsResponse.setMemMaxDeviation(hostMetrics.getMaximumMemoryUsage(), hostMetrics.getMemoryUsed(), hostMetrics.getTotalHosts());
+    private void addHostMemoryMetricsToResponse(HostMetricsSummary metricsResponse, Long clusterId, HostMetrics hostMetrics) {
+        final Long totalMemory = hostMetrics.getTotalMemory();
+        final Long memoryAllocated = hostMetrics.getMemoryAllocated();
+        final Long memoryUsed = hostMetrics.getMemoryUsed();
+        metricsResponse.setMemTotal(totalMemory);
+        metricsResponse.setMemAllocated(memoryAllocated, totalMemory);
+        if (memoryUsed > 0L) {
+            metricsResponse.setMemUsed(memoryUsed, totalMemory);
+            metricsResponse.setMemMaxDeviation(hostMetrics.getMaximumMemoryUsage(), memoryUsed, hostMetrics.getTotalHosts());
         }
-        // Memory thresholds
-        final Double memoryThreshold = AlertManager.MemoryCapacityThreshold.valueIn(clusterId);
-        final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
-        metricsResponse.setMemoryUsageThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryThreshold);
-        metricsResponse.setMemoryUsageDisableThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
-        metricsResponse.setMemoryAllocatedThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryThreshold);
-        metricsResponse.setMemoryAllocatedDisableThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
+        // thresholds
+        final Double memoryThreshold = (clusterId != null) ? AlertManager.MemoryCapacityThreshold.valueIn(clusterId) : AlertManager.MemoryCapacityThreshold.value();
+        final Float memoryDisableThreshold = (clusterId != null) ? DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId) : DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.value();
+        metricsResponse.setMemoryUsageThreshold(memoryUsed, totalMemory, memoryThreshold);
+        metricsResponse.setMemoryUsageDisableThreshold(memoryUsed, totalMemory, memoryDisableThreshold);
+        metricsResponse.setMemoryAllocatedThreshold(memoryAllocated, totalMemory, memoryThreshold);
+        metricsResponse.setMemoryAllocatedDisableThreshold(memoryAllocated, totalMemory, memoryDisableThreshold);
+
     }
 
-    private void addHostCpuMetricsToResponse(ClusterMetricsResponse metricsResponse, Long clusterId, HostMetrics hostMetrics) {
-        metricsResponse.setCpuTotal(hostMetrics.getTotalCpu());
-        metricsResponse.setCpuAllocated(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu());
-        if (hostMetrics.getCpuUsedPercentage() > 0L) {
-            metricsResponse.setCpuUsed(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
-            metricsResponse.setCpuMaxDeviation(hostMetrics.getMaximumCpuUsage(), hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
+    private void addHostCpuMetricsToResponse(HostMetricsSummary metricsResponse, Long clusterId, HostMetrics hostMetrics) {
+        Long totalHosts = hostMetrics.getTotalHosts();
+        Long totalCpu = hostMetrics.getTotalCpu();
+        Long cpuAllocated = hostMetrics.getCpuAllocated();
+        final Double cpuUsedPercentage = hostMetrics.getCpuUsedPercentage();
+
+        metricsResponse.setCpuTotal(totalCpu);
+        metricsResponse.setCpuAllocated(cpuAllocated, totalCpu);
+        if (cpuUsedPercentage > 0L) {
+            metricsResponse.setCpuUsed(cpuUsedPercentage, totalHosts);
+            metricsResponse.setCpuMaxDeviation(hostMetrics.getMaximumCpuUsage(), cpuUsedPercentage, totalHosts);
         }
-        // CPU thresholds
-        final Double cpuThreshold = AlertManager.CPUCapacityThreshold.valueIn(clusterId);
+        // thresholds
+        final Double cpuThreshold = (clusterId != null) ? AlertManager.CPUCapacityThreshold.valueIn(clusterId) : AlertManager.CPUCapacityThreshold.value();
         final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
-        metricsResponse.setCpuUsageThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuThreshold);
-        metricsResponse.setCpuUsageDisableThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuDisableThreshold);
-        metricsResponse.setCpuAllocatedThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuThreshold);
-        metricsResponse.setCpuAllocatedDisableThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuDisableThreshold);
+        metricsResponse.setCpuUsageThreshold(cpuUsedPercentage, totalHosts, cpuThreshold);
+        metricsResponse.setCpuUsageDisableThreshold(cpuUsedPercentage, totalHosts, cpuDisableThreshold);
+        metricsResponse.setCpuAllocatedThreshold(cpuAllocated, totalCpu, cpuThreshold);
+        metricsResponse.setCpuAllocatedDisableThreshold(cpuAllocated, totalCpu, cpuDisableThreshold);
     }
 
 
@@ -644,7 +654,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
      */
     private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("getting stats for %s", managementServerResponse.getId()));
+            LOGGER.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
         }
         ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
         if (status == null ) {
@@ -704,12 +714,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             }
             final Long zoneId = zone.getId();
 
-            // Thresholds
-            final Double cpuThreshold = AlertManager.CPUCapacityThreshold.value();
-            final Double memoryThreshold = AlertManager.MemoryCapacityThreshold.value();
-            final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.value();
-            final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.value();
-
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, zoneId, null);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, zoneId, null);
@@ -736,30 +740,12 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setHasAnnotation(zoneResponse.hasAnnotation());
             metricsResponse.setState(zoneResponse.getAllocationState());
             metricsResponse.setResource(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
+
+            final Long totalHosts = hostMetrics.getTotalHosts();
             // CPU
-            metricsResponse.setCpuTotal(hostMetrics.getTotalCpu());
-            metricsResponse.setCpuAllocated(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu());
-            if (hostMetrics.getCpuUsedPercentage() > 0L) {
-                metricsResponse.setCpuUsed(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
-                metricsResponse.setCpuMaxDeviation(hostMetrics.getMaximumCpuUsage(), hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts());
-            }
+            addHostCpuMetricsToResponse(metricsResponse, null, hostMetrics);
             // Memory
-            metricsResponse.setMemTotal(hostMetrics.getTotalMemory());
-            metricsResponse.setMemAllocated(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory());
-            if (hostMetrics.getMemoryUsed() > 0L) {
-                metricsResponse.setMemUsed(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory());
-                metricsResponse.setMemMaxDeviation(hostMetrics.getMaximumMemoryUsage(), hostMetrics.getMemoryUsed(), hostMetrics.getTotalHosts());
-            }
-            // CPU thresholds
-            metricsResponse.setCpuUsageThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuThreshold);
-            metricsResponse.setCpuUsageDisableThreshold(hostMetrics.getCpuUsedPercentage(), hostMetrics.getTotalHosts(), cpuDisableThreshold);
-            metricsResponse.setCpuAllocatedThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuThreshold);
-            metricsResponse.setCpuAllocatedDisableThreshold(hostMetrics.getCpuAllocated(), hostMetrics.getTotalCpu(), cpuDisableThreshold);
-            // Memory thresholds
-            metricsResponse.setMemoryUsageThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryThreshold);
-            metricsResponse.setMemoryUsageDisableThreshold(hostMetrics.getMemoryUsed(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
-            metricsResponse.setMemoryAllocatedThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryThreshold);
-            metricsResponse.setMemoryAllocatedDisableThreshold(hostMetrics.getMemoryAllocated(), hostMetrics.getTotalMemory(), memoryDisableThreshold);
+            addHostMemoryMetricsToResponse(metricsResponse, null, hostMetrics);
 
             metricsResponses.add(metricsResponse);
         }

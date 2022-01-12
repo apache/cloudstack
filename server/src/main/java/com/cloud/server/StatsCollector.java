@@ -54,6 +54,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -442,11 +443,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     private void registerAll(String prefix, MetricSet metricSet, MetricRegistry registry) {
+        String registryTemplate = new String(prefix + "%s");
         for (Map.Entry<String, Metric> entry : metricSet.getMetrics().entrySet()) {
+            String registryName = String.format(registryTemplate, entry.getKey());
             if (entry.getValue() instanceof MetricSet) {
-                registerAll(prefix + "." + entry.getKey(), (MetricSet) entry.getValue(), registry);
+                registerAll(registryName, (MetricSet) entry.getValue(), registry);
             } else {
-                registry.register(prefix + "." + entry.getKey(), entry.getValue());
+                registry.register(registryName, entry.getValue());
             }
         }
     }
@@ -511,27 +514,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             s_logger.info("Skipping collect VM stats. The global parameter vm.stats.interval is set to 0 or less than 0.");
         }
 
-        if (MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
-            _executor.scheduleAtFixedRate(new ManagementServerCollector(),
-                    1L,
-                    MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value(),
-                    TimeUnit.SECONDS);
-        } else {
-                LOGGER.debug(String.format("%s - %d is 0 or less, so not scheduling the management host status collector thread",
-                    MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.key(), MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value()));
-        }
-
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
-        if (DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
-            _executor.scheduleAtFixedRate(new DbCollector(),
-                    0L,
-                    DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.value(),
-                    TimeUnit.SECONDS);
-        } else {
-            LOGGER.debug(String.format("%s - %d is 0 or less, so not scheduling the management host status collector thread",
-                    DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.key(), DATABASE_SERVER_STATUS_COLLECTION_INTERVAL.value()));
-        }
+        scheduleCollection(MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL, new ManagementServerCollector(), 1L);
+        scheduleCollection(DATABASE_SERVER_STATUS_COLLECTION_INTERVAL, new DbCollector(), 0L);
 
         if (hostAndVmStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
@@ -621,6 +607,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         } else {
             s_logger.warn(String.format("Cannot find management server with msid [%s]. "
                     + "Therefore, VM stats will be recorded with the management server MAC address converted as a long in the mgmt_server_id column.", managementServerNodeId));
+        }
+    }
+
+    private void scheduleCollection(ConfigKey<Integer> statusCollectionInterval, AbstractStatsCollector collector, long delay) {
+        if (statusCollectionInterval.value() > 0) {
+            _executor.scheduleAtFixedRate(collector,
+                    delay,
+                    statusCollectionInterval.value(),
+                    TimeUnit.SECONDS);
+        } else {
+                LOGGER.debug(String.format("%s - %d is 0 or less, so not scheduling the status collector thread",
+                        statusCollectionInterval.key(), statusCollectionInterval.value()));
         }
     }
 
@@ -932,12 +930,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             // if we got these from the bean, skip
             if (newEntry.getSystemMemoryTotal() == 0) {
                 String mem = Script.runSimpleBashScript("cat /proc/meminfo | grep MemTotal | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
-                newEntry.setSystemMemoryTotal(Long.parseLong(mem) * 1024);
+                newEntry.setSystemMemoryTotal(Long.parseLong(mem) * ByteScaleUtils.KiB);
                 LOGGER.info(String.format("system memory from /proc: %d", newEntry.getSystemMemoryTotal()));
             }
             if (newEntry.getSystemMemoryFree() == 0) {
                 String free = Script.runSimpleBashScript("cat /proc/meminfo | grep MemFree | cut -f 2 -d ':' | tr -d 'a-zA-z '").trim();
-                newEntry.setSystemMemoryFree(Long.parseLong(free) * 1024);
+                newEntry.setSystemMemoryFree(Long.parseLong(free) * ByteScaleUtils.KiB);
                 LOGGER.info(String.format("free memory from /proc: %d", newEntry.getSystemMemoryFree()));
             }
             if (newEntry.getSystemMemoryUsed() <= 0) {
