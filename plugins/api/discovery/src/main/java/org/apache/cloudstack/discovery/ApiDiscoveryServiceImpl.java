@@ -260,6 +260,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                         apiChecker.checkAccess(account, user, apiName, role);
                     } catch (Exception ex) {
                         isAllowed = false;
+                        break;
                     }
                 }
                 if (isAllowed)
