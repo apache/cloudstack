@@ -44,7 +44,7 @@
             >{{ prov }}</a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="form.provider !== 'Swift'">
+        <div v-if="!['Swift', 'S3'].includes(form.provider)">
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
               v-model:value="form.zone"
@@ -101,6 +101,64 @@
             <a-input v-model:value="form.storagepolicy" />
           </a-form-item>
         </div>
+        <div v-if="form.provider === 'S3'">
+          <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
+            <a-select
+              v-model:value="form.zone"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option
+                :value="zone.id"
+                v-for="(zone) in zones"
+                :key="zone.id"
+                :label="zone.name">
+                <span>
+                  <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <global-outlined v-else style="margin-right: 5px" />
+                  {{ zone.name }}
+                </span>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="secondaryStorageAccessKey" ref="secondaryStorageAccessKey" :label="$t('label.s3.access.key')">
+            <a-input v-model:value="form.secondaryStorageAccessKey" />
+          </a-form-item>
+          <a-form-item name="secondaryStorageSecretKey" ref="secondaryStorageSecretKey" :label="$t('label.s3.secret.key')">
+            <a-input v-model:value="form.secondaryStorageSecretKey" />
+          </a-form-item>
+          <a-form-item name="secondaryStorageBucket" ref="secondaryStorageBucket" :label="$t('label.s3.bucket')">
+            <a-input v-model:value="form.secondaryStorageBucket"/>
+          </a-form-item>
+          <a-form-item name="secondaryStorageEndpoint" ref="secondaryStorageEndpoint" :label="$t('label.s3.endpoint')">
+            <a-input v-model:value="form.secondaryStorageEndpoint"/>
+          </a-form-item>
+          <a-form-item name="secondaryStorageHttps" ref="secondaryStorageHttps" :label="$t('label.s3.use.https')">
+            <a-switch v-model:checked="form.secondaryStorageHttps" />
+          </a-form-item>
+          <a-form-item name="secondaryStorageConnectionTimeout" ref="secondaryStorageConnectionTimeout" :label="$t('label.s3.connection.timeout')">
+            <a-input v-model:value="form.secondaryStorageConnectionTimeout"/>
+          </a-form-item>
+          <a-form-item name="secondaryStorageMaxError" ref="secondaryStorageMaxError" :label="$t('label.s3.max.error.retry')">
+            <a-input v-model:value="form.secondaryStorageMaxError"/>
+          </a-form-item>
+          <a-form-item name="secondaryStorageSocketTimeout" ref="secondaryStorageSocketTimeout" :label="$t('label.s3.socket.timeout')">
+            <a-input v-model:value="form.secondaryStorageSocketTimeout"/>
+          </a-form-item>
+          <a-form-item name="secondaryStorageNFSStaging" ref="secondaryStorageNFSStaging" :label="$t('label.create.nfs.secondary.staging.storage')">
+            <a-switch v-model:checked="form.secondaryStorageNFSStaging" @change="val => secondaryStorageNFSStaging = val" />
+          </a-form-item>
+        </div>
+        <div v-if="secondaryStorageNFSStaging">
+          <a-form-item name="secondaryStorageNFSServer" ref="secondaryStorageNFSServer" :label="$t('label.s3.nfs.server')">
+            <a-input v-model:value="form.secondaryStorageNFSServer" />
+          </a-form-item>
+          <a-form-item name="secondaryStorageNFSPath" ref="secondaryStorageNFSPath" :label="$t('label.s3.nfs.path')">
+            <a-input v-model:value="form.secondaryStorageNFSPath"/>
+          </a-form-item>
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -128,9 +186,10 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      providers: ['NFS', 'SMB/CIFS', 'Swift'],
+      providers: ['NFS', 'SMB/CIFS', 'S3', 'Swift'],
       zones: [],
-      loading: false
+      loading: false,
+      secondaryStorageNFSStaging: false
     }
   },
   created () {
@@ -141,7 +200,8 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        provider: 'NFS'
+        provider: 'NFS',
+        secondaryStorageHttps: true
       })
       this.rules = reactive({
         zone: [{ required: true, message: this.$t('label.required') }],
@@ -153,7 +213,12 @@ export default {
         url: [{ required: true, message: this.$t('label.required') }],
         account: [{ required: true, message: this.$t('label.required') }],
         username: [{ required: true, message: this.$t('label.required') }],
-        key: [{ required: true, message: this.$t('label.required') }]
+        key: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageAccessKey: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageSecretKey: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageBucket: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageNFSServer: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageNFSPath: [{ required: true, message: this.$t('label.required') }]
       })
     },
     fetchData () {
@@ -198,7 +263,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.formRef.value.validate().then(() => {
+      this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
 
         var data = {
@@ -234,29 +299,103 @@ export default {
             data['details[' + index.toString() + '].key'] = key
             data['details[' + index.toString() + '].value'] = swiftParams[key]
           })
+        } else if (provider === 'S3') {
+          let detailIdx = 0
+          const s3Params = {
+            accesskey: values.secondaryStorageAccessKey,
+            secretkey: values.secondaryStorageSecretKey,
+            bucket: values.secondaryStorageBucket,
+            usehttps: values?.secondaryStorageHttps || false
+          }
+          Object.keys(s3Params).forEach((key, index) => {
+            data['details[' + index.toString() + '].key'] = key
+            data['details[' + index.toString() + '].value'] = s3Params[key]
+            detailIdx = index
+          })
+
+          if (values.secondaryStorageEndpoint && values.secondaryStorageEndpoint.length > 0) {
+            detailIdx++
+            data['details[' + detailIdx.toString() + '].key'] = 'endpoint'
+            data['details[' + detailIdx.toString() + '].value'] = values.secondaryStorageEndpoint
+          }
+
+          if (values.secondaryStorageConnectionTimeout && values.secondaryStorageConnectionTimeout.length > 0) {
+            detailIdx++
+            data['details[' + detailIdx.toString() + '].key'] = 'connectiontimeout'
+            data['details[' + detailIdx.toString() + '].value'] = values.secondaryStorageConnectionTimeout
+          }
+
+          if (values.secondaryStorageMaxError && values.secondaryStorageMaxError.length > 0) {
+            detailIdx++
+            data['details[' + detailIdx.toString() + '].key'] = 'maxerrorretry'
+            data['details[' + detailIdx.toString() + '].value'] = values.secondaryStorageMaxError
+          }
+
+          if (values.secondaryStorageSocketTimeout && values.secondaryStorageSocketTimeout.length > 0) {
+            detailIdx++
+            data['details[' + detailIdx.toString() + '].key'] = 'sockettimeout'
+            data['details[' + detailIdx.toString() + '].value'] = values.secondaryStorageSocketTimeout
+          }
         }
 
-        data.url = url
+        if (provider !== 'S3') {
+          data.url = url
+        }
         data.provider = provider
-        if (values.zone && provider !== 'Swift') {
+        if (values.zone && !['Swift', 'S3'].includes(provider)) {
           data.zoneid = values.zone
         }
 
+        const nfsParams = {}
+        if (values.secondaryStorageNFSStaging) {
+          const nfsServer = values.secondaryStorageNFSServer
+          const path = values.secondaryStorageNFSPath
+          const nfsUrl = this.nfsURL(nfsServer, path)
+
+          nfsParams.provider = 'nfs'
+          nfsParams.zoneid = values.zone
+          nfsParams.url = nfsUrl
+        }
+
         this.loading = true
-        api('addImageStore', data).then(json => {
+
+        try {
+          await this.addImageStore(data)
+
+          if (values.secondaryStorageNFSStaging) {
+            await this.createSecondaryStagingStore(nfsParams)
+          }
           this.$notification.success({
             message: this.$t('label.add.secondary.storage'),
             description: this.$t('label.add.secondary.storage')
           })
+          this.loading = false
           this.closeModal()
           this.parentFetchData()
-        }).catch(error => {
+        } catch (error) {
           this.$notifyError(error)
-        }).finally(() => {
           this.loading = false
-        })
+        }
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    addImageStore (params) {
+      return new Promise((resolve, reject) => {
+        api('addImageStore', params).then(json => {
+          resolve()
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+    createSecondaryStagingStore (params) {
+      return new Promise((resolve, reject) => {
+        api('createSecondaryStagingStore', params).then(json => {
+          resolve()
+        }).catch(error => {
+          reject(error)
+        })
       })
     }
   }

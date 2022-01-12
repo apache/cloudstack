@@ -1095,7 +1095,7 @@ export default {
           this.vm.hostname = host.name
         }
 
-        if (this.serviceOffering.rootdisksize) {
+        if (this.serviceOffering?.rootdisksize) {
           this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
         } else if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
@@ -2079,6 +2079,7 @@ export default {
       this.updateComputeOffering(null)
     },
     updateTemplateConfigurationOfferingDetails (offeringId) {
+      this.rootDiskSizeFixed = 0
       var offering = this.serviceOffering
       if (!offering || offering.id !== offeringId) {
         offering = _.find(this.options.serviceOfferings, (option) => option.id === offeringId)
