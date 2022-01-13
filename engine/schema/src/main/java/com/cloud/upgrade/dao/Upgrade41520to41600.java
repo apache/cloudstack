@@ -70,7 +70,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         generateUuidForExistingSshKeyPairs(conn);
-       populateAnnotationPermissions(conn);
+        populateAnnotationPermissions(conn);
     }
 
     private void generateAnnotationPermissions(Connection conn) {
