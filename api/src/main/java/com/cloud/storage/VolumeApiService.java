@@ -152,4 +152,6 @@ public interface VolumeApiService {
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
 
     Volume recoverVolume(long volumeId);
+
+    boolean validateVolumeSizeRange(long size);
 }
