@@ -453,7 +453,7 @@ systemctl daemon-reload
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
     sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
-    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text management
 fi
 
 %preun agent
@@ -498,7 +498,7 @@ systemctl daemon-reload
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
     sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
-    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text agent
 fi
 
 %pre usage
@@ -533,7 +533,7 @@ fi
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
     sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
-    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text usage
 fi
 
 %post marvin

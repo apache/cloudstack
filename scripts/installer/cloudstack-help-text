@@ -18,8 +18,21 @@
 
 ACS_VERSION=
 ACL_MINOR_VERSION=$(echo $ACS_VERSION | cut -d'-' -f1)
+
+case $1 in
+    management)
+        PACKAGE="Managment Server"
+        ;;
+    usage)
+        PACKAGE="Usage Server"
+        ;;
+    agent)
+        PACKAGE="Agent"
+        ;;
+esac
+
 printf "\n"
-printf "Thank you for installing Apache CloudStack ${ACS_VERSION:-} !\n"
+printf "Thank you for installing Apache CloudStack ${PACKAGE} ${ACS_VERSION} !\n"
 printf "\n"
 printf " * Project website:  https://cloudstack.apache.org/\n"
 printf " * Documentation:    https://docs.cloudstack.apache.org/en/${ACL_MINOR_VERSION:-latest}/\n"
