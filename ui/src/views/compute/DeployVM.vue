@@ -1465,7 +1465,7 @@ export default {
       return key.split('.').join('\\002E')
     },
     updateSecurityGroups (securitygroupids) {
-      this.securitygroupids = securitygroupids
+      this.securitygroupids = securitygroupids || []
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
@@ -1659,7 +1659,7 @@ export default {
             }
           }
         }
-        if (this.securitygroupids.length > 0) {
+        if (this.securitygroupids && this.securitygroupids.length > 0) {
           deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
