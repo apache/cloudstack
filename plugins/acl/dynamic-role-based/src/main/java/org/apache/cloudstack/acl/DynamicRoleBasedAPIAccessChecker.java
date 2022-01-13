@@ -61,13 +61,14 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         throw new PermissionDeniedException("The API " + commandName + " is denied for the account's role.");
     }
 
-    public boolean isDisabled() {
-        return !roleService.isEnabled();
+    @Override
+    public boolean isEnabled() {
+        return roleService.isEnabled();
     }
 
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
-        if (isDisabled()) {
+        if (!isEnabled()) {
             return true;
         }
         Account account = accountService.getAccount(user.getAccountId());
@@ -76,14 +77,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         final Role accountRole = roleService.findRole(account.getRoleId());
-        return checkAccess(account, user, commandName, accountRole);
+        return checkAccessWithoutEnabledCheck(account, user, commandName, accountRole);
     }
 
     @Override
-    public boolean checkAccess(Account account, User user, String commandName, Role accountRole) throws PermissionDeniedException {
-        if (isDisabled()) {
-            return true;
-        }
+    public boolean checkAccessWithoutEnabledCheck(Account account, User user, String commandName, Role accountRole) throws PermissionDeniedException {
         if (accountRole == null || accountRole.getId() < 1L) {
             denyApiAccess(commandName);
         }

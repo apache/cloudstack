@@ -58,26 +58,23 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         throw new PermissionDeniedException("The API " + commandName + " is denied for the user's/account's project role.");
     }
 
-
-    public boolean isDisabled() {
+    @Override
+    public boolean isEnabled() {
         return !roleService.isEnabled();
     }
 
     @Override
     public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
-        if (isDisabled()) {
+        if (!isEnabled()) {
             return true;
         }
 
         Account userAccount = accountService.getAccount(user.getAccountId());
-        return checkAccess(userAccount, user, apiCommandName, null);
+        return checkAccessWithoutEnabledCheck(userAccount, user, apiCommandName, null);
     }
 
     @Override
-    public boolean checkAccess(Account userAccount, User user, String apiCommandName, Role role) throws PermissionDeniedException {
-        if (isDisabled()) {
-            return true;
-        }
+    public boolean checkAccessWithoutEnabledCheck(Account userAccount, User user, String apiCommandName, Role role) throws PermissionDeniedException {
         Project project = CallContext.current().getProject();
         if (project == null) {
             return true;

@@ -19,6 +19,7 @@ package org.apache.cloudstack.acl;
 import java.lang.reflect.Field;
 import java.util.Collections;
 
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,8 +33,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
-
-import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 import junit.framework.TestCase;
 
@@ -77,7 +76,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         Mockito.when(roleService.findRole(Mockito.anyLong())).thenReturn((RoleVO) getTestRole());
 
         // Enabled plugin
-        Mockito.doReturn(false).when(apiAccessChecker).isDisabled();
+        Mockito.doReturn(true).when(apiAccessChecker).isEnabled();
         Mockito.doCallRealMethod().when(apiAccessChecker).checkAccess(Mockito.any(User.class), Mockito.anyString());
     }
 

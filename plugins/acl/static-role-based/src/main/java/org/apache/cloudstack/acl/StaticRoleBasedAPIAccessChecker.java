@@ -64,13 +64,14 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
     }
 
-    public boolean isDisabled() {
-        return roleService.isEnabled();
+    @Override
+    public boolean isEnabled() {
+        return !roleService.isEnabled();
     }
 
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
-        if (isDisabled()) {
+        if (!isEnabled()) {
             return true;
         }
 
@@ -80,14 +81,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
 
         final Role accountRole = roleService.findRole(account.getRoleId());
-        return checkAccess(account, user, commandName, accountRole);
+        return checkAccessWithoutEnabledCheck(account, user, commandName, accountRole);
     }
 
     @Override
-    public boolean checkAccess(Account account, User user, String commandName, Role accountRole) throws PermissionDeniedException {
-        if (isDisabled()) {
-            return true;
-        }
+    public boolean checkAccessWithoutEnabledCheck(Account account, User user, String commandName, Role accountRole) throws PermissionDeniedException {
         RoleType roleType = accountRole.getRoleType();
         boolean isAllowed =
                 commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) : annotationRoleBasedApisMap.get(

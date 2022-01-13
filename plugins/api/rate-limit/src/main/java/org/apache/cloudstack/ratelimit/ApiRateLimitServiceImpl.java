@@ -140,20 +140,22 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     }
 
     @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
     public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
         // check if api rate limiting is enabled or not
         if (!enabled) {
             return true;
         }
         Account account = _accountService.getAccount(user.getAccountId());
-        return checkAccess(account, user, apiCommandName, null);
+        return checkAccessWithoutEnabledCheck(account, user, apiCommandName, null);
     }
 
     @Override
-    public boolean checkAccess(Account account, User user, String apiCommandName, Role role) throws PermissionDeniedException {
-        if (!enabled) {
-            return true;
-        }
+    public boolean checkAccessWithoutEnabledCheck(Account account, User user, String apiCommandName, Role role) throws PermissionDeniedException {
         if (_accountService.isRootAdmin(account.getId())) {
             // no API throttling on root admin
             return true;

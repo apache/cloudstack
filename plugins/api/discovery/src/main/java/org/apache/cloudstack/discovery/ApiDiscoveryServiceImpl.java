@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -238,13 +239,14 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         if (account == null)
             return null;
 
+        List<APIChecker> enabledCheckers = _apiAccessCheckers.stream().filter(APIChecker::isEnabled).collect(Collectors.toList());
         if (name != null) {
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
-            for (APIChecker apiChecker : _apiAccessCheckers) {
+            for (APIChecker apiChecker : enabledCheckers) {
                 try {
-                    apiChecker.checkAccess(account, user, name, role);
+                    apiChecker.checkAccessWithoutEnabledCheck(account, user, name, role);
                 } catch (Exception ex) {
                     s_logger.debug("API discovery access check failed for " + name + " with " + ex.getMessage());
                     return null;
@@ -255,9 +257,9 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         } else {
             for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
                 boolean isAllowed = true;
-                for (APIChecker apiChecker : _apiAccessCheckers) {
+                for (APIChecker apiChecker : enabledCheckers) {
                     try {
-                        apiChecker.checkAccess(account, user, apiName, role);
+                        apiChecker.checkAccessWithoutEnabledCheck(account, user, apiName, role);
                     } catch (Exception ex) {
                         isAllowed = false;
                         break;
