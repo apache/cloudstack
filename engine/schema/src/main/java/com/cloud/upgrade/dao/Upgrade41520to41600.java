@@ -73,10 +73,10 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
         populateAnnotationPermissions(conn);
     }
 
-    private void generateAnnotationPermissions(Connection conn) {
+    private void populateAnnotationPermissions(Connection conn) {
         List<String> annotationRules = Arrays.asList("listAnnotations", "addAnnotation", "removeAnnotation");
         for (RoleType roleType : Arrays.asList(RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User)) {
-            checkAnnotationPermissionExists(conn, roleType, annotationRules);
+            checkAndPersistAnnotationPermissions(conn, roleType, annotationRules);
         }
     }
 
