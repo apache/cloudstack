@@ -976,7 +976,23 @@ export default {
       this.form = this.$form.createForm(this)
       this.formModel = {}
       if (action.component && action.api && !action.popup) {
-        this.$router.push({ name: action.api })
+        const query = {}
+        if (this.$route.path.startsWith('/vm')) {
+          switch (true) {
+            case ('templateid' in this.$route.query):
+              query.templateid = this.$route.query.templateid
+              break
+            case ('isoid' in this.$route.query):
+              query.isoid = this.$route.query.isoid
+              break
+            case ('networkid' in this.$route.query):
+              query.networkid = this.$route.query.networkid
+              break
+            default:
+              break
+          }
+        }
+        this.$router.push({ name: action.api, query })
         return
       }
       this.currentAction = action
