@@ -16,6 +16,7 @@
 // under the License.
 
 import { axios, sourceToken } from '@/utils/request'
+import { message, notification } from 'ant-design-vue'
 
 export function api (command, args = {}, method = 'GET', data = {}) {
   let params = {}
@@ -60,5 +61,7 @@ export function login (arg) {
 
 export function logout () {
   sourceToken.cancel()
+  message.destroy()
+  notification.destroy()
   return api('logout')
 }

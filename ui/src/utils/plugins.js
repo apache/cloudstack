@@ -21,6 +21,7 @@ import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
+import { sourceToken } from '@/utils/request'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -168,11 +169,13 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
-        notification.error({
-          message: i18n.t('label.error'),
-          description: catchMessage,
-          duration: 0
-        })
+        if (!sourceToken.isCancel(e)) {
+          notification.error({
+            message: i18n.t('label.error'),
+            description: catchMessage,
+            duration: 0
+          })
+        }
         catchMethod && catchMethod()
       })
     }

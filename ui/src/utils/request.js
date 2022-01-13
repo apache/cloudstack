@@ -112,6 +112,9 @@ const installer = {
 
 const sourceToken = {
   init: () => { source = axios.CancelToken.source() },
+  isCancel: (e) => {
+    return axios.isCancel(e)
+  },
   getSource: () => {
     if (!source) sourceToken.init()
     return source
