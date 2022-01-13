@@ -238,7 +238,7 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String getProviderUrl(final Long domainId) {
-        final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
+        final String protocol = getSSLStatus(domainId) == true ? "ldaps://" : "ldap://";
         final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0, domainId);
         final StringBuilder providerUrls = new StringBuilder();
         String delim = "";
@@ -270,20 +270,20 @@ public class LdapConfiguration implements Configurable{
         return ldapSearchGroupPrinciple.valueIn(domainId);
     }
 
-    public boolean getSSLStatus() {
+    public boolean getSSLStatus(Long domainId) {
         boolean sslStatus = false;
-        if (getTrustStore() != null && getTrustStorePassword() != null) {
+        if (getTrustStore(domainId) != null && getTrustStorePassword(domainId) != null) {
             sslStatus = true;
         }
         return sslStatus;
     }
 
-    public String getTrustStore() {
-        return ldapTrustStore.value();
+    public String getTrustStore(Long domainId) {
+        return ldapTrustStore.valueIn(domainId);
     }
 
-    public String getTrustStorePassword() {
-        return ldapTrustStorePassword.value();
+    public String getTrustStorePassword(Long domainId) {
+        return ldapTrustStorePassword.valueIn(domainId);
     }
 
     public String getUsernameAttribute(final Long domainId) {

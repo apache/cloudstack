@@ -714,6 +714,7 @@ public class ApiConstants {
     public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
     public static final String VM_SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String IMAGE_STORE_UUID = "imagestoreuuid";
+    public static final String IMAGE_STORE_ID = "imagestoreid";
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
     public static final String RESERVED_IP_RANGE = "reservediprange";

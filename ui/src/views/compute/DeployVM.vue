@@ -391,6 +391,7 @@
                 </template>
               </a-step>
               <a-step
+                v-if="isUserAllowedToListSshKeys"
                 :title="this.$t('label.sshkeypairs')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
@@ -1059,6 +1060,9 @@ export default {
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     },
+    isUserAllowedToListSshKeys () {
+      return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
+    },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
     },
@@ -1129,7 +1133,9 @@ export default {
         this.vm.hostname = host.name
       }
 
-      if (this.diskSize) {
+      if (this.serviceOffering?.rootdisksize) {
+        this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
+      } else if (this.diskSize) {
         this.vm.disksizetotalgb = this.diskSize
       }
 
@@ -1475,12 +1481,18 @@ export default {
     },
     handleSubmit (e) {
       console.log('wizard submit')
+      const options = {
+        scroll: {
+          offsetTop: 90
+        }
+      }
       e.preventDefault()
       if (this.loading.deploy) return
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScroll(options, async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({
+              type: 'error',
               message: this.$t('message.license.agreements.not.accepted'),
               description: this.$t('message.step.license.agreements.continue')
             })
@@ -1646,9 +1658,9 @@ export default {
               }
             }
           }
-          if (this.securitygroupids.length > 0) {
-            deployVmData.securitygroupids = this.securitygroupids.join(',')
-          }
+        }
+        if (this.securitygroupids.length > 0) {
+          deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
         deployVmData.keypair = values.keypair
@@ -1690,7 +1702,7 @@ export default {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
                 if (vm.password) {
-                  this.$notification.success({
+                  this.$notification.error({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
                     duration: 0
@@ -2085,6 +2097,7 @@ export default {
       this.updateComputeOffering(null)
     },
     updateTemplateConfigurationOfferingDetails (offeringId) {
+      this.rootDiskSizeFixed = 0
       var offering = this.serviceOffering
       if (!offering || offering.id !== offeringId) {
         offering = _.find(this.options.serviceOfferings, (option) => option.id === offeringId)

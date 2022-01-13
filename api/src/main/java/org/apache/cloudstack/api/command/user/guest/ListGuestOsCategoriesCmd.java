@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -35,7 +34,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listOsCategories", description = "Lists all supported OS categories for this cloud.", responseObject = GuestOSCategoryResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListGuestOsCategoriesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListGuestOsCategoriesCmd.class.getName());
 
     private static final String s_name = "listoscategoriesresponse";
 

@@ -1340,6 +1340,7 @@ export default {
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)
+        params.provider = 'Linstor'
         params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup.value
       } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
         let path = this.prefillContent.primaryStorageVmfsDatacenter.value
@@ -1468,6 +1469,12 @@ export default {
           this.prefillContent.secondaryStorageKey.value.length > 0) {
           params['details[' + index.toString() + '].key'] = 'key'
           params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageKey.value
+          index++
+        }
+        if (this.prefillContent.secondaryStoragePolicy &&
+          this.prefillContent.secondaryStoragePolicy.value.length > 0) {
+          params['details[' + index.toString() + '].key'] = 'storagepolicy'
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
           index++
         }
       }

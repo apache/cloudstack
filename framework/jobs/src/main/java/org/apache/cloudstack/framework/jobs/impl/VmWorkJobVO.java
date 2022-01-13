@@ -100,6 +100,7 @@ public class VmWorkJobVO extends AsyncJobVO {
     public void setSecondaryObjectIdentifier(String secondaryObjectIdentifier) {
         this.secondaryObjectIdentifier = secondaryObjectIdentifier;
     }
+
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
@@ -112,5 +113,4 @@ public class VmWorkJobVO extends AsyncJobVO {
                 append("}");
         return sb.toString();
     }
-
 }

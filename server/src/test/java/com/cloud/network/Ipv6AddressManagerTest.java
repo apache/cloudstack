@@ -229,7 +229,7 @@ public class Ipv6AddressManagerTest {
     }
 
     @Test
-    public void setNICIPv6AddressTest() {
+    public void setNICIPv6AddressTest() throws InsufficientAddressCapacityException {
         NicProfile nic = new NicProfile();
         Network network = mock(Network.class);
         DataCenter dc = mock(DataCenter.class);

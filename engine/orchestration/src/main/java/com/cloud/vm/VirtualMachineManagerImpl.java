@@ -192,7 +192,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -357,8 +356,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private AsyncJobManager _jobMgr;
     @Inject
     private StorageManager storageMgr;
-    @Inject
-    private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     private NetworkDetailsDao networkDetailsDao;
     @Inject
@@ -3991,7 +3988,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
             removeCustomOfferingDetails(vmId);
         }
-        VMTemplateVO template = _templateDao.findById(vmForUpdate.getTemplateId());
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmForUpdate.getTemplateId());
         boolean dynamicScalingEnabled = _userVmMgr.checkIfDynamicScalingCanBeEnabled(vmForUpdate, newServiceOffering, template, vmForUpdate.getDataCenterId());
         vmForUpdate.setDynamicallyScalable(dynamicScalingEnabled);
         return _vmDao.update(vmId, vmForUpdate);
@@ -4003,9 +4000,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            // avoid re-entrance
-            VmWorkJobVO placeHolder = null;
-            placeHolder = createPlaceHolderWork(vm.getId(), network.getUuid());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId(), network.getUuid());
             try {
                 return orchestrateAddVmToNetwork(vm, network, requested);
             } finally {
@@ -4041,7 +4036,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
 
-            throw new RuntimeException("Unexpected job execution result");
+            throw new RuntimeException("null job execution result");
         }
     }
 
@@ -5412,7 +5407,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<Volume, StoragePool> volumeStorageMap = dest.getStorageForDisks();
         if (volumeStorageMap != null) {
             for (Volume vol : volumeStorageMap.keySet()) {
-                checkConcurrentJobsPerDatastoreThreshold(volumeStorageMap.get(vol));
+                checkConcurrentJobsPerDatastoreThreshhold(volumeStorageMap.get(vol));
             }
         }
 
@@ -5577,7 +5572,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
     }
 
-    private void checkConcurrentJobsPerDatastoreThreshold(final StoragePool destPool) {
+    private void checkConcurrentJobsPerDatastoreThreshhold(final StoragePool destPool) {
         final Long threshold = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
         if (threshold != null && threshold > 0) {
             long count = _jobMgr.countPendingJobs("\"storageid\":\"" + destPool.getUuid() + "\"", MigrateVMCmd.class.getName(), MigrateVolumeCmd.class.getName(), MigrateVolumeCmdByAdmin.class.getName());
@@ -5598,7 +5593,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Set<Long> uniquePoolIds = new HashSet<>(poolIds);
         for (Long poolId : uniquePoolIds) {
             StoragePoolVO pool = _storagePoolDao.findById(poolId);
-            checkConcurrentJobsPerDatastoreThreshold(pool);
+            checkConcurrentJobsPerDatastoreThreshhold(pool);
         }
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -5650,7 +5645,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VmWorkJobVO workJob = null;
         if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
             if (pendingWorkJobs.size() > 1) {
-                s_logger.warn(String.format("The number of jobs to add network %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
+                throw new CloudRuntimeException(String.format("The number of jobs to add network %s to vm %s are %d", network.getUuid(), vm.getInstanceName(), pendingWorkJobs.size()));
             }
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5685,7 +5680,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
         workJob.setSecondaryObjectIdentifier(network.getUuid());
 
-        // save work context info (there are some duplications)
+        // save work context info as there might be some duplicates
         final VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
                 VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network.getId(), requested);
         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
@@ -5699,6 +5694,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             throw e;
         }
+
         return workJob;
     }
 
@@ -6023,7 +6019,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         workJob.setStep(VmWorkJobVO.Step.Starting);
         workJob.setVmType(VirtualMachine.Type.Instance);
         workJob.setVmInstanceId(instanceId);
-        if(StringUtils.isNotBlank(secondaryObjectIdentifier)) {
+        if(org.apache.commons.lang3.StringUtils.isNotBlank(secondaryObjectIdentifier)) {
             workJob.setSecondaryObjectIdentifier(secondaryObjectIdentifier);
         }
         workJob.setInitMsid(ManagementServerNode.getManagementServerId());

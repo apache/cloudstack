@@ -2357,6 +2357,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 s_logger.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
                 isSecureBoot = true;
             }
+
+            bootMode = customParams.get(GuestDef.BootType.UEFI.toString());
         }
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
@@ -3713,10 +3715,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return null;
         }
 
-        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-            return DiskDef.DiskBus.SCSI;
-        }
-
         String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
             s_logger.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
@@ -3750,10 +3748,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator, boolean isUefiEnabled) {
-        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-            return DiskDef.DiskBus.SCSI;
-        }
-
         if (platformEmulator == null) {
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
@@ -3764,6 +3758,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
+        } else if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+            return DiskDef.DiskBus.SCSI;
         } else {
             return DiskDef.DiskBus.IDE;
         }
