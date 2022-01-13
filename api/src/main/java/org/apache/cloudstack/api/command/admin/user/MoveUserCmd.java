@@ -44,7 +44,7 @@ import javax.inject.Inject;
         since = "4.11",
         authorized = {RoleType.Admin})
 public class MoveUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(MoveUserCmd.class.getName());
 
     public static final String APINAME = "moveUser";
 

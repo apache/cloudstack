@@ -414,6 +414,18 @@
             <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
           </div>
         </div>
+
+        <div class="resource-detail-item" v-if="resource.aclid">
+          <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
+          <div class="resource-detail-item__details">
+            <span v-if="images.acl">
+              <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="deployment-unit" />
+            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
+          </div>
+        </div>
+
         <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.affinitygroup') }}</div>
           <a-icon type="swap" />
@@ -639,7 +651,7 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="!isStatic && resourceType && 'listTags' in $store.getters.apis">
+      <div class="account-center-tags" v-if="!isStatic && resourceType && tagsSupportingResourceTypes.includes(this.resourceType) && 'listTags' in $store.getters.apis">
         <a-divider/>
         <a-spin :spinning="loadingTags">
           <div class="title">{{ $t('label.tags') }}</div>
@@ -760,10 +772,12 @@ export default {
       this.showKeys = false
       this.setData()
 
-      if ('tags' in this.resource) {
-        this.tags = this.resource.tags
-      } else if (this.resourceType) {
-        this.getTags()
+      if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
+        if ('tags' in this.resource) {
+          this.tags = this.resource.tags
+        } else if (this.resourceType) {
+          this.getTags()
+        }
       }
       if ('apikey' in this.resource) {
         this.getUserKeys()
@@ -782,6 +796,12 @@ export default {
     await this.getIcons()
   },
   computed: {
+    tagsSupportingResourceTypes () {
+      return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'Network',
+        'LoadBalancer', 'PortForwardingRule', 'FirewallRule', 'SecurityGroup', 'SecurityGroupRule',
+        'PublicIpAddress', 'Project', 'Account', 'Vpc', 'NetworkACL', 'StaticRoute', 'VMSnapshot',
+        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
+    },
     name () {
       return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype

@@ -157,11 +157,12 @@ public class QuotaAlertManagerImplTest extends TestCase {
         Mockito.when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
 
         quotaAlertManager.mailSender = Mockito.mock(SMTPMailSender.class);
-        Mockito.when(quotaAlertManager.mailSender.sendMail(Mockito.anyObject())).thenReturn(Boolean.TRUE);
+        Mockito.doNothing().when(quotaAlertManager.mailSender).sendMail(Mockito.any());
 
         quotaAlertManager.sendQuotaAlert(email);
         assertTrue(email.getSendDate() != null);
-        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+
+        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyString(), Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
         Mockito.verify(quotaAlertManager.mailSender, Mockito.times(1)).sendMail(Mockito.any(SMTPMailProperties.class));
     }
 

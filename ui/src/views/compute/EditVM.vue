@@ -59,7 +59,7 @@
           v-decorator="['isdynamicallyscalable']"
           :disabled="!canDynamicScalingEnabled()" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="serviceOffering ? serviceOffering.offerha : false">
         <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
         <a-switch
           :default-checked="resource.haenable"
@@ -180,11 +180,16 @@ export default {
     fetchInstaceGroups () {
       this.groups.loading = true
       this.groups.opts = []
-      api('listInstanceGroups', {
-        account: this.$store.getters.userInfo.account,
+      const params = {
         domainid: this.$store.getters.userInfo.domainid,
         listall: true
-      }).then(json => {
+      }
+      if (this.$store.getters.project && this.$store.getters.project.id) {
+        params.projectid = this.$store.getters.project.id
+      } else {
+        params.account = this.$store.getters.userInfo.account
+      }
+      api('listInstanceGroups', params).then(json => {
         const groups = json.listinstancegroupsresponse.instancegroup || []
         groups.forEach(x => {
           this.groups.opts.push(x.name)
@@ -195,7 +200,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) return
 
         const params = {}

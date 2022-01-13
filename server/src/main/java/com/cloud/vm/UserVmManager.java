@@ -57,6 +57,8 @@ public interface UserVmManager extends UserVmService {
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
+    public  static  final String CKS_NODE = "cksnode";
+
     /**
      * @param hostId get all of the virtual machines that belong to one host.
      * @return collection of VirtualMachine.
@@ -106,6 +108,9 @@ public interface UserVmManager extends UserVmService {
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
+
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,

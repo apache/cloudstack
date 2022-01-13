@@ -29,6 +29,7 @@ public class ResizeVolumeCommand extends Command {
     private Long newSize;
     private boolean shrinkOk;
     private String vmInstance;
+    private String chainInfo;
 
     /* For managed storage */
     private boolean managed;
@@ -45,6 +46,11 @@ public class ResizeVolumeCommand extends Command {
         this.shrinkOk = shrinkOk;
         this.vmInstance = vmInstance;
         this.managed = false;
+    }
+
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance, String chainInfo) {
+        this(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        this.chainInfo = chainInfo;
     }
 
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
@@ -80,6 +86,8 @@ public class ResizeVolumeCommand extends Command {
     public boolean isManaged() { return managed; }
 
     public String get_iScsiName() {return iScsiName; }
+
+    public String getChainInfo() {return chainInfo; }
 
     /**
      * {@inheritDoc}

@@ -33,6 +33,7 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -88,7 +89,6 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 
@@ -738,7 +738,7 @@ public class NetScalerControlCenterResource implements ServerResource {
             int i = 0;
             if (temp != null) {
                 while (i < temp.length) {
-                    temp[i] = StringUtils.cleanString(temp[i]);
+                    temp[i] = com.cloud.utils.StringUtils.cleanString(temp[i]);
                     i++;
                 }
                 List<String> stringList = new ArrayList<String>();

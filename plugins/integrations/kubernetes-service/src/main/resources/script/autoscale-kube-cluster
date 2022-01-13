@@ -1,0 +1,93 @@
+#!/bin/bash -e
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+function usage() {
+    cat << USAGE
+Usage: ./autoscale-kube-cluster [OPTIONS]...
+Enables autoscaling for the kubernetes cluster.
+Arguments:
+  -i, --id string         ID of the cluster
+  -e, --enable            Enables autoscaling
+  -d, --disable           Disables autoscaling
+  -M, --maxsize number    Maximum size of the cluster
+  -m, --minsize number    Minimum size of the cluster
+Other arguments:
+  -h, --help              Display this help message and exit
+Examples:
+  ./autoscale-kube-cluster -e -M 3 -m 1
+  ./autoscale-kube-cluster -d
+USAGE
+    exit 0
+}
+ID=""
+ENABLE=""
+MINSIZE=""
+MAXSIZE=""
+while [ -n "$1" ]; do
+    case "$1" in
+        -h | --help)
+            usage
+            ;;
+        -i | --id)
+            ID=$2
+            shift 2
+            ;;
+        -e | --enable)
+            ENABLE="true"
+            shift 1
+            ;;
+        -d | --enable)
+            ENABLE="false"
+            shift 1
+            ;;
+        -M | --maxsize)
+            MAXSIZE=$2
+            shift 2
+            ;;
+        -m | --minsize)
+            MINSIZE=$2
+            shift 2
+            ;;
+        -*|*)
+            echo "ERROR: no such option $1. -h or --help for help"
+            exit 1
+            ;;
+    esac
+done
+if [ $ENABLE == "true" ] ; then
+    if [ -e /opt/autoscaler/autoscaler_tmpl.yaml ]; then
+        sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
+        /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
+        exit 0
+    else
+        mkdir -p /opt/autoscaler
+        AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
+        autoscaler_conf_file="/opt/autoscaler/autoscaler_tmpl.yaml"
+        curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
+        if [ $? -ne 0 ]; then
+            echo "Unable to connect to the internet to download the autoscaler deployment and image"
+            exit 1
+        else
+            sed -e "s/<cluster-id>/$ID/g" -e "s/<min>/$MINSIZE/g" -e "s/<max>/$MAXSIZE/g" /opt/autoscaler/autoscaler_tmpl.yaml > /opt/autoscaler/autoscaler_now.yaml
+            /opt/bin/kubectl apply -f /opt/autoscaler/autoscaler_now.yaml
+            exit 0
+        fi
+    fi
+else
+    /opt/bin/kubectl delete deployment -n kube-system cluster-autoscaler
+fi

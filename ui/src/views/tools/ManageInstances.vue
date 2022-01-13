@@ -49,15 +49,19 @@
                   v-decorator="['zoneid', {}]"
                   showSearch
                   optionFilterProp="children"
-                  :filterOption="filterOption"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
                   autoFocus
                 >
-                  <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value">
-                    <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                    <a-icon v-else style="margin-right: 5px" type="global" />
-                    {{ zoneitem.label }}
+                  <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
+                    <span>
+                      <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else style="margin-right: 5px" type="global" />
+                      {{ zoneitem.label }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>

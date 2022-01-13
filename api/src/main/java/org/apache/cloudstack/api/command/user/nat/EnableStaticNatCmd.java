@@ -39,7 +39,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "enableStaticNat", description = "Enables static NAT for given IP address", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableStaticNatCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(EnableStaticNatCmd.class.getName());
 
     private static final String s_name = "enablestaticnatresponse";
 

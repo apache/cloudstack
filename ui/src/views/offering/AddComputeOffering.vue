@@ -443,14 +443,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
-              <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="block" style="margin-right: 5px" />
-              {{ opt.path || opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -474,15 +476,17 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @select="val => fetchvSphereStoragePolicies(val)"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
-              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px"/>
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -512,6 +516,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -605,19 +610,19 @@ export default {
       this.isSystem = true
     }
     this.fetchData()
-    this.isPublic = this.isAdmin()
+    this.isPublic = isAdmin()
   },
   methods: {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      if (this.isAdmin()) {
+      if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
       }
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
@@ -709,7 +714,7 @@ export default {
       this.selectedDeployementPlanner = planner
       this.plannerModeVisible = false
       if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
-        this.plannerModeVisible = this.isAdmin()
+        this.plannerModeVisible = isAdmin()
       }
     },
     handlePlannerModeChange (val) {
@@ -731,7 +736,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

@@ -66,7 +66,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -111,7 +111,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
 
 @Component
 public class TemplateServiceImpl implements TemplateService {
@@ -765,15 +764,15 @@ public class TemplateServiceImpl implements TemplateService {
                 if (!deployAsIs) {
                     if (!diskTemplate.isBootable()) {
                         createChildDataDiskTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                        if (!diskTemplate.isIso() && Strings.isNullOrEmpty(details.get(VmDetailConstants.DATA_DISK_CONTROLLER))){
+                        if (!diskTemplate.isIso() && StringUtils.isEmpty(details.get(VmDetailConstants.DATA_DISK_CONTROLLER))){
                             details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getOvaDiskControllerDetails(diskTemplate, false));
                             details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getOvaDiskControllerDetails(diskTemplate, false));
                         }
                     } else {
                         finalizeParentTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                        if (Strings.isNullOrEmpty(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                        if (StringUtils.isEmpty(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
                             final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
-                            if (!Strings.isNullOrEmpty(rootDiskController)) {
+                            if (StringUtils.isNotEmpty(rootDiskController)) {
                                 details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
                             }
                         }

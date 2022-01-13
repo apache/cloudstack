@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A bean representing a user
@@ -252,7 +252,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String getTimezone() {
-        if (Strings.isNullOrEmpty(timezone)) {
+        if (StringUtils.isEmpty(timezone)) {
             return "UTC";
         }
         return timezone;

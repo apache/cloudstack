@@ -88,14 +88,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id">
-              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
-              {{ opt.name || opt.description }}
+            <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -118,14 +120,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex">
-              <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
-              {{ opt.name || opt.description }}
+            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -140,17 +144,11 @@
         <a-form-item
           :label="$t('label.ispublic')"
           v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
-          <a-switch
-            v-decorator="['ispublic', {
-              initialValue: false
-            }]" />
+          <a-switch v-decorator="['ispublic', { initialValue: false }]" />
         </a-form-item>
 
-        <a-form-item :label="$t('label.isfeatured')">
-          <a-switch
-            v-decorator="['isfeatured', {
-              initialValue: false
-            }]" />
+        <a-form-item :label="$t('label.isfeatured')" v-if="$store.getters.userInfo.roletype === 'Admin'">
+          <a-switch v-decorator="['isfeatured', { initialValue: false }]" />
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -309,7 +307,12 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }

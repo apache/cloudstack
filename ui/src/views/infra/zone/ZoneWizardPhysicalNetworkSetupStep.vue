@@ -141,7 +141,7 @@
       :closable="true"
       :footer="null"
       @cancel="() => { showError = false }"
-      v-ctrl-enter="showError = false"
+      v-ctrl-enter="() => { showError = false }"
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
@@ -287,10 +287,10 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
+      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled?.value || false)
     },
     networkOfferingSelected () {
       return this.prefillContent.networkOfferingSelected
@@ -475,6 +475,7 @@ export default {
 
       Object.keys(fields).forEach(key => {
         this.form.getFieldDecorator([key], { initialValue: fields[key] })
+        this.form.setFieldsValue({ [key]: fields[key] })
       })
     },
     deleteTraffic (key, traffic, $event) {
@@ -489,7 +490,7 @@ export default {
       this.emitPhysicalNetworks()
     },
     updateTrafficLabel (trafficInEdit) {
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (!err) {
           this.showEditTraffic = false
           if (this.hypervisor === 'VMware') {

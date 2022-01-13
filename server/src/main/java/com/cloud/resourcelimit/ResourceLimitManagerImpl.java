@@ -895,7 +895,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     protected long recalculateAccountResourceCount(final long accountId, final ResourceType type) {
         final Long newCount;
         if (type == Resource.ResourceType.user_vm) {
-            newCount = _userVmDao.countAllocatedVMsForAccount(accountId, VirtualMachineManager.ResoureCountRunningVMsonly.value());
+            newCount = _userVmDao.countAllocatedVMsForAccount(accountId, VirtualMachineManager.ResourceCountRunningVMsonly.value());
         } else if (type == Resource.ResourceType.volume) {
             long virtualRouterCount = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId).size();
             newCount = _volumeDao.countAllocatedVolumesForAccount(accountId) - virtualRouterCount; // don't count the volumes of virtual router
@@ -963,7 +963,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
-        if (VirtualMachineManager.ResoureCountRunningVMsonly.value())
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
             sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
         else
             sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
@@ -987,7 +987,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
-        if (VirtualMachineManager.ResoureCountRunningVMsonly.value())
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
             sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
         else
             sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});

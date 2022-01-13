@@ -48,7 +48,7 @@ public class MemStatTest {
         MemStat memStat = new MemStat();
 
         Assert.assertEquals(memStat.getTotal(), 5970161664L);
-        Assert.assertEquals(memStat.getAvailable(), 2829840384L);
+        Assert.assertEquals(memStat.getAvailable(), 3164520448L);
         Assert.assertEquals(memStat.getFree(), 160514048L);
         Assert.assertEquals(memStat.getCache(), 2669326336L);
     }

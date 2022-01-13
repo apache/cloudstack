@@ -36,6 +36,7 @@ import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -50,7 +51,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
@@ -155,7 +155,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public void setHosts(final String host) {
-        if (!Strings.isNullOrEmpty(host)) {
+        if (StringUtils.isNotEmpty(host)) {
             _host = host.split(hostLbAlgorithmSeparator)[0];
             resetHostCounter();
         }
@@ -333,7 +333,7 @@ public class AgentShell implements IAgentShell, Daemon {
         }
 
         String val = getProperty(null, preferredHostIntervalKey);
-        preferredHostCheckInterval = (Strings.isNullOrEmpty(val) ? null : Long.valueOf(val));
+        preferredHostCheckInterval = StringUtils.isEmpty(val) ? null : Long.valueOf(val);
 
         return true;
     }

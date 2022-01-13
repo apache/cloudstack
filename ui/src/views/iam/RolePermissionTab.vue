@@ -171,8 +171,14 @@ export default {
       }).finally(() => {
         this.loadingTable = false
         this.updateTable = false
+        this.updateApis()
         if (callback) callback()
       })
+    },
+    updateApis () {
+      this.apis = Object.keys(this.$store.getters.apis).sort((a, b) => a.localeCompare(b))
+      var apisSupported = this.rules?.map(rule => rule.rule) || []
+      this.apis = this.apis.filter(api => !apisSupported.includes(api))
     },
     changeOrder () {
       api('updateRolePermission', {}, 'POST', {

@@ -27,15 +27,18 @@
           showSearch
           optionFilterProp="children"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
-            :key="zone.id">
-            <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-            <a-icon v-else type="global" style="margin-right: 5px" />
-            {{ zone.name }}
+            :key="zone.id"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </div>

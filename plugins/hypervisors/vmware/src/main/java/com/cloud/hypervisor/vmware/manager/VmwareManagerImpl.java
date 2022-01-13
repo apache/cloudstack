@@ -165,7 +165,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
@@ -1274,16 +1273,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         final String oldVCenterHost = vmwareDc.getVcenterHost();
 
-        if (!Strings.isNullOrEmpty(userName)) {
+        if (StringUtils.isNotEmpty(userName)) {
             vmwareDc.setUser(userName);
         }
-        if (!Strings.isNullOrEmpty(password)) {
+        if (StringUtils.isNotEmpty(password)) {
             vmwareDc.setPassword(password);
         }
-        if (!Strings.isNullOrEmpty(vCenterHost)) {
+        if (StringUtils.isNotEmpty(vCenterHost)) {
             vmwareDc.setVcenterHost(vCenterHost);
         }
-        if (!Strings.isNullOrEmpty(vmwareDcName)) {
+        if (StringUtils.isNotEmpty(vmwareDcName)) {
             vmwareDc.setVmwareDatacenterName(vmwareDcName);
         }
         vmwareDc.setGuid(String.format("%s@%s", vmwareDc.getVmwareDatacenterName(), vmwareDc.getVcenterHost()));
@@ -1298,7 +1297,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             clusterDetails.put("username", vmwareDc.getUser());
                             clusterDetails.put("password", vmwareDc.getPassword());
                             final String clusterUrl = clusterDetails.get("url");
-                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && !Strings.isNullOrEmpty(clusterUrl)) {
+                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && StringUtils.isNotEmpty(clusterUrl)) {
                                 clusterDetails.put("url", clusterUrl.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             clusterDetailsDao.persist(cluster.getId(), clusterDetails);
@@ -1308,7 +1307,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             hostDetails.put("username", vmwareDc.getUser());
                             hostDetails.put("password", vmwareDc.getPassword());
                             final String hostGuid = hostDetails.get("guid");
-                            if (!Strings.isNullOrEmpty(hostGuid)) {
+                            if (StringUtils.isNotEmpty(hostGuid)) {
                                 hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             hostDetailsDao.persist(host.getId(), hostDetails);
