@@ -60,7 +60,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
     @Override
     public boolean isEnabled() {
-        return !roleService.isEnabled();
+        return roleService.isEnabled();
     }
 
     @Override
