@@ -70,7 +70,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         generateUuidForExistingSshKeyPairs(conn);
-        generateAnnotationPermissions(conn);
+       populateAnnotationPermissions(conn);
     }
 
     private void generateAnnotationPermissions(Connection conn) {
@@ -80,7 +80,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    private void checkAnnotationPermissionExists(Connection conn, RoleType roleType, List<String> rules) {
+    private void checkAndPersistAnnotationPermissions(Connection conn, RoleType roleType, List<String> rules) {
         LOG.debug("Checking the annotation permissions for the role: " + roleType.getId());
         for (String rule : rules) {
             LOG.debug("Checking the annotation permissions for the role: " + roleType.getId() + " and rule: " + rule);
