@@ -2280,8 +2280,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
-                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
-                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
                 if (uploadEntity.getOvfInformationTO() != null) {
                     answer.setOvfInformationTO(uploadEntity.getOvfInformationTO());
                 }
@@ -3427,12 +3425,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
                 if (info.ovfInformationTO != null) {
-                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
-                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
-                    }
-                    if (info.ovfInformationTO.getHardwareSection() != null) {
-                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
-                    }
                     uploadEntity.setOvfInformationTO(info.ovfInformationTO);
                 }
                 break;

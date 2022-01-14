@@ -20,7 +20,6 @@ package org.apache.cloudstack.storage.template;
 
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.storage.Storage;
-import com.cloud.utils.Pair;
 
 public class UploadEntity {
     private long downloadedsize;
@@ -37,8 +36,6 @@ public class UploadEntity {
     private String description;
     private long contentLength;
     private long processTimeout;
-    private Pair<String, String> guestOsInfo;
-    private String minimumHardwareVersion;
     private OVFInformationTO ovfInformationTO;
 
     public static enum ResourceType {
@@ -211,22 +208,6 @@ public class UploadEntity {
 
     public void setContentLength(long contentLength) {
         this.contentLength = contentLength;
-    }
-
-    public Pair<String, String> getGuestOsInfo() {
-        return guestOsInfo;
-    }
-
-    public void setGuestOsInfo(Pair<String, String> guestOsInfo) {
-        this.guestOsInfo = guestOsInfo;
-    }
-
-    public void setMinimumHardwareVersion(String minimumHardwareVersion) {
-        this.minimumHardwareVersion = minimumHardwareVersion;
-    }
-
-    public String getMinimumHardwareVersion() {
-        return minimumHardwareVersion;
     }
 
     public OVFInformationTO getOvfInformationTO() {

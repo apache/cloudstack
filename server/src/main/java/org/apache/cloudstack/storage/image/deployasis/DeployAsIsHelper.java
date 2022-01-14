@@ -16,21 +16,16 @@
 // under the License.
 package org.apache.cloudstack.storage.image.deployasis;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.deployasis.TemplateDeployAsIsInformationTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
-import java.util.List;
 import java.util.Map;
 
 public interface DeployAsIsHelper {
 
-    boolean persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer, TemplateDataStoreVO tmpltStoreVO);
+    boolean persistTemplateOVFInformationAndUpdateGuestOS(long templateId, OVFInformationTO ovfInformationTO, TemplateDataStoreVO tmpltStoreVO);
     Map<String, String> getVirtualMachineDeployAsIsProperties(VirtualMachineProfile vmId);
     Map<Integer, String> getAllocatedVirtualMachineNicsAdapterMapping(VirtualMachineProfile vm, NicTO[] nics);
-    Long retrieveTemplateGuestOsIdFromGuestOsInfo(long templateId, String guestOsType, String guestOsDescription,
-                                                  String minimumHardwareVersion);
-    void persistTemplateDeployAsIsInformationTOList(long templateId, List<? extends TemplateDeployAsIsInformationTO> informationTOList);
 }
