@@ -1542,7 +1542,7 @@ export default {
       return key.split('.').join('\\002E')
     },
     updateSecurityGroups (securitygroupids) {
-      this.securitygroupids = securitygroupids
+      this.securitygroupids = securitygroupids || []
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
