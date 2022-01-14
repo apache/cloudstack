@@ -18,7 +18,7 @@
 
 ---
 users:
-  - name: core
+  - name: cloud
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     ssh_authorized_keys:
@@ -31,7 +31,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -118,7 +118,7 @@ write_files:
               fi
               retval=0
               set +e
-              docker load < "${BINARIES_DIR}/docker/$line"
+              ctr image import "${BINARIES_DIR}/docker/$line"
               retval=$?
               set -e
               if [ $retval -eq 0 ]; then
@@ -165,7 +165,7 @@ write_files:
       fi
 
       systemctl enable kubelet && systemctl start kubelet
-      modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+      modprobe overlay && modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
 
       if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
         crucial_cmd_attempts=1
@@ -176,7 +176,7 @@ write_files:
           fi
           retval=0
           set +e
-          kubeadm config images pull
+          kubeadm config images pull --cri-socket /run/containerd/containerd.sock
           retval=$?
           set -e
           if [ $retval -eq 0 ]; then
@@ -192,7 +192,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -210,16 +210,16 @@ write_files:
       fi
       kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --discovery-token-unsafe-skip-ca-verification
 
-      sudo touch /home/core/success
-      echo "true" > /home/core/success
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
 
   - path: /etc/systemd/system/setup-kube-system.service
     permissions: '0755'
     owner: root:root
     content: |
       [Unit]
-      Requires=docker.service
-      After=docker.service
+      Requires=containerd.service
+      After=containerd.service
 
       [Service]
       Type=simple
@@ -241,5 +241,6 @@ write_files:
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
+  - chown -R cloud:cloud /home/cloud/.ssh
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
