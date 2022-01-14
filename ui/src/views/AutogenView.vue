@@ -787,7 +787,7 @@ export default {
         return
       }
 
-      if (!this.columnKeys || this.columnKeys.length === 0) {
+      if (store.getters.apis[this.apiName].response && (!this.columnKeys || this.columnKeys.length === 0)) {
         for (const field of store.getters.apis[this.apiName].response) {
           this.columnKeys.push(field.name)
         }

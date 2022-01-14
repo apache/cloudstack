@@ -52,7 +52,7 @@ public class ListApisCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "API name")
     private String name;
 
-    @Parameter(name = ApiConstants.TRIM, type = CommandType.BOOLEAN, description = "To return response parameter in API response or not", since = "4.16.1")
+    @Parameter(name = ApiConstants.TRIM, type = CommandType.BOOLEAN, description = "To return only API names or not", since = "4.16.1")
     private Boolean trim;
 
     @Override

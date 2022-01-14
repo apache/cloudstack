@@ -217,13 +217,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         if (!trim) {
             return response;
         }
-        ApiDiscoveryResponse r = new ApiDiscoveryResponse();
-        r.setName(response.getName());
-        r.setDescription(response.getDescription());
-        r.setSince(response.getSince());
-        r.setAsync(response.getAsync());
-        r.setRelated(response.getRelated());
-        r.setParams(response.getParams());
+        ApiDiscoveryResponse r = new ApiDiscoveryResponse(response.getName());
         r.setObjectName(response.getObjectName());
         return r;
     }

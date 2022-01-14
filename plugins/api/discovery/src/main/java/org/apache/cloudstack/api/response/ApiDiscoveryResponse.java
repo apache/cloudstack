@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ApiDiscoveryResponse extends BaseResponse {
@@ -57,6 +58,10 @@ public class ApiDiscoveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "response field type")
     private String type;
+
+    public ApiDiscoveryResponse(String name) {
+        this.name = name;
+    }
 
     public ApiDiscoveryResponse() {
         params = new HashSet<ApiParameterResponse>();
