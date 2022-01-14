@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.image.deployasis;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
