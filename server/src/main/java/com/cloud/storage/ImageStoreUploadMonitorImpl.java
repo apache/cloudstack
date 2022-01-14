@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -25,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.OVFInformationTO;
+import com.cloud.agent.api.to.deployasis.TemplateDeployAsIsInformationTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -424,6 +427,15 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     templateUpdate.setGuestOSId(guestOsId);
                                 } catch (CloudRuntimeException e) {
                                     s_logger.error("Could not map the guest OS to a CloudStack guest OS", e);
+                                }
+                                OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
+                                if (ovfInformationTO != null) {
+                                    s_logger.debug("Receiving ovfInformation TO");
+                                    List<List<? extends TemplateDeployAsIsInformationTO>> informationList = Arrays.asList(ovfInformationTO.getNetworks(), ovfInformationTO.getProperties());
+                                    for (List<? extends TemplateDeployAsIsInformationTO> infoList : informationList) {
+                                        s_logger.debug("Persisting information " + infoList.getClass());
+                                        deployAsIsHelper.persistTemplateDeployAsIsInformationTOList(tmpTemplate.getId(), infoList);
+                                    }
                                 }
                             }
                             _templateDao.update(tmpTemplate.getId(), templateUpdate);

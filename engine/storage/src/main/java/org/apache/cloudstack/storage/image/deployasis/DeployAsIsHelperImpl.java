@@ -337,7 +337,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         return map;
     }
 
-    private void persistTemplateDeployAsIsInformationTOList(long templateId,
+    public void persistTemplateDeployAsIsInformationTOList(long templateId,
                                                             List<? extends TemplateDeployAsIsInformationTO> informationTOList) {
         for (TemplateDeployAsIsInformationTO informationTO : informationTOList) {
             String propKey = getKeyFromInformationTO(informationTO);

@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.utils.Pair;
 
 public class UploadStatusAnswer extends Answer {
@@ -34,6 +35,7 @@ public class UploadStatusAnswer extends Answer {
     private int downloadPercent = 0;
     private Pair<String, String> guestOsInfo;
     private String minimumHardwareVersion;
+    private OVFInformationTO ovfInformationTO;
 
     protected UploadStatusAnswer() {
     }
@@ -103,5 +105,13 @@ public class UploadStatusAnswer extends Answer {
 
     public String getMinimumHardwareVersion() {
         return minimumHardwareVersion;
+    }
+
+    public OVFInformationTO getOvfInformationTO() {
+        return ovfInformationTO;
+    }
+
+    public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
+        this.ovfInformationTO = ovfInformationTO;
     }
 }

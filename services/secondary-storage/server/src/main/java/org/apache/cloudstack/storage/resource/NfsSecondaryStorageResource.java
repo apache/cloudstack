@@ -2282,6 +2282,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setDownloadPercent(100);
                 answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
                 answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
+                if (uploadEntity.getOvfInformationTO() != null) {
+                    answer.setOvfInformationTO(uploadEntity.getOvfInformationTO());
+                }
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -3430,6 +3433,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     if (info.ovfInformationTO.getHardwareSection() != null) {
                         uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
                     }
+                    uploadEntity.setOvfInformationTO(info.ovfInformationTO);
                 }
                 break;
             }
