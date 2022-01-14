@@ -18,19 +18,23 @@
  */
 package com.cloud.utils;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.PBEStringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 public class EncryptionUtil {
     public static final Logger s_logger = Logger.getLogger(EncryptionUtil.class.getName());
@@ -68,6 +72,16 @@ public class EncryptionUtil {
         } catch (NoSuchAlgorithmException | InvalidKeyException | UnsupportedEncodingException e) {
             s_logger.error("exception occurred which encoding the data." + e.getMessage());
             throw new CloudRuntimeException("unable to generate signature", e);
+        }
+    }
+
+    public static String calculateChecksum(File file) {
+        try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
+            return DigestUtils.md5Hex(is);
+        } catch (IOException e) {
+            String errMsg = "Failed to calculate template checksum";
+            s_logger.error(errMsg, e);
+            throw new CloudRuntimeException(errMsg, e);
         }
     }
 }
