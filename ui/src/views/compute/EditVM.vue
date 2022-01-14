@@ -67,7 +67,7 @@
         </template>
         <a-switch v-model:checked="form.isdynamicallyscalable" />
       </a-form-item>
-      <a-form-item name="haenable" ref="haenable">
+      <a-form-item name="haenable" ref="haenable" v-if="serviceOffering ? serviceOffering.offerha : false">
         <template #label>
           <tooltip-label :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
         </template>

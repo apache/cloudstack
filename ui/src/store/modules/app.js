@@ -47,6 +47,7 @@ const app = {
     inverted: true,
     multiTab: true,
     metrics: false,
+    listAllProjects: false,
     server: '',
     vueVersion: ''
   },
@@ -100,6 +101,9 @@ const app = {
     },
     SET_METRICS: (state, bool) => {
       state.metrics = bool
+    },
+    SET_LIST_ALL_PROJECTS: (state, bool) => {
+      state.listAllProjects = bool
     },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
       vueProps.$localStorage.set(USE_BROWSER_TIMEZONE, bool)
@@ -156,6 +160,9 @@ const app = {
     },
     SetMetrics ({ commit }, bool) {
       commit('SET_METRICS', bool)
+    },
+    SetListAllProjects ({ commit }, bool) {
+      commit('SET_LIST_ALL_PROJECTS', bool)
     },
     SetUseBrowserTimezone ({ commit }, bool) {
       commit('SET_USE_BROWSER_TIMEZONE', bool)

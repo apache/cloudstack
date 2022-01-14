@@ -34,6 +34,24 @@ export default {
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'resources',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
+    },
+    {
+      name: 'limits',
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
+    },
+    {
+      name: 'certificate',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SSLCertificateTab.vue')))
+    },
+    {
+      name: 'settings',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
+      show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
     }
   ],
   actions: [

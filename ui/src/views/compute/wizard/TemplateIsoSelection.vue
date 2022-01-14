@@ -64,10 +64,6 @@ export default {
       type: String,
       default: ''
     },
-    selected: {
-      type: String,
-      default: ''
-    },
     loading: {
       type: Boolean,
       default: false
