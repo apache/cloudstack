@@ -754,9 +754,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         //Only when the type is instance VM and not explicitly dedicated.
         if (vm.getType() == VirtualMachine.Type.User && !isExplicit) {
             //add explicitly dedicated resources in avoidList
-
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("adding pods to avoid lists for non-exlicit vm deployment: " + allPodsInDc);
+            }
             avoids.addPodList(allPodsInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("adding clusters to avoid lists for non-exlicit vm deployment: " + allClustersInDc);
+            }
             avoids.addClusterList(allClustersInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("adding hosts to avoid lists for non-exlicit vm deployment: " + allHostsInDc);
+            }
             avoids.addHostList(allHostsInDc);
         }
 
@@ -835,8 +843,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
 
             //Add in avoid list or no addition if no dedication
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("adding pods to avoid lists: " + allPodsInDc);
+            }
             avoids.addPodList(allPodsInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("adding clusters to avoid lists: " + allClustersInDc);
+            }
             avoids.addClusterList(allClustersInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("adding hosts to avoid lists: " + allHostsInDc);
+            }
             avoids.addHostList(allHostsInDc);
         }
     }
