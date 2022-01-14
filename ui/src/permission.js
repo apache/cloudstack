@@ -75,9 +75,6 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
-              if (!apis.listUsers.params) {
-                store.dispatch('GetApis')
-              }
             })
           })
           .catch(() => {

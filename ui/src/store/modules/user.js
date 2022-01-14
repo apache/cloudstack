@@ -230,6 +230,24 @@ const user = {
           }).catch(error => {
             reject(error)
           })
+          api('listApis').then(response => {
+            const apis = {}
+            const apiList = response.listapisresponse.api
+            for (var idx = 0; idx < apiList.length; idx++) {
+              const api = apiList[idx]
+              const apiName = api.name
+              apis[apiName] = {
+                params: api.params,
+                response: api.response
+              }
+            }
+            commit('SET_APIS', apis)
+            store.dispatch('GenerateRoutes', { apis }).then(() => {
+              router.addRoutes(store.getters.addRouters)
+            })
+          }).catch(error => {
+            reject(error)
+          })
         }
 
         api('listUsers', { username: Cookies.get('username') }).then(response => {
@@ -261,28 +279,6 @@ const user = {
           const cloudian = response.cloudianisenabledresponse.cloudianisenabled || {}
           commit('SET_CLOUDIAN', cloudian)
         }).catch(ignored => {
-        })
-      })
-    },
-
-    GetApis ({ commit }) {
-      return new Promise((resolve, reject) => {
-        console.log('Retrieving APIs with full response')
-        api('listApis').then(response => {
-          const apis = {}
-          const apiList = response.listapisresponse.api
-          for (var idx = 0; idx < apiList.length; idx++) {
-            const api = apiList[idx]
-            const apiName = api.name
-            apis[apiName] = {
-              params: api.params,
-              response: api.response
-            }
-          }
-          commit('SET_APIS', apis)
-          resolve(apis)
-        }).catch(error => {
-          reject(error)
         })
       })
     },
