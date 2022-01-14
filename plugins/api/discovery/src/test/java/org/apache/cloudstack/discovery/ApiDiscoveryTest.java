@@ -85,6 +85,7 @@ public class ApiDiscoveryTest {
         s_discoveryService._apiAccessCheckers = mock(List.class);
         s_discoveryService._services = mock(List.class);
 
+        when(s_apiChecker.isEnabled()).thenReturn(true);
         when(s_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
         when(s_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
         when(s_discoveryService._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(s_apiChecker).iterator());
@@ -143,7 +144,7 @@ public class ApiDiscoveryTest {
         if (responses != null) {
             assertTrue("No. of response items > 2", responses.getCount().intValue() == 2);
             for (ApiDiscoveryResponse response : responses.getResponses()) {
-                assertTrue("API response param is not empty", response.getApiResponse().isEmpty());
+                assertTrue("API response param is not empty", response.getApiResponse() == null);
             }
         }
     }
