@@ -248,6 +248,7 @@ export default {
     },
     fetchAccount (domainid) {
       this.accountList = []
+      this.form.setFieldsValue({ account: null })
       this.loadingAccount = true
       var params = { listAll: true, showicon: true }
       if (domainid) {
