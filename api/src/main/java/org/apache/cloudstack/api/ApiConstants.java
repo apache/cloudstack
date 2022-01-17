@@ -229,6 +229,7 @@ public class ApiConstants {
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
+    public static final String ISO_ID = "isoid";
     public static final String ISO_GUEST_OS_NONE = "None";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
@@ -263,7 +264,6 @@ public class ApiConstants {
     public static final String NEW_END_IP = "newendip";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
-    public static final String ISO_ID = "isoid";
     public static final String IS_SYSTEM_OFFERING = "issystem";
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
