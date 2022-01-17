@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
@@ -34,6 +35,10 @@ import com.cloud.vm.NicProfile;
 public interface Ipv6Service extends PluggableService {
 
     public static final int IPV6_SLAAC_CIDR_NETMASK = 64;
+
+    Pair<Integer, Integer> getUsedTotalIpv6SubnetForPrefix(DataCenterGuestIpv6Prefix prefix);
+
+    Pair<Integer, Integer> getUsedTotalIpv6SubnetForZone(long zoneId);
 
     Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException;
 

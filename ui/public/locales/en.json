@@ -1188,6 +1188,7 @@
 "label.ipv4.dns2": "IPv4 DNS2",
 "label.ipv6.dns1": "IPv6 DNS1",
 "label.ipv6.dns2": "IPv6 DNS2",
+"label.ipv6.subnets": "IPv6 Subnets",
 "label.iqn": "Target IQN",
 "label.is.in.progress": "is in progress",
 "label.is.redundant.router": "Redundant",

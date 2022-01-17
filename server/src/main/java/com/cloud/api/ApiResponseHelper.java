@@ -1268,6 +1268,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPrefix(prefix.getPrefix());
         DataCenter dc = ApiDBUtils.findZoneById(prefix.getDataCenterId());
         response.setZoneId(dc.getUuid());
+        Pair<Integer, Integer> usedTotal = ipv6Service.getUsedTotalIpv6SubnetForPrefix(prefix);
+        int used = usedTotal.first();
+        int total = usedTotal.second();
+        response.setUsedSubnets(used);
+        response.setAvailableSubnets(total - used);
+        response.setTotalSubnets(total);
         response.setCreated(prefix.getCreated());
         return response;
     }

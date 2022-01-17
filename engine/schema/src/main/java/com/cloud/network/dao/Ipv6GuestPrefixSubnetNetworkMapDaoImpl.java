@@ -36,7 +36,7 @@ import com.cloud.utils.db.SearchCriteria;
 @DB
 public class Ipv6GuestPrefixSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv6GuestPrefixSubnetNetworkMapVO, Long> implements Ipv6GuestPrefixSubnetNetworkMapDao {
 
-    protected SearchBuilder<Ipv6GuestPrefixSubnetNetworkMapVO> FreeSubnetSearch;
+    protected SearchBuilder<Ipv6GuestPrefixSubnetNetworkMapVO> PrefixStateSearch;
     protected SearchBuilder<Ipv6GuestPrefixSubnetNetworkMapVO> PrefixIdSearch;
     protected SearchBuilder<Ipv6GuestPrefixSubnetNetworkMapVO> NetworkIdSearch;
     protected SearchBuilder<Ipv6GuestPrefixSubnetNetworkMapVO> SubnetSearch;
@@ -44,10 +44,10 @@ public class Ipv6GuestPrefixSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv6G
 
     @PostConstruct
     public void init() {
-        FreeSubnetSearch = createSearchBuilder();
-        FreeSubnetSearch.and("prefixId", FreeSubnetSearch.entity().getPrefixId(), SearchCriteria.Op.EQ);
-        FreeSubnetSearch.and("state", FreeSubnetSearch.entity().getState(), SearchCriteria.Op.EQ);
-        FreeSubnetSearch.done();
+        PrefixStateSearch = createSearchBuilder();
+        PrefixStateSearch.and("prefixId", PrefixStateSearch.entity().getPrefixId(), SearchCriteria.Op.EQ);
+        PrefixStateSearch.and("state", PrefixStateSearch.entity().getState(), SearchCriteria.Op.IN);
+        PrefixStateSearch.done();
         PrefixIdSearch = createSearchBuilder();
         PrefixIdSearch.and("prefixId", PrefixIdSearch.entity().getPrefixId(), SearchCriteria.Op.EQ);
         PrefixIdSearch.done();
@@ -63,10 +63,19 @@ public class Ipv6GuestPrefixSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv6G
     }
 
     @Override
-    public Ipv6GuestPrefixSubnetNetworkMapVO findFirstAvailable(long prefixId) {
-        SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = FreeSubnetSearch.create();
+    public List<Ipv6GuestPrefixSubnetNetworkMapVO> listUsedByPrefix(long prefixId) {
+        SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = PrefixStateSearch.create();
         sc.setParameters("prefixId", prefixId);
-        sc.setParameters("state", Ipv6GuestPrefixSubnetNetworkMap.State.Free);
+        sc.setParameters("state", (Object[]) new Ipv6GuestPrefixSubnetNetworkMap.State[]{Ipv6GuestPrefixSubnetNetworkMap.State.Allocated, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating});
+        Filter searchFilter = new Filter(Ipv6GuestPrefixSubnetNetworkMapVO.class, "id", true, null, 1L);
+        return listBy(sc, searchFilter);
+    }
+
+    @Override
+    public Ipv6GuestPrefixSubnetNetworkMapVO findFirstAvailable(long prefixId) {
+        SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = PrefixStateSearch.create();
+        sc.setParameters("prefixId", prefixId);
+        sc.setParameters("state", (Object[]) new Ipv6GuestPrefixSubnetNetworkMap.State[]{Ipv6GuestPrefixSubnetNetworkMap.State.Free});
         Filter searchFilter = new Filter(Ipv6GuestPrefixSubnetNetworkMapVO.class, "id", true, null, 1L);
         List<Ipv6GuestPrefixSubnetNetworkMapVO> list = listBy(sc, searchFilter);
         return CollectionUtils.isNotEmpty(list) ? list.get(0) : null;

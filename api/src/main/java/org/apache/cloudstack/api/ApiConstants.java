@@ -34,6 +34,7 @@ public class ApiConstants {
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String AVAILABLE = "available";
+    public static final String AVAILABLE_SUBNETS = "availablesubnets";
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
@@ -262,6 +263,7 @@ public class ApiConstants {
     public static final String NEW_END_IP = "newendip";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
+    public static final String ISO_ID = "isoid";
     public static final String IS_SYSTEM_OFFERING = "issystem";
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
@@ -376,15 +378,16 @@ public class ApiConstants {
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
-    public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
+    public static final String TOTAL_SUBNETS = "totalsubnets";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
+    public static final String USED_SUBNETS = "usedsubnets";
     public static final String USER_DATA = "userdata";
     public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";

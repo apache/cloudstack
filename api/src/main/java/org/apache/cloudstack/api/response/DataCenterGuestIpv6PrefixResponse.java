@@ -41,6 +41,18 @@ public class DataCenterGuestIpv6PrefixResponse extends BaseResponse {
     @Param(description = "id of zone to which the IPv6 prefix belongs to." )
     private String zoneId;
 
+    @SerializedName(ApiConstants.USED_SUBNETS)
+    @Param(description = "count of the used IPv6 subnets for the prefix." )
+    private Integer usedSubnets;
+
+    @SerializedName(ApiConstants.AVAILABLE_SUBNETS)
+    @Param(description = "count of the available IPv6 subnets for the prefix." )
+    private Integer availableSubnets;
+
+    @SerializedName(ApiConstants.TOTAL_SUBNETS)
+    @Param(description = "count of the total IPv6 subnets for the prefix." )
+    private Integer totalSubnets;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = " date when this IPv6 prefix was created." )
     private Date created;
@@ -55,6 +67,18 @@ public class DataCenterGuestIpv6PrefixResponse extends BaseResponse {
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setUsedSubnets(Integer usedSubnets) {
+        this.usedSubnets = usedSubnets;
+    }
+
+    public void setAvailableSubnets(Integer availableSubnets) {
+        this.availableSubnets = availableSubnets;
+    }
+
+    public void setTotalSubnets(Integer totalSubnets) {
+        this.totalSubnets = totalSubnets;
     }
 
     public void setCreated(Date created) {

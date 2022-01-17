@@ -24,6 +24,7 @@ import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface Ipv6GuestPrefixSubnetNetworkMapDao extends GenericDao<Ipv6GuestPrefixSubnetNetworkMapVO, Long> {
+    List<Ipv6GuestPrefixSubnetNetworkMapVO> listUsedByPrefix(long prefixId);
     Ipv6GuestPrefixSubnetNetworkMapVO findFirstAvailable(long prefixId);
     Ipv6GuestPrefixSubnetNetworkMapVO findLast(long prefixId);
     Ipv6GuestPrefixSubnetNetworkMapVO findByNetworkId(long networkId);

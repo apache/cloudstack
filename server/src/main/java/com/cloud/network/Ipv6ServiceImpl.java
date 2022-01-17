@@ -42,6 +42,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
@@ -151,6 +152,32 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         cmdList.add(UpdateIpv6FirewallRuleCmd.class);
         cmdList.add(DeleteIpv6FirewallRuleCmd.class);
         return cmdList;
+    }
+
+    @Override
+    public Pair<Integer, Integer> getUsedTotalIpv6SubnetForPrefix(DataCenterGuestIpv6Prefix prefix) {
+        List<Ipv6GuestPrefixSubnetNetworkMapVO> usedSubnets = ipv6GuestPrefixSubnetNetworkMapDao.listUsedByPrefix(prefix.getId());
+        final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
+        Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+        int total = 0;
+        while(splits.hasNext()) {
+            total++;
+            splits.next();
+        }
+        return new Pair<>(usedSubnets.size(), total);
+    }
+
+    @Override
+    public Pair<Integer, Integer> getUsedTotalIpv6SubnetForZone(long zoneId) {
+        int used = 0;
+        int total = 0;
+        List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+        for (DataCenterGuestIpv6PrefixVO prefix : prefixes) {
+            Pair<Integer, Integer> usedTotal = getUsedTotalIpv6SubnetForPrefix(prefix);
+            used += usedTotal.first();
+            total += usedTotal.second();
+        }
+        return new Pair<>(used, total);
     }
 
     public Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException {

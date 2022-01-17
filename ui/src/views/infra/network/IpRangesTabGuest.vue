@@ -35,6 +35,9 @@
       :rowKey="record => record.id + record.prefix"
       :pagination="false"
     >
+      <template slot="allocated" slot-scope="record">
+        {{ record.usedsubnets + '/' + record.totalsubnets }}
+      </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
           <tooltip-button
@@ -198,6 +201,10 @@ export default {
           dataIndex: 'prefix'
         },
         {
+          title: this.$t('label.allocated'),
+          scopedSlots: { customRender: 'allocated' }
+        },
+        {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
@@ -212,7 +219,7 @@ export default {
     this.fetchData()
   },
   watch: {
-    network (newItem, oldItem) {
+    resource (newItem, oldItem) {
       if (!newItem || !newItem.id) {
         return
       }
