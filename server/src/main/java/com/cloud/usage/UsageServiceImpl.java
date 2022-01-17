@@ -179,7 +179,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
             accountId = GetAccountIdFromProject(projectId);
             projectRequested = true;
-        } else if ((accountId == null) && (accountName != null) && (domainId != null)) {
+        } else if ((accountId == null) && (StringUtils.isNotBlank(accountName)) && (domainId != null)) {
             accountId = getAccountIdFromDomainPlusName(domainId, accountName, caller);
         }
 
