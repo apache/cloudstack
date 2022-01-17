@@ -48,6 +48,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "update_parameters", updatable = true)
     protected boolean updateParameters = true;
 
+    @Column(name = "user_vm_type", updatable = true)
+    private String userVmType;
+
     transient String password;
 
     @Override
@@ -124,6 +127,14 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     public boolean isUpdateParameters() {
         return updateParameters;
+    }
+
+    public String getUserVmType() {
+        return userVmType;
+    }
+
+    public void setUserVmType(String userVmType) {
+        this.userVmType = userVmType;
     }
 
     @Override

@@ -22,6 +22,7 @@ import com.cloud.utils.db.GenericDao;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByPodId(long podId);
@@ -33,6 +34,8 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByZoneId(long zoneId);
 
     List<HypervisorType> getAvailableHypervisorInZone(Long zoneId);
+
+    Set<HypervisorType> getDistictAvailableHypervisorsAcrossClusters();
 
     List<ClusterVO> listByDcHyType(long dcId, String hyType);
 

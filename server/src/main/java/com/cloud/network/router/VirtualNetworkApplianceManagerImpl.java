@@ -168,6 +168,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.OpRouterMonitorServiceVO;
@@ -349,6 +350,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao;
     @Inject private RouterHealthCheckResultDao routerHealthCheckResultDao;
     @Inject private LBStickinessPolicyDao lbStickinessPolicyDao;
+    @Inject private NetworkServiceMapDao _ntwkSrvcDao;
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
@@ -1775,6 +1777,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             SearchCriteria<UserVmJoinVO> scvm = sbvm.create();
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
+            boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
+            boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
             for (UserVmJoinVO vm : vms) {
                 if (vm.getState() != VirtualMachine.State.Running) {
                     continue;
@@ -1782,7 +1786,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
-                        .append(",ip=").append(vm.getIpAddress()).append(";");
+                        .append(",ip=").append(vm.getIpAddress())
+                        .append(",dhcp=").append(isDhcpSupported)
+                        .append(",dns=").append(isDnsSupported).append(";");
                 updateWithPortForwardingRules(routerJoinVO, vm, portData);
             }
             updateWithLbRules(routerJoinVO, loadBalancingData);
@@ -1939,6 +1945,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
             buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         NicProfile controlNic = null;
         String defaultDns1 = null;

@@ -420,7 +420,7 @@ public class LibvirtComputingResourceTest {
     public void testCreateDevicesWithSCSIDisk() {
         VirtualMachineTO to = createDefaultVM(false);
         to.setDetails(new HashMap<>());
-        libvirtComputingResourceSpy._guestCpuArch = "aarch64";
+        to.setPlatformEmulator("Other PV Virtio-SCSI");
 
         GuestDef guest = new GuestDef();
         guest.setGuestType(GuestType.KVM);
@@ -627,7 +627,7 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy._videoRam = 200;
         libvirtComputingResourceSpy._videoHw = "vGPU";
 
-        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef();
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
         assertXpath(domainDoc, "/video/model/@type", "vGPU");
         assertXpath(domainDoc, "/video/model/@vram", "200");

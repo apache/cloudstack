@@ -30,7 +30,18 @@ mocks = {
     error: jest.fn((message) => {})
   },
   $notification: {
-    error: jest.fn((message) => {})
+    error: jest.fn((option) => {
+      return option
+    }),
+    info: jest.fn((option) => {
+      return option
+    }),
+    success: jest.fn((option) => {
+      return option
+    }),
+    warning: jest.fn((option) => {
+      return option
+    })
   },
   $pollJob: jest.fn((obj) => {
     switch (obj.jobId) {
@@ -611,7 +622,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('check $pollJob have successMethod() is called with isUserVm is false', async (done) => {
         const mockData = {
-          migratevirtualmachineresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id-case-2'
           },
           queryasyncjobresultresponse: {
@@ -660,7 +671,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('check $pollJob have errorMethod() is called', async (done) => {
         const mockData = {
-          migratevirtualmachinewithvolumeresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id-case-3'
           },
           queryasyncjobresultresponse: {
@@ -700,7 +711,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
       it('check $pollJob have catchMethod() is called', async (done) => {
         const mockData = {
-          migratevirtualmachinewithvolumeresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id-case-4'
           }
         }

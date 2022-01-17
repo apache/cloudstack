@@ -516,6 +516,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -609,19 +610,19 @@ export default {
       this.isSystem = true
     }
     this.fetchData()
-    this.isPublic = this.isAdmin()
+    this.isPublic = isAdmin()
   },
   methods: {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      if (this.isAdmin()) {
+      if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
       }
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
@@ -713,7 +714,7 @@ export default {
       this.selectedDeployementPlanner = planner
       this.plannerModeVisible = false
       if (this.selectedDeployementPlanner === 'ImplicitDedicationPlanner') {
-        this.plannerModeVisible = this.isAdmin()
+        this.plannerModeVisible = isAdmin()
       }
     },
     handlePlannerModeChange (val) {
@@ -735,7 +736,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

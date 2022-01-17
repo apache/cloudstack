@@ -189,7 +189,7 @@ public class LDAPConfigCmd extends BaseCmd {
             List<LDAPConfigResponse> responses = new ArrayList<LDAPConfigResponse>();
 
             if (result.second() > 0) {
-                boolean useSSlConfig = _ldapConfiguration.getSSLStatus();
+                boolean useSSlConfig = _ldapConfiguration.getSSLStatus(null);
                 String searchBaseConfig = _ldapConfiguration.getBaseDn(null);
                 String bindDnConfig = _ldapConfiguration.getBindPrincipal(null);
                 for (LdapConfigurationVO ldapConfigurationVO : result.first()) {

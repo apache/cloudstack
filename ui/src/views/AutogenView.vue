@@ -39,6 +39,13 @@
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-switch
+                  v-if="!projectView && hasProjectId"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
+                  :checked="$store.getters.listAllProjects"
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
                   <template slot="title">
                     {{ $t('label.filterby') }}
@@ -269,7 +276,7 @@
                   }"
                   :autoFocus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option key="" label="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                     <div>
                       <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
@@ -407,7 +414,8 @@
         :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData" />
+        @refresh="this.fetchData"
+        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
         style="margin-top: 10px"
@@ -503,6 +511,7 @@ export default {
       showAction: false,
       dataView: false,
       projectView: false,
+      hasProjectId: false,
       selectedFilter: '',
       filters: [],
       searchFilters: [],
@@ -600,6 +609,7 @@ export default {
     if ('projectid' in this.$route.query) {
       this.switchProject(this.$route.query.projectid)
     }
+    this.setModalWidthByScreen()
   },
   beforeRouteUpdate (to, from, next) {
     this.currentPath = this.$route.fullPath
@@ -631,6 +641,9 @@ export default {
       }
     },
     '$store.getters.metrics' (oldVal, newVal) {
+      this.fetchData()
+    },
+    '$store.getters.listAllProjects' (oldVal, newVal) {
       this.fetchData()
     }
   },
@@ -738,6 +751,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -758,7 +772,7 @@ export default {
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
-            this.columnKeys = columns()
+            this.columnKeys = columns(this.$store.getters)
           } else {
             this.columnKeys = columns
           }
@@ -829,9 +843,12 @@ export default {
         }
       }
 
+      if (this.$store.getters.listAllProjects && !this.projectView) {
+        params.projectid = '-1'
+      }
+
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
 
       if (this.$showIcon()) {
         params.showIcon = true
@@ -951,13 +968,31 @@ export default {
       } else {
         this.modalWidth = '30vw'
       }
+
+      this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
       const self = this
       this.form = this.$form.createForm(this)
       this.formModel = {}
       if (action.component && action.api && !action.popup) {
-        this.$router.push({ name: action.api })
+        const query = {}
+        if (this.$route.path.startsWith('/vm')) {
+          switch (true) {
+            case ('templateid' in this.$route.query):
+              query.templateid = this.$route.query.templateid
+              break
+            case ('isoid' in this.$route.query):
+              query.isoid = this.$route.query.isoid
+              break
+            case ('networkid' in this.$route.query):
+              query.networkid = this.$route.query.networkid
+              break
+            default:
+              break
+          }
+        }
+        this.$router.push({ name: action.api, query })
         return
       }
       this.currentAction = action
@@ -1006,7 +1041,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -1070,6 +1105,13 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+      } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
+        if (this.resource.type) {
+          params.guestiptype = this.resource.type
+        }
+        if (!this.resource.vpcid) {
+          params.forvpc = false
+        }
       }
       if (showIcon) {
         params.showicon = true
@@ -1099,7 +1141,6 @@ export default {
       }).catch(function (error) {
         console.log(error)
         param.loading = false
-      }).then(function () {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
@@ -1125,6 +1166,9 @@ export default {
                   duration: 0
                 })
               }
+            }
+            if ('successMethod' in action) {
+              action.successMethod(this, result)
             }
             resolve(true)
           },
@@ -1189,7 +1233,7 @@ export default {
           this.modalInfo.title = this.currentAction.label
           this.modalInfo.docHelp = this.currentAction.docHelp
         }
-        this.form.validateFields((err, values) => {
+        this.form.validateFieldsAndScroll((err, values) => {
           if (!err) {
             this.actionLoading = true
             const itemsNameMap = {}
@@ -1283,7 +1327,7 @@ export default {
     },
     execSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -1516,7 +1560,7 @@ export default {
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
           callback()
         } else if (value && this.confirmDirty) {
-          form.validateFields(['confirmpassword'], { force: true })
+          form.validateFieldsAndScroll(['confirmpassword'], { force: true })
           callback()
         } else {
           callback()
@@ -1524,13 +1568,18 @@ export default {
       } else {
         callback()
       }
+    },
+    setModalWidthByScreen () {
+      const screenWidth = window.innerWidth
+      if (screenWidth <= 768) {
+        this.modalWidth = '450px'
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;

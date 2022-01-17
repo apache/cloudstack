@@ -137,6 +137,7 @@ public class ApiConstants {
     public static final String IP6_DNS1 = "ip6dns1";
     public static final String IP6_DNS2 = "ip6dns2";
     public static final String DOMAIN = "domain";
+    public static final String DOMAIN_DETAILS = "domaindetails";
     public static final String DOMAIN_PATH = "domainpath";
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
@@ -713,6 +714,7 @@ public class ApiConstants {
     public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
     public static final String VM_SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String IMAGE_STORE_UUID = "imagestoreuuid";
+    public static final String IMAGE_STORE_ID = "imagestoreid";
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
     public static final String RESERVED_IP_RANGE = "reservediprange";
@@ -837,11 +839,16 @@ public class ApiConstants {
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MASTER_NODES = "masternodes";
+    public static final String NODE_IDS = "nodeids";
     public static final String CONTROL_NODES = "controlnodes";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
+    public static final String SUPPORTS_AUTOSCALING = "supportsautoscaling";
+    public static final String AUTOSCALING_ENABLED = "autoscalingenabled";
+    public static final String MIN_SIZE = "minsize";
+    public static final String MAX_SIZE = "maxsize";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";
