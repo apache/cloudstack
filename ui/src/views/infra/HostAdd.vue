@@ -123,7 +123,6 @@
                 initialValue: authMethod
               }]"
               buttonStyle="solid"
-              :defaultValue="authMethod"
               @change="selected => { handleAuthMethodChange(selected.target.value) }">
               <a-radio-button value="password">
                 {{ $t('label.password') }}
@@ -322,14 +321,15 @@ export default {
       api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id || null
-        this.fetchPods()
+        this.fetchPods(this.zoneId)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
     },
-    fetchPods () {
+    fetchPods (zoneId) {
+      this.zoneId = zoneId
       this.loading = true
       api('listPods', {
         zoneid: this.zoneId
