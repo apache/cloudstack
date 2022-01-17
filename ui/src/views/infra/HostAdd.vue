@@ -320,7 +320,7 @@ export default {
       this.loading = true
       api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0].id || null
+        this.zoneId = this.zonesList[0]?.id || null
         this.fetchPods(this.zoneId)
       }).catch(error => {
         this.$notifyError(error)
@@ -335,7 +335,8 @@ export default {
         zoneid: this.zoneId
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
-        this.podId = this.podsList[0].id || null
+        this.podId = this.podsList[0]?.id || null
+        this.form.setFieldsValue({ podid: this.podId })
         this.fetchClusters()
       }).catch(error => {
         this.$notifyError(error)
@@ -351,9 +352,10 @@ export default {
         podid: this.podId
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
-        this.clusterId = this.clustersList[0].id || null
+        this.clusterId = this.clustersList[0]?.id || null
         if (this.clusterId) {
           this.handleChangeCluster(this.clusterId)
+          this.form.setFieldsValue({ clusterid: this.clusterId })
         }
       }).catch(error => {
         this.$notifyError(error)
