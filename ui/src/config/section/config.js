@@ -51,7 +51,7 @@ export default {
           label: 'label.remove.ldap',
           message: 'message.remove.ldap',
           dataView: true,
-          args: ['hostname'],
+          args: ['hostname', 'port', 'domainid'],
           mapping: {
             hostname: {
               value: (record) => { return record.hostname }
