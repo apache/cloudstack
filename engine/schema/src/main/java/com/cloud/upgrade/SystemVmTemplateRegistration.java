@@ -36,7 +36,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.upgrade.dao.BasicTemplateDataStoreDaoImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.DigestUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
@@ -726,7 +726,7 @@ public class SystemVmTemplateRegistration {
             }
 
             File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
-            String templateChecksum = EncryptionUtil.calculateChecksum(tempFile);
+            String templateChecksum = DigestUtil.calculateChecksum(tempFile);
             if (!templateChecksum.equals(NewTemplateChecksum.get(getHypervisorType(hypervisor)))) {
                 LOGGER.error(String.format("Checksum mismatch: %s != %s ", templateChecksum, NewTemplateChecksum.get(getHypervisorType(hypervisor))));
                 templatesFound = false;

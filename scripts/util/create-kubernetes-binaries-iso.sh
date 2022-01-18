@@ -136,7 +136,7 @@ while read -r line; do
     sudo ctr image pull "$line"
     image_name=`echo "$line" | grep -oE "[^/]+$"`
     sudo ctr image export "${working_dir}/docker/$image_name.tar" "$line"
-        sudo ctr image rm "$line"
+    sudo ctr image rm "$line"
 done <<< "$output"
 
 echo "Restore kubeadm permissions..."

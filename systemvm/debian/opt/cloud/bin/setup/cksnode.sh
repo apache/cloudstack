@@ -30,9 +30,14 @@ setup_k8s_node() {
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
 
     # Prevent root login
-    > /root/.ssh/authorized_keys
-    passwd -l root
+#    > /root/.ssh/authorized_keys
+#    passwd -l root
     #sed -i 's#root:x:0:0:root:/root:/bin/bash#root:x:0:0:root:/root:/sbin/nologin#' /etc/passwd
+
+    # Update containerd configuration
+    mkdir -p /etc/containerd
+    containerd config default>/etc/containerd/config.toml
+    systemctl restart containerd
 
     swapoff -a
     sudo sed -i '/ swap / s/^/#/' /etc/fstab
@@ -61,8 +66,6 @@ setup_k8s_node() {
 
     log_it "Starting cloud-init services"
     systemctl enable --now --no-block containerd
-    systemctl enable --now --no-block docker.socket
-    systemctl enable --now --no-block docker.service
     if [ -f /home/cloud/success ]; then
       systemctl stop cloud-init cloud-config cloud-final
       systemctl disable cloud-init cloud-config cloud-final
