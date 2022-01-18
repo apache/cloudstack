@@ -260,6 +260,7 @@ write_files:
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
   - containerd config default > /etc/containerd/config.toml
+  - systemctl restart containerd
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
 
