@@ -55,6 +55,12 @@ export default {
           mapping: {
             hostname: {
               value: (record) => { return record.hostname }
+            },
+            port: {
+              value: (record) => { return record.port }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
             }
           }
         }
