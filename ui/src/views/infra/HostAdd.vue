@@ -347,6 +347,12 @@ export default {
       })
     },
     fetchClusters (podId) {
+      if (!podId) {
+        this.clustersList = []
+        this.clusterId = null
+        this.form.setFieldsValue({ clusterid: this.clusterId })
+        return
+      }
       this.podId = podId
       this.loading = true
       api('listClusters', {
