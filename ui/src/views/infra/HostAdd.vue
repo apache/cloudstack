@@ -337,7 +337,7 @@ export default {
         this.podsList = response.listpodsresponse.pod || []
         this.podId = this.podsList[0]?.id || null
         this.form.setFieldsValue({ podid: this.podId })
-        this.fetchClusters()
+        this.fetchClusters(this.podId)
       }).catch(error => {
         this.$notifyError(error)
         this.podsList = []
@@ -346,16 +346,17 @@ export default {
         this.loading = false
       })
     },
-    fetchClusters () {
+    fetchClusters (podId) {
+      this.podId = podId
       this.loading = true
       api('listClusters', {
         podid: this.podId
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
         this.clusterId = this.clustersList[0]?.id || null
+        this.form.setFieldsValue({ clusterid: this.clusterId })
         if (this.clusterId) {
           this.handleChangeCluster(this.clusterId)
-          this.form.setFieldsValue({ clusterid: this.clusterId })
         }
       }).catch(error => {
         this.$notifyError(error)
