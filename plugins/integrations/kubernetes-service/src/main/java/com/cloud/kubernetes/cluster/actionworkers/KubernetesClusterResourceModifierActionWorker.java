@@ -164,6 +164,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
 
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
+
         return k8sNodeConfig;
     }
 
