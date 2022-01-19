@@ -34,7 +34,6 @@ User=cloud
 EnvironmentFile=/etc/default/cloudstack-management
 WorkingDirectory=/var/log/cloudstack/management
 PIDFile=/var/run/cloudstack-management.pid
-ExecStartPre=/bin/bash /usr/share/cloudstack-management/templates/systemvm/export-templates.sh
 ExecStart=/usr/bin/java $JAVA_DEBUG $JAVA_OPTS -cp $CLASSPATH $BOOTSTRAP_CLASS
 TimeoutSec=900
 
