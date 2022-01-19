@@ -173,7 +173,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -193,8 +193,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
-              description: description,
+              title,
+              description,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })

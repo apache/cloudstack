@@ -37,7 +37,7 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -110,7 +110,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     }
 
     private OutOfBandManagementDriver getDriver(final OutOfBandManagement outOfBandManagementConfig) {
-        if (!Strings.isNullOrEmpty(outOfBandManagementConfig.getDriver())) {
+        if (StringUtils.isNotEmpty(outOfBandManagementConfig.getDriver())) {
             final OutOfBandManagementDriver driver = outOfBandManagementDriversMap.get(outOfBandManagementConfig.getDriver());
             if (driver != null) {
                 return driver;
@@ -128,7 +128,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         }
         for (OutOfBandManagement.Option option: options.keySet()) {
             final String value = options.get(option);
-            if (Strings.isNullOrEmpty(value)) {
+            if (StringUtils.isEmpty(value)) {
                 continue;
             }
             switch (option) {
@@ -228,7 +228,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             return true;
         }
         final DataCenterDetailVO zoneDetails = dataCenterDetailsDao.findDetail(zoneId, OOBM_ENABLED_DETAIL);
-        if (zoneDetails != null && !Strings.isNullOrEmpty(zoneDetails.getValue()) && !Boolean.valueOf(zoneDetails.getValue())) {
+        if (zoneDetails != null && StringUtils.isNotEmpty(zoneDetails.getValue()) && !Boolean.valueOf(zoneDetails.getValue())) {
             return false;
         }
         return true;
@@ -239,7 +239,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             return true;
         }
         final ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(clusterId, OOBM_ENABLED_DETAIL);
-        if (clusterDetails != null && !Strings.isNullOrEmpty(clusterDetails.getValue()) && !Boolean.valueOf(clusterDetails.getValue())) {
+        if (clusterDetails != null && StringUtils.isNotEmpty(clusterDetails.getValue()) && !Boolean.valueOf(clusterDetails.getValue())) {
             return false;
         }
         return true;
@@ -376,7 +376,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             outOfBandManagementConfig = outOfBandManagementDao.persist(new OutOfBandManagementVO(host.getId()));
         }
         outOfBandManagementConfig = updateConfig(outOfBandManagementConfig, options);
-        if (Strings.isNullOrEmpty(outOfBandManagementConfig.getDriver()) || !outOfBandManagementDriversMap.containsKey(outOfBandManagementConfig.getDriver().toLowerCase())) {
+        if (StringUtils.isEmpty(outOfBandManagementConfig.getDriver()) || !outOfBandManagementDriversMap.containsKey(outOfBandManagementConfig.getDriver().toLowerCase())) {
             throw new CloudRuntimeException("Out-of-band management driver is not available. Please provide a valid driver name.");
         }
 
@@ -445,13 +445,13 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD, eventDescription = "updating out-of-band management password")
     public OutOfBandManagementResponse changePassword(final Host host, final String newPassword) {
         checkOutOfBandManagementEnabledByZoneClusterHost(host);
-        if (Strings.isNullOrEmpty(newPassword)) {
+        if (StringUtils.isEmpty(newPassword)) {
             throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as provided new-password is null or empty for %s.", host));
         }
 
         final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
         final ImmutableMap<OutOfBandManagement.Option, String> options = getOptions(outOfBandManagementConfig);
-        if (!(options.containsKey(OutOfBandManagement.Option.PASSWORD) && !Strings.isNullOrEmpty(options.get(OutOfBandManagement.Option.PASSWORD)))) {
+        if (!(options.containsKey(OutOfBandManagement.Option.PASSWORD) && StringUtils.isNotEmpty(options.get(OutOfBandManagement.Option.PASSWORD)))) {
             throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as we've no previously configured password for %s.", host));
         }
         final OutOfBandManagementDriver driver = getDriver(outOfBandManagementConfig);

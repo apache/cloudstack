@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -947,7 +947,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String nextAclRuleUuid = moveNetworkAclItemCmd.getNextAclRuleUuid();
         String previousAclRuleUuid = moveNetworkAclItemCmd.getPreviousAclRuleUuid();
 
-        if (StringUtils.isBlank(previousAclRuleUuid) && StringUtils.isBlank(nextAclRuleUuid)) {
+        if (StringUtils.isAllBlank(previousAclRuleUuid, nextAclRuleUuid)) {
             throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be blank.");
         }
 

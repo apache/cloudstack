@@ -18,12 +18,12 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.host.Host;
 import com.cloud.serializer.Param;
-import com.google.common.base.Strings;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import org.apache.commons.lang3.StringUtils;
 
 @EntityReference(value = Host.class)
 public class OutOfBandManagementResponse extends BaseResponse {
@@ -94,7 +94,7 @@ public class OutOfBandManagementResponse extends BaseResponse {
             this.setPort(outOfBandManagementConfig.getPort());
         }
         this.setUsername(outOfBandManagementConfig.getUsername());
-        if (!Strings.isNullOrEmpty(outOfBandManagementConfig.getPassword())) {
+        if (StringUtils.isNotEmpty(outOfBandManagementConfig.getPassword())) {
             this.setPassword(outOfBandManagementConfig.getPassword().substring(0, 1) + "****");
         }
     }

@@ -36,7 +36,7 @@ import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
 import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -246,7 +246,17 @@ public class OVAProcessor extends AdapterBase implements Processor {
             NodeList diskElements = new OVFHelper().getElementsByTagNameAndPrefix(ovfDoc, "Disk", "ovf");
             for (int i = 0; i < diskElements.getLength(); i++) {
                 Element disk = (Element)diskElements.item(i);
-                long diskSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
+                String diskSizeValue = disk.getAttribute("ovf:capacity");
+                long diskSize = 1;
+                try {
+                    diskSize = Long.parseLong(diskSizeValue);
+                } catch (NumberFormatException e) {
+                    // ASSUMEably the diskSize contains a property for replacement
+                    LOGGER.warn(String.format("the disksize for disk %s is not a valid number: %s", disk.getAttribute("diskId"), diskSizeValue));
+                    // TODO parse the property to get any value can not be done at registration time
+                    //  and will have to be done at deploytime, so for orchestration purposes
+                    //  we now assume, a value of one
+                }
                 String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
                 diskSize = OVFHelper.getDiskVirtualSize(diskSize, allocationUnits, ovfFileName);
                 virtualSize += diskSize;

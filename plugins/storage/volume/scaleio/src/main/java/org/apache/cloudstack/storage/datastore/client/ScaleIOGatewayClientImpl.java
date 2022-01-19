@@ -34,6 +34,7 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.storage.datastore.api.ProtectionDomain;
@@ -78,7 +79,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 
 public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     private static final Logger LOG = Logger.getLogger(ScaleIOGatewayClientImpl.class);
@@ -107,8 +107,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     public ScaleIOGatewayClientImpl(final String url, final String username, final String password,
                                     final boolean validateCertificate, final int timeout, final int maxConnections)
             throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(url), "Gateway client url cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password), "Gateway client credentials cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(url), "Gateway client url cannot be null");
+        Preconditions.checkArgument(StringUtils.isNoneEmpty(username, password), "Gateway client credentials cannot be null");
 
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
@@ -169,7 +169,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
 
             String sessionKeyInResponse = EntityUtils.toString(response.getEntity());
-            if (Strings.isNullOrEmpty(sessionKeyInResponse)) {
+            if (StringUtils.isEmpty(sessionKeyInResponse)) {
                 throw new CloudRuntimeException("Failed to create a valid session for PowerFlex Gateway " + apiURI.getHost() + " to perform API requests");
             }
 
@@ -379,8 +379,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     @Override
     public Volume createVolume(final String name, final String storagePoolId,
                                final Integer sizeInGb, final Storage.ProvisioningType volumeType) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Volume name cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(storagePoolId), "Storage pool id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(name), "Volume name cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(storagePoolId), "Storage pool id cannot be null");
         Preconditions.checkArgument(sizeInGb != null && sizeInGb > 0, "Size(GB) must be greater than 0");
 
         Volume newVolume = new Volume();
@@ -422,18 +422,18 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public Volume getVolume(String volumeId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
         return get("/instances/Volume::" + volumeId, Volume.class);
     }
 
     @Override
     public Volume getVolumeByName(String name) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Volume name cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(name), "Volume name cannot be null");
 
         Volume searchVolume = new Volume();
         searchVolume.setName(name);
         String volumeId = post("/types/Volume/instances/action/queryIdByKey", searchVolume, String.class);
-        if (!Strings.isNullOrEmpty(volumeId)) {
+        if (StringUtils.isNotEmpty(volumeId)) {
             return getVolume(volumeId.replace("\"", ""));
         }
         return null;
@@ -441,8 +441,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean renameVolume(final String volumeId, final String newName) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(newName), "New name for volume cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(newName), "New name for volume cannot be null");
 
         Boolean renameVolumeStatus = post(
                 "/instances/Volume::" + volumeId + "/action/setVolumeName",
@@ -455,7 +455,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public Volume resizeVolume(final String volumeId, final Integer sizeInGB) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
         Preconditions.checkArgument(sizeInGB != null && (sizeInGB > 0 && sizeInGB % 8 == 0),
                 "Size(GB) must be greater than 0 and in granularity of 8");
 
@@ -471,8 +471,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public Volume cloneVolume(final String sourceVolumeId, final String destVolumeName) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sourceVolumeId), "Source volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(destVolumeName), "Dest volume name cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sourceVolumeId), "Source volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(destVolumeName), "Dest volume name cannot be null");
 
         Map<String, String> snapshotMap = new HashMap<>();
         snapshotMap.put(sourceVolumeId, destVolumeName);
@@ -489,7 +489,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             final SnapshotDef snapshotDef = new SnapshotDef();
             snapshotDef.setVolumeId(volumeId);
             String snapshotName = srcVolumeDestSnapshotMap.get(volumeId);
-            if (!Strings.isNullOrEmpty(snapshotName)) {
+            if (StringUtils.isNotEmpty(snapshotName)) {
                 snapshotDef.setSnapshotName(srcVolumeDestSnapshotMap.get(volumeId));
             }
             defs.add(snapshotDef);
@@ -501,7 +501,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean revertSnapshot(final String systemId, final Map<String, String> srcSnapshotDestVolumeMap) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(systemId), "System id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(systemId), "System id cannot be null");
         Preconditions.checkArgument(srcSnapshotDestVolumeMap != null && !srcSnapshotDestVolumeMap.isEmpty(), "srcSnapshotDestVolumeMap cannot be null");
 
         //  Take group snapshot (needs additional storage pool capacity till revert operation) to keep the last state of all volumes ???
@@ -555,8 +555,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public int deleteSnapshotGroup(final String systemId, final String snapshotGroupId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(systemId), "System id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(snapshotGroupId), "Snapshot group id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(systemId), "System id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(snapshotGroupId), "Snapshot group id cannot be null");
 
         JsonNode node = post(
                 "/instances/System::" + systemId + "/action/removeConsistencyGroupSnapshots",
@@ -570,8 +570,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public Volume takeSnapshot(final String volumeId, final String snapshotVolumeName) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(snapshotVolumeName), "Snapshot name cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(snapshotVolumeName), "Snapshot name cannot be null");
 
         final SnapshotDef[] snapshotDef = new SnapshotDef[1];
         snapshotDef[0] = new SnapshotDef();
@@ -592,8 +592,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean revertSnapshot(final String sourceSnapshotVolumeId, final String destVolumeId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sourceSnapshotVolumeId), "Source snapshot volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(destVolumeId), "Destination volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sourceSnapshotVolumeId), "Source snapshot volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(destVolumeId), "Destination volume id cannot be null");
 
         Volume sourceSnapshotVolume = getVolume(sourceSnapshotVolumeId);
         if (sourceSnapshotVolume == null) {
@@ -620,8 +620,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean mapVolumeToSdc(final String volumeId, final String sdcId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sdcId), "Sdc Id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "Sdc Id cannot be null");
 
         if (isVolumeMappedToSdc(volumeId, sdcId)) {
             return true;
@@ -638,8 +638,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean mapVolumeToSdcWithLimits(final String volumeId, final String sdcId, final Long iopsLimit, final Long bandwidthLimitInKbps) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sdcId), "Sdc Id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "Sdc Id cannot be null");
         Preconditions.checkArgument(iopsLimit != null && (iopsLimit == 0 || iopsLimit > 10),
                 "IOPS limit must be 0 (unlimited) or greater than 10");
         Preconditions.checkArgument(bandwidthLimitInKbps != null && (bandwidthLimitInKbps == 0 || (bandwidthLimitInKbps > 0 && bandwidthLimitInKbps % 1024 == 0)),
@@ -668,8 +668,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean unmapVolumeFromSdc(final String volumeId, final String sdcId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sdcId), "Sdc Id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "Sdc Id cannot be null");
 
         if (isVolumeMappedToSdc(volumeId, sdcId)) {
             Boolean unmapVolumeFromSdcStatus = post(
@@ -684,7 +684,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean unmapVolumeFromAllSdcs(final String volumeId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
 
         Volume volume = getVolume(volumeId);
         if (volume == null) {
@@ -707,10 +707,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean isVolumeMappedToSdc(final String volumeId, final String sdcId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sdcId), "Sdc Id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "Sdc Id cannot be null");
 
-        if (Strings.isNullOrEmpty(volumeId) || Strings.isNullOrEmpty(sdcId)) {
+        if (StringUtils.isAnyEmpty(volumeId, sdcId)) {
             return false;
         }
 
@@ -733,7 +733,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean deleteVolume(final String volumeId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
 
         try {
             unmapVolumeFromAllSdcs(volumeId);
@@ -749,13 +749,13 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean migrateVolume(final String srcVolumeId, final String destPoolId, final int timeoutInSecs) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(srcVolumeId), "src volume id cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(destPoolId), "dest pool id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(srcVolumeId), "src volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(destPoolId), "dest pool id cannot be null");
         Preconditions.checkArgument(timeoutInSecs > 0, "timeout must be greater than 0");
 
         try {
             Volume volume = getVolume(srcVolumeId);
-            if (volume == null || Strings.isNullOrEmpty(volume.getVtreeId())) {
+            if (volume == null || StringUtils.isEmpty(volume.getVtreeId())) {
                 LOG.warn("Couldn't find the volume(-tree), can not migrate the volume " + srcVolumeId);
                 return false;
             }
@@ -819,7 +819,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     private boolean waitForVolumeMigrationToComplete(final String volumeTreeId, int waitTimeoutInSecs) {
         LOG.debug("Waiting for the migration to complete for the volume-tree " + volumeTreeId);
-        if (Strings.isNullOrEmpty(volumeTreeId)) {
+        if (StringUtils.isEmpty(volumeTreeId)) {
             LOG.warn("Invalid volume-tree id, unable to check the migration status of the volume-tree " + volumeTreeId);
             return false;
         }
@@ -848,7 +848,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     private VTreeMigrationInfo.MigrationStatus getVolumeTreeMigrationStatus(final String volumeTreeId) {
-        if (Strings.isNullOrEmpty(volumeTreeId)) {
+        if (StringUtils.isEmpty(volumeTreeId)) {
             LOG.warn("Invalid volume-tree id, unable to get the migration status of the volume-tree " + volumeTreeId);
             return null;
         }
@@ -861,7 +861,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     private boolean rollbackVolumeMigration(final String srcVolumeId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(srcVolumeId), "src volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(srcVolumeId), "src volume id cannot be null");
 
         Volume volume = getVolume(srcVolumeId);
         if (volume == null) {
@@ -911,7 +911,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     private boolean pauseVolumeMigration(final String volumeId, final boolean forced) {
-        if (Strings.isNullOrEmpty(volumeId)) {
+        if (StringUtils.isEmpty(volumeId)) {
             LOG.warn("Invalid Volume Id, Unable to pause migration of the volume " + volumeId);
             return false;
         }
@@ -943,24 +943,24 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public StoragePool getStoragePool(String poolId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(poolId), "Storage pool id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(poolId), "Storage pool id cannot be null");
         return get("/instances/StoragePool::" + poolId, StoragePool.class);
     }
 
     @Override
     public StoragePoolStatistics getStoragePoolStatistics(String poolId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(poolId), "Storage pool id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(poolId), "Storage pool id cannot be null");
         return get("/instances/StoragePool::" + poolId + "/relationships/Statistics", StoragePoolStatistics.class);
     }
 
     @Override
     public VolumeStatistics getVolumeStatistics(String volumeId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumeId), "Volume id cannot be null");
 
         Volume volume = getVolume(volumeId);
         if (volume != null) {
             String volumeTreeId = volume.getVtreeId();
-            if (!Strings.isNullOrEmpty(volumeTreeId)) {
+            if (StringUtils.isNotEmpty(volumeTreeId)) {
                 VolumeStatistics volumeStatistics = get("/instances/VTree::" + volumeTreeId + "/relationships/Statistics", VolumeStatistics.class);
                 if (volumeStatistics != null) {
                     volumeStatistics.setAllocatedSizeInKb(volume.getSizeInKb());
@@ -974,7 +974,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public String getSystemId(String protectionDomainId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(protectionDomainId), "Protection domain id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(protectionDomainId), "Protection domain id cannot be null");
 
         ProtectionDomain protectionDomain = get("/instances/ProtectionDomain::" + protectionDomainId, ProtectionDomain.class);
         if (protectionDomain != null) {
@@ -985,7 +985,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public List<Volume> listVolumesInStoragePool(String poolId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(poolId), "Storage pool id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(poolId), "Storage pool id cannot be null");
 
         Volume[] volumes = get("/instances/StoragePool::" + poolId + "/relationships/Volume", Volume[].class);
         if (volumes != null) {
@@ -1009,16 +1009,16 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public Sdc getSdc(String sdcId) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(sdcId), "Sdc id cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "Sdc id cannot be null");
         return get("/instances/Sdc::" + sdcId, Sdc.class);
     }
 
     @Override
     public Sdc getSdcByIp(String ipAddress) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(ipAddress), "IP address cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(ipAddress), "IP address cannot be null");
 
         String sdcId = post("/types/Sdc/instances/action/queryIdByKey", String.format("{\"ip\":\"%s\"}", ipAddress), String.class);
-        if (!Strings.isNullOrEmpty(sdcId)) {
+        if (StringUtils.isNotEmpty(sdcId)) {
             return getSdc(sdcId.replace("\"", ""));
         }
         return null;
@@ -1051,7 +1051,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     @Override
     public boolean isSdcConnected(String ipAddress) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(ipAddress), "IP address cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(ipAddress), "IP address cannot be null");
 
         List<Sdc> sdcs = listSdcs();
         if(sdcs != null) {

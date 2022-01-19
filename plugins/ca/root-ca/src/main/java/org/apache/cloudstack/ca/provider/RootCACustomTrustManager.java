@@ -30,7 +30,7 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.certificate.dao.CrlDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public final class RootCACustomTrustManager implements X509TrustManager {
     private static final Logger LOG = Logger.getLogger(RootCACustomTrustManager.class);
@@ -43,7 +43,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
     private Map<String, X509Certificate> activeCertMap;
 
     public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final X509Certificate caCertificate, final CrlDao crlDao) {
-        if (!Strings.isNullOrEmpty(clientAddress)) {
+        if (StringUtils.isNotEmpty(clientAddress)) {
             this.clientAddress = clientAddress.replace("/", "").split(":")[0];
         }
         this.authStrictness = authStrictness;
@@ -96,7 +96,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
             final String errorMsg = String.format("Client is using revoked certificate of serial=%x, subject=%s from address=%s",
                     primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
             LOG.error(errorMsg);
-            exceptionMsg = (Strings.isNullOrEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
+            exceptionMsg = (StringUtils.isEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
         }
 
         // Validity check
@@ -126,9 +126,9 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         if (!certMatchesOwnership) {
             final String errorMsg = "Certificate ownership verification failed for client: " + clientAddress;
             LOG.error(errorMsg);
-            exceptionMsg = (Strings.isNullOrEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
+            exceptionMsg = (StringUtils.isEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
         }
-        if (authStrictness && !Strings.isNullOrEmpty(exceptionMsg)) {
+        if (authStrictness && StringUtils.isNotEmpty(exceptionMsg)) {
             throw new CertificateException(exceptionMsg);
         }
         if (LOG.isDebugEnabled()) {
@@ -139,7 +139,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
             }
         }
 
-        if (primaryClientCertificate != null && activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
+        if (primaryClientCertificate != null && activeCertMap != null && StringUtils.isNotEmpty(clientAddress)) {
             activeCertMap.put(clientAddress, primaryClientCertificate);
         }
     }

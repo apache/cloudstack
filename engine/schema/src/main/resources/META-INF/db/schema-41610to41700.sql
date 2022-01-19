@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.16.1.0 to 4.17.0.0
 --;
+
+-- PR#5668 Change the type of the 'ipsec_psk' field to allow large PSK.
+ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;

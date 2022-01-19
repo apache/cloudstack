@@ -31,6 +31,6 @@ public interface Ipv6AddressManager extends Manager {
 
     public String acquireGuestIpv6Address(Network network, String requestedIpv6) throws InsufficientAddressCapacityException;
 
-    public void setNicIp6Address(final NicProfile nic, final DataCenter dc, final Network network);
+    public void setNicIp6Address(final NicProfile nic, final DataCenter dc, final Network network) throws InsufficientAddressCapacityException;
 
 }

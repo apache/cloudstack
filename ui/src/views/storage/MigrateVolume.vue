@@ -16,63 +16,47 @@
 // under the License.
 
 <template>
-  <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
-    <div class="modal-form">
-      <div v-if="storagePools.length > 0">
-        <a-alert type="warning">
-          <span slot="message" v-html="$t('message.migrate.volume')" />
-        </a-alert>
-        <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
-        <a-select
-          v-model="selectedStoragePool"
-          style="width: 100%;"
-          :autoFocus="storagePools.length > 0"
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
-            {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
-          </a-select-option>
-        </a-select>
-        <template v-if="this.resource.virtualmachineid">
-          <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
-            {{ $t('label.usenewdiskoffering') }}
-          </p>
-          <a-checkbox v-model="replaceDiskOffering" />
+  <div class="form" v-ctrl-enter="handleKeyboardSubmit">
+    <a-alert class="top-spaced" type="warning">
+      <span slot="message" v-html="$t('message.migrate.volume')" />
+    </a-alert>
+    <storage-pool-select-view
+      ref="storagePoolSelection"
+      :resource="resource"
+      :suitabilityEnabled="true"
+      @storagePoolsUpdated="handleStoragePoolsChange"
+      @select="handleStoragePoolSelect" />
+    <div class="top-spaced" v-if="storagePools.length > 0">
+      <template v-if="this.resource.virtualmachineid">
+        <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
+          {{ $t('label.usenewdiskoffering') }}
+        </p>
+        <a-checkbox v-model="replaceDiskOffering" />
 
-          <template v-if="replaceDiskOffering">
-            <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
-            <a-select
-              v-model="selectedDiskOffering"
-              style="width: 100%;"
-              showSearch
-              optionFilterProp="children"
-              :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
-                {{ diskOffering.displaytext }}
-              </a-select-option>
-            </a-select>
-          </template>
+        <template v-if="replaceDiskOffering">
+          <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
+          <a-select
+            :loading="diskOfferingLoading"
+            v-model="selectedDiskOffering"
+            style="width: 100%;"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
+              {{ diskOffering.displaytext }}
+            </a-select-option>
+          </a-select>
         </template>
-      </div>
-      <a-alert style="margin-top: 15px" type="warning" v-else>
-        <span slot="message" v-html="$t('message.no.primary.stores')" />
-      </a-alert>
+      </template>
     </div>
 
     <a-divider />
 
     <div class="actions">
-      <a-button @click="closeModal">
-        {{ $t('label.cancel') }}
-      </a-button>
-      <a-button type="primary" ref="submit" @click="submitMigrateVolume">
-        {{ $t('label.ok') }}
-      </a-button>
+      <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" ref="submit" :disabled="!selectedStoragePool" @click="submitForm">{{ $t('label.ok') }}</a-button>
     </div>
 
   </div>
@@ -80,9 +64,13 @@
 
 <script>
 import { api } from '@/api'
+import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 
 export default {
   name: 'MigrateVolume',
+  components: {
+    StoragePoolSelectView
+  },
   props: {
     resource: {
       type: Object,
@@ -95,71 +83,67 @@ export default {
       storagePools: [],
       selectedStoragePool: null,
       diskOfferings: [],
+      diskOfferingLoading: false,
       replaceDiskOffering: false,
       selectedDiskOffering: null,
       isSubmitted: false
     }
   },
-  created () {
-    this.fetchStoragePools()
-    this.resource.virtualmachineid && this.fetchDiskOfferings()
+  watch: {
+    replaceDiskOffering (newValue) {
+      if (newValue) {
+        this.fetchDiskOfferings()
+      }
+    }
   },
   methods: {
-    fetchStoragePools () {
-      if (this.resource.virtualmachineid) {
-        api('findStoragePoolsForMigration', {
-          id: this.resource.id
-        }).then(response => {
-          this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
-          if (Array.isArray(this.storagePools) && this.storagePools.length) {
-            this.selectedStoragePool = this.storagePools[0].id || ''
-          }
-        }).catch(error => {
-          this.$notifyError(error)
-          this.closeModal()
-        })
-      } else {
-        api('listStoragePools', {
-          zoneid: this.resource.zoneid
-        }).then(response => {
-          this.storagePools = response.liststoragepoolsresponse.storagepool || []
-          this.storagePools = this.storagePools.filter(pool => { return pool.id !== this.resource.storageid })
-          if (Array.isArray(this.storagePools) && this.storagePools.length) {
-            this.selectedStoragePool = this.storagePools[0].id || ''
-          }
-        }).catch(error => {
-          this.$notifyError(error)
-          this.closeModal()
-        })
-      }
-    },
     fetchDiskOfferings () {
+      this.diskOfferingLoading = true
       api('listDiskOfferings', {
         listall: true
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering
-        this.selectedDiskOffering = this.diskOfferings[0].id
       }).catch(error => {
         this.$notifyError(error)
         this.closeModal()
+      }).finally(() => {
+        this.diskOfferingLoading = false
+        if (this.diskOfferings.length > 0) {
+          this.selectedDiskOffering = this.diskOfferings[0].id
+        }
       })
     },
-    closeModal () {
-      this.$parent.$parent.close()
+    handleStoragePoolsChange (storagePools) {
+      this.storagePools = storagePools
     },
-    submitMigrateVolume () {
+    handleStoragePoolSelect (storagePool) {
+      this.selectedStoragePool = storagePool
+    },
+    handleKeyboardSubmit () {
+      if (!this.selectedStoragePool) {
+        return
+      }
+      this.submitForm()
+    },
+    closeModal () {
+      this.$emit('close-action')
+    },
+    submitForm () {
       if (this.isSubmitted) return
       if (this.storagePools.length === 0) {
         this.closeModal()
         return
       }
       this.isSubmitted = true
-      api('migrateVolume', {
+      var params = {
         livemigrate: this.resource.vmstate === 'Running',
-        storageid: this.selectedStoragePool,
-        volumeid: this.resource.id,
-        newdiskofferingid: this.replaceDiskOffering ? this.selectedDiskOffering : null
-      }).then(response => {
+        storageid: this.selectedStoragePool.id,
+        volumeid: this.resource.id
+      }
+      if (this.replaceDiskOffering) {
+        params.newdiskofferingid = this.selectedDiskOffering
+      }
+      api('migrateVolume', params).then(response => {
         this.$pollJob({
           jobId: response.migratevolumeresponse.jobid,
           successMessage: this.$t('message.success.migrate.volume'),
@@ -185,12 +169,16 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .migrate-volume-container {
-    width: 85vw;
+  .form {
+    width: 80vw;
 
-    @media (min-width: 760px) {
-      width: 500px;
+    @media (min-width: 900px) {
+      width: 850px;
     }
+  }
+
+  .top-spaced {
+    margin-top: 20px;
   }
 
   .actions {
@@ -203,15 +191,5 @@ export default {
         margin-right: 10px;
       }
     }
-  }
-
-  .modal-form {
-    margin-top: -20px;
-
-    &__label {
-      margin-top: 10px;
-      margin-bottom: 5px;
-    }
-
   }
 </style>
