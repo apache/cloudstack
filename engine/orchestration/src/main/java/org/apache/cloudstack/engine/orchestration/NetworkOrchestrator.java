@@ -3300,6 +3300,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (DomainRouterVO router: domainRouters) {
                 try {
                     VMInstanceVO instanceVO = _vmDao.findById(router.getId());
+                    if (instanceVO == null) {
+                        s_logger.info("Did not find a virtual router instance for the network");
+                        continue;
+                    }
                     Pair<Boolean, String> patched = mgr.updateSystemVM(instanceVO, true);
                     if (patched.first()) {
                         s_logger.info(String.format("Successfully patched router %s", router));

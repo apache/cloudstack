@@ -100,7 +100,6 @@ export default {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
               (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
               (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id)) &&
-              record.templatetype !== 'SYSTEM' &&
               record.isready
           },
           popup: true,

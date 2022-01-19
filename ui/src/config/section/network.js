@@ -99,7 +99,7 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: ['cleanup'],
+          args: ['cleanup', 'livepatch'],
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,

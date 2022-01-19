@@ -36,7 +36,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.upgrade.dao.BasicTemplateDataStoreDaoImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
@@ -55,6 +54,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.ini4j.Ini;
@@ -679,6 +679,12 @@ public class SystemVmTemplateRegistration {
         }
     }
 
+    /**
+     * This method parses the metadata file consisting of the systemVM templates information
+     * @return the version of the systemvm template that is to be used. This is done to in order
+     * to fallback on the latest available version of the systemVM template when there does not
+     * exist a template corresponding to the current code version.
+     */
     public static String parseMetadataFile() {
         try {
             Ini ini = new Ini();
@@ -726,7 +732,7 @@ public class SystemVmTemplateRegistration {
             }
 
             File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
-            String templateChecksum = EncryptionUtil.calculateChecksum(tempFile);
+            String templateChecksum = DigestHelper.calculateChecksum(tempFile);
             if (!templateChecksum.equals(NewTemplateChecksum.get(getHypervisorType(hypervisor)))) {
                 LOGGER.error(String.format("Checksum mismatch: %s != %s ", templateChecksum, NewTemplateChecksum.get(getHypervisorType(hypervisor))));
                 templatesFound = false;
