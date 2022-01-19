@@ -103,6 +103,11 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         throw new UnavailableCommandException("The API " + apiCommandName + " does not exist or is not available for this account/user in project "+project.getUuid());
     }
 
+    @Override
+    public boolean checkAccess(Account user, String apiCommandName) throws PermissionDeniedException {
+        throw new PermissionDeniedException("cannot ask permission for an account from a project context");
+    }
+
     private boolean isPermitted(Project project, ProjectAccount projectUser, String apiCommandName) {
         ProjectRole projectRole = null;
         if(projectUser.getProjectRoleId() != null) {

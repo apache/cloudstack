@@ -37,14 +37,19 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
@@ -279,9 +284,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserAuthenticator> _userAuthenticators;
     protected List<UserAuthenticator> _userPasswordEncoders;
+    private List<APIChecker> apiAccessCheckers;
 
     @Inject
     private IpAddressManager _ipAddrMgr;
+    @Inject
+    private RoleService roleService;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -1003,13 +1011,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvents({@ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
-        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
-    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone, String accountName,
-            final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
-
-        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, roleId, domainId, networkDomain, details, accountUUID, userUUID,
-                User.Source.UNKNOWN);
+            @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
+    public UserAccount createUserAccount(CreateAccountCmd accountCmd) {
+        return createUserAccount(accountCmd.getUsername(), accountCmd.getPassword(), accountCmd.getFirstName(),
+                accountCmd.getLastName(), accountCmd.getEmail(), accountCmd.getTimeZone(), accountCmd.getAccountName(),
+                accountCmd.getAccountType(), accountCmd.getRoleId(), accountCmd.getDomainId(),
+                accountCmd.getNetworkDomain(), accountCmd.getDetails(), accountCmd.getAccountUUID(),
+                accountCmd.getUserUUID(), User.Source.UNKNOWN);
     }
+
 
     // ///////////////////////////////////////////////////
     // ////////////// API commands /////////////////////
@@ -1053,6 +1063,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Check permissions
         checkAccess(getCurrentCallingAccount(), domain);
+
+//        get user by account
+        checkRoleEscalation(getCurrentCallingAccount(), roleId);
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
@@ -1108,6 +1121,31 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check success
         return _userAccountDao.findById(userId);
+    }
+
+    /**
+     * if there is any permission under the requested role that is not permitted for the caller, refuse
+     */
+    private void checkRoleEscalation(Account caller, Long requestedRoleId) {
+        List<RolePermission> requestedPermissions = roleService.findAllPermissionsBy(requestedRoleId);
+
+        for (RolePermission permission : requestedPermissions) {
+            if (permission.getPermission() == Permission.ALLOW) {
+                String command = permission.getRule().getRuleString();
+                if (command.contains("*")) {
+                    // find all api that match command and loop
+                    checkApiAccess(caller, command);
+                } else {
+                    checkApiAccess(caller, command);
+                }
+            }
+        }
+    }
+
+    private void checkApiAccess(Account caller, String command) {
+        for (final APIChecker apiChecker : apiAccessCheckers) {
+            apiChecker.checkAccess(caller, command);
+        }
     }
 
     @Override
