@@ -71,19 +71,19 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.SYSTEM_MEMORY_TOTAL)
     @Param(description = "Total system memory")
-    private long systemMemoryTotal;
+    private String systemMemoryTotal;
 
     @SerializedName(MetricConstants.SYSTEM_MEMORY_FREE)
     @Param(description = "Free system memory")
-    private long systemMemoryFree;
+    private String systemMemoryFree;
 
     @SerializedName(MetricConstants.SYSTEM_MEMORY_USED)
     @Param(description = "Amount of memory used")
-    private long systemMemoryUsed;
+    private String systemMemoryUsed;
 
     @SerializedName(MetricConstants.SYSTEM_MEMORY_VIRTUALSIZE)
     @Param(description = "Virtual size of the fully loaded process")
-    private long systemMemoryVirtualSize;
+    private String systemMemoryVirtualSize;
 
     @SerializedName(MetricConstants.LOG_INFO)
     @Param(description = "the log files and their usage on disk")
@@ -161,19 +161,19 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
         this.threadsWaitingCount = threadsWaitingCount;
     }
 
-    public void setSystemMemoryTotal(long systemMemoryTotal) {
+    public void setSystemMemoryTotal(String systemMemoryTotal) {
         this.systemMemoryTotal = systemMemoryTotal;
     }
 
-    public void setSystemMemoryFree(long systemMemoryFree) {
+    public void setSystemMemoryFree(String systemMemoryFree) {
         this.systemMemoryFree = systemMemoryFree;
     }
 
-    public void setSystemMemoryUsed(long systemMemoryUsed) {
+    public void setSystemMemoryUsed(String systemMemoryUsed) {
         this.systemMemoryUsed = systemMemoryUsed;
     }
 
-    public void setSystemMemoryVirtualSize(long systemMemoryVirtualSize) {
+    public void setSystemMemoryVirtualSize(String systemMemoryVirtualSize) {
         this.systemMemoryVirtualSize = systemMemoryVirtualSize;
     }
 

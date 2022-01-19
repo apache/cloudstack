@@ -126,6 +126,8 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
+import static com.cloud.utils.NumbersUtil.toReadableSize;
+
 public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
     private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
 
@@ -682,10 +684,10 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         metricsResponse.setThreadsTerminatedCount(status.getThreadsTerminatedCount());
         metricsResponse.setThreadsTotalCount(status.getThreadsTotalCount());
         metricsResponse.setThreadsWaitingCount(status.getThreadsWaitingCount());
-        metricsResponse.setSystemMemoryTotal(status.getSystemMemoryTotal());
-        metricsResponse.setSystemMemoryFree(status.getSystemMemoryFree());
-        metricsResponse.setSystemMemoryUsed(status.getSystemMemoryUsed());
-        metricsResponse.setSystemMemoryVirtualSize(status.getSystemMemoryVirtualSize());
+        metricsResponse.setSystemMemoryTotal(toReadableSize(status.getSystemMemoryTotal()));
+        metricsResponse.setSystemMemoryFree(toReadableSize(status.getSystemMemoryFree()));
+        metricsResponse.setSystemMemoryUsed(toReadableSize(status.getSystemMemoryUsed()));
+        metricsResponse.setSystemMemoryVirtualSize(toReadableSize(status.getSystemMemoryVirtualSize()));
         metricsResponse.setLogInfo(status.getLogInfo());
         metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
         metricsResponse.setSystemLoadAverages(status.getSystemLoadAverages());
