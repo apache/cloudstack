@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 
-import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
@@ -189,7 +188,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
         }
 
-        if (!Strings.isNullOrEmpty(registryUsername) && !Strings.isNullOrEmpty(registryPassword) && !Strings.isNullOrEmpty(registryUrl)) {
+        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
             // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
             String runCmd = "- bash -x /opt/bin/setup-containerd";
 

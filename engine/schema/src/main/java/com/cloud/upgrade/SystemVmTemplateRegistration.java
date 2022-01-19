@@ -93,6 +93,7 @@ public class SystemVmTemplateRegistration {
     public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String storageScriptsDir = "scripts/storage/secondary";
+    private static final String installerScriptsDir = "scripts/installer/";
     private static final Integer OTHER_LINUX_ID = 99;
     private static final Integer LINUX_5_ID = 15;
     private static final Integer LINUX_7_ID = 183;
@@ -724,6 +725,7 @@ public class SystemVmTemplateRegistration {
         }
 
         boolean templatesFound = true;
+        int count = hypervisors.size();
         for (String hypervisor : hypervisors) {
             String matchedTemplate = templates.stream().filter(x -> x.contains(hypervisor)).findAny().orElse(null);
             if (matchedTemplate == null) {
@@ -732,6 +734,22 @@ public class SystemVmTemplateRegistration {
             }
 
             File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
+            if (!tempFile.exists()) {
+                --count;
+                String exportTmpltScript = Script.findScript(installerScriptsDir, "export-templates.sh");
+                if (exportTmpltScript == null) {
+                    throw new CloudRuntimeException("Unable to find the export-templates.sh script to export templates on the fly");
+                }
+                Script scr = new Script(exportTmpltScript, SCRIPT_TIMEOUT, LOGGER);
+                scr.add(hypervisor.toLowerCase(Locale.ROOT));
+                scr.add((count > 0 ? "1" : "0"));
+                String result = scr.execute();
+                if (result != null) {
+                    String errMsg = String.format("failed to create template: %s ", result);
+                    LOGGER.error(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+            }
             String templateChecksum = DigestHelper.calculateChecksum(tempFile);
             if (!templateChecksum.equals(NewTemplateChecksum.get(getHypervisorType(hypervisor)))) {
                 LOGGER.error(String.format("Checksum mismatch: %s != %s ", templateChecksum, NewTemplateChecksum.get(getHypervisorType(hypervisor))));

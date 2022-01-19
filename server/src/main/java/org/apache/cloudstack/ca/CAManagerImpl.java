@@ -39,7 +39,6 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.ca.IssueCertificateCmd;
@@ -190,7 +189,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         try {
             if (host.getType() != Host.Type.ConsoleProxy && host.getType() != Host.Type.SecondaryStorageVM) {
                 csr = generateKeyStoreAndCsr(host, null);
-                if (Strings.isNullOrEmpty(csr)) {
+                if (StringUtils.isEmpty(csr)) {
                     return false;
                 }
             }

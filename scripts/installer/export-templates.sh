@@ -17,21 +17,27 @@
 # under the License.
 
 METADATA_FILE="metadata.ini"
-IMAGE_PATH=${1:-"/usr/share/cloudstack-management/templates/systemvm/"}
+IMAGE_PATH=${3:-"/usr/share/cloudstack-management/templates/systemvm/"}
 TEMPLATE_VERSION=$(awk -F "=" '/version/ {print $2}' ${IMAGE_PATH}${METADATA_FILE} | xargs)
 TEMPLATE_PATH="/usr/share/cloudstack-management/templates/systemvm/"
 VERSION="${TEMPLATE_VERSION%.*}"
-PREFIX=${2:-"systemvmtemplate-$VERSION"}
+PREFIX=${4:-"systemvmtemplate-$VERSION"}
+CLEANUP=${2:-1}
 TEMP_IMAGE_PATH="/tmp/sysvm_convert/"
 
-if [ -f ${IMAGE_PATH}${PREFIX}-kvm.qcow2.bxz2 ]; then
+initial_setup() {
   mkdir -p $TEMP_IMAGE_PATH
   cp -r $IMAGE_PATH/* $TEMP_IMAGE_PATH
   cd $TEMP_IMAGE_PATH
-  bzip2 -dc $PREFIX-kvm.qcow2.bz2 > $PREFIX-kvm.qcow2
+  if [ ! -f ${TEMP_IMAGE_PATH}${PREFIX}-kvm.qcow2 ]; then
+    bzip2 -dc $PREFIX-kvm.qcow2.bz2 > $PREFIX-kvm.qcow2
+  fi
+}
+
+export_vmware() {
+  initial_setup
   # Export for KVM
   virt-sparsify $PREFIX-kvm.qcow2 --compress -o compat=0.10 $PREFIX-kvm-temp.qcow2
-
   # Export for VMware
   qemu-img convert -f qcow2 -O vmdk -o adapter_type=lsilogic,subformat=streamOptimized,compat6 $PREFIX-kvm-temp.qcow2 $PREFIX-vmware.vmdk
   size=$(stat --printf="%s" $PREFIX-vmware.vmdk)
@@ -144,15 +150,43 @@ EOF
   tar -cvf $PREFIX-vmware.ova $PREFIX-vmware.ovf $PREFIX-vmware.mf $PREFIX-vmware.vmdk
   checksum=$(md5sum $PREFIX-vmware.ova | awk '{print $1}')
   sed -i '/^\['"vmware"']/,/^\[/{s/^checksum[[:space:]]*=.*/checksum = '"$checksum"'/}' ./$METADATA_FILE
+  rm -rf *.mf  *.ovf  *.vmdk
+  sudo cp $TEMP_IMAGE_PATH/$PREFIX-vmware.ova $TEMP_IMAGE_PATH/metadata.ini $IMAGE_PATH
+  cleanup
+}
 
+export_xen() {
   # Export for XenServer/XCP-ng
+  initial_setup
   qemu-img convert -f qcow2 -O vpc $PREFIX-kvm.qcow2 $PREFIX-xen.vhd
   bzip2 $PREFIX-xen.vhd
   checksum=$(md5sum $PREFIX-xen.vhd.bz2 | awk '{print $1}')
   sed -i '/^\['"xenserver"']/,/^\[/{s/^checksum[[:space:]]*=.*/checksum = '"$checksum"'/}' $METADATA_FILE
+  rm -rf $PREFIX-xen.vhd
+  sudo cp $TEMP_IMAGE_PATH/$PREFIX-xen* $TEMP_IMAGE_PATH/metadata.ini $IMAGE_PATH
+  cleanup
+}
 
-  rm -rf $PREFIX-kvm*.qcow2 $PREFIX-xen.vhd *.mf  *.ovf  *.vmdk
-  sudo cp $TEMP_IMAGE_PATH/$PREFIX* $TEMP_IMAGE_PATH/metadata.ini $IMAGE_PATH
-  cd -
-  rm -rf $TEMP_IMAGE_PATH
+cleanup() {
+  cd /var/cloudstack/management/
+  if [ $CLEANUP == 1 ]; then
+    cd /var/cloudstack/management/
+    rm -rf $TEMP_IMAGE_PATH
+  fi
+}
+
+if [ "$#" -lt 1 ] ; then
+   echo "Usage: $0 <hypervisor: vmware/xenserver> [cleanup: 0/1; default: 1] [imagepath: default:/usr/share/cloudstack-management/templates/systemvm/] [templateprefix: default:systemvmtemplate-$VERSION]" >&2
+   exit 1
 fi
+
+if [ $1 == "vmware" ]; then
+  echo "exporting vmware template"
+  export_vmware
+elif [ $1 == "xenserver" ]; then
+  echo "exporting xenserver template"
+  export_xen
+else
+  echo "Conversion of template to $1's compatible format not supported "
+fi
+
