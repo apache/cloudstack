@@ -213,6 +213,23 @@ write_files:
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 
+  - path: /opt/bin/setup-containerd
+    permissions: '0755'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      
+      export registryConfig="\\        [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"{{registry.url.endpoint}}\"]\n \\         endpoint = [\"{{registry.url}}\"]"
+      export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url}}\".auth]\n \tauth = \"\" \n \tidentitytoken = \"{{registry.token}}\""
+      
+      echo "creating config file for containerd"
+      containerd config default > /etc/containerd/config.toml
+      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry\]/a '"${registryCredentials}"'' /etc/containerd/config.toml
+      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry.mirrors\]/a '"${registryConfig}"'' /etc/containerd/config.toml
+      
+      echo "Restarting containerd service"
+      systemctl restart containerd
+
   - path: /etc/systemd/system/setup-kube-system.service
     permissions: '0755'
     owner: root:root
@@ -242,5 +259,7 @@ write_files:
 
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
+  - containerd config default > /etc/containerd/config.toml
+  - systemctl restart containerd
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]

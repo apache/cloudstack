@@ -136,6 +136,18 @@ export default {
       response: (result) => { return result && result.diagnostics && result.diagnostics.url ? `Please click the link to download the retrieved diagnostics: <p><a href='${result.diagnostics.url}'>${result.diagnostics.url}</a></p>` : 'Invalid response' }
     },
     {
+      api: 'patchSystemVm',
+      icon: 'diff',
+      label: 'label.action.patch.systemvm',
+      message: 'message.action.patch.systemvm',
+      dataView: true,
+      show: (record) => { return ['Running'].includes(record.state) },
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+    },
+    {
       api: 'destroySystemVm',
       icon: 'delete',
       label: 'label.action.destroy.systemvm',

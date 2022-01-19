@@ -32,12 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -428,34 +427,25 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private void validateDockerRegistryParams(final String dockerRegistryUserName,
                                               final String dockerRegistryPassword,
-                                              final String dockerRegistryUrl,
-                                              final String dockerRegistryEmail) {
+                                              final String dockerRegistryUrl) {
         // if no params related to docker registry specified then nothing to validate so return true
         if ((dockerRegistryUserName == null || dockerRegistryUserName.isEmpty()) &&
                 (dockerRegistryPassword == null || dockerRegistryPassword.isEmpty()) &&
-                (dockerRegistryUrl == null || dockerRegistryUrl.isEmpty()) &&
-                (dockerRegistryEmail == null || dockerRegistryEmail.isEmpty())) {
+                (dockerRegistryUrl == null || dockerRegistryUrl.isEmpty())) {
             return;
         }
 
         // all params related to docker registry must be specified or nothing
         if (!((dockerRegistryUserName != null && !dockerRegistryUserName.isEmpty()) &&
                 (dockerRegistryPassword != null && !dockerRegistryPassword.isEmpty()) &&
-                (dockerRegistryUrl != null && !dockerRegistryUrl.isEmpty()) &&
-                (dockerRegistryEmail != null && !dockerRegistryEmail.isEmpty()))) {
-            throw new InvalidParameterValueException("All the docker private registry parameters (username, password, url, email) required are specified");
+                (dockerRegistryUrl != null && !dockerRegistryUrl.isEmpty()))) {
+            throw new InvalidParameterValueException("All the docker private registry parameters (username, password, url) required are specified");
         }
 
         try {
             URL url = new URL(dockerRegistryUrl);
         } catch (MalformedURLException e) {
             throw new InvalidParameterValueException("Invalid docker registry url specified");
-        }
-
-        Pattern VALID_EMAIL_ADDRESS_REGEX = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher(dockerRegistryEmail);
-        if (!matcher.find()) {
-            throw new InvalidParameterValueException("Invalid docker registry email specified");
         }
     }
 
@@ -619,7 +609,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
         final String dockerRegistryPassword = cmd.getDockerRegistryPassword();
         final String dockerRegistryUrl = cmd.getDockerRegistryUrl();
-        final String dockerRegistryEmail = cmd.getDockerRegistryEmail();
         final Long nodeRootDiskSize = cmd.getNodeRootDiskSize();
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
 
@@ -706,7 +695,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Given service offering ID: %s is not suitable for Kubernetes cluster");
         }
 
-        validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl, dockerRegistryEmail);
+        validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl);
 
         Network network = null;
         if (networkId != null) {
@@ -728,7 +717,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        if (!KubernetesClusterExperimentalFeaturesEnabled.value() && !StringUtils.isAllEmpty(dockerRegistryUrl, dockerRegistryUserName, dockerRegistryEmail, dockerRegistryPassword)) {
+        if (!KubernetesClusterExperimentalFeaturesEnabled.value() && (!Strings.isNullOrEmpty(dockerRegistryUrl) ||
+                !Strings.isNullOrEmpty(dockerRegistryUserName) || !Strings.isNullOrEmpty(dockerRegistryPassword))) {
             throw new CloudRuntimeException(String.format("Private registry for the Kubernetes cluster is an experimental feature. Use %s configuration for enabling experimental features", KubernetesClusterExperimentalFeaturesEnabled.key()));
         }
     }
@@ -778,7 +768,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
         final String dockerRegistryPassword = cmd.getDockerRegistryPassword();
         final String dockerRegistryUrl = cmd.getDockerRegistryUrl();
-        final String dockerRegistryEmail = cmd.getDockerRegistryEmail();
         final boolean networkCleanup = cmd.getNetworkId() == null;
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -793,9 +782,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_USER_NAME, dockerRegistryUserName, true);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_PASSWORD, dockerRegistryPassword, false);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_URL, dockerRegistryUrl, true);
-                addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_EMAIL, dockerRegistryEmail, true);
 
-                details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, ApiConstants.USERNAME, "admin", true));
+                details.add(new KubernetesClusterDetailsVO(kubernetesCluster.getId(), ApiConstants.USERNAME, "admin", true));
                 SecureRandom random = new SecureRandom();
                 String randomPassword = new BigInteger(130, random).toString(32);
                 details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, ApiConstants.PASSWORD, randomPassword, false));

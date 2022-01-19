@@ -47,7 +47,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
-            description = "If true, initiates copy of scripts and restart of the agent if if the template version is the latest." +
+            description = "If true, initiates copy of scripts and restart of the agent, even if the scripts version matches." +
                     "To be used with ID parameter only")
     private Boolean force;
 

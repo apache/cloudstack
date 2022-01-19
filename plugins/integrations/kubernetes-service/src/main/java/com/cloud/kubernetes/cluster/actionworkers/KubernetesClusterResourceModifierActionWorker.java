@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 
 import com.cloud.capacity.CapacityManager;
@@ -95,7 +97,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.StringUtils;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -163,54 +164,48 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        /* genarate /.docker/config.json file on the nodes only if Kubernetes cluster is created to
+
+        k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
+        return k8sNodeConfig;
+    }
+
+    protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
+        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
          * use docker private registry */
-        String dockerUserName = null;
-        String dockerPassword = null;
-        String dockerRegistryUrl = null;
-        String dockerRegistryEmail = null;
+        String registryUsername = null;
+        String registryPassword = null;
+        String registryUrl = null;
+
         List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
         for (KubernetesClusterDetailsVO detail : details) {
             if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
-                dockerUserName = detail.getValue();
+                registryUsername = detail.getValue();
             }
             if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
-                dockerPassword = detail.getValue();
+                registryPassword = detail.getValue();
             }
             if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
-                dockerRegistryUrl = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_EMAIL)) {
-                dockerRegistryEmail = detail.getValue();
+                registryUrl = detail.getValue();
             }
         }
-        if (StringUtils.isNoneEmpty(dockerUserName, dockerPassword)) {
-            // do write file for  /.docker/config.json through the code instead of k8s-node.yml as we can no make a section
-            // optional or conditionally applied
-            String dockerConfigString = "write_files:\n" +
-                    "  - path: /.docker/config.json\n" +
-                    "    owner: cloud:cloud\n" +
-                    "    permissions: '0644'\n" +
-                    "    content: |\n" +
-                    "      {\n" +
-                    "        \"auths\": {\n" +
-                    "          {{docker.url}}: {\n" +
-                    "            \"auth\": {{docker.secret}},\n" +
-                    "            \"email\": {{docker.email}}\n" +
-                    "          }\n" +
-                    "         }\n" +
-                    "      }";
-            k8sNodeConfig = k8sNodeConfig.replace("write_files:", dockerConfigString);
-            final String dockerUrlKey = "{{docker.url}}";
-            final String dockerAuthKey = "{{docker.secret}}";
-            final String dockerEmailKey = "{{docker.email}}";
-            final String usernamePasswordKey = dockerUserName + ":" + dockerPassword;
-            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-            k8sNodeConfig = k8sNodeConfig.replace(dockerUrlKey, "\"" + dockerRegistryUrl + "\"");
-            k8sNodeConfig = k8sNodeConfig.replace(dockerAuthKey, "\"" + base64Auth + "\"");
-            k8sNodeConfig = k8sNodeConfig.replace(dockerEmailKey, "\"" + dockerRegistryEmail + "\"");
+
+        if (!Strings.isNullOrEmpty(registryUsername) && !Strings.isNullOrEmpty(registryPassword) && !Strings.isNullOrEmpty(registryUrl)) {
+            // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
+            String runCmd = "- bash -x /opt/bin/setup-containerd";
+
+            String registryEp = registryUrl.split("://")[1];
+            k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
+            final String registryUrlKey = "{{registry.url}}";
+            final String registryUrlEpKey = "{{registry.url.endpoint}}";
+            final String registryAuthKey = "{{registry.token}}";
+
+            final String usernamePasswordKey = registryUsername + ":" + registryPassword;
+            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes((com.cloud.utils.StringUtils.getPreferredCharset())));
+            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
+            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
+            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
         }
-        return k8sNodeConfig;
+        return k8sConfig;
     }
 
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {

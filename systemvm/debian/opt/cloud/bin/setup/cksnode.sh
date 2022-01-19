@@ -31,14 +31,9 @@ setup_k8s_node() {
     systemctl restart ssh
 
     # Prevent root login
-#    > /root/.ssh/authorized_keys
-#    passwd -l root
+    > /root/.ssh/authorized_keys
+    passwd -l root
     #sed -i 's#root:x:0:0:root:/root:/bin/bash#root:x:0:0:root:/root:/sbin/nologin#' /etc/passwd
-
-    # Update containerd configuration
-    mkdir -p /etc/containerd
-    containerd config default>/etc/containerd/config.toml
-    systemctl restart containerd
 
     swapoff -a
     sudo sed -i '/ swap / s/^/#/' /etc/fstab

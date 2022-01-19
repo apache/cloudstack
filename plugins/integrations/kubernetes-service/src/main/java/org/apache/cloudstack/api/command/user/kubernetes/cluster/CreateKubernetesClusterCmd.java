@@ -140,10 +140,6 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "URL for the docker image private registry")
     private String dockerRegistryUrl;
 
-    @Parameter(name = ApiConstants.DOCKER_REGISTRY_EMAIL, type = CommandType.STRING,
-            description = "email of the docker image private registry user")
-    private String dockerRegistryEmail;
-
     @Parameter(name = ApiConstants.NODE_ROOT_DISK_SIZE, type = CommandType.LONG,
             description = "root disk size in GB for each node")
     private Long nodeRootDiskSize;
@@ -224,10 +220,6 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     public String getDockerRegistryUrl() {
         return dockerRegistryUrl;
-    }
-
-    public String getDockerRegistryEmail() {
-        return dockerRegistryEmail;
     }
 
     public Long getNodeRootDiskSize() {
