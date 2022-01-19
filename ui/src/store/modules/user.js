@@ -177,9 +177,9 @@ const user = {
       })
     },
 
-    GetInfo ({ commit }) {
+    GetInfo ({ commit }, switchDomain) {
       return new Promise((resolve, reject) => {
-        const cachedApis = vueProps.$localStorage.get(APIS, {})
+        const cachedApis = switchDomain ? {} :vueProps.$localStorage.get(APIS, {})
         const cachedZones = vueProps.$localStorage.get(ZONES, [])
         const cachedTimezoneOffset = vueProps.$localStorage.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)

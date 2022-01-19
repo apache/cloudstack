@@ -65,7 +65,7 @@
         </a-drawer>
       </template>
 
-      <drawer :visible="showSetting" placement="right" v-if="isDevelopmentMode">
+      <drawer :visible="showSetting" placement="right" v-if="isDevelopmentMode || allowSettingTheme">
         <template #handler>
           <a-button type="primary" size="large">
             <close-outlined v-if="showSetting" />
@@ -146,6 +146,9 @@ export default {
     }),
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
+    },
+    allowSettingTheme () {
+      return this.$config.allowSettingTheme
     },
     contentPaddingLeft () {
       if (!this.fixSidebar || this.isMobile()) {
