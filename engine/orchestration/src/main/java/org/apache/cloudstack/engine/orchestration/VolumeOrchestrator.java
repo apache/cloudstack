@@ -23,6 +23,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1972,6 +1973,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
         vol.setState(Volume.State.Ready);
+        vol.setAttached(new Date());
         vol = _volsDao.persist(vol);
         return toDiskProfile(vol, offering);
     }

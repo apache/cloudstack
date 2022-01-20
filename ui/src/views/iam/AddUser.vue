@@ -93,7 +93,8 @@
             optionFilterProp="children"
             :filterOption="(input, option) => {
               return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            }"
+            @change="val => this.fetchAccount(val)" >
             <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
               <span>
                 <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -192,7 +193,6 @@ export default {
       timeZoneMap: [],
       domainLoading: false,
       domainsList: [],
-      selectedDomain: '',
       samlEnable: false,
       idpLoading: false,
       idps: [],
@@ -220,9 +220,6 @@ export default {
       if (!this.domianid) {
         this.fetchDomains()
       }
-      if (!this.account) {
-        this.fetchAccount()
-      }
       this.fetchTimeZone()
       if (this.samlAllowed) {
         this.fetchIdps()
@@ -230,26 +227,34 @@ export default {
     },
     fetchDomains () {
       this.domainLoading = true
-      api('listDomains', {
+      var params = {
         listAll: true,
         showicon: true,
         details: 'min'
-      }).then(response => {
+      }
+      api('listDomains', params).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
-        this.selectedDomain = this.domainsList[0].id || ''
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
           description: error.response.data.errorresponse.errortext
         })
       }).finally(() => {
+        const domainid = this.domainsList[0].id || ''
+        this.form.setFieldsValue({ domainid: domainid })
+        this.fetchAccount(domainid)
         this.domainLoading = false
       })
     },
-    fetchAccount () {
+    fetchAccount (domainid) {
       this.accountList = []
+      this.form.setFieldsValue({ account: null })
       this.loadingAccount = true
-      api('listAccounts', { listAll: true, showicon: true }).then(response => {
+      var params = { listAll: true, showicon: true }
+      if (domainid) {
+        params.domainid = domainid
+      }
+      api('listAccounts', params).then(response => {
         this.accountList = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notification.error({
