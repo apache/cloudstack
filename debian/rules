@@ -116,6 +116,7 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/setup
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
 	cp -r scripts/installer $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/network $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
