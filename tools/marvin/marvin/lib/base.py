@@ -2417,7 +2417,6 @@ class NetworkOffering:
     @classmethod
     def create(cls, apiclient, services, **kwargs):
         """Create network offering"""
-
         cmd = createNetworkOffering.createNetworkOfferingCmd()
         cmd.displaytext = "-".join([services["displaytext"], random_gen()])
         cmd.name = "-".join([services["name"], random_gen()])
@@ -2456,6 +2455,8 @@ class NetworkOffering:
             cmd.egressdefaultpolicy = services["egress_policy"]
         if "tags" in services:
             cmd.tags = services["tags"]
+        if "internetprotocol" in services:
+            cmd.internetprotocol = services["internetprotocol"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
