@@ -61,7 +61,6 @@ patch() {
     [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
     local newmd5=
     [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
-
     log_it "Scripts checksum detected: oldmd5=$oldmd5 newmd5=$newmd5"
     if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
     then
@@ -88,6 +87,14 @@ start() {
   rm -f /tmp/rrouter_bumped
   rm -f /root/.rnd
   echo "" > /root/.ssh/known_hosts
+
+  if which growpart > /dev/null; then
+    ROOT_MOUNT_POINT=$(df -h / | tail -n 1  | cut -d' ' -f1)
+    ROOT_DISK=$(echo $ROOT_MOUNT_POINT | sed 's/[0-9]*$//g')
+    growpart $ROOT_DISK 2
+    growpart $ROOT_DISK 6
+    resize2fs $ROOT_MOUNT_POINT
+  fi
 
   patch
   sync

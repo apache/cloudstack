@@ -1338,13 +1338,22 @@ export default {
         const rbdid = this.prefillContent.primaryStorageRADOSUser?.value || ''
         const rbdsecret = this.prefillContent.primaryStorageRADOSSecret?.value || ''
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
-      } else if (protocol === 'vmfs') {
-        let path = this.prefillContent.primaryStorageVmfsDatacenter?.value || ''
+      } else if (protocol === 'Linstor') {
+        url = this.linstorURL(server)
+        params.provider = 'Linstor'
+        params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup.value
+      } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
+        let path = this.prefillContent.primaryStorageVmfsDatacenter.value
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
-        path += '/' + this.prefillContent.primaryStorageVmfsDatastore?.value || ''
-        url = this.vmfsURL('dummy', path)
+        path += '/' + this.prefillContent.primaryStorageVmfsDatastore.value
+        if (protocol === 'vmfs') {
+          url = this.vmfsURL('dummy', path)
+        }
+        if (protocol === 'datastorecluster') {
+          url = this.datastoreclusterURL('dummy', path)
+        }
       } else {
         let iqn = this.prefillContent.primaryStorageTargetIQN?.value || ''
         if (iqn.substring(0, 1) !== '/') {
@@ -1460,6 +1469,12 @@ export default {
           this.prefillContent.secondaryStorageKey.value.length > 0) {
           params['details[' + index.toString() + '].key'] = 'key'
           params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageKey.value
+          index++
+        }
+        if (this.prefillContent.secondaryStoragePolicy &&
+          this.prefillContent.secondaryStoragePolicy.value.length > 0) {
+          params['details[' + index.toString() + '].key'] = 'storagepolicy'
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
           index++
         }
       }
@@ -2091,8 +2106,8 @@ export default {
     },
     rbdURL (monitor, pool, id, secret) {
       let url
-      secret = secret.replace('+', '-')
-      secret = secret.replace('/', '_')
+      secret = secret.replace(/\+/g, '-')
+      secret = secret.replace(/\//g, '_')
       if (id != null && secret != null) {
         monitor = id + ':' + secret + '@' + monitor
       }
@@ -2120,6 +2135,24 @@ export default {
       let url = ''
       if (server.indexOf('://') === -1) {
         url = 'vmfs://' + server + path
+      } else {
+        url = server + path
+      }
+      return url
+    },
+    linstorURL (server) {
+      var url
+      if (server.indexOf('://') === -1) {
+        url = 'http://' + server
+      } else {
+        url = server
+      }
+      return url
+    },
+    datastoreclusterURL (server, path) {
+      var url
+      if (server.indexOf('://') === -1) {
+        url = 'datastorecluster://' + server + path
       } else {
         url = server + path
       }

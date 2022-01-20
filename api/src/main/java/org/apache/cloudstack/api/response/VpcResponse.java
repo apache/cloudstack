@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Vpc.class)
 @SuppressWarnings("unused")
-public class VpcResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
+public class VpcResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse, SetResourceIconResponse {
     @SerializedName("id")
     @Param(description = "the id of the VPC")
     private String id;
@@ -127,8 +127,16 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "if this VPC has redundant router", since = "4.6")
     private boolean redundantRouter;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
     public void setId(final String id) {
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setName(final String name) {
@@ -230,5 +238,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setRedundantRouter(final Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
     }
 }

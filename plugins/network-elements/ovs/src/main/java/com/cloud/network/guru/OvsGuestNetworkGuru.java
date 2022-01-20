@@ -81,10 +81,14 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             && _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(
                 offering.getId(), Service.Connectivity)) {
             return true;
+        } else if (networkType == NetworkType.Advanced
+            && offering.getGuestType() == GuestType.Shared
+            && _ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Ovs)
+            && physicalNetwork.getIsolationMethods().contains("GRE")) {
+            return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   "
-                + GuestType.Isolated + " in zone of type "
-                + NetworkType.Advanced);
+            s_logger.trace(String.format("We only take care of Guest networks of type %s with Service %s or type with %s provider %s in %s zone",
+                    GuestType.Isolated, Service.Connectivity, GuestType.Shared, Network.Provider.Ovs, NetworkType.Advanced));
             return false;
         }
     }
@@ -107,6 +111,9 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         config.setBroadcastDomainType(BroadcastDomainType.Vswitch);
+        if (config.getBroadcastUri() != null) {
+            config.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(config.getBroadcastUri().toString().replace("vlan://", "")));
+        }
 
         return config;
     }

@@ -86,7 +86,6 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
           dataView: true,
           popup: true,
-          show: (record) => { return ['Stopped'].includes(record.state) },
           component: () => import('@/views/compute/EditVM.vue')
         },
         {
@@ -429,15 +428,18 @@ export default {
       icon: kubernetes,
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
-      columns: () => {
+      columns: (store) => {
         var fields = ['name', 'state', 'size', 'cpunumber', 'memory']
-        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+        if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
+        }
+        if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
+          fields.splice(2, 0, 'autoscalingenabled')
         }
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
       tabs: [{
         name: 'k8s',
         component: () => import('@/views/compute/KubernetesServiceTab.vue')

@@ -68,6 +68,7 @@ import {
   AutoComplete,
   Collapse
 } from 'ant-design-vue'
+import VueCropper from 'vue-cropper'
 
 Vue.use(ConfigProvider)
 Vue.use(Layout)
@@ -117,10 +118,10 @@ Vue.use(Calendar)
 Vue.use(Slider)
 Vue.use(AutoComplete)
 Vue.use(Collapse)
+Vue.use(VueCropper)
 
 Vue.prototype.$confirm = Modal.confirm
 Vue.prototype.$message = message
-Vue.prototype.$notification = notification
 Vue.prototype.$info = Modal.info
 Vue.prototype.$success = Modal.success
 Vue.prototype.$error = Modal.error

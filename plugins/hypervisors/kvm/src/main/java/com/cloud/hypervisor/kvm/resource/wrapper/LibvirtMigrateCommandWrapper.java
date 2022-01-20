@@ -51,6 +51,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainJobInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
 import org.libvirt.StorageVol;
@@ -219,6 +220,29 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     s_logger.info("Waiting for migration of " + vmName + " to complete, waited " + sleeptime + "ms");
                 }
 
+                // abort the vm migration if the job is executed more than vm.migrate.wait
+                final int migrateWait = libvirtComputingResource.getMigrateWait();
+                if (migrateWait > 0 && sleeptime > migrateWait * 1000) {
+                    DomainState state = null;
+                    try {
+                        state = dm.getInfo().state;
+                    } catch (final LibvirtException e) {
+                        s_logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
+                    }
+                    if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
+                        try {
+                            DomainJobInfo job = dm.getJobInfo();
+                            s_logger.info("Aborting " + vmName + " domain job: " + job);
+                            dm.abortJob();
+                            result = String.format("Migration of VM %s was cancelled by cloudstack due to time out after %d seconds", vmName, migrateWait);
+                            s_logger.debug(result);
+                            break;
+                        } catch (final LibvirtException e) {
+                            s_logger.info("Failed to abort the vm migration job of vm " + vmName + " : " + e.getMessage());
+                        }
+                    }
+                }
+
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
                 final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
                 if (migratePauseAfter > 0 && sleeptime > migratePauseAfter) {
@@ -262,7 +286,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             | TransformerException
             | URISyntaxException e) {
             s_logger.debug(String.format("%s : %s", e.getClass().getSimpleName(), e.getMessage()));
-            result = "Exception during migrate: " + e.getMessage();
+            if (result == null) {
+                result = "Exception during migrate: " + e.getMessage();
+            }
         } finally {
             try {
                 if (dm != null && result != null) {

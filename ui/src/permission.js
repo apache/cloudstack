@@ -78,10 +78,19 @@ router.beforeEach((to, from, next) => {
             })
           })
           .catch(() => {
+            let countNotify = store.getters.countNotify
+            countNotify++
+            store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
+              top: '65px',
               message: 'Error',
               description: i18n.t('message.error.discovering.feature'),
-              duration: 0
+              duration: 0,
+              onClose: () => {
+                let countNotify = store.getters.countNotify
+                countNotify > 0 ? countNotify-- : countNotify = 0
+                store.commit('SET_COUNT_NOTIFY', countNotify)
+              }
             })
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })

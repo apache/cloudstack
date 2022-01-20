@@ -32,18 +32,58 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="this.$t('label.zoneid')">
+                      <div v-if="zones.length <= 8">
+                        <a-row type="flex" :gutter="5" justify="start">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-decorator="['zoneid', {
+                                initialValue: selectedZone,
+                                rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
+                              @change="onSelectZoneId(zoneItem.id)">
+                              <a-col :span="8">
+                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                  <a-radio :value="zoneItem.id">
+                                    <div>
+                                      <img
+                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                        :src="getImg(zoneItem.icon.base64image)"
+                                        style="marginTop: -30px; marginLeft: 60px"
+                                        width="36px"
+                                        height="36px" />
+                                      <a-icon v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}" type="global"/>
+                                    </div>
+                                  </a-radio>
+                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
+                                </a-card-grid>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
                       <a-select
+                        v-else
                         v-decorator="['zoneid', {
-                          rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
+                          initialValue: selectedZone,
+                          rules: [{ required: true, message: `${$t('message.error.select')}` }]
                         }]"
                         showSearch
                         optionFilterProp="children"
-                        :filterOption="filterOption"
-                        :options="zoneSelectOptions"
+                        :filterOption="(input, option) => {
+                          return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         autoFocus
-                      ></a-select>
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
+                          <span>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <a-icon v-else style="margin-right: 5px" type="global" />
+                            {{ zone1.name }}
+                          </span>
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
@@ -352,6 +392,7 @@
                 </template>
               </a-step>
               <a-step
+                v-if="isUserAllowedToListSshKeys"
                 :title="this.$t('label.sshkeypairs')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template slot="description">
@@ -657,6 +698,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -685,6 +727,7 @@ export default {
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
+    ResourceIcon,
     TooltipLabel
   },
   props: {
@@ -725,8 +768,8 @@ export default {
         disksize: null
       },
       options: {
-        templates: [],
-        isos: [],
+        templates: {},
+        isos: {},
         hypervisors: [],
         serviceOfferings: [],
         diskOfferings: [],
@@ -792,16 +835,6 @@ export default {
       defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
-      tabList: [
-        {
-          key: 'templateid',
-          tab: this.$t('label.templates')
-        },
-        {
-          key: 'isoid',
-          tab: this.$t('label.isos')
-        }
-      ],
       tabKey: 'templateid',
       dataPreFill: {},
       showDetails: false,
@@ -813,7 +846,9 @@ export default {
       diskIOpsMin: 0,
       diskIOpsMax: 0,
       minIops: 0,
-      maxIops: 0
+      maxIops: 0,
+      zones: [],
+      selectedZone: ''
     }
   },
   computed: {
@@ -898,7 +933,8 @@ export default {
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
             page: 1,
             pageSize: 10,
-            keyword: undefined
+            keyword: undefined,
+            showIcon: true
           }
         },
         pods: {
@@ -1009,11 +1045,45 @@ export default {
     templateConfigurationExists () {
       return this.vm.templateid && this.templateConfigurations && this.templateConfigurations.length > 0
     },
+    templateId () {
+      return this.$route.query.templateid || null
+    },
+    isoId () {
+      return this.$route.query.isoid || null
+    },
     networkId () {
       return this.$route.query.networkid || null
     },
+    tabList () {
+      let tabList = []
+      if (this.templateId) {
+        tabList = [{
+          key: 'templateid',
+          tab: this.$t('label.templates')
+        }]
+      } else if (this.isoId) {
+        tabList = [{
+          key: 'isoid',
+          tab: this.$t('label.isos')
+        }]
+      } else {
+        tabList = [{
+          key: 'templateid',
+          tab: this.$t('label.templates')
+        },
+        {
+          key: 'isoid',
+          tab: this.$t('label.isos')
+        }]
+      }
+
+      return tabList
+    },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    isUserAllowedToListSshKeys () {
+      return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
@@ -1085,7 +1155,9 @@ export default {
         this.vm.hostname = host.name
       }
 
-      if (this.diskSize) {
+      if (this.serviceOffering?.rootdisksize) {
+        this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
+      } else if (this.diskSize) {
         this.vm.disksizetotalgb = this.diskSize
       }
 
@@ -1102,6 +1174,7 @@ export default {
       }
 
       if (this.iso) {
+        this.vm.isoid = this.iso.id
         this.vm.templateid = this.iso.id
         this.vm.templatename = this.iso.displaytext
         this.vm.ostypeid = this.iso.ostypeid
@@ -1224,11 +1297,57 @@ export default {
     },
     fillValue (field) {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
+      this.form.setFieldsValue({ [field]: this.dataPreFill[field] })
     },
-    fetchData () {
+    fetchZoneByQuery () {
+      return new Promise(resolve => {
+        let zones = []
+        let apiName = ''
+        const params = {}
+        if (this.templateId) {
+          apiName = 'listTemplates'
+          params.listall = true
+          params.templatefilter = 'all'
+          params.id = this.templateId
+        } else if (this.isoId) {
+          params.listall = true
+          params.isofilter = 'all'
+          params.id = this.isoId
+          apiName = 'listIsos'
+        } else if (this.networkId) {
+          params.listall = true
+          params.id = this.networkId
+          apiName = 'listNetworks'
+        }
+
+        api(apiName, params).then(json => {
+          let objectName
+          const responseName = [apiName.toLowerCase(), 'response'].join('')
+          for (const key in json[responseName]) {
+            if (key === 'count') {
+              continue
+            }
+            objectName = key
+            break
+          }
+          const data = json?.[responseName]?.[objectName] || []
+          zones = data.map(item => item.zoneid)
+          return resolve(zones)
+        }).catch(() => {
+          return resolve(zones)
+        })
+      })
+    },
+    async fetchData () {
+      const zones = await this.fetchZoneByQuery()
+      if (zones && zones.length === 1) {
+        this.selectedZone = zones[0]
+        this.dataPreFill.zoneid = zones[0]
+      }
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
+        this.fetchZones(null, zones)
         _.each(this.params, (param, name) => {
           if (param.isLoad) {
             this.fetchOptions(param, name)
@@ -1247,18 +1366,13 @@ export default {
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
+    },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
-      this.options.zones = await this.fetchZones()
-      this.zoneId = zoneId
-      this.zoneSelected = true
-      this.tabKey = 'templateid'
-      await _.each(this.params, (param, name) => {
-        if (!('isLoad' in param) || param.isLoad) {
-          this.fetchOptions(param, name, ['zones'])
-        }
-      })
-      await this.fetchAllTemplates()
+      this.options.zones = await this.fetchZones(zoneId)
+      this.onSelectZoneId(zoneId)
     },
     fetchBootTypes () {
       this.options.bootTypes = [
@@ -1297,7 +1411,25 @@ export default {
       this.fetchOptions(param, 'networks')
     },
     resetData () {
-      this.vm = {}
+      this.vm = {
+        name: null,
+        zoneid: null,
+        zonename: null,
+        hypervisor: null,
+        templateid: null,
+        templatename: null,
+        keyboard: null,
+        keypair: null,
+        group: null,
+        affinitygroupids: [],
+        affinitygroup: [],
+        serviceofferingid: null,
+        serviceofferingname: null,
+        ostypeid: null,
+        ostypename: null,
+        rootdisksize: null,
+        disksize: null
+      }
       this.zoneSelected = false
       this.form.resetFields()
       this.fetchData()
@@ -1410,7 +1542,7 @@ export default {
       return key.split('.').join('\\002E')
     },
     updateSecurityGroups (securitygroupids) {
-      this.securitygroupids = securitygroupids
+      this.securitygroupids = securitygroupids || []
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
@@ -1426,12 +1558,18 @@ export default {
     },
     handleSubmit (e) {
       console.log('wizard submit')
+      const options = {
+        scroll: {
+          offsetTop: 90
+        }
+      }
       e.preventDefault()
       if (this.loading.deploy) return
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScroll(options, async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({
+              type: 'error',
               message: this.$t('message.license.agreements.not.accepted'),
               description: this.$t('message.step.license.agreements.continue')
             })
@@ -1597,9 +1735,9 @@ export default {
               }
             }
           }
-          if (this.securitygroupids.length > 0) {
-            deployVmData.securitygroupids = this.securitygroupids.join(',')
-          }
+        }
+        if (this.securitygroupids.length > 0) {
+          deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
         deployVmData.keypair = values.keypair
@@ -1641,7 +1779,7 @@ export default {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
                 if (vm.password) {
-                  this.$notification.success({
+                  this.$notification.error({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
                     duration: 0
@@ -1673,13 +1811,26 @@ export default {
         })
       })
     },
-    fetchZones () {
+    fetchZones (zoneId, listZoneAllow) {
+      this.zones = []
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        api(param.list, { listall: true }).then(json => {
-          const zones = json.listzonesresponse.zone || []
-          resolve(zones)
+        const args = { listall: true, showicon: true }
+        if (zoneId) args.id = zoneId
+        api(param.list, args).then(json => {
+          const zoneResponse = json.listzonesresponse.zone || []
+          if (listZoneAllow && listZoneAllow.length > 0) {
+            zoneResponse.map(zone => {
+              if (listZoneAllow.includes(zone.id)) {
+                this.zones.push(zone)
+              }
+            })
+          } else {
+            this.zones = zoneResponse
+          }
+
+          resolve(this.zones)
         }).catch(function (error) {
           console.log(error.stack)
         }).finally(() => {
@@ -1759,6 +1910,8 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
+      args.showicon = 'true'
+      args.id = this.templateId
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -1778,6 +1931,8 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
+      args.showicon = 'true'
+      args.id = this.isoId
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
@@ -1842,7 +1997,9 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.selectedZone = this.zoneId
       this.form.setFieldsValue({
+        zoneid: this.zoneId,
         clusterid: undefined,
         podid: undefined,
         hostid: undefined,
@@ -1850,6 +2007,9 @@ export default {
         isoid: undefined
       })
       this.tabKey = 'templateid'
+      if (this.isoId) {
+        this.tabKey = 'isoid'
+      }
       _.each(this.params, (param, name) => {
         if (this.networkId && name === 'networks') {
           param.options = {
@@ -1860,7 +2020,11 @@ export default {
           this.fetchOptions(param, name, ['zones'])
         }
       })
-      this.fetchAllTemplates()
+      if (this.tabKey === 'templateid') {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
     },
     onSelectPodId (value) {
       this.podId = value
@@ -2031,6 +2195,7 @@ export default {
       this.updateComputeOffering(null)
     },
     updateTemplateConfigurationOfferingDetails (offeringId) {
+      this.rootDiskSizeFixed = 0
       var offering = this.serviceOffering
       if (!offering || offering.id !== offeringId) {
         offering = _.find(this.options.serviceOfferings, (option) => option.id === offeringId)

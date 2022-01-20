@@ -61,7 +61,13 @@
     -->
 
     <span slot="name" slot-scope="text, record">
-      <div style="min-width: 120px" >
+      <span v-if="['vm'].includes($route.path.split('/')[1])">
+        <span v-if="record.icon && record.icon.base64image">
+          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        </span>
+        <os-logo v-else :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
+      </span>
+      <span style="min-width: 120px" >
         <QuickView
           style="margin-left: 5px"
           :actions="actions"
@@ -71,7 +77,15 @@
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
-        <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+          <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px; margin-right: 5px" :type="$route.meta.icon"/>
+          <a-icon v-else style="font-size: 16px; margin-right: 5px" :component="$route.meta.icon" />
+        </span>
+        <span v-else>
+          <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        </span>
 
         <span v-if="record.hasannotations">
           <span v-if="record.id">
@@ -89,7 +103,7 @@
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
         </span>
-      </div>
+      </span>
     </span>
     <a slot="templatetype" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
@@ -108,6 +122,10 @@
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
     <span slot="username" slot-scope="text, record" href="javascript:;">
+      <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
+        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        <a-icon v-else style="font-size: 16px; margin-right: 5px" type="user" />
+      </span>
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
@@ -153,7 +171,7 @@
     </span>
     <template slot="state" slot-scope="text, record">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
-      <status v-else :text="text ? text : ''" displayText />
+      <status v-else :text="text ? text : ''" displayText style="min-width: 80px" />
     </template>
     <template slot="allocationstate" slot-scope="text">
       <status :text="text ? text : ''" displayText />
@@ -250,6 +268,10 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
+    <span slot="autoscalingenabled" slot-scope="text, record">
+      <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
+      {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
+    </span>
     <span slot="current" slot-scope="text, record">
       <status :text="record.current ? record.current.toString() : 'false'" />
     </span>
@@ -326,6 +348,12 @@
         v-if="editableValueKey === record.key"
         iconType="check-circle"
         iconTwoToneColor="#52c41a" />
+      <tooltip-button
+        :tooltip="$t('label.reset.config.value')"
+        @click="resetConfig(record)"
+        v-if="editableValueKey !== record.key"
+        icon="reload"
+        :disabled="!('updateConfiguration' in $store.getters.apis)" />
     </template>
     <template slot="tariffActions" slot-scope="text, record">
       <tooltip-button
@@ -347,6 +375,7 @@ import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ListView',
@@ -356,7 +385,8 @@ export default {
     Status,
     InfoCard,
     QuickView,
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     columns: {
@@ -376,12 +406,13 @@ export default {
       default: () => []
     }
   },
-  inject: ['parentFetchData', 'parentToggleLoading', 'parentEditTariffAction'],
+  inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
       selectedRowKeys: [],
       editableValueKey: null,
       editableValue: '',
+      resourceIcon: '',
       thresholdMapping: {
         cpuused: {
           notification: 'cputhreshold',
@@ -501,6 +532,23 @@ export default {
         this.$emit('refresh')
       })
     },
+    resetConfig (item) {
+      api('resetConfiguration', {
+        name: item.name
+      }).then(() => {
+        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        this.$message.success(message)
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.reset.config'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.reset.config')
+        })
+      }).finally(() => {
+        this.$emit('refresh')
+      })
+    },
     editValue (record) {
       this.editableValueKey = record.key
       this.editableValue = record.value
@@ -594,7 +642,7 @@ export default {
       this.updateOrder(data)
     },
     editTariffValue (record) {
-      this.parentEditTariffAction(true, record)
+      this.$emit('edit-tariff-action', true, record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {

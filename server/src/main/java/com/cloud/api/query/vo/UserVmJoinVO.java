@@ -142,6 +142,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "private_mac_address", updatable = true, nullable = true)
     private String privateMacAddress;
 
+    @Column(name = "cluster_id", updatable = true, nullable = false)
+    private Long clusterId;
+
     @Column(name = "pod_id", updatable = true, nullable = false)
     private Long podId;
 
@@ -528,6 +531,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public Long getLastHostId() {
         return lastHostId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public Long getPodId() {

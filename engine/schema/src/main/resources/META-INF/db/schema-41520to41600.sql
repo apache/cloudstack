@@ -19,6 +19,19 @@
 -- Schema upgrade from 4.15.2.0 to 4.16.0.0
 --;
 
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_vm_type` varchar(255) DEFAULT "UserVM" COMMENT 'Defines the type of UserVM';
+
+-- This is set, so as to ensure that the controller details from the ovf template are adhered to
+UPDATE `cloud`.`vm_template` set deploy_as_is = 1 where id = 8;
+
+DELETE FROM `cloud`.`configuration` WHERE name IN ("cloud.kubernetes.cluster.template.name.kvm", "cloud.kubernetes.cluster.template.name.vmware", "cloud.kubernetes.cluster.template.name.xenserver", "cloud.kubernetes.cluster.template.name.hyperv");
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;
+
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `control_node` tinyint(1) unsigned NOT NULL DEFAULT 0;
+
 -- Adding dynamic scalable flag for service offering table
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamic_scaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
@@ -443,6 +456,7 @@ SELECT
     `host`.`id` AS `host_id`,
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
+    `host`.`cluster_id` AS `cluster_id`,
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
@@ -697,6 +711,20 @@ CREATE VIEW `cloud`.`host_view` AS
     GROUP BY
         `host`.`id`;
 
+CREATE TABLE `cloud`.`resource_icon` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `icon` blob COMMENT 'Base64 version of the resource icon',
+  `resource_id` bigint unsigned NOT NULL,
+  `resource_uuid` varchar(40),
+  `resource_type` varchar(255),
+  `updated` datetime default NULL,
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_resource_icon__uuid` UNIQUE (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 1;
 
 -- Allow annotations for resource admins, domain admins and users
@@ -774,3 +802,6 @@ ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
 UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
 ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
 
+ALTER TABLE cloud_usage.usage_network DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`,`zone_id`,`host_id`,`network_id`,`event_time_millis`);
+ALTER TABLE `cloud`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);
+ALTER TABLE `cloud_usage`.`user_statistics` DROP INDEX `account_id`, ADD UNIQUE KEY `account_id`  (`account_id`,`data_center_id`,`public_ip_address`,`device_id`,`device_type`, `network_id`);

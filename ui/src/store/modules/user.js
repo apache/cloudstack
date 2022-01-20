@@ -17,7 +17,6 @@
 
 import Cookies from 'js-cookie'
 import Vue from 'vue'
-import md5 from 'md5'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import router from '@/router'
@@ -56,7 +55,8 @@ const user = {
     domainStore: {},
     darkMode: false,
     themeSetting: {},
-    defaultListViewPageSize: 20
+    defaultListViewPageSize: 20,
+    countNotify: 0
   },
 
   mutations: {
@@ -122,6 +122,9 @@ const user = {
     },
     SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
       state.defaultListViewPageSize = defaultListViewPageSize
+    },
+    SET_COUNT_NOTIFY (state, number) {
+      state.countNotify = number
     }
   },
 
@@ -172,9 +175,9 @@ const user = {
       })
     },
 
-    GetInfo ({ commit }) {
+    GetInfo ({ commit }, switchDomain) {
       return new Promise((resolve, reject) => {
-        const cachedApis = Vue.ls.get(APIS, {})
+        const cachedApis = switchDomain ? {} : Vue.ls.get(APIS, {})
         const cachedZones = Vue.ls.get(ZONES, [])
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
@@ -198,11 +201,6 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            if ('email' in result) {
-              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
-            } else {
-              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
-            }
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -242,11 +240,6 @@ const user = {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
-          if ('email' in result) {
-            commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
-          } else {
-            commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
-          }
         }).catch(error => {
           reject(error)
         })

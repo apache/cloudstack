@@ -89,79 +89,96 @@
         </a-row>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
-          <a-switch v-decorator="['forvpc', {initialValue: forVpc}]" :defaultChecked="forVpc" @change="val => { handleForVpcChange(val) }" />
+          <a-switch v-decorator="['forvpc']" :checked="forVpc" @change="val => { handleForVpcChange(val) }" />
         </a-form-item>
         <a-form-item :label="$t('label.userdatal2')" v-if="guestType === 'l2'">
           <a-switch v-decorator="['userdatal2', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
-          <a-radio-group
-            v-decorator="[' ', {
-              initialValue: 'publicLb'
-            }]"
-            buttonStyle="solid">
-            <a-radio-button value="publicLb">
-              {{ $t('label.public.lb') }}
-            </a-radio-button>
-            <a-radio-button value="internalLb">
-              {{ $t('label.internal.lb') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.promiscuousmode')">
-          <a-radio-group
-            v-decorator="['promiscuousmode', {
-              initialValue: promiscuousMode
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handlePromiscuousModeChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.macaddresschanges')">
-          <a-radio-group
-            v-decorator="['macaddresschanges', {
-              initialValue: macAddressChanges
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handleMacAddressChangesChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.forgedtransmits')">
-          <a-radio-group
-            v-decorator="['forgedtransmits', {
-              initialValue: forgedTransmits
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
+        <a-row :gutter="12">
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.promiscuousmode')" :tooltip="$t('message.network.offering.promiscuous.mode')"/>
+              <a-radio-group
+                v-decorator="['promiscuousmode', {
+                  initialValue: ''
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.macaddresschanges')" :tooltip="$t('message.network.offering.mac.address.changes')"/>
+              <a-radio-group
+                v-decorator="['macaddresschanges', {
+                  initialValue: ''
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
+              <a-radio-group
+                v-decorator="['forgedtransmits', {
+                  initialValue: ''
+                }]"
+                buttonStyle="solid">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
+              <span v-if="macLearningValue !== ''">
+                <a-alert type="warning">
+                  <span slot="message" v-html="$t('message.network.offering.mac.learning.warning')" />
+                </a-alert>
+                <br/>
+              </span>
+              <a-radio-group
+                v-decorator="['maclearning', {
+                  initialValue: macLearningValue
+                }]"
+                buttonStyle="solid"
+                @change="e => { macLearningValue = e.target.value }">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item v-if="guestType !== 'l2'">
           <tooltip-label slot="label" :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
@@ -171,15 +188,28 @@
                   v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
                   :checkBoxLabel="item.description"
-                  :checkBoxDecorator="'service.' + item.name"
-                  :selectOptions="item.provider"
-                  :selectDecorator="item.name + '.provider'"
+                  :selectOptions="!supportedServiceLoading ? item.provider: []"
                   @handle-checkselectpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+        <a-form-item :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
+          <a-radio-group
+            v-decorator="['lbType', {
+              initialValue: lbType
+            }]"
+            buttonStyle="solid"
+            @change="e => { handleLbTypeChange(e.target.value) }" >
+            <a-radio-button value="publicLb">
+              {{ $t('label.public.lb') }}
+            </a-radio-button>
+            <a-radio-button value="internalLb">
+              {{ $t('label.internal.lb') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
           <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             v-decorator="['serviceofferingid', {
@@ -223,7 +253,7 @@
         <a-form-item :label="$t('label.service.lb.elasticlbcheckbox')" v-if="guestType == 'shared' && lbServiceChecked && lbServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticlb', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="(guestType === 'shared' || guestType === 'isolated') && lbServiceChecked && firewallServiceChecked && lbServiceProvider === 'F5BigIp' && firewallServiceProvider === 'JuniperSRX'">
+        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="['shared', 'isolated'].includes(guestType) && lbServiceChecked && firewallServiceChecked && ['F5BigIp', 'Netscaler'].includes(lbServiceProvider) && ['JuniperSRX'].includes(firewallServiceProvider)">
           <a-radio-group
             v-decorator="['inlinemode', {
               initialValue: 'false'
@@ -341,12 +371,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
-              {{ opt.path || opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -370,12 +404,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -394,13 +432,16 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddNetworkOffering',
   components: {
     CheckBoxSelectPair,
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -408,12 +449,11 @@ export default {
       hasAdvanceZone: false,
       requiredNetworkOfferingExists: false,
       guestType: 'isolated',
-      promiscuousMode: '',
-      macAddressChanges: '',
-      forgedTransmits: '',
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
+      lbType: 'publicLb',
+      macLearningValue: '',
       supportedServices: [],
       supportedServiceLoading: false,
       isVirtualRouterForAtLeastOneService: false,
@@ -423,6 +463,8 @@ export default {
       sourceNatServiceChecked: false,
       lbServiceChecked: false,
       lbServiceProvider: '',
+      registeredServicePackages: [],
+      registeredServicePackageLoading: false,
       isElasticIp: false,
       staticNatServiceChecked: false,
       staticNatServiceProvider: '',
@@ -459,7 +501,7 @@ export default {
       this.fetchServiceOfferingData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     isSupportedServiceObject (obj) {
       return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
@@ -467,6 +509,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -479,6 +522,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
@@ -489,15 +533,27 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
-    },
-    handlePromiscuousModeChange (val) {
-      this.promiscuousMode = val
-    },
-    handleMacAddressChangesChange (val) {
-      this.macAddressChanges = val
-    },
-    handleForgedTransmitsChange (val) {
-      this.forgedTransmits = val
+      if (val === 'l2') {
+        this.forVpc = false
+        this.lbType = 'publicLb'
+        this.isVirtualRouterForAtLeastOneService = false
+        this.isVpcVirtualRouterForAtLeastOneService = false
+        this.serviceOfferings = []
+        this.serviceOfferingLoading = false
+        this.sourceNatServiceChecked = false
+        this.lbServiceChecked = false
+        this.lbServiceProvider = ''
+        this.registeredServicePackages = []
+        this.registeredServicePackageLoading = false
+        this.isElasticIp = false
+        this.staticNatServiceChecked = false
+        this.staticNatServiceProvider = ''
+        this.connectivityServiceChecked = false
+        this.firewallServiceChecked = false
+        this.firewallServiceProvider = ''
+        this.selectedServiceProviderMap = {}
+        this.updateSupportedServices()
+      }
     },
     fetchSupportedServiceData () {
       const params = {}
@@ -561,18 +617,21 @@ export default {
           this.supportedServices[i].provider = providers
           this.supportedServices[i].description = serviceDisplayName
         }
+      }).finally(() => {
+        this.supportedServiceLoading = false
+        this.updateSupportedServices()
       })
     },
     fetchServiceOfferingData () {
       const params = {}
       params.issystem = true
       params.systemvmtype = 'domainrouter'
-      this.supportedServiceLoading = true
+      this.serviceOfferingLoading = true
       api('listServiceOfferings', params).then(json => {
         const listServiceOfferings = json.listserviceofferingsresponse.serviceoffering
         this.serviceOfferings = this.serviceOfferings.concat(listServiceOfferings)
       }).finally(() => {
-        this.supportedServiceLoading = false
+        this.serviceOfferingLoading = false
       })
     },
     fetchRegisteredServicePackageData () {
@@ -594,32 +653,41 @@ export default {
         this.registeredServicePackageLoading = false
       })
     },
-    handleForVpcChange (forVpc) {
+    updateSupportedServices () {
+      this.supportedServiceLoading = true
+      var supportedServices = this.supportedServices
       var self = this
-      this.forVpc = forVpc
-      this.supportedServices.forEach(function (svc, index) {
-        if (svc !== 'Connectivity') {
+      supportedServices.forEach(function (svc, index) {
+        if (svc.name !== 'Connectivity') {
           var providers = svc.provider
           providers.forEach(function (provider, providerIndex) {
             if (self.forVpc) { // *** vpc ***
-              if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter' || provider.name === 'Netscaler' || provider.name === 'BigSwitchBcf' || provider.name === 'ConfigDrive') {
-                provider.enabled = true
-              } else {
-                provider.enabled = false
+              var enabledProviders = ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive']
+              if (self.lbType === 'internalLb') {
+                enabledProviders.push('InternalLbVm')
               }
+              provider.enabled = enabledProviders.includes(provider.name)
             } else { // *** non-vpc ***
-              if (provider.name === 'InternalLbVm' || provider.name === 'VpcVirtualRouter') {
-                provider.enabled = false
-              } else {
-                provider.enabled = true
-              }
+              provider.enabled = !['InternalLbVm', 'VpcVirtualRouter'].includes(provider.name)
             }
             providers[providerIndex] = provider
           })
           svc.provider = providers
-          self.supportedServices[index] = svc
+          supportedServices[index] = svc
         }
       })
+      setTimeout(() => {
+        self.supportedServices = supportedServices
+        self.supportedServiceLoading = false
+      }, 50)
+    },
+    handleForVpcChange (forVpc) {
+      this.forVpc = forVpc
+      this.updateSupportedServices()
+    },
+    handleLbTypeChange (lbType) {
+      this.lbType = lbType
+      this.updateSupportedServices()
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (service === 'SourceNat') {
@@ -663,41 +731,39 @@ export default {
       providers.forEach(function (prvdr, idx) {
         if (prvdr === 'VirtualRouter') {
           self.isVirtualRouterForAtLeastOneService = true
-          if (self.serviceOfferings.length === 0) {
-            self.fetchServiceOfferingData()
-          }
         }
         if (prvdr === 'VpcVirtualRouter') {
           self.isVpcVirtualRouterForAtLeastOneService = true
+        }
+        if ((self.isVirtualRouterForAtLeastOneService || self.isVpcVirtualRouterForAtLeastOneService) &&
+          self.serviceOfferings.length === 0) {
+          self.fetchServiceOfferingData()
         }
       })
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }
         this.loading = true
         var params = {}
 
-        var self = this
-        var selectedServices = null
         var keys = Object.keys(values)
-        var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'isolation', 'supportspublicaccess']
+        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
-          if (self.isSupportedServiceObject(values[key])) {
-            if (selectedServices == null) {
-              selectedServices = {}
-            }
-            selectedServices[key] = values[key]
-          } else {
-            if (!ignoredKeys.includes(key) &&
-              values[key] != null && values[key] !== undefined &&
-              !(key === 'availability' && values[key] === 'Optional')) {
-              params[key] = values[key]
-            }
+          if (!ignoredKeys.includes(key) &&
+            values[key] != null && values[key] !== undefined &&
+            !(key === 'availability' && values[key] === 'Optional')) {
+            params[key] = values[key]
           }
         })
 
@@ -735,12 +801,12 @@ export default {
             params.conservemode = false
           }
         }
-        if (selectedServices != null) {
-          var supportedServices = Object.keys(selectedServices)
+        if (this.selectedServiceProviderMap != null) {
+          var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = supportedServices.join(',')
           for (var k in supportedServices) {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
-            params['serviceProviderList[' + k + '].provider'] = selectedServices[supportedServices[k]].provider
+            params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
           var serviceCapabilityIndex = 0
           if (supportedServices.includes('Connectivity')) {
@@ -796,7 +862,7 @@ export default {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true
               serviceCapabilityIndex++
             }
-            if (values.inlinemode === true && ((selectedServices.Lb.provider === 'F5BigIp') || (selectedServices.Lb.provider === 'Netscaler'))) {
+            if (values.inlinemode === true && ((this.selectedServiceProviderMap.Lb === 'F5BigIp') || (this.selectedServiceProviderMap.Lb === 'Netscaler'))) {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.inlinemode
@@ -806,7 +872,7 @@ export default {
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation'
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.isolation
             serviceCapabilityIndex++
-            if (selectedServices.Lb.provider === 'InternalLbVm') {
+            if (this.selectedServiceProviderMap.Lb === 'InternalLbVm') {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'lbSchemes'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal'
@@ -828,14 +894,10 @@ export default {
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
           params.egressdefaultpolicy = false
         }
-        if (values.promiscuousmode) {
-          params['details[0].promiscuousMode'] = values.promiscuousmode
-        }
-        if (values.macaddresschanges) {
-          params['details[0].macaddresschanges'] = values.macaddresschanges
-        }
-        if (values.forgedtransmits) {
-          params['details[0].forgedtransmits'] = values.forgedtransmits
+        for (const key of detailsKey) {
+          if (values[key]) {
+            params['details[0].' + key] = values[key]
+          }
         }
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
