@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -281,9 +280,7 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6Route> ipv6Routes;
 
-    public NetworkResponse() {
-        this.ipv6Routes = new LinkedHashSet<Ipv6Route>();
-    }
+    public NetworkResponse() {}
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -561,6 +558,10 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setIpv6Routing(String ipv6Routing) {
         this.ipv6Routing = ipv6Routing;
+    }
+
+    public void setIpv6Routes(Set<Ipv6Route> ipv6Routes) {
+        this.ipv6Routes = ipv6Routes;
     }
 
     public void addIpv6Route(Ipv6Route ipv6Route) {

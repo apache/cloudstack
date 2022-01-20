@@ -27,6 +27,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2526,6 +2527,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
             response.setIpv6Routing("Static");
             response.setIpv6Firewall(networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId()));
+            response.setIpv6Routes(new LinkedHashSet<>());
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
                 List<String> ipv6Addresses = ipv6Service.getPublicIpv6AddressesForNetwork(network);
                 for (String address : ipv6Addresses) {
