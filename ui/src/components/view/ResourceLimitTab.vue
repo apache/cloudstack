@@ -18,6 +18,7 @@
 <template>
   <a-spin :spinning="formLoading">
     <a-form
+      :ref="formRef"
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
@@ -28,7 +29,9 @@
         <a-form-item
           v-if="item.resourcetypename !== 'project'"
           :v-bind="item.resourcetypename"
-          :label="$t('label.max' + (item.resourcetypename ? item.resourcetypename.replace('_', '') : ''))">
+          :label="$t('label.max' + (item.resourcetypename ? item.resourcetypename.replace('_', '') : ''))"
+          :name="item.resourcetype"
+          :ref="item.resourcetype">
           <a-input-number
             :disabled="!('updateResourceLimit' in $store.getters.apis)"
             style="width: 100%;"
@@ -51,7 +54,7 @@
 </template>
 
 <script>
-import { reactive } from 'vue'
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -72,11 +75,10 @@ export default {
       dataResource: []
     }
   },
-  beforeCreate () {
+  created () {
+    this.formRef = ref()
     this.form = reactive({})
     this.rules = reactive({})
-  },
-  created () {
     this.dataResource = this.resource
     this.fetchData()
   },
@@ -114,6 +116,7 @@ export default {
           form[item.resourcetype] = item.max | -1
         })
         this.form = form
+        this.formRef.value.resetFields()
         this.formLoading = false
       } catch (e) {
         this.$notification.error({
@@ -128,10 +131,8 @@ export default {
 
       if (this.formLoading) return
 
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const arrAsync = []
         const params = this.getParams()
         for (const key in values) {
@@ -155,6 +156,8 @@ export default {
         }).finally(() => {
           this.formLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     listResourceLimits (params) {
