@@ -1241,7 +1241,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
                 if (snapshotStoreRef == null) {
-                    throw new CloudRuntimeException("Could not find snapshot");
+                    throw new CloudRuntimeException(String.format("Could not find snapshot with id [%] on [%]", snapshotId, snapshot.getLocationType()));
                 }
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                         snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
