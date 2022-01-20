@@ -104,8 +104,8 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     }
 
     @Override
-    public boolean checkAccess(Account user, String apiCommandName) throws PermissionDeniedException {
-        throw new PermissionDeniedException("cannot ask permission for an account from a project context");
+    public boolean checkAccess(Account account, String apiCommandName) throws PermissionDeniedException {
+        return true;
     }
 
     private boolean isPermitted(Project project, ProjectAccount projectUser, String apiCommandName) {

@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,6 +39,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -49,6 +52,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -284,6 +288,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserAuthenticator> _userAuthenticators;
     protected List<UserAuthenticator> _userPasswordEncoders;
+    protected List<PluggableService> services;
     private List<APIChecker> apiAccessCheckers;
 
     @Inject
@@ -300,6 +305,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<SecurityChecker> _securityCheckers;
     private int _cleanupInterval;
+    private List<String> apiNameList;
+
+    protected AccountManagerImpl() {
+        super();
+    }
 
     public List<UserAuthenticator> getUserAuthenticators() {
         return _userAuthenticators;
@@ -323,6 +333,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
         _securityCheckers = securityCheckers;
+    }
+
+    public List<PluggableService> getServices() {
+        return services;
+    }
+
+    public void setServices(List<PluggableService> services) {
+        this.services = services;
+    }
+
+    public List<APIChecker> getApiAccessCheckers() {
+        return apiAccessCheckers;
+    }
+
+    public void setApiAccessCheckers(List<APIChecker> apiAccessCheckers) {
+        this.apiAccessCheckers = apiAccessCheckers;
     }
 
     public List<QuerySelector> getQuerySelectors() {
@@ -366,9 +392,45 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean start() {
+        if (apiNameList == null) {
+            long startTime = System.nanoTime();
+            apiNameList = new ArrayList<String>();
+            Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
+            for (PluggableService service : services) {
+                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
+                cmdClasses.addAll(service.getCommands());
+            }
+            apiNameList = createApiNameList(cmdClasses);
+            long endTime = System.nanoTime();
+            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+        }
         _executor.scheduleAtFixedRate(new AccountCleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
         return true;
     }
+
+    protected List<String> createApiNameList(Set<Class<?>> cmdClasses) {
+        List<String> apiNameList = new ArrayList<String>();
+
+        for (Class<?> cmdClass : cmdClasses) {
+            APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
+            if (apiCmdAnnotation == null) {
+                apiCmdAnnotation = cmdClass.getSuperclass().getAnnotation(APICommand.class);
+            }
+            if (apiCmdAnnotation == null || !apiCmdAnnotation.includeInApiDoc() || apiCmdAnnotation.name().isEmpty()) {
+                continue;
+            }
+
+            String apiName = apiCmdAnnotation.name();
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Found api: " + apiName);
+            }
+
+            apiNameList.add(apiName);
+        }
+
+        return apiNameList;
+    }
+
 
     @Override
     public boolean stop() {
@@ -1064,9 +1126,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check permissions
         checkAccess(getCurrentCallingAccount(), domain);
 
-//        get user by account
-        checkRoleEscalation(getCurrentCallingAccount(), roleId);
-
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
         }
@@ -1092,6 +1151,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
                 AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
                 long accountId = account.getId();
+
+                checkRoleEscalation(getCurrentCallingAccount(), account);
 
                 // create the first user for the account
                 UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
@@ -1126,7 +1187,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     /**
      * if there is any permission under the requested role that is not permitted for the caller, refuse
      */
-    private void checkRoleEscalation(Account caller, Long requestedRoleId) {
+    private void checkRoleEscalation(Account caller, Account requested) {
+        Long requestedRoleId = requested.getRoleId();
         List<RolePermission> requestedPermissions = roleService.findAllPermissionsBy(requestedRoleId);
 
         for (RolePermission permission : requestedPermissions) {
