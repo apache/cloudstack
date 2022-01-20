@@ -95,6 +95,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     protected final static String BASE_MOUNT_POINT_ON_REMOTE = "/var/cloud_mount/";
 
+    protected String getNfsVersion() {
+        return hypervisorResource.nfsVersion;
+    }
+
     public XenServerStorageProcessor(final CitrixResourceBase resource) {
         hypervisorResource = resource;
     }

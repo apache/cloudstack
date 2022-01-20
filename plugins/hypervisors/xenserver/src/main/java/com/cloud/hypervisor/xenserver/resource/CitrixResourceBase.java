@@ -294,6 +294,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _configDriveSRName = "ConfigDriveISOs";
     public String _attachIsoDeviceNum = "3";
 
+    protected String nfsVersion;
+
     protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
 
     protected int _wait;
@@ -840,6 +842,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         value = (String)params.get("migratewait");
         _migratewait = NumbersUtil.parseInt(value, 3600);
+
+        s_logger.debug("Checking NFS version is set");
+        nfsVersion = (String) params.get("secstorage.nfs.version");
 
         _maxNics = NumbersUtil.parseInt((String)params.get("xenserver.nics.max"), 7);
 
@@ -5671,7 +5676,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             URI uri = new URI(secondaryStorageUrl);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
-            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
+            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
             if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
             }
@@ -5698,11 +5703,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private String mountNfs(Connection conn, String remoteDir, String localDir) {
+    private String mountNfs(Connection conn, String remoteDir, String localDir, String nfsVersion) {
         if (localDir == null) {
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
-        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir, "nfsVersion", nfsVersion);
     }
 
     // Unmount secondary storage from host
