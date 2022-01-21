@@ -225,8 +225,6 @@ const user = {
             store.dispatch('GenerateRoutes', { apis }).then(() => {
               router.addRoutes(store.getters.addRouters)
             })
-            hide()
-            message.success(i18n.t('message.sussess.discovering.feature'))
           }).catch(error => {
             reject(error)
           })
@@ -245,6 +243,8 @@ const user = {
             store.dispatch('GenerateRoutes', { apis }).then(() => {
               router.addRoutes(store.getters.addRouters)
             })
+            hide()
+            message.success(i18n.t('message.sussess.discovering.feature'))
           }).catch(error => {
             reject(error)
           })

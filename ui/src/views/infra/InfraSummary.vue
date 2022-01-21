@@ -31,14 +31,16 @@
             {{ $t('label.refresh') }}
           </a-button>
           <a-button
+            v-if="sslUploadAllowed"
             style="margin-left: 12px; margin-top: 4px"
             icon="safety-certificate"
             size="small"
             shape="round"
-            @click="sslFormVisible = true">
+            @click="openSslModal">
             {{ $t('label.sslcertificates') }}
           </a-button>
           <a-modal
+            v-if="sslFormVisible"
             :title="$t('label.sslcertificates')"
             :visible="sslFormVisible"
             :footer="null"
@@ -192,10 +194,15 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = this.$getApiParams('uploadCustomCertificate')
+    this.apiParams = {}
   },
   created () {
     this.fetchData()
+  },
+  computed: {
+    sslUploadAllowed () {
+      return 'uploadCustomCertificate' in this.$store.getters.apis && this.$store.getters.apis.uploadCustomCertificate.params
+    }
   },
   methods: {
     fetchData () {
@@ -226,6 +233,11 @@ export default {
       this.intermediateCertificates = []
       this.sslFormSubmitting = false
       this.sslFormVisible = false
+    },
+
+    openSslModal () {
+      this.apiParams = this.$getApiParams('uploadCustomCertificate')
+      this.sslFormVisible = true
     },
 
     sslModalClose () {
