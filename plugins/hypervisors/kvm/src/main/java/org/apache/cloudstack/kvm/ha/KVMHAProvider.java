@@ -154,6 +154,9 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             KVMHAConfig.KvmHARecoverAttemptThreshold,
             KVMHAConfig.KvmHaWebservicePort,
             KVMHAConfig.IsKvmHaWebserviceEnabled,
+            KVMHAConfig.KvmHaWebserviceSslEnabled,
+            KVMHAConfig.KvmHaWebserviceUsername,
+            KVMHAConfig.KvmHaWebservicePassword,
             KVMHAConfig.KvmHaAcceptedProblematicHostsRatio
         };
     }

@@ -700,7 +700,7 @@ public class SystemVmTemplateRegistration {
             Ini.Section section = ini.get("default");
             return section.get("version");
         } catch (Exception e) {
-            String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
+                String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
             LOGGER.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }

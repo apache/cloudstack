@@ -42,6 +42,9 @@ HTTP_NOT_FOUND = 404
 HTTP_PROTOCOL = 'http'
 HTTPS_PROTOCOL = 'https'
 QEMU_SYSTEM = 'qemu:///system'
+STATUS = 'status'
+UP = 'Up'
+DOWN = 'Down'
 
 # Variables
 server_side = True
@@ -51,7 +54,7 @@ insecure = False
 port = 8443
 http_protocol = HTTPS_PROTOCOL
 username = 'kvmHaHelperDefaultUsername'
-password = 'kvmhahelperDefaultPassword'
+password = 'kvmHaHelperDefaultPassword'
 
 """
     This web-server exposes a simple JSON API that returns a list of Virtual Machines running according to Libvirt.
@@ -101,13 +104,22 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
     """
 
     def do_GET(self):
+        if not insecure:
+            self.do_http_basic_auth()
+        else:
+            self.do_normal_http_get()
+
+    def do_normal_http_get(self):
+        self.send_response(HTTP_OK)
+        self.send_header(CONTENT_TYPE, APPLICATION_JSON)
+        self.end_headers()
+        self.process_get_request()
+
+    def do_http_basic_auth(self):
         expected_header = BASIC_AUTH + key
         request_header = self.headers.get("Authorization")
         if request_header == expected_header:
-            self.send_response(HTTP_OK)
-            self.send_header(CONTENT_TYPE, APPLICATION_JSON)
-            self.end_headers()
-            self.process_get_request()
+            self.do_normal_http_get()
         else:
             logging.error('Failed to authenticate: wrong authentication method or credentials.')
             self.send_response(HTTP_UNAUTHORIZED)
@@ -156,27 +168,27 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
         try:
             response = requests.get(url=request_url)
             if HTTP_OK <= response.status_code < HTTP_MULTIPLE_CHOICES:
-                request_response = 'Up'
+                request_response = UP
             else:
-                request_response = 'Down'
+                request_response = DOWN
         except:
             logging.error('GET Request {} failed.'.format(request_url))
             output = {
-                'status': 'Down'
+                STATUS : DOWN
             }
             logging.debug('Neighbour host status:  {}'.format(output))
             self.send_response(HTTP_NOT_FOUND)
-            self.send_header(CONTENT_TYPE, 'application/json')
+            self.send_header(CONTENT_TYPE, APPLICATION_JSON)
             self.end_headers()
             self.wfile.write(json.dumps(output).encode())
             return
 
         logging.debug('Neighbour host status: {}'.format(request_response))
         output = {
-            'status': request_response,
+            STATUS : request_response,
         }
         self.send_response(HTTP_OK)
-        self.send_header('Content-type', 'application/json')
+        self.send_header(CONTENT_TYPE, APPLICATION_JSON)
         self.end_headers()
         self.wfile.write(json.dumps(output).encode())
 
@@ -208,7 +220,7 @@ if __name__ == "__main__":
     logging.basicConfig(filename=LOG_PATH, format='%(asctime)s - %(message)s', level=logging.DEBUG)
     try:
         parser = argparse.ArgumentParser(prog='agent-ha-helper',
-                                         usage='%(prog)s [-h] [-i] -p <port>',
+                                         usage='%(prog)s [-h] [-i] -p <port> -u <user> -k <keyword>',
                                          description='The agent-ha-helper.py provides a HTTP server '
                                                      'which handles API requests to identify '
                                                      'if the host (or a neighbour host) is healthy.')

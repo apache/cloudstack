@@ -18,11 +18,20 @@
 # The agent-ha-helper.py provides a HTTP server which handles API requests to identify if the host (or a neighbour host) is healthy.
 # optional arguments:
 
-# PORT  Port to be used by the agent-ha-helper server
+# PORT  Sets the port to be used by the agent-ha-helper server  (must contains the flag '-p' for Script to add the value)
 # Default is 8443. However, if the "insecure" mode is activated, then it uses 8080 by default.
-# PORT=8443
+# PORT="-p 8443"
 
 # If uncommented, it passes flag that allows to deploy the HTTP server without SSL (default port would be 8080 in such case)
+# If no mode is provided, agent-ha-helper creates HTTP server with support to SSL via cloud.crt and cloud.key.
 # To enable HTTP requests then make it
 # SECURITY_MODE="--insecure"
-# If no mode is provided, agent-ha-helper creates HTTP server with support to SSL via cloud.crt and cloud.key.
+
+
+# USERNAME  Sets username for server authentication (must contains the flag '-u' for Script to add the value)
+# Default is kvmHaHelperDefaultUsername. If this is changed, the CloudStack global settings 'kvm.ha.webservice.username' should also be updated to match this configuration.
+# USERNAME="-u kvmHaHelperDefaultUsername"
+
+# KEYWORD  Sets the keyworkd / password for server authentication  (must contains the flag '-k' for Script to add the value)
+# Default is kvmHaHelperDefaultPassword. If this is changed, the CloudStack global settings 'kvm.ha.webservice.password' should also be updated to match this configuration.
+# KEYWORD="-k kvmHaHelperDefaultPassword"

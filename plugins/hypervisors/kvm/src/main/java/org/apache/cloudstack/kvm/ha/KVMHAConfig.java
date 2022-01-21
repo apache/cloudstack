@@ -62,8 +62,23 @@ public class KVMHAConfig {
                     + "One can enable (set to 'true') or disable it ('false'). If disabled then CloudStack ignores HA validation via this agent.",
             true, ConfigKey.Scope.Cluster);
 
+    public static final ConfigKey<Boolean> KvmHaWebserviceSslEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "kvm.ha.webservice.ssl.enabled", "true",
+            "Enable SSL for KVM HA Helper Agent. Note that HA Helper SSL will work only on KVM nodes where there has been provided Security Keys or a custom certificate configured."
+                    + "Default value is true, if you configured your KVM HA Helper servers (on KVM nodes) with SSL disabled then you must change this to False."
+                    + "Note that HA Helper SSL will work only on KVM nodes where there has been provided Security Keys or a custom certificate configured.",
+            true, ConfigKey.Scope.Cluster);
+
+    public static final ConfigKey<String> KvmHaWebserviceUsername = new ConfigKey<String>("Advanced", String.class, "kvm.ha.webservice.username", "kvmHaHelperDefaultUsername",
+            "Sets the username for KVM HA webserver Basic Authentication. The username set here must match with the webserver's configured username.",
+            true, ConfigKey.Scope.Cluster);
+
+    public static final ConfigKey<String> KvmHaWebservicePassword = new ConfigKey<String>("Advanced", String.class, "kvm.ha.webservice.password", "kvmHaHelperDefaultPassword",
+            "Sets the password for KVM HA webserver Basic Authentication. The password set here must match with the webserver's configured password.",
+            true, ConfigKey.Scope.Cluster);
+
     public static final ConfigKey<Double> KvmHaAcceptedProblematicHostsRatio = new ConfigKey<Double>("Advanced", Double.class, "kvm.ha.accepted.problematic.hosts.ratio", "0.3",
             "The ratio of problematic Hosts accepted on a Cluster. If a cluster has more than the accepted ratio, HA will not Fence/Recover Hosts; instead, it will notify Admins to check the cluster healthy. "
                     + "A Host is considered problematic if in one of the following states: Error, Alert, Down, Disconnected. Default value is '0.3' (30%).",
             true, ConfigKey.Scope.Cluster);
+
 }

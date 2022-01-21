@@ -13,10 +13,11 @@
  */
 package org.apache.cloudstack.kvm.ha;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
+import com.cloud.host.HostVO;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -37,11 +38,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.host.HostVO;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KvmHaAgentClientTest {
@@ -63,6 +62,8 @@ public class KvmHaAgentClientTest {
     private static final String VMS_COUNT = "count";
     private static final String VIRTUAL_MACHINES = "virtualmachines";
     private static final int MAX_REQUEST_RETRIES = 2;
+    static final String HTTP = "http";
+    static final String HTTPS = "https";
 
     @Spy
     @InjectMocks
@@ -101,7 +102,7 @@ public class KvmHaAgentClientTest {
     }
 
     private CloseableHttpResponse mockResponse(int httpStatusCode, String jsonString) throws IOException {
-        BasicStatusLine basicStatusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1000, 123), httpStatusCode, "Status");
+        BasicStatusLine basicStatusLine = new BasicStatusLine(new ProtocolVersion(HTTP, 1000, 123), httpStatusCode, "Status");
         CloseableHttpResponse response = Mockito.mock(CloseableHttpResponse.class);
         InputStream in = IOUtils.toInputStream(jsonString, StandardCharsets.UTF_8);
         Mockito.when(response.getStatusLine()).thenReturn(basicStatusLine);
@@ -308,4 +309,5 @@ public class KvmHaAgentClientTest {
         boolean result = kvmHaAgentClient.isHttpStatusCodNotOk(HttpStatus.SC_NOT_FOUND);
         Assert.assertTrue(result);
     }
+
 }

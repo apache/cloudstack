@@ -32,17 +32,26 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -67,6 +76,10 @@ public class KvmHaAgentClient {
     private static final int WAIT_FOR_REQUEST_RETRY = 2;
     private static final int MAX_REQUEST_RETRIES = 2;
     private static final JsonParser JSON_PARSER = new JsonParser();
+    static final String HTTP_PROTOCOL = "http";
+    static final String HTTPS_PROTOCOL = "https";
+    private final static String APPLICATION_JSON = "application/json";
+    private final static String ACCEPT = "accept";
 
     @Inject
     private VMInstanceDao vmInstanceDao;
@@ -75,7 +88,8 @@ public class KvmHaAgentClient {
      *  Returns the number of VMs running on the KVM host according to Libvirt.
      */
     public int countRunningVmsOnAgent(Host host) {
-        String url = String.format("https://%s:%d", host.getPrivateIpAddress(), getKvmHaMicroservicePortValue(host));
+        String protocol = getProtocolString();
+        String url = String.format("%s://%s:%d", protocol, host.getPrivateIpAddress(), getKvmHaMicroservicePortValue(host));
         HttpResponse response = executeHttpRequest(url);
 
         if (response == null)
@@ -89,6 +103,21 @@ public class KvmHaAgentClient {
         return responseInJson.get(VM_COUNT).getAsInt();
     }
 
+    /**
+     * Returns the HTTP protocol. It can be 'HTTP' or 'HTTPS' depending on configuration 'kvm.ha.webservice.ssl.enabled'
+     */
+    protected String getProtocolString() {
+        boolean KvmHaWebserviceSslEnabled = KVMHAConfig.KvmHaWebserviceSslEnabled.value();
+        String protocol = HTTP_PROTOCOL;
+        if (KvmHaWebserviceSslEnabled) {
+            protocol = HTTPS_PROTOCOL;
+        }
+        return protocol;
+    }
+
+    /**
+     * Returns the port from the KVM HA Helper according to the configuration 'kvm.ha.webservice.port'
+     */
     protected int getKvmHaMicroservicePortValue(Host host) {
         Integer haAgentPort = KVMHAConfig.KvmHaWebservicePort.value();
         if (haAgentPort == null) {
@@ -131,7 +160,8 @@ public class KvmHaAgentClient {
         String neighbourHostAddress = neighbour.getPrivateIpAddress();
         String targetHostAddress = target.getPrivateIpAddress();
         int port = getKvmHaMicroservicePortValue(neighbour);
-        String url = String.format("https://%s:%d/%s/%s:%d", neighbourHostAddress, port, CHECK_NEIGHBOUR, targetHostAddress, port);
+        String protocol = getProtocolString();
+        String url = String.format("%s://%s:%d/%s/%s:%d", protocol, neighbourHostAddress, port, CHECK_NEIGHBOUR, targetHostAddress, port);
         HttpResponse response = executeHttpRequest(url);
 
         if (response == null)
@@ -143,8 +173,8 @@ public class KvmHaAgentClient {
 
         int statusCode = response.getStatusLine().getStatusCode();
         if (isHttpStatusCodNotOk(statusCode)) {
-            LOGGER.error(
-                    String.format("Failed HTTP %s Request %s; the expected HTTP status code is '%s' but it got '%s'.", HttpGet.METHOD_NAME, url, EXPECTED_HTTP_STATUS, statusCode));
+            LOGGER.error(String.format("Failed HTTP %s Request %s; the expected HTTP status code is '%s' but it got '%s'.",
+                    HttpGet.METHOD_NAME, url, EXPECTED_HTTP_STATUS, statusCode));
             return false;
         }
 
@@ -152,6 +182,9 @@ public class KvmHaAgentClient {
         return Status.Up.toString().equals(hostStatusFromJson);
     }
 
+    /**
+     * Return 'True' in case the Status Code is NOT in the [200,299] range.
+     */
     protected boolean isHttpStatusCodNotOk(int statusCode) {
         return statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES;
     }
@@ -166,18 +199,54 @@ public class KvmHaAgentClient {
             return null;
         }
 
-        HttpClient client = HttpClientBuilder.create().build();
+        HttpClient httpClient = prepareHttpClient(httpReq);
+        if (httpClient == null)
+            return null;
+
         HttpResponse response = null;
         try {
-            response = client.execute(httpReq);
+            response = httpClient.execute(httpReq);
         } catch (IOException e) {
             if (MAX_REQUEST_RETRIES == 0) {
                 LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s] due to exception %s.", httpReq.getMethod(), url, e), e);
                 return null;
             }
-            response = retryHttpRequest(url, httpReq, client);
+            response = retryHttpRequest(url, httpReq, httpClient);
         }
         return response;
+    }
+
+    /**
+     * Creates an httpClient that can be either prepared for HTTP requests or HTTP*S* (accepting sign certificates).
+     * In case of exceptions, it returns null.
+     */
+    @Nullable
+    private HttpClient prepareHttpClient(HttpRequestBase httpReq) {
+        HttpClient httpClient;
+        boolean isKvmHaWebserviceSslEnabled = KVMHAConfig.KvmHaWebserviceSslEnabled.value();
+        if (isKvmHaWebserviceSslEnabled) {
+            try {
+                setsHttpHeaderForBasicAuthentication(httpReq);
+                httpClient = createSslHttpClient();
+            } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
+                LOGGER.error(String.format("Failed to create HTTPS Client due to exception %s.", e), e);
+                return null;
+            }
+        } else {
+            httpClient = HttpClientBuilder.create().build();
+        }
+        return httpClient;
+    }
+
+    /**
+     * Creates an HttpClient that implements SSL.
+     * Note that it accepts self-signed certificates as CloudStack agents only have this kind of certs on Agents.
+     */
+    private HttpClient createSslHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
+        SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext);
+        HttpClient httpClient = HttpClients.custom().setSSLSocketFactory(sslConnectionSocketFactory).build();
+        return httpClient;
     }
 
     @Nullable
@@ -254,4 +323,24 @@ public class KvmHaAgentClient {
             throw new CloudRuntimeException("Failed to process response", e);
         }
     }
+
+    /**
+     * Adds to the given HttpRequest a Basic Authentication header with the respective Username:Password for the KVM HA Helper.
+     */
+    protected void setsHttpHeaderForBasicAuthentication(HttpRequestBase httpReq) {
+        String username = KVMHAConfig.KvmHaWebserviceUsername.value();
+        String password = KVMHAConfig.KvmHaWebservicePassword.value();
+        httpReq.addHeader(ACCEPT, APPLICATION_JSON);
+        String encoding = basicAuth(username, password);
+        httpReq.addHeader("Authorization", encoding);
+    }
+
+    /**
+     * Encodes 'username:password' into 64-base encoded String
+     */
+    private static String basicAuth(String username, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
+    }
+
+
 }
