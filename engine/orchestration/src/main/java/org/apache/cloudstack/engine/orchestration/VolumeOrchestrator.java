@@ -164,6 +164,7 @@ import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
+import java.util.Date;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -1975,6 +1976,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
         vol.setState(Volume.State.Ready);
+        vol.setAttached(new Date());
         vol = _volsDao.persist(vol);
         return toDiskProfile(vol, offering);
     }

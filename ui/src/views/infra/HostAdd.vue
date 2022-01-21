@@ -123,7 +123,6 @@
                 initialValue: authMethod
               }]"
               buttonStyle="solid"
-              :defaultValue="authMethod"
               @change="selected => { handleAuthMethodChange(selected.target.value) }">
               <a-radio-button value="password">
                 {{ $t('label.password') }}
@@ -321,22 +320,24 @@ export default {
       this.loading = true
       api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0].id || null
-        this.fetchPods()
+        this.zoneId = this.zonesList[0]?.id || null
+        this.fetchPods(this.zoneId)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
     },
-    fetchPods () {
+    fetchPods (zoneId) {
+      this.zoneId = zoneId
       this.loading = true
       api('listPods', {
         zoneid: this.zoneId
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
-        this.podId = this.podsList[0].id || null
-        this.fetchClusters()
+        this.podId = this.podsList[0]?.id || null
+        this.form.setFieldsValue({ podid: this.podId })
+        this.fetchClusters(this.podId)
       }).catch(error => {
         this.$notifyError(error)
         this.podsList = []
@@ -345,13 +346,19 @@ export default {
         this.loading = false
       })
     },
-    fetchClusters () {
+    fetchClusters (podId) {
+      this.form.clearField('clusterid')
+      this.clusterId = null
+      this.clustersList = []
+      if (!podId) return
+      this.podId = podId
       this.loading = true
       api('listClusters', {
         podid: this.podId
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
-        this.clusterId = this.clustersList[0].id || null
+        this.clusterId = this.clustersList[0]?.id || null
+        this.form.setFieldsValue({ clusterid: this.clusterId })
         if (this.clusterId) {
           this.handleChangeCluster(this.clusterId)
         }
