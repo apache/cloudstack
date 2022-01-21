@@ -45,7 +45,6 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -1190,16 +1189,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void checkRoleEscalation(Account caller, Account requested) {
         Long requestedRoleId = requested.getRoleId();
         List<RolePermission> requestedPermissions = roleService.findAllPermissionsBy(requestedRoleId);
-
-        for (RolePermission permission : requestedPermissions) {
-            if (permission.getPermission() == Permission.ALLOW) {
-                String command = permission.getRule().getRuleString();
-                if (command.contains("*")) {
-                    // find all api that match command and loop
-                    checkApiAccess(caller, command);
-                } else {
-                    checkApiAccess(caller, command);
-                }
+        for (String command : apiNameList) {
+            // if requested can, make sure caller can as well
+            try {
+                checkApiAccess(requested,command);
+            } catch (PermissionDeniedException pde) {
+                continue;
+            }
+            try {
+                checkApiAccess(caller, command);
+            } catch (PermissionDeniedException pde) {
+                String msg = String.format("user of account %s/%s (%s) can not create an account with access to %s",
+                        caller.getAccountName(),
+                        caller.getDomainId(),
+                        caller.getUuid(),
+                        command);
+                s_logger.warn(msg);
+                throw new PermissionDeniedException(msg,pde);
             }
         }
     }
