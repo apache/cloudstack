@@ -75,7 +75,6 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
-Requires: libguestfs-tools
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: qemu-tools
