@@ -76,7 +76,8 @@ export default {
   data () {
     return {
       volumes: [],
-      loading: false
+      loading: false,
+      dataResource: {}
     }
   },
   beforeCreate () {
@@ -84,6 +85,7 @@ export default {
     this.apiParams = this.$getApiParams('destroyVirtualMachine')
   },
   created () {
+    this.dataResource = Object.assign({}, this.resource)
     this.fetchData()
   },
   methods: {
@@ -91,7 +93,7 @@ export default {
       this.volumes = []
       this.loading = true
       api('listVolumes', {
-        virtualMachineId: this.resource.id,
+        virtualMachineId: this.data.id,
         type: 'DATADISK',
         details: 'min',
         listall: 'true'
@@ -111,7 +113,7 @@ export default {
         this.loading = true
 
         const params = {
-          id: this.resource.id
+          id: this.dataResource.id
         }
         if (values.volumeids) {
           params.volumeids = values.volumeids.join(',')
@@ -125,10 +127,10 @@ export default {
           this.$pollJob({
             jobId,
             title: this.$t('label.action.destroy.instance'),
-            description: this.resource.name,
-            loadingMessage: `${this.$t('message.deleting.vm')} ${this.resource.name}`,
+            description: this.dataResource.name,
+            loadingMessage: `${this.$t('message.deleting.vm')} ${this.dataResource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`,
+            successMessage: `${this.$t('message.success.delete.vm')} ${this.dataResource.name}`,
             successMethod: () => {
               if (this.$route.path.includes('/vm/') && values.expunge) {
                 this.$router.go(-1)
