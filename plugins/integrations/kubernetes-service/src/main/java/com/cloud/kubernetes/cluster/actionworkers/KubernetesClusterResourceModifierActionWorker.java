@@ -75,6 +75,7 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
@@ -359,6 +360,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
+        }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
         }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
