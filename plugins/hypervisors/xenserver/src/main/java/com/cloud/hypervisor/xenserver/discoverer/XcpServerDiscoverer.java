@@ -363,6 +363,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 details.put(Config.InstanceName.toString().toLowerCase(), _instance);
+                setSecondaryStorageNfsVersionToParams(zone.getId(), params);
                 try {
                     resource.configure("XenServer", params);
                 } catch (ConfigurationException e) {

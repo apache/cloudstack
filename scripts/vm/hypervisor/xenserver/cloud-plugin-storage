@@ -239,6 +239,7 @@ def mountNfsSecondaryStorage(session, args):
     remoteDir = args['remoteDir']
     localDir  = args['localDir']
     nfsVersion = args['nfsVersion']
+    logging.debug("mountNfsSecondaryStorage with params: " + str(args))
     mounted = False
     f = open("/proc/mounts", 'r')
     for line in f:

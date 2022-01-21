@@ -52,6 +52,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -843,8 +844,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         value = (String)params.get("migratewait");
         _migratewait = NumbersUtil.parseInt(value, 3600);
 
-        s_logger.debug("Checking NFS version is set");
-        nfsVersion = (String) params.get("secstorage.nfs.version");
+        nfsVersion = (String) params.get(CapacityManager.ImageStoreNFSVersion.key());
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(nfsVersion)) {
+            s_logger.debug("Setting image store NFS version = " + nfsVersion + " on host " + _name);
+        }
 
         _maxNics = NumbersUtil.parseInt((String)params.get("xenserver.nics.max"), 7);
 
@@ -1116,7 +1119,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder) {
-        final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder);
+        final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder, "nfsVersion", nfsVersion);
         return result != null;
     }
 
@@ -1488,7 +1491,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder) {
-        final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
+        final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder, "nfsVersion", nfsVersion);
         return details != null && details.equals("1");
     }
 
@@ -4118,7 +4121,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         final String result = callHostPlugin(conn, "vmopsSnapshot", "post_create_private_template", "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName,
-                "templateDescription", templateDescription, "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
+                "templateDescription", templateDescription, "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId), "nfsVersion", nfsVersion);
 
         boolean success = false;
         if (result != null && !result.isEmpty()) {
