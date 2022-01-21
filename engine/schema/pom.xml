@@ -188,32 +188,32 @@
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
                             </execution>
-<!--                            <execution>-->
-<!--                                <id>download-vmware-template</id>-->
-<!--                                <goals>-->
-<!--                                    <goal>wget</goal>-->
-<!--                                </goals>-->
-<!--                                <configuration>-->
-<!--                                    <checkSignature>true</checkSignature>-->
-<!--&lt;!&ndash;                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>&ndash;&gt;-->
-<!--                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>-->
-<!--                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>-->
-<!--                                    <md5>${vmware.checksum}</md5>-->
-<!--                                </configuration>-->
-<!--                            </execution>-->
-<!--                            <execution>-->
-<!--                                <id>download-xenserver-template</id>-->
-<!--                                <goals>-->
-<!--                                    <goal>wget</goal>-->
-<!--                                </goals>-->
-<!--                                <configuration>-->
-<!--                                    <checkSignature>true</checkSignature>-->
-<!--&lt;!&ndash;                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>&ndash;&gt;-->
-<!--                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>-->
-<!--                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>-->
-<!--                                    <md5>${xen.checksum}</md5>-->
-<!--                                </configuration>-->
-<!--                            </execution>-->
+                            <execution>
+                                <id>download-vmware-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${vmware.checksum}</md5>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-xenserver-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+<!--                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${xen.checksum}</md5>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
