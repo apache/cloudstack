@@ -93,7 +93,7 @@ export default {
       this.volumes = []
       this.loading = true
       api('listVolumes', {
-        virtualMachineId: this.data.id,
+        virtualMachineId: this.dataResource.id,
         type: 'DATADISK',
         details: 'min',
         listall: 'true'
