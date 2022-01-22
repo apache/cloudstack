@@ -190,7 +190,7 @@ setup_interface_sshd() {
     setup_common eth0 eth1
     setup_sshd $ETH1_IP "eth1"
 
-  elif [ "$TYPE" == "elbvm" ] || [ "$TYPE" == "dhcpsrvr"]; then
+  elif [ "$TYPE" == "elbvm" ] || [ "$TYPE" == "dhcpsrvr" ]; then
     setup_common eth0 eth1
     if [ "$SSHONGUEST" == "true" ]; then
       setup_sshd $ETH0_IP "eth0"
