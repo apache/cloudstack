@@ -287,24 +287,9 @@ public class KVMStorageProcessorTest {
         PowerMockito.mockStatic(Script.class, LibvirtUtilitiesHelper.class);
         PowerMockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(null);
         PowerMockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(true);
-        Mockito.doReturn(false).when(storageProcessorSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(), Mockito.any());
+        Mockito.doNothing().when(storageProcessorSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(), Mockito.any());
 
         storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
-    }
-
-    @Test
-    public void validateManuallyDeleteUnusedSnapshotFileLibvirtSupportsFlagDeleteReturnsFalse() throws IOException {
-        Assert.assertFalse(storageProcessorSpy.manuallyDeleteUnusedSnapshotFile(true, ""));
-    }
-
-    @Test
-    @PrepareForTest(KVMStorageProcessor.class)
-    public void validateManuallyDeleteUnusedSnapshotFileLibvirtDoesNotSupportsFlagDeleteReturnsTrue() throws IOException {
-        Mockito.doReturn("").when(snapshotObjectToMock).getPath();
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenReturn(true);
-
-        Assert.assertTrue(storageProcessorSpy.manuallyDeleteUnusedSnapshotFile(false, ""));
     }
 
     @Test (expected = CloudRuntimeException.class)

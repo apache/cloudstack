@@ -1669,11 +1669,11 @@ public class KVMStorageProcessor implements StorageProcessor {
      *  <b>6.0.0</b>.
      * @param snapshotPath The unused snapshot file to manually delete.
      */
-    protected boolean manuallyDeleteUnusedSnapshotFile(boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, String snapshotPath) {
+    protected void manuallyDeleteUnusedSnapshotFile(boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, String snapshotPath) {
         if (isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit) {
             s_logger.debug(String.format("The current Libvirt's version supports the flag '--delete' on command 'virsh blockcommit', we will skip the manually deletion of the"
                     + " unused snapshot file [%s] as it already was automatically deleted.", snapshotPath));
-            return false;
+            return;
         }
 
         s_logger.debug(String.format("The current Libvirt's version does not supports the flag '--delete' on command 'virsh blockcommit', therefore we will manually delete the"
@@ -1682,7 +1682,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             Files.deleteIfExists(Paths.get(snapshotPath));
             s_logger.debug(String.format("Manually deleted unused snapshot file [%s].", snapshotPath));
-            return true;
         } catch (IOException ex) {
             throw new CloudRuntimeException(String.format("Unable to manually delete unused snapshot file [%s] due to [%s].", snapshotPath, ex.getMessage()));
         }
