@@ -59,7 +59,7 @@
           v-decorator="['isdynamicallyscalable']"
           :disabled="!canDynamicScalingEnabled()" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="serviceOffering ? serviceOffering.offerha : false">
         <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
         <a-switch
           :default-checked="resource.haenable"

@@ -1249,8 +1249,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        boolean ipv4 = true, ipv6 = false;
-        if (startIP != null) {
+        boolean ipv4 = false, ipv6 = false;
+        if (org.apache.commons.lang3.StringUtils.isNoneBlank(gateway, netmask)) {
             ipv4 = true;
         }
         if (StringUtils.isNoneBlank(ip6Cidr, ip6Gateway)) {
@@ -1294,14 +1294,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 } else if (!NetUtils.isValidIp4(endIP)) {
                     throw new InvalidParameterValueException("Invalid format for the endIp parameter");
                 }
-            }
-
-            if (startIP != null && endIP != null) {
                 if (!(gateway != null && netmask != null)) {
                     throw new InvalidParameterValueException("gateway and netmask should be defined when startIP/endIP are passed in");
                 }
             }
-
             if (gateway != null && netmask != null) {
                 if (NetUtils.isNetworkorBroadcastIP(gateway, netmask)) {
                     if (s_logger.isDebugEnabled()) {
@@ -1335,6 +1331,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if(StringUtils.isAllBlank(zone.getIp6Dns1(), zone.getIp6Dns2())) {
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
+
+            if (!ipv4 && ntwkOff.getGuestType() == GuestType.Shared && _networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)) {
+                throw new InvalidParameterValueException("Currently IPv6-only Shared network with Virtual Router provider is not supported.");
+            }
         }
 
         validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
@@ -1357,12 +1357,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         performBasicPrivateVlanChecks(vlanId, secondaryVlanId, privateVlanType);
 
-        // Regular user can create Guest Isolated Source Nat enabled network only
-        if (_accountMgr.isNormalUser(caller.getId()) && (ntwkOff.getTrafficType() != TrafficType.Guest
-                || ntwkOff.getGuestType() != Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
-            throw new InvalidParameterValueException(
-                    String.format("Regular users can only create a network from network offerings having traffic type [%s] and network type [%s] with a service [%s] enabled.", TrafficType.Guest,
-                            Network.GuestType.Isolated, Service.SourceNat.getName()));
+        // Regular user can create Guest Isolated Source Nat enabled network or L2 network only
+        if (_accountMgr.isNormalUser(caller.getId())) {
+            validateNetworkOfferingForRegularUser(ntwkOff);
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
@@ -1452,6 +1449,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return network;
+    }
+
+    private void validateNetworkOfferingForRegularUser(NetworkOfferingVO ntwkOff) {
+        if (ntwkOff.getTrafficType() != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Regular users can only create a Guest network");
+        }
+        if (ntwkOff.getGuestType() == GuestType.Isolated && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
+            s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s] with a service [%s] enabled.",
+                    TrafficType.Guest, GuestType.Isolated, Service.SourceNat.getName()));
+        } else if (ntwkOff.getGuestType() == GuestType.L2) {
+            s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s].",
+                    TrafficType.Guest, GuestType.L2));
+        } else {
+            throw new InvalidParameterValueException(
+                    String.format("Regular users can only create an %s network with a service [%s] enabled, or a %s network.",
+                            GuestType.Isolated, Service.SourceNat.getName(), GuestType.L2));
+        }
     }
 
     /**
@@ -1614,8 +1628,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkOfferingId = cmd.getNetworkOfferingId();
 
         // 1) default is system to false if not specified
-        // 2) reset parameter to false if it's specified by the regular user
-        if ((isSystem == null || _accountMgr.isNormalUser(caller.getId())) && id == null) {
+        // 2) reset parameter to false if it's specified by a non-ROOT user
+        if (isSystem == null || !_accountMgr.isRootAdmin(caller.getId())) {
             isSystem = false;
         }
 

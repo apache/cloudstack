@@ -47,6 +47,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -96,9 +97,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         try {
             Answer answer;
             NDC.push(getCommandLogTitle(cmd));
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Executing " + _gson.toJson(cmd));
+            logCommand(cmd);
 
             if (cmd instanceof PrimaryStorageDownloadCommand) {
                 answer = execute((PrimaryStorageDownloadCommand)cmd);
@@ -142,6 +141,14 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 s_logger.debug("Done executing " + _gson.toJson(cmd));
             recycleServiceContext();
             NDC.pop();
+        }
+    }
+
+    private void logCommand(Command cmd) {
+        try {
+            s_logger.debug(String.format("Executing command: [%s].", _gson.toJson(cmd)));
+        } catch (Exception e) {
+            s_logger.debug(String.format("Executing command: [%s].", cmd.getClass().getSimpleName()));
         }
     }
 
@@ -310,5 +317,13 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public String getMountPoint(String storageUrl, String nfsVersion) {
         return _resource.getRootDir(storageUrl, nfsVersion);
+    }
+
+    @Override
+    public String createLogMessageException(Throwable e, Command command) {
+        String message = String.format("%s failed due to [%s].", command.getClass().getSimpleName(), VmwareHelper.getExceptionMessage(e));
+        s_logger.error(message, e);
+
+        return message;
     }
 }

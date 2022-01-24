@@ -30,10 +30,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
@@ -51,6 +53,7 @@ import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -105,6 +108,7 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -629,9 +633,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (cluster == null) {
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                 }
-                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, name);
+                String newName = name;
+                if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
+                    newName = "cpuOvercommitRatio";
+                }
+                if (name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+                    newName = "memoryOvercommitRatio";
+                }
+                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, newName);
                 if (clusterDetailsVO == null) {
-                    clusterDetailsVO = new ClusterDetailsVO(resourceId, name, value);
+                    clusterDetailsVO = new ClusterDetailsVO(resourceId, newName, value);
                     _clusterDetailsDao.persist(clusterDetailsVO);
                 } else {
                     clusterDetailsVO.setValue(value);
@@ -876,6 +887,159 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
+    }
+
+    private ParamCountPair getParamCount(Map<String, Long> scopeMap) {
+        Long id = null;
+        int paramCount = 0;
+        String scope = ConfigKey.Scope.Global.toString();
+
+        for (var entry : scopeMap.entrySet()) {
+            if (entry.getValue() != null) {
+                id = entry.getValue();
+                scope = entry.getKey();
+                paramCount++;
+            }
+        }
+
+        return new ParamCountPair(id, paramCount, scope);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "resetting configuration")
+    public Pair<Configuration, String> resetConfiguration(final ResetCfgCmd cmd) throws InvalidParameterValueException {
+        final Long userId = CallContext.current().getCallingUserId();
+        final String name = cmd.getCfgName();
+        final Long zoneId = cmd.getZoneId();
+        final Long clusterId = cmd.getClusterId();
+        final Long storagepoolId = cmd.getStoragepoolId();
+        final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
+        final Long imageStoreId = cmd.getImageStoreId();
+        Optional optionalValue;
+        final ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey == null) {
+            s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
+            throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+        }
+        String defaultValue = configKey.defaultValue();
+        String category = configKey.category();
+        String configScope = configKey.scope().toString();
+
+        String scope = "";
+        Map<String, Long> scopeMap = new LinkedHashMap<>();
+
+        Long id = null;
+        int paramCountCheck = 0;
+
+        scopeMap.put(ConfigKey.Scope.Zone.toString(), zoneId);
+        scopeMap.put(ConfigKey.Scope.Cluster.toString(), clusterId);
+        scopeMap.put(ConfigKey.Scope.Domain.toString(), domainId);
+        scopeMap.put(ConfigKey.Scope.Account.toString(), accountId);
+        scopeMap.put(ConfigKey.Scope.StoragePool.toString(), storagepoolId);
+        scopeMap.put(ConfigKey.Scope.ImageStore.toString(), imageStoreId);
+
+        ParamCountPair paramCountPair = getParamCount(scopeMap);
+        id = paramCountPair.getId();
+        paramCountCheck = paramCountPair.getParamCount();
+        scope = paramCountPair.getScope();
+
+        if (paramCountCheck > 1) {
+            throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
+        }
+
+        if (scope != null && !scope.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scope)) {
+            throw new InvalidParameterValueException("Invalid scope id provided for the parameter " + name);
+        }
+
+        String newValue = null;
+        switch (ConfigKey.Scope.valueOf(scope)) {
+            case Zone:
+                final DataCenterVO zone = _zoneDao.findById(id);
+                if (zone == null) {
+                    throw new InvalidParameterValueException("unable to find zone by id " + id);
+                }
+                _dcDetailsDao.removeDetail(id, name);
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Cluster:
+                final ClusterVO cluster = _clusterDao.findById(id);
+                if (cluster == null) {
+                    throw new InvalidParameterValueException("unable to find cluster by id " + id);
+                }
+                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(id, name);
+                newValue = configKey.value().toString();
+                if (name.equalsIgnoreCase("cpu.overprovisioning.factor") || name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+                    _clusterDetailsDao.persist(id, name, newValue);
+                } else if (clusterDetailsVO != null) {
+                    _clusterDetailsDao.remove(clusterDetailsVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case StoragePool:
+                final StoragePoolVO pool = _storagePoolDao.findById(id);
+                if (pool == null) {
+                    throw new InvalidParameterValueException("unable to find storage pool by id " + id);
+                }
+                _storagePoolDetailsDao.removeDetail(id, name);
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Domain:
+                final DomainVO domain = _domainDao.findById(id);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("unable to find domain by id " + id);
+                }
+                DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(id, name);
+                if (domainDetailVO != null) {
+                    _domainDetailsDao.remove(domainDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Account:
+                final AccountVO account = _accountDao.findById(id);
+                if (account == null) {
+                    throw new InvalidParameterValueException("unable to find account by id " + id);
+                }
+                AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(id, name);
+                if (accountDetailVO != null) {
+                    _accountDetailsDao.remove(accountDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case ImageStore:
+                final ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
+                if (imageStoreVO == null) {
+                    throw new InvalidParameterValueException("unable to find the image store by id " + id);
+                }
+                ImageStoreDetailVO imageStoreDetailVO = _imageStoreDetailsDao.findDetail(id, name);
+                if (imageStoreDetailVO != null) {
+                    _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            default:
+                if (!_configDao.update(name, category, defaultValue)) {
+                    s_logger.error("Failed to reset configuration option, name: " + name + ", defaultValue:" + defaultValue);
+                    throw new CloudRuntimeException("Failed to reset configuration value. Please contact Cloud Support.");
+                }
+                optionalValue = Optional.ofNullable(configKey.value());
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+        }
+
+        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
+        return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
     private String validateConfigurationValue(final String name, String value, final String scope) {
@@ -4921,7 +5085,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean releasePublicIpRange(final long vlanDbId, final long userId, final Account caller) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if(vlan == null) {
-            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null. This is NPE situation.");
+            // Nothing to do if vlan can't be found
+            s_logger.warn(String.format("Skipping the process for releasing public IP range as could not find a VLAN with ID '%s' for Account '%s' and User '%s'."
+                    ,vlanDbId, caller, userId));
+            return true;
         }
 
         // Verify range is dedicated
@@ -4988,13 +5155,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
-            return true;
+            success = true;
         } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
-            return true;
+            success = true;
         } else {
-            return false;
+            success = false;
         }
+
+        return success;
     }
 
     @DB
@@ -5445,7 +5614,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (service == Service.SecurityGroup) {
                 // allow security group service for Shared networks only
                 if (guestType != GuestType.Shared) {
-                    throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+                    throw new InvalidParameterValueException("Security group service is supported for network offerings with guest ip type " + GuestType.Shared);
                 }
                 final Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
                 sgProviders.add(Provider.SecurityGroupProvider);
@@ -7049,5 +7218,41 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN
         };
+    }
+
+    static class ParamCountPair {
+        private Long id;
+        private int paramCount;
+        private String scope;
+
+        public ParamCountPair(Long id, int paramCount, String scope) {
+            this.id = id;
+            this.paramCount = paramCount;
+            this.scope = scope;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public int getParamCount() {
+            return paramCount;
+        }
+
+        public void setParamCount(int paramCount) {
+            this.paramCount = paramCount;
+        }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(String scope) {
+            this.scope = scope;
+        }
     }
 }

@@ -57,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class StressTestDirectAttach {
     private static long sleepTime = 180000L; // default 0
     private static boolean cleanUp = true;
-    public static final Logger s_logger = Logger.getLogger(TestClientWithAPI.class.getName());
+    public static final Logger s_logger = Logger.getLogger(StressTestDirectAttach.class.getName());
     private static boolean repeat = true;
     private static String[] users = null;
     private static boolean internet = false;

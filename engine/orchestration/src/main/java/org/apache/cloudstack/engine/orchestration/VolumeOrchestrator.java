@@ -160,6 +160,7 @@ import com.cloud.vm.dao.UserVmDao;
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
 import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
+import java.util.Date;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -1932,6 +1933,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
         vol.setState(Volume.State.Ready);
+        vol.setAttached(new Date());
         vol = _volsDao.persist(vol);
         return toDiskProfile(vol, offering);
     }

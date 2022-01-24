@@ -248,8 +248,7 @@ export default {
                     description: this.resource.name,
                     successMethod: result => {
                       if (this.action.api === 'deleteDomain') {
-                        this.$set(this.resource, 'isDel', true)
-                        this.parentUpdActionData(this.resource)
+                        this.parentFetchData()
                       }
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)

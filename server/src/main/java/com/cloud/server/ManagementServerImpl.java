@@ -74,6 +74,7 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.direct.download.RevokeTemplateDirectDownloadCertificateCmd;
@@ -1146,7 +1147,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
@@ -1159,7 +1160,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
 
         if (podId != null) {
@@ -3009,6 +3010,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListHypervisorCapabilitiesCmd.class);
         cmdList.add(UpdateCfgCmd.class);
         cmdList.add(UpdateHypervisorCapabilitiesCmd.class);
+        cmdList.add(ResetCfgCmd.class);
         cmdList.add(CreateDomainCmd.class);
         cmdList.add(DeleteDomainCmd.class);
         cmdList.add(ListDomainChildrenCmd.class);

@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade from 4.16.0.0 to 4.16.1.0
 --;
+
+ALTER TABLE `cloud`.`vm_work_job` ADD COLUMN `secondary_object` char(100) COMMENT 'any additional item that must be checked during queueing' AFTER `vm_instance_id`;

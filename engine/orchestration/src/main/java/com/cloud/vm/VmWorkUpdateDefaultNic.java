@@ -29,6 +29,12 @@ public class VmWorkUpdateDefaultNic extends VmWork {
         this.defaultNicId = defaultNicId;
     }
 
+    public VmWorkUpdateDefaultNic(VmWork vmWork, long nicId, long defaultNicId) {
+        super(vmWork);
+        this.nicId = nicId;
+        this.defaultNicId = defaultNicId;
+    }
+
     public Long getNicId() {
         return nicId;
     }

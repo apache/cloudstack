@@ -15,7 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { axios } from '@/utils/request'
+import { axios, sourceToken } from '@/utils/request'
+import { message, notification } from 'ant-design-vue'
 
 export function api (command, args = {}, method = 'GET', data = {}) {
   let params = {}
@@ -40,6 +41,8 @@ export function api (command, args = {}, method = 'GET', data = {}) {
 }
 
 export function login (arg) {
+  sourceToken.init()
+
   const params = new URLSearchParams()
   params.append('command', 'login')
   params.append('username', arg.username || arg.email)
@@ -57,5 +60,8 @@ export function login (arg) {
 }
 
 export function logout () {
+  sourceToken.cancel()
+  message.destroy()
+  notification.destroy()
   return api('logout')
 }
