@@ -334,21 +334,22 @@ export default {
       api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.form.zoneid = this.zonesList[0].id || null
-        this.fetchPods()
+        this.fetchPods(this.form.zoneid)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
     },
-    fetchPods () {
+    fetchPods (zoneId) {
+      this.form.zoneid = zoneId
       this.loading = true
       api('listPods', {
         zoneid: this.form.zoneid
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
         this.form.podid = this.podsList[0].id || null
-        this.fetchClusters()
+        this.fetchClusters(this.form.podid)
       }).catch(error => {
         this.$notifyError(error)
         this.podsList = []
@@ -357,7 +358,11 @@ export default {
         this.loading = false
       })
     },
-    fetchClusters () {
+    fetchClusters (podId) {
+      this.form.clusterid = null
+      this.clustersList = []
+      if (!podId) return
+      this.podId = podId
       this.loading = true
       api('listClusters', {
         podid: this.form.podid

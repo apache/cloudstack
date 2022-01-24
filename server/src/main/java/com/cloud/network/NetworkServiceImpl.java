@@ -1357,12 +1357,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         performBasicPrivateVlanChecks(vlanId, secondaryVlanId, privateVlanType);
 
-        // Regular user can create Guest Isolated Source Nat enabled network only
-        if (_accountMgr.isNormalUser(caller.getId()) && (ntwkOff.getTrafficType() != TrafficType.Guest
-                || ntwkOff.getGuestType() != Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
-            throw new InvalidParameterValueException(
-                    String.format("Regular users can only create a network from network offerings having traffic type [%s] and network type [%s] with a service [%s] enabled.", TrafficType.Guest,
-                            Network.GuestType.Isolated, Service.SourceNat.getName()));
+        // Regular user can create Guest Isolated Source Nat enabled network or L2 network only
+        if (_accountMgr.isNormalUser(caller.getId())) {
+            validateNetworkOfferingForRegularUser(ntwkOff);
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
@@ -1452,6 +1449,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return network;
+    }
+
+    private void validateNetworkOfferingForRegularUser(NetworkOfferingVO ntwkOff) {
+        if (ntwkOff.getTrafficType() != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Regular users can only create a Guest network");
+        }
+        if (ntwkOff.getGuestType() == GuestType.Isolated && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
+            s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s] with a service [%s] enabled.",
+                    TrafficType.Guest, GuestType.Isolated, Service.SourceNat.getName()));
+        } else if (ntwkOff.getGuestType() == GuestType.L2) {
+            s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s].",
+                    TrafficType.Guest, GuestType.L2));
+        } else {
+            throw new InvalidParameterValueException(
+                    String.format("Regular users can only create an %s network with a service [%s] enabled, or a %s network.",
+                            GuestType.Isolated, Service.SourceNat.getName(), GuestType.L2));
+        }
     }
 
     /**
