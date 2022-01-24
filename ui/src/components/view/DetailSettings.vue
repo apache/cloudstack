@@ -173,8 +173,8 @@ export default {
         this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
     },
-    filterOrReadOnlyDetails () {
-      for (var i = 0; i < this.details.length; i++) {
+    filterReadOnlyDetails () {
+      for (var i = this.details.length - 1; i >= 0; i--) {
         if (!this.allowEditOfDetail(this.details[i].name)) {
           this.details.splice(i, 1)
         }
@@ -261,16 +261,16 @@ export default {
       }
       this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
-      this.filterOrReadOnlyDetails()
+      this.filterReadOnlyDetails()
       this.runApi()
     },
     updateDetail (index) {
-      this.filterOrReadOnlyDetails()
+      this.filterReadOnlyDetails()
       this.runApi()
     },
     deleteDetail (index) {
       this.details.splice(index, 1)
-      this.filterOrReadOnlyDetails()
+      this.filterReadOnlyDetails()
       this.runApi()
     },
     onShowAddDetail () {
