@@ -186,6 +186,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateTemplate')
+    this.isAdmin = ['Admin'].includes(this.$store.getters.userInfo.roletype)
   },
   created () {
     this.$set(this.rootDisk, 'loading', false)
@@ -197,7 +198,7 @@ export default {
     this.$set(this.osTypes, 'loading', false)
     this.$set(this.osTypes, 'opts', [])
     const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
-    if (this.isAdmin()) {
+    if (this.isAdmin) {
       resourceFields.push('templatetype')
     }
     for (var field of resourceFields) {
@@ -221,9 +222,6 @@ export default {
     this.fetchData()
   },
   methods: {
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
     fetchData () {
       this.fetchOsTypes()
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
