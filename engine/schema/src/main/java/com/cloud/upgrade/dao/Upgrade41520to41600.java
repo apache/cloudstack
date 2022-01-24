@@ -22,8 +22,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
+import com.cloud.upgrade.RolePermissionChecker;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -32,6 +36,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     final static Logger LOG = Logger.getLogger(Upgrade41520to41600.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
+    private RolePermissionChecker rolePermissionChecker = new RolePermissionChecker();
 
     public Upgrade41520to41600() {
     }
@@ -65,6 +70,28 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         generateUuidForExistingSshKeyPairs(conn);
+        populateAnnotationPermissions(conn);
+    }
+
+    private void populateAnnotationPermissions(Connection conn) {
+        List<String> annotationRules = Arrays.asList("listAnnotations", "addAnnotation", "removeAnnotation");
+        for (RoleType roleType : Arrays.asList(RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User)) {
+            checkAndPersistAnnotationPermissions(conn, roleType, annotationRules);
+        }
+    }
+
+    private void checkAndPersistAnnotationPermissions(Connection conn, RoleType roleType, List<String> rules) {
+        LOG.debug("Checking the annotation permissions for the role: " + roleType.getId());
+        for (String rule : rules) {
+            LOG.debug("Checking the annotation permissions for the role: " + roleType.getId() + " and rule: " + rule);
+            if (!rolePermissionChecker.existsRolePermissionByRoleIdAndRule(conn, roleType.getId(), rule)) {
+                LOG.debug("Inserting role permission for role: " + roleType.getId() + " and rule: " + rule);
+                rolePermissionChecker.insertAnnotationRulePermission(conn, roleType.getId(), rule);
+            } else {
+                LOG.debug("Found existing role permission for role: " + roleType.getId() + " and rule: " + rule +
+                        ", not updating it");
+            }
+        }
     }
 
     private void generateUuidForExistingSshKeyPairs(Connection conn) {
