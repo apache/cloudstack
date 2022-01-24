@@ -125,7 +125,14 @@
           <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
           <a-switch v-decorator="['isdynamicallyscalable', {}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.templatetype')" v-if="isAdmin">
+        <a-form-item v-if="isAdmin">
+          <tooltip-label slot="label" :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+          <span v-if="selectedTemplateType ==='SYSTEM'">
+            <a-alert type="warning">
+              <span slot="message" v-html="$t('message.template.type.change.warning')" />
+            </a-alert>
+            <br/>
+          </span>
           <a-select
             showSearch
             optionFilterProp="children"
@@ -133,7 +140,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-decorator="['templatetype']"
-            :placeholder="apiParams.templatetype.description">
+            :placeholder="apiParams.templatetype.description"
+            @change="val => { selectedTemplateType = val }">
             <a-select-option v-for="opt in templatetypes" :key="opt">
               {{ opt }}
             </a-select-option>
@@ -171,7 +179,8 @@ export default {
       nicAdapterType: {},
       keyboardType: {},
       osTypes: {},
-      loading: false
+      loading: false,
+      selectedTemplateType: ''
     }
   },
   beforeCreate () {
@@ -222,7 +231,7 @@ export default {
       this.fetchKeyboardTypes()
     },
     isValidValueForKey (obj, key) {
-      return key in obj && obj[key] != null && obj[key] !== undefined
+      return key in obj && obj[key] != null && obj[key] !== undefined && obj[key] !== ''
     },
     fetchOsTypes () {
       const params = {}
@@ -351,7 +360,7 @@ export default {
         const params = {
           id: this.resource.id
         }
-        const detailsField = ['rootDiskController', 'nicAdapter', 'keyboardType']
+        const detailsField = ['rootDiskController', 'nicAdapter', 'keyboard']
         for (const key in values) {
           if (!this.isValidValueForKey(values, key)) continue
           if (detailsField.includes(key)) {
