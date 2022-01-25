@@ -4045,7 +4045,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      */
     private void checkIfNetworkExistsForUserVM(VirtualMachine virtualMachine, Network network) {
         if (virtualMachine.getType() != VirtualMachine.Type.User) {
-            return; // others may have multiple nics in teh same network
+            return; // others may have multiple nics in the same network
         }
         List<NicVO> allNics = _nicsDao.listByVmId(virtualMachine.getId());
         for (NicVO nic : allNics) {
