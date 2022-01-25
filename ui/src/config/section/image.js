@@ -103,18 +103,8 @@ export default {
               record.templatetype !== 'SYSTEM' &&
               record.isready
           },
-          args: (record, store) => {
-            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('templatetype')
-            }
-            return fields
-          },
-          mapping: {
-            templatetype: {
-              options: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/image/UpdateTemplate.vue')
         },
         {
           api: 'updateTemplatePermissions',
