@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
  * Created by frank on 9/17/14.
  */
 @APICommand(name = "notifyBaremetalProvisionDone", description = "Notify provision has been done on a host. This api is for baremetal virtual router service, not for end user", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.User})
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class BaremetalProvisionDoneNotificationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(BaremetalProvisionDoneNotificationCmd.class);
     private static final String s_name = "baremetalprovisiondone";
