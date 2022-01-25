@@ -304,7 +304,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     static Boolean rulesContinueOnErrFlag = true;
 
-    private static final ConfigKey<Boolean> SystemVmPublicIpReservationModeStrictness = new ConfigKey<Boolean>("Advanced",
+    public static ConfigKey<Boolean> SystemVmPublicIpReservationModeStrictness = new ConfigKey<Boolean>("Advanced",
             Boolean.class, "system.vm.public.ip.reservation.mode.strictness", "false",
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", false, ConfigKey.Scope.Global);
 

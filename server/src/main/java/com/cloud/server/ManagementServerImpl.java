@@ -655,6 +655,7 @@ import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
@@ -2318,7 +2319,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType) {
+    protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
@@ -2388,7 +2389,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("state", state);
         }
 
-        sc.setParameters( "forsystemvms", false);
+        if (sourceNetworkId == null && IpAddressManagerImpl.SystemVmPublicIpReservationModeStrictness.value()) {
+            sc.setParameters("forsystemvms", false);
+        }        
     }
 
     @Override
