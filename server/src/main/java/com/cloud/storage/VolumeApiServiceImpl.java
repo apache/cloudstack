@@ -312,7 +312,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
-    private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
+    private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged));
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
