@@ -90,7 +90,7 @@
                   }"
                   :loading="listVolumes[record.id].loading"
                   :placeholder="$t('label.delete.volumes')"
-                  @change="(value) => onChooseVolume(record.id, value)">
+                  @change="(value) => onChangeVolume(record.id, value)">
                   <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id">
                     {{ item.name || item.description }}
                   </a-select-option>
@@ -219,7 +219,7 @@ export default {
         })
       })
     },
-    onChooseVolume (vmId, volumes) {
+    onChangeVolume (vmId, volumes) {
       this.volumeIds[vmId] = volumes
     },
     handleCancel () {
