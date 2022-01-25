@@ -30,7 +30,7 @@
           v-if="reversed !== checked"
           :label="selectLabel">
           <a-select
-            v-model="selectedOption"
+            v-model:value="selectedOption"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {

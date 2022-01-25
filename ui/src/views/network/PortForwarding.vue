@@ -269,7 +269,7 @@
               <a-radio-group
                 class="radio-group"
                 :key="record.id"
-                v-model="checked"
+                v-model:value="checked"
                 @change="($event) => checked = $event.target.value">
                 <a-radio :value="record.id" @change="e => fetchNics(e)" />
               </a-radio-group>

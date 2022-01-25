@@ -135,7 +135,7 @@
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
           <a-select
-            v-model="addAccount.domain"
+            v-model:value="addAccount.domain"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
