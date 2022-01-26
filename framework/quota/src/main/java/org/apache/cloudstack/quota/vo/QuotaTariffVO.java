@@ -18,6 +18,9 @@ package org.apache.cloudstack.quota.vo;
 
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
+import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,6 +33,7 @@ import javax.persistence.TemporalType;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "quota_tariff")
@@ -66,6 +70,25 @@ public class QuotaTariffVO implements InternalIdentity {
 
     @Column(name = "updated_by")
     private Long updatedBy = null;
+
+    @Column(name = "uuid")
+    private String uuid = UUID.randomUUID().toString();
+
+    @Column(name = "name", nullable = false, length = 65535)
+    protected String name = null;
+
+    @Column(name = "description", length = 65535)
+    protected String description;
+
+    @Column(name = "activation_rule", length = 65535)
+    protected String activationRule;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    protected Date removed;
+
+    @Column(name = "end_date")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date endDate;
 
     public QuotaTariffVO() {
     }
@@ -167,4 +190,49 @@ public class QuotaTariffVO implements InternalIdentity {
     public long getId() {
         return this.id;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getActivationRule() {
+        return activationRule;
+    }
+
+    public void setActivationRule(String activationRule) {
+        this.activationRule = activationRule;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
 }
