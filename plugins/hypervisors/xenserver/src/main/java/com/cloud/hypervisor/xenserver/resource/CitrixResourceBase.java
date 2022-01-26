@@ -52,7 +52,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -294,8 +293,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _configDriveIsopath = "/opt/xensource/packages/configdrive_iso/";
     protected String _configDriveSRName = "ConfigDriveISOs";
     public String _attachIsoDeviceNum = "3";
-
-    protected String nfsVersion;
 
     protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
 
@@ -844,11 +841,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         value = (String)params.get("migratewait");
         _migratewait = NumbersUtil.parseInt(value, 3600);
 
-        nfsVersion = (String) params.get(CapacityManager.ImageStoreNFSVersion.key());
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(nfsVersion)) {
-            s_logger.debug("Setting image store NFS version = " + nfsVersion + " on host " + _name);
-        }
-
         _maxNics = NumbersUtil.parseInt((String)params.get("xenserver.nics.max"), 7);
 
         if (_pod == null) {
@@ -1118,7 +1110,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cdromVBD;
     }
 
-    protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder) {
+    protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder, final String nfsVersion) {
         final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder, "nfsVersion", nfsVersion);
         return result != null;
     }
@@ -1490,7 +1482,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vm;
     }
 
-    protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder) {
+    protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder, final String nfsVersion) {
         final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder, "nfsVersion", nfsVersion);
         return details != null && details.equals("1");
     }
@@ -4110,7 +4102,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean postCreatePrivateTemplate(final Connection conn, final String templatePath, final String tmpltFilename, final String templateName, String templateDescription, String checksum,
-            final long size, final long virtualSize, final long templateId) {
+            final long size, final long virtualSize, final long templateId, final String nfsVersion) {
 
         if (templateDescription == null) {
             templateDescription = "";
@@ -5669,6 +5661,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String vmIP = cmd.getSystemVmIp();
         String diagnosticsZipFile = cmd.getFileName();
+        String nfsVersion = cmd.getNfsVersion();
 
         String localDir = null;
         boolean success;

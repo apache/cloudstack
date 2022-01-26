@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.resource;
 
-import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -27,8 +26,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -54,16 +51,6 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected ResourceManager _resourceMgr;
     @Inject
     protected DataCenterDao _dcDao;
-    @Inject
-    private ImageStoreDao imageStoreDao;
-
-    protected void setSecondaryStorageNfsVersionToParams(Long zoneId, Map<String, Object> params) {
-        ImageStoreVO imageStoreInZone = imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
-        String nfsVersion = imageStoreInZone != null ?
-                CapacityManager.ImageStoreNFSVersion.valueIn(imageStoreInZone.getId()) :
-                CapacityManager.ImageStoreNFSVersion.value();
-        params.put(CapacityManager.ImageStoreNFSVersion.key(), nfsVersion);
-    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -152,7 +139,6 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
         params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
         params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-        setSecondaryStorageNfsVersionToParams(host.getDataCenterId(), params);
 
         return params;
 
