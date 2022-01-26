@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -208,5 +209,18 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         }
 
         return searchBuilder;
+    }
+
+    @Override
+    public QuotaTariffVO findByName(String name) {
+        Pair<List<QuotaTariffVO>, Integer> pairQuotaTariffs = listQuotaTariffs(null, null, null, name, null, false, null, null);
+        List<QuotaTariffVO> quotaTariffs = pairQuotaTariffs.first();
+
+        if (CollectionUtils.isEmpty(quotaTariffs)) {
+            s_logger.debug(String.format("Could not find quota tariff with name [%s].", name));
+            return null;
+        }
+
+        return quotaTariffs.get(0);
     }
 }

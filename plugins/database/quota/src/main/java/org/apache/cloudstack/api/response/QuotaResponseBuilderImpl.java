@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
@@ -376,35 +377,103 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
-        final int quotaType = cmd.getUsageType();
-        final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-        final Date effectiveDate = _quotaService.computeAdjustedTime(cmd.getStartDate());
-        final Date now = _quotaService.computeAdjustedTime(new Date());
-        // if effective date is in the past return error
-        if (effectiveDate.compareTo(now) < 0) {
-            throw new InvalidParameterValueException("Incorrect effective date for tariff " + effectiveDate + " is less than now " + now);
-        }
-        QuotaTypes quotaConstant = QuotaTypes.listQuotaTypes().get(quotaType);
-        if (quotaConstant == null) {
-            throw new InvalidParameterValueException("Quota type does not exists " + quotaType);
+        String name = cmd.getName();
+        Double value = cmd.getValue();
+        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        String description = cmd.getDescription();
+        String activationRule = cmd.getActivationRule();
+        Date now = _quotaService.computeAdjustedTime(new Date());
+
+        warnQuotaTariffUpdateDeprecatedFields(cmd);
+
+        QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
+
+        if (currentQuotaTariff == null) {
+            throw new InvalidParameterValueException(String.format("There is no quota tariffs with name [%s].", name));
         }
 
-        QuotaTariffVO result = null;
-        result = new QuotaTariffVO(quotaType);
-        result.setUsageName(quotaConstant.getQuotaName());
-        result.setUsageUnit(quotaConstant.getQuotaUnit());
-        result.setUsageDiscriminator(quotaConstant.getDiscriminator());
-        result.setCurrencyValue(quotaCost);
-        result.setEffectiveOn(effectiveDate);
-        result.setUpdatedOn(now);
-        result.setUpdatedBy(cmd.getEntityOwnerId());
+        Date currentQuotaTariffStartDate = currentQuotaTariff.getEffectiveOn();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
+        currentQuotaTariff.setRemoved(now);
+
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
+                activationRule);
+        _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
+        return newQuotaTariff;
+    }
+
+    protected void warnQuotaTariffUpdateDeprecatedFields(QuotaTariffUpdateCmd cmd) {
+        String warnMessage = "The parameter 's%s' for API 'quotaTariffUpdate' is no longer needed and it will be removed in future releases.";
+
+        if (cmd.getStartDate() != null) {
+            s_logger.warn(String.format(warnMessage,"startdate"));
         }
-        _quotaTariffDao.addQuotaTariff(result);
 
-        return result;
+        if (cmd.getUsageType() != null) {
+            s_logger.warn(String.format(warnMessage,"usagetype"));
+        }
+    }
+
+    protected QuotaTariffVO persistNewQuotaTariff(QuotaTariffVO currentQuotaTariff, String name, int usageType, Date startDate, Long entityOwnerId, Date endDate, Double value,
+            String description, String activationRule) {
+
+        QuotaTariffVO newQuotaTariff = getNewQuotaTariffObject(currentQuotaTariff, name, usageType);
+
+        newQuotaTariff.setEffectiveOn(startDate);
+        newQuotaTariff.setUpdatedOn(startDate);
+        newQuotaTariff.setUpdatedBy(entityOwnerId);
+
+        validateEndDateOnCreatingNewQuotaTariff(newQuotaTariff, startDate, endDate);
+        validateValueOnCreatingNewQuotaTariff(newQuotaTariff, value);
+        validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setDescription, description);
+        validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setActivationRule, activationRule);
+
+        _quotaTariffDao.addQuotaTariff(newQuotaTariff);
+        return newQuotaTariff;
+    }
+
+    protected QuotaTariffVO getNewQuotaTariffObject(QuotaTariffVO currentQuotaTariff, String name, int usageType) {
+        if (currentQuotaTariff != null) {
+            return new QuotaTariffVO(currentQuotaTariff);
+        }
+
+        QuotaTariffVO newQuotaTariff = new QuotaTariffVO();
+
+        if (!newQuotaTariff.setUsageTypeData(usageType)) {
+            throw new InvalidParameterValueException(String.format("There is no usage type with value [%s].", usageType));
+        }
+
+        newQuotaTariff.setName(name);
+        return newQuotaTariff;
+    }
+
+    protected void validateStringsOnCreatingNewQuotaTariff(Consumer<String> method, String value){
+        if (value != null) {
+            method.accept(value.isBlank() ? null : value);
+        }
+    }
+
+    protected void validateValueOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Double value) {
+        if (value != null) {
+            newQuotaTariff.setCurrencyValue(new BigDecimal(value));
+        }
+    }
+
+    protected void validateEndDateOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Date startDate, Date endDate) {
+        if (endDate == null) {
+            return;
+        }
+
+        if (endDate.compareTo(startDate) < 0) {
+            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than the start date [%s]", endDate, startDate));
+        }
+
+        Date now = _quotaService.computeAdjustedTime(new Date());
+        if (endDate.compareTo(now) < 0) {
+            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].", endDate, now));
+        }
+
+        newQuotaTariff.setEndDate(endDate);
     }
 
     @Override

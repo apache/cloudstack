@@ -110,6 +110,15 @@ public class QuotaTariffVO implements InternalIdentity {
     }
 
 
+    public QuotaTariffVO(QuotaTariffVO that) {
+        this(that.getUsageType(), that.getUsageName(), that.getUsageUnit(), that.getUsageDiscriminator(), that.getCurrencyValue(), that.getEffectiveOn(), that.getUpdatedOn(),
+                that.getUpdatedBy());
+        this.setName(that.getName());
+        this.setDescription(that.getDescription());
+        this.setActivationRule(that.getActivationRule());
+        this.setEndDate(that.getEndDate());
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -235,4 +244,23 @@ public class QuotaTariffVO implements InternalIdentity {
         return uuid;
     }
 
+    public boolean setUsageTypeData(int usageType) {
+        QuotaTypes quotaType = QuotaTypes.listQuotaTypes().get(usageType);
+
+        if (quotaType == null) {
+            return false;
+        }
+
+        this.setUsageType(usageType);
+        this.setUsageName(quotaType.getQuotaName());
+        this.setUsageUnit(quotaType.getQuotaUnit());
+        this.setUsageDiscriminator(quotaType.getDiscriminator());
+
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "effectiveOn", "endDate");
+    };
 }
