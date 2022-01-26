@@ -29,7 +29,7 @@ public class UuidUtils {
     }
 
     public static boolean validateUUID(String uuid) {
-        RegularExpression regex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
+        RegularExpression regex = new RegularExpression("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
         return regex.matches(uuid);
     }
 
