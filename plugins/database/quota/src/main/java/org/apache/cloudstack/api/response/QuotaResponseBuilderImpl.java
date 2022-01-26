@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.quota.QuotaManager;
@@ -614,4 +615,28 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return Date.from(nextDayLocalDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
     }
 
+    @Override
+    public QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd) {
+        String name = cmd.getName();
+        int usageType = cmd.getUsageType();
+        Date startDate = cmd.getStartDate();
+        Date now = new Date();
+        startDate = _quotaService.computeAdjustedTime(startDate == null ? now : startDate);
+        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Double value = cmd.getValue();
+        String description = cmd.getDescription();
+        String activationRule = cmd.getActivationRule();
+
+        QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
+
+        if (currentQuotaTariff != null) {
+            throw new InvalidParameterValueException(String.format("A quota tariff with name [%s] already exist.", name));
+        }
+
+        if (startDate.compareTo(now) < 0) {
+            throw new InvalidParameterValueException(String.format("The quota tariff's start date [%s] cannot be less than now [%s]", startDate, now));
+        }
+
+        return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+    }
 }
