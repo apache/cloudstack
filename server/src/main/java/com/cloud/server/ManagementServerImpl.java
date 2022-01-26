@@ -2391,7 +2391,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (sourceNetworkId == null && IpAddressManagerImpl.SystemVmPublicIpReservationModeStrictness.value()) {
             sc.setParameters("forsystemvms", false);
-        }        
+        }
     }
 
     @Override
