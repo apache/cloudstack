@@ -56,6 +56,7 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -113,8 +114,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setUsageDiscriminator(tariff.getUsageDiscriminator());
         response.setTariffValue(tariff.getCurrencyValue());
         response.setEffectiveOn(tariff.getEffectiveOn());
-        response.setDescription(tariff.getUsageTypeDescription());
+        response.setUsageTypeDescription(tariff.getUsageTypeDescription());
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        response.setActivationRule(tariff.getActivationRule());
+        response.setName(tariff.getName());
+        response.setEndDate(tariff.getEndDate());
+        response.setDescription(tariff.getDescription());
+        response.setUuid(tariff.getUuid());
         return response;
     }
 
@@ -354,25 +360,18 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
-        Pair<List<QuotaTariffVO>, Integer> result;
-        Date effectiveDate = cmd.getEffectiveDate() == null ? new Date() : cmd.getEffectiveDate();
-        Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
-        }
-        if (cmd.getUsageType() != null) {
-            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), adjustedEffectiveDate);
-            if (tariffPlan != null) {
-                List<QuotaTariffVO> list = new ArrayList<>();
-                list.add(tariffPlan);
-                result = new Pair<>(list, list.size());
-            } else {
-                result = new Pair<>(new ArrayList<>(), 0);
-            }
-        } else {
-            result = _quotaTariffDao.listAllTariffPlans(adjustedEffectiveDate, cmd.getStartIndex(), cmd.getPageSizeVal());
-        }
-        return result;
+        Date startDate = _quotaService.computeAdjustedTime(cmd.getEffectiveDate());
+        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Integer usageType = cmd.getUsageType();
+        String name = cmd.getName();
+        boolean listAll = cmd.isListAll();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        s_logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+                "endDate", "listAll", "name", "page", "pageSize", "usageType")));
+
+        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
     }
 
     @Override

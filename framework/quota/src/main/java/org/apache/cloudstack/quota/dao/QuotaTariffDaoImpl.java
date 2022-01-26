@@ -156,4 +156,57 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             }
         });
     }
+
+    @Override
+    public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffs(Date startDate, Date endDate, Integer usageType, String name, String uuid, boolean listAll, Long startIndex, Long pageSize) {
+        SearchCriteria<QuotaTariffVO> searchCriteria = createListQuotaTariffsSearchCriteria(startDate, endDate, usageType, name, uuid);
+        Filter sorter = new Filter(QuotaTariffVO.class, "usageType", false, startIndex, pageSize);
+        sorter.addOrderBy(QuotaTariffVO.class, "effectiveOn", false);
+        sorter.addOrderBy(QuotaTariffVO.class, "updatedOn", false);
+
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<QuotaTariffVO>, Integer>>() {
+            @Override
+            public Pair<List<QuotaTariffVO>, Integer> doInTransaction(final TransactionStatus status) {
+                return searchAndCount(searchCriteria, sorter, listAll);
+            }
+        });
+    }
+
+    protected SearchCriteria<QuotaTariffVO> createListQuotaTariffsSearchCriteria(Date startDate, Date endDate, Integer usageType, String name, String uuid) {
+        SearchCriteria<QuotaTariffVO> searchCriteria = createListQuotaTariffsSearchBuilder(startDate, endDate, usageType, name, uuid).create();
+
+        searchCriteria.setParametersIfNotNull("start_date", startDate);
+        searchCriteria.setParametersIfNotNull("end_date", endDate);
+        searchCriteria.setParametersIfNotNull("usage_type", usageType);
+        searchCriteria.setParametersIfNotNull("name", name);
+        searchCriteria.setParametersIfNotNull("uuid", uuid);
+
+        return searchCriteria;
+    }
+
+    protected SearchBuilder<QuotaTariffVO> createListQuotaTariffsSearchBuilder(Date startDate, Date endDate, Integer usageType, String name, String uuid) {
+        SearchBuilder<QuotaTariffVO> searchBuilder = createSearchBuilder();
+
+        if (startDate != null) {
+            searchBuilder.and("start_date", searchBuilder.entity().getEffectiveOn(), SearchCriteria.Op.GTEQ);
+        }
+
+        if (endDate != null) {
+            searchBuilder.and("end_date", searchBuilder.entity().getEndDate(), SearchCriteria.Op.LTEQ);
+        }
+
+        if (usageType != null) {
+            searchBuilder.and("usage_type", searchBuilder.entity().getUsageType(), SearchCriteria.Op.EQ);
+        }
+
+        if (name != null) {
+            searchBuilder.and("name", searchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        }
+
+        if (uuid != null) {
+            searchBuilder.and("uuid", searchBuilder.entity().getUuid(), SearchCriteria.Op.EQ);
+        }
+
+        return searchBuilder;
+    }
 }
