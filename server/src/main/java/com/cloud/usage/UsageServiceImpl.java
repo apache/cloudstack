@@ -409,7 +409,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
         }
         final long projectAccountId = project.getProjectAccountId();
-        if(s_logger.isInfoEnabled()) {
+        if (s_logger.isInfoEnabled()) {
             s_logger.info(String.format("Using projectAccountId %d for project %s [%s] as account id", projectAccountId, project.getName(), project.getUuid()));
         }
         accountId = projectAccountId;
