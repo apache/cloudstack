@@ -35,6 +35,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,6 +49,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 
 public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader {
@@ -90,6 +94,16 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
         } finally {
             instream.close();
         }
+        // Load the default trust store entries to ensure we have everything
+        TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        factory.init((KeyStore) null);
+        for (TrustManager manager : factory.getTrustManagers()) {
+            if (manager instanceof X509TrustManager) {
+                for (X509Certificate acceptedIssuer : ((X509TrustManager) manager).getAcceptedIssuers()) {
+                    trustStore.setCertificateEntry(acceptedIssuer.getSubjectDN().getName(), acceptedIssuer);
+                }
+            }
+        }
         return SSLContexts.custom()
                 .loadTrustMaterial(trustStore, new TrustSelfSignedStrategy())
                 .build();
@@ -101,6 +115,7 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
         try {
             response = httpsClient.execute(req);
         } catch (IOException e) {
+            s_logger.error("Error on execute", e);
             throw new CloudRuntimeException("Error on HTTPS request: " + e.getMessage());
         }
         return consumeResponse(response);
