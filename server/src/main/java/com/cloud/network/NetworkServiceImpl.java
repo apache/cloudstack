@@ -1986,7 +1986,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify network id
-        NetworkVO network = getNetworkVO(networkId, "unable to find network with specified id", String.valueOf(networkId));
+        NetworkVO network = getNetworkVO(networkId, "Unable to find a network with the specified ID.", String.valueOf(networkId));
 
         // don't allow to delete system network
         if (isNetworkSystem(network)) {
