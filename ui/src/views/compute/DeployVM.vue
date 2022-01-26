@@ -1773,8 +1773,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
-              description: description,
+              title,
+              description,
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id

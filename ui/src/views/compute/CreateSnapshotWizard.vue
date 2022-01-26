@@ -135,8 +135,8 @@ export default {
             if (jobId) {
               this.$pollJob({
                 jobId,
-                title: title,
-                description: description,
+                title,
+                description,
                 successMethod: result => {
                   const volumeId = result.jobresult.snapshot.volumeid
                   const snapshotId = result.jobresult.snapshot.id
