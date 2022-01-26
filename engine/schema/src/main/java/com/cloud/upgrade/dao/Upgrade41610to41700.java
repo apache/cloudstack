@@ -18,10 +18,23 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
@@ -56,6 +69,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        convertQuotaTariffsToNewParadigm(conn);
     }
 
     @Override
@@ -81,6 +95,102 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+        }
+    }
+
+    protected void convertQuotaTariffsToNewParadigm(Connection conn) {
+        LOG.info("Converting quota tariffs to new paradigm.");
+
+        List<UsageTypeResponse> usageTypeResponses = UsageTypes.listUsageTypes();
+
+        for (UsageTypeResponse usageTypeResponse : usageTypeResponses) {
+            Integer usageType = usageTypeResponse.getUsageType();
+
+            String tariffTypeDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(usageTypeResponse, "description", "usageType");
+
+            LOG.info(String.format("Converting quota tariffs of type %s to new paradigm.", tariffTypeDescription));
+
+            for (boolean previousTariff : Arrays.asList(true, false)) {
+                Map<Long, Date> tariffs = selectTariffs(conn, usageType, previousTariff, tariffTypeDescription);
+
+                int tariffsSize = tariffs.size();
+                if (tariffsSize <  2) {
+                    LOG.info(String.format("Quota tariff of type %s has [%s] %s register(s). Tariffs with less than 2 register do not need to be converted to new paradigm.",
+                            tariffTypeDescription, tariffsSize, previousTariff ? "previous of current" : "next to current"));
+                    continue;
+                }
+
+                executeUpdateQuotaTariffSetEndDateAndRemoved(conn, usageType, tariffs, previousTariff, tariffTypeDescription);
+            }
+        }
+    }
+
+    protected Map<Long, Date> selectTariffs(Connection conn, Integer usageType, boolean previousTariff, String tariffTypeDescription) {
+        Map<Long, Date> quotaTariffs = new LinkedHashMap<>();
+
+        String selectQuotaTariffs = String.format("SELECT id, effective_on FROM cloud_usage.quota_tariff WHERE %s AND usage_type = ? ORDER BY effective_on, updated_on;",
+                previousTariff ? "usage_name = name" : "removed is null");
+
+        LOG.info(String.format("Selecting %s quota tariffs of type [%s] according to SQL [%s].", previousTariff ? "previous of current" : "next to current",
+                tariffTypeDescription, selectQuotaTariffs));
+
+        try (PreparedStatement pstmt = conn.prepareStatement(selectQuotaTariffs)) {
+            pstmt.setInt(1, usageType);
+
+            try (ResultSet result = pstmt.executeQuery()) {
+                while (result.next()) {
+                    quotaTariffs.put(result.getLong("id"), result.getDate("effective_on"));
+                }
+            }
+            return quotaTariffs;
+        } catch (SQLException e) {
+            String message = String.format("Unable to retrieve %s quota tariffs of type [%s] due to [%s].", previousTariff ? "previous" : "next", tariffTypeDescription,
+                    e.getMessage());
+            LOG.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
+    }
+
+    protected void executeUpdateQuotaTariffSetEndDateAndRemoved(Connection conn, Integer usageType, Map<Long, Date> tariffs, boolean setRemoved, String tariffTypeDescription) {
+        String updateQuotaTariff = String.format("UPDATE cloud_usage.quota_tariff SET end_date = ? %s WHERE id = ?;", setRemoved ? ", removed = ?" : "");
+
+        Object[] ids = tariffs.keySet().toArray();
+
+        LOG.info(String.format("Updating %s registers of %s quota tariffs of type [%s] with SQL [%s].", tariffs.size() -1, setRemoved ? "previous of current" :
+            "next to current", tariffTypeDescription, updateQuotaTariff));
+
+        for (int i = 0; i < tariffs.size() - 1; i++) {
+            Long id = Long.valueOf(String.valueOf(ids[i]));
+            Long nextId = Long.valueOf(String.valueOf(ids[i + 1]));
+
+            Date endDate = tariffs.get(nextId);
+
+            if (!DateUtils.isSameDay(endDate, tariffs.get(id))) {
+                endDate = DateUtils.addDays(endDate, -1);
+            }
+
+            try (PreparedStatement pstmt = conn.prepareStatement(updateQuotaTariff)) {
+                java.sql.Date sqlEndDate = new java.sql.Date(endDate.getTime());
+                pstmt.setDate(1, sqlEndDate);
+
+                String updateRemoved = "";
+                if (setRemoved) {
+                    pstmt.setDate(2, sqlEndDate);
+                    pstmt.setLong(3, id);
+
+                    updateRemoved = String.format("and \"removed\" to [%s] ", sqlEndDate);
+                } else {
+                    pstmt.setLong(2, id);
+                }
+
+                LOG.info(String.format("Updating \"end_date\" to [%s] %sof quota tariff with ID [%s].", sqlEndDate, updateRemoved, id));
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                String message = String.format("Unable to update \"end_date\" %s of quota tariffs of usage type [%s] due to [%s].", setRemoved ? "and \"removed\"" : "",
+                        usageType, e.getMessage());
+                LOG.error(message, e);
+                throw new CloudRuntimeException(message, e);
+            }
         }
     }
 }
