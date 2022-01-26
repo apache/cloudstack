@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.image.deployasis;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
@@ -100,41 +99,44 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         gson = builder.create();
     }
 
-    public boolean persistTemplateDeployAsIsDetails(long templateId, DownloadAnswer answer, TemplateDataStoreVO tmpltStoreVO) {
-        try {
-            OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
-            if (ovfInformationTO != null) {
-                List<OVFPropertyTO> ovfProperties = ovfInformationTO.getProperties();
-                List<OVFNetworkTO> networkRequirements = ovfInformationTO.getNetworks();
-                OVFVirtualHardwareSectionTO ovfHardwareSection = ovfInformationTO.getHardwareSection();
-                List<OVFEulaSectionTO> eulaSections = ovfInformationTO.getEulaSections();
-                Pair<String, String> guestOsInfo = ovfInformationTO.getGuestOsInfo();
+    private void persistTemplateOVFInformation(long templateId, OVFInformationTO ovfInformationTO) {
+        List<OVFPropertyTO> ovfProperties = ovfInformationTO.getProperties();
+        List<OVFNetworkTO> networkRequirements = ovfInformationTO.getNetworks();
+        OVFVirtualHardwareSectionTO ovfHardwareSection = ovfInformationTO.getHardwareSection();
+        List<OVFEulaSectionTO> eulaSections = ovfInformationTO.getEulaSections();
+        Pair<String, String> guestOsInfo = ovfInformationTO.getGuestOsInfo();
 
-                if (CollectionUtils.isNotEmpty(ovfProperties)) {
-                    persistTemplateDeployAsIsInformationTOList(templateId, ovfProperties);
-                }
-                if (CollectionUtils.isNotEmpty(networkRequirements)) {
-                    persistTemplateDeployAsIsInformationTOList(templateId, networkRequirements);
-                }
-                if (CollectionUtils.isNotEmpty(eulaSections)) {
-                    persistTemplateDeployAsIsInformationTOList(templateId, eulaSections);
-                }
-                String minimumHardwareVersion = null;
-                if (ovfHardwareSection != null) {
-                    if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
-                        persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getConfigurations());
-                    }
-                    if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
-                        persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getCommonHardwareItems());
-                    }
-                    minimumHardwareVersion = ovfHardwareSection.getMinimiumHardwareVersion();
-                }
-                if (guestOsInfo != null) {
-                    String osType = guestOsInfo.first();
-                    String osDescription = guestOsInfo.second();
-                    LOGGER.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
-                    handleGuestOsFromOVFDescriptor(templateId, osType, osDescription, minimumHardwareVersion);
-                }
+        if (CollectionUtils.isNotEmpty(ovfProperties)) {
+            persistTemplateDeployAsIsInformationTOList(templateId, ovfProperties);
+        }
+        if (CollectionUtils.isNotEmpty(networkRequirements)) {
+            persistTemplateDeployAsIsInformationTOList(templateId, networkRequirements);
+        }
+        if (CollectionUtils.isNotEmpty(eulaSections)) {
+            persistTemplateDeployAsIsInformationTOList(templateId, eulaSections);
+        }
+        String minimumHardwareVersion = null;
+        if (ovfHardwareSection != null) {
+            if (CollectionUtils.isNotEmpty(ovfHardwareSection.getConfigurations())) {
+                persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getConfigurations());
+            }
+            if (CollectionUtils.isNotEmpty(ovfHardwareSection.getCommonHardwareItems())) {
+                persistTemplateDeployAsIsInformationTOList(templateId, ovfHardwareSection.getCommonHardwareItems());
+            }
+            minimumHardwareVersion = ovfHardwareSection.getMinimiumHardwareVersion();
+        }
+        if (guestOsInfo != null) {
+            String osType = guestOsInfo.first();
+            String osDescription = guestOsInfo.second();
+            LOGGER.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
+            handleGuestOsFromOVFDescriptor(templateId, osType, osDescription, minimumHardwareVersion);
+        }
+    }
+
+    public boolean persistTemplateOVFInformationAndUpdateGuestOS(long templateId, OVFInformationTO ovfInformationTO, TemplateDataStoreVO tmpltStoreVO) {
+        try {
+            if (ovfInformationTO != null) {
+                persistTemplateOVFInformation(templateId, ovfInformationTO);
             }
         } catch (Exception e) {
             LOGGER.error("Error persisting deploy-as-is details for template " + templateId, e);
@@ -151,7 +153,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
     /**
      * Returns the mapped guest OS from the OVF file of the template to the CloudStack database OS ID
      */
-    public Long retrieveTemplateGuestOsIdFromGuestOsInfo(long templateId, String guestOsType, String guestOsDescription,
+    private Long retrieveTemplateGuestOsIdFromGuestOsInfo(long templateId, String guestOsType, String guestOsDescription,
                                                          String minimumHardwareVersion) {
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType hypervisor = template.getHypervisorType();
@@ -337,7 +339,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
         return map;
     }
 
-    private void persistTemplateDeployAsIsInformationTOList(long templateId,
+    public void persistTemplateDeployAsIsInformationTOList(long templateId,
                                                             List<? extends TemplateDeployAsIsInformationTO> informationTOList) {
         for (TemplateDeployAsIsInformationTO informationTO : informationTOList) {
             String propKey = getKeyFromInformationTO(informationTO);
