@@ -384,19 +384,18 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     private Long getAccountIdFromDomainPlusName(Long domainId, String accountName, Account caller) {
         Long accountId;
         Account userAccount = null;
-        if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
-            List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
-            if (accounts.size() > 0) {
-                userAccount = accounts.get(0);
-            }
-            if (userAccount != null) {
-                accountId = userAccount.getId();
-            } else {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-            }
-        } else {
+        if (! _domainDao.isChildDomain(caller.getDomainId(), domainId)) {
             throw new PermissionDeniedException("Invalid Domain Id or Account");
+        }
+        Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
+        List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
+        if (accounts.size() > 0) {
+            userAccount = accounts.get(0);
+        }
+        if (userAccount != null) {
+            accountId = userAccount.getId();
+        } else {
+            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
         return accountId;
     }
