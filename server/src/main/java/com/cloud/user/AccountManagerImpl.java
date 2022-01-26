@@ -1188,7 +1188,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     private void checkRoleEscalation(Account caller, Account requested) {
         Long requestedRoleId = requested.getRoleId();
-        List<RolePermission> requestedPermissions = roleService.findAllPermissionsBy(requestedRoleId);
         for (String command : apiNameList) {
             // if requested can, make sure caller can as well
             try {
@@ -1865,6 +1864,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             acctForUpdate.setRoleId(roleId);
+            checkRoleEscalation(getCurrentCallingAccount(), acctForUpdate);
         }
 
         if (networkDomain != null) {
