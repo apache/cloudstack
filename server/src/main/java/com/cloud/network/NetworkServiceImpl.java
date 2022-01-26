@@ -2020,10 +2020,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return restartNetwork(network, cleanup, makeRedundant, user);
     }
 
-    private NetworkVO getNetworkVO(Long networkId, String s, String s2) {
+    private NetworkVO getNetworkVO(Long networkId, String errMsgFormat, String objectId) {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
-            throwInvalidIdException(s, s2, "networkId");
+            throwInvalidIdException(errMsgFormat, objectId, "networkId");
         }
         return network;
     }
