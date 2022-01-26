@@ -2074,7 +2074,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NetworkVO network = getNetworkVO(cmd.getNetworkId(), "Network [%s] to restart was not found.", String.valueOf(networkId));
         boolean cleanup = cmd.getCleanup();
         if (network.getVpcId() != null && cleanup) {
-            throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC", network.getUuid(), "network tier");
+            throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
         }
         boolean makeRedundant = cmd.getMakeRedundant();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
