@@ -1189,12 +1189,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void checkRoleEscalation(Account caller, Account requested) {
         Long requestedRoleId = requested.getRoleId();
         for (String command : apiNameList) {
-            // if requested can, make sure caller can as well
             try {
                 checkApiAccess(requested,command);
             } catch (PermissionDeniedException pde) {
                 continue;
             }
+            // so requested can, now make sure caller can as well
             try {
                 checkApiAccess(caller, command);
             } catch (PermissionDeniedException pde) {
