@@ -392,12 +392,10 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         if (accounts.size() > 0) {
             userAccount = accounts.get(0);
         }
-        if (userAccount != null) {
-            accountId = userAccount.getId();
-        } else {
+        if (userAccount == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
-        return accountId;
+        return userAccount.getId();
     }
 
     @NotNull
