@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.command.QuotaEnabledCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
+import org.apache.cloudstack.api.command.QuotaTariffDeleteCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaUpdateCmd;
@@ -128,6 +129,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         cmdList.add(QuotaEmailTemplateListCmd.class);
         cmdList.add(QuotaEmailTemplateUpdateCmd.class);
         cmdList.add(QuotaTariffCreateCmd.class);
+        cmdList.add(QuotaTariffDeleteCmd.class);
         return cmdList;
     }
 
@@ -250,6 +252,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public Date computeAdjustedTime(final Date date) {
+        if (date == null) {
+            return null;
+        }
+
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         TimeZone localTZ = cal.getTimeZone();

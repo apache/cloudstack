@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
@@ -638,5 +640,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+    }
+
+    public boolean deleteQuotaTariff(String quotaTariffUuid) {
+        QuotaTariffVO quotaTariff = _quotaTariffDao.findByUuid(quotaTariffUuid);
+
+        if (quotaTariff == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Quota tariff with the provided UUID does not exist.");
+        }
+
+        quotaTariff.setRemoved(_quotaService.computeAdjustedTime(new Date()));
+        return _quotaTariffDao.updateQuotaTariff(quotaTariff);
     }
 }

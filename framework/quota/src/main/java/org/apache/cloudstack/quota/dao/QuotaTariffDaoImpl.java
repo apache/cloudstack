@@ -223,4 +223,17 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
 
         return quotaTariffs.get(0);
     }
+
+    @Override
+    public QuotaTariffVO findByUuid(String uuid) {
+        Pair<List<QuotaTariffVO>, Integer> pairQuotaTariffs = listQuotaTariffs(null, null, null, null, uuid, false, null, null);
+        List<QuotaTariffVO> quotaTariffs = pairQuotaTariffs.first();
+
+        if (CollectionUtils.isEmpty(quotaTariffs)) {
+            s_logger.debug(String.format("Could not find quota tariff with UUID [%s].", uuid));
+            return null;
+        }
+
+        return quotaTariffs.get(0);
+    }
 }

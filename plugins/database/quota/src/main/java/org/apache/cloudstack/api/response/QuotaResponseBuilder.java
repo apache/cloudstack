@@ -67,4 +67,6 @@ public interface QuotaResponseBuilder {
     Date startOfNextDay();
 
     QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd);
+
+    boolean deleteQuotaTariff(String quotaTariffUuid);
 }
