@@ -1901,7 +1901,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected void syncPlatformAndCoresPerSocketSettings(String coresPerSocket, Map<String, String> platform) {
-        if (coresPerSocket == null) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(coresPerSocket) || MapUtils.isEmpty(platform)) {
             return;
         }
         if (platform.containsKey(PLATFORM_CORES_PER_SOCKET_KEY)) {
