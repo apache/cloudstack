@@ -113,7 +113,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setUsageDiscriminator(tariff.getUsageDiscriminator());
         response.setTariffValue(tariff.getCurrencyValue());
         response.setEffectiveOn(tariff.getEffectiveOn());
-        response.setDescription(tariff.getDescription());
+        response.setDescription(tariff.getUsageTypeDescription());
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         return response;
     }

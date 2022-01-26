@@ -155,7 +155,7 @@ public class QuotaTariffVO implements InternalIdentity {
         this.currencyValue = currencyValue;
     }
 
-    public String getDescription() {
+    public String getUsageTypeDescription() {
         return QuotaTypes.getDescription(usageType);
     }
 

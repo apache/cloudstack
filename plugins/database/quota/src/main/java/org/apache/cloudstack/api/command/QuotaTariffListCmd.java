@@ -60,7 +60,7 @@ public class QuotaTariffListCmd extends BaseListCmd {
         final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
         for (final QuotaTariffVO resource : result.first()) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Result desc=" + resource.getDescription() + " date=" + resource.getEffectiveOn() + " val=" + resource.getCurrencyValue());
+                s_logger.debug("Result desc=" + resource.getUsageTypeDescription() + " date=" + resource.getEffectiveOn() + " val=" + resource.getCurrencyValue());
             }
             responses.add(_responseBuilder.createQuotaTariffResponse(resource));
         }
