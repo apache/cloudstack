@@ -755,7 +755,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (vm.getType() == VirtualMachine.Type.User && !isExplicit) {
             //add explicitly dedicated resources in avoidList
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("adding pods to avoid lists for non-exlicit vm deployment: " + allPodsInDc);
+                s_logger.debug("Adding pods to avoid lists for non-explicit VM deployment: " + allPodsInDc);
             }
             avoids.addPodList(allPodsInDc);
             if (s_logger.isDebugEnabled()) {
