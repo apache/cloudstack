@@ -2071,7 +2071,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
-        NetworkVO network = getNetworkVO(cmd.getNetworkId(),"Nework to restart not found %s", String.valueOf(networkId));
+        NetworkVO network = getNetworkVO(cmd.getNetworkId(), "Network [%s] to restart was not found.", String.valueOf(networkId));
         boolean cleanup = cmd.getCleanup();
         if (network.getVpcId() != null && cleanup) {
             throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC", network.getUuid(), "network tier");
