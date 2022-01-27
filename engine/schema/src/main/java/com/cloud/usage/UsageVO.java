@@ -401,5 +401,5 @@ public class UsageVO implements Usage, InternalIdentity {
     @Override
     public String toString() {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "usageId", "usageType", "startDate", "endDate");
-    }       
+    }
 }

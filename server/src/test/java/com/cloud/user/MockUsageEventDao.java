@@ -29,7 +29,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.Integer;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -322,11 +321,6 @@ public class MockUsageEventDao implements UsageEventDao{
 
     @Override
     public Pair<List<UsageEventVO>, Integer> searchAndCount(SearchCriteria<UsageEventVO> sc, Filter filter, boolean includeRemoved) {
-        return null;
-    }
-
-    @Override
-    public Integer countAll() {
         return null;
     }
 }
