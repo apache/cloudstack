@@ -159,6 +159,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
     private Long storagePolicy;
 
+    @Parameter(name = ApiConstants.DISK_SIZE_STRICTNESS, type = CommandType.BOOLEAN, description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.17")
+    private Boolean diskSizeStrictness;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
     private Map details;
 
@@ -301,6 +304,11 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public Long getStoragePolicy() {
         return storagePolicy;
     }
+
+    public boolean getDiskSizeStrictness() {
+        return diskSizeStrictness != null ? diskSizeStrictness : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

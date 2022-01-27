@@ -20,18 +20,25 @@
     <a-alert class="top-spaced" type="warning">
       <span slot="message" v-html="$t('message.migrate.volume')" />
     </a-alert>
-    <storage-pool-select-view
-      ref="storagePoolSelection"
-      :resource="resource"
-      :suitabilityEnabled="true"
-      @storagePoolsUpdated="handleStoragePoolsChange"
-      @select="handleStoragePoolSelect" />
+    <a-form-item>
+      <tooltip-label slot="label" :title="$t('label.storagepool')" :tooltip="$t('message.migrate.volume.tooltip')"/>
+      <storage-pool-select-view
+        ref="storagePoolSelection"
+        :resource="resource"
+        :suitabilityEnabled="true"
+        @change="fetchDiskOfferings"
+        @storagePoolsUpdated="handleStoragePoolsChange"
+        @select="handleStoragePoolSelect" />
+    </a-form-item>
     <div class="top-spaced" v-if="storagePools.length > 0">
       <template v-if="this.resource.virtualmachineid">
         <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
           {{ $t('label.usenewdiskoffering') }}
         </p>
-        <a-checkbox v-model="replaceDiskOffering" />
+        <a-switch
+          v-decorator="['replaceDiskOffering']"
+          :checked="replaceDiskOffering"
+          @change="val => { replaceDiskOffering = val }"/>
 
         <template v-if="replaceDiskOffering">
           <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
@@ -64,12 +71,14 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 
 export default {
   name: 'MigrateVolume',
   components: {
-    StoragePoolSelectView
+    StoragePoolSelectView,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -96,22 +105,61 @@ export default {
       }
     }
   },
+  created () {
+    this.fetchStoragePools()
+  },
   methods: {
+    fetchStoragePools () {
+      if (this.resource.virtualmachineid) {
+        api('findStoragePoolsForMigration', {
+          id: this.resource.id
+        }).then(response => {
+          this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
+          if (Array.isArray(this.storagePools) && this.storagePools.length) {
+            this.selectedStoragePool = this.storagePools[0].id || ''
+            this.fetchDiskOfferings()
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+          this.closeModal()
+        })
+      } else {
+        api('listStoragePools', {
+          zoneid: this.resource.zoneid
+        }).then(response => {
+          this.storagePools = response.liststoragepoolsresponse.storagepool || []
+          this.storagePools = this.storagePools.filter(pool => { return pool.id !== this.resource.storageid })
+          if (Array.isArray(this.storagePools) && this.storagePools.length) {
+            this.selectedStoragePool = this.storagePools[0].id || ''
+            this.fetchDiskOfferings()
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+          this.closeModal()
+        })
+      }
+    },
     fetchDiskOfferings () {
       this.diskOfferingLoading = true
-      api('listDiskOfferings', {
-        listall: true
-      }).then(response => {
-        this.diskOfferings = response.listdiskofferingsresponse.diskoffering
-      }).catch(error => {
-        this.$notifyError(error)
-        this.closeModal()
-      }).finally(() => {
-        this.diskOfferingLoading = false
-        if (this.diskOfferings.length > 0) {
-          this.selectedDiskOffering = this.diskOfferings[0].id
-        }
-      })
+      if (this.resource.virtualmachineid) {
+        api('listDiskOfferings', {
+          storageid: this.selectedStoragePool.id,
+          listall: true
+        }).then(response => {
+          this.diskOfferings = response.listdiskofferingsresponse.diskoffering
+          if (this.diskOfferings) {
+            this.selectedDiskOffering = this.diskOfferings[0].id
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+          this.closeModal()
+        }).finally(() => {
+          this.diskOfferingLoading = false
+          if (this.diskOfferings.length > 0) {
+            this.selectedDiskOffering = this.diskOfferings[0].id
+          }
+        })
+      }
     },
     handleStoragePoolsChange (storagePools) {
       this.storagePools = storagePools

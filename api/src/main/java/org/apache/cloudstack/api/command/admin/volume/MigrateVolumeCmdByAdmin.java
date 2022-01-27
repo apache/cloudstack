@@ -26,4 +26,5 @@ import com.cloud.storage.Volume;
 
 @APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Full, entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd implements AdminCmd {}
+public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd implements AdminCmd {
+}

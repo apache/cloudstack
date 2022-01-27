@@ -454,8 +454,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private ServiceOfferingVO createServiceOfferingForVMImporting(Integer cpus, Integer memory, Integer maxCpuUsage) {
         String name = "Imported-" + cpus + "-" + memory;
-        ServiceOfferingVO vo = new ServiceOfferingVO(name, cpus, memory, maxCpuUsage, null, null, false, name, Storage.ProvisioningType.THIN, false, false, null, false, Type.User,
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, name, Storage.ProvisioningType.THIN, false, null, false, false, true);
+        diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
+        ServiceOfferingVO vo = new ServiceOfferingVO(name, cpus, memory, maxCpuUsage, null, null, false, name, false, Type.User,
                 false);
+        vo.setDiskOfferingId(diskOfferingVO.getId());
         return serviceOfferingDao.persist(vo);
     }
 
@@ -665,7 +670,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     vmInternalName, id, vmInternalName, templateId, guestOsId, serviceOfferingId));
 
             UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware, guestOsId, false, false, domainId, accountId, userId,
-                    serviceOfferingId, null, vmInternalName, null);
+                    serviceOfferingId, null, vmInternalName);
             vmInstanceVO.setDataCenterId(zoneId);
             return userVmDao.persist(vmInstanceVO);
         }
