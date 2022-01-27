@@ -74,7 +74,6 @@ restart_services() {
         systemctl is-active --quiet "$svc"
         if [ $? -eq 0 ]; then
           systemctl restart "$svc"
-          sleep 5
           systemctl is-active --quiet "$svc"
           if [ $? -gt 0 ]; then
             echo "Failed to start "$svc" service. Patch Failed. Retrying again" >> $logfile 2>&1
@@ -100,10 +99,10 @@ cleanup_systemVM() {
 
 patch_systemvm() {
   rm -rf /usr/local/cloud/systemvm
-  mkdir -p /usr/local/cloud/systemvm
 
   if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]; then
     echo "All" | unzip $newpath/agent.zip -d /usr/local/cloud/systemvm >> $logfile 2>&1
+    mkdir -p /usr/local/cloud/systemvm
     find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
   fi
   echo "Extracting cloud scripts" >> $logfile 2>&1

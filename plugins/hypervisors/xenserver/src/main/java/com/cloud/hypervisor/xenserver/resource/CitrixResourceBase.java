@@ -996,7 +996,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final Connection conn = getConnection();
         final String hostPath = "/opt/xensource/packages/resources/";
         String rc = "";
-        for (String file: newSrcFiles) {
+        for (String file: systemVmPatchFiles) {
             rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "srcfilepath", hostPath.concat(file), "dstfilepath", path, "cleanup", "false");
             if (rc.startsWith("fail#")) {
                 s_logger.error(String.format("Failed to scp file %s required for patching the systemVM", file));
