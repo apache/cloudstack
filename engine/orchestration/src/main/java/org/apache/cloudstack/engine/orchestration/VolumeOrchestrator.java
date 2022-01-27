@@ -132,7 +132,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -564,7 +563,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private SnapshotInfo backupSnapshotIfNeeded(Snapshot snapshot, DataStoreRole dataStoreRole, SnapshotInfo snapInfo) {
-        boolean backupSnapToSecondary = SnapshotManager.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotManager.BackupSnapshotAfterTakingSnapshot.value();
+        boolean backupSnapToSecondary = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
         StoragePoolVO srcPool = _storagePoolDao.findById(snapInfo.getBaseVolume().getPoolId());
         // We need to copy the snapshot onto secondary.

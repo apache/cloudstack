@@ -223,7 +223,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                BackupSnapshotAfterTakingSnapshot};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot};
     }
 
     @Override
@@ -1226,7 +1226,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupSnapToSecondary = BackupSnapshotAfterTakingSnapshot.value() == null || BackupSnapshotAfterTakingSnapshot.value();
+            boolean backupSnapToSecondary = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
             if (backupSnapToSecondary) {
                 backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);
@@ -1354,7 +1354,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
+        if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()) {
             return DataStoreRole.Primary;
         }
 
