@@ -497,7 +497,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return UUID.randomUUID().toString();
     }
 
-    private Long getDefaultCustomOffering(long zoneId) {
+    private Long getDefaultCustomOfferingId(long zoneId) {
         DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName(CUSTOM_DISK_OFFERING_UNIQUE_NAME);
         if (diskOfferingVO == null || !DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
             return null;
@@ -516,8 +516,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return null;
     }
 
-    private Long getCustomDiskOfferingForVolumeUpload(long zoneId) {
-        Long offeringId = getDefaultCustomOffering(zoneId);
+    private Long getCustomDiskOfferingIdForVolumeUpload(long zoneId) {
+        Long offeringId = getDefaultCustomOfferingId(zoneId);
         if (offeringId != null) {
             return offeringId;
         }
@@ -544,7 +544,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
 
                 if (diskOfferingId == null) {
-                    Long customDiskOfferingId = getCustomDiskOfferingForVolumeUpload(zoneId);
+                    Long customDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(zoneId);
                     if (customDiskOfferingId == null) {
                         DataCenter zone = _dcDao.findById(zoneId);
                         throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
