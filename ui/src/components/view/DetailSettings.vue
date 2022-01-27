@@ -267,6 +267,10 @@ export default {
         this.error = this.$t('message.error.provide.setting')
         return
       }
+      if (!this.allowEditOfDetail(this.newKey)) {
+        this.error = this.$t('error.unable.to.proceed')
+        return
+      }
       this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
       this.runApi()
