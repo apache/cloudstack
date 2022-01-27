@@ -495,29 +495,28 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         });
     }
 
-    public Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(final long accountId, final long domainId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Getting usage records for account: " + accountId + ", domainId: " + domainId);
-        }
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<? extends UsageVO>, Integer>>() {
+    @Override
+    public Pair<List<UsageVO>, Integer> listUsageRecordsPendingForQuotaAggregation(long accountId, long domainId) {
+        s_logger.debug(String.format("Retrieving pending usage records for accountId [%s] and domainId [%s].", accountId, domainId));
+
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<UsageVO>, Integer>>() {
             @Override
-            public Pair<List<? extends UsageVO>, Integer> doInTransaction(final TransactionStatus status) {
-                Pair<List<UsageVO>, Integer> usageRecords = new Pair<List<UsageVO>, Integer>(new ArrayList<UsageVO>(), 0);
-                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, Long.MAX_VALUE);
+            public Pair<List<UsageVO>, Integer> doInTransaction(final TransactionStatus status) {
+                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, null, null);
                 QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
+
                 if (accountId != -1) {
                     qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
                 }
+
                 if (domainId != -1) {
                     qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
                 }
+
                 qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
                 qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
-                }
-                usageRecords = searchAndCountAllRecords(qb.create(), usageFilter);
-                return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
+
+                return searchAndCountAllRecords(qb.create(), usageFilter);
             }
         });
     }

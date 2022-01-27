@@ -59,7 +59,7 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
 
     UsageVO persistUsage(final UsageVO usage);
 
-    Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(long accountId, long domainId);
+    Pair<List<UsageVO>, Integer> listUsageRecordsPendingForQuotaAggregation(long accountId, long domainId);
 
     List<Pair<String, String>> listAccountResourcesInThePeriod(long accountId, int usageType, Date startDate, Date endDate);
 }

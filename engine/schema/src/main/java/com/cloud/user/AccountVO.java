@@ -18,6 +18,7 @@ package com.cloud.user;
 
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -222,5 +223,9 @@ public class AccountVO implements Account {
     @Override
     public String getName() {
         return accountName;
+    }
+
+    public String reflectionToString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "accountName", "domainId");
     }
 }
