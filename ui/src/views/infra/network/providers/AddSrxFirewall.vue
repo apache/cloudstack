@@ -27,7 +27,7 @@
             <a-input
               :placeholder="apiParams.url.description"
               autoFocus
-              v-decorator="['url', {
+              v-decorator="['ip', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
           </a-form-item>
