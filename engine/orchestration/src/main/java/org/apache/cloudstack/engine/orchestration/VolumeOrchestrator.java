@@ -365,6 +365,36 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return null;
     }
 
+    public List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
+        Long podId = null;
+        if (pod != null) {
+            podId = pod.getId();
+        } else if (clusterId != null) {
+            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
+            if (cluster != null) {
+                podId = cluster.getPodId();
+            }
+        }
+
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        List<StoragePool> suitablePools = new ArrayList<>();
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+
+            ExcludeList avoidList = new ExcludeList();
+            for (StoragePool pool : avoid) {
+                avoidList.addPool(pool.getId());
+            }
+            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
+
+            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
+            if (CollectionUtils.isEmpty(poolList)) {
+                continue;
+            }
+            suitablePools.addAll(poolList);
+        }
+        return suitablePools;
+    }
+
     @Override
     public StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId) {
         Long podId = null;
@@ -634,7 +664,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
-            dskCh = createDiskCharacteristics(volume, template, dc, offering);
+            dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
             storageMgr.setDiskProfileThrottling(dskCh, offering, diskOffering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
@@ -893,7 +923,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             Long offeringId = null;
 
-            if (offering.getType() == DiskOffering.Type.Disk) {
+            if (!offering.isComputeOnly()) {
                 offeringId = offering.getId();
             }
 

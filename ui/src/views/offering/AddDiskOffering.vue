@@ -75,6 +75,15 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item>
+          <span slot="label">
+            {{ $t('label.disksizestrictness') }}
+            <a-tooltip :title="apiParams.disksizestrictness.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-switch v-decorator="['disksizestrictness', { initialValue: this.disksizestrictness }]" :checked="this.disksizestrictness" @change="val => { this.disksizestrictness = val }" />
+        </a-form-item>
+        <a-form-item>
           <tooltip-label slot="label" :title="$t('label.customdisksize')" :tooltip="apiParams.customized.description"/>
           <a-switch v-decorator="['customdisksize', { initialValue: isCustomDiskSize }]" :checked="isCustomDiskSize" @change="val => { isCustomDiskSize = val }" />
         </a-form-item>
@@ -379,7 +388,8 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
-      loading: false
+      loading: false,
+      disksizestrictness: false
     }
   },
   beforeCreate () {
@@ -501,7 +511,8 @@ export default {
           storageType: values.storagetype,
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
-          customized: values.customdisksize
+          customized: values.customdisksize,
+          disksizestrictness: values.disksizestrictness
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize
@@ -568,6 +579,7 @@ export default {
           params.storagepolicy = values.storagepolicy
         }
         api('createDiskOffering', params).then(json => {
+          this.$emit('publish-disk-offering-id', json?.creatediskofferingresponse?.diskoffering?.id)
           this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
           this.$emit('refresh-data')
           this.closeAction()
