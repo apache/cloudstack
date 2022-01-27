@@ -38,6 +38,8 @@ import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
@@ -72,6 +74,13 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             + "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
+
+    private static final String LIST_ACCOUNT_RESOURCES_IN_PERIOD = "SELECT zone.uuid as zone_uuid, domain.uuid as domain_uuid\n "
+            + "FROM    cloud_usage.cloud_usage cloud_usage\n "
+            + "INNER   JOIN cloud.data_center zone ON (zone.id = cloud_usage.zone_id)\n "
+            + "INNER   JOIN cloud.domain domain ON (domain.id = cloud_usage.domain_id)\n "
+            + "WHERE   cloud_usage.usage_type = ? AND cloud_usage.account_id = ? AND cloud_usage.start_date >= ? AND cloud_usage.end_date <= ? "
+            + "GROUP   BY cloud_usage.usage_id ";
 
     public UsageDaoImpl() {
     }
@@ -511,5 +520,40 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
             }
         });
+    }
+
+    @Override
+    public List<Pair<String, String>> listAccountResourcesInThePeriod(long accountId, int usageType, Date startDate, Date endDate) {
+        String startDateString = DateUtil.getOutputString(startDate);
+        String endDateString = DateUtil.getOutputString(endDate);
+
+        s_logger.debug(String.format("Retrieving account resources between [%s] and [%s] for accountId [%s] and usageType [%s].", startDateString, endDateString, accountId,
+                usageType));
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareStatement(LIST_ACCOUNT_RESOURCES_IN_PERIOD)) {
+            List<Pair<String, String>> accountResourcesOfTheLastDay = new ArrayList<>();
+
+            pstmt.setInt(1, usageType);
+            pstmt.setLong(2, accountId);
+            pstmt.setTimestamp(3, new Timestamp(startDate.getTime()));
+            pstmt.setTimestamp(4, new Timestamp(endDate.getTime()));
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String zoneUuid = rs.getString("zone_uuid");
+                    String domainUuid = rs.getString("domain_uuid");
+
+                    accountResourcesOfTheLastDay.add(new Pair<>(zoneUuid, domainUuid));
+                }
+            }
+
+            return accountResourcesOfTheLastDay;
+        } catch (SQLException e) {
+            s_logger.error(String.format("Failed to retrieve account resources between [%s] and [%s] for accountId [%s] and usageType [%s] due to [%s]. Returning an empty list of"
+                    + " resources.", startDateString, endDateString, accountId, usageType, e.getMessage()), e);
+
+            return new ArrayList<>();
+        }
     }
 }
