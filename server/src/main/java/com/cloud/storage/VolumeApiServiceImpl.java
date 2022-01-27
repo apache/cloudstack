@@ -498,12 +498,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
         if (diskOfferingVO != null) {
             DiskOfferingJoinVO diskOfferingJoinVO = diskOfferingJoinDao.findById(diskOfferingVO.getId());
-            if (diskOfferingJoinVO != null && org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
-                return diskOfferingJoinVO.getId();
-            }
-            List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
-            if (zoneIds.contains(String.valueOf(zoneId))) {
-                return diskOfferingJoinVO.getId();
+            if (diskOfferingJoinVO != null) {
+                if (org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
+                    return diskOfferingJoinVO.getId();
+                }
+                List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
+                if (zoneIds.contains(String.valueOf(zoneId))) {
+                    return diskOfferingJoinVO.getId();
+                }
             }
         }
         List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomIopsOfferingsByZoneId(zoneId);
