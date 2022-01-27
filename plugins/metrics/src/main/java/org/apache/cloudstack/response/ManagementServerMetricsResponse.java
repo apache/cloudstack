@@ -27,47 +27,47 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.AVAILABLE_PROCESSORS)
     @Param(description = "the number of processors available to the JVM")
-    private int availableProcessors;
+    private Integer availableProcessors;
 
     @SerializedName(MetricConstants.AGENT_COUNT)
     @Param(description = "the number of agents this Management Server is responsible for")
-    private int agentCount;
+    private Integer agentCount;
 
     @SerializedName(MetricConstants.SESSIONS)
     @Param(description = "the number of client sessions active on this Management Server")
-    private long sessions;
+    private Long sessions;
 
     @SerializedName(MetricConstants.HEAP_MEMORY_USED)
     @Param(description = "the amount of memory used by this Management Server")
-    private long heapMemoryUsed;
+    private Long heapMemoryUsed;
 
     @SerializedName(MetricConstants.HEAP_MEMORY_TOTAL)
     @Param(description = "the amount of memory allocated to this Management Server")
-    private long heapMemoryTotal;
+    private Long heapMemoryTotal;
 
     @SerializedName(MetricConstants.THREADS_BLOCKED_COUNT)
     @Param(description = "The number of blocked threads")
-    private int threadsBlockedCount;
+    private Integer threadsBlockedCount;
 
     @SerializedName(MetricConstants.THREADS_DAEMON_COUNT)
     @Param(description = "The number of daemon threads")
-    private int threadsDaemonCount;
+    private Integer threadsDaemonCount;
 
     @SerializedName(MetricConstants.THREADS_RUNNABLE_COUNT)
     @Param(description = "The number of runnable threads")
-    private int threadsRunnableCount;
+    private Integer threadsRunnableCount;
 
     @SerializedName(MetricConstants.THREADS_TERMINATED_COUNT)
     @Param(description = "The number of terminated threads")
-    private int threadsTerminatedCount;
+    private Integer threadsTerminatedCount;
 
     @SerializedName(MetricConstants.THREADS_TOTAL_COUNT)
     @Param(description = "The number of threads")
-    private int threadsTotalCount;
+    private Integer threadsTotalCount;
 
     @SerializedName(MetricConstants.THREADS_WAITING_COUNT)
     @Param(description = "The number of waiting threads")
-    private int threadsWaitingCount;
+    private Integer threadsWaitingCount;
 
     @SerializedName(MetricConstants.SYSTEM_MEMORY_TOTAL)
     @Param(description = "Total system memory")
@@ -91,7 +91,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.SYSTEM_CYCLES)
     @Param(description = "the total system cpu capacity")
-    private double systemTotalCpuCycles;
+    private Double systemTotalCpuCycles;
 
     @SerializedName(MetricConstants.SYSTEM_LOAD_AVERAGES)
     @Param(description = "the load averages for 1 5 and 15 minutes")
@@ -103,11 +103,11 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.DATABASE_IS_LOCAL)
     @Param(description = "the system is running against a local database")
-    private boolean dbLocal;
+    private Boolean dbLocal;
 
     @SerializedName(MetricConstants.USAGE_IS_LOCAL)
     @Param(description = "the system has a usage server running locally")
-    private boolean usageLocal;
+    private Boolean usageLocal;
 
     @SerializedName(MetricConstants.CPULOAD)
     @Param(description = "the current cpu load")

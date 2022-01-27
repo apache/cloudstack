@@ -32,6 +32,7 @@ import javax.inject.Inject;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.server.DbStatsCollection;
+import com.cloud.server.StatsCollector;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.DbProperties;
@@ -665,7 +666,9 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
-            copyManagementServerStatusToResponse(metricsResponse, status);
+            if (StatsCollector.MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
+                copyManagementServerStatusToResponse(metricsResponse, status);
+            }
         }
     }
 
