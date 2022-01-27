@@ -128,6 +128,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
@@ -320,6 +321,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
 
+    private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
+
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
         _gson = GsonHelper.getGsonLogger();
@@ -494,19 +497,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return UUID.randomUUID().toString();
     }
 
+    private Long getDefaultCustomOffering(long zoneId) {
+        DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName(CUSTOM_DISK_OFFERING_UNIQUE_NAME);
+        if (diskOfferingVO == null || !DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
+            return null;
+        }
+        DiskOfferingJoinVO diskOfferingJoinVO = diskOfferingJoinDao.findById(diskOfferingVO.getId());
+        if (diskOfferingJoinVO == null) {
+            return null;
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
+            return diskOfferingJoinVO.getId();
+        }
+        List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
+        if (zoneIds.contains(String.valueOf(zoneId))) {
+            return diskOfferingJoinVO.getId();
+        }
+        return null;
+    }
+
     private Long getCustomDiskOfferingForVolumeUpload(long zoneId) {
-        DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
-        if (diskOfferingVO != null) {
-            DiskOfferingJoinVO diskOfferingJoinVO = diskOfferingJoinDao.findById(diskOfferingVO.getId());
-            if (diskOfferingJoinVO != null) {
-                if (org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
-                    return diskOfferingJoinVO.getId();
-                }
-                List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
-                if (zoneIds.contains(String.valueOf(zoneId))) {
-                    return diskOfferingJoinVO.getId();
-                }
-            }
+        Long offeringId = getDefaultCustomOffering(zoneId);
+        if (offeringId != null) {
+            return offeringId;
         }
         List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomIopsOfferingsByZoneId(zoneId);
         if (CollectionUtils.isNotEmpty(offerings)) {
