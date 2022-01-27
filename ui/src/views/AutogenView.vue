@@ -913,8 +913,10 @@ export default {
           }
         }
         if (this.items.length > 0) {
-          this.resource = this.items[0]
-          this.$emit('change-resource', this.resource)
+          if (!this.showAction) {
+            this.resource = this.items[0]
+            this.$emit('change-resource', this.resource)
+          }
         } else {
           if (this.dataView) {
             this.$router.push({ path: '/exception/404' })
