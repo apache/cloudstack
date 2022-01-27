@@ -103,7 +103,7 @@
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -131,10 +131,14 @@
             :resource="resource"
             :loading="loading"
             :action="{currentAction}"
+            :selectedRowKeys="selectedRowKeys"
+            :selectedItems="selectedItems"
+            :chosenColumns="chosenColumns"
             v-bind="{currentAction}"
             @refresh-data="fetchData"
             @poll-action="pollActionCompletion"
-            @close-action="closeAction"/>
+            @close-action="closeAction"
+            @cancel-bulk-action="handleCancel"/>
         </a-modal>
       </keep-alive>
       <a-modal
@@ -1595,5 +1599,10 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+/deep/.ant-alert-message {
+  display: flex;
+  align-items: center;
 }
 </style>
