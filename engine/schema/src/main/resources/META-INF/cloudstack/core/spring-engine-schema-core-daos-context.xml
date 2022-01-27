@@ -111,7 +111,7 @@
   <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
   <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl" />
   <bean id="imageStoreJoinDaoImpl" class="com.cloud.api.query.dao.ImageStoreJoinDaoImpl" />
-  <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" />
+  <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDaoImpl" />
   <bean id="templateDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl" />
   <bean id="templateJoinDaoImpl" class="com.cloud.api.query.dao.TemplateJoinDaoImpl" />
   <bean id="volumeDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.VolumeDataStoreDaoImpl" />
