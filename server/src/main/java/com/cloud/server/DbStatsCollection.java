@@ -26,5 +26,6 @@ public interface DbStatsCollection {
     String currentTlsVersion = "Current_tls_version";
     String version = "version";
     String versionComment = "version_comment";
+    String collectionTime = "collectiontime";
 
 }

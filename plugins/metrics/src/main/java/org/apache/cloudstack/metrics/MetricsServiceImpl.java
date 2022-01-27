@@ -789,7 +789,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     public DbMetricsResponse listDbMetrics() {
         DbMetricsResponse response = new DbMetricsResponse();
 
-        response.setCollectionTime(new Date());
         response.setHostname(dbHostName());
         response.setReplicas(dbReplicas());
         getDynamicDataFromDB(response);
@@ -821,6 +820,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         }
 
         response.setLoadAverages(loadAverages);
+        response.setCollectionTime((Date) dbStats.get(DbStatsCollection.collectionTime));
+
     }
 
     private void getStaticDataFromDB(DbMetricsResponse response) {

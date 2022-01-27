@@ -270,16 +270,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     private static final ConfigKey<Integer> MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
             Integer.class, "management.server.stats.interval", "60",
-            "Time interval for management servers stats. Set to <= 0 to disable management servers stats.", false);
-    private static final ConfigKey<Integer> USAGE_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
-            Integer.class, "usage.server.stats.interval", "60",
-            "Time interval for usage servers stats. Set to <= 0 to disable usage servers stats.", false);
+            "Time interval in seconds, for management servers stats collection. Set to <= 0 to disable management servers stats.", false);
     private static final ConfigKey<Integer> DATABASE_SERVER_STATUS_COLLECTION_INTERVAL = new ConfigKey<>("Advanced",
             Integer.class, "database.server.stats.interval", "60",
-            "Time interval for database servers stats. Set to <= 0 to disable database servers stats.", false);
+            "Time interval in seconds, for database servers stats collection. Set to <= 0 to disable database servers stats.", false);
     private static final ConfigKey<Integer> DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER = new ConfigKey<>("Advanced",
             Integer.class, "database.server.stats.retention", "10",
-            "The number of load averages to retain in history.", true);
+            "The number of load averages to retain in history. This will define for how many periods of 'database.server.stats.interval' seconds, the load average will be kept in memory",
+            true);
     private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
@@ -748,6 +746,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
          private void getDynamicDataFromDB() {
              Map<String, String> stats = DbUtil.getDbInfo("STATUS", queries, uptime);
+             dbStats.put(collectionTime, new Date());
              dbStats.put(queries, (Integer.valueOf(stats.get(queries))));
              dbStats.put(uptime, (Integer.valueOf(stats.get(uptime))));
          }
@@ -2357,7 +2356,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime,
                 VM_STATS_INCREMENT_METRICS_IN_MEMORY,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
-                USAGE_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER};
     }
