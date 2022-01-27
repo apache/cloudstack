@@ -35,8 +35,7 @@ import java.io.File;
  */
 public interface ServerResource extends Manager {
 
-    String[] srcFiles = new String[] { "agent.zip", "cloud-scripts.tgz" };
-    String[] newSrcFiles = new String[] { "agent.zip", "cloud-scripts.tgz", "patch-sysvms.sh" };
+    String[] systemVmPatchFiles = new String[] { "agent.zip", "cloud-scripts.tgz", "patch-sysvms.sh" };
     String[] certificateFiles = new String[] {KeyStoreUtils.CERT_FILENAME, KeyStoreUtils.CACERT_FILENAME, KeyStoreUtils.PKEY_FILENAME};
 
     String SSHKEYSPATH = "/root/.ssh";

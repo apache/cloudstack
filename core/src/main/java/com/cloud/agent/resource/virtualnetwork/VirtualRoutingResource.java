@@ -174,12 +174,28 @@ public class VirtualRoutingResource {
         return new SetupKeystoreAnswer(result.getDetails());
     }
 
+    private void scpCertificateFiles(String routerIp, String path, String filename, String content) throws InterruptedException {
+        String errMsg = "Failed to scp file: %s to system VM";
+        for (int retries = 5; retries > 0; retries--) {
+            try {
+                _vrDeployer.createFileInVR(routerIp, path, filename, content);
+            } catch (Exception e) {
+                errMsg += ", retrying";
+                s_logger.error(String.format(errMsg, filename), e);
+                Thread.sleep(2000);
+            }
+        }
+    }
     private Answer execute(final SetupCertificateCommand cmd) {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         if (!org.apache.commons.lang3.StringUtils.isEmpty(routerName) && (routerName.startsWith("s-") || routerName.startsWith("v-"))) {
-            _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), "/usr/local/cloud/systemvm/conf/", KeyStoreUtils.CERT_FILENAME, cmd.getCertificate());
-            _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), "/usr/local/cloud/systemvm/conf/", KeyStoreUtils.CACERT_FILENAME, cmd.getCaCertificates());
-            _vrDeployer.createFileInVR(cmd.getRouterAccessIp(), "/usr/local/cloud/systemvm/conf/", KeyStoreUtils.PKEY_FILENAME, cmd.getPrivateKey());
+            try {
+                scpCertificateFiles(cmd.getRouterAccessIp(), "/usr/local/cloud/systemvm/conf/", KeyStoreUtils.CERT_FILENAME, cmd.getCertificate());
+                scpCertificateFiles(cmd.getRouterAccessIp(), "/usr/local/cloud/systemvm/conf/", KeyStoreUtils.CACERT_FILENAME, cmd.getCaCertificates());
+                scpCertificateFiles(cmd.getRouterAccessIp(), "/usr/local/cloud/systemvm/conf/", KeyStoreUtils.PKEY_FILENAME, cmd.getPrivateKey());
+            } catch (InterruptedException e) {
+                throw new CloudRuntimeException(String.format("Failed to scp certificate file to %s due to %s", routerName, e.getLocalizedMessage()));
+            }
         }
         final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties %s " +
                         "/usr/local/cloud/systemvm/conf/%s %s " +

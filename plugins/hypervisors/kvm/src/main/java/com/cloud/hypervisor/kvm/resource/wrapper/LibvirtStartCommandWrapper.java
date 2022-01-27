@@ -120,9 +120,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
                     try {
                         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
-                        FileUtil.scpPatchFiles(controlIp, "/home/cloud", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.newSrcFiles, LibvirtComputingResource.BASEPATH);
-                        // TODO: May want to remove this when cert patching logic is moved
-                        Thread.sleep(10000);
+                        FileUtil.scpPatchFiles(controlIp, "/home/cloud", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
                     } catch (Exception e) {
                         String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                         s_logger.error(errMsg, e);

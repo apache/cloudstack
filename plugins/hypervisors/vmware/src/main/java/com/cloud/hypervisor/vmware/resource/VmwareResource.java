@@ -662,7 +662,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         ExecutionResult result = getSystemVmVersionAndChecksum(controlIp);
         try {
-            FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, newSrcFiles, BASEPATH);
+            FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(cmd, e.getMessage());
         }
@@ -2549,9 +2549,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 try {
                     String homeDir = System.getProperty("user.home");
                     File pemFile = new File(homeDir + "/.ssh/id_rsa");
-                    FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, newSrcFiles, BASEPATH);
-                    // TODO: May want to remove this when cert patching logic is moved
-                    Thread.sleep(10000);
+                    FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
                 } catch (Exception e) {
                     String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                     s_logger.error(errMsg, e);

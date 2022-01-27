@@ -17,7 +17,6 @@
 
 package com.cloud.vm;
 
-import java.io.IOException;
 import java.net.URI;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -80,7 +79,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -1198,17 +1196,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
 
                     StartCommand command = new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType()));
-                    if (isValidSystemVMType(vm)) {
-                        final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(vmProfile.getHostName(), vmProfile.getInstanceName()),
-                                new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
-                        try {
-                            command.setCertificate(CertUtils.x509CertificateToPem(certificate.getClientCertificate()));
-                            command.setCaCertificates(CertUtils.x509CertificatesToPem(certificate.getCaCertificates()));
-                            command.setPrivateKey(CertUtils.privateKeyToPem(certificate.getPrivateKey()));
-                        } catch (IOException e) {
-                            throw new CloudRuntimeException("Failed to generate/setup certificates for system VM");
-                        }
-                    }
                     cmds.addCommand(command);
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
