@@ -125,6 +125,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setEndDate(tariff.getEndDate());
         response.setDescription(tariff.getDescription());
         response.setUuid(tariff.getUuid());
+        response.setRemoved(tariff.getRemoved());
         return response;
     }
 

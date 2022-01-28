@@ -78,6 +78,10 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "uuid")
     private String uuid;
 
+    @SerializedName("removed")
+    @Param(description = "when the quota tariff was removed")
+    private Date removed;
+
     public QuotaTariffResponse() {
         super();
         this.setObjectName("quotatariff");
@@ -191,4 +195,13 @@ public class QuotaTariffResponse extends BaseResponse {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
 }
