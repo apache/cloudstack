@@ -37,6 +37,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
     private final Map<String, NfsStoragePool> nfsstoragePool = new ConcurrentHashMap<>();
     private final Map<String, RbdStoragePool> rbdstoragePool = new ConcurrentHashMap<>();
+    private final NfsStoragePool nfsStoragePool = null;
+    private final RbdStoragePool rbdStoragePool = null;
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
 
     private final String hostPrivateIp;
@@ -119,8 +121,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             synchronized (nfsstoragePool) {
                 Set<String> removedPools = new HashSet<>();
                 for (String uuid : nfsstoragePool.keySet()) {
-                    NfsStoragePool primaryStoragePool = nfsstoragePool.get(uuid);
-                    runHeartBeatCommon(primaryStoragePool, null, uuid, removedPools);
+                    NfsStoragePool nfsStoragePool = nfsstoragePool.get(uuid);
+                    runHeartbeatToPool(nfsStoragePool, rbdStoragePool, uuid, removedPools);
                     continue;
                 }
 
@@ -136,8 +138,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             synchronized (rbdstoragePool) {
                 Set<String> removedPools = new HashSet<>();
                 for (String uuid : rbdstoragePool.keySet()) {
-                    RbdStoragePool primaryStoragePool = rbdstoragePool.get(uuid);
-                    runHeartBeatCommon(null, primaryStoragePool, uuid, removedPools);
+                    RbdStoragePool rbdStoragePool = rbdstoragePool.get(uuid);
+                    runHeartbeatToPool(nfsStoragePool, rbdStoragePool, uuid, removedPools);
                     continue;
                 }
 
@@ -150,7 +152,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
     }
 
-    private Set<String> runHeartBeatCommon(NfsStoragePool nfsStoragePool, RbdStoragePool rbdStoragePool, String uuid, Set<String> removedPools) {
+    private Set<String> runHeartbeatToPool(NfsStoragePool nfsStoragePool, RbdStoragePool rbdStoragePool, String uuid, Set<String> removedPools) {
         StoragePool storage;
         try {
             Connect conn = LibvirtConnection.getConnection();
