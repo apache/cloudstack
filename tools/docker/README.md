@@ -12,7 +12,30 @@ CloudStack Simulator is an all in one CloudStack Build including the simulator t
 
 ```
 docker pull cloudstack/simulator
-docker run --name simulator -p 8080:8080 -d cloudstack/simulator
+docker run --name simulator -p 8080:5050 -d cloudstack/simulator
+```
+
+Access CloudStack UI
+```
+Open your browser at http://localhost:8080/
+Default login is admin:password
+```
+
+Deploy a datacenter:
+```
+# Advanced zone
+docker exec -it simulator python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/advanced.cfg
+
+# Advanced zone with security groups
+docker exec -it simulator python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/advancedsg.cfg
+
+# Basic zone
+docker exec -it simulator python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/basic.cfg
+```
+
+Log into the simulator:
+```
+docker exec -it simulator bash
 ```
 
 ### CloudStack Management-server 

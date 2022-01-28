@@ -55,8 +55,8 @@ public class EncryptionSecretKeyChecker {
         DbProperties.getDbProperties();
     }
 
-    public void check(Properties dbProps) throws IOException {
-        String encryptionType = dbProps.getProperty("db.cloud.encryption.type");
+    public void check(Properties properties, String property) throws IOException {
+        String encryptionType = properties.getProperty(property);
 
         s_logger.debug("Encryption Type: " + encryptionType);
 
@@ -116,7 +116,7 @@ public class EncryptionSecretKeyChecker {
                     throw new CloudRuntimeException("Accept failed on " + port);
                 }
             } catch (IOException ioex) {
-                throw new CloudRuntimeException("Error initializing secret key reciever", ioex);
+                throw new CloudRuntimeException("Error initializing secret key receiver", ioex);
             }
         } else {
             throw new CloudRuntimeException("Invalid encryption type: " + encryptionType);

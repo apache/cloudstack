@@ -59,12 +59,14 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id">
-              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
-              {{ zone.name }}
+            <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id" :label="zone.name">
+              <span>
+                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ zone.name }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -178,27 +180,17 @@
             <a-input v-decorator="['vCenterDataStore', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
         </div>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
-          <a-select
-            v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-            @change="updateProviderAndProtocol"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
-              {{ provider }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
         <div v-if="protocolSelected !== 'Linstor'">
           <a-form-item>
             <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
             <a-select
               v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-              @change="updateProviderAndProtocol">
+              @change="updateProviderAndProtocol"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
                 {{ provider }}
               </a-select-option>
@@ -514,8 +506,8 @@ export default {
       /*  Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
           It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
       */
-      secret = secret.replace('+', '-')
-      secret = secret.replace('/', '_')
+      secret = secret.replace(/\+/g, '-')
+      secret = secret.replace(/\//g, '_')
       if (id !== null && secret !== null) {
         monitor = id + ':' + secret + '@' + monitor
       }
@@ -598,7 +590,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

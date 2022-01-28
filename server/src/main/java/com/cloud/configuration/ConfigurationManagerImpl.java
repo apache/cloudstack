@@ -30,10 +30,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
@@ -51,12 +53,14 @@ import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -104,6 +108,7 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -442,6 +447,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
                         true, ConfigKey.Scope.Zone, null);
+    public static final ConfigKey<Boolean> ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.account.settings.for.domain", "Advanced", "false",
+            "Indicates whether to add account settings for domain. If true, account settings will be added to domain settings, all accounts in the domain will inherit the domain setting if account setting is not set.", true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
+            "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
+            true, ConfigKey.Scope.Global, null);
 
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
       + "for vm service offering. If 0 - no limitation", true);
@@ -624,9 +634,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (cluster == null) {
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                 }
-                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, name);
+                String newName = name;
+                if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
+                    newName = "cpuOvercommitRatio";
+                }
+                if (name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+                    newName = "memoryOvercommitRatio";
+                }
+                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, newName);
                 if (clusterDetailsVO == null) {
-                    clusterDetailsVO = new ClusterDetailsVO(resourceId, name, value);
+                    clusterDetailsVO = new ClusterDetailsVO(resourceId, newName, value);
                     _clusterDetailsDao.persist(clusterDetailsVO);
                 } else {
                     clusterDetailsVO.setValue(value);
@@ -820,12 +837,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        value = value.trim();
-
-        if (value.isEmpty() || value.equals("null")) {
-            value = null;
-        }
-
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -865,12 +876,171 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
+        value = value.trim();
+
+        if (value.isEmpty() || value.equals("null")) {
+            value = (id == null) ? null : "";
+        }
+
         final String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
+    }
+
+    private ParamCountPair getParamCount(Map<String, Long> scopeMap) {
+        Long id = null;
+        int paramCount = 0;
+        String scope = ConfigKey.Scope.Global.toString();
+
+        for (var entry : scopeMap.entrySet()) {
+            if (entry.getValue() != null) {
+                id = entry.getValue();
+                scope = entry.getKey();
+                paramCount++;
+            }
+        }
+
+        return new ParamCountPair(id, paramCount, scope);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "resetting configuration")
+    public Pair<Configuration, String> resetConfiguration(final ResetCfgCmd cmd) throws InvalidParameterValueException {
+        final Long userId = CallContext.current().getCallingUserId();
+        final String name = cmd.getCfgName();
+        final Long zoneId = cmd.getZoneId();
+        final Long clusterId = cmd.getClusterId();
+        final Long storagepoolId = cmd.getStoragepoolId();
+        final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
+        final Long imageStoreId = cmd.getImageStoreId();
+        Optional optionalValue;
+        final ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey == null) {
+            s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
+            throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+        }
+        String defaultValue = configKey.defaultValue();
+        String category = configKey.category();
+        String configScope = configKey.scope().toString();
+
+        String scope = "";
+        Map<String, Long> scopeMap = new LinkedHashMap<>();
+
+        Long id = null;
+        int paramCountCheck = 0;
+
+        scopeMap.put(ConfigKey.Scope.Zone.toString(), zoneId);
+        scopeMap.put(ConfigKey.Scope.Cluster.toString(), clusterId);
+        scopeMap.put(ConfigKey.Scope.Domain.toString(), domainId);
+        scopeMap.put(ConfigKey.Scope.Account.toString(), accountId);
+        scopeMap.put(ConfigKey.Scope.StoragePool.toString(), storagepoolId);
+        scopeMap.put(ConfigKey.Scope.ImageStore.toString(), imageStoreId);
+
+        ParamCountPair paramCountPair = getParamCount(scopeMap);
+        id = paramCountPair.getId();
+        paramCountCheck = paramCountPair.getParamCount();
+        scope = paramCountPair.getScope();
+
+        if (paramCountCheck > 1) {
+            throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
+        }
+
+        if (scope != null && !scope.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scope)) {
+            throw new InvalidParameterValueException("Invalid scope id provided for the parameter " + name);
+        }
+
+        String newValue = null;
+        switch (ConfigKey.Scope.valueOf(scope)) {
+            case Zone:
+                final DataCenterVO zone = _zoneDao.findById(id);
+                if (zone == null) {
+                    throw new InvalidParameterValueException("unable to find zone by id " + id);
+                }
+                _dcDetailsDao.removeDetail(id, name);
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Cluster:
+                final ClusterVO cluster = _clusterDao.findById(id);
+                if (cluster == null) {
+                    throw new InvalidParameterValueException("unable to find cluster by id " + id);
+                }
+                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(id, name);
+                newValue = configKey.value().toString();
+                if (name.equalsIgnoreCase("cpu.overprovisioning.factor") || name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+                    _clusterDetailsDao.persist(id, name, newValue);
+                } else if (clusterDetailsVO != null) {
+                    _clusterDetailsDao.remove(clusterDetailsVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case StoragePool:
+                final StoragePoolVO pool = _storagePoolDao.findById(id);
+                if (pool == null) {
+                    throw new InvalidParameterValueException("unable to find storage pool by id " + id);
+                }
+                _storagePoolDetailsDao.removeDetail(id, name);
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Domain:
+                final DomainVO domain = _domainDao.findById(id);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("unable to find domain by id " + id);
+                }
+                DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(id, name);
+                if (domainDetailVO != null) {
+                    _domainDetailsDao.remove(domainDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Account:
+                final AccountVO account = _accountDao.findById(id);
+                if (account == null) {
+                    throw new InvalidParameterValueException("unable to find account by id " + id);
+                }
+                AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(id, name);
+                if (accountDetailVO != null) {
+                    _accountDetailsDao.remove(accountDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case ImageStore:
+                final ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
+                if (imageStoreVO == null) {
+                    throw new InvalidParameterValueException("unable to find the image store by id " + id);
+                }
+                ImageStoreDetailVO imageStoreDetailVO = _imageStoreDetailsDao.findDetail(id, name);
+                if (imageStoreDetailVO != null) {
+                    _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            default:
+                if (!_configDao.update(name, category, defaultValue)) {
+                    s_logger.error("Failed to reset configuration option, name: " + name + ", defaultValue:" + defaultValue);
+                    throw new CloudRuntimeException("Failed to reset configuration value. Please contact Cloud Support.");
+                }
+                optionalValue = Optional.ofNullable(configKey.value());
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+        }
+
+        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
+        return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
     private String validateConfigurationValue(final String name, String value, final String scope) {
@@ -883,7 +1053,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final String configScope = cfg.getScope();
         if (scope != null) {
-            if (!configScope.contains(scope)) {
+            if (!configScope.contains(scope) &&
+                    !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account.toString()) &&
+                            scope.equals(ConfigKey.Scope.Domain.toString()))) {
                 s_logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
             }
@@ -1527,6 +1699,178 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } catch (final Exception e) {
             s_logger.error("Unable to delete Pod " + podId + "IP range due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to delete Pod " + podId + "IP range. Please contact Cloud Support.");
+        }
+    }
+
+    @Override
+    @DB
+    public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
+        final long podId = cmd.getPodId();
+        final HostPodVO pod = _podDao.findById(podId);
+        if (pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by id: " + podId);
+        }
+
+        final String currentStartIP = cmd.getCurrentStartIP();
+        final String currentEndIP = cmd.getCurrentEndIP();
+        String newStartIP = cmd.getNewStartIP();
+        String newEndIP = cmd.getNewEndIP();
+
+        if (newStartIP == null) {
+            newStartIP = currentStartIP;
+        }
+
+        if (newEndIP == null) {
+            newEndIP = currentEndIP;
+        }
+
+        if (newStartIP.equals(currentStartIP) && newEndIP.equals(currentEndIP)) {
+            throw new InvalidParameterValueException("New starting and ending IP address are the same as current starting and ending IP address");
+        }
+
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+        if (existingPodIpRanges.length == 0) {
+            throw new InvalidParameterValueException("The IP range cannot be found in the pod: " + podId + " since the existing IP range is empty.");
+        }
+
+        verifyIpRangeParameters(currentStartIP,currentEndIP);
+        verifyIpRangeParameters(newStartIP,newEndIP);
+        checkIpRangeContainsTakenAddresses(pod,currentStartIP,currentEndIP,newStartIP,newEndIP);
+
+        String vlan = verifyPodIpRangeExists(podId,existingPodIpRanges,currentStartIP,currentEndIP,newStartIP,newEndIP);
+
+        List<Long> currentIpRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
+        List<Long> newIpRange = listAllIPsWithintheRange(newStartIP,newEndIP);
+
+        try {
+            final String finalNewEndIP = newEndIP;
+            final String finalNewStartIP = newStartIP;
+            final Integer vlanId = vlan.equals(Vlan.UNTAGGED) ? null : Integer.parseInt(vlan);
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    final long zoneId = pod.getDataCenterId();
+                    pod.setDescription(pod.getDescription().replace(currentStartIP + "-",
+                            finalNewStartIP + "-").replace(currentEndIP, finalNewEndIP));
+                    updatePodIpRangeInDb(zoneId,podId,vlanId,pod,newIpRange,currentIpRange);
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to update Pod " + podId + " IP range due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+        }
+    }
+
+    private String verifyPodIpRangeExists(long podId,String[] existingPodIpRanges, String currentStartIP,
+            String currentEndIP, String newStartIP, String newEndIP) {
+        boolean foundRange = false;
+        String vlan = null;
+
+        for (String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if (existingPodIpRange.length > 1) {
+                if (!NetUtils.isValidIp4(existingPodIpRange[0]) || !NetUtils.isValidIp4(existingPodIpRange[1])) {
+                    continue;
+                }
+                if (currentStartIP.equals(existingPodIpRange[0]) && currentEndIP.equals(existingPodIpRange[1])) {
+                    foundRange = true;
+                    vlan = existingPodIpRange[3];
+                }
+                if (!foundRange && NetUtils.ipRangesOverlap(newStartIP, newEndIP, existingPodIpRange[0], existingPodIpRange[1])) {
+                    throw new InvalidParameterValueException("The Start and End IP address range: (" + newStartIP + "-" + newEndIP + ") overlap with the pod IP range: " + podIpRange);
+                }
+            }
+        }
+
+        if (!foundRange) {
+            throw new InvalidParameterValueException("The input IP range: " + currentStartIP + "-" + currentEndIP + " of pod: " + podId + " is not present. Please input an existing range.");
+        }
+
+        return vlan;
+    }
+
+    private void updatePodIpRangeInDb (long zoneId, long podId, Integer vlanId, HostPodVO pod, List<Long> newIpRange, List<Long> currentIpRange) {
+        HostPodVO lock = null;
+        try {
+            lock = _podDao.acquireInLockTable(podId);
+            if (lock == null) {
+                String msg = "Unable to acquire lock on table to update the ip range of POD: " + pod.getName() + ", Update failed.";
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            List<Long> iPaddressesToAdd = new ArrayList(newIpRange);
+            iPaddressesToAdd.removeAll(currentIpRange);
+            if (iPaddressesToAdd.size() > 0) {
+                for (Long startIP : iPaddressesToAdd) {
+                    _zoneDao.addPrivateIpAddress(zoneId, podId, NetUtils.long2Ip(startIP), NetUtils.long2Ip(startIP), false, vlanId);
+                }
+            } else {
+                currentIpRange.removeAll(newIpRange);
+                if (currentIpRange.size() > 0) {
+                    for (Long startIP: currentIpRange) {
+                        if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(startIP),podId,zoneId)) {
+                            throw new CloudRuntimeException("Failed to remove private ip address: " + NetUtils.long2Ip(startIP) + " of Pod: " + podId + " DC: " + pod.getDataCenterId());
+                        }
+                    }
+                }
+            }
+            _podDao.update(podId, pod);
+        } catch (final Exception e) {
+            s_logger.error("Unable to update Pod " + podId + " IP range due to database error " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to update Pod " + podId + " IP range. Please contact Cloud Support.");
+        }  finally {
+            if (lock != null) {
+                _podDao.releaseFromLockTable(podId);
+            }
+        }
+    }
+
+    private List<Long> listAllIPsWithintheRange(String startIp, String endIP) {
+        verifyIpRangeParameters(startIp,endIP);
+        long startIpLong = NetUtils.ip2Long(startIp);
+        long endIpLong = NetUtils.ip2Long(endIP);
+
+        List<Long> listOfIpsinRange = new ArrayList<>();
+        while (startIpLong <= endIpLong) {
+            listOfIpsinRange.add(startIpLong);
+            startIpLong++;
+        }
+        return listOfIpsinRange;
+    }
+
+    private void verifyIpRangeParameters(String startIP, String endIp) {
+
+        if (!Strings.isNullOrEmpty(startIP) && !NetUtils.isValidIp4(startIP)) {
+            throw new InvalidParameterValueException("The current start address of the IP range " + startIP + " is not a valid IP address.");
+        }
+
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp4(endIp)) {
+            throw new InvalidParameterValueException("The current end address of the IP range " + endIp + " is not a valid IP address.");
+        }
+
+        if (NetUtils.ip2Long(startIP) > NetUtils.ip2Long(endIp)) {
+            throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
+        }
+    }
+
+    private void checkIpRangeContainsTakenAddresses(final HostPodVO pod,final String currentStartIP,
+            final String currentEndIP,final String newStartIp, final String newEndIp) {
+
+        List<Long> newIpRange = listAllIPsWithintheRange(newStartIp,newEndIp);
+        List<Long> currentIpRange = listAllIPsWithintheRange(currentStartIP,currentEndIP);
+        List<Long> takenIpsList = new ArrayList<>();
+        final List<DataCenterIpAddressVO> takenIps = _privateIpAddressDao.listIpAddressUsage(pod.getId(),pod.getDataCenterId(),true);
+
+        for (DataCenterIpAddressVO takenIp : takenIps) {
+            takenIpsList.add(NetUtils.ip2Long(takenIp.getIpAddress()));
+        }
+
+        takenIpsList.retainAll(currentIpRange);
+        if (!newIpRange.containsAll(takenIpsList)) {
+            throw new InvalidParameterValueException("The IP range does not contain some IP addresses that have "
+                    + "already been taken. Please adjust your IP range to include all IP addresses already taken.");
         }
     }
 
@@ -4742,7 +5086,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean releasePublicIpRange(final long vlanDbId, final long userId, final Account caller) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
         if(vlan == null) {
-            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null. This is NPE situation.");
+            // Nothing to do if vlan can't be found
+            s_logger.warn(String.format("Skipping the process for releasing public IP range as could not find a VLAN with ID '%s' for Account '%s' and User '%s'."
+                    ,vlanDbId, caller, userId));
+            return true;
         }
 
         // Verify range is dedicated
@@ -4809,13 +5156,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
-            return true;
+            success = true;
         } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
-            return true;
+            success = true;
         } else {
-            return false;
+            success = false;
         }
+
+        return success;
     }
 
     @DB
@@ -6867,6 +7216,44 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
-                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS};
+                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
+                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN
+        };
+    }
+
+    static class ParamCountPair {
+        private Long id;
+        private int paramCount;
+        private String scope;
+
+        public ParamCountPair(Long id, int paramCount, String scope) {
+            this.id = id;
+            this.paramCount = paramCount;
+            this.scope = scope;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public int getParamCount() {
+            return paramCount;
+        }
+
+        public void setParamCount(int paramCount) {
+            this.paramCount = paramCount;
+        }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(String scope) {
+            this.scope = scope;
+        }
     }
 }

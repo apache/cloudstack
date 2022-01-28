@@ -39,8 +39,8 @@ import com.cloud.user.AccountVO;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
-public class VMSanpshotOnPrimaryParser {
-    public static final Logger s_logger = Logger.getLogger(VMSanpshotOnPrimaryParser.class.getName());
+public class VMSnapshotOnPrimaryParser {
+    public static final Logger s_logger = Logger.getLogger(VMSnapshotOnPrimaryParser.class.getName());
 
     private static UsageDao s_usageDao;
     private static UsageVMSnapshotOnPrimaryDao s_usageSnapshotOnPrimaryDao;

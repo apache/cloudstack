@@ -125,7 +125,7 @@ export default {
       message: 'message.action.cancel.maintenance.mode',
       docHelp: 'adminguide/hosts.html#maintaining-hypervisors-on-hosts',
       dataView: true,
-      show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' }
+      show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' || record.resourcestate === 'ErrorInPrepareForMaintenance' }
     },
     {
       api: 'configureOutOfBandManagement',

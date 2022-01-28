@@ -25,6 +25,7 @@ if [ $# -lt 6 ]; then
 fi
 
 RELEASE="v${2}"
+VAL="1.18.0"
 output_dir="${1}"
 start_dir="$PWD"
 iso_dir="/tmp/iso"
@@ -60,12 +61,20 @@ echo "Downloading kubelet.service ${RELEASE}..."
 cd "${start_dir}"
 kubelet_service_file="${working_dir}/kubelet.service"
 touch "${kubelet_service_file}"
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+if [[ `echo "${2} $VAL" | awk '{print ($1 < $2)}'` == 1 ]]; then
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+else
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+fi
 
 echo "Downloading 10-kubeadm.conf ${RELEASE}..."
 kubeadm_conf_file="${working_dir}/10-kubeadm.conf"
 touch "${kubeadm_conf_file}"
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+if [[ `echo "${2} $val" | awk '{print ($1 < $2)}'` == 1 ]]; then
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+else
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+fi
 
 NETWORK_CONFIG_URL="${5}"
 echo "Downloading network config ${NETWORK_CONFIG_URL}"
@@ -76,6 +85,12 @@ DASHBORAD_CONFIG_URL="${6}"
 echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
 curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
+
+# TODO : Change the url once merged
+AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
+echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
+autoscaler_conf_file="${working_dir}/autoscaler.yaml"
+curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
 
 PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
 echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
@@ -106,6 +121,10 @@ do
   images=`grep "image:" $i | cut -d ':' -f2- | tr -d ' ' | tr -d "'"`
   output=`printf "%s\n" ${output} ${images}`
 done
+
+# Don't forget about the other image !
+autoscaler_image=`grep "image:" ${autoscaler_conf_file} | cut -d ':' -f2- | tr -d ' '`
+output=`printf "%s\n" ${output} ${autoscaler_image}`
 
 provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${provider_image}`

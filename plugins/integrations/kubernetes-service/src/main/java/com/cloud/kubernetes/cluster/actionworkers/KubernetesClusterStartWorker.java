@@ -60,6 +60,7 @@ import com.cloud.network.Network;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -71,6 +72,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
 
@@ -157,7 +159,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
-                pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
@@ -195,11 +197,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = kubernetesClusterNodeNamePrefix + "-control";
-        if (kubernetesCluster.getControlNodeCount() > 1) {
-            hostName += "-1";
-        }
-        hostName = getKubernetesClusterNodeAvailableName(hostName);
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);
         boolean haSupported = isKubernetesVersionSupportsHA();
         String k8sControlNodeConfig = null;
         try {
@@ -211,7 +210,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true);
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -230,7 +229,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
-                pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
@@ -254,7 +253,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-control-%d", kubernetesClusterNodeNamePrefix, additionalControlNodeInstance + 1));
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sControlNodeConfig = null;
         try {
             k8sControlNodeConfig = getKubernetesAdditionalControlNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
@@ -265,7 +265,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", additionalControlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -276,7 +276,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
         UserVm k8sControlVM = null;
         k8sControlVM = createKubernetesControlNode(network, publicIpAddress);
-        addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId());
+        addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId(), true);
         if (kubernetesCluster.getNodeRootDiskSize() > 0) {
             resizeNodeVolume(k8sControlVM);
         }
@@ -298,7 +298,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             for (int i = 1; i < kubernetesCluster.getControlNodeCount(); i++) {
                 UserVm vm = null;
                 vm = createKubernetesAdditionalControlNode(publicIpAddress, i);
-                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true);
                 if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                     resizeNodeVolume(vm);
                 }
@@ -385,25 +385,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 network.getName(), kubernetesCluster.getName()));
         }
 
-        try {
-            provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster ID: %s",
-                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
-            }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
-
-        try {
-            int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMs.size() - 1;
-            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
-            }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
+        createFirewallRules(publicIp, clusterVMIds);
 
         // Load balancer rule fo API access for control node VMs
         try {
@@ -420,6 +402,30 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
     }
 
+    private void createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds) throws ManagementServerException {
+        // Firewall rule fo API access for control node VMs
+        try {
+            provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+
+        // Firewall rule fo SSH access on each node VM
+        try {
+            int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
+            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
     private void startKubernetesClusterVMs() {
         List <UserVm> clusterVms = getKubernetesClusterVMs();
         for (final UserVm vm : clusterVms) {
@@ -427,6 +433,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             try {
+                resizeNodeVolume(vm);
                 startKubernetesVM(vm);
             } catch (ManagementServerException ex) {
                 LOGGER.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
@@ -506,6 +513,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 (Network.GuestType.Isolated.equals(network.getGuestType()) || kubernetesCluster.getControlNodeCount() > 1)) { // Shared network, single-control node cluster won't have an IP yet
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster" , kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
+        // Allow account creating the kubernetes cluster to access systemVM template
+        LaunchPermissionVO launchPermission =  new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
+        launchPermissionDao.persist(launchPermission);
+
         List<UserVm> clusterVMs = new ArrayList<>();
         UserVm k8sControlVM = null;
         try {
@@ -571,6 +582,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
+        taintControlNodes();
         deployProvider();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;

@@ -1806,7 +1806,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public synchronized boolean configureTunnelNetwork(final long networkId,
+    public synchronized boolean configureTunnelNetwork(final Long networkId,
                                                        final long hostId, final String nwName) {
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
@@ -2357,6 +2357,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 s_logger.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
                 isSecureBoot = true;
             }
+
+            bootMode = customParams.get(GuestDef.BootType.UEFI.toString());
         }
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
@@ -2427,7 +2429,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         devices.addDevice(createChannelDef(vmTO));
         devices.addDevice(createWatchDogDef());
-        devices.addDevice(createVideoDef());
+        devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
         devices.addDevice(createTabletInputDef());
@@ -2488,8 +2490,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ConsoleDef(PTY, null, null, (short)0);
     }
 
-    protected VideoDef createVideoDef() {
-        return new VideoDef(_videoHw, _videoRam);
+    protected VideoDef createVideoDef(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        String videoHw = _videoHw;
+        int videoRam = _videoRam;
+        if (details != null) {
+            if (details.containsKey(VmDetailConstants.VIDEO_HARDWARE)) {
+                videoHw = details.get(VmDetailConstants.VIDEO_HARDWARE);
+            }
+            if (details.containsKey(VmDetailConstants.VIDEO_RAM)) {
+                String value = details.get(VmDetailConstants.VIDEO_RAM);
+                videoRam = NumbersUtil.parseInt(value, videoRam);
+            }
+        }
+        return new VideoDef(videoHw, videoRam);
     }
 
     protected RngDef createRngDef() {
@@ -3701,10 +3715,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return null;
         }
 
-        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-            return DiskDef.DiskBus.SCSI;
-        }
-
         String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
             s_logger.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
@@ -3738,10 +3748,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator, boolean isUefiEnabled) {
-        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-            return DiskDef.DiskBus.SCSI;
-        }
-
         if (platformEmulator == null) {
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
@@ -3752,6 +3758,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
+        } else if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+            return DiskDef.DiskBus.SCSI;
         } else {
             return DiskDef.DiskBus.IDE;
         }

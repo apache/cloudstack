@@ -148,8 +148,13 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 && offering.getGuestType() == GuestType.Shared
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)) {
             return true;
+        } else if (dc.getNetworkType() == NetworkType.Advanced
+                && offering.getGuestType() == GuestType.Shared
+                && ! _ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Ovs)
+                && physnet.getIsolationMethods().contains("GRE")) {
+            return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type " + GuestType.Shared);
+            s_logger.trace("We only take care of Shared Guest networks without Ovs or NiciraNvp provider");
             return false;
         }
     }
