@@ -28,12 +28,12 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.DateUtil;
@@ -961,6 +961,18 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
 
+    @Override
+    public List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId) {
+        SearchCriteria<VMInstanceVO> sc = createSearchCriteria();
+        sc.addOr("hostId", SearchCriteria.Op.EQ, hostId);
+        sc.addOr("lastHostId", SearchCriteria.Op.EQ, hostId);
+        SearchCriteria<VMInstanceVO> podSc = createSearchCriteria();
+        podSc.addAnd("hostId", Op.NULL);
+        podSc.addAnd("lastHostId", Op.NULL);
+        podSc.addAnd("podIdToDeployIn", SearchCriteria.Op.EQ, podId);
+        sc.addOr("pod", SearchCriteria.Op.SC, podSc);
+        return listBy(sc);
     }
 }
