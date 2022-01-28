@@ -830,7 +830,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public void loadHostTags(HostVO host) {
-        List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
+        List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
         host.setHostTags(hostTags);
     }
 
