@@ -298,8 +298,8 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
-    public short getsnapshotType() {
-        return snapshot.getsnapshotType();
+    public short getSnapshotType() {
+        return snapshot.getSnapshotType();
     }
 
     @Override

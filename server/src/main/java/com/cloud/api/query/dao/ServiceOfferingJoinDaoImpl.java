@@ -24,6 +24,7 @@ import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -141,6 +142,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
         offeringResponse.setRootDiskSize(rootDiskSizeInGb);
+        offeringResponse.setDiskOfferingStrictness(offering.getDiskOfferingStrictness());
+        DiskOfferingVO diskOfferingVO = ApiDBUtils.findDiskOfferingById(offering.getDiskOfferingId());
+        if (diskOfferingVO != null) {
+            offeringResponse.setDiskOfferingId(offering.getDiskOfferingUuid());
+            offeringResponse.setDiskOfferingName(offering.getDiskOfferingName());
+            offeringResponse.setDiskOfferingDisplayText(offering.getDiskOfferingDisplayText());
+        }
 
         offeringResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.SERVICE_OFFERING.name(),
                 accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));

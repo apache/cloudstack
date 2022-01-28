@@ -740,7 +740,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destVolumeInfo.getDataStore().getId(), DataStoreRole.Primary);
 
         MigrateVolumeCommand command = new MigrateVolumeCommand(srcVolumeInfo.getId(), srcVolumeInfo.getPath(), destPool, srcVolumeInfo.getAttachedVmName(),
-                srcVolumeInfo.getVolumeType(), waitInterval);
+                srcVolumeInfo.getVolumeType(), waitInterval, null);
 
         Map<String, String> details = new HashMap<>();
 

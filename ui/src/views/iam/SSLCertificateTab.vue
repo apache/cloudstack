@@ -209,7 +209,7 @@ export default {
       const title = `${this.$t('label.deleteconfirm')} ${this.$t('label.certificate')}`
 
       this.$confirm({
-        title: title,
+        title,
         okText: this.$t('label.ok'),
         okType: 'danger',
         cancelText: this.$t('label.cancel'),
