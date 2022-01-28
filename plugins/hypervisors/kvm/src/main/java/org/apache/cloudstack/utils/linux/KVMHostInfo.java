@@ -83,23 +83,36 @@ public class KVMHostInfo {
 
     protected static long getCpuSpeed(final NodeInfo nodeInfo) {
         try {
-            LOGGER.info("Fetching cpu speed from it from lscpu");
-            String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
-            String result = Script.runSimpleBashScript(command);
-            long speed = (long) (Float.parseFloat(result) * 1000);
-            LOGGER.info(String.format("Got [%d] speed from lscpu", speed));
-            return speed;
-        } catch (NullPointerException | NumberFormatException e) {
-            try (Reader reader = new FileReader(cpuInfoMaxFreqFileName)) {
-                LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu. Using the value in [%s].", cpuInfoMaxFreqFileName), e);
-                Long cpuInfoMaxFreq = Long.parseLong(IOUtils.toString(reader).trim());
-                LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
-                return cpuInfoMaxFreq / 1000;
-            } catch (IOException | NumberFormatException ex) {
-                LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s] and lscpu. Using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), ex);
-                return nodeInfo.mhz;
-            }
+            return getCpuSpeedInternal();
+        } catch (IOException | NumberFormatException ex) {
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s] and lscpu. Using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), ex);
+            return nodeInfo.mhz;
         }
+    }
+
+    private static long getCpuSpeedInternal() throws IOException {
+        try {
+            return getCpuSpeedByLSCPU();
+        } catch (NullPointerException | NumberFormatException e) {
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu. Using the value in [%s].", cpuInfoMaxFreqFileName), e);
+            return getCpuSpeedFromFile();
+        }
+    }
+
+    private static long getCpuSpeedByLSCPU() {
+        LOGGER.info("Fetching cpu speed from it from lscpu");
+        String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+        String result = Script.runSimpleBashScript(command);
+        long speed = (long) (Float.parseFloat(result) * 1000);
+        LOGGER.info(String.format("Got [%d] speed from lscpu", speed));
+        return speed;
+    }
+
+    private static long getCpuSpeedFromFile() throws IOException {
+        Reader reader = new FileReader(cpuInfoMaxFreqFileName);
+        Long cpuInfoMaxFreq = Long.parseLong(IOUtils.toString(reader).trim());
+        LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
+        return cpuInfoMaxFreq / 1000;
     }
 
     private void getHostInfoFromLibvirt() {
