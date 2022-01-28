@@ -139,7 +139,7 @@ class TestHypervisorCapabilities(cloudstackTestCase):
                     self.hostCapability.maxdatavolumeslimit,
                     self.hostCapability.vmsnapshotenabled)
 
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestHypervisorCapabilities, self).tearDown()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
