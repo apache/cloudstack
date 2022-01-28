@@ -178,7 +178,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             if (accountId != null) {
                 throw new InvalidParameterValueException("Projectid and accountId can't be specified together");
             }
-            accountId = GetAccountIdFromProject(projectId);
+            accountId = getAccountIdFromProject(projectId);
             projectRequested = true;
         } else if ((accountId == null) && (StringUtils.isNotBlank(accountName)) && (domainId != null)) {
             accountId = getAccountIdFromDomainPlusName(domainId, accountName, caller);
@@ -399,7 +399,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     }
 
     @NotNull
-    private Long GetAccountIdFromProject(Long projectId) {
+    private Long getAccountIdFromProject(Long projectId) {
         Long accountId;
         Project project = _projectMgr.getProject(projectId);
         if (project == null) {
