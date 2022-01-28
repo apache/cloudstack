@@ -85,7 +85,6 @@ class TestHypervisorCapabilities(cloudstackTestCase):
                        cls.notSupported = False
                        break
 
-        print("Test-- %s, %s, %s" % (cls.notSupported, cls.hostCapability.id, cls.hostCapability.maxdatavolumeslimit))
         if cls.notSupported == False:
             cls.template = get_template(
                 cls.apiclient,
@@ -165,6 +164,20 @@ class TestHypervisorCapabilities(cloudstackTestCase):
             "listHypervisorCapabilities response maxdatavolumeslimit value not 1")
 
         Host.update(self.apiclient, id=self.host.id, hosttags="host1")
+        volume_created1 = Volume.create(
+            self.userapiclient,
+            self.services["volume"],
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering.id
+        )
+        self.cleanup.append(volume_created1)
+        volume_created2 = Volume.create(
+            self.userapiclient,
+            self.services["volume"],
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering.id
+        )
+        self.cleanup.append(volume_created2)
         vm = VirtualMachine.create(
             self.userapiclient,
             self.services["small"],
@@ -174,20 +187,6 @@ class TestHypervisorCapabilities(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
         )
-        volume_created1 = Volume.create(
-            self.userapiclient,
-            self.services["volume"],
-            zoneid=self.zone.id,
-            diskofferingid=self.disk_offering.id
-        )
-        volume_created2 = Volume.create(
-            self.userapiclient,
-            self.services["volume"],
-            zoneid=self.zone.id,
-            diskofferingid=self.disk_offering.id
-        )
-        self.cleanup.append(volume_created1)
-        self.cleanup.append(volume_created2)
         self.cleanup.append(vm)
 
         vm.attach_volume(
@@ -245,6 +244,7 @@ class TestHypervisorCapabilities(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
         )
+        self.cleanup.append(vm)
 
         try:
             fail_snapshot = VmSnapshot.create(
@@ -254,8 +254,7 @@ class TestHypervisorCapabilities(cloudstackTestCase):
                 name="Test Snapshot",
                 description="Test Snapshot Desc"
             )
-            if vm_snapshot:
-                VmSnapshot.deleteVMSnapshot(self.userapiclient, fail_snapshot.id)
+            self.cleanup.append(fail_snapshot)
             self.fail("Successful to take VM snapshot even when vmsnapshotenabled was set to False")
         except Exception as e:
             self.debug("Failed to take VM snapshot even vmsnapshotenabled was set to False: %s" % e)
@@ -269,8 +268,7 @@ class TestHypervisorCapabilities(cloudstackTestCase):
             name="Test Snapshot",
             description="Test Snapshot Desc"
         )
-        if vm_snapshot:
-            VmSnapshot.deleteVMSnapshot(self.userapiclient, vm_snapshot.id)
+        self.cleanup.append(vm_snapshot)
 
     def updateHostHypervisorCapability(self, id, maxDataVolumes, vmSnapshotEnabled=None):
         cmd = updateHypervisorCapabilities.updateHypervisorCapabilitiesCmd()
