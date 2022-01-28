@@ -486,7 +486,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!diskOffering.isCustomized()) {
                 throw new InvalidParameterValueException("Please specify a custom sized disk offering.");
             }
-
+            DiskOfferingJoinVO diskOfferingJoinVO = diskOfferingJoinDao.findById(diskOfferingId);
+            if (!org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
+                List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
+                if (!zoneIds.contains(String.valueOf(zoneId))) {
+                    throw new InvalidParameterValueException("Please specify a custom sized disk offering available in the zone.");
+                }
+            }
             _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering, zone);
         }
 
@@ -521,7 +527,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (offeringId != null) {
             return offeringId;
         }
-        List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomOfferingsByZoneId(zoneId);
+        List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomDiskOfferingsByZoneId(zoneId);
         if (CollectionUtils.isNotEmpty(offerings)) {
             return offerings.get(0).getId();
         }
