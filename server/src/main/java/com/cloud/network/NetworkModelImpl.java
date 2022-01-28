@@ -34,17 +34,15 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.StringUtils;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -116,6 +114,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -1014,24 +1013,34 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         //              or on NULL from network.throttling.rate
         // For others: Use network rate from their network offering,
         //              or on NULL from network.throttling.rate setting at zone > global level
-        // http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/service_offerings.html#network-throttling
+        // http://docs.cloudstack.apache.org/en/latest/adminguide/service_offerings.html#network-throttling
         if (vm != null) {
-            if (vm.getType() == Type.User) {
-                final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
-                if (nic != null && nic.isDefaultNic()) {
-                    return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
-                }
-            }
-            if (vm.getType() == Type.DomainRouter && (network.getTrafficType() == TrafficType.Public || network.getTrafficType() == TrafficType.Guest)) {
-                for (final Nic nic: _nicDao.listByVmId(vmId)) {
-                    final NetworkVO nw = _networksDao.findById(nic.getNetworkId());
-                    if (nw.getTrafficType() == TrafficType.Guest) {
-                        return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
+            switch (vm.getType()) {
+                case User:
+                    final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+                    if (nic != null && nic.isDefaultNic()) {
+                        return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
                     }
-                }
-            }
-            if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
-                return -1;
+                    break;
+                case DomainRouter:
+                    if (TrafficType.Guest.equals(network.getTrafficType())) {
+                        final Nic routerNic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+                        if (routerNic != null) {
+                            return _configMgr.getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
+                        }
+                    } else if (TrafficType.Public.equals(network.getTrafficType())) {
+                        List<NicVO> routerNics = _nicDao.listByVmId(vmId);
+                        for (final Nic routerNic : routerNics) {
+                            final NetworkVO nw = _networksDao.findById(routerNic.getNetworkId());
+                            if (TrafficType.Guest.equals(nw.getTrafficType())) {
+                                return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
+                            }
+                        }
+                    }
+                    break;
+                case ConsoleProxy:
+                case SecondaryStorageVm:
+                    return -1;
             }
         }
         if (ntwkOff != null) {
@@ -1554,6 +1563,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 if (!checkedProvider.contains(providerName)) {
                     result = result && isProviderEnabledInPhysicalNetwork(physicalNtwkId, providerName);
                 }
+                checkedProvider.add(providerName);
             }
         }
 
@@ -1649,8 +1659,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
         // Perform account permission check
-        if ((network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) ||
-                (network.getGuestType() == GuestType.Shared && network.getAclType() == ACLType.Account)) {
+        if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
@@ -1828,14 +1837,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
-        if (network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) {
-            s_logger.trace("Network id=" + networkId + " is not shared or L2");
+        if (network.getGuestType() != GuestType.Shared) {
+            s_logger.trace("Network id=" + networkId + " is not shared");
             return false;
         }
 
         NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
         if (networkDomainMap == null) {
-            s_logger.trace("Network id=" + networkId + " is shared or L2, but not domain specific");
+            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
             return true;
         } else {
             networkDomainId = networkDomainMap.getDomainId();
@@ -2208,7 +2217,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
-        if (StringUtils.isBlank(ip6Gateway) || StringUtils.isBlank(ip6Cidr)) {
+        if (org.apache.commons.lang3.StringUtils.isAnyBlank(ip6Gateway, ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
@@ -2223,7 +2232,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
         }
 
-        if (StringUtils.isNotBlank(startIPv6)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(startIPv6)) {
             if (!NetUtils.isValidIp6(startIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
             }
@@ -2232,7 +2241,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
-        if (StringUtils.isNotBlank(endIPv6)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(endIPv6)) {
             if (!NetUtils.isValidIp6(endIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
             }

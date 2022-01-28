@@ -32,9 +32,9 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
-import com.google.common.base.Strings;
 
 @APICommand(name = RevokeCertificateCmd.APINAME,
         description = "Revokes certificate using configured CA plugin",
@@ -68,7 +68,7 @@ public class RevokeCertificateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public BigInteger getSerialBigInteger() {
-        if (Strings.isNullOrEmpty(serial)) {
+        if (StringUtils.isEmpty(serial)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Certificate serial cannot be empty");
         }
         return new BigInteger(serial, 16);

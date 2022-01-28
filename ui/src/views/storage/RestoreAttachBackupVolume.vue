@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form layout="vertical" :form="form">
       <a-form-item :label="$t('label.volume')">
         <a-select
@@ -25,7 +25,12 @@
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
           :loading="volumeOptions.loading"
-          autoFocus>
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(opt) in volumeOptions.opts"
             :key="opt.id">
@@ -35,12 +40,16 @@
       </a-form-item>
       <a-form-item :label="$t('label.vm')">
         <a-select
-          showSearch
           allowClear
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
-          :loading="virtualMachineOptions.loading">
+          :loading="virtualMachineOptions.loading"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="(opt) in virtualMachineOptions.opts"
             :key="opt.name">
@@ -50,7 +59,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading || actionLoading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading || actionLoading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -127,8 +136,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-
-      this.form.validateFields((err, values) => {
+      if (this.actionLoading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -144,15 +153,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title,
+              description: values.volumeid,
               successMethod: result => {
-                const successDescription = result.jobresult.storagebackup.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,
@@ -179,15 +182,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>

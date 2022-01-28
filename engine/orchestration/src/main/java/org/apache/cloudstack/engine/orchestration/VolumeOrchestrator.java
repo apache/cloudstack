@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -35,7 +36,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.utils.StringUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
@@ -84,6 +84,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -118,6 +119,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -130,6 +132,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -300,6 +303,34 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return _volsDao.persist(newVol);
     }
 
+    private Optional<StoragePool> getMatchingStoragePool(String preferredPoolId, List<StoragePool> storagePools) {
+        if (preferredPoolId == null) {
+            return Optional.empty();
+        }
+        return storagePools.stream()
+                .filter(pool -> pool.getUuid().equalsIgnoreCase(preferredPoolId))
+                .findFirst();
+    }
+
+    private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
+        String accountStoragePoolUuid = null;
+        if (vm != null) {
+            accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        }
+        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
+
+        if (storagePool.isPresent()) {
+            s_logger.debug("A storage pool is specified for this account, so we will use this storage pool for allocation: "
+                    + storagePool.get().getUuid());
+        } else {
+            String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
+            storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
+            storagePool.ifPresent(pool -> s_logger.debug("A storage pool is specified in global setting, so we will use this storage pool for allocation: "
+                    + pool.getUuid()));
+        }
+        return storagePool;
+    }
+
     @Override
     public StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
         Long podId = null;
@@ -321,9 +352,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
 
-            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
+            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
             if (poolList != null && !poolList.isEmpty()) {
-                return (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
+                // Check if the preferred storage pool can be used. If yes, use it.
+                Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
+
+                return (storagePool.isPresent()) ? (StoragePool) this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary) :
+                    (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
             }
         }
         return null;
@@ -349,7 +384,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
-            final List<StoragePool> poolList = allocator.reorderPools(suitablePools, profile, plan);
+            final List<StoragePool> poolList = allocator.reorderPools(suitablePools, profile, plan, null);
 
             if (poolList != null && !poolList.isEmpty()) {
                 return (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
@@ -461,18 +496,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (snapInfo == null) {
                 throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId());
             }
-            // We need to copy the snapshot onto secondary.
-            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
-            snapshotStrategy.backupSnapshot(snapInfo);
 
-            // Attempt to grab it again.
-            snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
-            if (snapInfo == null) {
-                throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId() + " on secondary and could not create backup");
-            }
+            snapInfo = backupSnapshotIfNeeded(snapshot, dataStoreRole, snapInfo);
         }
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
-        if (!DataStoreRole.Primary.equals(dataStoreRole)) {
+        if (!DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
             try {
                 // sync snapshot to region store if necessary
                 DataStore snapStore = snapInfo.getDataStore();
@@ -502,6 +530,25 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException("Failed to create volume from snapshot", e);
         }
 
+    }
+
+    private SnapshotInfo backupSnapshotIfNeeded(Snapshot snapshot, DataStoreRole dataStoreRole, SnapshotInfo snapInfo) {
+        boolean backupSnapToSecondary = SnapshotManager.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotManager.BackupSnapshotAfterTakingSnapshot.value();
+
+        StoragePoolVO srcPool = _storagePoolDao.findById(snapInfo.getBaseVolume().getPoolId());
+        // We need to copy the snapshot onto secondary.
+        //Skipping the backup to secondary storage with NFS/FS could be supported when CLOUDSTACK-5297 is accepted with small enhancement in:
+        //KVMStorageProcessor::createVolumeFromSnapshot and CloudStackPrimaryDataStoreDriverImpl::copyAsync/createAsync
+        if ((!backupSnapToSecondary && (StoragePoolType.NetworkFilesystem.equals(srcPool.getPoolType()) || StoragePoolType.Filesystem.equals(srcPool.getPoolType())))) {
+            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+            snapshotStrategy.backupSnapshot(snapInfo);
+            // Attempt to grab it again.
+            snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
+            if (snapInfo == null) {
+                throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId() + " on secondary and could not create backup");
+            }
+        }
+        return snapInfo;
     }
 
     public DataStoreRole getDataStoreRole(Snapshot snapshot) {

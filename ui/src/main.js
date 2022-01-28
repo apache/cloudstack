@@ -26,18 +26,26 @@ import './core/lazy_use'
 import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin, fileSizeUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
+import './utils/directives'
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, router)
 Vue.use(pollJobPlugin)
 Vue.use(notifierPlugin)
 Vue.use(toLocaleDatePlugin)
+Vue.use(showIconPlugin)
+Vue.use(resourceTypePlugin)
 
 fetch('config.json').then(response => response.json()).then(config => {
   Vue.prototype.$config = config
-  Vue.axios.defaults.baseURL = config.apiBase
+  let basUrl = config.apiBase
+  if (config.multipleServer) {
+    basUrl = (config.servers[0].apiHost || '') + config.servers[0].apiBase
+  }
+
+  Vue.axios.defaults.baseURL = basUrl
 
   loadLanguageAsync().then(() => {
     new Vue({
@@ -51,3 +59,5 @@ fetch('config.json').then(response => response.json()).then(config => {
 })
 
 Vue.use(configUtilPlugin)
+Vue.use(apiMetaUtilPlugin)
+Vue.use(fileSizeUtilPlugin)

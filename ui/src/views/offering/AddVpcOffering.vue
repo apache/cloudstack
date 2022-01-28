@@ -16,109 +16,84 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.name') }]
             }]"
-            :placeholder="this.$t('label.name')"/>
+            :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.displaytext') }}
-            <a-tooltip :title="apiParams.displaytext.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.description') }]
             }]"
-            :placeholder="this.$t('label.displaytext')"/>
+            :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.supportedservices') }}
-            <a-tooltip :title="apiParams.supportedservices.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
-            <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
+            <a-list itemLayout="horizontal" :dataSource="supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
                 <CheckBoxSelectPair
                   v-decorator="['service.'+item.name, {}]"
                   :resourceKey="item.name"
                   :checkBoxLabel="item.description"
-                  :checkBoxDecorator="'service.' + item.name"
                   :selectOptions="item.provider"
-                  :selectDecorator="item.name + '.provider'"
-                  @handle-checkpair-change="handleSupportedServiceChange"/>
+                  @handle-checkselectpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.regionlevelvpccapabilitycheckbox')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.service.connectivity.regionlevelvpccapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-decorator="['regionlevelvpc', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-decorator="['distributedrouter', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('label.redundantrouter')" v-if="this.sourceNatServiceChecked">
+        <a-form-item :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
           <a-switch v-decorator="['redundantrouter', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.ispublic')" v-if="this.isAdmin()">
-          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.isPublic" @change="val => { this.isPublic = val }" />
+        <a-form-item :label="$t('label.ispublic')" v-if="isAdmin()">
+          <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :defaultChecked="isPublic" @change="val => { isPublic = val }" />
         </a-form-item>
-        <a-form-item v-if="!this.isPublic">
-          <span slot="label">
-            {{ $t('label.domainid') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="!isPublic">
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
               rules: [
                 {
                   required: true,
-                  message: `${this.$t('message.error.select')}`
+                  message: $t('message.error.select')
                 }
               ]
             }]"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domain')">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+            :placeholder="apiParams.domainid.description">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="block" style="margin-right: 5px" />
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -137,28 +112,27 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zone')">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            :placeholder="apiParams.zoneid.description">
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item v-if="apiParams.enable">
-          <span slot="label">
-            {{ $t('label.enable.vpc.offering') }}
-            <a-tooltip :title="apiParams.enable.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.enable.vpc.offering')" :tooltip="apiParams.enable.description"/>
           <a-switch v-decorator="['enable', {initialValue: false}]" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -166,12 +140,17 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddVpcOffering',
   components: {
-    CheckBoxSelectPair
+    CheckBoxSelectPair,
+    ResourceIcon,
+    TooltipLabel
   },
   data () {
     return {
@@ -187,16 +166,13 @@ export default {
       supportedServices: [],
       supportedServiceLoading: false,
       connectivityServiceChecked: false,
-      sourceNatServiceChecked: false
+      sourceNatServiceChecked: false,
+      selectedServiceProviderMap: {}
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.createVPCOffering || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createVPCOffering')
   },
   created () {
     this.zones = [
@@ -214,14 +190,12 @@ export default {
       this.fetchSupportedServiceData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isSupportedServiceObject (obj) {
-      return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
+      return isAdmin()
     },
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -234,6 +208,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
@@ -330,13 +305,20 @@ export default {
       if (service === 'SourceNat') {
         this.sourceNatServiceChecked = checked
       }
+      if (checked && provider != null & provider !== undefined) {
+        this.selectedServiceProviderMap[service] = provider
+      } else {
+        delete this.selectedServiceProviderMap[service]
+      }
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
+        this.loading = true
         var params = {}
         params.name = values.name
         params.displaytext = values.displaytext
@@ -366,23 +348,12 @@ export default {
         if (zoneId) {
           params.zoneid = zoneId
         }
-        var selectedServices = null
-        var keys = Object.keys(values)
-        var self = this
-        keys.forEach(function (key, keyIndex) {
-          if (self.isSupportedServiceObject(values[key])) {
-            if (selectedServices == null) {
-              selectedServices = {}
-            }
-            selectedServices[key] = values[key]
-          }
-        })
-        if (selectedServices != null) {
-          var supportedServices = Object.keys(selectedServices)
+        if (this.selectedServiceProviderMap != null) {
+          var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = supportedServices.join(',')
           for (var k in supportedServices) {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
-            params['serviceProviderList[' + k + '].provider'] = selectedServices[supportedServices[k]].provider
+            params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
           var serviceCapabilityIndex = 0
           if (supportedServices.includes('Connectivity')) {
@@ -441,13 +412,5 @@ export default {
   .supported-services-container {
     height: 250px;
     overflow: auto;
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
   }
 </style>

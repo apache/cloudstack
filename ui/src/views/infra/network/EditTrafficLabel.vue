@@ -16,16 +16,11 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.traffictype') }}
-            <a-tooltip :title="apiParams.id.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
           <a-select
             autoFocus
             v-decorator="['id', {
@@ -33,19 +28,19 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="typeLoading"
             :placeholder="apiParams.id.description"
-            @change="onChangeTrafficType">
+            @change="onChangeTrafficType"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="type in trafficTypes" :key="type.id">
               {{ type.traffictype }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.kvmnetworklabel') }}
-            <a-tooltip :title="apiParams.kvmnetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
           <a-input
             v-decorator="['kvmnetworklabel', {
               initialValue: trafficResource.kvmnetworklabel
@@ -53,12 +48,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.vmwarenetworklabel') }}
-            <a-tooltip :title="apiParams.vmwarenetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
           <a-input
             v-decorator="['vmwarenetworklabel', {
               initialValue: trafficResource.vmwarenetworklabel
@@ -66,12 +56,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.xennetworklabel') }}
-            <a-tooltip :title="apiParams.xennetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
           <a-input
             v-decorator="['xennetworklabel', {
               initialValue: trafficResource.xennetworklabel
@@ -79,12 +64,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.hypervnetworklabel') }}
-            <a-tooltip :title="apiParams.hypervnetworklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
           <a-input
             v-decorator="['hypervnetworklabel', {
               initialValue: trafficResource.hypervnetworklabel
@@ -92,12 +72,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.ovm3networklabel') }}
-            <a-tooltip :title="apiParams.ovm3networklabel.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
           <a-input
             v-decorator="['ovm3networklabel', {
               initialValue: trafficResource.ovm3networklabel
@@ -106,7 +81,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -115,9 +90,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'EditTrafficLabel',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -136,13 +115,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.updateTrafficType || {}
-    this.apiParams = {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
+    this.apiParams = this.$getApiParams('updateTrafficType')
   },
   inject: ['parentFetchData'],
   created () {
@@ -176,7 +149,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -190,15 +164,8 @@ export default {
         api('updateTrafficType', params).then(response => {
           this.$pollJob({
             jobId: response.updatetraffictyperesponse.jobid,
-            successMethod: result => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                description: description,
-                jobid: response.updatetraffictyperesponse.jobid,
-                status: this.$t('progress')
-              })
-              this.parentFetchData()
-            },
+            title,
+            description,
             successMessage: `${this.$t('label.update.traffic.label')} ${this.traffictype} ${this.$t('label.success')}`,
             loadingMessage: `${title} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result')
@@ -224,13 +191,6 @@ export default {
 
   @media (min-width: 600px) {
     width: 450px;
-  }
-}
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

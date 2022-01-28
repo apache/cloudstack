@@ -67,6 +67,10 @@ export default {
       }, {
         name: 'settings',
         component: () => import('@/components/view/DetailSettings')
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -190,6 +194,9 @@ export default {
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
         }
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('order')
+        }
         return fields
       },
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
@@ -205,6 +212,10 @@ export default {
       }, {
         name: 'zones',
         component: () => import('@/views/image/IsoZones.vue')
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -310,7 +321,7 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

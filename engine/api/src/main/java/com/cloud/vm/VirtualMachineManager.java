@@ -26,15 +26,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.offering.DiskOffering;
@@ -67,7 +70,7 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
             "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
-    ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
+    ConfigKey<Boolean> ResourceCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
             "Count the resources of only running VMs in resource limitation.", true);
 
     ConfigKey<Boolean> AllowExposeHypervisorHostnameAccountLevel = new ConfigKey<Boolean>("Advanced", Boolean.class, "account.allow.expose.host.hostname",
@@ -75,22 +78,6 @@ public interface VirtualMachineManager extends Manager {
 
     ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
-
-    static final ConfigKey<Integer> VmServiceOfferingMaxCPUCores = new ConfigKey<Integer>("Advanced",
-            Integer.class,
-            "vm.serviceoffering.cpu.cores.max",
-            "0",
-            "Maximum CPU cores for vm service offering. If 0 - no limitation",
-            true
-    );
-
-    static final ConfigKey<Integer> VmServiceOfferingMaxRAMSize = new ConfigKey<Integer>("Advanced",
-            Integer.class,
-            "vm.serviceoffering.ram.size.max",
-            "0",
-            "Maximum RAM size in MB for vm service offering. If 0 - no limitation",
-            true
-    );
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -234,7 +221,7 @@ public interface VirtualMachineManager extends Manager {
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
-    boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException,
+    boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, Host dest) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException;
 
     VirtualMachine reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering, Map<String, String> customParameters, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
@@ -261,6 +248,10 @@ public interface VirtualMachineManager extends Manager {
     boolean unmanage(String vmUuid);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    boolean checkIfVmHasClusterWideVolumes(Long vmId);
+
+    DataCenterDeployment getMigrationDeployment(VirtualMachine vm, Host host, Long poolId, ExcludeList excludes);
 
     /**
      * Returns true if the VM's Root volume is allocated at a local storage pool

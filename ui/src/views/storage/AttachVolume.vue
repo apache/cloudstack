@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
+    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical" v-ctrl-enter="handleSubmit">
       <div style="margin-bottom: 10px">
         <a-alert type="warning">
           <span slot="message" v-html="$t('message.confirm.attach.disk')" />
@@ -29,7 +29,12 @@
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: $t('message.error.select') }]
           }]"
-          :placeholder="apiParams.virtualmachineid.description">
+          :placeholder="apiParams.virtualmachineid.description"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="vm in virtualmachines" :key="vm.id">
             {{ vm.name || vm.displayname }}
           </a-select-option>
@@ -38,7 +43,7 @@
     </a-form>
     <div class="actions">
       <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-      <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+      <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
     </div>
   </a-spin>
 </template>
@@ -53,7 +58,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       virtualmachines: [],
@@ -62,11 +66,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.attachVolume || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('attachVolume')
   },
   created () {
     this.fetchData()
@@ -104,7 +104,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -114,16 +115,10 @@ export default {
           id: this.resource.id,
           virtualmachineid: values.virtualmachineid
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.attach.disk'),
-            jobid: response.attachvolumeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.attachvolumeresponse.jobid,
-            successMethod: () => {
-              this.parentFetchData()
-            },
+            title: this.$t('label.action.attach.disk'),
+            description: this.resource.id,
             errorMessage: `${this.$t('message.attach.volume.failed')}: ${this.resource.name || this.resource.id}`,
             loadingMessage: `${this.$t('message.attach.volume.progress')}: ${this.resource.name || this.resource.id}`,
             catchMessage: this.$t('error.fetching.async.job.result')
@@ -133,7 +128,6 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.parentFetchData()
         })
       })
     }

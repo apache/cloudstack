@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div>
+    <div v-ctrl-enter="handleSubmit">
       <div class="vm-modal__header">
         <span style="min-width: 200px;">{{ $t('label.name') }}</span>
         <span>{{ $t('label.state') }}</span>
@@ -41,7 +41,11 @@
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
               mode="multiple"
               v-model="iLb.vmguestip[index]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
               </a-select-option>
@@ -80,7 +84,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit">
+      <a-button type="primary" ref="submit" @click="handleSubmit">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -195,6 +199,9 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.fetchLoading) {
+        return
+      }
       var j = 0
       this.params = {}
       for (var i = 0; i < this.iLb.virtualmachineid.length; i++) {
@@ -210,17 +217,10 @@ export default {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: `${this.$t('message.success.assigned.vms')} ${this.$t('label.to')} ${this.resource.name}`,
-          successMethod: () => {
-            this.$emit('refresh-data')
-          },
           errorMessage: `${this.$t('message.failed.to.assign.vms')} ${this.$t('label.to')} ${this.resource.name}`,
-          errorMethod: () => {
-            this.$emit('refresh-data')
-          },
           loadingMessage: `${this.$t('label.assigning.vms')} ${this.$t('label.to')} ${this.resource.name}`,
           catchMessage: this.$t('error.fetching.async.job.result')
         })
-        this.$emit('refresh-data')
         this.closeModal()
       }).catch(error => {
         this.$notification.error({

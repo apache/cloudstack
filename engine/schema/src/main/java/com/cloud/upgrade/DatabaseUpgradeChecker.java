@@ -29,8 +29,11 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.upgrade.dao.Upgrade41510to41520;
+import com.cloud.upgrade.dao.Upgrade41600to41610;
+import com.cloud.upgrade.dao.Upgrade41610to41700;
 import org.apache.cloudstack.utils.CloudStackVersion;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.upgrade.dao.DbUpgrade;
@@ -71,7 +74,7 @@ import com.cloud.upgrade.dao.Upgrade41300to41310;
 import com.cloud.upgrade.dao.Upgrade41310to41400;
 import com.cloud.upgrade.dao.Upgrade41400to41500;
 import com.cloud.upgrade.dao.Upgrade41500to41510;
-import com.cloud.upgrade.dao.Upgrade41510to41600;
+import com.cloud.upgrade.dao.Upgrade41520to41600;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -198,7 +201,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.14.0.0", new Upgrade41400to41500())
                 .next("4.14.1.0", new Upgrade41400to41500())
                 .next("4.15.0.0", new Upgrade41500to41510())
-                .next("4.15.1.0", new Upgrade41510to41600())
+                .next("4.15.1.0", new Upgrade41510to41520())
+                .next("4.15.2.0", new Upgrade41520to41600())
+                .next("4.16.0.0", new Upgrade41600to41610())
+                .next("4.16.1.0", new Upgrade41610to41700())
                 .build();
     }
 
@@ -272,8 +278,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
 
-        updateSystemVmTemplates(upgrades);
-
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
@@ -344,6 +348,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.close();
             }
         }
+        updateSystemVmTemplates(upgrades);
     }
 
     @Override
@@ -364,7 +369,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     return;
                 }
 
+                SystemVmTemplateRegistration.parseMetadataFile();
                 final CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
+                SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(currentVersion.getMajorRelease()) + "." + String.valueOf(currentVersion.getMinorRelease());
+                SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(currentVersion.getPatchRelease());
+
                 s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
 
                 if (dbVersion.compareTo(currentVersion) > 0) {

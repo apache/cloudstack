@@ -39,8 +39,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -51,6 +53,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
+    protected final SearchBuilder<ClusterVO> ClusterSearch;
 
     protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
 
@@ -96,6 +99,10 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ClusterIdSearch = createSearchBuilder(Long.class);
         ClusterIdSearch.selectFields(ClusterIdSearch.entity().getId());
         ClusterIdSearch.and("dataCenterId", ClusterIdSearch.entity().getDataCenterId(), Op.EQ);
+        ClusterIdSearch.done();
+
+        ClusterSearch = createSearchBuilder();
+        ClusterSearch.select(null, Func.DISTINCT, ClusterSearch.entity().getHypervisorType());
         ClusterIdSearch.done();
     }
 
@@ -151,6 +158,17 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             hypers.add(cluster.getHypervisorType());
         }
 
+        return hypers;
+    }
+
+    @Override
+    public Set<HypervisorType> getDistictAvailableHypervisorsAcrossClusters() {
+        SearchCriteria<ClusterVO> sc = ClusterSearch.create();
+        List<ClusterVO> clusters = listBy(sc);
+        Set<HypervisorType> hypers = new HashSet<>();
+        for (ClusterVO cluster : clusters) {
+            hypers.add(cluster.getHypervisorType());
+        }
         return hypers;
     }
 

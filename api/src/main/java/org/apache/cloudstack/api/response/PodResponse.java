@@ -21,23 +21,23 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.Pod;
 import com.cloud.serializer.Param;
 
 @EntityReference(value = Pod.class)
-public class PodResponse extends BaseResponse {
-    @SerializedName("id")
+public class PodResponse extends BaseResponseWithAnnotations {
+    @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the Pod")
     private String id;
 
-    @SerializedName("name")
+    @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the Pod")
     private String name;
 
-    @SerializedName("zoneid")
+    @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the Zone ID of the Pod")
     private String zoneId;
 
@@ -45,37 +45,45 @@ public class PodResponse extends BaseResponse {
     @Param(description = "the Zone name of the Pod")
     private String zoneName;
 
-    @SerializedName("gateway")
+    @SerializedName(ApiConstants.GATEWAY)
     @Param(description = "the gateway of the Pod")
     private String gateway;
 
-    @SerializedName("netmask")
+    @SerializedName(ApiConstants.NETMASK)
     @Param(description = "the netmask of the Pod")
     private String netmask;
 
-    @SerializedName("startip")
-    @Param(description = "the starting IP for the Pod")
+    @SerializedName(ApiConstants.IP_RANGES)
+    @Param(description = "the IP ranges for the Pod", responseObject = IpRangeResponse.class, since = "4.16.0")
+    private List<IpRangeResponse> ipRanges;
+
+    @Deprecated(since = "4.16")
+    @SerializedName(ApiConstants.START_IP)
+    @Param(description = "the starting IP for the Pod. This parameter is deprecated, please use 'startip' from ipranges parameter.")
     private List<String> startIp;
 
-    @SerializedName("endip")
-    @Param(description = "the ending IP for the Pod")
+    @Deprecated(since = "4.16")
+    @SerializedName(ApiConstants.END_IP)
+    @Param(description = "the ending IP for the Pod. This parameter is deprecated, please use 'endip' from ipranges parameter.")
     private List<String> endIp;
 
-    @SerializedName("forsystemvms")
-    @Param(description = "indicates if range is dedicated for CPVM and SSVM")
+    @Deprecated(since = "4.16")
+    @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
+    @Param(description = "indicates if range is dedicated for CPVM and SSVM. This parameter is deprecated, please use 'forsystemvms' from ipranges parameter.")
     private List<String> forSystemVms;
 
-    @SerializedName("vlanid")
-    @Param(description = "indicates Vlan ID for the range")
+    @Deprecated(since = "4.16")
+    @SerializedName(ApiConstants.VLAN_ID)
+    @Param(description = "indicates Vlan ID for the range. This parameter is deprecated, please use 'vlanid' from ipranges parameter.")
     private List<String> vlanId;
 
-    @SerializedName("allocationstate")
+    @SerializedName(ApiConstants.ALLOCATION_STATE)
     @Param(description = "the allocation state of the Pod")
     private String allocationState;
 
-    @SerializedName("capacity")
+    @SerializedName(ApiConstants.CAPACITY)
     @Param(description = "the capacity of the Pod", responseObject = CapacityResponse.class)
-    private List<CapacityResponse> capacitites;
+    private List<CapacityResponse> capacities;
 
     public String getId() {
         return id;
@@ -125,6 +133,10 @@ public class PodResponse extends BaseResponse {
         this.netmask = netmask;
     }
 
+    public void setIpRanges(List<IpRangeResponse> ipRanges) {
+        this.ipRanges = ipRanges;
+    }
+
     public List<String> getStartIp() {
         return startIp;
     }
@@ -165,11 +177,11 @@ public class PodResponse extends BaseResponse {
         this.allocationState = allocationState;
     }
 
-    public List<CapacityResponse> getCapacitites() {
-        return capacitites;
+    public List<CapacityResponse> getCapacities() {
+        return capacities;
     }
 
-    public void setCapacitites(List<CapacityResponse> capacitites) {
-        this.capacitites = capacitites;
+    public void setCapacities(List<CapacityResponse> capacities) {
+        this.capacities = capacities;
     }
 }

@@ -123,7 +123,6 @@ import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
@@ -148,6 +147,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
 * Class to manage secondary storages. <br><br>
@@ -858,7 +858,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         _useSSlCopy = BooleanUtils.toBoolean(_configDao.getValue("secstorage.encrypt.copy"));
 
         String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
-        if(_useSSlCopy && org.apache.commons.lang3.StringUtils.isEmpty(ssvmUrlDomain)){
+        if(_useSSlCopy && StringUtils.isEmpty(ssvmUrlDomain)){
             s_logger.warn("Empty secondary storage url domain, explicitly disabling SSL");
             _useSSlCopy = false;
         }
@@ -1074,7 +1074,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
+        buf.append(" host=").append(com.cloud.utils.StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
@@ -1084,6 +1084,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
         buf.append(" workers=").append(_configDao.getValue("workers"));
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (_configDao.isPremium()) {
             s_logger.debug("VMWare hypervisor was configured, informing secondary storage VM to load the PremiumSecondaryStorageResource.");

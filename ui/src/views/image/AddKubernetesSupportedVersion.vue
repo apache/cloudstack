@@ -16,19 +16,14 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.semanticversion') }}
-            <a-tooltip :title="apiParams.semanticversion.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
           <a-input
             v-decorator="['semanticversion', {
               rules: [{ required: true, message: $t('message.error.kuberversion') }]
@@ -37,12 +32,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ message: $t('message.error.name') }]
@@ -50,12 +40,7 @@
             :placeholder="$t('label.name')"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -73,22 +58,21 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.url') }}
-            <a-tooltip :title="apiParams.url.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.url.description"/>
           <a-input
             v-decorator="['url', {
               rules: [{ required: true, message: $t('message.error.binaries.iso.url') }]
@@ -96,12 +80,7 @@
             :placeholder="apiParams.url.description" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.checksum') }}
-            <a-tooltip :title="apiParams.checksum.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-decorator="['checksum', {
               rules: [{ required: false, message: $t('message.error.required.input') }]
@@ -109,12 +88,7 @@
             :placeholder="apiParams.checksum.description" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.mincpunumber') }}
-            <a-tooltip :title="apiParams.mincpunumber.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
           <a-input
             v-decorator="['mincpunumber', {
               rules: [{ required: true, message: $t('message.please.enter.value') },
@@ -131,12 +105,7 @@
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.minmemory') }}
-            <a-tooltip :title="apiParams.minmemory.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
           <a-input
             v-decorator="['minmemory', {
               rules: [{ required: true, message: $t('message.please.enter.value') },
@@ -155,7 +124,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -164,10 +133,15 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddKubernetesSupportedVersion',
-  props: {},
+  components: {
+    ResourceIcon,
+    TooltipLabel
+  },
   data () {
     return {
       zones: [],
@@ -177,11 +151,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.addKubernetesSupportedVersion || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('addKubernetesSupportedVersion')
   },
   created () {
     this.zones = [
@@ -205,6 +175,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
@@ -220,7 +191,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -268,14 +240,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

@@ -16,35 +16,30 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.role') }}
-            <a-tooltip :title="apiParams.roleid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           <a-select
             v-decorator="['roleid', {
               initialValue: selectedRole,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="roleLoading"
             :placeholder="apiParams.roleid.description"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.username') }}
-            <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
           <a-input
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -54,12 +49,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.password') }}
-                <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.password.description"/>
               <a-input-password
                 v-decorator="['password', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -69,12 +59,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.confirmpassword') }}
-                <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
               <a-input-password
                 v-decorator="['confirmpassword', {
                   rules: [
@@ -87,12 +72,7 @@
           </a-col>
         </a-row>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.email') }}
-            <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
           <a-input
             v-decorator="['email', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -102,12 +82,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.firstname') }}
-                <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
               <a-input
                 v-decorator="['firstname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -117,12 +92,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.lastname') }}
-                <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
               <a-input
                 v-decorator="['lastname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -132,77 +102,70 @@
           </a-col>
         </a-row>
         <a-form-item v-if="this.isAdminOrDomainAdmin()">
-          <span slot="label">
-            {{ $t('label.domain') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             :loading="domainLoading"
             v-decorator="['domainid', {
               initialValue: selectedDomain,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
-            :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.path || domain.name || domain.description }}
+            :placeholder="apiParams.domainid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
+              <span>
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px"/>
+                {{ domain.path || domain.name || domain.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.account') }}
-            <a-tooltip :title="apiParams.account.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           <a-input v-decorator="['account']" :placeholder="apiParams.account.description" />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.timezone') }}
-            <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
-            showSearch
             v-decorator="['timezone']"
             :loading="timeZoneLoading"
-            :placeholder="apiParams.timezone.description">
+            :placeholder="apiParams.timezone.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.networkdomain') }}
-            <a-tooltip :title="apiParams.networkdomain.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
           <a-input
             v-decorator="['networkdomain']"
             :placeholder="apiParams.networkdomain.description" />
         </a-form-item>
-        <div v-if="'authorizeSamlSso' in $store.getters.apis">
+        <div v-if="samlAllowed">
           <a-form-item :label="$t('label.samlenable')">
             <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
           </a-form-item>
           <a-form-item v-if="samlEnable">
-            <span slot="label">
-              {{ $t('label.samlentity') }}
-              <a-tooltip :title="apiParams.entityid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
             <a-select
               v-decorator="['samlentity', {
                 initialValue: selectedIdp,
               }]"
-              :loading="idpLoading">
-              <a-select-option v-for="(idp, idx) in idps" :key="idx">
+              :loading="idpLoading"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option v-for="idp in idps" :key="idp.id">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
@@ -210,7 +173,7 @@
         </div>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -220,9 +183,15 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountForm',
+  components: {
+    TooltipLabel,
+    ResourceIcon
+  },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
@@ -243,29 +212,22 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createAccount || {}
-    this.apiParams = {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
+    this.apiParams = this.$getApiParams('createAccount', 'authorizeSamlSso')
   },
   created () {
     this.fetchData()
+  },
+  computed: {
+    samlAllowed () {
+      return 'authorizeSamlSso' in this.$store.getters.apis
+    }
   },
   methods: {
     fetchData () {
       this.fetchDomains()
       this.fetchRoles()
       this.fetchTimeZone()
-      if ('listIdps' in this.$store.getters.apis) {
+      if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
@@ -298,6 +260,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
@@ -346,7 +309,13 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }
@@ -385,7 +354,7 @@ export default {
                 userid: users[i].id
               }).then(response => {
                 this.$notification.success({
-                  message: this.$t('samlenable'),
+                  message: this.$t('label.samlenable'),
                   description: this.$t('message.success.enable.saml.auth')
                 })
               }).catch(error => {
@@ -420,12 +389,6 @@ export default {
     width: 80vw;
     @media (min-width: 600px) {
       width: 450px;
-    }
-  }
-  .action-button {
-    text-align: right;
-    button {
-      margin-right: 5px;
     }
   }
 </style>

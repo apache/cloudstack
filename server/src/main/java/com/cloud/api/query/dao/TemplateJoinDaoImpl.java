@@ -29,6 +29,8 @@ import javax.inject.Inject;
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
@@ -42,6 +44,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -85,6 +88,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private VMTemplateDetailsDao _templateDetailsDao;
     @Inject
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -122,7 +127,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("templateState", activeTmpltSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.and("public", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.and().op("public", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.or().op("publicNoUrl", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.and("url", activeTmpltSearch.entity().getUrl(), SearchCriteria.Op.NULL);
+        activeTmpltSearch.cp();
+        activeTmpltSearch.cp();
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
@@ -156,8 +165,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO template) {
-        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId());
-        List<Map<String, String>> downloadProgressDetails = new ArrayList();
+        List<ImageStoreVO> storesInZone = dataStoreDao.listStoresByZoneId(template.getDataCenterId());
+        Long[] storeIds = storesInZone.stream().map(ImageStoreVO::getId).toArray(Long[]::new);
+        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId(), storeIds);
+        List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
@@ -256,6 +267,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
+        templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+                _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
@@ -353,6 +367,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
+        if (templateResponse.hasAnnotation() == null) {
+            templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+                    _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        }
+
         return templateResponse;
     }
 
@@ -368,7 +387,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setCreated(iso.getCreatedOnStore());
         isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
-            // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
+            // for TemplateManager.XS_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO, we didn't download, but is ready to use.
             isoResponse.setReady(true);
         } else {
             isoResponse.setReady(iso.getState() == ObjectInDataStoreStateMachine.State.Ready);
@@ -440,6 +459,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+        isoResponse.setHasAnnotation(annotationDao.hasAnnotations(iso.getUuid(), AnnotationService.EntityType.ISO.name(),
+                _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
 
@@ -475,10 +496,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
-        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, null, null);
-        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", QueryService.SortKeyAscending.value());
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
@@ -526,6 +545,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
         sc.setParameters("public", Boolean.FALSE);
+        sc.setParameters("publicNoUrl",Boolean.TRUE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
@@ -541,9 +561,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (ids == null || ids.length == 0) {
             return new ArrayList<TemplateJoinVO>();
         }
+
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", true);
+
         SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
         sc.setParameters("idsIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+        return searchIncludingRemoved(sc, searchFilter, null, false);
     }
-
 }

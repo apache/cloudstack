@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div>
+    <div v-ctrl-enter="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -38,7 +38,13 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
-          <a-select v-model="newRule.algorithm">
+          <a-select
+            v-model="newRule.algorithm"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
             <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
@@ -46,7 +52,14 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="min-width: 100px">
+          <a-select
+            v-model="newRule.protocol"
+            style="min-width: 100px"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
@@ -62,7 +75,14 @@
     </div>
 
     <a-divider />
-
+    <a-button
+      v-if="(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
+      icon="delete"
+      style="width: 100%; margin-bottom: 15px"
+      @click="bulkActionConfirmation()">
+      {{ $t('label.action.bulk.delete.load.balancer.rules') }}
+    </a-button>
     <a-table
       size="small"
       class="list-view"
@@ -70,12 +90,13 @@
       :columns="columns"
       :dataSource="lbRules"
       :pagination="false"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="algorithm" slot-scope="record">
         {{ returnAlgorithmName(record.algorithm) }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="stickiness" slot-scope="record">
         <a-button @click="() => openStickinessModal(record.id)">
@@ -143,9 +164,12 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
-      class="tags-modal">
+      class="tags-modal"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <span v-show="tagsModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -183,11 +207,14 @@
 
     <a-modal
       :title="$t('label.configure.sticky.policy')"
-      v-model="stickinessModalVisible"
+      :visible="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
-      :okButtonProps="{ props: {htmlType: 'submit'}}">
+      :closable="true"
+      :okButtonProps="{ props: {htmlType: 'submit'}}"
+      @cancel="stickinessModalVisible = false"
+      v-ctrl-enter="handleSubmitStickinessForm">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
@@ -195,7 +222,15 @@
 
       <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
         <a-form-item :label="$t('label.stickiness.method')">
-          <a-select autoFocus v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
+          <a-select
+            autoFocus
+            v-decorator="['methodname']"
+            @change="handleStickinessMethodSelectChange"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
             <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
@@ -250,7 +285,11 @@
         <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['expire']" />
         </a-form-item>
-        <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+
+        <div :span="24" class="action-button">
+          <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -259,7 +298,10 @@
       v-model="editRuleModalVisible"
       :afterClose="closeModal"
       :maskClosable="false"
-      @ok="handleSubmitEditForm">
+      :closable="true"
+      :footer="null"
+      @cancel="editRuleModalVisible = false"
+      v-ctrl-enter="handleSubmitEditForm">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -271,7 +313,13 @@
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
-          <a-select v-model="editRuleDetails.algorithm">
+          <a-select
+            v-model="editRuleDetails.algorithm"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
             <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
@@ -279,11 +327,21 @@
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
-          <a-select v-model="editRuleDetails.protocol">
+          <a-select
+            v-model="editRuleDetails.protocol"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
+        </div>
+        <div :span="24" class="action-button">
+          <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
     </a-modal>
@@ -291,15 +349,12 @@
     <a-modal
       :title="$t('label.add.vms')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      @ok="handleAddNewRule"
-      :okButtonProps="{ props:
-        {disabled: newRule.virtualmachineid === [] } }"
-      @cancel="closeModal"
+      :footer="null"
+      v-ctrl-enter="handleAddNewRule"
     >
       <div>
         <span
@@ -309,7 +364,12 @@
             :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
-            :placeholder="$t('label.select.tier')" >
+            :placeholder="$t('label.select.tier')"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
@@ -344,7 +404,11 @@
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
               mode="multiple"
               v-model="newRule.vmguestip[index]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
@@ -367,8 +431,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template slot="buildOptionText" slot-scope="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -376,21 +440,44 @@
         </a-pagination>
       </div>
 
+      <div :span="24" class="action-button">
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button :disabled="newRule.virtualmachineid === []" type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
 
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="lbRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      :filterColumns="filterColumns"
+      action="deleteLoadBalancerRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'LoadBalancing',
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -401,6 +488,16 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      selectedRowKeys: [],
+      showGroupActionModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.load.balancer.rules'),
+        confirmMessage: this.$t('label.confirm.delete.loadbalancer.rules')
+      },
       loading: true,
       lbRules: [],
       newTagsForm: this.$form.createForm(this),
@@ -523,6 +620,11 @@ export default {
       searchQuery: null
     }
   },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
+    }
+  },
   created () {
     this.fetchData()
   },
@@ -533,12 +635,6 @@ export default {
       }
       this.resource = newItem
       this.fetchData()
-    }
-  },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
     }
   },
   methods: {
@@ -639,6 +735,13 @@ export default {
       }
       return 'Configure'
     },
+    getCapitalise (val) {
+      if (!val) {
+        return
+      }
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     openTagsModal (id) {
       this.tagsModalLoading = true
       this.tagsModalVisible = true
@@ -658,10 +761,11 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsModalLoading) return
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsModalLoading = false
           return
@@ -677,13 +781,11 @@ export default {
             jobId: response.createtagsresponse.jobid,
             successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.openTagsModal(this.selectedRule)
             },
             errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.closeModal()
             },
@@ -712,13 +814,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -769,14 +869,12 @@ export default {
           jobId: response.createLBStickinessPolicy.jobid,
           successMessage: this.$t('message.success.config.sticky.policy'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.config.sticky.policy.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -792,6 +890,8 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
+      }).finally(() => {
+        this.closeModal()
       })
     },
     handleDeleteStickinessPolicy () {
@@ -801,14 +901,12 @@ export default {
           jobId: response.deleteLBstickinessrruleresponse.jobid,
           successMessage: this.$t('message.success.remove.sticky.policy'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.remove.sticky.policy.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -827,9 +925,10 @@ export default {
       })
     },
     handleSubmitStickinessForm (e) {
+      if (this.stickinessModalLoading) return
       this.stickinessModalLoading = true
       e.preventDefault()
-      this.stickinessPolicyForm.validateFields((err, values) => {
+      this.stickinessPolicyForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.stickinessModalLoading = false
           return
@@ -865,6 +964,7 @@ export default {
       })
     },
     handleStickinessMethodSelectChange (e) {
+      this.stickinessPolicyForm.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
@@ -903,6 +1003,7 @@ export default {
       this.editRuleDetails.protocol = this.selectedRule.protocol
     },
     handleSubmitEditForm () {
+      if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
       api('updateLoadBalancerRule', {
@@ -913,14 +1014,12 @@ export default {
           jobId: response.updateloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.edit.rule'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.edit.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -939,42 +1038,105 @@ export default {
         this.loading = false
       })
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.lbRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    bulkActionConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+    },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    deleteRules (e) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.operation.status'),
+        scopedSlots: { customRender: 'status' },
+        filters: [
+          { text: 'In Progress', value: 'InProgress' },
+          { text: 'Success', value: 'success' },
+          { text: 'Failed', value: 'failed' }
+        ]
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
+        this.handleDeleteRule(rule)
+      }
+    },
     handleDeleteRule (rule) {
       this.loading = true
       api('deleteLoadBalancerRule', {
         id: rule.id
       }).then(response => {
+        const jobId = response.deleteloadbalancerruleresponse.jobid
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
-          jobId: response.deleteloadbalancerruleresponse.jobid,
+          title: this.$t('label.action.delete.load.balancer'),
+          description: rule.id,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+            }
+            if (this.selectedRowKeys.length === 0) {
+              this.parentToggleLoading()
+              this.fetchData()
+            }
             this.closeModal()
           },
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+            }
+            if (this.selectedRowKeys.length === 0) {
+              this.parentToggleLoading()
+              this.fetchData()
+            }
             this.closeModal()
           },
           loadingMessage: this.$t('message.delete.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedRowKeys.length === 0) {
+              this.parentToggleLoading()
+              this.parentFetchData()
+            }
             this.closeModal()
-          }
+          },
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
+        console.log(error)
         this.$notifyError(error)
         this.loading = false
       })
     },
     handleOpenAddVMModal () {
+      if (this.addVmModalLoading) return
       if (!this.selectedRule) {
         if (!this.newRule.name) {
           this.$refs.newRuleName.classList.add('error')
@@ -1084,14 +1246,12 @@ export default {
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.asign.vm'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.assign.vm.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -1108,6 +1268,7 @@ export default {
       })
     },
     handleAddNewRule () {
+      if (this.loading) return
       this.loading = true
 
       if (this.selectedRule) {
@@ -1149,6 +1310,7 @@ export default {
       this.editRuleModalLoading = false
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
+      this.showConfirmationAction = false
       this.vms = []
       this.nics = []
       this.addVmModalVisible = false
@@ -1165,6 +1327,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value

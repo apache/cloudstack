@@ -28,20 +28,36 @@ import java.util.Set;
 import javax.mail.Address;
 import javax.mail.MessagingException;
 import javax.mail.Session;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import junit.framework.TestCase;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.mail.EmailConstants;
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SMTPMailSenderTest extends TestCase {
 
     private SMTPMailSender smtpMailSender;
+
+    @Spy
+    @InjectMocks
+    private SMTPMailSender smtpMailSenderMock;
+
+    @Mock
+    Logger loggerMock;
+
+    @Mock
+    SMTPMessage messageMock;
+
     private Map<String, String> configsMock = Mockito.mock(Map.class);
     private String namespace = "test";
     private String enabledProtocols = "mail.smtp.ssl.protocols";
@@ -447,8 +463,10 @@ public class SMTPMailSenderTest extends TestCase {
         mailProps.setSender(new MailAddress("test@test.com"));
         mailProps.setContent("A simple test");
         mailProps.setContentType("text/plain");
+        mailProps.setRecipients(new HashSet<>());
+        mailProps.setSubject("Test");
 
-        Mockito.doReturn(true).when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.anySet(), Mockito.anyString());
 
         SMTPMessage message = smtpMailSender.createMessage(mailProps);
 
@@ -465,8 +483,10 @@ public class SMTPMailSenderTest extends TestCase {
         mailProps.setFrom(new MailAddress("test2@test2.com", "TEST2"));
         mailProps.setContent("A simple test");
         mailProps.setContentType("text/plain");
+        mailProps.setRecipients(new HashSet<>());
+        mailProps.setSubject("Test");
 
-        Mockito.doReturn(true).when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.anySet(), Mockito.anyString());
 
         SMTPMessage message = smtpMailSender.createMessage(mailProps);
 
@@ -490,8 +510,10 @@ public class SMTPMailSenderTest extends TestCase {
         cal.set(Calendar.DAY_OF_MONTH, 1);
 
         mailProps.setSentDate(cal.getTime());
+        mailProps.setRecipients(new HashSet<>());
+        mailProps.setSubject("Test");
 
-        Mockito.doReturn(true).when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.anySet(), Mockito.anyString());
 
         SMTPMessage message = smtpMailSender.createMessage(mailProps);
         assertTrue(DateUtils.truncatedEquals(cal.getTime(), message.getSentDate(), Calendar.SECOND));
@@ -511,8 +533,9 @@ public class SMTPMailSenderTest extends TestCase {
         mailProps.setSubject(subject);
         mailProps.setContent(content);
         mailProps.setContentType(contentType);
+        mailProps.setRecipients(new HashSet<>());
 
-        Mockito.doReturn(true).when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(smtpMailSender).setMailRecipients(Mockito.any(SMTPMessage.class), Mockito.anySet(), Mockito.anyString());
 
         SMTPMessage message = smtpMailSender.createMessage(mailProps);
         assertEquals(subject, message.getSubject());
@@ -531,7 +554,7 @@ public class SMTPMailSenderTest extends TestCase {
         recipients.add(new MailAddress("smtp.acme.org"));
         recipients.add(new MailAddress("smtp.acme2.org", "Coyote"));
 
-        boolean returnOfSetEmail = smtpMailSender.setMailRecipients(messageMock, recipients, "A simple test");
+        smtpMailSender.setMailRecipients(messageMock, recipients, "A simple test");
 
         Address[] allRecipients = messageMock.getAllRecipients();
 
@@ -540,8 +563,6 @@ public class SMTPMailSenderTest extends TestCase {
 
         assertEquals("\"smtp.acme.org\" <smtp.acme.org>", allRecipients[0].toString());
         assertEquals("Coyote <smtp.acme2.org>", allRecipients[1].toString());
-
-        assertTrue(returnOfSetEmail);
     }
 
     @Test
@@ -556,38 +577,45 @@ public class SMTPMailSenderTest extends TestCase {
         recipients.add(new MailAddress(""));
         recipients.add(new MailAddress("  "));
 
-        boolean returnOfSetEmail = smtpMailSender.setMailRecipients(messageMock, recipients, "A simple test");
+        smtpMailSender.setMailRecipients(messageMock, recipients, "A simple test");
 
         Address[] allRecipients = messageMock.getAllRecipients();
 
         int expectedNumberOfValidRecipientsConfigured = 0;
         assertEquals(expectedNumberOfValidRecipientsConfigured, allRecipients.length);
+    }
 
-        assertFalse(returnOfSetEmail);
+    @Test
+    public void setMailRecipientsTestWarnLogging() throws UnsupportedEncodingException, MessagingException  {
+        SMTPMessage messageMock = new SMTPMessage(Mockito.mock(MimeMessage.class));
+
+        smtpMailSenderMock.setMailRecipients(messageMock, null, "");
+
+        Mockito.verify(smtpMailSenderMock.logger).error(Mockito.anyString());
     }
 
     @Test
     public void validateSMTPMailSenderSendMailWithNullSession() {
         SMTPMailProperties mailProps = new SMTPMailProperties();
 
-        boolean returnOfSendMail = smtpMailSender.sendMail(mailProps);
+        smtpMailSenderMock.sendMail(mailProps);
 
-        assertFalse(returnOfSendMail);
+        Mockito.verify(smtpMailSenderMock.logger).error(Mockito.anyString());
     }
 
     @Test
     public void validateSMTPMailSenderSendMailWithValidSession() throws MessagingException, UnsupportedEncodingException {
-        smtpMailSender = smtpMailSender = Mockito.spy(smtpMailSender);
         SMTPMailProperties mailProps = new SMTPMailProperties();
+        smtpMailSenderMock.session = Session.getDefaultInstance(Mockito.mock(Properties.class));
+        Address[] recipients = {new InternetAddress("email@acme.com")};
 
-        smtpMailSender.session = Session.getDefaultInstance(Mockito.mock(Properties.class));
+        Mockito.doReturn(recipients).when(messageMock).getAllRecipients();
+        Mockito.doReturn(messageMock).when(smtpMailSenderMock).createMessage(Mockito.any());
+        Mockito.doReturn(Mockito.mock(SMTPTransport.class)).when(smtpMailSenderMock).createSmtpTransport();
 
-        Mockito.doReturn(Mockito.mock(SMTPMessage.class)).when(smtpMailSender).createMessage(Mockito.any(SMTPMailProperties.class));
-        Mockito.doReturn(Mockito.mock(SMTPTransport.class)).when(smtpMailSender).createSmtpTransport();
+        smtpMailSenderMock.sendMail(mailProps);
 
-        boolean returnOfSendMail = smtpMailSender.sendMail(mailProps);
-
-        assertTrue(returnOfSendMail);
+        Mockito.verify(smtpMailSenderMock.logger, Mockito.never()).error(Mockito.anyString());
     }
 
     @Test

@@ -25,6 +25,7 @@ export default {
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
   details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  resourceType: 'VirtualRouter',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
@@ -35,6 +36,9 @@ export default {
     name: 'router.health.checks',
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
     component: () => import('@views/infra/routers/RouterHealthCheck.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   related: [{
     name: 'vm',
@@ -49,7 +53,10 @@ export default {
       label: 'label.action.start.router',
       message: 'message.action.start.router',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopRouter',
@@ -58,7 +65,10 @@ export default {
       message: 'message.action.stop.router',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'rebootRouter',
@@ -67,7 +77,10 @@ export default {
       message: 'message.action.reboot.router',
       dataView: true,
       args: ['forced'],
-      hidden: (record) => { return record.state === 'Running' }
+      hidden: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'scaleSystemVm',
@@ -156,7 +169,10 @@ export default {
       label: 'label.destroy.router',
       message: 'message.confirm.destroy.router',
       dataView: true,
-      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

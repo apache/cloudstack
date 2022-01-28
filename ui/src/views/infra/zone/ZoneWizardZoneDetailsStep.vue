@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-ctrl-enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 24px;"
@@ -205,7 +205,6 @@
         has-feedback>
         <a-select
           :loading="hypervisors === null"
-          showSearch
           v-decorator="['hypervisor',{
             rules: [{
               required: true,
@@ -214,7 +213,11 @@
             }]
           }]"
           :placeholder="$t('message.error.hypervisor.type')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="hypervisor in hypervisors" :key="hypervisor.name">
             {{ hypervisor.name }}
           </a-select-option>
@@ -234,7 +237,11 @@
             }]
           }]"
           :placeholder="$t('message.error.network.offering')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
             :key="networkOffering.id">
@@ -289,7 +296,11 @@
             }]
           }]"
           :placeholder="$t('message.error.select.domain.to.dedicate')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="dom in domains" :key="dom.id">
             {{ dom.path }}
           </a-select-option>
@@ -331,7 +342,7 @@
         v-if="!isFixError">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit" class="button-next">
+      <a-button ref="submit" type="primary" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
     </div>
@@ -371,8 +382,8 @@ export default {
     ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i
   }),
   created () {
-    this.hypervisors = this.prefillContent.hypervisors ? this.prefillContent.hypervisors : null
-    this.networkOfferings = this.prefillContent.networkOfferings ? this.prefillContent.networkOfferings : null
+    this.hypervisors = this.prefillContent.hypervisors?.hypervisors || null
+    this.networkOfferings = this.prefillContent?.networkOfferings || null
     this.form = this.$form.createForm(this, {
       onFieldsChange: (_, changedFields) => {
         if (changedFields.networkOfferingId && this.prefillContent.networkOfferingSelected) {
@@ -422,37 +433,37 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
+      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled?.value || false)
     },
     name () {
-      return this.prefillContent.name ? this.prefillContent.name.value : null
+      return this.prefillContent.name?.value || null
     },
     ipv4Dns1 () {
-      return this.prefillContent.ipv4Dns1 ? this.prefillContent.ipv4Dns1.value : null
+      return this.prefillContent.ipv4Dns1?.value || null
     },
     ipv4Dns2 () {
-      return this.prefillContent.ipv4Dns2 ? this.prefillContent.ipv4Dns2.value : null
+      return this.prefillContent.ipv4Dns2?.value || null
     },
     ipv6Dns1 () {
-      return this.prefillContent.ipv6Dns1 ? this.prefillContent.ipv6Dns1.value : null
+      return this.prefillContent.ipv6Dns1?.value || null
     },
     ipv6Dns2 () {
-      return this.prefillContent.ipv6Dns2 ? this.prefillContent.ipv6Dns2.value : null
+      return this.prefillContent.ipv6Dns2?.value || null
     },
     internalDns1 () {
-      return this.prefillContent.internalDns1 ? this.prefillContent.internalDns1.value : null
+      return this.prefillContent.internalDns1?.value || null
     },
     internalDns2 () {
-      return this.prefillContent.internalDns2 ? this.prefillContent.internalDns2.value : null
+      return this.prefillContent.internalDns2?.value || null
     },
     ipv6Cidr () {
-      return this.prefillContent.ipv6Cidr ? this.prefillContent.ipv6Cidr.value : null
+      return this.prefillContent.ipv6Cidr?.value || null
     },
     ip6gateway () {
-      return this.prefillContent.ip6gateway ? this.prefillContent.ip6gateway.value : null
+      return this.prefillContent.ip6gateway?.value || null
     },
     currentHypervisor () {
       if (this.prefillContent.hypervisor) {
@@ -463,7 +474,7 @@ export default {
       return null
     },
     currentNetworkOfferingId () {
-      const lastNetworkOfferingId = this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.id : null
+      const lastNetworkOfferingId = this.prefillContent.networkOfferingSelected?.id || null
       if (this.networkOfferings) {
         if (lastNetworkOfferingId !== null && this.networkOfferings[lastNetworkOfferingId]) {
           return lastNetworkOfferingId
@@ -473,29 +484,29 @@ export default {
       return null
     },
     networkDomain () {
-      return this.prefillContent.networkDomain ? this.prefillContent.networkDomain.value : null
+      return this.prefillContent.networkDomain?.value || null
     },
     guestcidraddress () {
-      return this.prefillContent.guestcidraddress ? this.prefillContent.guestcidraddress.value : '10.1.1.0/24'
+      return this.prefillContent.guestcidraddress?.value || '10.1.1.0/24'
     },
     isDedicated () {
-      return this.prefillContent.isDedicated ? this.prefillContent.isDedicated.value : false
+      return this.prefillContent.isDedicated?.value || false
     },
     domain () {
-      const lastDomainId = this.prefillContent.domainId ? this.prefillContent.domainId.value : null
+      const lastDomainId = this.prefillContent.domainId?.value || null
       if (this.domains !== null && lastDomainId !== null && this.domains[lastDomainId]) {
         return lastDomainId
       }
       return null
     },
     account () {
-      return this.prefillContent.account ? this.prefillContent.account.value : null
+      return this.prefillContent.account?.value || null
     },
     localstorageenabled () {
-      return this.prefillContent.localstorageenabled ? this.prefillContent.localstorageenabled.value : false
+      return this.prefillContent.localstorageenabled?.value || false
     },
     localstorageenabledforsystemvm () {
-      return this.prefillContent.localstorageenabledforsystemvm ? this.prefillContent.localstorageenabledforsystemvm.value : false
+      return this.prefillContent.localstorageenabledforsystemvm?.value || false
     }
   },
   methods: {
@@ -537,7 +548,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form :form="form" @submit="handleSubmit" layout="vertical">
         <a-form-item
@@ -33,7 +33,11 @@
             :loading="loading"
             @change="val => { selectedStore = val }"
             autoFocus
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="store in imageStores"
               :key="store.id"
@@ -52,7 +56,11 @@
             }]"
             mode="multiple"
             :loading="loading"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="store in imageStores"
               v-if="store.id !== selectedStore"
@@ -71,14 +79,18 @@
                 }]
             }]"
             :loading="loading"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="Complete">{{ $t('label.complete') }}</a-select-option>
             <a-select-option value="Balance">{{ $t('label.balance') }}</a-select-option>
           </a-select>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -114,7 +126,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -133,6 +146,7 @@ export default {
 
         const title = this.$t('message.data.migration')
         this.loading = true
+        const loadingJob = this.$message.loading({ content: this.$t('label.migrating.data'), duration: 0 })
 
         const result = this.migrateData(params, title)
         result.then(json => {
@@ -155,12 +169,11 @@ export default {
           this.closeAction()
         }).catch(error => {
           console.log(error)
-        })
-        setTimeout(() => {
-          this.$message.loading({ content: this.$t('label.migrating.data'), duration: 1 })
+        }).finally(() => {
           this.loading = false
+          setTimeout(loadingJob)
           this.closeAction()
-        }, 200)
+        })
       })
     },
     migrateData (args, title) {
@@ -168,37 +181,20 @@ export default {
         api('migrateSecondaryStorageData', args).then(async json => {
           const jobId = json.migratesecondarystoragedataresponse.jobid
           if (jobId) {
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
+            this.$pollJob({
+              jobId,
+              title,
               description: this.$t('message.data.migration.progress'),
-              status: 'progress',
-              silent: true
+              successMethod: (result) => resolve(result),
+              errorMethod: (result) => reject(result.jobresult.errortext),
+              showLoading: false,
+              catchMessage: this.$t('error.fetching.async.job.result'),
+              catchMethod: () => { this.closeAction() }
             })
-            const result = await this.pollJob(jobId, title)
-            if (result.jobstatus === 2) {
-              reject(result.jobresult.errortext)
-              return
-            }
-            resolve(result)
           }
         }).catch(error => {
           reject(error)
         })
-      })
-    },
-    async pollJob (jobId, title) {
-      return new Promise(resolve => {
-        const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
-            const result = json.queryasyncjobresultresponse
-            if (result.jobstatus === 0) {
-              return
-            }
-            clearInterval(asyncJobInterval)
-            resolve(result)
-          })
-        }, 1000)
       })
     },
     closeAction () {
@@ -213,14 +209,6 @@ export default {
 
   @media (min-width: 1000px) {
     width: 40vw;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

@@ -17,30 +17,30 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
           :form="form"
           @submit="handleSubmit"
           layout="vertical">
-          <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0">
+          <a-form-item v-if="pods && pods.length > 0">
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               autoFocus
               v-decorator="['podid', {
                 initialValue: this.pods && this.pods.length > 0 ? this.pods[0].id : '',
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.gateway') }}
-              <a-tooltip :title="apiParams.gateway.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
             <a-input
               autoFocus
               v-decorator="['gateway', {
@@ -49,12 +49,7 @@
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.netmask') }}
-              <a-tooltip :title="apiParams.netmask.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             <a-input
               v-decorator="['netmask', {
                 rules: [{ required: true, message: $t('message.error.netmask') }]
@@ -64,12 +59,7 @@
           <a-row :gutter="12">
             <a-col :md="12" lg="12">
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.startipv4') }}
-                  <a-tooltip :title="apiParams.startip.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
                 <a-input
                   v-decorator="['startip', {
                     rules: [
@@ -86,12 +76,7 @@
             </a-col>
             <a-col :md="12" :lg="12">
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.endipv4') }}
-                  <a-tooltip :title="apiParams.endip.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
                 <a-input
                   v-decorator="['endip', {
                     rules: [
@@ -108,23 +93,13 @@
             </a-col>
           </a-row>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.ip6cidr') }}
-              <a-tooltip :title="apiParams.ip6cidr.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
             <a-input
               v-decorator="['ip6cidr']"
               :placeholder="apiParams.ip6cidr.description"/>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.ip6gateway') }}
-              <a-tooltip :title="apiParams.ip6gateway.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
             <a-input
               v-decorator="['ip6gateway']"
               :placeholder="apiParams.ip6gateway.description"/>
@@ -132,12 +107,7 @@
           <a-row :gutter="12">
             <a-col :md="12" :lg="12">
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.startipv6') }}
-                  <a-tooltip :title="apiParams.startipv6.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
                 <a-input
                   v-decorator="['startipv6', {
                     rules: [
@@ -153,12 +123,7 @@
             </a-col>
             <a-col :md="12" :lg="12">
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.endipv6') }}
-                  <a-tooltip :title="apiParams.endipv6.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
                 <a-input
                   v-decorator="['endipv6', {
                     rules: [
@@ -182,6 +147,7 @@
             <a-button
               :loading="loading"
               type="primary"
+              ref="submit"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
             </a-button>
@@ -194,9 +160,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVlanIpRange',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -214,11 +184,7 @@ export default {
   },
   created () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createVlanIpRange || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createVlanIpRange')
     this.fetchData()
   },
   methods: {
@@ -257,7 +223,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
 
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -322,14 +289,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

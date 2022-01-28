@@ -21,7 +21,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 public abstract class BaseListDomainResourcesCmd extends BaseListCmd implements IBaseListDomainResourcesCmd {
 
     @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "If set to false, "
-        + "list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
+        + "list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false. Resources dedicated to a project are listed only if using the projectid parameter.")
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,

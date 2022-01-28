@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.capacity;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -95,8 +97,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
         Configurable {
@@ -926,8 +926,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       State oldState = transition.getCurrentState();
       State newState = transition.getToState();
       Event event = transition.getEvent();
-      s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
-              " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
+      Host lastHost = _hostDao.findById(vm.getLastHostId());
+      Host oldHost = _hostDao.findById(oldHostId);
+      Host newHost = _hostDao.findById(vm.getHostId());
+      s_logger.debug(String.format("%s state transited from [%s] to [%s] with event [%s]. VM's original host: %s, new host: %s, host before state transition: %s", vm, oldState,
+                newState, event, lastHost, newHost, oldHost));
 
       if (oldState == State.Starting) {
         if (newState != State.Running) {
@@ -1229,13 +1232,17 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public boolean checkIfHostReachMaxGuestLimit(Host host) {
-        Long vmCount = _vmDao.countActiveByHostId(host.getId());
         HypervisorType hypervisorType = host.getHypervisorType();
+        if (hypervisorType.equals(HypervisorType.KVM)) {
+            s_logger.debug(String.format("Host {id: %s, name: %s, uuid: %s} is %s hypervisor type, no max guest limit check needed", host.getId(), host.getName(), host.getUuid(), hypervisorType));
+            return false;
+        }
+        Long vmCount = _vmDao.countActiveByHostId(host.getId());
         String hypervisorVersion = host.getHypervisorVersion();
         Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
-        if (vmCount.longValue() >= maxGuestLimit.longValue()) {
-            s_logger.info("Host name: " + host.getName() + ", hostId: " + host.getId() + " already reached max Running VMs(count includes system VMs), limit: " +
-                maxGuestLimit + ", Running VM count: " + vmCount.longValue());
+        if (vmCount >= maxGuestLimit) {
+            s_logger.info(String.format("Host {id: %s, name: %s, uuid: %s} already reached max Running VMs(count includes system VMs), limit: %d, running VM count: %s",
+                    host.getId(), host.getName(), host.getUuid(), maxGuestLimit, vmCount));
             return true;
         }
         return false;
@@ -1249,6 +1256,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
-            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion};
+            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold};
     }
 }

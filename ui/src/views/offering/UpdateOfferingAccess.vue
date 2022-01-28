@@ -16,14 +16,14 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
 
-        <a-form-item :label="$t('label.ispublic')" v-show="this.isAdmin()">
+        <a-form-item :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
         </a-form-item>
 
@@ -43,12 +43,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="this.apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-              {{ opt.path || opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -73,19 +77,23 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="this.apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
 
       </a-form>
@@ -95,6 +103,8 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'UpdateOfferingAccess',
@@ -103,6 +113,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -157,7 +170,7 @@ export default {
       this.fetchZoneData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     fetchOfferingData () {
       this.loading = true
@@ -177,6 +190,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -190,6 +204,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
@@ -214,7 +229,7 @@ export default {
           }
         }
       } else {
-        if (this.isAdmin()) {
+        if (isAdmin()) {
           this.offeringIsPublic = true
         }
       }
@@ -244,10 +259,12 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
+        this.loading = true
 
         const params = {}
         params.id = this.resource.id
@@ -305,14 +322,6 @@ export default {
 
     @media (min-width: 600px) {
       width: 25vw;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

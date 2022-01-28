@@ -54,6 +54,10 @@ public class VmWorkStart extends VmWork {
         super(userId, accountId, vmId, handlerName);
     }
 
+    public VmWorkStart(VmWork vmWork){
+        super(vmWork);
+    }
+
     public DeploymentPlan getPlan() {
 
         if (podId != null || clusterId != null || hostId != null || poolId != null || physicalNetworkId != null || avoids !=null) {

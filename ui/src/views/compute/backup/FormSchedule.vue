@@ -21,7 +21,7 @@
       <label>
         {{ $t('label.header.backup.schedule') }}
       </label>
-      <div class="form">
+      <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
           :form="form"
           layout="vertical"
@@ -85,6 +85,11 @@
             <a-col :md="24" :lg="12" v-if="intervalType==='weekly'">
               <a-form-item :label="$t('label.day.of.week')">
                 <a-select
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   v-decorator="['day-of-week', {
                     rules: [{
                       required: true,
@@ -100,6 +105,11 @@
             <a-col :md="24" :lg="12" v-if="intervalType==='monthly'">
               <a-form-item :label="$t('label.day.of.month')">
                 <a-select
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   v-decorator="['day-of-month', {
                     rules: [{
                       required: true,
@@ -116,6 +126,10 @@
               <a-form-item :label="$t('label.timezone')">
                 <a-select
                   showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   v-decorator="['timezone', {
                     rules: [{
                       required: true,
@@ -138,6 +152,7 @@
             </a-button>
             <a-button
               :loading="actionLoading"
+              ref="submit"
               type="primary"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
@@ -244,7 +259,8 @@ export default {
       }
     },
     handleSubmit (e) {
-      this.form.validateFields((error, values) => {
+      if (this.actionLoading) return
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) {
           return
         }
@@ -315,14 +331,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  margin-top: 20px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

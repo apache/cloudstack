@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <a-icon type="loading" />
       {{ $t('message.upload.file.processing') }}
@@ -45,12 +45,7 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.volume.name') }]
@@ -59,12 +54,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zone') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             v-decorator="['zoneId', {
               initialValue: zoneSelected,
@@ -74,19 +64,23 @@
                   message: `${this.$t('message.error.select')}`
                 }
               ]
-            }]">
-            <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
-              {{ zone.name || zone.description }}
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
+              <span>
+                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ zone.name || zone.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.format') }}
-            <a-tooltip :title="apiParams.format.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           <a-select
             v-decorator="['format', {
               initialValue: formats[0],
@@ -96,19 +90,19 @@
                   message: `${this.$t('message.error.select')}`
                 }
               ]
-            }]">
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.volumechecksum') }}
-            <a-tooltip :title="apiParams.checksum.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-decorator="['checksum']"
             :placeholder="$t('label.volumechecksum.description')"
@@ -116,7 +110,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -126,9 +120,15 @@
 <script>
 import { api } from '@/api'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadLocalVolume',
+  components: {
+    ResourceIcon,
+    TooltipLabel
+  },
   data () {
     return {
       fileList: [],
@@ -142,18 +142,14 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.getUploadParamsForVolume || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('getUploadParamsForVolume')
   },
   created () {
     this.listZones()
   },
   methods: {
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
@@ -174,7 +170,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -189,6 +186,7 @@ export default {
           }
           params[key] = input
         }
+        this.loading = true
         api('getUploadParamsForVolume', params).then(json => {
           this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
           const { fileList } = this
@@ -203,7 +201,6 @@ export default {
           fileList.forEach(file => {
             formData.append('files[]', file)
           })
-          this.loading = true
           this.uploadPercentage = 0
           axios.post(this.uploadParams.postURL,
             formData,
@@ -249,14 +246,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

@@ -17,72 +17,90 @@
 
 <template>
   <div>
-    <a-card class="breadcrumb-card">
-      <a-row>
-        <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
-          <breadcrumb :resource="resource">
-            <span slot="end">
-              <a-button
-                :loading="loading"
-                style="margin-bottom: 5px"
-                shape="round"
-                size="small"
-                icon="reload"
-                @click="fetchData({ irefresh: true })">
-                {{ $t('label.refresh') }}
-              </a-button>
-              <a-switch
-                v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
-                style="margin-left: 8px"
-                :checked-children="$t('label.metrics')"
-                :un-checked-children="$t('label.metrics')"
-                :checked="$store.getters.metrics"
-                @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
-              <a-tooltip placement="right">
-                <template slot="title">
-                  {{ $t('label.filterby') }}
-                </template>
-                <a-select
-                  v-if="!dataView && filters && filters.length > 0"
-                  :placeholder="$t('label.filterby')"
-                  :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                    ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                    ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
-                  style="min-width: 100px; margin-left: 10px"
-                  @change="changeFilter">
-                  <a-icon slot="suffixIcon" type="filter" />
-                  <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
-                    {{ $t('label.all') }}
-                  </a-select-option>
-                  <a-select-option v-for="filter in filters" :key="filter">
-                    {{ $t('label.' + filter) }}
-                  </a-select-option>
-                </a-select>
-              </a-tooltip>
-            </span>
-          </breadcrumb>
-        </a-col>
-        <a-col
-          :span="device === 'mobile' ? 24 : 12"
-          :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
-          <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
-          <action-button
-            v-else
-            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
-            :loading="loading"
-            :actions="actions"
-            :selectedRowKeys="selectedRowKeys"
-            :dataView="dataView"
-            :resource="resource"
-            @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
-          <search-view
-            v-if="!dataView"
-            :searchFilters="searchFilters"
-            :searchParams="searchParams"
-            :apiName="apiName"/>
-        </a-col>
-      </a-row>
-    </a-card>
+    <a-affix :offsetTop="78">
+      <a-card class="breadcrumb-card" style="z-index: 10">
+        <a-row>
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+            <breadcrumb :resource="resource">
+              <span slot="end">
+                <a-button
+                  :loading="loading"
+                  style="margin-bottom: 5px"
+                  shape="round"
+                  size="small"
+                  icon="reload"
+                  @click="fetchData({ irefresh: true })">
+                  {{ $t('label.refresh') }}
+                </a-button>
+                <a-switch
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.metrics')"
+                  :un-checked-children="$t('label.metrics')"
+                  :checked="$store.getters.metrics"
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-switch
+                  v-if="!projectView && hasProjectId"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
+                  :checked="$store.getters.listAllProjects"
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
+                <a-tooltip placement="right">
+                  <template slot="title">
+                    {{ $t('label.filterby') }}
+                  </template>
+                  <a-select
+                    v-if="!dataView && filters && filters.length > 0"
+                    :placeholder="$t('label.filterby')"
+                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                    style="min-width: 100px; margin-left: 10px"
+                    @change="changeFilter"
+                    showSearch
+                    optionFilterProp="children"
+                    :filterOption="(input, option) => {
+                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
+                    <a-icon slot="suffixIcon" type="filter" />
+                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                      {{ $t('label.all') }}
+                    </a-select-option>
+                    <a-select-option v-for="filter in filters" :key="filter">
+                      {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
+                      <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
+                    </a-select-option>
+                  </a-select>
+                </a-tooltip>
+              </span>
+            </breadcrumb>
+          </a-col>
+          <a-col
+            :span="device === 'mobile' ? 24 : 12"
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
+            <action-button
+              v-else
+              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
+              :loading="loading"
+              :actions="actions"
+              :selectedRowKeys="selectedRowKeys"
+              :selectedItems="selectedItems"
+              :dataView="dataView"
+              :resource="resource"
+              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
+            <search-view
+              v-if="!dataView"
+              :searchFilters="searchFilters"
+              :searchParams="searchParams"
+              :apiName="apiName"
+              @search="onSearch"
+              @change-filter="changeFilter"/>
+          </a-col>
+        </a-row>
+      </a-card>
+    </a-affix>
 
     <div v-show="showAction">
       <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
@@ -124,12 +142,14 @@
         :visible="showAction"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
+        :footer="null"
         style="top: 20px;"
-        @ok="handleSubmit"
-        @cancel="closeAction"
+        :width="modalWidth"
+        :ok-button-props="getOkProps()"
+        :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
+        @cancel="closeAction"
+        v-ctrl-enter="handleSubmit"
         centered
       >
         <span slot="title">
@@ -144,9 +164,37 @@
         </span>
         <a-spin :spinning="actionLoading">
           <span v-if="currentAction.message">
-            <a-alert type="warning">
-              <span slot="message" v-html="$t(currentAction.message)" />
-            </a-alert>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-alert
+                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                type="error">
+                <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+                <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+              <a-alert v-else type="warning">
+                <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-else>
+              <a-alert type="warning">
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-divider />
+              <a-table
+                v-if="selectedRowKeys.length > 0"
+                size="middle"
+                :columns="chosenColumns"
+                :dataSource="selectedItems"
+                :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+                :pagination="true"
+                style="overflow-y: auto"
+              >
+              </a-table>
+            </div>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
@@ -159,12 +207,7 @@
               :v-bind="field.name"
               v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
-              <span slot="label">
-                {{ $t('label.' + field.name) }}
-                <a-tooltip :title="field.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
               <span v-if="field.type==='boolean'">
                 <a-switch
@@ -184,6 +227,11 @@
                   }]"
                   :placeholder="field.description"
                   :autoFocus="fieldIndex === firstIndex"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
@@ -224,13 +272,51 @@
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :autoFocus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
-                  <a-select-option v-for="opt in field.opts" :key="opt.id">
-                    {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
+                    <div>
+                      <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <os-logo v-else :osId="opt.ostypeid" :osName="opt.ostypename" size="lg" style="margin-left: -1px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="global" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('project'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="project" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('network'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                      </span>
+                      {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
+                    </div>
                   </a-select-option>
                 </a-select>
               </span>
@@ -243,6 +329,11 @@
                   }]"
                   :placeholder="field.description"
                   :autoFocus="fieldIndex === firstIndex"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -296,12 +387,18 @@
                   :placeholder="field.description" />
               </span>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
+        <br />
       </a-modal>
     </div>
 
-    <div v-if="dataView">
+    <div v-if="dataView" style="margin-top: -10px">
       <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
       <resource-view
         v-else
@@ -317,15 +414,17 @@
         :actions="actions"
         ref="listview"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData" />
+        @refresh="this.fetchData"
+        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
+        style="margin-top: 10px"
         size="small"
         :current="page"
         :pageSize="pageSize"
         :total="itemCount"
         :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="device === 'desktop' ? ['20', '50', '100', '200'] : ['10', '20', '50', '100', '200']"
+        :pageSizeOptions="pageSizeOptions"
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger
@@ -335,6 +434,12 @@
         </template>
       </a-pagination>
     </div>
+    <bulk-action-progress
+      :showGroupActionModal="showGroupActionModal"
+      :selectedItems="selectedItems"
+      :selectedColumns="selectedColumns"
+      :message="modalInfo"
+      @handle-cancel="handleCancel" />
   </div>
 </template>
 
@@ -352,6 +457,10 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import BulkActionProgress from '@/components/view/BulkActionProgress'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Resource',
@@ -362,7 +471,11 @@ export default {
     ListView,
     Status,
     ActionButton,
-    SearchView
+    SearchView,
+    BulkActionProgress,
+    TooltipLabel,
+    OsLogo,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -374,8 +487,7 @@ export default {
       parentSearch: this.onSearch,
       parentChangeFilter: this.changeFilter,
       parentChangeResource: this.changeResource,
-      parentPollActionCompletion: this.pollActionCompletion,
-      parentEditTariffAction: () => {}
+      parentPollActionCompletion: this.pollActionCompletion
     }
   },
   data () {
@@ -384,16 +496,22 @@ export default {
       loading: false,
       actionLoading: false,
       columns: [],
+      selectedColumns: [],
+      chosenColumns: [],
+      showGroupActionModal: false,
+      selectedItems: [],
       items: [],
+      modalInfo: {},
       itemCount: 0,
       page: 1,
-      pageSize: 10,
+      pageSize: this.$store.getters.defaultListViewPageSize,
       resource: {},
       selectedRowKeys: [],
       currentAction: {},
       showAction: false,
       dataView: false,
       projectView: false,
+      hasProjectId: false,
       selectedFilter: '',
       filters: [],
       searchFilters: [],
@@ -401,15 +519,32 @@ export default {
       actions: [],
       formModel: {},
       confirmDirty: false,
-      firstIndex: 0
+      firstIndex: 0,
+      modalWidth: '30vw',
+      promises: []
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
+  beforeDestroy () {
+    eventBus.$off('vm-refresh-data')
+    eventBus.$off('async-job-complete')
+    eventBus.$off('exec-action')
+  },
+  mounted () {
+    eventBus.$on('exec-action', (action, isGroupAction) => {
+      this.execAction(action, isGroupAction)
+    })
+  },
   created () {
     eventBus.$on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        this.fetchData()
+      }
+    })
+    eventBus.$on('refresh-icon', () => {
+      if (this.$showIcon()) {
         this.fetchData()
       }
     })
@@ -419,20 +554,62 @@ export default {
           return
         }
       }
+
+      if ((this.$route.path.includes('/publicip/') && ['firewall', 'portforwarding', 'loadbalancing'].includes(this.$route.query.tab)) ||
+        (this.$route.path.includes('/guestnetwork/') && (this.$route.query.tab === 'egress.rules' || this.$route.query.tab === 'public.ip.addresses'))) {
+        return
+      }
+
+      if (this.$route.path.includes('/template/') || this.$route.path.includes('/iso/')) {
+        return
+      }
       this.fetchData()
     })
-    eventBus.$on('exec-action', (action, isGroupAction) => {
-      this.execAction(action, isGroupAction)
+    eventBus.$on('update-bulk-job-status', (items, action) => {
+      for (const item of items) {
+        this.$store.getters.headerNotices.map(function (j) {
+          if (j.jobid === item.jobid) {
+            j.bulkAction = action
+          }
+        })
+      }
     })
 
-    if (this.device === 'desktop') {
-      this.pageSize = 20
-    }
+    eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
+      if (selectedItems.length === 0) {
+        return
+      }
+      var tempResource = []
+      if (selectedItems && resource) {
+        if (resource.includes(',')) {
+          resource = resource.split(',')
+          tempResource = resource
+        } else {
+          tempResource.push(resource)
+        }
+        for (var r = 0; r < tempResource.length; r++) {
+          var objIndex = 0
+          if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
+            objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else {
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+          }
+          if (state && objIndex !== -1) {
+            selectedItems[objIndex].status = state
+          }
+          if (jobid && objIndex !== -1) {
+            selectedItems[objIndex].jobid = jobid
+          }
+        }
+      }
+    })
+
     this.currentPath = this.$route.fullPath
     this.fetchData()
     if ('projectid' in this.$route.query) {
       this.switchProject(this.$route.query.projectid)
     }
+    this.setModalWidthByScreen()
   },
   beforeRouteUpdate (to, from, next) {
     this.currentPath = this.$route.fullPath
@@ -450,7 +627,6 @@ export default {
           this.pageSize = Number(to.query.pagesize)
         } else {
           this.page = 1
-          this.pageSize = (this.device === 'desktop' ? 20 : 10)
         }
         this.itemCount = 0
         this.fetchData()
@@ -466,9 +642,46 @@ export default {
     },
     '$store.getters.metrics' (oldVal, newVal) {
       this.fetchData()
+    },
+    '$store.getters.listAllProjects' (oldVal, newVal) {
+      this.fetchData()
+    }
+  },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
+    },
+    pageSizeOptions () {
+      var sizes = [20, 50, 100, 200, this.$store.getters.defaultListViewPageSize]
+      if (this.device !== 'desktop') {
+        sizes.unshift(10)
+      }
+      return [...new Set(sizes)].sort(function (a, b) {
+        return a - b
+      }).map(String)
     }
   },
   methods: {
+    getStyle () {
+      if (['snapshot', 'vmsnapshot', 'publicip'].includes(this.$route.name)) {
+        return 'table-cell'
+      }
+      return 'inline-flex'
+    },
+    getOkProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'default' } }
+      } else {
+        return { props: { type: 'primary' } }
+      }
+    },
+    getCancelProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'primary' } }
+      } else {
+        return { props: { type: 'default' } }
+      }
+    },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
         return
@@ -503,7 +716,12 @@ export default {
 
       params.listall = true
       if (this.$route.meta.params) {
-        Object.assign(params, this.$route.meta.params)
+        const metaParams = this.$route.meta.params
+        if (typeof metaParams === 'function') {
+          Object.assign(params, metaParams())
+        } else {
+          Object.assign(params, metaParams)
+        }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'templatefilter' in params && this.routeName === 'template') {
@@ -533,6 +751,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -553,7 +772,7 @@ export default {
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
-            this.columnKeys = columns()
+            this.columnKeys = columns(this.$store.getters)
           } else {
             this.columnKeys = columns
           }
@@ -603,6 +822,12 @@ export default {
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
       }
+      this.chosenColumns = this.columns.filter(column => {
+        return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
+          this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
+          this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
+          this.$t('label.created'), this.$t('label.order')].includes(column.title)
+      })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
@@ -611,18 +836,23 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
-        if (this.$route.path.startsWith('/ssh/')) {
-          params.name = this.$route.params.id
-        } else if (this.$route.path.startsWith('/vmsnapshot/')) {
+        if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
         }
       }
 
+      if (this.$store.getters.listAllProjects && !this.projectView) {
+        params.projectid = '-1'
+      }
+
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
+
+      if (this.$showIcon()) {
+        params.showIcon = true
+      }
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -658,6 +888,18 @@ export default {
           })
         }
 
+        if (this.apiName === 'listAnnotations') {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -666,9 +908,7 @@ export default {
               this.items[idx][key] = func(this.items[idx])
             }
           }
-          if (this.$route.path.startsWith('/ssh')) {
-            this.items[idx].id = this.items[idx].name
-          } else if (this.$route.path.startsWith('/ldapsetting')) {
+          if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
         }
@@ -710,6 +950,7 @@ export default {
         }
       }).finally(f => {
         this.loading = false
+        this.searchParams = params
       })
     },
     closeAction () {
@@ -719,13 +960,39 @@ export default {
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
+      if (selection?.length > 0) {
+        this.modalWidth = '50vw'
+        this.selectedItems = (this.items.filter(function (item) {
+          return selection.indexOf(item.id) !== -1
+        }))
+      } else {
+        this.modalWidth = '30vw'
+      }
+
+      this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
       const self = this
       this.form = this.$form.createForm(this)
       this.formModel = {}
       if (action.component && action.api && !action.popup) {
-        this.$router.push({ name: action.api })
+        const query = {}
+        if (this.$route.path.startsWith('/vm')) {
+          switch (true) {
+            case ('templateid' in this.$route.query):
+              query.templateid = this.$route.query.templateid
+              break
+            case ('isoid' in this.$route.query):
+              query.isoid = this.$route.query.isoid
+              break
+            case ('networkid' in this.$route.query):
+              query.networkid = this.$route.query.networkid
+              break
+            default:
+              break
+          }
+        }
+        this.$router.push({ name: action.api, query })
         return
       }
       this.currentAction = action
@@ -774,7 +1041,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -804,6 +1071,10 @@ export default {
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
       const possibleName = 'list' + extractedParamName + 's'
+      var showIcon = false
+      if (this.$showIcon(extractedParamName)) {
+        showIcon = true
+      }
       var possibleApi
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].api) {
         possibleApi = this.currentAction.mapping[param.name].api
@@ -834,6 +1105,16 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+      } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
+        if (this.resource.type) {
+          params.guestiptype = this.resource.type
+        }
+        if (!this.resource.vpcid) {
+          params.forvpc = false
+        }
+      }
+      if (showIcon) {
+        params.showicon = true
       }
       api(possibleApi, params).then(json => {
         param.loading = false
@@ -860,34 +1141,50 @@ export default {
       }).catch(function (error) {
         console.log(error)
         param.loading = false
-      }).then(function () {
       })
     },
-    pollActionCompletion (jobId, action, resourceName, showLoading = true) {
-      this.$pollJob({
-        jobId,
-        name: resourceName,
-        successMethod: result => {
-          this.fetchData()
-          if (action.response) {
-            const description = action.response(result.jobresult)
-            if (description) {
-              this.$notification.info({
-                message: this.$t(action.label),
-                description: (<span domPropsInnerHTML={description}></span>),
-                duration: 0
-              })
+    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
+      if (this.shouldNavigateBack(action)) {
+        action.isFetchData = false
+      }
+      return new Promise((resolve) => {
+        this.$pollJob({
+          jobId,
+          title: this.$t(action.label),
+          description: resourceName,
+          name: resourceName,
+          successMethod: result => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
             }
-          }
-          if ('successMethod' in action) {
-            action.successMethod(this, result)
-          }
-        },
-        errorMethod: () => this.fetchData(),
-        loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
-        showLoading: showLoading,
-        catchMessage: this.$t('error.fetching.async.job.result'),
-        action
+            if (action.response) {
+              const description = action.response(result.jobresult)
+              if (description) {
+                this.$notification.info({
+                  message: this.$t(action.label),
+                  description: (<span domPropsInnerHTML={description}></span>),
+                  duration: 0
+                })
+              }
+            }
+            if ('successMethod' in action) {
+              action.successMethod(this, result)
+            }
+            resolve(true)
+          },
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
+            }
+            resolve(true)
+          },
+          loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
+          showLoading: showLoading,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          action,
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal,
+          resourceId: resource
+        })
       })
     },
     fillEditFormFieldValues () {
@@ -907,31 +1204,57 @@ export default {
         }
       })
     },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.message = {}
+    },
     handleSubmit (e) {
+      if (this.actionLoading) return
+      this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
-        this.form.validateFields((err, values) => {
+        if (this.selectedRowKeys.length > 0) {
+          this.selectedColumns = this.chosenColumns
+          this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+          this.selectedColumns.splice(0, 0, {
+            dataIndex: 'status',
+            title: this.$t('label.operation.status'),
+            scopedSlots: { customRender: 'status' },
+            filters: [
+              { text: 'In Progress', value: 'InProgress' },
+              { text: 'Success', value: 'success' },
+              { text: 'Failed', value: 'failed' }
+            ]
+          })
+          this.showGroupActionModal = true
+          this.modalInfo.title = this.currentAction.label
+          this.modalInfo.docHelp = this.currentAction.docHelp
+        }
+        this.form.validateFieldsAndScroll((err, values) => {
           if (!err) {
             this.actionLoading = true
             const itemsNameMap = {}
             this.items.map(x => {
               itemsNameMap[x.id] = x.name || x.displaytext || x.id
             })
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
             for (const params of paramsList) {
-              var resourceName = itemsNameMap[params.id]
+              var resourceName = itemsNameMap[params.id || params.vmsnapshotid || params.username || params.name]
               // Using a method for this since it's an async call and don't want wrong prarms to be passed
-              this.callGroupApi(params, resourceName)
+              this.promises.push(this.callGroupApi(params, resourceName))
             }
             this.$message.info({
               content: this.$t(this.currentAction.label),
               key: this.currentAction.label,
               duration: 3
             })
-            setTimeout(() => {
+            Promise.all(this.promises).finally(() => {
               this.actionLoading = false
-              this.closeAction()
               this.fetchData()
-            }, 500)
+            })
           }
         })
       } else {
@@ -939,49 +1262,72 @@ export default {
       }
     },
     callGroupApi (params, resourceName) {
-      const action = this.currentAction
-      api(action.api, params).then(json => {
-        this.handleResponse(json, resourceName, action, false)
-      }).catch(error => {
-        if ([401].includes(error.response.status)) {
-          return
-        }
-        this.$notifyError(error)
+      return new Promise((resolve, reject) => {
+        const action = this.currentAction
+        api(action.api, params).then(json => {
+          resolve(this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false))
+          this.closeAction()
+        }).catch(error => {
+          if ([401].includes(error.response.status)) {
+            return
+          }
+          if (this.selectedItems.length !== 0) {
+            this.$notifyError(error)
+            eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+          }
+        })
       })
     },
-    handleResponse (response, resourceName, action, showLoading = true) {
-      for (const obj in response) {
-        if (obj.includes('response')) {
-          if (response[obj].jobid) {
-            const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress' })
-            this.pollActionCompletion(jobid, action, resourceName, showLoading)
-            return true
-          } else {
-            var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-              (resourceName ? ' - ' + resourceName : '')
-            var duration = 2
-            if (action.additionalMessage) {
-              message = message + ' - ' + this.$t(action.successMessage)
-              duration = 5
+    getDataIdentifier (params) {
+      var dataIdentifier = ''
+      dataIdentifier = params.id || params.username || params.name || params.vmsnapshotid || params.ids
+      return dataIdentifier
+    },
+    handleResponse (response, resourceName, resource, action, showLoading = true) {
+      return new Promise(resolve => {
+        let jobId = null
+        for (const obj in response) {
+          if (obj.includes('response')) {
+            if (response[obj].jobid) {
+              jobId = response[obj].jobid
+            } else {
+              if (this.selectedItems.length > 0) {
+                eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+                if (resource) {
+                  this.selectedItems.filter(item => item === resource)
+                }
+              }
+              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
+                (resourceName ? ' - ' + resourceName : '')
+              var duration = 2
+              if (action.additionalMessage) {
+                message = message + ' - ' + this.$t(action.successMessage)
+                duration = 5
+              }
+              if (this.selectedItems.length === 0) {
+                this.$message.success({
+                  content: message,
+                  key: action.label + resourceName,
+                  duration: duration
+                })
+              }
+              break
             }
-            this.$message.success({
-              content: message,
-              key: action.label + resourceName,
-              duration: duration
-            })
           }
-          break
         }
-      }
-      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-        this.$store.dispatch('UpdateConfiguration')
-      }
-      return false
+        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+          this.$store.dispatch('UpdateConfiguration')
+        }
+        if (jobId) {
+          eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
+        }
+        resolve(false)
+      })
     },
     execSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -996,15 +1342,15 @@ export default {
             if (param.name !== key) {
               continue
             }
-            if (!input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
+            if (input === undefined || input === null ||
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (!input && input !== 0 && !['tags'].includes(key)) {
-              continue
+            if (input === '' && !['tags', 'hosttags', 'storagetags'].includes(key)) {
+              break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
@@ -1052,14 +1398,22 @@ export default {
           args = [action.api, params]
         }
         api(...args).then(json => {
-          hasJobId = this.handleResponse(json, resourceName, action)
-          if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
-            this.$router.go(-1)
-          } else {
-            if (!hasJobId) {
-              this.fetchData()
-            }
+          var response = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
+          if (!response) {
+            this.fetchData()
+            this.closeAction()
+            return
           }
+          response.then(jobId => {
+            hasJobId = jobId
+            if (this.shouldNavigateBack(action)) {
+              this.$router.go(-1)
+            } else {
+              if (!hasJobId) {
+                this.fetchData()
+              }
+            }
+          })
           this.closeAction()
         }).catch(error => {
           if ([401].includes(error.response.status)) {
@@ -1067,11 +1421,15 @@ export default {
           }
 
           console.log(error)
+          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false
         })
       })
+    },
+    shouldNavigateBack (action) {
+      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
@@ -1080,6 +1438,7 @@ export default {
       delete query.account
       delete query.domainid
       delete query.state
+      delete query.annotationfilter
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1097,6 +1456,8 @@ export default {
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
         }
+      } else if (this.$route.name === 'comment') {
+        query.annotationfilter = filter
       }
       query.filter = filter
       query.page = 1
@@ -1134,8 +1495,8 @@ export default {
           Object.assign(query, opts)
         }
       }
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = String(this.pageSize)
       if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
         this.fetchData(query)
         return
@@ -1199,7 +1560,7 @@ export default {
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
           callback()
         } else if (value && this.confirmDirty) {
-          form.validateFields(['confirmpassword'], { force: true })
+          form.validateFieldsAndScroll(['confirmpassword'], { force: true })
           callback()
         } else {
           callback()
@@ -1207,13 +1568,18 @@ export default {
       } else {
         callback()
       }
+    },
+    setModalWidthByScreen () {
+      const screenWidth = window.innerWidth
+      if (screenWidth <= 768) {
+        this.modalWidth = '450px'
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-
 .breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
@@ -1222,7 +1588,6 @@ export default {
 }
 
 .row-element {
-  margin-top: 10px;
   margin-bottom: 10px;
 }
 

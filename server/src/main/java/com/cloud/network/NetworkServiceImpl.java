@@ -38,7 +38,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.Network.PVlanType;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -62,6 +61,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -92,11 +92,14 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.Network.PVlanType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -167,7 +170,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -187,6 +189,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -195,14 +198,14 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -327,6 +330,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     AccountService _accountService;
     @Inject
     NetworkAccountDao _networkAccountDao;
+    @Inject
+    VirtualMachineManager vmManager;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -726,10 +731,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip6addr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type
         if (network.getGuestType() == Network.GuestType.Isolated) {
-            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && isBlank(ipv6Address))) {
+            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && StringUtils.isBlank(ipv6Address))) {
                 ipaddr = _ipAddrMgr.allocateGuestIP(network, ipv4Address);
             }
-            if (isNotBlank(ipv6Address)) {
+            if (StringUtils.isNotBlank(ipv6Address)) {
                 ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
             }
         } else if (network.getGuestType() == Network.GuestType.Shared) {
@@ -763,7 +768,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return null;
         }
 
-        if (isNotBlank(ipaddr) || isNotBlank(ip6addr)) {
+        if (!StringUtils.isAllBlank(ipaddr, ip6addr)) {
             // we got the ip addr so up the nics table and secodary ip
             final String ip4AddrFinal = ipaddr;
             final String ip6AddrFinal = ip6addr;
@@ -1031,14 +1036,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private void validateRouterIps(String routerIp, String routerIpv6, String startIp, String endIp, String gateway,
                                    String netmask, String startIpv6, String endIpv6, String ip6Cidr) {
-        if (isNotBlank(routerIp)) {
+        if (StringUtils.isNotBlank(routerIp)) {
             if (startIp != null && endIp == null) {
                 endIp = startIp;
             }
             if (!NetUtils.isValidIp4(routerIp)) {
                 throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
             }
-            if (isNotBlank(startIp) && isNotBlank(endIp)) {
+            if (StringUtils.isNoneBlank(startIp, endIp)) {
                 if (!NetUtils.isIpInRange(routerIp, startIp, endIp)) {
                     throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIp + " - " + endIp);
                 }
@@ -1049,14 +1054,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
         }
-        if (isNotBlank(routerIpv6)) {
+        if (StringUtils.isNotBlank(routerIpv6)) {
             if (startIpv6 != null && endIpv6 == null) {
                 endIpv6 = startIpv6;
             }
             if (!NetUtils.isValidIp6(routerIpv6)) {
                 throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
             }
-            if (isNotBlank(startIpv6) && isNotBlank(endIpv6)) {
+            if (StringUtils.isNoneBlank(startIpv6, endIpv6)) {
                 String ipv6Range = startIpv6 + "-" + endIpv6;
                 if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
                     throw new CloudRuntimeException("Router IPv6 address provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
@@ -1194,12 +1199,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
         }
 
-        if (ntwkOff.getGuestType() != GuestType.Shared && (isNotBlank(routerIp) || isNotBlank(routerIpv6))) {
+        if (ntwkOff.getGuestType() != GuestType.Shared && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
             throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)
-                && (isNotBlank(routerIp) || isNotBlank(routerIpv6))) {
+                && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
             throw new InvalidParameterValueException("Virtual Router is not a supported provider for the Shared network, hence router ip should not be provided");
         }
 
@@ -1244,11 +1249,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        boolean ipv4 = true, ipv6 = false;
-        if (startIP != null) {
+        boolean ipv4 = false, ipv6 = false;
+        if (org.apache.commons.lang3.StringUtils.isNoneBlank(gateway, netmask)) {
             ipv4 = true;
         }
-        if (isNotBlank(ip6Cidr) && isNotBlank(ip6Gateway)) {
+        if (StringUtils.isNoneBlank(ip6Cidr, ip6Gateway)) {
             ipv6 = true;
         }
 
@@ -1289,14 +1294,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 } else if (!NetUtils.isValidIp4(endIP)) {
                     throw new InvalidParameterValueException("Invalid format for the endIp parameter");
                 }
-            }
-
-            if (startIP != null && endIP != null) {
                 if (!(gateway != null && netmask != null)) {
                     throw new InvalidParameterValueException("gateway and netmask should be defined when startIP/endIP are passed in");
                 }
             }
-
             if (gateway != null && netmask != null) {
                 if (NetUtils.isNetworkorBroadcastIP(gateway, netmask)) {
                     if (s_logger.isDebugEnabled()) {
@@ -1327,18 +1328,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
             }
 
-            if(isBlank(zone.getIp6Dns1()) && isBlank(zone.getIp6Dns2())) {
+            if(StringUtils.isAllBlank(zone.getIp6Dns1(), zone.getIp6Dns2())) {
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
+            }
+
+            if (!ipv4 && ntwkOff.getGuestType() == GuestType.Shared && _networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)) {
+                throw new InvalidParameterValueException("Currently IPv6-only Shared network with Virtual Router provider is not supported.");
             }
         }
 
         validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
 
-        if (isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
+        if (StringUtils.isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
         }
 
-        if (isNotBlank(isolatedPvlan) && ipv6) {
+        if (StringUtils.isNotBlank(isolatedPvlan) && ipv6) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with IPv4!");
         }
 
@@ -1346,7 +1351,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String secondaryVlanId = pvlanPair.first();
         PVlanType privateVlanType = pvlanPair.second();
 
-        if ((isNotBlank(secondaryVlanId) || privateVlanType != null) && isBlank(vlanId)) {
+        if ((StringUtils.isNotBlank(secondaryVlanId) || privateVlanType != null) && StringUtils.isBlank(vlanId)) {
             throw new InvalidParameterValueException("VLAN ID has to be set in order to configure a Private VLAN");
         }
 
@@ -1383,7 +1388,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Cannot support IPv6 on network offering with external devices!");
         }
 
-        if (isNotBlank(secondaryVlanId) && providersConfiguredForExternalNetworking(ntwkProviders)) {
+        if (StringUtils.isNotBlank(secondaryVlanId) && providersConfiguredForExternalNetworking(ntwkProviders)) {
             throw new InvalidParameterValueException("Cannot support private vlan on network offering with external devices!");
         }
 
@@ -1456,19 +1461,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String secondaryVlanId = pvlanId;
         PVlanType type = null;
 
-        if (isNotBlank(pvlanTypeStr)) {
+        if (StringUtils.isNotBlank(pvlanTypeStr)) {
             PVlanType providedType = PVlanType.fromValue(pvlanTypeStr);
             type = providedType;
-        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId)) {
+        } else if (StringUtils.isNoneBlank(vlanId, secondaryVlanId)) {
             // Preserve the existing functionality
             type = vlanId.equals(secondaryVlanId) ? PVlanType.Promiscuous : PVlanType.Isolated;
         }
 
-        if (isBlank(secondaryVlanId) && type == PVlanType.Promiscuous) {
+        if (StringUtils.isBlank(secondaryVlanId) && type == PVlanType.Promiscuous) {
             secondaryVlanId = vlanId;
         }
 
-        if (isNotBlank(secondaryVlanId)) {
+        if (StringUtils.isNotBlank(secondaryVlanId)) {
             try {
                 Integer.parseInt(secondaryVlanId);
             } catch (NumberFormatException e) {
@@ -1483,11 +1488,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      * Basic checks for setting up private VLANs, considering the VLAN ID, secondary VLAN ID and private VLAN type
      */
     protected void performBasicPrivateVlanChecks(String vlanId, String secondaryVlanId, PVlanType privateVlanType) {
-        if (isNotBlank(vlanId) && isBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous) {
+        if (StringUtils.isNotBlank(vlanId) && StringUtils.isBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous) {
             throw new InvalidParameterValueException("Private VLAN ID has not been set, therefore Promiscuous type is expected");
-        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && !vlanId.equalsIgnoreCase(secondaryVlanId) && privateVlanType == PVlanType.Promiscuous) {
+        } else if (StringUtils.isNoneBlank(vlanId, secondaryVlanId) && !vlanId.equalsIgnoreCase(secondaryVlanId) && privateVlanType == PVlanType.Promiscuous) {
             throw new InvalidParameterValueException("Private VLAN type is set to Promiscuous, but VLAN ID and Secondary VLAN ID differ");
-        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous && vlanId.equalsIgnoreCase(secondaryVlanId)) {
+        } else if (StringUtils.isNoneBlank(vlanId, secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous && vlanId.equalsIgnoreCase(secondaryVlanId)) {
             throw new InvalidParameterValueException("Private VLAN type is set to " + privateVlanType + ", but VLAN ID and Secondary VLAN ID are equal");
         }
     }
@@ -1609,8 +1614,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkOfferingId = cmd.getNetworkOfferingId();
 
         // 1) default is system to false if not specified
-        // 2) reset parameter to false if it's specified by the regular user
-        if ((isSystem == null || _accountMgr.isNormalUser(caller.getId())) && id == null) {
+        // 2) reset parameter to false if it's specified by a non-ROOT user
+        if (isSystem == null || !_accountMgr.isRootAdmin(caller.getId())) {
             isSystem = false;
         }
 
@@ -1795,7 +1800,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         //Now apply pagination
-        List<? extends Network> wPagination = StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<? extends Network> wPagination = com.cloud.utils.StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
         if (wPagination != null) {
             Pair<List<? extends Network>, Integer> listWPagination = new Pair<List<? extends Network>, Integer>(wPagination, networksToReturn.size());
             return listWPagination;
@@ -2142,6 +2147,38 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private boolean checkForNonStoppedVmInNetwork(long networkId) {
         List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(networkId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
         return vms.isEmpty();
+    }
+
+    private void replugNicsForUpdatedNetwork(NetworkVO network) throws ResourceUnavailableException, InsufficientCapacityException {
+        List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+        Network updatedNetwork = getNetwork(network.getId());
+        for (NicVO nic : nics) {
+            long vmId = nic.getInstanceId();
+            VMInstanceVO vm = _vmDao.findById(vmId);
+            if (vm == null) {
+                s_logger.error(String.format("Cannot replug NIC: %s as VM for it is not found with ID: %d", nic, vmId));
+                continue;
+            }
+            if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not on VMware", nic, vm));
+                continue;
+            }
+            if (!VirtualMachine.Type.User.equals(vm.getType())) {
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not a user VM", nic, vm));
+                continue;
+            }
+            if (!VirtualMachine.State.Running.equals(vm.getState())) {
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not in running state", nic, vm));
+                continue;
+            }
+            Host host = _hostDao.findById(vm.getHostId());
+            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(),
+                    _networkModel.getNetworkRate(network.getId(), vm.getId()),
+                    _networkModel.isSecurityGroupSupportedInNetwork(updatedNetwork),
+                    _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+            vmManager.replugNic(updatedNetwork, vmManager.toNicTO(nicProfile, vm.getHypervisorType()), vmManager.toVmTO(vmProfile), host);
+        }
     }
 
     @Override
@@ -2545,6 +2582,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     throw e;
                                 }
                             }
+                            if (networkOfferingChanged) {
+                                replugNicsForUpdatedNetwork(network);
+                            }
                         }
 
                         // 4) if network has been upgraded from a non persistent ntwk offering to a persistent ntwk offering,
@@ -2814,7 +2854,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (Network tier : migratedTiers) {
             String tierNetworkOfferingUuid = networkToOffering.get(tier.getUuid());
 
-            if (!isNotBlank(tierNetworkOfferingUuid)) {
+            if (StringUtils.isBlank(tierNetworkOfferingUuid)) {
                 throwInvalidIdException("Failed to resume migrating VPC as the specified tierNetworkOfferings is not complete", String.valueOf(tier.getUuid()), "networkUuid");
             }
 
@@ -2969,7 +3009,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 return false;
             }
 
-            if (!StringUtils.areTagsEqual(oldNetworkOffering.getTags(), newNetworkOffering.getTags())) {
+            if (!com.cloud.utils.StringUtils.areTagsEqual(oldNetworkOffering.getTags(), newNetworkOffering.getTags())) {
                 s_logger.debug("Network offerings " + newNetworkOffering.getUuid() + " and " + oldNetworkOffering.getUuid() + " have different tags, can't upgrade");
                 return false;
             }

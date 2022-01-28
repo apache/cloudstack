@@ -39,7 +39,7 @@ export default {
     },
     {
       name: 'limits',
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     },
     {
@@ -116,7 +116,10 @@ export default {
           !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1) &&
           (record.state === 'disabled' || record.state === 'locked')
       },
-      params: { lock: 'false' }
+      params: { lock: 'false' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'disableAccount',
@@ -134,7 +137,10 @@ export default {
         lock: {
           value: (record) => { return false }
         }
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x, lock: false } }) }
     },
     {
       api: 'disableAccount',
@@ -152,7 +158,10 @@ export default {
         lock: {
           value: (record) => { return true }
         }
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x, lock: true } }) }
     },
     {
       api: 'uploadSslCert',
@@ -180,7 +189,10 @@ export default {
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

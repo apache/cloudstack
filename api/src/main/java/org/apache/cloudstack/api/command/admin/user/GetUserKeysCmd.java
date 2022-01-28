@@ -44,7 +44,7 @@ public class GetUserKeysCmd extends BaseCmd{
     @Parameter(name= ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "ID of the user whose keys are required")
     private Long id;
 
-    public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(GetUserKeysCmd.class.getName());
     public static final String APINAME = "getUserKeys";
 
     public Long getID(){

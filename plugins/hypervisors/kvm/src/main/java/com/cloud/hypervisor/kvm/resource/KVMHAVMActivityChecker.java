@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.storage.Storage.StoragePoolType;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
@@ -27,26 +28,40 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
     private static final Logger LOG = Logger.getLogger(KVMHAVMActivityChecker.class);
 
     final private NfsStoragePool nfsStoragePool;
+    final private RbdStoragePool rbdStoragePool;
     final private String hostIP;
     final private String volumeUuidList;
     final private String vmActivityCheckPath;
     final private Duration activityScriptTimeout = Duration.standardSeconds(3600L);
     final private long suspectTimeInSeconds;
+    final private StoragePoolType poolType;
 
-    public KVMHAVMActivityChecker(final NfsStoragePool pool, final String host, final String volumeUUIDListString, String vmActivityCheckPath, final long suspectTime) {
+    public KVMHAVMActivityChecker(final NfsStoragePool pool, final RbdStoragePool rbdpool, final String host, final String volumeUUIDListString, String vmActivityCheckPath, final long suspectTime, StoragePoolType poolType) {
         this.nfsStoragePool = pool;
+        this.rbdStoragePool = rbdpool;
         this.hostIP = host;
         this.volumeUuidList = volumeUUIDListString;
         this.vmActivityCheckPath = vmActivityCheckPath;
         this.suspectTimeInSeconds = suspectTime;
+        this.poolType = poolType;
     }
 
     @Override
     public Boolean checkingHeartBeat() {
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), LOG);
-        cmd.add("-i", nfsStoragePool._poolIp);
-        cmd.add("-p", nfsStoragePool._poolMountSourcePath);
-        cmd.add("-m", nfsStoragePool._mountDestPath);
+        String poolIp = "";
+        if (poolType == StoragePoolType.NetworkFilesystem) {
+            cmd.add("-i", nfsStoragePool._poolIp);
+            cmd.add("-p", nfsStoragePool._poolMountSourcePath);
+            cmd.add("-m", nfsStoragePool._mountDestPath);
+            poolIp = nfsStoragePool._poolIp;
+        } else if (poolType == StoragePoolType.RBD) {
+            cmd.add("-i", getRbdMonIpAddress(rbdStoragePool._poolSourceHost));
+            cmd.add("-p", rbdStoragePool._poolMountSourcePath);
+            cmd.add("-n", rbdStoragePool._poolAuthUserName);
+            cmd.add("-s", rbdStoragePool._poolAuthSecret);
+            poolIp = rbdStoragePool._poolIp;
+        }
         cmd.add("-h", hostIP);
         cmd.add("-u", volumeUuidList);
         cmd.add("-t", String.valueOf(String.valueOf(System.currentTimeMillis() / 1000)));
@@ -56,7 +71,7 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
         String result = cmd.execute(parser);
         String parsedLine = parser.getLine();
 
-        LOG.debug(String.format("Checking heart beat with KVMHAVMActivityChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine, nfsStoragePool._poolIp));
+        LOG.debug(String.format("Checking heart beat with KVMHAVMActivityChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine, poolIp));
 
         if (result == null && parsedLine.contains("DEAD")) {
             LOG.warn(String.format("Checking heart beat with KVMHAVMActivityChecker command [%s] returned [%s]. It is [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(), result, parsedLine, hostIP));

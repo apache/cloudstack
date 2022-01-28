@@ -29,6 +29,8 @@ public class UnmanagedInstanceTO {
 
     private String name;
 
+    private String internalCSName;
+
     private PowerState powerState;
 
     private Integer cpuCores;
@@ -53,6 +55,14 @@ public class UnmanagedInstanceTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getInternalCSName() {
+        return internalCSName;
+    }
+
+    public void setInternalCSName(String internalCSName) {
+        this.internalCSName = internalCSName;
     }
 
     public PowerState getPowerState() {

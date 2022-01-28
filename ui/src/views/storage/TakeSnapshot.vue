@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="take-snapshot">
+  <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
         <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
@@ -62,13 +62,17 @@
               @keyup.enter="handleInputConfirm"
               compact>
               <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" :placeholder="$t('label.key')" />
-              <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+              <a-input
+                class="tag-disabled-input"
+                style=" width: 30px; border-left: 0; pointer-events: none; text-align: center"
+                placeholder="="
+                disabled />
               <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
               <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
               <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
             </a-input-group>
           </div>
-          <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
+          <a-tag v-else @click="showInput" class="btn-add-tag" style="borderStyle: dashed;">
             <a-icon type="plus" /> {{ $t('label.new.tag') }}
           </a-tag>
         </div>
@@ -82,6 +86,7 @@
             v-if="handleShowButton()"
             :loading="actionLoading"
             type="primary"
+            ref="submit"
             @click="handleSubmit">
             {{ this.$t('label.ok') }}
           </a-button>
@@ -93,7 +98,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'TakeSnapshot',
@@ -124,11 +129,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createSnapshot || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createSnapshot')
   },
   mounted () {
     this.quiescevm = this.resource.quiescevm
@@ -137,7 +138,8 @@ export default {
   methods: {
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((error, values) => {
+      if (this.actionLoading) return
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) {
           return
         }
@@ -171,15 +173,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                const successDescription = result.jobresult.snapshot.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-              },
+              title,
+              description: values.name || this.resource.id,
+              successMethod: result => {},
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${description}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
@@ -263,15 +259,6 @@ export default {
 
 .tagsTitle {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

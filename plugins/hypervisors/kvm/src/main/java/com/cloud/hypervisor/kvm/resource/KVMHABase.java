@@ -17,6 +17,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
@@ -32,6 +34,7 @@ public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
+    protected static String s_heartBeatPathRbd;
     protected long _heartBeatUpdateTimeout = 60000;
     protected long _heartBeatUpdateFreq = 60000;
     protected long _heartBeatUpdateMaxTries = 5;
@@ -54,6 +57,28 @@ public class KVMHABase {
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
             _type = type;
+        }
+    }
+
+    public static class RbdStoragePool {
+        String _poolUUID;
+        String _poolIp;
+        String _poolMountSourcePath;
+        String _mountDestPath;
+        PoolType _type;
+        String _poolAuthUserName;
+        String _poolAuthSecret;
+        String _poolSourceHost;
+
+        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthUserName, String poolAuthSecret, String poolSourceHost) {
+            _poolUUID = poolUUID;
+            _poolIp = poolIp;
+            _poolMountSourcePath = poolSourcePath;
+            _mountDestPath = mountDestPath;
+            _type = type;
+            _poolAuthUserName = poolAuthUserName;
+            _poolAuthSecret = poolAuthSecret;
+            _poolSourceHost = poolSourceHost;
         }
     }
 
@@ -179,6 +204,26 @@ public class KVMHABase {
         }
 
         return result;
+    }
+
+    public static String getRbdMonIpAddress(String sourceHost) {
+        try {
+            String[] hostArr = sourceHost.split(",");
+            String sourceHostIP = "";
+            for (String host : hostArr) {
+                String ipRegex = "(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])";
+                if (host.matches(ipRegex)) {
+                    sourceHostIP += host + ",";
+                } else {
+                    InetAddress addr = InetAddress.getByName(host);
+                    sourceHostIP += addr.getHostAddress() + ",";
+                }
+            }
+            return sourceHostIP;
+        } catch (UnknownHostException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+            return null;
+        }
     }
 
     public Boolean checkingHeartBeat() {

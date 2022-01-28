@@ -38,7 +38,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "iso_id", nullable = true, length = 17)
     private Long isoId = null;
 
-    @Column(name = "user_data", updatable = true, nullable = true, length = 32768)
+    @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
@@ -47,6 +47,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     @Column(name = "update_parameters", updatable = true)
     protected boolean updateParameters = true;
+
+    @Column(name = "user_vm_type", updatable = true)
+    private String userVmType;
 
     transient String password;
 
@@ -124,5 +127,18 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     public boolean isUpdateParameters() {
         return updateParameters;
+    }
+
+    public String getUserVmType() {
+        return userVmType;
+    }
+
+    public void setUserVmType(String userVmType) {
+        this.userVmType = userVmType;
+    }
+
+    @Override
+    public String getName() {
+        return instanceName;
     }
 }

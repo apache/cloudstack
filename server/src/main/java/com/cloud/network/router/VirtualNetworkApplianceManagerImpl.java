@@ -66,7 +66,7 @@ import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,6 +168,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.OpRouterMonitorServiceVO;
@@ -349,6 +350,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao;
     @Inject private RouterHealthCheckResultDao routerHealthCheckResultDao;
     @Inject private LBStickinessPolicyDao lbStickinessPolicyDao;
+    @Inject private NetworkServiceMapDao _ntwkSrvcDao;
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
@@ -819,7 +821,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             final List<String> ipList = new ArrayList<String>();
             for (final Site2SiteVpnConnectionVO conn : conns) {
-                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected
+                    && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                     continue;
                 }
                 final Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
@@ -855,7 +858,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         throw new CloudRuntimeException("Unable to acquire lock for site to site vpn connection id " + conn.getId());
                     }
                     try {
-                        if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                        if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                             continue;
                         }
                         final Site2SiteVpnConnection.State oldState = conn.getState();
@@ -1459,7 +1462,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return null;
         }
 
-        String controlIP = getRouterControlIP(router);
+        String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
         if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
             final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(performFreshChecks, false);
             command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
@@ -1491,7 +1494,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return null;
         }
 
-        String controlIP = getRouterControlIP(router);
+        String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
         if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
             final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(false, true);
             command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
@@ -1601,7 +1604,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private SetMonitorServiceCommand createMonitorServiceCommand(DomainRouterVO router, List<MonitorServiceTO> services,
                                                                  boolean reconfigure, boolean deleteFromProcessedCache) {
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(services);
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIP(router));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
@@ -1633,7 +1636,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return false;
         }
 
-        String controlIP = getRouterControlIP(router);
+        String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
         if (StringUtils.isBlank(controlIP) || controlIP.equals("0.0.0.0")) {
             s_logger.debug("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
             return false;
@@ -1774,6 +1777,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             SearchCriteria<UserVmJoinVO> scvm = sbvm.create();
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
+            boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
+            boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
             for (UserVmJoinVO vm : vms) {
                 if (vm.getState() != VirtualMachine.State.Running) {
                     continue;
@@ -1781,7 +1786,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
-                        .append(",ip=").append(vm.getIpAddress()).append(";");
+                        .append(",ip=").append(vm.getIpAddress())
+                        .append(",dhcp=").append(isDhcpSupported)
+                        .append(",dns=").append(isDnsSupported).append(";");
                 updateWithPortForwardingRules(routerJoinVO, vm, portData);
             }
             updateWithLbRules(routerJoinVO, loadBalancingData);
@@ -1844,7 +1851,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (!Boolean.parseBoolean(serviceMonitoringFlag)) {
                     continue;
                 }
-                String controlIP = getRouterControlIP(router);
+                String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
 
                 if (controlIP != null && !controlIP.equals("0.0.0.0")) {
                     OpRouterMonitorServiceVO opRouterMonitorServiceVO = _opRouterMonitorServiceDao.findById(router.getId());
@@ -1915,29 +1922,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    private String getRouterControlIP(DomainRouterVO router){
-        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        String controlIP = null;
-
-        if(router.getHypervisorType() == HypervisorType.VMware  && dcVo.getNetworkType() == NetworkType.Basic ){
-
-            final List<NicVO> nics = _nicDao.listByVmId(router.getId());
-            for (final NicVO nic : nics) {
-                final NetworkVO nc = _networkDao.findById(nic.getNetworkId());
-                if (nc.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
-                    controlIP = nic.getIPv4Address();
-                    break;
-                }
-            }
-            s_logger.debug("Vmware with Basic network selected Guest NIC ip as control IP " + controlIP );
-        }else{
-            controlIP = _routerControlHelper.getRouterControlIp(router.getId());
-        }
-
-        s_logger.debug("IP of control NIC " + controlIP );
-        return controlIP;
-    }
-
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
 
@@ -1961,6 +1945,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
             buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         NicProfile controlNic = null;
         String defaultDns1 = null;

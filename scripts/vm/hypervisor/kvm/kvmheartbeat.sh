@@ -138,7 +138,7 @@ check_hbLog() {
   diff=`expr $now - $hb`
   if [ $diff -gt $interval ]
   then
-    return 1
+    return $diff
   fi
   return 0
 }
@@ -146,11 +146,12 @@ check_hbLog() {
 if [ "$rflag" == "1" ]
 then
   check_hbLog
-  if [ $? == 0 ]
+  diff=$?
+  if [ $diff == 0 ]
   then
     echo "=====> ALIVE <====="
   else
-    echo "=====> DEAD <======"
+    echo "=====> Considering host as DEAD because last write on [$hbFile] was [$diff] seconds ago, but the max interval is [$interval] <======"
   fi
   exit 0
 elif [ "$cflag" == "1" ]

@@ -16,19 +16,14 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.kubecluster.name') }]
@@ -37,12 +32,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.description') }}
-            <a-tooltip :title="apiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-decorator="['description', {
               rules: [{ required: true, message: $t('message.error.cluster.description') }]
@@ -50,12 +40,7 @@
             :placeholder="apiParams.description.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -64,23 +49,22 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description"
             @change="val => { this.handleZoneChange(this.zones[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.kubernetesversionid') }}
-            <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
@@ -100,12 +84,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.serviceofferingid') }}
-            <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {
@@ -124,18 +103,14 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.noderootdisksize') }}
-            <a-tooltip :title="apiParams.noderootdisksize.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.noderootdisksize')" :tooltip="apiParams.noderootdisksize.description"/>
           <a-input
             v-decorator="['noderootdisksize', {
+              initialValue: '8',
               rules: [{
                 validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.validate.number'))
+                  if (value && (isNaN(value) || value < 8)) {
+                    callback(this.$t('messgae.validate.min').replace('{0}', '8GB'))
                   }
                   callback()
                 }
@@ -144,12 +119,7 @@
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.networkid') }}
-            <a-tooltip :title="apiParams.networkid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.networkid')" :tooltip="apiParams.networkid.description"/>
           <a-select
             id="network-selection"
             v-decorator="['networkid', {}]"
@@ -169,12 +139,7 @@
           <a-switch v-decorator="['haenable', {initialValue: this.haEnabled}]" :checked="this.haEnabled" @change="val => { this.haEnabled = val }" />
         </a-form-item>
         <a-form-item v-if="this.haEnabled">
-          <span slot="label">
-            {{ $t('label.controlnodes') }}
-            <a-tooltip :title="apiParams.controlnodes.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.controlnodes')" :tooltip="apiParams.controlnodes.description"/>
           <a-input
             v-decorator="['controlnodes', {
               initialValue: '2',
@@ -192,23 +157,13 @@
             :placeholder="apiParams.controlnodes.description"/>
         </a-form-item>
         <a-form-item v-if="this.haEnabled">
-          <span slot="label">
-            {{ $t('label.externalloadbalanceripaddress') }}
-            <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.externalloadbalanceripaddress')" :tooltip="apiParams.externalloadbalanceripaddress.description"/>
           <a-input
             v-decorator="['externalloadbalanceripaddress', {}]"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.cks.cluster.size') }}
-            <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
           <a-input
             v-decorator="['size', {
               initialValue: '1',
@@ -226,12 +181,7 @@
             :placeholder="apiParams.size.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.keypair') }}
-            <a-tooltip :title="apiParams.keypair.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.keypair')" :tooltip="apiParams.keypair.description"/>
           <a-select
             id="keypair-selection"
             v-decorator="['keypair', {}]"
@@ -253,12 +203,7 @@
           </a-form-item>
           <div v-if="usePrivateRegistry">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.username') }}
-                <a-tooltip :title="apiParams.dockerregistryusername.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.dockerregistryusername.description"/>
               <a-input
                 v-decorator="['dockerregistryusername', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -266,12 +211,7 @@
                 :placeholder="apiParams.dockerregistryusername.description"/>
             </a-form-item>
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.password') }}
-                <a-tooltip :title="apiParams.dockerregistrypassword.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.dockerregistrypassword.description"/>
               <a-input-password
                 v-decorator="['dockerregistrypassword', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -279,12 +219,7 @@
                 :placeholder="apiParams.dockerregistrypassword.description"/>
             </a-form-item>
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.url') }}
-                <a-tooltip :title="apiParams.dockerregistryurl.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.dockerregistryurl.description"/>
               <a-input
                 v-decorator="['dockerregistryurl', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -292,12 +227,7 @@
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.email') }}
-                <a-tooltip :title="apiParams.dockerregistryemail.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.dockerregistryemail.description"/>
               <a-input
                 v-decorator="['dockerregistryemail', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -308,7 +238,7 @@
         </div>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -317,9 +247,15 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateKubernetesCluster',
+  components: {
+    TooltipLabel,
+    ResourceIcon
+  },
   props: {},
   data () {
     return {
@@ -342,11 +278,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createKubernetesCluster || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createKubernetesCluster')
   },
   created () {
     this.networks = [
@@ -381,6 +313,7 @@ export default {
     fetchZoneData () {
       const params = {}
       this.zoneLoading = true
+      params.showicon = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         this.zones = this.zones.concat(listZones)
@@ -498,7 +431,13 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }
@@ -535,23 +474,15 @@ export default {
 
         api('createKubernetesCluster', params).then(json => {
           const jobId = json.createkubernetesclusterresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.kubernetes.cluster.create'),
-            jobid: jobId,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.kubernetes.cluster.create'),
+            description: values.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.create')} ${values.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name
           })
           this.closeAction()
-          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
@@ -572,14 +503,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

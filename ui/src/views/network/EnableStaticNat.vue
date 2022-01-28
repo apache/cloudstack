@@ -23,7 +23,12 @@
           autoFocus
           @change="handleTierSelect"
           v-model="vpcTiers"
-          :placeholder="$t('label.select.tier')">
+          :placeholder="$t('label.select.tier')"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
           </a-select-option>
@@ -52,7 +57,12 @@
         <a-select
           v-if="nicsList.length && selectedVm && selectedVm === record.id"
           class="nic-select"
-          :defaultValue="selectedNic.ipaddress">
+          :defaultValue="selectedNic.ipaddress"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             @click="selectedNic = item"
             v-for="item in nicsList"
@@ -77,7 +87,7 @@
       size="small"
       :current="page"
       :pageSize="pageSize"
-      :total="vmsList.length"
+      :total="vmCount"
       :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="changePage"
@@ -152,7 +162,8 @@ export default {
       vpcTiers: [],
       selectedVpcTier: null,
       page: 1,
-      pageSize: 10
+      pageSize: 10,
+      vmCount: 0
     }
   },
   created () {
@@ -176,6 +187,7 @@ export default {
         domainid: this.resource.domainid,
         keyword: this.searchQuery
       }).then(response => {
+        this.vmCount = response.listvirtualmachinesresponse.count
         this.vmsList = response.listvirtualmachinesresponse.virtualmachine || []
       }).catch(error => {
         this.$notifyError(error)

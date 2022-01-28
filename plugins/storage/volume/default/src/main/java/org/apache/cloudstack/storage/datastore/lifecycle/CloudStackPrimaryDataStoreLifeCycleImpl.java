@@ -139,7 +139,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
         URI uri = null;
+        boolean multi = false;
         try {
+            String urlType = url.substring(0, 3);
+            if (urlType.equals("rbd") && url.contains(",")) {
+                multi = true;
+                url = url.replaceAll(",", "/");
+            }
             uri = new URI(UriUtils.encodeURIComponent(url));
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
@@ -162,9 +168,17 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
             } else if (uri.getScheme().equalsIgnoreCase("rbd")) {
+                String uriHost = uri.getHost();
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
+                }
+                if (multi) {
+                    String multiHost = uriHost + (uriPath.substring(0, uriPath.lastIndexOf("/")).replaceAll("/", ","));
+                    String[] hostArr = multiHost.split(",");
+                    if (hostArr.length > 5) {
+                        throw new InvalidParameterValueException("RADOS monitor can support up to 5.");
+                    }
                 }
             } else if (uri.getScheme().equalsIgnoreCase("gluster")) {
                 String uriHost = uri.getHost();
@@ -242,6 +256,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         } else if (scheme.equalsIgnoreCase("rbd")) {
             if (port == -1) {
                 port = 0;
+            }
+            if (multi) {
+                storageHost = storageHost + (hostPath.substring(0, hostPath.lastIndexOf("/")).replaceAll("/", ","));
+                hostPath = hostPath.substring(hostPath.lastIndexOf("/")+1);
             }
             parameters.setType(StoragePoolType.RBD);
             parameters.setHost(storageHost);
@@ -359,6 +377,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         parameters.setName(poolName);
         parameters.setClusterId(clusterId);
         parameters.setProviderName(providerName);
+        parameters.setHypervisorType(hypervisorType);
 
         return dataStoreHelper.createPrimaryDataStore(parameters);
     }
@@ -404,6 +423,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
         if (answer != null && answer.getResult()) {
+            storageMgr.updateStorageCapabilities(pool.getId(), false);
             return true;
         } else {
             primaryDataStoreDao.expunge(pool.getId());

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class LibvirtVMDef {
@@ -230,51 +230,54 @@ public class LibvirtVMDef {
     }
 
     public static class GuestResourceDef {
-        private long _mem;
-        private long _currentMem = -1;
-        private String _memBacking;
-        private int _vcpu = -1;
-        private boolean _memBalloning = false;
+        private long memory;
+        private long currentMemory = -1;
+        private int vcpu = -1;
+        private int maxVcpu = -1;
+        private boolean memoryBalloning = false;
 
         public void setMemorySize(long mem) {
-            _mem = mem;
+            this.memory = mem;
         }
 
         public void setCurrentMem(long currMem) {
-            _currentMem = currMem;
-        }
-
-        public void setMemBacking(String memBacking) {
-            _memBacking = memBacking;
+            this.currentMemory = currMem;
         }
 
         public void setVcpuNum(int vcpu) {
-            _vcpu = vcpu;
+            this.vcpu = vcpu;
         }
 
-        public void setMemBalloning(boolean turnon) {
-            _memBalloning = turnon;
+        public void setMaxVcpuNum(int maxVcpu) {
+            this.maxVcpu = maxVcpu;
+        }
+
+        public int getVcpu() {
+            return vcpu;
+        }
+
+        public int getMaxVcpu() {
+            return maxVcpu;
+        }
+
+        public void setMemBalloning(boolean memoryBalloning) {
+            this.memoryBalloning = memoryBalloning;
         }
 
         @Override
         public String toString() {
-            StringBuilder resBuidler = new StringBuilder();
-            resBuidler.append("<memory>" + _mem + "</memory>\n");
-            if (_currentMem != -1) {
-                resBuidler.append("<currentMemory>" + _currentMem + "</currentMemory>\n");
+            StringBuilder response = new StringBuilder();
+            response.append(String.format("<memory>%s</memory>\n", this.currentMemory));
+            response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
+
+            if (this.memory > this.currentMemory) {
+                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.memory));
+                response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
-            if (_memBacking != null) {
-                resBuidler.append("<memoryBacking>" + "<" + _memBacking + "/>" + "</memoryBacking>\n");
-            }
-            if (_memBalloning) {
-                resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
-            } else {
-                resBuidler.append("<devices>\n" + "<memballoon model='none'/>\n" + "</devices>\n");
-            }
-            if (_vcpu != -1) {
-                resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
-            }
-            return resBuidler.toString();
+
+            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this.memoryBalloning ? "virtio" : "none"));
+            response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
+            return response.toString();
         }
     }
 
@@ -530,6 +533,15 @@ public class LibvirtVMDef {
                     devicesBuilder.append(dev.toString());
                 }
             }
+
+            if (_emulator != null && _emulator.endsWith("aarch64")) {
+                devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
+                for (int i = 0; i < 32; i++) {
+                  devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
+                }
+                devicesBuilder.append("<controller type='pci' model='pcie-to-pci-bridge'/>\n");
+            }
+
             devicesBuilder.append("</devices>\n");
             return devicesBuilder.toString();
         }
@@ -651,6 +663,26 @@ public class LibvirtVMDef {
 
         }
 
+        /**
+         * This enum specifies IO Drivers, each option controls specific policies on I/O.
+         * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
+         */
+        public enum IoDriver {
+            NATIVE("native"),
+            THREADS("threads"),
+            IOURING("io_uring");
+            String ioDriver;
+
+            IoDriver(String driver) {
+                ioDriver = driver;
+            }
+
+            @Override
+            public String toString() {
+                return ioDriver;
+            }
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -681,6 +713,7 @@ public class LibvirtVMDef {
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
+        private IoDriver ioDriver;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -688,6 +721,14 @@ public class LibvirtVMDef {
 
         public void setDiscard(DiscardType discard) {
             this._discard = discard;
+        }
+
+        public DiskDef.IoDriver getIoDriver() {
+            return ioDriver;
+        }
+
+        public void setIoDriver(IoDriver ioDriver) {
+            this.ioDriver = ioDriver;
         }
 
         public void setDeviceType(DeviceType deviceType) {
@@ -1004,6 +1045,11 @@ public class LibvirtVMDef {
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
                 }
+
+                if(ioDriver != null) {
+                    diskBuilder.append(String.format("io='%s'", ioDriver));
+                }
+
                 diskBuilder.append("/>\n");
             }
 
@@ -1578,9 +1624,13 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder videoBuilder = new StringBuilder();
-            if (_videoModel != null && !_videoModel.isEmpty() && _videoRam != 0){
+            if (_videoModel != null && !_videoModel.isEmpty()){
                 videoBuilder.append("<video>\n");
-                videoBuilder.append("<model type='" + _videoModel + "' vram='" + _videoRam + "'/>\n");
+                if (_videoRam != 0) {
+                    videoBuilder.append("<model type='" + _videoModel + "' vram='" + _videoRam + "'/>\n");
+                } else {
+                    videoBuilder.append("<model type='" + _videoModel + "'/>\n");
+                }
                 videoBuilder.append("</video>\n");
                 return videoBuilder.toString();
             }

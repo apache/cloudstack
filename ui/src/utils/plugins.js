@@ -20,6 +20,8 @@ import { i18n } from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
+import store from '@/store'
+import { sourceToken } from '@/utils/request'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -27,6 +29,8 @@ export const pollJobPlugin = {
       /**
        * @param {String} jobId
        * @param {String} [name='']
+       * @param {String} [title='']
+       * @param {String} [description='']
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -36,10 +40,14 @@ export const pollJobPlugin = {
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
        * @param {Object} [action=null]
+       * @param {Object} [bulkAction=false]
+       * @param {String} resourceId
        */
       const {
         jobId,
         name = '',
+        title = '',
+        description = '',
         successMessage = i18n.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.t('label.error'),
@@ -48,11 +56,38 @@ export const pollJobPlugin = {
         showLoading = true,
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
-        action = null
+        action = null,
+        bulkAction = false,
+        resourceId = null
       } = options
 
+      store.dispatch('AddHeaderNotice', {
+        key: jobId,
+        title,
+        description,
+        status: 'progress'
+      })
+
+      eventBus.$on('update-job-details', (jobId, resourceId) => {
+        const fullPath = this.$route.fullPath
+        const path = this.$route.path
+        var jobs = this.$store.getters.headerNotices.map(job => {
+          if (job.key === jobId) {
+            if (resourceId && !path.includes(resourceId)) {
+              job.path = path + '/' + resourceId
+            } else {
+              job.path = fullPath
+            }
+          }
+          return job
+        })
+        this.$store.commit('SET_HEADER_NOTICES', jobs)
+      })
+
+      options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
+        eventBus.$emit('update-job-details', jobId, resourceId)
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {
@@ -62,33 +97,72 @@ export const pollJobPlugin = {
             content = content + ' - ' + name
           }
           message.success({
-            content: content,
+            content,
             key: jobId,
             duration: 2
           })
-          eventBus.$emit('async-job-complete', action)
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title,
+            description,
+            status: 'done',
+            duration: 2
+          })
+          eventBus.$emit('update-job-details', jobId, resourceId)
+          // Ensure we refresh on the same / parent page
+          const currentPage = this.$router.currentRoute.path
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
+          if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
+            eventBus.$emit('async-job-complete', action)
+          }
           successMethod(result)
         } else if (result.jobstatus === 2) {
-          message.error({
-            content: errorMessage,
-            key: jobId,
-            duration: 1
-          })
-          var title = errorMessage
+          if (!bulkAction) {
+            message.error({
+              content: errorMessage,
+              key: jobId,
+              duration: 1
+            })
+          }
+          var errMessage = errorMessage
           if (action && action.label) {
-            title = i18n.t(action.label)
+            errMessage = i18n.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
             desc = `(${name}) ${desc}`
           }
-          notification.error({
-            message: title,
-            description: desc,
+          if (!bulkAction) {
+            let countNotify = store.getters.countNotify
+            countNotify++
+            store.commit('SET_COUNT_NOTIFY', countNotify)
+            notification.error({
+              top: '65px',
+              message: errMessage,
+              description: desc,
+              key: jobId,
+              duration: 0,
+              onClose: () => {
+                let countNotify = store.getters.countNotify
+                countNotify > 0 ? countNotify-- : countNotify = 0
+                store.commit('SET_COUNT_NOTIFY', countNotify)
+              }
+            })
+          }
+          store.dispatch('AddHeaderNotice', {
             key: jobId,
-            duration: 0
+            title,
+            description: desc,
+            status: 'failed',
+            duration: 2
           })
-          eventBus.$emit('async-job-complete', action)
+          eventBus.$emit('update-job-details', jobId, resourceId)
+          // Ensure we refresh on the same / parent page
+          const currentPage = this.$router.currentRoute.path
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
+          if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
+            eventBus.$emit('async-job-complete', action)
+          }
           errorMethod(result)
         } else if (result.jobstatus === 0) {
           if (showLoading) {
@@ -104,11 +178,22 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
-        notification.error({
-          message: i18n.t('label.error'),
-          description: catchMessage,
-          duration: 0
-        })
+        if (!sourceToken.isCancel(e)) {
+          let countNotify = store.getters.countNotify
+          countNotify++
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+          notification.error({
+            top: '65px',
+            message: i18n.t('label.error'),
+            description: catchMessage,
+            duration: 0,
+            onClose: () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
+          })
+        }
         catchMethod && catchMethod()
       })
     }
@@ -139,11 +224,63 @@ export const notifierPlugin = {
           }
         }
       }
+      let countNotify = store.getters.countNotify
+      countNotify++
+      store.commit('SET_COUNT_NOTIFY', countNotify)
       notification.error({
+        top: '65px',
         message: msg,
         description: desc,
-        duration: 0
+        duration: 0,
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
       })
+    }
+
+    Vue.prototype.$notification = {
+      defaultConfig: {
+        top: '65px',
+        onClose: () => {
+          let countNotify = store.getters.countNotify
+          countNotify > 0 ? countNotify-- : countNotify = 0
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+        }
+      },
+      setCountNotify: () => {
+        let countNotify = store.getters.countNotify
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
+      },
+      info: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.info(config)
+      },
+      error: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.error(config)
+      },
+      success: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.success(config)
+      },
+      warning: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.warning(config)
+      },
+      warn: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.warn(config)
+      },
+      close: (key) => notification.close(key),
+      destroy: () => notification.destroy()
     }
   }
 }
@@ -182,6 +319,83 @@ export const configUtilPlugin = {
         }
       }
       return docHelp
+    }
+  }
+}
+
+export const showIconPlugin = {
+  install (Vue) {
+    Vue.prototype.$showIcon = function (resource) {
+      var resourceType = this.$route.path.split('/')[1]
+      if (resource) {
+        resourceType = resource
+      }
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+        return true
+      } else {
+        return false
+      }
+    }
+  }
+}
+
+export const resourceTypePlugin = {
+  install (Vue) {
+    Vue.prototype.$getResourceType = function () {
+      const type = this.$route.path.split('/')[1]
+      if (type === 'vm') {
+        return 'UserVM'
+      } else if (type === 'accountuser') {
+        return 'User'
+      } else if (type === 'guestnetwork') {
+        return 'Network'
+      } else {
+        return type
+      }
+    }
+  }
+}
+
+export const apiMetaUtilPlugin = {
+  install (Vue) {
+    Vue.prototype.$getApiParams = function () {
+      var apiParams = {}
+      for (var argument of arguments) {
+        var apiConfig = this.$store.getters.apis[argument] || {}
+        if (apiConfig && apiConfig.params) {
+          apiConfig.params.forEach(param => {
+            apiParams[param.name] = param
+          })
+        }
+      }
+      return apiParams
+    }
+  }
+}
+
+const KB = 1024
+const MB = 1024 * KB
+const GB = 1024 * MB
+const TB = 1024 * GB
+
+export const fileSizeUtilPlugin = {
+  install (Vue) {
+    Vue.prototype.$bytesToHumanReadableSize = function (bytes) {
+      if (bytes == null) {
+        return ''
+      }
+      if (bytes < KB && bytes >= 0) {
+        return bytes + ' bytes'
+      }
+      if (bytes < MB) {
+        return (bytes / KB).toFixed(2) + ' KB'
+      } else if (bytes < GB) {
+        return (bytes / MB).toFixed(2) + ' MB'
+      } else if (bytes < TB) {
+        return (bytes / GB).toFixed(2) + ' GB'
+      } else {
+        return (bytes / TB).toFixed(2) + ' TB'
+      }
     }
   }
 }

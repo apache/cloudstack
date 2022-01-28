@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
@@ -35,7 +36,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.StringUtils;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
@@ -44,6 +44,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -677,7 +678,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         ServiceOffering offering = vmProfile.getServiceOffering();
         if (offering.getHostTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
+            if (!host.checkHostServiceOfferingTags(offering)) {
                 s_logger.debug("Service Offering host tag does not match the last host of this VM");
                 return false;
             }
@@ -1411,7 +1412,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         hostCanAccessPool = true;
                         if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                             try {
-                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(allVolumes, storagePool);
+                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(allVolumes, storagePool);
                                 if (!isStoragePoolStoragepolicyComplaince) {
                                     continue;
                                 }
@@ -1450,7 +1451,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                                     try {
-                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, potentialSPool);
+                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, potentialSPool);
                                         if (!isStoragePoolStoragepolicyComplaince) {
                                             continue;
                                         }
@@ -1638,7 +1639,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
-            if (vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO && vmProfile.getServiceOffering().getTagsArray().length != 0) {
+            if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
+                    && vmProfile.getServiceOffering().getTagsArray().length != 0) {
                 diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
             }
 
@@ -1674,7 +1676,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             for (StoragePoolAllocator allocator : _storagePoolAllocators) {
                 final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
                 if (suitablePools != null && !suitablePools.isEmpty()) {
-                    suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                    checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), suitableVolumeStoragePools, toBeCreated);
                     foundPotentialPools = true;
                     break;
                 }
@@ -1713,6 +1715,43 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         return new Pair<Map<Volume, List<StoragePool>>, List<Volume>>(suitableVolumeStoragePools, readyAndReusedVolumes);
+    }
+
+    private void checkForPreferredStoragePool(List<StoragePool> suitablePools,
+                                              VirtualMachine vm,
+                                              Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
+                                              VolumeVO toBeCreated) {
+        List<StoragePool> pools = new ArrayList<>();
+        Optional<StoragePool> storagePool = getPreferredStoragePool(suitablePools, vm);
+        storagePool.ifPresent(pools::add);
+
+        pools.addAll(suitablePools);
+        suitableVolumeStoragePools.put(toBeCreated, pools);
+    }
+
+    private Optional<StoragePool> getMatchingStoragePool(String preferredPoolId, List<StoragePool> storagePools) {
+        if (preferredPoolId == null) {
+            return Optional.empty();
+        }
+        return storagePools.stream()
+                .filter(pool -> pool.getUuid().equalsIgnoreCase(preferredPoolId))
+                .findFirst();
+    }
+
+    private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
+        String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
+
+        if (storagePool.isPresent()) {
+            s_logger.debug("A storage pool is specified for this account, so we will use this storage pool for allocation: "
+                    + storagePool.get().getUuid());
+        } else {
+            String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
+            storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
+            storagePool.ifPresent(pool -> s_logger.debug("A storage pool is specified in global setting, so we will use this storage pool for allocation: "
+                    + pool.getUuid()));
+        }
+        return storagePool;
     }
 
     private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId) {

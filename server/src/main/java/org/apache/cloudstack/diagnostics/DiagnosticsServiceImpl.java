@@ -18,7 +18,6 @@
 package org.apache.cloudstack.diagnostics;
 
 import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.getTimeDifference;
-import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.umountSecondaryStorage;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.RouterDefaultSupportedFiles;
 import static org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList.SystemVMDefaultSupportedFiles;
 
@@ -75,7 +74,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 
 public class DiagnosticsServiceImpl extends ManagerBase implements PluggableService, DiagnosticsService, Configurable {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsServiceImpl.class);
@@ -142,7 +140,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         final String shellCmd = prepareShellCmd(cmdType, ipAddress, optionalArguments);
 
-        if (Strings.isNullOrEmpty(shellCmd)) {
+        if (StringUtils.isEmpty(shellCmd)) {
             throw new IllegalArgumentException("Optional parameters contain unwanted characters: " + optionalArguments);
         }
 
@@ -151,7 +149,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         final DiagnosticsCommand command = new DiagnosticsCommand(shellCmd, vmManager.getExecuteInSequence(hypervisorType));
         final Map<String, String> accessDetails = networkManager.getSystemVMAccessDetails(vmInstance);
 
-        if (Strings.isNullOrEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
+        if (StringUtils.isEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
             throw new CloudRuntimeException("Unable to set system vm ControlIP for system vm with ID: " + vmId);
         }
 
@@ -170,7 +168,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     }
 
     protected boolean hasValidChars(String optionalArgs) {
-        if (Strings.isNullOrEmpty(optionalArgs)) {
+        if (StringUtils.isEmpty(optionalArgs)) {
             return true;
         } else {
             final String regex = "^[\\w\\-\\s.]+$";
@@ -181,7 +179,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
     protected String prepareShellCmd(String cmdType, String ipAddress, String optionalParams) {
         final String CMD_TEMPLATE = String.format("%s %s", cmdType, ipAddress);
-        if (Strings.isNullOrEmpty(optionalParams)) {
+        if (StringUtils.isEmpty(optionalParams)) {
             return CMD_TEMPLATE;
         } else {
             if (hasValidChars(optionalParams)) {
@@ -341,7 +339,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
             if (existsInSecondaryStore) {
                 // scp from system VM to mounted sec storage directory
-                File permKey = new File("/var/cloudstack/management/.ssh/id_rsa");
+                String homeDir = System.getProperty("user.home");
+                File permKey = new File(homeDir + "/.ssh/id_rsa");
                 SshHelper.scpFrom(vmSshIp, 3922, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsFile);
             }
 
@@ -352,8 +351,6 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
             LOGGER.error(msg, e);
             return new Pair<>(false, msg);
-        } finally {
-            umountSecondaryStorage(mountPoint);
         }
 
         return new Pair<>(success, "File copied to secondary storage successfully");
@@ -481,17 +478,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         private void cleanupOldDiagnosticFiles(DataStore store) {
             String mountPoint = null;
-            try {
-                mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
-                if (StringUtils.isNotBlank(mountPoint)) {
-                    File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
-                    if (directory.isDirectory()) {
-                        deleteOldDiagnosticsFiles(directory, store.getName());
-                    }
-                }
-            } finally {
-                if (StringUtils.isNotBlank(mountPoint)) {
-                    umountSecondaryStorage(mountPoint);
+            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+            if (StringUtils.isNotBlank(mountPoint)) {
+                File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
+                if (directory.isDirectory()) {
+                    deleteOldDiagnosticsFiles(directory, store.getName());
                 }
             }
         }
