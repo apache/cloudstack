@@ -123,10 +123,7 @@ class TestHypervisorCapabilities(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestHypervisorCapabilities, cls).tearDownClass()
 
     def setUp(self):
         self.cleanup = []
