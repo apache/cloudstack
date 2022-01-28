@@ -521,7 +521,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (offeringId != null) {
             return offeringId;
         }
-        List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomIopsOfferingsByZoneId(zoneId);
+        List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomOfferingsByZoneId(zoneId);
         if (CollectionUtils.isNotEmpty(offerings)) {
             return offerings.get(0).getId();
         }
@@ -543,24 +543,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
 
-                if (diskOfferingId == null) {
-                    Long customDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(zoneId);
-                    if (customDiskOfferingId == null) {
+                Long volumeDiskOfferingId = diskOfferingId;
+                if (volumeDiskOfferingId == null) {
+                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(zoneId);
+                    if (volumeDiskOfferingId == null) {
                         DataCenter zone = _dcDao.findById(zoneId);
                         throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
                     }
-                    volume.setDiskOfferingId(customDiskOfferingId);
-                } else {
-                    volume.setDiskOfferingId(diskOfferingId);
+                }
 
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(diskOfferingId);
+                volume.setDiskOfferingId(volumeDiskOfferingId);
+                DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volumeDiskOfferingId);
 
-                    Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
+                Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
 
-                    if (isCustomizedIops == null || !isCustomizedIops) {
-                        volume.setMinIops(diskOfferingVO.getMinIops());
-                        volume.setMaxIops(diskOfferingVO.getMaxIops());
-                    }
+                if (isCustomizedIops == null || !isCustomizedIops) {
+                    volume.setMinIops(diskOfferingVO.getMinIops());
+                    volume.setMaxIops(diskOfferingVO.getMaxIops());
                 }
 
                 // volume.setSize(size);

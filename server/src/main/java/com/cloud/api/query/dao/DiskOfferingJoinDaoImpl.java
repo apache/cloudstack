@@ -90,15 +90,15 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
     }
 
     @Override
-    public List<DiskOfferingJoinVO> findCustomIopsOfferingsByZoneId(long zoneId) {
+    public List<DiskOfferingJoinVO> findCustomOfferingsByZoneId(long zoneId) {
         SearchBuilder<DiskOfferingJoinVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.FIND_IN_SET);
-        sb.and("customizedIops", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
+        sb.and("customized", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
         sb.done();
 
         SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
         sc.setParameters("zoneId", String.valueOf(zoneId));
-        sc.setParameters("customizedIops", true);
+        sc.setParameters("customized", true);
         return listBy(sc);
     }
 
