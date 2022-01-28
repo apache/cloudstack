@@ -177,7 +177,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                     String multiHost = uriHost + (uriPath.substring(0, uriPath.lastIndexOf("/")).replaceAll("/", ","));
                     String[] hostArr = multiHost.split(",");
                     if (hostArr.length > 5) {
-                        throw new InvalidParameterValueException("RADOS monitor can support up to 5.");
+                        throw new InvalidParameterValueException("RADOS monitor can support up to 5 hosts.");
                     }
                 }
             } else if (uri.getScheme().equalsIgnoreCase("gluster")) {
@@ -259,7 +259,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             }
             if (multi) {
                 storageHost = storageHost + (hostPath.substring(0, hostPath.lastIndexOf("/")).replaceAll("/", ","));
-                hostPath = hostPath.substring(hostPath.lastIndexOf("/")+1);
+                hostPath = hostPath.substring(hostPath.lastIndexOf("/") + 1);
             }
             parameters.setType(StoragePoolType.RBD);
             parameters.setHost(storageHost);

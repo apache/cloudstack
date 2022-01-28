@@ -57,11 +57,11 @@ public final class LibvirtFenceCommandWrapper extends CommandWrapper<FenceComman
          * a heartbeat. Disable Fencing Off for hosts without NFS
          */
         if (nfspools.size() == 0) {
-            String logline = "No NFS storage pools found. No way to safely fence " + command.getVmName() + " on host " + command.getHostGuid();
+            String logline = String.format("No NFS storage pools found. No way to safely fence %s on host %s", command.getVmName(), command.getHostGuid());
             s_logger.warn(logline);
             return new FenceAnswer(command, false, logline);
-        }else if (rbdpools.size() == 0) {
-            String logline = "No RBD storage pools found. No way to safely fence " + command.getVmName() + " on host " + command.getHostGuid();
+        } else if (rbdpools.size() == 0) {
+            String logline = String.format("No RBD storage pools found. No way to safely fence %s on host %s", command.getVmName(), command.getHostGuid());
             s_logger.warn(logline);
             return new FenceAnswer(command, false, logline);
         }
