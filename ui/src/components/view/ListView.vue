@@ -62,7 +62,7 @@
 
     <span slot="name" slot-scope="text, record">
       <span v-if="['vm'].includes($route.path.split('/')[1])">
-        <span v-if="record.icon && record.icon.base64image">
+        <span v-if="record.icon?.base64image">
           <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
         </span>
         <os-logo v-else :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
