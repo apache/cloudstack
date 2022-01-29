@@ -37,7 +37,7 @@ public class KVMHABase {
     protected static String s_heartBeatPathRbd;
     protected long _heartBeatUpdateTimeout = 60000;
     protected long _heartBeatUpdateFreq = 60000;
-    protected long _heartBeatUpdateMaxTries = 5;
+    protected long _heartBeatUpdateMaxTries = 10;
     protected long _heartBeatUpdateRetrySleep = 10000;
 
     public static enum PoolType {
@@ -221,7 +221,7 @@ public class KVMHABase {
             }
             return sourceHostIP;
         } catch (UnknownHostException e) {
-            s_logger.debug("Failed to get connection: " + e.getMessage());
+            s_logger.warn("Failed to get connection: " + e);
             return null;
         }
     }
