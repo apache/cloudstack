@@ -40,15 +40,15 @@ import com.cloud.utils.db.TransactionLegacy;
 public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> implements UsageStorageDao {
     public static final Logger s_logger = Logger.getLogger(UsageStorageDaoImpl.class.getName());
 
-    protected static final String REMOVE_BY_USERID_STORAGEID = "DELETE FROM usage_storage WHERE account_id = ? AND id = ? AND storage_type = ?";
-    protected static final String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND id = ? AND storage_type = ? AND zone_id = ? and deleted IS NULL";
+    protected static final String REMOVE_BY_USERID_STORAGEID = "DELETE FROM usage_storage WHERE account_id = ? AND entity_id = ? AND storage_type = ?";
+    protected static final String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND entity_id = ? AND storage_type = ? AND zone_id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
-        "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size " + "FROM usage_storage "
+        "SELECT entity_id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size " + "FROM usage_storage "
             + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN =
-        "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size " + "FROM usage_storage "
+        "SELECT entity_id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size " + "FROM usage_storage "
             + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size "
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT entity_id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size "
         + "FROM usage_storage " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     private final SearchBuilder<UsageStorageVO> IdSearch;
@@ -57,13 +57,13 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
     public UsageStorageDaoImpl() {
         IdSearch = createSearchBuilder();
         IdSearch.and("accountId", IdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        IdSearch.and("id", IdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        IdSearch.and("id", IdSearch.entity().getEntityId(), SearchCriteria.Op.EQ);
         IdSearch.and("type", IdSearch.entity().getStorageType(), SearchCriteria.Op.EQ);
         IdSearch.done();
 
         IdZoneSearch = createSearchBuilder();
         IdZoneSearch.and("accountId", IdZoneSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        IdZoneSearch.and("id", IdZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
+        IdZoneSearch.and("id", IdZoneSearch.entity().getEntityId(), SearchCriteria.Op.EQ);
         IdZoneSearch.and("type", IdZoneSearch.entity().getStorageType(), SearchCriteria.Op.EQ);
         IdZoneSearch.and("dcId", IdZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         IdZoneSearch.and("deleted", IdZoneSearch.entity().getDeleted(), SearchCriteria.Op.NULL);
@@ -124,7 +124,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
                     if (pstmt != null) {
                         pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
                         pstmt.setLong(2, usage.getAccountId());
-                        pstmt.setLong(3, usage.getId());
+                        pstmt.setLong(3, usage.getEntityId());
                         pstmt.setInt(4, usage.getStorageType());
                         pstmt.setLong(5, usage.getZoneId());
                         pstmt.executeUpdate();
