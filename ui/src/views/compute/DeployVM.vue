@@ -1779,7 +1779,7 @@ export default {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
                 if (vm.password) {
-                  this.$notification.error({
+                  this.$notification.success({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
                     duration: 0
