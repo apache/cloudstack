@@ -1986,7 +1986,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify network id
-        NetworkVO network = getNetworkVO(networkId, "Unable to find a network with the specified ID.", String.valueOf(networkId));
+        NetworkVO network = getNetworkVO(networkId, "Unable to find a network with the specified ID.");
 
         // don't allow to delete system network
         if (isNetworkSystem(network)) {
@@ -2016,14 +2016,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
     public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        NetworkVO network = getNetworkVO(networkId, "Network with specified id doesn't exist", networkId.toString());
+        NetworkVO network = getNetworkVO(networkId, "Network with specified id doesn't exist");
         return restartNetwork(network, cleanup, makeRedundant, user);
     }
 
-    private NetworkVO getNetworkVO(Long networkId, String errMsgFormat, String objectId) {
+    private NetworkVO getNetworkVO(Long networkId, String errMsgFormat) {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
-            throwInvalidIdException(errMsgFormat, objectId, "networkId");
+            throwInvalidIdException(errMsgFormat, networkId.toString(), "networkId");
         }
         return network;
     }
@@ -2070,8 +2070,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network and re-applies all the rules
-        Long networkId = cmd.getNetworkId();
-        NetworkVO network = getNetworkVO(cmd.getNetworkId(), "Network [%s] to restart was not found.", String.valueOf(networkId));
+        NetworkVO network = getNetworkVO(cmd.getNetworkId(), "Network [%s] to restart was not found.");
         boolean cleanup = cmd.getCleanup();
         if (network.getVpcId() != null && cleanup) {
             throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
@@ -2215,7 +2214,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean restartNetwork = false;
 
         // verify input parameters
-        final NetworkVO network = getNetworkVO(networkId, "Specified network id doesn't exist in the system", String.valueOf(networkId));
+        final NetworkVO network = getNetworkVO(networkId, "Specified network id doesn't exist in the system");
 
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
