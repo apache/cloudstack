@@ -274,29 +274,29 @@ public class SnapshotHelperTest {
     }
 
     @Test
-    public void validateIsKvmVolumeSnapshotsOnlyInPrimaryStorageNotKvmDoNothing() {
+    public void checkKvmVolumeSnapshotsOnlyInPrimaryStorageTestNotKvmDoNothing() {
         Arrays.asList(HypervisorType.values()).forEach(hypervisorType -> {
             if (hypervisorType == HypervisorType.KVM) {
                 return;
             }
 
-            snapshotHelperSpy.isKvmVolumeSnapshotsOnlyInPrimaryStorage(null, hypervisorType);
+            snapshotHelperSpy.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(null, hypervisorType);
         });
 
         Mockito.verify(snapshotHelperSpy, Mockito.never()).getSnapshotIdsOnlyInPrimaryStorage(Mockito.anyLong());
     }
 
     @Test
-    public void validateIsKvmVolumeSnapshotsOnlyInPrimaryStorageAllSnapshotsInSecondaryStorageDoNothing() {
+    public void checkKvmVolumeSnapshotsOnlyInPrimaryStorageTestAllSnapshotsInSecondaryStorageDoNothing() {
         Mockito.doReturn(new HashSet<>()).when(snapshotHelperSpy).getSnapshotIdsOnlyInPrimaryStorage(Mockito.anyLong());
 
-        snapshotHelperSpy.isKvmVolumeSnapshotsOnlyInPrimaryStorage(volumeVoMock, HypervisorType.KVM);
+        snapshotHelperSpy.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volumeVoMock, HypervisorType.KVM);
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void validateIsKvmVolumeSnapshotsOnlyInPrimaryStorageSomeSnapshotsNotInSecondaryStorageThrowsCloudRuntimeException() {
+    public void checkKvmVolumeSnapshotsOnlyInPrimaryStorageTestSomeSnapshotsNotInSecondaryStorageThrowsCloudRuntimeException() {
         Mockito.doReturn(new HashSet<>(Arrays.asList(1l, 2l))).when(snapshotHelperSpy).getSnapshotIdsOnlyInPrimaryStorage(Mockito.anyLong());
 
-        snapshotHelperSpy.isKvmVolumeSnapshotsOnlyInPrimaryStorage(volumeVoMock, HypervisorType.KVM);
+        snapshotHelperSpy.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volumeVoMock, HypervisorType.KVM);
     }
 }

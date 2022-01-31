@@ -202,7 +202,7 @@ public class SnapshotHelper {
      * Verifies if it is a KVM volume that has snapshots only in primary storage.
      * @throws CloudRuntimeException If it is a KVM volume and has at least one snapshot only in primary storage.
      */
-    public void isKvmVolumeSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, HypervisorType hypervisorType) throws CloudRuntimeException {
+    public void checkKvmVolumeSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, HypervisorType hypervisorType) throws CloudRuntimeException {
         if (HypervisorType.KVM != hypervisorType) {
             logger.trace(String.format("The %s hypervisor [%s] is not KVM, therefore we will not check if the snapshots are only in primary storage.", volumeVo, hypervisorType));
             return;
