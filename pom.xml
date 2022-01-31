@@ -76,7 +76,7 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.reload4j.version>1.2.18.0</cs.reload4j.version>
+        <cs.reload4j.version>1.2.18.4</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
         <cs.logging.version>1.1.1</cs.logging.version>
 
