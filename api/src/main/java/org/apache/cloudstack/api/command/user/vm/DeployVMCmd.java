@@ -239,6 +239,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "true if virtual machine needs to be dynamically scalable")
     protected Boolean dynamicScalingEnabled;
 
+    @Parameter(name = ApiConstants.OVERRIDE_DISK_OFFERING_ID, type = CommandType.UUID, since = "4.17", entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine to be used for root volume instead of the disk offering mapped in service offering." +
+            "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
+    private Long overrideDiskOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -635,6 +639,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public boolean isDynamicScalingEnabled() {
         return dynamicScalingEnabled == null ? true : dynamicScalingEnabled;
+    }
+
+    public Long getOverrideDiskOfferingId() {
+        return overrideDiskOfferingId;
     }
 
     /////////////////////////////////////////////////////

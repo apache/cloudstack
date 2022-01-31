@@ -258,6 +258,7 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -768,6 +769,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_RESIZE, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_DESTROY, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
+        entityEventDetails.put(EVENT_VOLUME_CHANGE_DISK_OFFERING, Volume.class);
 
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);

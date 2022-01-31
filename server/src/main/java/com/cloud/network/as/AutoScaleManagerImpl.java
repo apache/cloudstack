@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -1307,6 +1308,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
             }
 
+            DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, serviceOffering.getDiskOfferingId());
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Unable to find disk offering: " + serviceOffering.getDiskOfferingId());
+            }
+
             VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
@@ -1314,8 +1320,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
 
             if (!zone.isLocalStorageEnabled()) {
-                if (serviceOffering.isUseLocalStorage()) {
-                    throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
+                if (diskOffering.isUseLocalStorage()) {
+                    throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " associated to the service offering " + serviceOffering.getName() + " uses it");
                 }
             }
 
@@ -1325,18 +1331,18 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                     getCurrentTimeStampString(),
                     "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null, null,
-                    null, true, null, null, null, null, null, null, null, true);
+                    null, true, null, null, null, null, null, null, null, true, null);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, null, null,
                         owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
                         "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null,
-                        null, null, true, null, null, null, null, null, null, null, true);
+                        null, null, true, null, null, null, null, null, null, null, true, null);
 
                 } else {
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                         getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null, null, addrs, true, null, null, null, null, null, null, null, true, null);
+                        null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null, null, addrs, true, null, null, null, null, null, null, null, true, null, null);
 
                 }
             }
