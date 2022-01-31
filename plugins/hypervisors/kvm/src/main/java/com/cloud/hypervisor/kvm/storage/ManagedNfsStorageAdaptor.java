@@ -306,6 +306,11 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         String mountPoint = _mountPoint + File.separator + uuid;
         File f = new File(mountPoint + File.separator + path);
         if (!f.exists()) {

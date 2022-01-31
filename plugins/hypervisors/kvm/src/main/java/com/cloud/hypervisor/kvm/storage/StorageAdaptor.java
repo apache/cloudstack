@@ -74,6 +74,8 @@ public interface StorageAdaptor {
 
     public boolean createFolder(String uuid, String path);
 
+    public boolean createFolder(String uuid, String path, String localPath);
+
     /**
      * Creates disk using template backing.
      * Precondition: Template is on destPool
