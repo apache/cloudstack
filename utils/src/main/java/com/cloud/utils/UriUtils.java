@@ -263,6 +263,10 @@ public class UriUtils {
     }
 
     public static Pair<String, Integer> validateUrl(String format, String url) throws IllegalArgumentException {
+        return validateUrl(format, url, false);
+    }
+
+    public static Pair<String, Integer> validateUrl(String format, String url, boolean skipIpv6Check) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
             if ((uri.getScheme() == null) ||
@@ -283,7 +287,7 @@ public class UriUtils {
                 if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
                     throw new IllegalArgumentException("Illegal host specified in url");
                 }
-                if (hostAddr instanceof Inet6Address) {
+                if (!skipIpv6Check && hostAddr instanceof Inet6Address) {
                     throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
                 }
             } catch (UnknownHostException uhe) {

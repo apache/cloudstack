@@ -39,8 +39,8 @@ import com.cloud.user.AccountVO;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
-public class VMSanpshotOnPrimaryParser {
-    public static final Logger s_logger = Logger.getLogger(VMSanpshotOnPrimaryParser.class.getName());
+public class VMSnapshotOnPrimaryParser {
+    public static final Logger s_logger = Logger.getLogger(VMSnapshotOnPrimaryParser.class.getName());
 
     private static UsageDao s_usageDao;
     private static UsageVMSnapshotOnPrimaryDao s_usageSnapshotOnPrimaryDao;
@@ -95,7 +95,7 @@ public class VMSanpshotOnPrimaryParser {
                 s_logger.debug("Remoevd vm snapshot found endDateEffective " + endDateEffective + " period end data " + endDate);
             }
             long duration = (endDateEffective.getTime() - created.getTime()) + 1;
-            createUsageRecord(UsageTypes.VM_SNAPSHOT_ON_PRIMARY, duration, created, endDateEffective, account, usageRec.getId(), usageRec.getName(), usageRec.getZoneId(),
+            createUsageRecord(UsageTypes.VM_SNAPSHOT_ON_PRIMARY, duration, created, endDateEffective, account, usageRec.getVolumeId(), usageRec.getName(), usageRec.getZoneId(),
                     usageRec.getVirtualSize(), usageRec.getPhysicalSize(), usageRec.getVmSnapshotId());
         }
 

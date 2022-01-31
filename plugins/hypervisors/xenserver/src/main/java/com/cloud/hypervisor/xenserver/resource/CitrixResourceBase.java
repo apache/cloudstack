@@ -1110,8 +1110,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cdromVBD;
     }
 
-    protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder) {
-        final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder);
+    protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder, final String nfsVersion) {
+        final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder, "nfsVersion", nfsVersion);
         return result != null;
     }
 
@@ -1482,8 +1482,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vm;
     }
 
-    protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder) {
-        final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
+    protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder, final String nfsVersion) {
+        final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder, "nfsVersion", nfsVersion);
         return details != null && details.equals("1");
     }
 
@@ -4102,7 +4102,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean postCreatePrivateTemplate(final Connection conn, final String templatePath, final String tmpltFilename, final String templateName, String templateDescription, String checksum,
-            final long size, final long virtualSize, final long templateId) {
+            final long size, final long virtualSize, final long templateId, final String nfsVersion) {
 
         if (templateDescription == null) {
             templateDescription = "";
@@ -4113,7 +4113,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         final String result = callHostPlugin(conn, "vmopsSnapshot", "post_create_private_template", "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName,
-                "templateDescription", templateDescription, "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
+                "templateDescription", templateDescription, "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId), "nfsVersion", nfsVersion);
 
         boolean success = false;
         if (result != null && !result.isEmpty()) {
@@ -5661,6 +5661,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String vmIP = cmd.getSystemVmIp();
         String diagnosticsZipFile = cmd.getFileName();
+        String nfsVersion = cmd.getNfsVersion();
 
         String localDir = null;
         boolean success;
@@ -5671,7 +5672,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             URI uri = new URI(secondaryStorageUrl);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
-            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
+            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
             if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
             }
@@ -5698,11 +5699,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private String mountNfs(Connection conn, String remoteDir, String localDir) {
+    private String mountNfs(Connection conn, String remoteDir, String localDir, String nfsVersion) {
         if (localDir == null) {
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
-        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir, "nfsVersion", nfsVersion);
     }
 
     // Unmount secondary storage from host
