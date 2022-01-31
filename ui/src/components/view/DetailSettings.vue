@@ -173,13 +173,6 @@ export default {
         this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
     },
-    filterOrReadOnlyDetails () {
-      for (var i = 0; i < this.details.length; i++) {
-        if (!this.allowEditOfDetail(this.details[i].name)) {
-          this.details.splice(i, 1)
-        }
-      }
-    },
     allowEditOfDetail (name) {
       if (this.resource.readonlydetails) {
         if (this.resource.readonlydetails.split(',').map(item => item.trim()).includes(name)) {
@@ -211,6 +204,27 @@ export default {
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         this.resource.project && this.resource.projectid === this.$store.getters.project.id
     },
+    getDetailsParam (details) {
+      var params = {}
+      var filteredDetails = details
+      if (this.resource.readonlydetails && filteredDetails) {
+        filteredDetails = []
+        var readOnlyDetailNames = this.resource.readonlydetails.split(',').map(item => item.trim())
+        for (var detail of this.details) {
+          if (!readOnlyDetailNames.includes(detail.name)) {
+            filteredDetails.push(detail)
+          }
+        }
+      }
+      if (filteredDetails.length === 0) {
+        params.cleanupdetails = true
+      } else {
+        filteredDetails.forEach(function (item, index) {
+          params['details[0].' + item.name] = item.value
+        })
+      }
+      return params
+    },
     runApi () {
       var apiName = ''
       if (this.resourceType === 'UserVm') {
@@ -226,14 +240,8 @@ export default {
         return
       }
 
-      const params = { id: this.resource.id }
-      if (this.details.length === 0) {
-        params.cleanupdetails = true
-      } else {
-        this.details.forEach(function (item, index) {
-          params['details[0].' + item.name] = item.value
-        })
-      }
+      var params = { id: this.resource.id }
+      params = Object.assign(params, this.getDetailsParam(this.details))
       this.loading = true
       api(apiName, params).then(json => {
         var details = {}
@@ -259,18 +267,19 @@ export default {
         this.error = this.$t('message.error.provide.setting')
         return
       }
+      if (!this.allowEditOfDetail(this.newKey)) {
+        this.error = this.$t('error.unable.to.proceed')
+        return
+      }
       this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
-      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     updateDetail (index) {
-      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     deleteDetail (index) {
       this.details.splice(index, 1)
-      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     onShowAddDetail () {
