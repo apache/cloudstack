@@ -470,7 +470,7 @@ public class SystemVmTemplateRegistration {
         template.setCrossZones(true);
         template.setHypervisorType(details.getHypervisorType());
         template.setState(VirtualMachineTemplate.State.Inactive);
-        template.setDeployAsIs(Hypervisor.HypervisorType.VMware.equals(details.getHypervisorType()));
+        template.setDeployAsIs(false);
         template = vmTemplateDao.persist(template);
         return template;
     }
@@ -828,9 +828,6 @@ public class SystemVmTemplateRegistration {
     private void updateTemplateUrlAndChecksum(VMTemplateVO templateVO, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         templateVO.setUrl(NewTemplateUrl.get(hypervisorAndTemplateName.getKey()));
         templateVO.setChecksum(NewTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
-        if (Hypervisor.HypervisorType.VMware == templateVO.getHypervisorType()) {
-            templateVO.setDeployAsIs(true);
-        }
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
         if (!updated) {
             String errMsg = String.format("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type %s", hypervisorAndTemplateName.getKey().name());

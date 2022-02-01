@@ -667,7 +667,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             s_logger.info("Keypairs already in database, updating local copy");
             updateKeyPairsOnDisk(homeDir);
         }
-        s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
             copyPrivateKeyToHosts(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         } catch (CloudRuntimeException e) {
