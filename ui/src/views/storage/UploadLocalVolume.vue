@@ -92,7 +92,7 @@
               return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="opt in offerings" :key="opt.id">
-              {{ opt.displaytext || opt.name }}
+              {{ opt.name || opt.displaytext }}
             </a-select-option>
           </a-select>
         </a-form-item>
