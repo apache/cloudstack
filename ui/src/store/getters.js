@@ -30,6 +30,7 @@ const getters = {
   userInfo: state => state.user.info,
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
+  listAllProjects: state => state.app.listAllProjects,
   headerNotices: state => state.user.headerNotices,
   isLdapEnabled: state => state.user.isLdapEnabled,
   cloudian: state => state.user.cloudian,
@@ -40,7 +41,8 @@ const getters = {
   domainStore: state => state.user.domainStore,
   darkMode: state => state.user.darkMode,
   themeSetting: state => state.user.themeSetting,
-  defaultListViewPageSize: state => state.user.defaultListViewPageSize
+  defaultListViewPageSize: state => state.user.defaultListViewPageSize,
+  countNotify: state => state.user.countNotify
 }
 
 export default getters

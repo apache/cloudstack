@@ -17,139 +17,220 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form" v-ctrl-enter="handleSubmitForm">
+    <div class="form-layout" v-ctrl-enter="handleSubmitForm">
+      <div class="form">
+        <a-form
+          :form="form"
+          layout="vertical"
+          @submit="handleSubmitForm">
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.zonenamelabel')" :tooltip="placeholder.zoneid"/>
+            <a-select
+              v-decorator="['zoneid', {
+                initialValue: this.zoneId,
+                rules: [{ required: true, message: $t('message.error.select') }]
+              }]"
+              :placeholder="placeholder.zoneid"
+              autoFocus
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              @change="fetchPods">
+              <a-select-option
+                v-for="zone in zonesList"
+                :value="zone.id"
+                :key="zone.id"
+                :label="zone.name">
+                <span>
+                  <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  {{ zone.name }}
+                </span>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.podname')" :tooltip="placeholder.podid"/>
+            <a-select
+              v-decorator="['podid', {
+                initialValue: podId,
+                rules: [{ required: true, message: $t('message.error.select') }]
+              }]"
+              :placeholder="placeholder.podid"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              @change="fetchClusters">
+              <a-select-option
+                v-for="pod in podsList"
+                :value="pod.id"
+                :key="pod.id">
+                {{ pod.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.clustername')" :tooltip="placeholder.clusterid"/>
+            <a-select
+              v-decorator="['clusterid', {
+                initialValue: clusterId,
+                rules: [{ required: true, message: $t('message.error.select') }]
+              }]"
+              :placeholder="placeholder.clusterid"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              @change="handleChangeCluster">
+              <a-select-option
+                v-for="cluster in clustersList"
+                :value="cluster.id"
+                :key="cluster.id">
+                {{ cluster.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label
+              slot="label"
+              :title="selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel')"
+              :tooltip="placeholder.url"/>
+            <a-input
+              v-decorator="['hostname', {
+                initialValue: hostname,
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="placeholder.url"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware'">
+            <tooltip-label slot="label" :title="$t('label.username')" :tooltip="placeholder.username"/>
+            <a-input
+              v-decorator="['username', {
+                initialValue: username,
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="placeholder.username"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware'">
+            <tooltip-label slot="label" :title="$t('label.authentication.method')" :tooltip="$t('label.authentication.method')"/>
+            <a-radio-group
+              v-decorator="['authmethod', {
+                initialValue: authMethod
+              }]"
+              buttonStyle="solid"
+              @change="selected => { handleAuthMethodChange(selected.target.value) }">
+              <a-radio-button value="password">
+                {{ $t('label.password') }}
+              </a-radio-button>
+              <a-radio-button value="sshkey" v-if="selectedClusterHyperVisorType === 'KVM'">
+                {{ $t('label.authentication.sshkey') }}
+              </a-radio-button>
+            </a-radio-group>
+            <div v-if="authMethod === 'sshkey'">
+              <a-alert type="warning">
+                <span style="display:block;width:300px;word-wrap:break-word;" slot="message" v-html="$t('message.add.host.sshkey')" />
+              </a-alert>
+            </div>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware' && authMethod === 'password'">
+            <tooltip-label slot="label" :title="$t('label.password')" :tooltip="placeholder.password"/>
+            <a-input-password
+              v-decorator="['password', {
+                initialValue: password,
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="placeholder.password"></a-input-password>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'Ovm3'">
+            <tooltip-label slot="label" :title="$t('label.agent.username')" :tooltip="$t('label.agent.username')"/>
+            <a-input
+              v-decorator="['agentusername', { initialValue: agentusername }]"
+              :placeholder="$t('label.agent.username')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'Ovm3'">
+            <tooltip-label slot="label" :title="$t('label.agent.password')" :tooltip="$t('label.agent.password')"/>
+            <a-input
+              v-decorator="['agentpassword', { initialValue: agentpassword }]"
+              :placeholder="$t('label.agent.password')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'Ovm3'">
+            <tooltip-label slot="label" :title="$t('label.agentport')" :tooltip="$t('label.agentport')"/>
+            <a-input
+              v-decorator="['agentport', { initialValue: agentport }]"
+              :placeholder="$t('label.agentport')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
+            <a-input
+              v-decorator="['baremetalcpucores', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalcpucores')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalcpu')" :tooltip="$t('label.baremetalcpu')"/>
+            <a-input
+              v-decorator="['baremetalcpu', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalcpu')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalmemory')" :tooltip="$t('label.baremetalmemory')"/>
+            <a-input
+              v-decorator="['baremetalmemory', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalmemory')"></a-input>
+          </a-form-item>
+          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <tooltip-label slot="label" :title="$t('label.baremetalmac')" :tooltip="$t('label.baremetalmac')"/>
+            <a-input
+              v-decorator="['baremetalmac', {
+                rules: [{ required: true, message: $t('message.error.required.input') }]
+              }]"
+              :placeholder="$t('label.baremetalmac')"></a-input>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.hosttags')" :tooltip="placeholder.hosttags"/>
+            <a-select
+              mode="tags"
+              :placeholder="placeholder.hosttags"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              v-decorator="['hosttags', {
+                rules: hostTagRules
+              }]">
+              <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.isdedicated')"/>
+            <a-checkbox @change="toggleDedicated"></a-checkbox>
+          </a-form-item>
+          <template v-if="showDedicated">
+            <DedicateDomain
+              @domainChange="id => dedicatedDomainId = id"
+              @accountChange="id => dedicatedAccount = id"
+              :error="domainError" />
+          </template>
 
-      <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select
-          v-model="zoneId"
-          @change="fetchPods"
-          autoFocus
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="zone in zonesList"
-            :value="zone.id"
-            :key="zone.id"
-            :label="zone.name">
-            <span>
-              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
-              {{ zone.name }}
-            </span>
-          </a-select-option>
-        </a-select>
+          <a-divider></a-divider>
+
+          <div :span="24" class="action-button">
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
       </div>
-
-      <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.podname') }}</div>
-        <a-select
-          v-model="podId"
-          @change="fetchClusters"
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="pod in podsList"
-            :value="pod.id"
-            :key="pod.id">
-            {{ pod.name }}
-          </a-select-option>
-        </a-select>
-      </div>
-
-      <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.clustername') }}</div>
-        <a-select
-          v-model="clusterId"
-          @change="handleChangeCluster"
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="cluster in clustersList"
-            :value="cluster.id"
-            :key="cluster.id">
-            {{ cluster.name }}
-          </a-select-option>
-        </a-select>
-      </div>
-
-      <div class="form__item required-field">
-        <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel') }}</div>
-        <span class="required required-label">{{ $t('label.required') }}</span>
-        <a-input v-model="hostname"></a-input>
-      </div>
-
-      <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.username') }}</div>
-        <span class="required required-label">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.username" v-model="username"></a-input>
-      </div>
-
-      <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
-        <span class="required required-label">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
-      </div>
-
-      <template v-if="selectedClusterHyperVisorType === 'Ovm3'">
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.agent.username') }}</div>
-          <a-input v-model="agentusername"></a-input>
-        </div>
-        <div class="form__item required-field">
-          <div class="form__label"><span class="required">* </span>{{ $t('label.agent.password') }}</div>
-          <span class="required required-label">{{ $t('label.required') }}</span>
-          <a-input type="password" v-model="agentpassword"></a-input>
-        </div>
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.agentport') }}</div>
-          <a-input v-model="agentport"></a-input>
-        </div>
-      </template>
-
-      <div class="form__item">
-        <div class="form__label">{{ $t('label.hosttags') }}</div>
-        <a-select
-          mode="tags"
-          :placeholder="placeholder.hosttags"
-          v-model="selectedTags"
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
-        </a-select>
-      </div>
-
-      <div class="form__item">
-        <div class="form__label">{{ $t('label.isdedicated') }}</div>
-        <a-checkbox @change="toggleDedicated" />
-      </div>
-
-      <template v-if="showDedicated">
-        <DedicateDomain
-          @domainChange="id => dedicatedDomainId = id"
-          @accountChange="id => dedicatedAccount = id"
-          :error="domainError" />
-      </template>
-
-      <a-divider></a-divider>
-
-      <div :span="24" class="action-button">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
-      </div>
-
     </div>
   </a-spin>
 </template>
@@ -158,12 +239,14 @@
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'HostAdd',
   components: {
     DedicateDomain,
-    ResourceIcon
+    ResourceIcon,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -190,6 +273,7 @@ export default {
       agentusername: null,
       agentpassword: null,
       agentport: null,
+      authMethod: 'password',
       selectedCluster: null,
       selectedClusterHyperVisorType: null,
       showDedicated: false,
@@ -198,11 +282,29 @@ export default {
       domainError: false,
       params: [],
       placeholder: {
+        zoneid: null,
+        podid: null,
+        clusterid: null,
+        url: null,
         username: null,
         password: null,
-        hosttags: null
+        hosttags: null,
+        isdedicated: null
       }
     }
+  },
+  computed: {
+    hostTagRules () {
+      let rules = []
+      if (this.selectedClusterHyperVisorType === 'BareMetal') {
+        rules = [{ required: true, message: this.$t('message.error.select') }]
+      }
+
+      return rules
+    }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
   },
   created () {
     this.fetchData()
@@ -218,22 +320,24 @@ export default {
       this.loading = true
       api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0].id || null
-        this.fetchPods()
+        this.zoneId = this.zonesList[0]?.id || null
+        this.fetchPods(this.zoneId)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
     },
-    fetchPods () {
+    fetchPods (zoneId) {
+      this.zoneId = zoneId
       this.loading = true
       api('listPods', {
         zoneid: this.zoneId
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
-        this.podId = this.podsList[0].id || null
-        this.fetchClusters()
+        this.podId = this.podsList[0]?.id || null
+        this.form.setFieldsValue({ podid: this.podId })
+        this.fetchClusters(this.podId)
       }).catch(error => {
         this.$notifyError(error)
         this.podsList = []
@@ -242,15 +346,21 @@ export default {
         this.loading = false
       })
     },
-    fetchClusters () {
+    fetchClusters (podId) {
+      this.form.clearField('clusterid')
+      this.clusterId = null
+      this.clustersList = []
+      if (!podId) return
+      this.podId = podId
       this.loading = true
       api('listClusters', {
         podid: this.podId
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
-        this.clusterId = this.clustersList[0].id || null
+        this.clusterId = this.clustersList[0]?.id || null
+        this.form.setFieldsValue({ clusterid: this.clusterId })
         if (this.clusterId) {
-          this.handleChangeCluster()
+          this.handleChangeCluster(this.clusterId)
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -263,7 +373,16 @@ export default {
     fetchHostTags () {
       this.loading = true
       api('listHostTags').then(response => {
-        this.hostTagsList = response.listhosttagsresponse.hosttag || []
+        const listTagExists = []
+        const hostTagsList = response.listhosttagsresponse.hosttag || []
+        hostTagsList.forEach(tag => {
+          if (listTagExists.includes(tag.name)) {
+            return true
+          }
+
+          listTagExists.push(tag.name)
+          this.hostTagsList.push(tag)
+        })
       }).catch(error => {
         this.$notifyError(error)
         this.hostTagsList = []
@@ -271,7 +390,8 @@ export default {
         this.loading = false
       })
     },
-    handleChangeCluster () {
+    handleChangeCluster (value) {
+      this.clusterId = value
       this.selectedCluster = this.clustersList.find(i => i.id === this.clusterId)
       this.selectedClusterHyperVisorType = this.selectedCluster.hypervisortype
     },
@@ -280,64 +400,58 @@ export default {
       this.dedicatedAccount = null
       this.showDedicated = !this.showDedicated
     },
+    handleAuthMethodChange (val) {
+      this.authMethod = val
+    },
     handleSubmitForm () {
       if (this.loading) return
-      const requiredFields = document.querySelectorAll('.required-field')
+      this.form.validateFieldsAndScroll((err, values) => {
+        if (err) return
 
-      requiredFields.forEach(field => {
-        const input = field.querySelector('.ant-input')
-        if (!input.value) {
-          input.parentNode.querySelector('.required-label').classList.add('required-label--error')
+        if (values.hostname.indexOf('http://') === -1) {
+          this.url = `http://${values.hostname}`
         } else {
-          input.parentNode.querySelector('.required-label').classList.remove('required-label--error')
+          this.url = values.hostname
         }
-      })
 
-      if (this.$el.querySelectorAll('.required-label--error').length > 0) return
-
-      if (this.selectedClusterHyperVisorType === 'VMware') {
-        this.username = ''
-        this.password = ''
-      }
-
-      if (this.hostname.indexOf('http://') === -1) {
-        this.url = `http://${this.hostname}`
-      } else {
-        this.url = this.hostname
-      }
-
-      const args = {
-        zoneid: this.zoneId,
-        podid: this.podId,
-        clusterid: this.clusterId,
-        hypervisor: this.selectedClusterHyperVisorType,
-        clustertype: this.selectedCluster.clustertype,
-        hosttags: this.selectedTags.join(),
-        username: this.username,
-        password: this.password,
-        url: this.url,
-        agentusername: this.agentusername,
-        agentpassword: this.agentpassword,
-        agentport: this.agentport
-      }
-      Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
-
-      this.loading = true
-      api('addHost', {}, 'POST', args).then(response => {
-        const host = response.addhostresponse.host[0] || {}
-        if (host.id && this.showDedicated) {
-          this.dedicateHost(host.id)
+        const args = {
+          zoneid: values.zoneid,
+          podid: values.podid,
+          clusterid: values.clusterid,
+          hypervisor: this.selectedClusterHyperVisorType,
+          clustertype: this.selectedCluster.clustertype,
+          hosttags: values.hosttags ? values.hosttags.join() : null,
+          username: values.username,
+          password: this.authMethod !== 'password' ? '' : values.password,
+          url: this.url,
+          agentusername: values.agentusername,
+          agentpassword: values.agentpassword,
+          agentport: values.agentport
         }
-        this.parentFetchData()
-        this.$parent.$parent.close()
-      }).catch(error => {
-        this.$notification.error({
-          message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.addhostresponse.errortext,
-          duration: 0
+        if (this.selectedClusterHyperVisorType === 'BareMetal') {
+          args.cpunumber = values.baremetalcpucores
+          args.cpuspeed = values.baremetalcpu
+          args.memory = values.baremetalmemory
+          args.hostmac = values.baremetalmac
+        }
+        Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
+        this.loading = true
+        api('addHost', {}, 'POST', args).then(response => {
+          const host = response.addhostresponse.host[0] || {}
+          if (host.id && this.showDedicated) {
+            this.dedicateHost(host.id)
+          }
+          this.parentFetchData()
+          this.closeAction()
+        }).catch(error => {
+          this.$notification.error({
+            message: `${this.$t('label.error')} ${error.response.status}`,
+            description: error.response.data.addhostresponse.errortext,
+            duration: 0
+          })
+        }).finally(() => {
+          this.loading = false
         })
-      }).finally(() => {
-        this.loading = false
       })
     },
     dedicateHost (hostId) {
@@ -378,15 +492,22 @@ export default {
       this.params.find(i => {
         if (i.name === field) this.placeholder[field] = i.description
       })
+    },
+    closeAction () {
+      this.$emit('close-action')
     }
   }
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
   .form {
     &__label {
       margin-bottom: 5px;
+
+      .required {
+        margin-left: 10px;
+      }
     }
     &__item {
       margin-bottom: 20px;

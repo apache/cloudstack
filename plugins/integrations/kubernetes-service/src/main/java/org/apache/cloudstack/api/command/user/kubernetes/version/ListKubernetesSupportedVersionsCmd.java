@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.version.KubernetesVersionService;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = ListKubernetesSupportedVersionsCmd.APINAME,
         description = "Lists supported Kubernetes version",
@@ -81,7 +81,7 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
     }
 
     public String getMinimumSemanticVersion() {
-        if(!Strings.isNullOrEmpty(minimumSemanticVersion) &&
+        if(StringUtils.isNotEmpty(minimumSemanticVersion) &&
                 !minimumSemanticVersion.matches("[0-9]+(\\.[0-9]+)*")) {
             throw new IllegalArgumentException("Invalid version format");
         }

@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +30,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
@@ -84,7 +84,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -94,6 +93,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String _nfsVersion;
+
 
     @Override
     public boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd) {
@@ -295,13 +295,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             return new PrimaryStorageDownloadAnswer(templateUuidName, 0);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to execute PrimaryStorageDownloadCommand due to exception";
-            s_logger.error(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
+            return new PrimaryStorageDownloadAnswer(hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -379,22 +373,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 try {
                     if (workerVm != null) {
-                        // detach volume and destroy worker vm
                         workerVm.detachAllDisksAndDestroy();
                     }
                 } catch (Throwable e) {
-                    s_logger.warn("Failed to destroy worker VM: " + workerVMName);
+                    s_logger.warn(String.format("Failed to destroy worker VM [%s] due to: [%s].", workerVMName, e.getMessage()), e);
                 }
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "BackupSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
-            return new BackupSnapshotAnswer(cmd, false, details, snapshotBackupUuid, true);
+            return new BackupSnapshotAnswer(cmd, false, hostService.createLogMessageException(e, cmd), snapshotBackupUuid, true);
         }
 
         return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, true);
@@ -432,14 +418,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "CreatePrivateTemplateFromVolumeCommand exception: " + StringUtils.getExceptionStackInfo(e);
-            return new CreatePrivateTemplateAnswer(cmd, false, details);
+            return new CreatePrivateTemplateAnswer(cmd, false, hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -460,14 +439,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), uniqeName, ImageFormat.OVA);
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-
-            details = "CreatePrivateTemplateFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
-            return new CreatePrivateTemplateAnswer(cmd, false, details);
+            return new CreatePrivateTemplateAnswer(cmd, false, hostService.createLogMessageException(e, cmd));
         }
     }
 
@@ -503,13 +475,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
             return new CopyVolumeAnswer(cmd, true, null, result.first(), result.second());
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            String msg = "Unable to execute CopyVolumeCommand due to exception";
-            s_logger.error(msg, e);
-            return new CopyVolumeAnswer(cmd, false, "CopyVolumeCommand failed due to exception: " + StringUtils.getExceptionStackInfo(e), null, null);
+            return new CopyVolumeAnswer(cmd, false, hostService.createLogMessageException(e, cmd), null, null);
         }
     }
 
@@ -542,12 +508,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 success = true;
             }
         } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                hostService.invalidateServiceContext(context);
-            }
-
-            s_logger.error("Unexpecpted exception ", e);
-            details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
+            details = hostService.createLogMessageException(e, cmd);
         }
 
         return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
@@ -945,8 +906,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 Script command = new Script(false, "mkdir", _timeout, s_logger);
                 command.add("-p");
                 command.add(exportPath);
-                if (command.execute() != null) {
-                    throw new Exception("unable to prepare snapshot backup directory");
+
+                String result = command.execute();
+                if (result != null) {
+                    String errorMessage = String.format("Unable to prepare snapshot backup directory: [%s] due to [%s].", exportPath, result);
+                    s_logger.error(errorMessage);
+                    throw new Exception(errorMessage);
                 }
             }
         }
@@ -967,7 +932,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmxFormattedVirtualHardwareVersion);
                 clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
                 if (clonedVm == null) {
-                    String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
+                    String msg = String.format("Unable to create dummy VM to export volume. volume path: [%s].", volumePath);
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
@@ -1032,7 +997,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.removeSnapshot(exportName, false);
             }
             if (workerVm != null) {
-                //detach volume and destroy worker vm
                 workerVm.detachAllDisksAndDestroy();
             }
         }
@@ -1140,12 +1104,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "snapshots/" + accountId + "/" + volumeId;
     }
 
-    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, ManagedObjectReference morDs, String exceptFileName)
-            throws Exception {
+    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, ManagedObjectReference morDs,
+                                        String exceptFileName, String vmName) throws Exception {
         long size = 0;
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
         HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
-        String datastorePath = "[" + dsMo.getName() + "]";
+        String datastorePath = (new DatastoreFile(dsMo.getName(), vmName)).getPath();
         HostDatastoreBrowserSearchSpec searchSpec = new HostDatastoreBrowserSearchSpec();
         FileQueryFlags fqf = new FileQueryFlags();
         fqf.setFileSize(true);
@@ -1191,7 +1155,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
-                if (info.getEntityName().equals(cmd.getVmName()) && StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
+                if (info.getEntityName().equals(cmd.getVmName()) && org.apache.commons.lang3.StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
                     if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
                         s_logger.debug("There is already a VM snapshot task running, wait for it");
                         context.getVimClient().waitForTask(taskMor);
@@ -1306,12 +1270,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             // get volume's chain size for this VM snapshot; exclude current volume vdisk
             DataStoreTO store = volumeTO.getDataStore();
             ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, store);
-            long size = getVMSnapshotChainSize(context, hyperHost, baseName + ".vmdk", morDs, newPath);
-            size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath);
+            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath, vmName);
 
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
                 // add memory snapshot size
-                size += getVMSnapshotChainSize(context, hyperHost, vmName + "-*.vmsn", morDs, null);
+                size += getVMSnapshotChainSize(context, hyperHost, vmName + "-*.vmsn", morDs, null, vmName);
             }
 
             volumeTO.setSize(size);
@@ -1406,7 +1369,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
-                if (info.getEntityName().equals(cmd.getVmName()) && StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
+                if (info.getEntityName().equals(cmd.getVmName()) && org.apache.commons.lang3.StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
                 }

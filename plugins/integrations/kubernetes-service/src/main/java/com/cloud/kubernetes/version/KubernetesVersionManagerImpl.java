@@ -56,7 +56,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesVersionManagerImpl extends ManagerBase implements KubernetesVersionService {
     public static final Logger LOGGER = Logger.getLogger(KubernetesVersionManagerImpl.class.getName());
@@ -130,7 +130,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     private List <KubernetesSupportedVersionVO> filterKubernetesSupportedVersions(List <KubernetesSupportedVersionVO> versions, final String minimumSemanticVersion) {
-        if (!Strings.isNullOrEmpty(minimumSemanticVersion)) {
+        if (StringUtils.isNotEmpty(minimumSemanticVersion)) {
             for (int i = versions.size() - 1; i >= 0; --i) {
                 KubernetesSupportedVersionVO version = versions.get(i);
                 try {
@@ -159,7 +159,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         registerIsoCmd.setDisplayText(isoName);
         registerIsoCmd.setBootable(false);
         registerIsoCmd.setUrl(isoUrl);
-        if (!Strings.isNullOrEmpty(isoChecksum)) {
+        if (StringUtils.isNotEmpty(isoChecksum)) {
             registerIsoCmd.setChecksum(isoChecksum);
         }
         registerIsoCmd.setAccountName(accountManager.getSystemAccount().getAccountName());
@@ -176,7 +176,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     public static int compareSemanticVersions(String v1, String v2) throws IllegalArgumentException {
-        if (Strings.isNullOrEmpty(v1) || Strings.isNullOrEmpty(v2)) {
+        if (StringUtils.isAnyEmpty(v1, v2)) {
             throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
         }
         if(!isSemanticVersion(v1)) {
@@ -240,7 +240,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         final Long zoneId = cmd.getZoneId();
         String minimumSemanticVersion = cmd.getMinimumSemanticVersion();
         final Long minimumKubernetesVersionId = cmd.getMinimumKubernetesVersionId();
-        if (!Strings.isNullOrEmpty(minimumSemanticVersion) && minimumKubernetesVersionId != null) {
+        if (StringUtils.isNotEmpty(minimumSemanticVersion) && minimumKubernetesVersionId != null) {
             throw new CloudRuntimeException(String.format("Both parameters %s and %s can not be passed together", ApiConstants.MIN_SEMANTIC_VERSION, ApiConstants.MIN_KUBERNETES_VERSION_ID));
         }
         if (minimumKubernetesVersionId != null) {
@@ -299,10 +299,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
             throw new InvalidParameterValueException("Invalid zone specified");
         }
-        if (Strings.isNullOrEmpty(isoUrl)) {
+        if (StringUtils.isEmpty(isoUrl)) {
             throw new InvalidParameterValueException(String.format("Invalid URL for ISO specified, %s", isoUrl));
         }
-        if (Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isEmpty(name)) {
             name = String.format("v%s", semanticVersion);
             if (zoneId != null) {
                 name = String.format("%s-%s", name, dataCenterDao.findById(zoneId).getName());

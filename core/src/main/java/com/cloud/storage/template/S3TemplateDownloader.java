@@ -37,7 +37,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
@@ -46,7 +46,6 @@ import java.io.InputStream;
 import java.util.Date;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import static com.cloud.utils.StringUtils.join;
 import static java.util.Arrays.asList;
 
 /**
@@ -98,7 +97,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         this.fileExtension = StringUtils.substringAfterLast(StringUtils.substringAfterLast(downloadUrl, "/"), ".");
 
         // Calculate and set S3 Key.
-        this.s3Key = join(asList(installPath, StringUtils.substringAfterLast(downloadUrl, "/")), S3Utils.SEPARATOR);
+        this.s3Key = StringUtils.join(asList(installPath, StringUtils.substringAfterLast(downloadUrl, "/")), S3Utils.SEPARATOR);
 
         // Set proxy if available.
         HTTPUtils.setProxy(proxy, this.httpClient);

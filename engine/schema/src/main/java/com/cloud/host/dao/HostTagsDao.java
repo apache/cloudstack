@@ -25,7 +25,7 @@ public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
 
     void persist(long hostId, List<String> hostTags);
 
-    List<String> gethostTags(long hostId);
+    List<String> getHostTags(long hostId);
 
     List<String> getDistinctImplicitHostTags(List<Long> hostIds, String[] implicitHostTags);
 

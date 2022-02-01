@@ -20,7 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.utils.Pair;
+import com.cloud.agent.api.to.OVFInformationTO;
 
 public class UploadStatusAnswer extends Answer {
     public static enum UploadStatus {
@@ -32,8 +32,7 @@ public class UploadStatusAnswer extends Answer {
     private long physicalSize = 0;
     private String installPath = null;
     private int downloadPercent = 0;
-    private Pair<String, String> guestOsInfo;
-    private String minimumHardwareVersion;
+    private OVFInformationTO ovfInformationTO;
 
     protected UploadStatusAnswer() {
     }
@@ -89,19 +88,11 @@ public class UploadStatusAnswer extends Answer {
         this.downloadPercent = downloadPercent;
     }
 
-    public Pair<String, String> getGuestOsInfo() {
-        return guestOsInfo;
+    public OVFInformationTO getOvfInformationTO() {
+        return ovfInformationTO;
     }
 
-    public void setGuestOsInfo(Pair<String, String> guestOsInfo) {
-        this.guestOsInfo = guestOsInfo;
-    }
-
-    public void setMinimumHardwareVersion(String minimumHardwareVersion) {
-        this.minimumHardwareVersion = minimumHardwareVersion;
-    }
-
-    public String getMinimumHardwareVersion() {
-        return minimumHardwareVersion;
+    public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
+        this.ovfInformationTO = ovfInformationTO;
     }
 }

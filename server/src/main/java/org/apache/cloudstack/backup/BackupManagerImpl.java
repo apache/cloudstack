@@ -110,7 +110,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
@@ -533,7 +533,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             vm = guru.importVirtualMachineFromBackup(zoneId, domainId, accountId, userId, vmInternalName, backup);
         } catch (final Exception e) {
-            LOG.error("Failed to import VM from backup restoration", e);
+            LOG.error(String.format("Failed to import VM [vmInternalName: %s] from backup restoration [%s] with hypervisor [type: %s] due to: [%s].", vmInternalName,
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType"), hypervisorType, e.getMessage()), e);
             throw new CloudRuntimeException("Error during vm backup restoration and import: " + e.getMessage());
         }
         if (vm == null) {
@@ -586,7 +587,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
     public boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception {
-        if (Strings.isNullOrEmpty(backedUpVolumeUuid)) {
+        if (StringUtils.isEmpty(backedUpVolumeUuid)) {
             throw new CloudRuntimeException("Invalid volume ID passed");
         }
         final BackupVO backup = backupDao.findById(backupId);
@@ -747,7 +748,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     public BackupProvider getBackupProvider(final String name) {
-        if (Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isEmpty(name)) {
             throw new CloudRuntimeException("Invalid backup provider name provided");
         }
         if (!backupProvidersMap.containsKey(name)) {

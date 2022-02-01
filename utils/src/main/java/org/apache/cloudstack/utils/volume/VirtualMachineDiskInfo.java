@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.utils.volume;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class VirtualMachineDiskInfo {
     private String diskDeviceBusName;

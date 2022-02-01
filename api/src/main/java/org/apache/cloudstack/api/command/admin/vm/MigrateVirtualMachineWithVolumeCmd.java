@@ -50,7 +50,7 @@ import com.cloud.vm.VirtualMachine;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
     private static final String s_name = "migratevirtualmachinewithvolumeresponse";
 

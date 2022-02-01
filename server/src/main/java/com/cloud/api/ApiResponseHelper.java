@@ -338,7 +338,6 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
@@ -363,7 +362,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -646,7 +645,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
-            vmSnapshotResponse.setVirtualMachineName(Strings.isNullOrEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
+            vmSnapshotResponse.setVirtualMachineName(StringUtils.isEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
             vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
@@ -3948,7 +3947,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot usage");
                 if (vmSnapshotVO != null) {
-                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                    builder.append(" Id: ").append(vmSnapshotVO.getUuid());
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
@@ -3991,7 +3990,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 final StringBuilder builder = new StringBuilder();
                 builder.append("VMSnapshot on primary storage usage");
                 if (vmSnapshotVO != null) {
-                    builder.append(" Id: ").append(vmSnapshotVO.getId()).append(" (").append(vmSnapshotVO.getUuid()).append(") ");
+                    builder.append(" Id: ").append(vmSnapshotVO.getUuid());
                 }
                 if (vmInstance != null) {
                     builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")

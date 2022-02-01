@@ -36,7 +36,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorker {
 
@@ -81,7 +81,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         for (int i = 0; i < clusterVMs.size(); ++i) {
             UserVm vm = clusterVMs.get(i);
             String hostName = vm.getHostName();
-            if (!Strings.isNullOrEmpty(hostName)) {
+            if (StringUtils.isNotEmpty(hostName)) {
                 hostName = hostName.toLowerCase();
             }
             result = null;
@@ -138,7 +138,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
-        if (Strings.isNullOrEmpty(publicIpAddress)) {
+        if (StringUtils.isEmpty(publicIpAddress)) {
             logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve associated public IP", kubernetesCluster.getName()));
         }
         clusterVMs = getKubernetesClusterVMs();

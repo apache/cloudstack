@@ -29,7 +29,7 @@ public abstract class UploadState {
         UPLOAD_ANSWER, ABANDON_UPLOAD, TIMEOUT_CHECK, DISCONNECT
     };
 
-    protected static final Logger s_logger = Logger.getLogger(UploadListener.class.getName());
+    protected static final Logger s_logger = Logger.getLogger(UploadState.class.getName());
 
     private UploadListener ul;
 

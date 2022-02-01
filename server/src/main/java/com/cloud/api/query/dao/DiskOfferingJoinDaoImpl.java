@@ -139,6 +139,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
                     diskOfferingResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
             }
         }
+        diskOfferingResponse.setDiskSizeStrictness(offering.getDiskSizeStrictness());
 
         return diskOfferingResponse;
     }

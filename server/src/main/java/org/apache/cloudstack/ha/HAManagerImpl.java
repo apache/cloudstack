@@ -86,7 +86,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public final class HAManagerImpl extends ManagerBase implements HAManager, ClusterManagerListener, PluggableService, Configurable, StateListener<HAConfig.HAState, HAConfig.Event, HAConfig> {
     public static final Logger LOG = Logger.getLogger(HAManagerImpl.class);
@@ -244,7 +244,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             return true;
         }
         final DataCenterDetailVO zoneDetails = dataCenterDetailsDao.findDetail(resource.getDataCenterId(), HA_ENABLED_DETAIL);
-        return zoneDetails == null || Strings.isNullOrEmpty(zoneDetails.getValue()) || Boolean.valueOf(zoneDetails.getValue());
+        return zoneDetails == null || StringUtils.isEmpty(zoneDetails.getValue()) || Boolean.valueOf(zoneDetails.getValue());
     }
 
     private boolean isHAEnabledForCluster(final HAResource resource) {
@@ -252,7 +252,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             return true;
         }
         final ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(resource.getClusterId(), HA_ENABLED_DETAIL);
-        return clusterDetails == null || Strings.isNullOrEmpty(clusterDetails.getValue()) || Boolean.valueOf(clusterDetails.getValue());
+        return clusterDetails == null || StringUtils.isEmpty(clusterDetails.getValue()) || Boolean.valueOf(clusterDetails.getValue());
     }
 
     private boolean isHAEligibleForResource(final HAResource resource) {
@@ -352,7 +352,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     }
                     haConfig.setResourceId(resourceId);
                     haConfig.setResourceType(resourceType);
-                    if (Strings.isNullOrEmpty(haConfig.getHaProvider())) {
+                    if (StringUtils.isEmpty(haConfig.getHaProvider())) {
                         throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("HAProvider is not provided for the resource [%s], failing configuration.", resourceId));
                     }
                     if (haConfigDao.persist(haConfig) != null) {
@@ -365,7 +365,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     if (haProvider != null) {
                         haConfig.setHaProvider(haProvider);
                     }
-                    if (Strings.isNullOrEmpty(haConfig.getHaProvider())) {
+                    if (StringUtils.isEmpty(haConfig.getHaProvider())) {
                         throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("HAProvider is not provided for the resource [%s], failing configuration.", resourceId));
                     }
                     return haConfigDao.update(haConfig.getId(), haConfig);
@@ -380,7 +380,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     public boolean configureHA(final Long resourceId, final HAResource.ResourceType resourceType, final String haProvider) {
         Preconditions.checkArgument(resourceId != null && resourceId > 0L);
         Preconditions.checkArgument(resourceType != null);
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(haProvider));
+        Preconditions.checkArgument(StringUtils.isNotEmpty(haProvider));
 
         if (!haProviderMap.containsKey(haProvider.toLowerCase())) {
             throw new CloudRuntimeException(String.format("Given HA provider [%s] does not exist.", haProvider));

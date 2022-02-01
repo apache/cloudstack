@@ -430,7 +430,7 @@ public class CitrixRequestWrapperTest {
     public void testResizeVolumeCommand() {
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
 
-        final ResizeVolumeCommand resizeCommand = new ResizeVolumeCommand("Test", pool, 1l, 3l, false, "Tests-1");
+        final ResizeVolumeCommand resizeCommand = new ResizeVolumeCommand("Test", pool, 1l, 3l, false, "Tests-1", null);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

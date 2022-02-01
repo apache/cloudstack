@@ -24,7 +24,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.libvirt.LibvirtException;
 

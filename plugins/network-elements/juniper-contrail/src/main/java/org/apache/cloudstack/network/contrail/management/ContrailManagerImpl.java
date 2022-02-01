@@ -48,7 +48,7 @@ import org.apache.cloudstack.network.contrail.model.FloatingIpPoolModel;
 import org.apache.cloudstack.network.contrail.model.ModelController;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;

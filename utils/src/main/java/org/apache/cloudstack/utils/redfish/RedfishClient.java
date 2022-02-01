@@ -38,7 +38,7 @@ import javax.net.ssl.TrustManager;
 
 import com.cloud.utils.nio.TrustAllManager;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;

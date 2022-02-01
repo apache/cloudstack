@@ -30,8 +30,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import com.google.common.base.Strings;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +48,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
 
     @Override
     public boolean validateCertificate(String certificate, String key, String domainSuffix) {
-        if (Strings.isNullOrEmpty(certificate) || Strings.isNullOrEmpty(key) || Strings.isNullOrEmpty(domainSuffix)) {
+        if (StringUtils.isAnyEmpty(certificate, key, domainSuffix)) {
             s_logger.error("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: " + domainSuffix);
             return false;
         }

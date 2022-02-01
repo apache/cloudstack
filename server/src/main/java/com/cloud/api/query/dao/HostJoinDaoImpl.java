@@ -40,7 +40,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -105,7 +105,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private boolean containsHostHATag(final String tags) {
         boolean result = false;
         String haTag = ApiDBUtils.getHaTag();
-        if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(tags)) {
+        if (StringUtils.isNoneEmpty(haTag, tags)) {
             List<String> tagsList = Arrays.asList(tags.split(","));
             if (tagsList.contains(haTag)) {
                 result = true;

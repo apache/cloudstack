@@ -17,7 +17,6 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,7 +35,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.StringUtils;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
@@ -45,6 +43,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -113,7 +112,6 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -1404,6 +1402,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                 List<Volume> allVolumes = new ArrayList<>();
                 allVolumes.addAll(volumesOrderBySizeDesc);
+                List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = getVolumeDiskProfilePairs(allVolumes);
                 for (StoragePool storagePool : suitablePools) {
                     haveEnoughSpace = false;
                     hostCanAccessPool = false;
@@ -1412,7 +1411,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         hostCanAccessPool = true;
                         if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                             try {
-                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(allVolumes, storagePool);
+                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, storagePool);
                                 if (!isStoragePoolStoragepolicyComplaince) {
                                     continue;
                                 }
@@ -1448,10 +1447,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                 else
                                     requestVolumes = new ArrayList<Volume>();
                                 requestVolumes.add(vol);
-
+                                List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = getVolumeDiskProfilePairs(requestVolumes);
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                                     try {
-                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, potentialSPool);
+                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, potentialSPool);
                                         if (!isStoragePoolStoragepolicyComplaince) {
                                             continue;
                                         }
@@ -1461,8 +1460,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                     }
                                 }
 
-                                if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
-                                        !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
+                                if (!_storageMgr.storagePoolHasEnoughIops(volumeDiskProfilePair, potentialSPool) ||
+                                        !_storageMgr.storagePoolHasEnoughSpace(volumeDiskProfilePair, potentialSPool, potentialHost.getClusterId()))
                                     continue;
                                 volumeAllocationMap.put(potentialSPool, requestVolumes);
                             }
@@ -1496,6 +1495,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
         s_logger.debug("Could not find a potential host that has associated storage pools from the suitable host/pool lists for this VM");
         return null;
+    }
+
+    private  List<Pair<Volume, DiskProfile>> getVolumeDiskProfilePairs(List<Volume> volumes) {
+        List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs = new ArrayList<>();
+        for (Volume volume: volumes) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, _volsDao.getHypervisorType(volume.getId()));
+            volumeDiskProfilePairs.add(new Pair<>(volume, diskProfile));
+        }
+        return volumeDiskProfilePairs;
     }
 
     /**
@@ -1639,10 +1648,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
-            if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
-                    && vmProfile.getServiceOffering().getTagsArray().length != 0) {
-                diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
-            }
+            //FR123 check how is it different for service offering getTagsArray and disk offering's
+            //if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
+            //        && vmProfile.getServiceOffering().getTagsArray().length != 0) {
+            //    diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
+            //}
 
             DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
             boolean useLocalStorage = false;
@@ -1656,19 +1666,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 useLocalStorage = diskOffering.isUseLocalStorage();
-
-                // TODO: this is a hacking fix for the problem of deploy
-                // ISO-based VM on local storage
-                // when deploying VM based on ISO, we have a service offering
-                // and an additional disk offering, use-local storage flag is
-                // actually
-                // saved in service offering, override the flag from service
-                // offering when it is a ROOT disk
-                if (!useLocalStorage && vmProfile.getServiceOffering().isUseLocalStorage()) {
-                    if (toBeCreated.getVolumeType() == Volume.Type.ROOT) {
-                        useLocalStorage = true;
-                    }
-                }
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
 
