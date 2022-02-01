@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -100,9 +99,7 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -295,8 +292,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public TaggedResourceService taggedResourceService;
     @Inject
     VirtualMachineManager virtualMachineManager;
-    @Inject
-    DiskOfferingJoinDao diskOfferingJoinDao;
 
     protected Gson _gson;
 
@@ -496,33 +491,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return UUID.randomUUID().toString();
     }
 
-    private Long getDefaultCustomOfferingId(long zoneId) {
+    private Long getDefaultCustomOfferingId(Account owner, DataCenter zone) {
         DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName(CUSTOM_DISK_OFFERING_UNIQUE_NAME);
         if (diskOfferingVO == null || !DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
             return null;
         }
-        DiskOfferingJoinVO diskOfferingJoinVO = diskOfferingJoinDao.findById(diskOfferingVO.getId());
-        if (diskOfferingJoinVO == null) {
-            return null;
-        }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(diskOfferingJoinVO.getZoneId())) {
-            return diskOfferingJoinVO.getId();
-        }
-        List<String> zoneIds = Arrays.stream(diskOfferingJoinVO.getZoneId().split(",")).collect(Collectors.toList());
-        if (zoneIds.contains(String.valueOf(zoneId))) {
-            return diskOfferingJoinVO.getId();
+        try {
+            _configMgr.checkDiskOfferingAccess(owner, diskOfferingVO, zone);
+            return diskOfferingVO.getId();
+        } catch (PermissionDeniedException ignored) {
         }
         return null;
     }
 
-    private Long getCustomDiskOfferingIdForVolumeUpload(long zoneId) {
-        Long offeringId = getDefaultCustomOfferingId(zoneId);
+    private Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone) {
+        Long offeringId = getDefaultCustomOfferingId(owner, zone);
         if (offeringId != null) {
             return offeringId;
         }
-        List<DiskOfferingJoinVO> offerings = diskOfferingJoinDao.findCustomDiskOfferingsByZoneId(zoneId);
-        if (CollectionUtils.isNotEmpty(offerings)) {
-            return offerings.get(0).getId();
+        List<DiskOfferingVO> offerings = _diskOfferingDao.findCustomDiskOfferings();
+        for (DiskOfferingVO offering : offerings) {
+            try {
+                _configMgr.checkDiskOfferingAccess(owner, offering, zone);
+                return offering.getId();
+            } catch (PermissionDeniedException ignored) {}
         }
         return null;
     }
@@ -533,6 +525,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
                 VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
+                DataCenter zone = _dcDao.findById(zoneId);
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
@@ -544,9 +537,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 Long volumeDiskOfferingId = diskOfferingId;
                 if (volumeDiskOfferingId == null) {
-                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(zoneId);
+                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(owner, zone);
                     if (volumeDiskOfferingId == null) {
-                        DataCenter zone = _dcDao.findById(zoneId);
                         throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
                     }
                 }

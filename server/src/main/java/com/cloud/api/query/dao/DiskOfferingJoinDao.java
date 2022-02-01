@@ -30,8 +30,6 @@ public interface DiskOfferingJoinDao extends GenericDao<DiskOfferingJoinVO, Long
 
     List<DiskOfferingJoinVO> findByZoneId(long zoneId);
 
-    List<DiskOfferingJoinVO> findCustomDiskOfferingsByZoneId(long zoneId);
-
     DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO dof);
 
     DiskOfferingJoinVO newDiskOfferingView(DiskOffering dof);
