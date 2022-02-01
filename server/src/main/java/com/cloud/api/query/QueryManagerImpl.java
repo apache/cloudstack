@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -124,6 +126,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -194,6 +197,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.offering.DiskOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectInvitation;
@@ -213,17 +217,19 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -367,6 +373,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private ServiceOfferingDetailsDao _srvOfferingDetailsDao;
 
     @Inject
+    private DiskOfferingDao _diskOfferingDao;
+
+    @Inject
     private DataCenterJoinDao _dcJoinDao;
 
     @Inject
@@ -445,6 +454,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private VolumeDao volumeDao;
 
     @Inject
     private ResourceIconDao resourceIconDao;
@@ -984,6 +995,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object keyPairName = cmd.getKeyPairName();
         Object serviceOffId = cmd.getServiceOfferingId();
         Object securityGroupId = cmd.getSecurityGroupId();
+        Object backupOfferingId = cmd.getBackupOfferingId();
         Object isHaEnabled = cmd.getHaEnabled();
         Object pod = null;
         Long clusterId = null;
@@ -1016,6 +1028,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (serviceOffId != null) {
             sb.and("serviceOfferingId", sb.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
         }
+
+        if (backupOfferingId != null) {
+            sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
+        }
+
         if (display != null) {
             sb.and("display", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
         }
@@ -1100,6 +1117,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (serviceOffId != null) {
             sc.setParameters("serviceOfferingId", serviceOffId);
+        }
+
+        if (backupOfferingId != null) {
+            sc.setParameters("backupOfferingId", backupOfferingId);
         }
 
         if (securityGroupId != null) {
@@ -2067,7 +2088,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
+        sb.cp();
+
         // display UserVM volumes only
         sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
@@ -2872,7 +2896,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingJoinVO.class, "id", true);
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
-        sc.addAnd("type", Op.EQ, DiskOfferingVO.Type.Disk);
+        sc.addAnd("computeOnly", Op.EQ, false);
 
         Account account = CallContext.current().getCallingAccount();
         Object name = cmd.getDiskOfferingName();
@@ -2882,6 +2906,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
+        Long volumeId = cmd.getVolumeId();
+        Long storagePoolId = cmd.getStoragePoolId();
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -2912,6 +2938,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         }
 
+        if (volumeId != null && storagePoolId != null) {
+            throw new InvalidParameterValueException("Both volume ID and storage pool ID are not allowed at the same time");
+        }
+
         if (keyword != null) {
             SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -2938,6 +2968,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
         }
 
+        DiskOffering currentDiskOffering = null;
+        if (volumeId != null) {
+            Volume volume = volumeDao.findById(volumeId);
+            if (volume == null) {
+                throw new InvalidParameterValueException(String.format("Unable to find a volume with specified id %s", volumeId));
+            }
+            currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
+            if (!currentDiskOffering.isComputeOnly() && currentDiskOffering.getDiskSizeStrictness()) {
+                SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
+                ssc.addOr("diskSize", Op.EQ, volume.getSize());
+                ssc.addOr("customized", SearchCriteria.Op.EQ, true);
+                sc.addAnd("diskSizeOrCustomized", SearchCriteria.Op.SC, ssc);
+            }
+            sc.addAnd("id", SearchCriteria.Op.NEQ, currentDiskOffering.getId());
+            sc.addAnd("diskSizeStrictness", Op.EQ, currentDiskOffering.getDiskSizeStrictness());
+        }
+
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         Account caller = CallContext.current().getCallingAccount();
@@ -2961,6 +3008,28 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+        String[] requiredTagsArray = new String[0];
+        if (CollectionUtils.isNotEmpty(result.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
+            if (volumeId != null) {
+                Volume volume = volumeDao.findById(volumeId);
+                currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
+                requiredTagsArray = currentDiskOffering.getTagsArray();
+            } else if (storagePoolId != null) {
+                requiredTagsArray = _storageTagDao.getStoragePoolTags(storagePoolId).toArray(new String[0]);
+            }
+        }
+        if (requiredTagsArray.length != 0) {
+            ListIterator<DiskOfferingJoinVO> iteratorForTagsChecking = result.first().listIterator();
+            while (iteratorForTagsChecking.hasNext()) {
+                DiskOfferingJoinVO offering = iteratorForTagsChecking.next();
+                String offeringTags = offering.getTags();
+                String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
+                if (!CollectionUtils.isSubCollection(Arrays.asList(requiredTagsArray), Arrays.asList(offeringTagsArray))) {
+                    iteratorForTagsChecking.remove();
+                }
+            }
+        }
+
         return new Pair<>(result.first(), result.second());
     }
 
@@ -3042,6 +3111,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
             if (! currentVmOffering.isDynamic()) {
                 sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
+            }
+
+            if (currentVmOffering.getDiskOfferingStrictness()) {
+                sc.addAnd("diskOfferingId", Op.EQ, currentVmOffering.getDiskOfferingId());
+                sc.addAnd("diskOfferingStrictness", Op.EQ, true);
+            } else {
+                sc.addAnd("diskOfferingStrictness", Op.EQ, false);
             }
 
             boolean isRootVolumeUsingLocalStorage = virtualMachineManager.isRootVolumeOnLocalStorage(vmId);
@@ -3142,6 +3218,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<ServiceOfferingJoinVO> cpuSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
             cpuSearchCriteria.addOr("minCpu", Op.NULL);
             cpuSearchCriteria.addOr("constraints", Op.SC, cpuConstraintSearchCriteria);
+            cpuSearchCriteria.addOr("minCpu", Op.GTEQ, cpuNumber);
 
             sc.addAnd("cpuConstraints", SearchCriteria.Op.SC, cpuSearchCriteria);
         }
@@ -3154,6 +3231,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<ServiceOfferingJoinVO> memSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
             memSearchCriteria.addOr("minMemory", Op.NULL);
             memSearchCriteria.addOr("memconstraints", Op.SC, memoryConstraintSearchCriteria);
+            memSearchCriteria.addOr("minMemory", Op.GTEQ, memory);
 
             sc.addAnd("memoryConstraints", SearchCriteria.Op.SC, memSearchCriteria);
         }
@@ -3161,7 +3239,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (cpuSpeed != null) {
             SearchCriteria<ServiceOfferingJoinVO> cpuSpeedSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
             cpuSpeedSearchCriteria.addOr("speed", Op.NULL);
-            cpuSpeedSearchCriteria.addOr("speed", Op.EQ, cpuSpeed);
+            cpuSpeedSearchCriteria.addOr("speed", Op.GTEQ, cpuSpeed);
             sc.addAnd("cpuspeedconstraints", SearchCriteria.Op.SC, cpuSpeedSearchCriteria);
         }
 
@@ -3187,7 +3265,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (currentVmOffering != null) {
-            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getTags());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentVmOffering.getDiskOfferingId());
+            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
             if (!storageTags.isEmpty()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : storageTags) {

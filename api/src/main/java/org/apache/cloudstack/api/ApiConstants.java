@@ -114,12 +114,15 @@ public class ApiConstants {
     public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String NEW_DISK_OFFERING_ID = "newdiskofferingid";
+    public static final String OVERRIDE_DISK_OFFERING_ID = "overridediskofferingid";
     public static final String DISK_KBS_READ = "diskkbsread";
     public static final String DISK_KBS_WRITE = "diskkbswrite";
     public static final String DISK_IO_READ = "diskioread";
     public static final String DISK_IO_WRITE = "diskiowrite";
     public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
+    public static final String DISK_SIZE_STRICTNESS = "disksizestrictness";
+    public static final String DISK_OFFERING_STRICTNESS = "diskofferingstrictness";
     public static final String DOWNLOAD_DETAILS = "downloaddetails";
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
@@ -601,6 +604,7 @@ public class ApiConstants {
     public static final String LIVE_MIGRATE = "livemigrate";
     public static final String MIGRATE_ALLOWED = "migrateallowed";
     public static final String MIGRATE_TO = "migrateto";
+    public static final String AUTO_MIGRATE = "automigrate";
     public static final String GUID = "guid";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
@@ -726,6 +730,7 @@ public class ApiConstants {
     public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
     public static final String VM_SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String IMAGE_STORE_UUID = "imagestoreuuid";
+    public static final String IMAGE_STORE_ID = "imagestoreid";
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
     public static final String RESERVED_IP_RANGE = "reservediprange";

@@ -78,7 +78,7 @@ public class LdapConfigurationTest {
         ldapTestConfigTool.overrideConfigValue(ldapConfiguration, "ldapTrustStore", "/tmp/ldap.ts");
         ldapTestConfigTool.overrideConfigValue(ldapConfiguration, "ldapTrustStorePassword", "password");
 
-        assertTrue("A request is made to get the status of SSL should result in true", ldapConfiguration.getSSLStatus());
+        assertTrue("A request is made to get the status of SSL should result in true", ldapConfiguration.getSSLStatus(null));
     }
 
     @Test public void getSearchGroupPrincipleReturnsSuccessfully() throws Exception {
@@ -93,7 +93,7 @@ public class LdapConfigurationTest {
         // We have a ConfigDao with a value for truststore password
         ldapTestConfigTool.overrideConfigValue(ldapConfiguration, "ldapTrustStorePassword", "password");
 
-        String result = ldapConfiguration.getTrustStorePassword();
+        String result = ldapConfiguration.getTrustStorePassword(null);
 
         assertEquals("The result is password", "password", result);
     }

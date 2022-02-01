@@ -629,7 +629,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private Answer copyTemplateToVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO template to volume
-        LOGGER.debug("Initiating copy from PowerFlex template volume on host " + destHost != null ? destHost.getId() : "");
+        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
         int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
@@ -648,7 +648,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private Answer copyVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO volume
-        LOGGER.debug("Initiating copy from PowerFlex volume on host " + destHost != null ? destHost.getId() : "");
+        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
         String value = configDao.getValue(Config.CopyVolumeWait.key());
         int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 

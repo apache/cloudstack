@@ -299,7 +299,7 @@ export default {
     fetchComments () {
       this.clusterConfigLoading = true
       api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+        if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       }).catch(error => {

@@ -130,12 +130,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
         VolumeIdTypeSearch = createSearchBuilder();
         VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getsnapshotType(), SearchCriteria.Op.EQ);
+        VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getSnapshotType(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.done();
 
         VolumeIdTypeNotDestroyedSearch = createSearchBuilder();
         VolumeIdTypeNotDestroyedSearch.and("volumeId", VolumeIdTypeNotDestroyedSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        VolumeIdTypeNotDestroyedSearch.and("type", VolumeIdTypeNotDestroyedSearch.entity().getsnapshotType(), SearchCriteria.Op.EQ);
+        VolumeIdTypeNotDestroyedSearch.and("type", VolumeIdTypeNotDestroyedSearch.entity().getSnapshotType(), SearchCriteria.Op.EQ);
         VolumeIdTypeNotDestroyedSearch.and("status", VolumeIdTypeNotDestroyedSearch.entity().getState(), SearchCriteria.Op.NEQ);
         VolumeIdTypeNotDestroyedSearch.done();
 
