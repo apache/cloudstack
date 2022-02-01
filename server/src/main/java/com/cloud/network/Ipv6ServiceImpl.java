@@ -56,9 +56,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
@@ -90,8 +88,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
 
     ScheduledExecutorService _ipv6GuestPrefixSubnetNetworkMapStateScanner;
 
-    ScheduledExecutorService _ipv6GuestNetworkRoutesLogger;
-
     @Inject
     NetworkOfferingDao networkOfferingDao;
     @Inject
@@ -104,8 +100,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     FirewallRulesDao firewallDao;
     @Inject
     FirewallService firewallService;
-    @Inject
-    NetworkDao networkDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
     @Inject
@@ -130,7 +124,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public boolean start() {
         _ipv6GuestPrefixSubnetNetworkMapStateScanner.scheduleWithFixedDelay(new Ipv6GuestPrefixSubnetNetworkMapStateScanner(), 300, 30*60, TimeUnit.SECONDS);
-        _ipv6GuestNetworkRoutesLogger.scheduleWithFixedDelay(new Ipv6GuestNetworkRoutesLogger(), 2*60, 60, TimeUnit.SECONDS);
         return true;
     }
 
@@ -139,7 +132,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         _name = name;
         _configParams = params;
         _ipv6GuestPrefixSubnetNetworkMapStateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Ipv6GuestPrefixSubnet-State-Scanner"));
-        _ipv6GuestNetworkRoutesLogger = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Ipv6GuestNetwork-Routes-Logger"));
 
         return true;
     }
@@ -160,9 +152,12 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
         Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
         int total = 0;
-        while(splits.hasNext()) {
-            total++;
+        if (splits.hasNext()) {
             splits.next();
+            while(splits.hasNext()) {
+                total++;
+                splits.next();
+            }
         }
         return new Pair<>(usedSubnets.size(), total);
     }
@@ -500,42 +495,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 }
             } catch (Exception e) {
                 s_logger.warn("Caught exception while running Ipv6GuestPrefixSubnetNetworkMap state scanner: ", e);
-            }
-        }
-    }
-
-    public class Ipv6GuestNetworkRoutesLogger extends ManagedContextRunnable {
-        @Override
-        protected void runInContext() {
-            GlobalLock gcLock = GlobalLock.getInternLock("Ipv6GuestPrefixSubnetNetworkMap.State.Scanner.Lock");
-            try {
-                if (gcLock.lock(3)) {
-                    try {
-                        reallyRun();
-                    } finally {
-                        gcLock.unlock();
-                    }
-                }
-            } finally {
-                gcLock.releaseRef();
-            }
-        }
-
-        public void reallyRun() {
-            try {
-                List<NetworkVO> isolatedNetworks = networkDao.listByGuestType(Network.GuestType.Isolated);
-                for (NetworkVO network : isolatedNetworks) {
-                    if (Network.State.Implemented.equals(network.getState()) && networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
-                        List<String> ipv6Addresses = getPublicIpv6AddressesForNetwork(network);
-                        for (String address : ipv6Addresses) {
-                            if (s_logger.isInfoEnabled()) {
-                                s_logger.info(String.format("Add upstream IPv6 route for %s via: %s for network: %s", network.getIp6Cidr(), address, network));
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                s_logger.warn("Caught exception while logging IPv6 guest network routes: ", e);
             }
         }
     }

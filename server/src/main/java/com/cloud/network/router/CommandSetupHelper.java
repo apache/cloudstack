@@ -446,7 +446,7 @@ public class CommandSetupHelper {
     }
 
     public void createApplyIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+        final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
@@ -531,7 +531,7 @@ public class CommandSetupHelper {
     }
 
     public void createIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
-        final List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+        final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
         if (rules != null) {

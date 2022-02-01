@@ -5484,6 +5484,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
 
+        if (!GuestType.Isolated.equals(guestType) && internetProtocol != null) {
+            throw new InvalidParameterValueException(String.format("%s is supported only for %s guest type", ApiConstants.INTERNET_PROTOCOL, GuestType.Isolated));
+        }
+
         // Verify availability
         for (final Availability avlb : Availability.values()) {
             if (avlb.name().equalsIgnoreCase(availabilityStr)) {

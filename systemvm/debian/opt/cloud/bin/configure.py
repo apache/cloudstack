@@ -347,16 +347,20 @@ class CsIpv6Firewall(CsDataBag):
             CsHelper.execute("nft delete table %s %s" % (address_family, table))
 
     def process(self):
-        logging.info("Processing IPv6 firewall rules %s" % self.dbag)
         fw = self.config.get_ipv6_fw()
+        logging.info("Processing IPv6 firewall rules %s; %s" % (self.dbag, fw))
         for item in self.dbag:
             if item == "id":
                 continue
             rule = self.dbag[item]
             rstr = ""
 
+            chain = "fw_chain_ingress"
+            if 'traffic_type' in rule and rule['traffic_type'].lower() == "egress":
+                chain = "fw_chain_egress"
+
             saddr = ""
-            if 'source_cidr_list' in rule:
+            if 'source_cidr_list' in rule and len(rule['source_cidr_list']) > 0:
                 source_cidrs = rule['source_cidr_list']
                 if len(source_cidrs) == 1:
                     source_cidrs = source_cidrs[0]
@@ -364,7 +368,7 @@ class CsIpv6Firewall(CsDataBag):
                     source_cidrs = "{" + (",".join(source_cidrs)) + "}"
                 saddr = "ip6 saddr " + source_cidrs
             daddr = ""
-            if 'dest_cidr_list' in rule:
+            if 'dest_cidr_list' in rule and len(rule['dest_cidr_list']) > 0:
                 dest_cidrs = rule['dest_cidr_list']
                 if len(dest_cidrs) == 1:
                     dest_cidrs = dest_cidrs[0]
@@ -400,15 +404,37 @@ class CsIpv6Firewall(CsDataBag):
                 proto = "%s dport %s" % (proto, port)
 
             action = "accept"
+            if chain == "fw_chain_egress":
+                # In case we have a default rule (accept all or drop all), we have to evaluate the action again.
+                if protocol == 'all' and not rule['source_cidr_list']:
+                    # For default egress ALLOW or DENY, the logic is inverted.
+                    # Having default_egress_policy == True, means that the default rule should have ACCEPT,
+                    # otherwise DROP. The rule should be appended, not inserted.
+                    if rule['default_egress_policy']:
+                        action = "accept"
+                    else:
+                        action = "drop"
+                else:
+                    # For other rules added, if default_egress_policy == True, following rules should be DROP,
+                    # otherwise ACCEPT
+                    if rule['default_egress_policy']:
+                        action = "drop"
+                    else:
+                        action = "accept"
 
             rstr = saddr
+            type = ""
             if rstr and daddr:
                 rstr = rstr + " " + daddr
             if rstr and proto:
                 rstr = rstr + " " + proto
-            rstr = rstr + " " + action
+            if rstr and action:
+                rstr = rstr + " " + action
+            else:
+                type = "chain"
+                rstr = action
             logging.debug("Process IPv6 firewall rule %s" % rstr)
-            fw.append(rstr)
+            fw.append({'type': type, 'chain': chain, 'rule': rstr})
 
 
 class CsVmMetadata(CsDataBag):

@@ -19,11 +19,11 @@
   <div>
     <div>
       <div class="form" v-ctrl-enter="addRule">
-        <div class="form__item" v-if="newRule.traffictype === 'ingress'">
+        <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist" autoFocus></a-input>
         </div>
-        <div class="form__item" v-if="newRule.traffictype === 'egress'">
+        <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
           <a-input v-model="newRule.destcidrlist"></a-input>
         </div>
