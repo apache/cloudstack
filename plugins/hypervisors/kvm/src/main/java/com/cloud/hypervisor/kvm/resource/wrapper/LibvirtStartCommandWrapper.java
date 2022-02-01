@@ -19,15 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.io.File;
-import java.net.URISyntaxException;
-
-import com.cloud.utils.FileUtil;
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.LibvirtException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -36,14 +27,22 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.FileUtil;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.LibvirtException;
+
+import java.io.File;
+import java.net.URISyntaxException;
 
 @ResourceWrapper(handles =  StartCommand.class)
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
@@ -121,6 +120,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     try {
                         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
                         FileUtil.scpPatchFiles(controlIp, "/home/cloud", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+                        Thread.sleep(10000);
                     } catch (Exception e) {
                         String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                         s_logger.error(errMsg, e);

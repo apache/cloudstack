@@ -17,24 +17,6 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.utils.security.CertUtils;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Level;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
@@ -73,7 +55,25 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.security.CertUtils;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -197,6 +197,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);
         boolean haSupported = isKubernetesVersionSupportsHA();
@@ -253,6 +256,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
+        }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
         }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);

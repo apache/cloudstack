@@ -19,15 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsSetTagAndFlowAnswer;
 import com.cloud.agent.api.OvsSetTagAndFlowCommand;
@@ -51,6 +42,14 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @ResourceWrapper(handles =  StartCommand.class)
 public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand, Answer, CitrixResourceBase> {
@@ -196,6 +195,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             try {
                 citrixResourceBase.copyPatchFilesToVR(controlIp, "/home/cloud");
+                Thread.sleep(10000);
             } catch (Exception e) {
                 String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                 s_logger.error(errMsg, e);
