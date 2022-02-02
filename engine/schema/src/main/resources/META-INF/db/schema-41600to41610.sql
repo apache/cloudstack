@@ -129,3 +129,24 @@ CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_vpn_user', 'id', 'BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)');
 
 UPDATE `cloud`.`vm_template` set deploy_as_is = 0 where id = 8;
+
+CREATE PROCEDURE `cloud`.`UPDATE_KUBERNETES_NODE_DETAILS`()
+BEGIN
+  DECLARE vmid BIGINT
+; DECLARE done TINYINT DEFAULT FALSE
+; DECLARE vmidcursor CURSOR FOR SELECT DISTINCT(vm_id) FROM `cloud`.`kubernetes_cluster_vm_map`
+; DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE
+; OPEN vmidcursor
+; vmid_loop:LOOP
+    FETCH NEXT FROM vmidcursor INTO vmid
+;   IF done THEN
+      LEAVE vmid_loop
+;   ELSE
+      INSERT `cloud`.`user_vm_details` (vm_id, name, value, display) VALUES (vmid, 'controlNodeLoginUser', 'core', 1)
+;   END IF
+; END LOOP
+; CLOSE vmidcursor
+; END;
+
+CALL `cloud`.`UPDATE_KUBERNETES_NODE_DETAILS`();
+DROP PROCEDURE IF EXISTS `cloud`.`UPDATE_KUBERNETES_NODE_DETAILS`;

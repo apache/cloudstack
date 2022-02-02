@@ -73,4 +73,5 @@ public interface VmDetailConstants {
     String DISK_OFFERING = "diskOffering";
 
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
+    String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
 }

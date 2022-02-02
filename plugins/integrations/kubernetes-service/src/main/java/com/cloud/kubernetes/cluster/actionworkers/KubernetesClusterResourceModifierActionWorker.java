@@ -611,7 +611,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (enable) {
                 String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
                     kubernetesCluster.getUuid(), maxSize, minSize);
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 60000);
 
                 // Maybe the file isn't present. Try and copy it
@@ -626,7 +626,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     }
 
                     // If at first you don't succeed ...
-                    result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                         pkFile, null, command, 10000, 10000, 60000);
                     if (!result.first()) {
                         throw new CloudRuntimeException(result.second());
@@ -634,7 +634,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 }
                 updateKubernetesClusterEntry(true, minSize, maxSize);
             } else {
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
                         10000, 10000, 60000);
                 if (!result.first()) {
@@ -649,6 +649,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             return false;
         } finally {
             // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
+            updateLoginUserDetails(null);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
     }
