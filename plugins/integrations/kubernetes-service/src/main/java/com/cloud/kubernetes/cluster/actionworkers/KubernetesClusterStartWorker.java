@@ -57,6 +57,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
@@ -74,6 +75,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -462,7 +464,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 return true;
             }
         }
-        String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, timeoutTime);
+        String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, timeoutTime);
         if (StringUtils.isNotEmpty(kubeConfig)) {
             final String controlVMPrivateIpAddress = getControlVmPrivateIp();
             if (StringUtils.isNotEmpty(controlVMPrivateIpAddress)) {
@@ -482,7 +484,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 return true;
             }
         }
-        if (KubernetesClusterUtil.isKubernetesClusterDashboardServiceRunning(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, timeoutTime, 15000)) {
+        if (KubernetesClusterUtil.isKubernetesClusterDashboardServiceRunning(kubernetesCluster, publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, timeoutTime, 15000)) {
             kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), "dashboardServiceRunning", String.valueOf(true), false);
             return true;
         }
@@ -578,7 +580,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         sshPort = publicIpSshPort.second();
         updateKubernetesClusterEntryEndpoint();
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort,
-                CLUSTER_NODE_VM_USER, sshKeyFile, startTimeoutTime, 15000);
+                getControlNodeLoginUser(), sshKeyFile, startTimeoutTime, 15000);
         detachIsoKubernetesVMs(clusterVMs);
         if (!readyNodesCountValid) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s as it does not have desired number of nodes in ready state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
@@ -591,6 +593,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         taintControlNodes();
         deployProvider();
+        updateLoginUserDetails(clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toList()));
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
     }
@@ -645,7 +648,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         long actualNodeCount = 0;
         try {
-            actualNodeCount = KubernetesClusterUtil.getKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile);
+            actualNodeCount = KubernetesClusterUtil.getKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile);
         } catch (Exception e) {
             return false;
         }
