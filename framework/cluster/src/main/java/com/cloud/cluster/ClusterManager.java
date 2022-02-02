@@ -73,7 +73,7 @@ public interface ClusterManager extends Manager {
 
     /**
      *
-     * @return {code}Long.toString({code}{@see getManagementNodeId()}{code}){code}
+     * @return A {code}Long.toString({code}{@see getManagementNodeId()}{code}){code} representation of the PID of the management server process.
      */
     String getSelfPeerName();
 
@@ -81,12 +81,12 @@ public interface ClusterManager extends Manager {
 
     /**
      * determined by the time
-     * @return start time as {code}System.currentTimeMillis(){code}
+     * @return The start time of the management server as {code}System.currentTimeMillis(){code}.
      */
     long getCurrentRunId();
 
     /**
-     * the other guy's is derived from start time as stored in the db
+     * @return The other MS's id as derived from start time as stored in the db.
      */
     long getManagementRunId(long msId);
 
@@ -97,7 +97,7 @@ public interface ClusterManager extends Manager {
     }
 
     /**
-     * what the client of {@see registerStatusAdministrator()} should implement
+     * The definition of what the client of {@see registerStatusAdministrator()} should implement.
      */
     interface StatusAdministrator {
         String newStatus(ClusterServicePdu pdu);

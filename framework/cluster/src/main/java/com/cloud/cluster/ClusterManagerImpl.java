@@ -414,7 +414,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 }
                 sendStatus(peerName, status);
             } catch (final Exception e) {
-                s_logger.warn("Caught exception while talking to " + peer.getMsid());
+                String msg = String.format("Caught exception while talking to %d", peer.getMsid());
+                s_logger.warn(msg);
+                s_logger.debug(msg, e);
             }
         }
     }

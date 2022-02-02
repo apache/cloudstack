@@ -959,7 +959,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setSystemCyclesUsage(getSystemCpuUsage());
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(
-                        String.format("cpu\ncapacities: %f\n     loads: %s ; %s ; %s\n     stats: %f ; %f ; %f",
+                        String.format("cpu\ncapacities: %f\n     loads: %s ; %s ; %s\n     stats: %d ; %d ; %d",
                                 newEntry.getSystemTotalCpuCycles(),
                                 newEntry.getSystemLoadAverages()[0], newEntry.getSystemLoadAverages()[1], newEntry.getSystemLoadAverages()[2],
                                 newEntry.getSystemCyclesUsage()[0], newEntry.getSystemCyclesUsage()[1], newEntry.getSystemCyclesUsage()[2]
@@ -1025,6 +1025,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          * @param value ;)
          */
         private void extractDetailToField(ManagementServerHostStatsEntry metricsEntry, String metricName, Object value) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("checking detail %s == %s", metricName, value));
+            }
             switch (metricName) {
                 case "memory.heap.used":
                     metricsEntry.setHeapMemoryUsed((Long) value);
@@ -1054,7 +1057,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 case "threads.new.count":
                 case "threads.timed_waiting.count":
                 default:
-                    LOGGER.debug(String.format("not storiung detail %s, %s", metricName, value));
+                    LOGGER.debug(String.format("not storing detail %s, %s", metricName, value));
                     /*
                      * 'buffers.direct.capacity'=8192 type=Long
                      * 'buffers.direct.count'=1 type=Long
