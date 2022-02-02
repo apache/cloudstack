@@ -56,6 +56,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Strings;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -198,6 +199,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);
         boolean haSupported = isKubernetesVersionSupportsHA();
@@ -255,6 +259,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
+        }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
         }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);

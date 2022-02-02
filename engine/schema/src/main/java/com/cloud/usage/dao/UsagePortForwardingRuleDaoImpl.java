@@ -38,13 +38,13 @@ import com.cloud.utils.db.TransactionLegacy;
 public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForwardingRuleVO, Long> implements UsagePortForwardingRuleDao {
     public static final Logger s_logger = Logger.getLogger(UsagePortForwardingRuleDaoImpl.class.getName());
 
-    protected static final String REMOVE_BY_USERID_PFID = "DELETE FROM usage_port_forwarding WHERE account_id = ? AND id = ?";
-    protected static final String UPDATE_DELETED = "UPDATE usage_port_forwarding SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
+    protected static final String REMOVE_BY_USERID_PFID = "DELETE FROM usage_port_forwarding WHERE account_id = ? AND pf_id = ?";
+    protected static final String UPDATE_DELETED = "UPDATE usage_port_forwarding SET deleted = ? WHERE account_id = ? AND pf_id = ? and deleted IS NULL";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT pf_id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
         + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT pf_id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
         + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT pf_id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
         + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsagePortForwardingRuleDaoImpl() {
@@ -80,7 +80,7 @@ public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForw
                     if (pstmt != null) {
                         pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
                         pstmt.setLong(2, usage.getAccountId());
-                        pstmt.setLong(3, usage.getId());
+                        pstmt.setLong(3, usage.getPfId());
                         pstmt.executeUpdate();
                     }
                 }catch (SQLException e) {

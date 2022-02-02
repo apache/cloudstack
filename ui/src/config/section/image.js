@@ -102,21 +102,8 @@ export default {
               (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id)) &&
               record.isready
           },
-          args: (record, store) => {
-            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              if (record.templatetype === 'SYSTEM') {
-                fields = []
-              }
-              fields.push('templatetype')
-            }
-            return fields
-          },
-          mapping: {
-            templatetype: {
-              options: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/image/UpdateTemplate.vue')
         },
         {
           api: 'updateTemplatePermissions',

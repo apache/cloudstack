@@ -18,31 +18,15 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-
 import com.cloud.capacity.CapacityManager;
 
 public abstract class NfsImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
-    @Inject
-    ImageStoreDetailsDao _imageStoreDetailsDao;
-
     /**
-     * Retrieve NFS version to be used for imgStoreId store, if provided in image_store_details table
-     * @param imgStoreId store id
-     * @return "secstorage.nfs.version" associated value for imgStoreId in image_store_details table if exists, null if not
+     * Retrieve the NFS version to be used for the imgStoreId store
      */
-    protected String getNfsVersion(long imgStoreId){
-        Map<String, String> imgStoreDetails = _imageStoreDetailsDao.getDetails(imgStoreId);
-        String nfsVersionKey = CapacityManager.ImageStoreNFSVersion.key();
-        if (imgStoreDetails != null && imgStoreDetails.containsKey(nfsVersionKey)){
-            return imgStoreDetails.get(nfsVersionKey);
-        }
-        return null;
+    protected String getNfsVersion(long imgStoreId) {
+        return CapacityManager.ImageStoreNFSVersion.valueIn(imgStoreId);
     }
 
 }
