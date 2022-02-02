@@ -58,9 +58,13 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         throw new PermissionDeniedException("The API " + commandName + " is denied for the user's/account's project role.");
     }
 
+    @Override
+    public boolean isEnabled() {
+        return roleService.isEnabled();
+    }
 
     public boolean isDisabled() {
-        return !roleService.isEnabled();
+        return !isEnabled();
     }
 
     @Override

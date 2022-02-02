@@ -110,6 +110,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         throw new UnavailableCommandException("The API " + commandName + " does not exist or is not available for this account.");
     }
 
+    @Override
+    public boolean isEnabled() {
+        return roleService.isEnabled();
+    }
+
     public void addApiToRoleBasedAnnotationsMap(final RoleType roleType, final String commandName) {
         if (roleType == null || Strings.isNullOrEmpty(commandName)) {
             return;

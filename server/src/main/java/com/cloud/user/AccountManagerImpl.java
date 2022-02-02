@@ -183,6 +183,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.jetbrains.annotations.NotNull;
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
@@ -1186,16 +1187,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * if there is any permission under the requested role that is not permitted for the caller, refuse
      */
     private void checkRoleEscalation(Account caller, Account requested) {
-        Long requestedRoleId = requested.getRoleId();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+                    caller.getAccountName(),
+                    caller.getUuid(),
+                    caller.getRoleId(),
+                    requested.getAccountName(),
+                    requested.getUuid(),
+                    requested.getRoleId()));
+        }
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
         for (String command : apiNameList) {
             try {
-                checkApiAccess(requested,command);
+                checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                            command,
+                            pde.getAccount().getAccountName(),
+                            pde.getAccount().getUuid(),
+                            pde.getEntitiesInViolation()
+                            ));
+                }
                 continue;
             }
             // so requested can, now make sure caller can as well
             try {
-                checkApiAccess(caller, command);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("permission to \"%s\" is requested",
+                            command));
+                }
+                checkApiAccess(apiCheckers, caller, command);
             } catch (PermissionDeniedException pde) {
                 String msg = String.format("user of account %s/%s (%s) can not create an account with access to %s",
                         caller.getAccountName(),
@@ -1208,10 +1230,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private void checkApiAccess(Account caller, String command) {
-        for (final APIChecker apiChecker : apiAccessCheckers) {
+    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command) {
+        for (final APIChecker apiChecker : apiCheckers) {
             apiChecker.checkAccess(caller, command);
         }
+    }
+
+    @NotNull
+    private List<APIChecker> getEnabledApiCheckers() {
+        // we are really only interested in the dynamic access checker
+        List<APIChecker> usableApiCheckera = new ArrayList<>();
+        for (APIChecker apiChecker : apiAccessCheckers) {
+            if (apiChecker.isEnabled()) {
+                usableApiCheckera.add(apiChecker);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("using api checker \"%s\"",
+                            apiChecker.getName()));
+                }
+            }
+        }
+        return usableApiCheckera;
     }
 
     @Override

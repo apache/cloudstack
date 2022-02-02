@@ -179,6 +179,11 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     }
 
     @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ResetApiLimitCmd.class);

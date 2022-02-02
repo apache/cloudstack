@@ -65,6 +65,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
     }
 
+    @Override
+    public boolean isEnabled() {
+        return !isDisabled();
+    }
     public boolean isDisabled() {
         return roleService.isEnabled();
     }

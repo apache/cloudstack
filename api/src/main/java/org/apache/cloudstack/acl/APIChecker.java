@@ -29,4 +29,5 @@ public interface APIChecker extends Adapter {
     // On exception, checkAccess failed don't allow
     boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException;
     boolean checkAccess(Account account, String apiCommandName) throws PermissionDeniedException;
+    boolean isEnabled();
 }
