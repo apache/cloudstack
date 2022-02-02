@@ -92,7 +92,7 @@ public class KVMHostInfo {
 
     private static long getCpuSpeedInternal() throws IOException {
         try {
-            return getCpuSpeedByLSCPU();
+            return getCpuSpeedFromCommandLscpu();
         } catch (NullPointerException | NumberFormatException e) {
             LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu. Using the value in [%s].", cpuInfoMaxFreqFileName), e);
             return getCpuSpeedFromFile();
