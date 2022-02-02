@@ -226,6 +226,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
 
     public static final String XS_TOOLS_ISO_AFTER_70 = "guest-tools.iso";
+    protected static final String PLATFORM_CORES_PER_SOCKET_KEY = "cores-per-socket";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
@@ -1899,13 +1900,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected void syncPlatformAndCoresPerSocketSettings(String coresPerSocket, Map<String, String> platform) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(coresPerSocket) || platform == null) {
+            return;
+        }
+        if (platform.containsKey(PLATFORM_CORES_PER_SOCKET_KEY)) {
+            s_logger.debug("Updating the cores per socket value from: " + platform.get(PLATFORM_CORES_PER_SOCKET_KEY) + " to " + coresPerSocket);
+        }
+        platform.put(PLATFORM_CORES_PER_SOCKET_KEY, coresPerSocket);
+    }
+
     protected void finalizeVmMetaData(final VM vm, final VM.Record vmr, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
 
         final Map<String, String> details = vmSpec.getDetails();
         if (details != null) {
             final String platformstring = details.get(VmDetailConstants.PLATFORM);
+            final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
             if (platformstring != null && !platformstring.isEmpty()) {
                 final Map<String, String> platform = StringUtils.stringToMap(platformstring);
+                syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
                 vm.setPlatform(conn, platform);
             } else {
                 final String timeoffset = details.get(VmDetailConstants.TIME_OFFSET);
@@ -1914,10 +1927,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     platform.put(VmDetailConstants.TIME_OFFSET, timeoffset);
                     vm.setPlatform(conn, platform);
                 }
-                final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
                 if (coresPerSocket != null) {
                     final Map<String, String> platform = vm.getPlatform(conn);
-                    platform.put("cores-per-socket", coresPerSocket);
+                    syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
                     vm.setPlatform(conn, platform);
                 }
             }
