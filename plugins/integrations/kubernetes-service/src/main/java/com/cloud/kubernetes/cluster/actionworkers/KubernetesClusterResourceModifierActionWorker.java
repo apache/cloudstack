@@ -75,9 +75,9 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
-import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
@@ -95,6 +95,7 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
@@ -362,6 +363,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sNodeConfig = null;
@@ -609,7 +613,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (enable) {
                 String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
                     kubernetesCluster.getUuid(), maxSize, minSize);
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 60000);
 
                 // Maybe the file isn't present. Try and copy it
@@ -624,7 +628,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     }
 
                     // If at first you don't succeed ...
-                    result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                         pkFile, null, command, 10000, 10000, 60000);
                     if (!result.first()) {
                         throw new CloudRuntimeException(result.second());
@@ -632,7 +636,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 }
                 updateKubernetesClusterEntry(true, minSize, maxSize);
             } else {
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
                         10000, 10000, 60000);
                 if (!result.first()) {
@@ -647,6 +651,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             return false;
         } finally {
             // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
+            updateLoginUserDetails(null);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
     }

@@ -196,6 +196,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             try {
                 citrixResourceBase.copyPatchFilesToVR(controlIp, "/home/cloud");
+                Thread.sleep(10000);
             } catch (Exception e) {
                 String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                 s_logger.error(errMsg, e);

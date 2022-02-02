@@ -36,8 +36,8 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
@@ -121,6 +121,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     try {
                         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
                         FileUtil.scpPatchFiles(controlIp, "/home/cloud", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+                        Thread.sleep(10000);
                     } catch (Exception e) {
                         String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                         s_logger.error(errMsg, e);
@@ -155,28 +156,6 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             }
         }
     }
-
-//    /**
-//     * Create temporary file and return its path
-//     */
-//    private String createTemporaryFile(String certificateName, String certificate, String filePrefix) {
-//        String tempCerFilePath = String.format("/tmp/%s-%s",
-//               filePrefix, certificateName);
-//        s_logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
-//        int result = Script.runSimpleBashScriptForExitValue(String.format("echo '%s' > %s", certificate, tempCerFilePath));
-//        if (result != 0) {
-//            throw new CloudRuntimeException("Could not create the certificate file on path: " + tempCerFilePath);
-//        }
-//        return tempCerFilePath;
-//    }
-//
-//    /**
-//     * Remove temporary file
-//     */
-//    private void cleanupTemporaryFile(String temporaryFile) {
-//        s_logger.debug("Cleaning up temporary certificate file");
-//        Script.runSimpleBashScript("rm -f " + temporaryFile);
-//    }
 
     private void performAgentStartHook(String vmName, LibvirtComputingResource libvirtComputingResource) {
         try {

@@ -228,10 +228,9 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
 
     public static final String XS_TOOLS_ISO_AFTER_70 = "guest-tools.iso";
+    public static final String BASEPATH = "/opt/xensource/packages/resources/";
 
     protected static final String PLATFORM_CORES_PER_SOCKET_KEY = "cores-per-socket";
-
-    public static final String BASEPATH = "/opt/xensource/packages/resources/";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
