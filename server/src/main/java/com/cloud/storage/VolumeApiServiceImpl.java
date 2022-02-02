@@ -861,7 +861,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 GB.");
         } else if (size > (maxVolumeSize * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException(String.format("Requested volume size is %d, but the maximum size allowed is %d GB.", size, maxVolumeSize));
+            throw new InvalidParameterValueException(String.format("Requested volume size is %s, but the maximum size allowed is %d GB.", NumbersUtil.toReadableSize(size), maxVolumeSize));
         }
 
         return true;
