@@ -211,12 +211,13 @@ class TestHypervisorCapabilities(cloudstackTestCase):
             self.userapiclient,
             volume_created2
         )
+        vm.stop(self.userapiclient, forced=True)
         vm.detach_volume(self.userapiclient, volume_created1)
         vm.detach_volume(self.userapiclient, volume_created2)
 
     @skipTestIf("notSupported")
     @attr(tags=["advanced", "basic"], required_hardware="false")
-    def test_01_check_hypervisor_vm_snapshot(self):
+    def test_02_check_hypervisor_vm_snapshot(self):
         """ Test hypervisor vmsnapshotenabled effect
 
         # 1. Set vmsnapshotenabled to false for hypervisor
@@ -226,6 +227,8 @@ class TestHypervisorCapabilities(cloudstackTestCase):
         # 5. Set vmsnapshotenabled to true for hypervisor
         # 6. Try VM snapshot again, it should succeed
         """
+        if self.hypervisor == "KVM":
+            self.skipTest("Skipping test: Reason -  VM Snapshot of running VM is not supported for KVM")
         self.updateHostHypervisorCapability(self.hostCapability.id, None, False)
         capabilities = self.listHostHypervisorCapabilities(self.hostCapability.id)
         self.assertTrue(isinstance(capabilities, list), "listHypervisorCapabilities response not a valid list")
