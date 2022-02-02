@@ -99,7 +99,14 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: ['cleanup', 'livepatch'],
+          args: (record) => {
+            var fields = []
+            if (record.vpcid == null) {
+              fields.push('cleanup')
+            }
+            fields.push('livepatch')
+            return fields
+          },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
@@ -191,6 +198,7 @@ export default {
             if (!record.redundantvpcrouter) {
               fields.push('makeredundant')
             }
+            fields.push('livepatch')
             return fields
           },
           groupAction: true,
