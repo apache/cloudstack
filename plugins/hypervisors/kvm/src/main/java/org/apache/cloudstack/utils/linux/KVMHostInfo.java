@@ -99,12 +99,12 @@ public class KVMHostInfo {
         }
     }
 
-    private static long getCpuSpeedByLSCPU() {
-        LOGGER.info("Fetching cpu speed from it from lscpu");
+    private static long getCpuSpeedFromCommandLscpu() {
+        LOGGER.info("Fetching CPU speed from command \"lscpu\".");
         String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
         String result = Script.runSimpleBashScript(command);
         long speed = (long) (Float.parseFloat(result) * 1000);
-        LOGGER.info(String.format("Got [%d] speed from lscpu", speed));
+        LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
         return speed;
     }
 
