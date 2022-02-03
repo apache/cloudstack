@@ -105,6 +105,7 @@ export default {
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
+        this.form.resetFields()
         this.formLoading = false
       } catch (e) {
         this.$notification.error({

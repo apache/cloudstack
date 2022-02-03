@@ -21,16 +21,12 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -41,8 +37,6 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "disk_offering")
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
 public class DiskOfferingVO implements DiskOffering {
 
     @Id
@@ -65,8 +59,8 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "tags", length = 4096)
     String tags;
 
-    @Column(name = "type")
-    Type type;
+    @Column(name = "compute_only")
+    boolean computeOnly;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(TemporalType.TIMESTAMP)
@@ -80,9 +74,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     @Column(name = "use_local_storage")
     private boolean useLocalStorage;
-
-    @Column(name = "system_use")
-    private boolean systemUse;
 
     @Column(name = "customized")
     private boolean customized;
@@ -156,6 +147,9 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "hv_ss_reserve")
     Integer hypervisorSnapshotReserve;
 
+    @Column(name = "disk_size_strictness")
+    boolean diskSizeStrictness = false;
+
     public DiskOfferingVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -168,7 +162,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.diskSize = diskSize;
         this.tags = tags;
         recreatable = false;
-        type = Type.Disk;
+        computeOnly = false;
         useLocalStorage = false;
         customized = isCustomized;
         uuid = UUID.randomUUID().toString();
@@ -186,7 +180,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.diskSize = diskSize;
         this.tags = tags;
         recreatable = false;
-        type = Type.Disk;
+        computeOnly = false;
         useLocalStorage = false;
         customized = isCustomized;
         uuid = UUID.randomUUID().toString();
@@ -196,32 +190,30 @@ public class DiskOfferingVO implements DiskOffering {
         state = State.Active;
     }
 
-    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
             boolean customized) {
-        type = Type.Service;
+        computeOnly = true;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
-        this.systemUse = systemUse;
         this.customized = customized;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
     }
 
     public DiskOfferingVO(long id, String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
-            boolean systemUse, boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
+            boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
         this.id = id;
-        type = Type.Service;
+        computeOnly = true;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
-        this.systemUse = systemUse;
         this.customized = customized;
         this.customizedIops = customizedIops;
         uuid = UUID.randomUUID().toString();
@@ -304,8 +296,8 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public boolean isComputeOnly() {
+        return computeOnly;
     }
 
     @Override
@@ -320,15 +312,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    @Override
-    public boolean isSystemUse() {
-        return systemUse;
-    }
-
-    public void setSystemUse(boolean systemUse) {
-        this.systemUse = systemUse;
     }
 
     @Override
@@ -587,5 +570,13 @@ public class DiskOfferingVO implements DiskOffering {
 
     public boolean isShared() {
         return !useLocalStorage;
+    }
+
+    public boolean getDiskSizeStrictness() {
+        return diskSizeStrictness;
+    }
+
+    public void setDiskSizeStrictness(boolean diskSizeStrictness) {
+        this.diskSizeStrictness = diskSizeStrictness;
     }
 }

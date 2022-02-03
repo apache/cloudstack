@@ -394,13 +394,16 @@ public interface ManagementService {
 
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
-     * volume can be migrated. Current pool is not included in the list.
+     * volume can be migrated. Current pool is not included in the list. In case of vSphere datastore cluster storage pools,
+     * this method removes the child storage pools and adds the corresponding parent datastore cluster for API response listing
      *
      * @param Long volumeId
      * @return Pair<List<? extends StoragePool>, List<? extends StoragePool>> List of storage pools in cluster and list
      *         of pools with enough capacity.
      */
     Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
+
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool);
 
     String[] listEventTypes();
 

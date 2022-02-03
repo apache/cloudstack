@@ -20,6 +20,9 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -30,9 +33,13 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "usage_snapshot_on_primary")
 public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    // volumeId
-    private long id;
+    private Long id;
+
+    @Column(name = "volume_id")
+    private long volumeId;
 
     @Column(name = "zone_id")
     private long zoneId;
@@ -73,7 +80,7 @@ public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
     }
 
     public UsageSnapshotOnPrimaryVO(long id, long zoneId, long accountId, long domainId, long vmId, String name, int type, long virtualSize, long physicalSize, Date created, Date deleted) {
-        this.id = id;
+        this.volumeId = id;
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -153,4 +160,7 @@ public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
                 + ", snapshotType=" + snapshotType + ", physicalSize=" + physicalSize + ", created=" + created + ", deleted=" + deleted + ", virtualSize=" + virtualSize + ", vmSnapshotId=" + vmSnapshotId + "]";
     }
 
+    public long getVolumeId() {
+        return volumeId;
+    }
 }
