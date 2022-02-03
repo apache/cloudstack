@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -363,18 +364,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private List<String> getHostManagedVms(Host host) {
-        List<String> managedVms = new ArrayList<>();
-        List<VMInstanceVO> instances = vmDao.listByHostId(host.getId());
-        for (VMInstanceVO instance : instances) {
-            managedVms.add(instance.getInstanceName());
-        }
-        instances = vmDao.listByLastHostIdAndStates(host.getId(),
-                VirtualMachine.State.Stopped, VirtualMachine.State.Destroyed,
-                VirtualMachine.State.Expunging, VirtualMachine.State.Error,
-                VirtualMachine.State.Unknown, VirtualMachine.State.Shutdown);
-        for (VMInstanceVO instance : instances) {
-            managedVms.add(instance.getInstanceName());
-        }
+        List<VMInstanceVO> instances = vmDao.listByHostOrLastHostOrHostPod(host.getId(), host.getPodId());
+        List<String> managedVms = instances.stream().map(VMInstanceVO::getInstanceName).collect(Collectors.toList());
         return managedVms;
     }
 
