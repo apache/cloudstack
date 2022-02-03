@@ -3830,7 +3830,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
 
-        long volumesSize = isIso ? 0 : configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
+        long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
 
         if (diskOfferingId != null) {
             long size = 0;
@@ -4199,7 +4199,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return rootDiskSize;
         } else {
             // For baremetal, size can be 0 (zero)
-            Long templateSize = template.getSize();
+            Long templateSize = _templateDao.findById(template.getId()).getSize();
             if (templateSize != null) {
                 return templateSize;
             }
