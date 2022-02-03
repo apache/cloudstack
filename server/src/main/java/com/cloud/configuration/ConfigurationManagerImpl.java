@@ -2940,6 +2940,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (rootDiskSizeInGiB != null && rootDiskSizeInGiB <= 0L) {
             throw new InvalidParameterValueException(String.format("The Root disk size is of %s GB but it must be greater than 0.", rootDiskSizeInGiB));
         } else if (rootDiskSizeInGiB != null) {
+            long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
+            if (rootDiskSizeInGiB > maxVolumeSizeInGb) {
+                throw new InvalidParameterValueException(String.format("The maximum size for a disk is %d GB.", maxVolumeSizeInGb));
+            }
             long rootDiskSizeInBytes = rootDiskSizeInGiB * GiB_TO_BYTES;
             offering.setDiskSize(rootDiskSizeInBytes);
         }
@@ -3263,9 +3267,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         long diskSize = 0;// special case for custom disk offerings
         long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
         if (numGibibytes != null && numGibibytes <= 0) {
-            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
+            throw new InvalidParameterValueException("Please specify a disk size of at least 1 GB.");
         } else if (numGibibytes != null && numGibibytes > maxVolumeSizeInGb) {
-            throw new InvalidParameterValueException("The maximum size for a disk is " + maxVolumeSizeInGb + " Gb.");
+            throw new InvalidParameterValueException(String.format("The maximum size for a disk is %d GB.", maxVolumeSizeInGb));
         }
         final ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
 

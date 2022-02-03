@@ -4178,6 +4178,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long rootDiskSizeInBytes = diskOffering.getDiskSize();
         if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
             long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
+            _volumeService.validateVolumeSizeRange(rootDiskSizeInGiB);
             customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSizeInGiB));
             return rootDiskSizeInBytes;
         }
