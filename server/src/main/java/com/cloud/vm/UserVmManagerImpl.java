@@ -3830,11 +3830,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
 
-        long size = configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
+        long volumesSize = isIso ? 0 : configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
 
         if (diskOfferingId != null) {
+            long size = 0;
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            if (diskOffering != null && diskOffering.isCustomized()) {
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Specified disk offering cannot be found");
+            }
+            if (diskOffering.isCustomized()) {
                 if (diskSize == null) {
                     throw new InvalidParameterValueException("This disk offering requires a custom size specified");
                 }
@@ -3845,16 +3849,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             + " Min:" + customDiskOfferingMinSize);
                 }
                 size += diskSize * GiB_TO_BYTES;
+            } else {
+                size += diskOffering.getDiskSize();
             }
-            size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
             _volumeService.validateVolumeSizeRange(size);
+            volumesSize += size;
         }
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -4193,7 +4199,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return rootDiskSize;
         } else {
             // For baremetal, size can be 0 (zero)
-            Long templateSize = _templateDao.findById(template.getId()).getSize();
+            Long templateSize = template.getSize();
             if (templateSize != null) {
                 return templateSize;
             }
