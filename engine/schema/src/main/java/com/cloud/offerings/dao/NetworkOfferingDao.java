@@ -73,6 +73,4 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     NetworkOffering.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId);
 
     boolean isIpv6Supported(long offeringId);
-
-    boolean isIpv6FirewallEnabled(long offeringId);
 }

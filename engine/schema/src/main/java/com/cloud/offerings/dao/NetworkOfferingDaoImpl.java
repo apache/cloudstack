@@ -285,10 +285,4 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         NetworkOffering.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
         return ipv6EnabledProtocols.contains(internetProtocol);
     }
-
-    @Override
-    public boolean isIpv6FirewallEnabled(long offeringId) {
-        String ipv6FirewallStr = _detailsDao.getDetail(offeringId, NetworkOffering.Detail.ipv6Firewall);
-        return Boolean.parseBoolean(ipv6FirewallStr);
-    }
 }

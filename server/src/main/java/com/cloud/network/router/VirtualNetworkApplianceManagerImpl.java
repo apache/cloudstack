@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -209,6 +208,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -2135,8 +2135,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final StringBuilder buf = new StringBuilder();
 
         boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());
-        boolean isIpv6FirewallEnabled = _networkOfferingDao.isIpv6FirewallEnabled(guestNetwork.getNetworkOfferingId());
-        if (isIpv6Supported && isIpv6FirewallEnabled) {
+        if (isIpv6Supported) {
             buf.append(" ip6firewall=true");
         }
 

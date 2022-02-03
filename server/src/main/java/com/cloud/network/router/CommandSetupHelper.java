@@ -1150,8 +1150,6 @@ public class CommandSetupHelper {
             final String routerIpv6Cidr = vlan.getIp6Cidr();
             setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
             setupCmd.setRouterIpv6Cidr(routerIpv6Cidr);
-            boolean isIpv6FirewallEnabled = _networkOfferingDao.isIpv6FirewallEnabled(network.getNetworkOfferingId());
-            setupCmd.setRouterIpv6Firewall(isIpv6FirewallEnabled);
         }
     }
 
