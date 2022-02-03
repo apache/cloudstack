@@ -1036,12 +1036,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             if (host != null) {
                 s_logger.debug(String.format("Removing host entry for secondary storage VM [%s].", vmId));
                 _hostDao.remove(host.getId());
-
                 _tmplStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
                 _volumeStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
-                return true;
             }
-            return false;
+            return true;
         } catch (ResourceUnavailableException e) {
             s_logger.error(String.format("Unable to expunge secondary storage [%s] due to [%s].", ssvm.toString(), e.getMessage()), e);
             return false;

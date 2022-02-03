@@ -133,6 +133,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
@@ -330,6 +331,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
+    private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
+
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
         _gson = GsonHelper.getGsonLogger();
@@ -493,7 +496,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!diskOffering.isCustomized()) {
                 throw new InvalidParameterValueException("Please specify a custom sized disk offering.");
             }
-
             _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering, zone);
         }
 
@@ -504,12 +506,41 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return UUID.randomUUID().toString();
     }
 
+    private Long getDefaultCustomOfferingId(Account owner, DataCenter zone) {
+        DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName(CUSTOM_DISK_OFFERING_UNIQUE_NAME);
+        if (diskOfferingVO == null || !DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
+            return null;
+        }
+        try {
+            _configMgr.checkDiskOfferingAccess(owner, diskOfferingVO, zone);
+            return diskOfferingVO.getId();
+        } catch (PermissionDeniedException ignored) {
+        }
+        return null;
+    }
+
+    private Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone) {
+        Long offeringId = getDefaultCustomOfferingId(owner, zone);
+        if (offeringId != null) {
+            return offeringId;
+        }
+        List<DiskOfferingVO> offerings = _diskOfferingDao.findCustomDiskOfferings();
+        for (DiskOfferingVO offering : offerings) {
+            try {
+                _configMgr.checkDiskOfferingAccess(owner, offering, zone);
+                return offering.getId();
+            } catch (PermissionDeniedException ignored) {}
+        }
+        return null;
+    }
+
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url, final String format, final Long diskOfferingId, final Volume.State state) {
-        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<VolumeVO, CloudRuntimeException>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
                 VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
+                DataCenter zone = _dcDao.findById(zoneId);
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
@@ -519,23 +550,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
 
-                if (diskOfferingId == null) {
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
-                    if (diskOfferingVO != null) {
-                        long defaultDiskOfferingId = diskOfferingVO.getId();
-                        volume.setDiskOfferingId(defaultDiskOfferingId);
+                Long volumeDiskOfferingId = diskOfferingId;
+                if (volumeDiskOfferingId == null) {
+                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(owner, zone);
+                    if (volumeDiskOfferingId == null) {
+                        throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
                     }
-                } else {
-                    volume.setDiskOfferingId(diskOfferingId);
+                }
 
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(diskOfferingId);
+                volume.setDiskOfferingId(volumeDiskOfferingId);
+                DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volumeDiskOfferingId);
 
-                    Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
+                Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
 
-                    if (isCustomizedIops == null || !isCustomizedIops) {
-                        volume.setMinIops(diskOfferingVO.getMinIops());
-                        volume.setMaxIops(diskOfferingVO.getMaxIops());
-                    }
+                if (isCustomizedIops == null || !isCustomizedIops) {
+                    volume.setMinIops(diskOfferingVO.getMinIops());
+                    volume.setMaxIops(diskOfferingVO.getMaxIops());
                 }
 
                 // volume.setSize(size);

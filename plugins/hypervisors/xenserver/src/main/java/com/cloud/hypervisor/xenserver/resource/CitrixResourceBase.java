@@ -226,6 +226,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
 
     public static final String XS_TOOLS_ISO_AFTER_70 = "guest-tools.iso";
+    protected static final String PLATFORM_CORES_PER_SOCKET_KEY = "cores-per-socket";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
@@ -1110,8 +1111,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cdromVBD;
     }
 
-    protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder) {
-        final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder);
+    protected boolean createSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String newFolder, final String nfsVersion) {
+        final String result = callHostPlugin(conn, "vmopsSnapshot", "create_secondary_storage_folder", "remoteMountPath", remoteMountPath, "newFolder", newFolder, "nfsVersion", nfsVersion);
         return result != null;
     }
 
@@ -1482,8 +1483,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vm;
     }
 
-    protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder) {
-        final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder);
+    protected boolean deleteSecondaryStorageFolder(final Connection conn, final String remoteMountPath, final String folder, final String nfsVersion) {
+        final String details = callHostPlugin(conn, "vmopsSnapshot", "delete_secondary_storage_folder", "remoteMountPath", remoteMountPath, "folder", folder, "nfsVersion", nfsVersion);
         return details != null && details.equals("1");
     }
 
@@ -1899,13 +1900,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected void syncPlatformAndCoresPerSocketSettings(String coresPerSocket, Map<String, String> platform) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(coresPerSocket) || platform == null) {
+            return;
+        }
+        if (platform.containsKey(PLATFORM_CORES_PER_SOCKET_KEY)) {
+            s_logger.debug("Updating the cores per socket value from: " + platform.get(PLATFORM_CORES_PER_SOCKET_KEY) + " to " + coresPerSocket);
+        }
+        platform.put(PLATFORM_CORES_PER_SOCKET_KEY, coresPerSocket);
+    }
+
     protected void finalizeVmMetaData(final VM vm, final VM.Record vmr, final Connection conn, final VirtualMachineTO vmSpec) throws Exception {
 
         final Map<String, String> details = vmSpec.getDetails();
         if (details != null) {
             final String platformstring = details.get(VmDetailConstants.PLATFORM);
+            final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
             if (platformstring != null && !platformstring.isEmpty()) {
                 final Map<String, String> platform = com.cloud.utils.StringUtils.stringToMap(platformstring);
+                syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
                 vm.setPlatform(conn, platform);
             } else {
                 final String timeoffset = details.get(VmDetailConstants.TIME_OFFSET);
@@ -1914,10 +1927,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     platform.put(VmDetailConstants.TIME_OFFSET, timeoffset);
                     vm.setPlatform(conn, platform);
                 }
-                final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
                 if (coresPerSocket != null) {
                     final Map<String, String> platform = vm.getPlatform(conn);
-                    platform.put("cores-per-socket", coresPerSocket);
+                    syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
                     vm.setPlatform(conn, platform);
                 }
             }
@@ -4102,7 +4114,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected boolean postCreatePrivateTemplate(final Connection conn, final String templatePath, final String tmpltFilename, final String templateName, String templateDescription, String checksum,
-            final long size, final long virtualSize, final long templateId) {
+            final long size, final long virtualSize, final long templateId, final String nfsVersion) {
 
         if (templateDescription == null) {
             templateDescription = "";
@@ -4113,7 +4125,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         final String result = callHostPlugin(conn, "vmopsSnapshot", "post_create_private_template", "templatePath", templatePath, "templateFilename", tmpltFilename, "templateName", templateName,
-                "templateDescription", templateDescription, "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
+                "templateDescription", templateDescription, "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId), "nfsVersion", nfsVersion);
 
         boolean success = false;
         if (result != null && !result.isEmpty()) {
@@ -5661,6 +5673,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String vmIP = cmd.getSystemVmIp();
         String diagnosticsZipFile = cmd.getFileName();
+        String nfsVersion = cmd.getNfsVersion();
 
         String localDir = null;
         boolean success;
@@ -5671,7 +5684,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             URI uri = new URI(secondaryStorageUrl);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
-            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
+            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
             if (StringUtils.isBlank(mountPoint)) {
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
             }
@@ -5698,11 +5711,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private String mountNfs(Connection conn, String remoteDir, String localDir) {
+    private String mountNfs(Connection conn, String remoteDir, String localDir, String nfsVersion) {
         if (localDir == null) {
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
-        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir, "nfsVersion", nfsVersion);
     }
 
     // Unmount secondary storage from host
