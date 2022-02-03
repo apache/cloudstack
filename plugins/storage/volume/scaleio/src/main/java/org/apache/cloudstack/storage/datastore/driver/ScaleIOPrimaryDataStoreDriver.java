@@ -947,4 +947,22 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String msg = "SDC not connected on the host: " + host.getId() + ", reconnect the SDC to MDM";
         alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC disconnected on host: " + host.getUuid(), msg);
     }
+
+    @Override
+    public boolean vmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVMInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean vmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVMTags(long vmId, long volumeId, String tagValue) {
+    }
 }

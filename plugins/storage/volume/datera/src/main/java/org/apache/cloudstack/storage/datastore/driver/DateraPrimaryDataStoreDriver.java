@@ -1860,4 +1860,22 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
         return true;
     }
+
+    @Override
+    public boolean vmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVMInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean vmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVMTags(long vmId, long volumeId, String tagValue) {
+    }
 }
