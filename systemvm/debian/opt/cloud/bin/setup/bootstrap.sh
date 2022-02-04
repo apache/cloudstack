@@ -80,6 +80,9 @@ config_guest() {
           systemctl enable xe-daemon
           systemctl start xe-daemon
 
+          log_it "Removing old configuration files in /etc/cloudstack/"
+          rm -rf /etc/cloudstack/*.json
+
           if [ ! -f /usr/bin/xenstore-read ]; then
             log_it "ERROR: xentools not installed, cannot found xenstore-read" && exit 5
           fi
@@ -121,6 +124,9 @@ config_guest() {
           systemctl disable ntpd
           systemctl enable open-vm-tools
           systemctl start open-vm-tools
+
+          log_it "Removing old configuration files in /etc/cloudstack/"
+          rm -rf /etc/cloudstack/*.json
 
           vmtoolsd --cmd 'machine.id.get' > $CMDLINE
           ;;
