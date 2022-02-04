@@ -121,7 +121,6 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
         try {
             if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
-                _ravService.removeVpnUserWithoutValidVpnOwner(vpnUser.getId());
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
             }
         } catch (Exception ex) {

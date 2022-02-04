@@ -137,6 +137,21 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     int _pskLength;
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
+    private List<RemoteAccessVpnVO> getValidRemoteAccessVpnForAccount(long accountId) {
+        List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(accountId);
+        if (CollectionUtils.isNotEmpty(vpns)) {
+            List<RemoteAccessVpnVO> validVpns = new ArrayList<>();
+            for (RemoteAccessVpnVO vpn : vpns) {
+                Network network = _networkMgr.getNetwork(vpn.getNetworkId());
+                if (Network.State.Implemented.equals(network.getState())) {
+                    validVpns.add(vpn);
+                }
+            }
+            vpns = validVpns;
+        }
+        return vpns;
+    }
+
     @Override
     @DB
     public RemoteAccessVpn createRemoteAccessVpn(final long publicIpId, String ipRange, boolean openFirewall, final Boolean forDisplay) throws NetworkRuleConflictException {
@@ -526,14 +541,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         _accountMgr.checkAccess(caller, null, true, owner);
 
         s_logger.debug(String.format("Applying VPN users for %s.", owner.toString()));
-        List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
+        List<RemoteAccessVpnVO> vpns = getValidRemoteAccessVpnForAccount(vpnOwnerId);
 
         if (CollectionUtils.isEmpty(vpns)) {
             if (forRemove) {
                 return removeVpnUserWithoutRemoteAccessVpn(vpnOwnerId, userName);
             }
-            s_logger.error(String.format("Unable to add VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
-            return false;
+            s_logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
+            return true;
         }
 
         RemoteAccessVpnVO vpnTemp  = null;
