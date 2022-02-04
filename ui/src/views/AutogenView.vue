@@ -840,6 +840,10 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
+        if (['listSSHKeyPairs'].includes(this.apiName)) {
+          delete params.id
+          params.name = this.$route.params.id
+        }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {

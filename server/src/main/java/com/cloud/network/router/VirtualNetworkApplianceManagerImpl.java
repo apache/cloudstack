@@ -2068,7 +2068,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" dnssearchorder=").append(domain_suffix);
         }
 
-        if (profile.getHypervisorType() == HypervisorType.VMware || profile.getHypervisorType() == HypervisorType.Hyperv) {
+        if (profile.getHypervisorType() == HypervisorType.Hyperv) {
             buf.append(" extra_pubnics=" + _routerExtraPublicNics);
         }
 
