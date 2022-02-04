@@ -759,11 +759,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
             avoids.addPodList(allPodsInDc);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("adding clusters to avoid lists for non-exlicit vm deployment: " + allClustersInDc);
+                s_logger.debug("Adding clusters to avoid lists for non-explicit VM deployment: " + allClustersInDc);
             }
             avoids.addClusterList(allClustersInDc);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("adding hosts to avoid lists for non-exlicit vm deployment: " + allHostsInDc);
+                s_logger.debug("Adding hosts to avoid lists for non-explicit VM deployment: " + allHostsInDc);
             }
             avoids.addHostList(allHostsInDc);
         }
@@ -844,15 +844,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             //Add in avoid list or no addition if no dedication
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("adding pods to avoid lists: " + allPodsInDc);
+                s_logger.debug("Adding pods to avoid lists: " + allPodsInDc);
             }
             avoids.addPodList(allPodsInDc);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("adding clusters to avoid lists: " + allClustersInDc);
+                s_logger.debug("Adding clusters to avoid lists: " + allClustersInDc);
             }
             avoids.addClusterList(allClustersInDc);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("adding hosts to avoid lists: " + allHostsInDc);
+                s_logger.debug("Adding hosts to avoid lists: " + allHostsInDc);
             }
             avoids.addHostList(allHostsInDc);
         }

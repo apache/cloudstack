@@ -306,7 +306,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                     DedicatedResourceVO dPod = _dedicatedDao.findByPodId(pod.getId());
                     if (dPod != null && !dedicatedResources.contains(dPod)) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug(String.format("Avoiding POD %s [%s] because it is dedicated.", pod.getName(), pod.getUuid()));
+                            s_logger.debug(String.format("Avoiding POD %s [%s] because it is not dedicated.", pod.getName(), pod.getUuid()));
                         }
                         avoidList.addPod(pod.getId());
                     } else {
