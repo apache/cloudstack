@@ -139,16 +139,15 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
         s_logger.info("Getting pending quota records for account=" + account.getAccountName());
         for (UsageVO usageRecord : usageRecords.first()) {
-            BigDecimal aggregationRatio = new BigDecimal(_aggregationDuration).divide(s_minutesInMonth, 8, RoundingMode.HALF_EVEN);
             switch (usageRecord.getUsageType()) {
             case QuotaTypes.RUNNING_VM:
-                List<QuotaUsageVO> lq = updateQuotaRunningVMUsage(usageRecord, aggregationRatio);
+                List<QuotaUsageVO> lq = updateQuotaRunningVMUsage(usageRecord);
                 if (!lq.isEmpty()) {
                     quotaListForAccount.addAll(lq);
                 }
                 break;
             case QuotaTypes.ALLOCATED_VM:
-                QuotaUsageVO qu = updateQuotaAllocatedVMUsage(usageRecord, aggregationRatio);
+                QuotaUsageVO qu = updateQuotaAllocatedVMUsage(usageRecord);
                 if (qu != null) {
                     quotaListForAccount.add(qu);
                 }
@@ -159,7 +158,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             case QuotaTypes.VOLUME:
             case QuotaTypes.VM_SNAPSHOT:
             case QuotaTypes.BACKUP:
-                qu = updateQuotaDiskUsage(usageRecord, aggregationRatio, usageRecord.getUsageType());
+                qu = updateQuotaDiskUsage(usageRecord, usageRecord.getUsageType());
                 if (qu != null) {
                     quotaListForAccount.add(qu);
                 }
@@ -170,7 +169,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             case QuotaTypes.NETWORK_OFFERING:
             case QuotaTypes.SECURITY_GROUP:
             case QuotaTypes.VPN_USERS:
-                qu = updateQuotaRaw(usageRecord, aggregationRatio, usageRecord.getUsageType());
+                qu = updateQuotaRaw(usageRecord, usageRecord.getUsageType());
                 if (qu != null) {
                     quotaListForAccount.add(qu);
                 }
@@ -333,7 +332,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return true;
     }
 
-    public QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, final BigDecimal aggregationRatio, final int quotaType) {
+    public QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, final int quotaType) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(quotaType, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
@@ -352,7 +351,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quota_usage;
     }
 
-    public List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, final BigDecimal aggregationRatio) {
+    public List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord) {
         List<QuotaUsageVO> quotalist = new ArrayList<QuotaUsageVO>();
         QuotaUsageVO quota_usage;
         BigDecimal cpuquotausgage, speedquotausage, memoryquotausage, vmusage;
@@ -410,7 +409,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quotalist;
     }
 
-    public QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, final BigDecimal aggregationRatio) {
+    public QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.ALLOCATED_VM, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
@@ -428,7 +427,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quota_usage;
     }
 
-    public QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, final BigDecimal aggregationRatio, final int ruleType) {
+    public QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, final int ruleType) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(ruleType, usageRecord.getEndDate());
         if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
