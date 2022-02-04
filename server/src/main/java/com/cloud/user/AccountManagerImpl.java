@@ -1219,11 +1219,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
                 checkApiAccess(apiCheckers, caller, command);
             } catch (PermissionDeniedException pde) {
-                String msg = String.format("user of account %s/%s (%s) can not create an account with access to %s",
+                String msg = String.format("User of Account %s/%s (%s) can not create an account with access to more privileges they have themself.",
                         caller.getAccountName(),
                         caller.getDomainId(),
-                        caller.getUuid(),
-                        command);
+                        caller.getUuid());
                 s_logger.warn(msg);
                 throw new PermissionDeniedException(msg,pde);
             }
@@ -1239,17 +1238,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @NotNull
     private List<APIChecker> getEnabledApiCheckers() {
         // we are really only interested in the dynamic access checker
-        List<APIChecker> usableApiCheckera = new ArrayList<>();
+        List<APIChecker> usableApiCheckers = new ArrayList<>();
         for (APIChecker apiChecker : apiAccessCheckers) {
             if (apiChecker.isEnabled()) {
-                usableApiCheckera.add(apiChecker);
+                usableApiCheckers.add(apiChecker);
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("using api checker \"%s\"",
                             apiChecker.getName()));
                 }
             }
         }
-        return usableApiCheckera;
+        return usableApiCheckers;
     }
 
     @Override
