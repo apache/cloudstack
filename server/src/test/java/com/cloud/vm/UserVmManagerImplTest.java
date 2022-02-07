@@ -484,7 +484,7 @@ public class UserVmManagerImplTest {
 
         Mockito.when(diskfferingVo.getDiskSize()).thenReturn(offeringRootDiskSize);
 
-        Mockito.when(volumeApiService.validateVolumeSizeRange(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(volumeApiService.validateVolumeSizeInBytes(Mockito.anyLong())).thenReturn(true);
         long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, offering);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);

@@ -153,5 +153,5 @@ public interface VolumeApiService {
 
     Volume recoverVolume(long volumeId);
 
-    boolean validateVolumeSizeRange(long size);
+    boolean validateVolumeSizeInBytes(long size);
 }

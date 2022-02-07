@@ -699,9 +699,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 maxIops = diskOffering.getMaxIops();
             }
 
-            if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
-                // for validation
-                throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + VolumeOrchestrationService.MaxVolumeSize.value());
+            if (!validateVolumeSizeInBytes(size)) {
+                throw new InvalidParameterValueException(String.format("Invalid size for custom volume creation: %s, max volume size is: %s GB", NumbersUtil.toReadableSize(size), VolumeOrchestrationService.MaxVolumeSize.value()));
             }
         }
 
@@ -856,7 +855,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public boolean validateVolumeSizeRange(long size) {
+    public boolean validateVolumeSizeInBytes(long size) {
         long maxVolumeSize = VolumeOrchestrationService.MaxVolumeSize.value();
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 GB.");
@@ -1088,7 +1087,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            if (!validateVolumeSizeRange(newSize)) {
+            if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
             }
 

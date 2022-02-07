@@ -3852,7 +3852,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } else {
                 size = diskOffering.getDiskSize();
             }
-            _volumeService.validateVolumeSizeRange(size);
+            _volumeService.validateVolumeSizeInBytes(size);
             volumesSize += size;
         }
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
@@ -4183,7 +4183,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(serviceOffering.getId());
         long rootDiskSizeInBytes = diskOffering.getDiskSize();
         if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
-            _volumeService.validateVolumeSizeRange(rootDiskSizeInBytes);
+            _volumeService.validateVolumeSizeInBytes(rootDiskSizeInBytes);
             long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
             customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSizeInGiB));
             return rootDiskSizeInBytes;
@@ -4195,7 +4195,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
             rootDiskSize *= GiB_TO_BYTES;
-            _volumeService.validateVolumeSizeRange(rootDiskSize);
+            _volumeService.validateVolumeSizeInBytes(rootDiskSize);
             return rootDiskSize;
         } else {
             // For baremetal, size can be 0 (zero)
