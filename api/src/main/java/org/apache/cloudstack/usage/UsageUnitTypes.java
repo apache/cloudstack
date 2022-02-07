@@ -18,11 +18,11 @@
 package org.apache.cloudstack.usage;
 
 public enum UsageUnitTypes {
-    ComputeMonth ("Compute-Month"),
-    IpMonth ("IP-Month"),
+    ComputeMonth ("Compute*Month"),
+    IpMonth ("IP*Month"),
     Gb ("GB"),
-    GbMonth ("GB-Month"),
-    PolicyMonth ("Policy-Month");
+    GbMonth ("GB*Month"),
+    PolicyMonth ("Policy*Month");
 
     private final String description;
 

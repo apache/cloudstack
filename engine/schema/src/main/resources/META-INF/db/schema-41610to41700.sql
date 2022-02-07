@@ -692,5 +692,24 @@ ADD COLUMN  `removed` datetime DEFAULT NULL;
 ALTER TABLE cloud_usage.quota_tariff
 ADD COLUMN  `end_date` datetime DEFAULT NULL
 COMMENT     'Defines the end date of the tarrif.';
+
+
+-- Change usage unit to right unit
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'Compute*Month'
+WHERE   usage_unit = 'Compute-Month';
+
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'IP*Month'
+WHERE   usage_unit = 'IP-Month';
+
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'GB*Month'
+WHERE   usage_unit = 'GB-Month';
+
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'Policy*Month'
+WHERE   usage_unit = 'Policy-Month';
+
 ----- PR Quota custom tariffs #5909 -----
 
