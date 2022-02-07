@@ -28,12 +28,12 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.DateUtil;
@@ -961,6 +961,23 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
 
+    @Override
+    public List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId) {
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.or().op("hostId", sb.entity().getHostId(), Op.EQ);
+        sb.or("lastHostId", sb.entity().getLastHostId(), Op.EQ);
+        sb.and().op("hostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
+        sb.and("lastHostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), Op.EQ);
+        sb.cp();
+        sb.cp();
+        sb.done();
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("hostId", String.valueOf(hostId));
+        sc.setParameters("lastHostId", String.valueOf(hostId));
+        sc.setParameters("podId", String.valueOf(podId));
+        return listBy(sc);
     }
 }

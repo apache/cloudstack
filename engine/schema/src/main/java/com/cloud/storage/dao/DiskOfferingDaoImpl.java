@@ -29,6 +29,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOffering.Type;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
@@ -171,6 +172,18 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while listing disk offerings by size: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public List<DiskOfferingVO> findCustomDiskOfferings() {
+        SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("customized", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<DiskOfferingVO> sc = sb.create();
+        sc.setParameters("customized", true);
+        sc.setParameters("type", DiskOffering.Type.Disk.toString());
+        return listBy(sc);
     }
 
     @Override
