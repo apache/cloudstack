@@ -61,6 +61,12 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     public List<UserVmVO> listRunningByHostId(long hostId);
 
     /**
+     * List all running VMs.
+     * @return the list of all VM instances that are running.
+     */
+    public List<UserVmVO> listAllRunning();
+
+    /**
      * List user vm instances with virtualized networking (i.e. not direct attached networking) for the given account and datacenter
      * @param accountId will search for vm instances belonging to this account
      * @return the list of vm instances owned by the account in the given data center that have virtualized networking (not direct attached networking)

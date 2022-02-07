@@ -193,8 +193,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
-              description: description,
+              title,
+              description,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })

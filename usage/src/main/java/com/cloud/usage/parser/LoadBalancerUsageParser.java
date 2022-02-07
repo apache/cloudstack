@@ -81,7 +81,7 @@ public class LoadBalancerUsageParser {
 
         // loop through all the load balancer policies, create a usage record for each
         for (UsageLoadBalancerPolicyVO usageLB : usageLBs) {
-            long lbId = usageLB.getId();
+            long lbId = usageLB.getLbId();
             String key = "" + lbId;
 
             lbMap.put(key, new LBInfo(lbId, usageLB.getZoneId()));
@@ -105,7 +105,7 @@ public class LoadBalancerUsageParser {
 
             long currentDuration = (lbDeleteDate.getTime() - lbCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-            updateLBUsageData(usageMap, key, usageLB.getId(), currentDuration);
+            updateLBUsageData(usageMap, key, usageLB.getLbId(), currentDuration);
         }
 
         for (String lbIdKey : usageMap.keySet()) {

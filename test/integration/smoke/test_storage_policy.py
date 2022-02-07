@@ -192,6 +192,8 @@ class TestVMWareStoragePolicies(cloudstackTestCase):
             self.apiclient,
             self.testdata["l2-network"],
             zoneid=self.zone.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
             networkofferingid=self.network_offering.id
         )
         self.cleanup.append(l2_network)

@@ -53,6 +53,9 @@ mocks = {
     return error
   }),
   $notification: {
+    error: jest.fn((option) => {
+      return option
+    }),
     info: jest.fn((option) => {
       return {
         message: option.message,
@@ -61,10 +64,10 @@ mocks = {
       }
     }),
     success: jest.fn((option) => {
-      return {
-        message: option.message,
-        description: option.description
-      }
+      return option
+    }),
+    warning: jest.fn((option) => {
+      return option
     })
   },
   $message: {
@@ -2787,7 +2790,7 @@ describe('Views > AutogenView.vue', () => {
         })
       })
 
-      it('check $notification when api is called and response have not jobId result', async (done) => {
+      it('check $message when api is called and response have not jobId result', async (done) => {
         wrapper = factory({
           data: {
             showAction: true,
