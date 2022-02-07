@@ -73,7 +73,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         }
 
         if (host.getClusterId() == null) {
-            LOGGER.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
+            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host has no associated cluster id");
             return false;
         }
 
