@@ -36,7 +36,6 @@ responseHasSensitiveInfo = false, since = "4.17.0.0", authorized = {RoleType.Adm
 public class QuotaTariffDeleteCmd extends BaseCmd {
     public static final String APINAME = "quotaTariffDelete";
     protected Logger logger = Logger.getLogger(getClass());
-    private String commandName = "quotatariffdeleteresponse";
 
     @Inject
     QuotaResponseBuilder responseBuilder;
@@ -59,7 +58,7 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return commandName;
+        return QuotaTariffDeleteCmd.API_NAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override
