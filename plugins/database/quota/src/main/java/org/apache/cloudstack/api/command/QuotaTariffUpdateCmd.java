@@ -52,7 +52,7 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
-            + " startDate=2009-06-03.")
+            + " endDate=2009-06-03.")
     private Date endDate;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name")
