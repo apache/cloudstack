@@ -1675,7 +1675,9 @@ export default {
         if (this.zone.networktype !== 'Basic') {
           if (this.nicToNetworkSelection && this.nicToNetworkSelection.length > 0) {
             for (var j in this.nicToNetworkSelection) {
-              deployVmData['nicnetworklist[' + j + ']'] = this.nicToNetworkSelection[j]
+              var nicNetwork = this.nicToNetworkSelection[j]
+              deployVmData['nicnetworklist[' + j + '].nic'] = nicNetwork.nic
+              deployVmData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
             const arrNetwork = []
