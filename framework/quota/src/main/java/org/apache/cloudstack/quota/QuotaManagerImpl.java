@@ -533,16 +533,16 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         BigDecimal costPerHour = aggregatedQuotaTariffsValue.divide(s_hoursInMonth, 8, RoundingMode.HALF_EVEN);
 
         switch (UsageUnitTypes.getByDescription(quotaUnit)) {
-            case ComputeMonth:
-            case IpMonth:
-            case PolicyMonth:
+            case COMPUTE_MONTH:
+            case IP_MONTH:
+            case POLICY_MONTH:
                 return rawUsage.multiply(costPerHour);
 
-            case Gb:
+            case GB:
                 BigDecimal rawUsageInGb = rawUsage.divide(GiB_DECIMAL, 8, RoundingMode.HALF_EVEN);
                 return rawUsageInGb.multiply(aggregatedQuotaTariffsValue);
 
-            case GbMonth:
+            case GB_MONTH:
                 BigDecimal gbInUse = new BigDecimal(usageRecord.getSize()).divide(GiB_DECIMAL, 8, RoundingMode.HALF_EVEN);
                 return rawUsage.multiply(costPerHour).multiply(gbInUse);
 

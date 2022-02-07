@@ -151,19 +151,19 @@ public class QuotaManagerImplTest {
            Double expected = null;
 
            switch (type) {
-               case ComputeMonth:
-               case IpMonth:
-               case PolicyMonth:
+               case COMPUTE_MONTH:
+               case IP_MONTH:
+               case POLICY_MONTH:
                    //The value 5.5555556 is referent to the calculation (( tariffs values / hours in month ) * raw usage ).
                    expected = 5.5555556;
                    break;
 
-               case Gb:
+               case GB:
                    //The value 0.000004 is referent to the calculation (( raw usage / gib) * tariffs values ).
                    expected = 0.000004;
                    break;
 
-               case GbMonth:
+               case GB_MONTH:
                    //The value 5.5555556 is referent to the calculation (( usage size / gib ) * raw usage * ( tariffs values / hours in month )).
                    expected = 5.5555556;
                    break;
