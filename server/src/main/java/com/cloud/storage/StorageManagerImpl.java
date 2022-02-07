@@ -2808,32 +2808,33 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
-                                    if (HypervisorType.Simulator != hypervisorType) {
-                                        String templateName = getValidTemplateName(zoneId, hypervisorType);
-                                        Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
-                                                new Pair<>(hypervisorType, templateName);
-                                        Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
-                                        VMTemplateVO vmTemplateVO = null;
-                                        TemplateDataStoreVO templateVO = null;
-                                        if (templateId != null) {
-                                            vmTemplateVO = _templateDao.findById(templateId);
-                                            templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
-                                            if (templateVO != null) {
-                                                try {
-                                                    if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
-                                                        continue;
-                                                    }
-                                                } catch (Exception e) {
-                                                    s_logger.error("Failed to validated if template is seeded", e);
+                                    if (HypervisorType.Simulator == hypervisorType) {
+                                        continue;
+                                    }
+                                    String templateName = getValidTemplateName(zoneId, hypervisorType);
+                                    Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
+                                            new Pair<>(hypervisorType, templateName);
+                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
+                                    VMTemplateVO vmTemplateVO = null;
+                                    TemplateDataStoreVO templateVO = null;
+                                    if (templateId != null) {
+                                        vmTemplateVO = _templateDao.findById(templateId);
+                                        templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                        if (templateVO != null) {
+                                            try {
+                                                if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                                    continue;
                                                 }
+                                            } catch (Exception e) {
+                                                s_logger.error("Failed to validated if template is seeded", e);
                                             }
                                         }
-                                        SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
-                                        if (templateVO != null && vmTemplateVO != null) {
-                                            systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, filePath);
-                                        } else {
-                                            systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
-                                        }
+                                    }
+                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
+                                    if (templateVO != null && vmTemplateVO != null) {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, filePath);
+                                    } else {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
                                     }
                                 } catch (CloudRuntimeException e) {
                                     SystemVmTemplateRegistration.unmountStore(filePath);
