@@ -155,7 +155,7 @@ export default {
       this.tableChanged = true
     },
     filterItems () {
-      if (this.appliedFilterStatus && this.appliedFilterStatus.length > 0) {
+      if (this.appliedFilterStatus?.length > 0) {
         this.filteredItems = this.selectedItems.filter(item => {
           if (this.appliedFilterStatus.includes(item.status)) {
             return item
