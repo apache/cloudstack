@@ -23,9 +23,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +30,6 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -153,8 +149,6 @@ public class SnapshotManagerTest {
     SnapshotDataStoreVO snapshotStoreMock;
     @Mock
     SnapshotService snapshotSrv;
-    @Mock
-    DataStoreManager dataStoreManager;
 
     @Mock
     GlobalLock globalLockMock;
@@ -332,24 +326,22 @@ public class SnapshotManagerTest {
 
     // vm on Xenserver, return null
     @Test
-    public void testRevertSnapshotF2() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    public void testRevertSnapshotF2() {
         when(_vmDao.findById(anyLong())).thenReturn(vmMock);
         when(vmMock.getState()).thenReturn(State.Stopped);
         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
         when(volumeMock.getFormat()).thenReturn(ImageFormat.VHD);
-        getDataStore();
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNull(snapshot);
     }
 
     // vm on KVM, successful
     @Test
-    public void testRevertSnapshotF3() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    public void testRevertSnapshotF3() {
         when(_vmDao.findById(anyLong())).thenReturn(vmMock);
         when(vmMock.getState()).thenReturn(State.Stopped);
         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(volumeMock.getFormat()).thenReturn(ImageFormat.QCOW2);
-        getDataStore();
         when (snapshotStrategy.revertSnapshot(Mockito.any(SnapshotInfo.class))).thenReturn(true);
         when(_volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
@@ -533,15 +525,5 @@ public class SnapshotManagerTest {
         Mockito.verify(_snapshotMgr, timesVerification).updateSnapshotPolicy(Mockito.any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
           Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
         Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(Mockito.any(), Mockito.any());
-    }
-
-    private void getDataStore()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Method declaredMethod = SnapshotManagerImpl.class.getDeclaredMethod("getDataStoreRole", Snapshot.class);
-        declaredMethod.setAccessible(true);
-        List<SnapshotDataStoreVO> dataStoreSnapshots = new ArrayList<>();
-        dataStoreSnapshots.add(snapshotStoreMock);
-        when(snapshotStoreDao.findBySnapshotId(anyLong())).thenReturn(dataStoreSnapshots);
-        when(declaredMethod.invoke(_snapshotMgr, snapshotMock)).thenReturn(DataStoreRole.Primary);
     }
 }

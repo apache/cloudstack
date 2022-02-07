@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -59,7 +60,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -100,6 +100,7 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
@@ -310,6 +311,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+
         if (snapshotInfo == null) {
             throw new CloudRuntimeException(String.format("snapshot [%s] does not exists in data store", snapshotId));
         }
@@ -1328,11 +1330,32 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     private DataStoreRole getDataStoreRole(Snapshot snapshot) {
-        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.findBySnapshotId(snapshot.getId());
-        if (CollectionUtils.isEmpty(snapshots)) {
-            return null;
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+        if (snapshotStore == null) {
+            return DataStoreRole.Image;
         }
-        return snapshots.stream().map(store -> store.getRole()).filter(store -> DataStoreRole.Primary.equals(store)).findFirst().orElse(DataStoreRole.Image);
+
+        long storagePoolId = snapshotStore.getDataStoreId();
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        if (mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+            Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
+
+            if (supportsStorageSystemSnapshots) {
+                return DataStoreRole.Primary;
+            }
+        }
+
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+        if (storagePoolVO.getPoolType() == StoragePoolType.RBD) {
+            return DataStoreRole.Primary;
+        }
+
+        return DataStoreRole.Image;
     }
 
     @Override
