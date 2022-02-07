@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Config;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -342,10 +343,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 Answer answer = null;
                 try {
-
-                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd);
+                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(host.getHypervisorType());
+                    Pair<Boolean, Long> result = hvGuru.getCommandHostDelegation(host.getId(), cmd);
+                    final long targetHostId = result.first() ? result.second() : host.getId();
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
+                    s_logger.error("Error sending command to host", e);
                 }
                 if (answer != null) {
                     return answer;
