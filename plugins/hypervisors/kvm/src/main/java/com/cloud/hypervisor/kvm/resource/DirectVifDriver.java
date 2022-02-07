@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import org.apache.commons.compress.utils.Sets;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
