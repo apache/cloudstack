@@ -207,7 +207,7 @@ export default {
           dataView: true,
           show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
           popup: true,
-          component: () => import('@/views/storage/ChangeOfferingForVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
         {
           api: 'extractVolume',

@@ -105,7 +105,7 @@ export default {
               record.isready
           },
           popup: true,
-          component: () => import('@/views/image/UpdateTemplate.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateTemplate.vue')))
         },
         {
           api: 'updateTemplatePermissions',

@@ -49,10 +49,11 @@
       @update-compute-memory="updateFieldValue" />
 
     <a-form-item :label="$t('label.automigrate.volume')">
-      <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      <template #label>
+        <tooltip-label :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      </template>
       <a-switch
-        v-decorator="['autoMigrate']"
-        :checked="autoMigrate"
+        v-model:checked="autoMigrate"
         @change="val => { autoMigrate = val }"/>
     </a-form-item>
 
@@ -96,7 +97,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('scaleVirtualMachine')
   },
   created () {
