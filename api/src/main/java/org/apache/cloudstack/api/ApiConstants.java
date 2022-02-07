@@ -595,6 +595,7 @@ public class ApiConstants {
     public static final String MIGRATE_TO = "migrateto";
     public static final String AUTO_MIGRATE = "automigrate";
     public static final String GUID = "guid";
+    public static final String VM_SNAPSHOT_ENABELD = "vmsnapshotenabled";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";

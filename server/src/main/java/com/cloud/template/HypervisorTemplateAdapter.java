@@ -216,7 +216,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        UriUtils.validateUrl(cmd.getFormat(), url);
+        UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());

@@ -23,6 +23,10 @@
 ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
 
 
+-- PR#5832 Fix 'endpointe.url' global settings configruation typo.
+UPDATE `cloud`.`configuration` SET name='endpoint.url' WHERE name='endpointe.url';
+
+
 
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `uuid` varchar(40) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `name` varchar(255) NOT NULL;
@@ -640,7 +644,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
 
------ PR Quota custom tariffs #0000 -----
+
+----- PR Quota custom tariffs #5909---
 -- Create column 'uuid'
 ALTER TABLE cloud_usage.quota_tariff
 ADD COLUMN  `uuid` varchar(40);
@@ -687,4 +692,5 @@ ADD COLUMN  `removed` datetime DEFAULT NULL;
 ALTER TABLE cloud_usage.quota_tariff
 ADD COLUMN  `end_date` datetime DEFAULT NULL
 COMMENT     'Defines the end date of the tarrif.';
------ PR Quota custom tariffs #0000 -----
+----- PR Quota custom tariffs #5909 -----
+
