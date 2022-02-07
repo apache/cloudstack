@@ -28,6 +28,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
+              :placeholder="apiParams.url.description"
               v-focus="true"
               v-model:value="form.ip" />
           </a-form-item>
@@ -37,6 +38,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="username" ref="username" :label="$t('label.username')">
             <a-input
+              :placeholder="apiParams.username.description"
               v-model:value="form.username" />
           </a-form-item>
         </a-col>
@@ -45,6 +47,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="password" ref="password" :label="$t('label.password')">
             <a-input-password
+              :placeholder="apiParams.password.description"
               v-model:value="form.password" />
           </a-form-item>
         </a-col>
@@ -53,6 +56,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="networkdevicetype" ref="networkdevicetype" :label="$t('label.networkdevicetype')">
             <a-select
+              :placeholder="apiParams.networkdevicetype.description"
               v-model:value="form.networkdevicetype"
               showSearch
               optionFilterProp="label"
@@ -153,6 +157,7 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
@@ -170,6 +175,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.apiParams = this.$getApiParams('addSrxFirewall')
   },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {

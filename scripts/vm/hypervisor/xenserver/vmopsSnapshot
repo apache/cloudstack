@@ -68,7 +68,8 @@ def create_secondary_storage_folder(session, args):
             # Mount the remote resource folder locally
             remote_mount_path = args["remoteMountPath"]
             local_mount_path = os.path.join(CLOUD_DIR, util.gen_uuid())
-            mount(remote_mount_path, local_mount_path)
+            nfsVersion = args["nfsVersion"]
+            mount(remote_mount_path, local_mount_path, nfsVersion)
 
             # Create the new folder
             new_folder = local_mount_path + "/" + args["newFolder"]
@@ -104,7 +105,8 @@ def delete_secondary_storage_folder(session, args):
             # Mount the remote resource folder locally
             remote_mount_path = args["remoteMountPath"]
             local_mount_path = os.path.join(CLOUD_DIR, util.gen_uuid())
-            mount(remote_mount_path, local_mount_path)
+            nfsVersion = args["nfsVersion"]
+            mount(remote_mount_path, local_mount_path, nfsVersion)
 
             # Delete the specified folder
             folder = local_mount_path + "/" + args["folder"]
@@ -136,7 +138,8 @@ def post_create_private_template(session, args):
             # get local template folder 
             templatePath = args["templatePath"]
             local_mount_path = os.path.join(CLOUD_DIR, util.gen_uuid())
-            mount(templatePath, local_mount_path)
+            nfsVersion = args["nfsVersion"]
+            mount(templatePath, local_mount_path, nfsVersion)
             # Retrieve args
             filename = args["templateFilename"]
             name = args["templateName"]
@@ -307,9 +310,11 @@ def makedirs(path):
             raise xs_errors.XenError(errMsg)
     return
 
-def mount(remoteDir, localDir):
+def mount(remoteDir, localDir, nfsVersion=None):
     makedirs(localDir)
     options = "soft,tcp,timeo=133,retrans=1"
+    if nfsVersion:
+        options += ",vers=" + nfsVersion
     try: 
         cmd = ['mount', '-o', options, remoteDir, localDir]
         txt = util.pread2(cmd)

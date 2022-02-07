@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-card>
+  <a-card v-if="isCustomized">
     <a-col>
       <a-row>
         <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">

@@ -76,11 +76,11 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
 
         if cls.hypervisorNotSupported == False:
-            cls.endpoint_url = Configurations.list(cls.apiclient, name="endpointe.url")[0].value
+            cls.endpoint_url = Configurations.list(cls.apiclient, name="endpoint.url")[0].value
             if "localhost" in cls.endpoint_url:
                 endpoint_url = "http://%s:%d/client/api " %(cls.mgtSvrDetails["mgtSvrIp"], cls.mgtSvrDetails["port"])
-                cls.debug("Setting endpointe.url to %s" %(endpoint_url))
-                Configurations.update(cls.apiclient, "endpointe.url", endpoint_url)
+                cls.debug("Setting endpoint.url to %s" %(endpoint_url))
+                Configurations.update(cls.apiclient, "endpoint.url", endpoint_url)
             cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient, name="cloud.kubernetes.service.enabled")[0].value
             if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")

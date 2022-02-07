@@ -97,6 +97,10 @@ export default {
     isIsoSelected: {
       type: Boolean,
       default: false
+    },
+    isRootDiskOffering: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -161,6 +165,7 @@ export default {
     value (newValue, oldValue) {
       if (newValue && newValue !== oldValue) {
         this.selectedRowKeys = [newValue]
+        this.onSelectRow(this.selectedRowKeys)
       }
     },
     items: {
@@ -203,7 +208,7 @@ export default {
   methods: {
     initDataItem () {
       this.dataItems = []
-      if (this.options.page === 1 && !this.isIsoSelected) {
+      if (this.options.page === 1 && !this.isIsoSelected && !this.isRootDiskOffering) {
         this.dataItems.push({
           id: '0',
           name: this.$t('label.noselect'),
@@ -251,6 +256,7 @@ export default {
             this.selectedRowKeys = [record.key]
             this.$emit('select-disk-offering-item', record.key)
             this.$emit('on-selected-disk-size', this.diskSelected)
+            this.$emit('on-selected-root-disk-size', this.diskSelected)
           }
         }
       }

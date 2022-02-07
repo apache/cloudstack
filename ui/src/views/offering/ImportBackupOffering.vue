@@ -187,7 +187,7 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
+              title,
               description: values.name,
               successMethod: result => {
                 this.closeAction()

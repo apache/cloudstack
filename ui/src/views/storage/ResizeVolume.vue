@@ -24,39 +24,28 @@
       layout="vertical"
       @finish="handleSubmit"
      >
-      <a-form-item
-        name="diskofferingid"
-        ref="diskofferingid"
-        :label="$t('label.diskoffering')"
-        v-if="resource.type !== 'ROOT'">
-        <a-select
-          v-model:value="form.diskofferingid"
-          :loading="loading"
-          :placeholder="$t('label.diskoffering')"
-          @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
-          v-focus="resource.type !== 'ROOT'"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="(offering, index) in offerings"
-            :value="offering.id"
-            :key="index"
-          >{{ offering.displaytext || offering.name }}</a-select-option>
-        </a-select>
+      <a-form-item name="size" ref="size" :label="$t('label.sizegb')">
+        <a-input
+          v-model:value="form.size"
+          :placeholder="$t('label.disksize')"/>
       </a-form-item>
-      <div name="size" ref="size" v-if="customDiskOffering || resource.type === 'ROOT'">
-        <a-form-item :label="$t('label.sizegb')" ref="size" name="size">
+      <div v-if="customDiskOfferingIops">
+        <a-form-item name="miniops" ref="miniops" :label="$t('label.miniops')">
           <a-input
-            v-model:value="form.size"
-            :placeholder="$t('label.disksize')"
-            v-focus="customDiskOffering || resource.type === 'ROOT'"/>
+            v-model:value="form.miniops"
+            :placeholder="$t('label.miniops')"/>
+        </a-form-item>
+        <a-form-item name="maxiops" ref="maxiops" :label="$t('label.maxiops')">
+          <a-input
+            v-model:value="form.maxiops"
+            :placeholder="$t('label.maxiops')"/>
         </a-form-item>
       </div>
-      <a-form-item :label="$t('label.shrinkok')" name="shrinkok" ref="shrinkok" v-if="!['XenServer'].includes(resource.hypervisor)">
-        <a-checkbox v-model:checked="form.shrinkok" />
+      <a-form-item name="shrinkOk" ref="shrinkOk" :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
+        <a-switch
+          v-model:checked="form.shrinkOk"
+          :checked="shrinkOk"
+          @change="val => { shrinkOk = val }"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
@@ -93,8 +82,9 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
-        size: [{ required: true, message: this.$t('message.error.size') }]
+        size: [{ required: true, message: this.$t('message.error.size') }],
+        miniops: [{ required: true, message: this.$t('message.error.number') }],
+        maxiops: [{ required: true, message: this.$t('message.error.number') }]
       })
     },
     fetchData () {

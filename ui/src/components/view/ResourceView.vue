@@ -128,7 +128,7 @@ export default {
       this.activeTab = key
       const query = Object.assign({}, this.$route.query)
       query.tab = key
-      history.replaceState(
+      history.pushState(
         {},
         null,
         '#' + this.$route.path + '?' + Object.keys(query).map(key => {

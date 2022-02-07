@@ -28,6 +28,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
+              :placeholder="apiParams.url.description"
               v-focus="true"
               v-model:value="form.ip" />
           </a-form-item>
@@ -37,6 +38,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="username" ref="username" :label="$t('label.username')">
             <a-input
+              :placeholder="apiParams.username.description"
               v-model:value="form.username" />
           </a-form-item>
         </a-col>
@@ -45,6 +47,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="password" ref="password" :label="$t('label.password')">
             <a-input-password
+              :placeholder="apiParams.password.description"
               v-model:value="form.password" />
           </a-form-item>
         </a-col>
@@ -53,6 +56,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="networkdevicetype" ref="networkdevicetype" :label="$t('label.networkdevicetype')">
             <a-select
+              :placeholder="apiParams.networkdevicetype.description"
               v-model:value="form.networkdevicetype"
               showSearch
               optionFilterProp="label"
@@ -83,21 +87,27 @@
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
           <a-form-item name="gslbprovider" ref="gslbprovider" :label="$t('label.gslbprovider')">
-            <a-switch v-model:checked="form.gslbprovider" />
+            <a-switch
+              :placeholder="apiParams.gslbprovider.description"
+              v-model:checked="form.gslbprovider" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
           <a-form-item name="gslbproviderpublicip" ref="gslbproviderpublicip" :label="$t('label.gslbproviderpublicip')">
-            <a-input v-model:value="form.gslbproviderpublicip" />
+            <a-input
+              :placeholder="apiParams.gslbproviderpublicip.description"
+              v-model:value="form.gslbproviderpublicip" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
           <a-form-item name="gslbproviderprivateip" ref="gslbproviderprivateip" :label="$t('label.gslbproviderprivateip')">
-            <a-input v-model:value="form.gslbproviderprivateip" />
+            <a-input
+              :placeholder="apiParams.gslbproviderprivateip.description"
+              v-model:value="form.gslbproviderprivateip" />
           </a-form-item>
         </a-col>
       </a-row>
@@ -148,6 +158,7 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
@@ -173,6 +184,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.apiParams = this.$getApiParams('addNetscalerLoadBalancer')
   },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {

@@ -168,7 +168,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public short getsnapshotType() {
+    public short getSnapshotType() {
         return snapshotType;
     }
 

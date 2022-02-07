@@ -73,6 +73,24 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="diskofferingid" ref="diskofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.diskofferingid"
+            :loading="offeringLoading"
+            :placeholder="apiParams.diskofferingid.description"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="opt in offerings" :key="opt.id">
+              {{ opt.name || opt.displaytext }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item ref="format" name="format">
           <template #label>
             <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
@@ -124,6 +142,8 @@ export default {
     return {
       fileList: [],
       zones: [],
+      offerings: [],
+      offeringLoading: false,
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
       uploadParams: null,
       loading: false,
@@ -158,9 +178,33 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.form.zoneId = this.zones[0].id
+            this.onZoneChange(this.zones[0].id)
           }
         }
+      })
+    },
+    onZoneChange (zoneId) {
+      this.form.zoneId = zoneId
+      this.zoneId = zoneId
+      this.fetchDiskOfferings(zoneId)
+    },
+    fetchDiskOfferings (zoneId) {
+      this.offeringLoading = true
+      this.offerings = [{ id: -1, name: '' }]
+      this.form.setFieldsValue({
+        diskofferingid: undefined
+      })
+      api('listDiskOfferings', {
+        zoneid: zoneId,
+        listall: true
+      }).then(json => {
+        for (var offering of json.listdiskofferingsresponse.diskoffering) {
+          if (offering.iscustomized) {
+            this.offerings.push(offering)
+          }
+        }
+      }).finally(() => {
+        this.offeringLoading = false
       })
     },
     handleRemove (file) {
@@ -191,7 +235,7 @@ export default {
         }
         this.loading = true
         api('getUploadParamsForVolume', params).then(json => {
-          this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
+          this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
           const { fileList } = this
           if (this.fileList.length > 1) {
             this.$notification.error({
@@ -227,12 +271,20 @@ export default {
           }).catch(e => {
             this.$notification.error({
               message: this.$t('message.upload.failed'),
-              description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
+              description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
               duration: 0
             })
           }).finally(() => {
             this.loading = false
           })
+        }).catch(e => {
+          this.$notification.error({
+            message: this.$t('message.upload.failed'),
+            description: `${this.$t('message.upload.volume.failed')} -  ${e?.response?.data?.postuploadvolumeresponse?.errortext || e}`,
+            duration: 0
+          })
+        }).finally(() => {
+          this.loading = false
         })
       })
     },

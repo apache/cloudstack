@@ -28,6 +28,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
+              :placeholder="apiParams.hostname.description"
               v-focus="true"
               v-model:value="form.ip" />
           </a-form-item>
@@ -37,6 +38,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="username" ref="username" :label="$t('label.username')">
             <a-input
+              :placeholder="apiParams.username.description"
               v-model:value="form.username" />
           </a-form-item>
         </a-col>
@@ -45,6 +47,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item name="password" ref="password" :label="$t('label.password')">
             <a-input-password
+              :placeholder="apiParams.password.description"
               v-model:value="form.password" />
           </a-form-item>
         </a-col>
@@ -61,21 +64,27 @@
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
           <a-form-item name="transportzoneuuid" ref="transportzoneuuid" :label="$t('label.transportzoneuuid')">
-            <a-input v-model:value="form.transportzoneuuid" />
+            <a-input
+              :placeholder="apiParams.transportzoneuuid.description"
+              v-model:value="form.transportzoneuuid" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
           <a-form-item name="l3gatewayserviceuuid" ref="l3gatewayserviceuuid" :label="$t('label.l3gatewayserviceuuid')">
-            <a-input v-model:value="form.l3gatewayserviceuuid" />
+            <a-input
+              :placeholder="apiParams.l3gatewayserviceuuid.description"
+              v-model:value="form.l3gatewayserviceuuid" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
           <a-form-item name="l2gatewayserviceuuid" ref="l2gatewayserviceuuid" :label="$t('label.l2gatewayserviceuuid')">
-            <a-input v-model:value="form.l2gatewayserviceuuid" />
+            <a-input
+              :placeholder="apiParams.l2gatewayserviceuuid.description"
+              v-model:value="form.l2gatewayserviceuuid" />
           </a-form-item>
         </a-col>
       </a-row>
@@ -105,12 +114,14 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
   },
   created () {
     this.initForm()
+    this.apiParams = this.$getApiParams('addNiciraNvpDevice')
   },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {

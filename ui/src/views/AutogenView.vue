@@ -109,7 +109,7 @@
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0)">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -138,10 +138,14 @@
               :resource="resource"
               :loading="loading"
               :action="{currentAction}"
+              :selectedRowKeys="selectedRowKeys"
+              :selectedItems="selectedItems"
+              :chosenColumns="chosenColumns"
               v-bind="{currentAction}"
               @refresh-data="fetchData"
               @poll-action="pollActionCompletion"
-              @close-action="closeAction"/>
+              @close-action="closeAction"
+              @cancel-bulk-action="handleCancel"/>
           </keep-alive>
         </a-modal>
       </keep-alive>
@@ -813,6 +817,10 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
+        if (['listSSHKeyPairs'].includes(this.apiName)) {
+          delete params.id
+          params.name = this.$route.params.id
+        }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
@@ -890,8 +898,10 @@ export default {
           }
         }
         if (this.items.length > 0) {
-          this.resource = this.items[0]
-          this.$emit('change-resource', this.resource)
+          if (!this.showAction) {
+            this.resource = this.items[0]
+            this.$emit('change-resource', this.resource)
+          }
         } else {
           if (this.dataView) {
             this.$router.push({ path: '/exception/404' })
@@ -1633,5 +1643,10 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+/deep/.ant-alert-message {
+  display: flex;
+  align-items: center;
 }
 </style>

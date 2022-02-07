@@ -228,9 +228,9 @@ public interface StorageManager extends StorageService {
 
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
-    boolean storagePoolHasEnoughIops(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
     /**
      * This comment is relevant to managed storage only.
@@ -254,13 +254,13 @@ public interface StorageManager extends StorageService {
      *
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volume, StoragePool pool, Long clusterId);
 
     boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
 
     boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
-    boolean isStoragePoolCompliantWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
+    boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 

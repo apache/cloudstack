@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -178,10 +179,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         ApiResponseHelper.populateOwner(volResponse, volume);
 
         if (volume.getDiskOfferingId() > 0) {
-            if (ApiDBUtils.findServiceOfferingByUuid(volume.getDiskOfferingUuid()) != null) {
-                volResponse.setServiceOfferingId(volume.getDiskOfferingUuid());
-                volResponse.setServiceOfferingName(volume.getDiskOfferingName());
-                volResponse.setServiceOfferingDisplayText(volume.getDiskOfferingDisplayText());
+            DiskOffering computeOnlyDiskOffering  = ApiDBUtils.findComputeOnlyDiskOfferingById(volume.getDiskOfferingId());
+            if (computeOnlyDiskOffering != null) {
+                ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId());
+                volResponse.setServiceOfferingId(String.valueOf(serviceOffering.getId()));
+                volResponse.setServiceOfferingName(serviceOffering.getName());
+                volResponse.setServiceOfferingDisplayText(serviceOffering.getDisplayText());
             } else {
                 volResponse.setDiskOfferingId(volume.getDiskOfferingUuid());
                 volResponse.setDiskOfferingName(volume.getDiskOfferingName());

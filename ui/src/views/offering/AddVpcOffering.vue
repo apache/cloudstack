@@ -51,7 +51,6 @@
               <template #renderItem="{ item }">
                 <a-list-item>
                   <CheckBoxSelectPair
-                    v-decorator="['service.'+item.name, {}]"
                     :resourceKey="item.name"
                     :checkBoxLabel="item.description"
                     :selectOptions="item.provider"

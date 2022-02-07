@@ -1357,9 +1357,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         performBasicPrivateVlanChecks(vlanId, secondaryVlanId, privateVlanType);
 
-        // Regular user can create Guest Isolated Source Nat enabled network or L2 network only
-        if (_accountMgr.isNormalUser(caller.getId())) {
-            validateNetworkOfferingForRegularUser(ntwkOff);
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
+            validateNetworkOfferingForNonRootAdminUser(ntwkOff);
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
@@ -1451,20 +1450,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
-    private void validateNetworkOfferingForRegularUser(NetworkOfferingVO ntwkOff) {
+    private void validateNetworkOfferingForNonRootAdminUser(NetworkOfferingVO ntwkOff) {
         if (ntwkOff.getTrafficType() != TrafficType.Guest) {
-            throw new InvalidParameterValueException("Regular users can only create a Guest network");
+            throw new InvalidParameterValueException("This user can only create a Guest network");
         }
-        if (ntwkOff.getGuestType() == GuestType.Isolated && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
-            s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s] with a service [%s] enabled.",
-                    TrafficType.Guest, GuestType.Isolated, Service.SourceNat.getName()));
-        } else if (ntwkOff.getGuestType() == GuestType.L2) {
+        if (ntwkOff.getGuestType() == GuestType.L2 || ntwkOff.getGuestType() == GuestType.Isolated) {
             s_logger.debug(String.format("Creating a network from network offerings having traffic type [%s] and network type [%s].",
-                    TrafficType.Guest, GuestType.L2));
+                    TrafficType.Guest, ntwkOff.getGuestType()));
         } else {
             throw new InvalidParameterValueException(
-                    String.format("Regular users can only create an %s network with a service [%s] enabled, or a %s network.",
-                            GuestType.Isolated, Service.SourceNat.getName(), GuestType.L2));
+                    String.format("This user can only create an %s network or a %s network.", GuestType.Isolated, GuestType.L2));
         }
     }
 
@@ -1997,12 +1992,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify network id
-        NetworkVO network = _networksDao.findById(networkId);
-        if (network == null) {
-            // see NetworkVO.java
-
-            throwInvalidIdException("unable to find network with specified id", String.valueOf(networkId), "networkId");
-        }
+        NetworkVO network = getNetworkVO(networkId, "Unable to find a network with the specified ID.");
 
         // don't allow to delete system network
         if (isNetworkSystem(network)) {
@@ -2032,10 +2022,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
     public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        NetworkVO network = getNetworkVO(networkId, "Network with specified id doesn't exist");
+        return restartNetwork(network, cleanup, makeRedundant, user);
+    }
+
+    private NetworkVO getNetworkVO(Long networkId, String errMsgFormat) {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
-            throwInvalidIdException("Network with specified id doesn't exist", networkId.toString(), "networkId");
+            throwInvalidIdException(errMsgFormat, networkId.toString(), "networkId");
         }
+        return network;
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
+    public boolean restartNetwork(NetworkVO network, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         // Don't allow to restart network if it's not in Implemented/Setup state
         if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
@@ -2061,11 +2061,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             cleanup = true;
         }
 
-        boolean success = _networkMgr.restartNetwork(networkId, callerAccount, user, cleanup);
+        long id = network.getId();
+        boolean success = _networkMgr.restartNetwork(id, callerAccount, user, cleanup);
         if (success) {
-            s_logger.debug("Network id=" + networkId + " is restarted successfully.");
+            s_logger.debug(String.format("Network id=%d is restarted successfully.",id));
         } else {
-            s_logger.warn("Network id=" + networkId + " failed to restart.");
+            s_logger.warn(String.format("Network id=%d failed to restart.",id));
         }
 
         return success;
@@ -2075,11 +2076,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network and re-applies all the rules
-        Long networkId = cmd.getNetworkId();
+        NetworkVO network = getNetworkVO(cmd.getNetworkId(), "Network [%s] to restart was not found.");
         boolean cleanup = cmd.getCleanup();
+        if (network.getVpcId() != null && cleanup) {
+            throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
+        }
         boolean makeRedundant = cmd.getMakeRedundant();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        return restartNetwork(networkId, cleanup, makeRedundant, callerUser);
+        return restartNetwork(network, cleanup, makeRedundant, callerUser);
     }
 
     @Override
@@ -2216,11 +2220,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean restartNetwork = false;
 
         // verify input parameters
-        final NetworkVO network = _networksDao.findById(networkId);
-        if (network == null) {
-            // see NetworkVO.java
-            throwInvalidIdException("Specified network id doesn't exist in the system", String.valueOf(networkId), "networkId");
-        }
+        final NetworkVO network = getNetworkVO(networkId, "Specified network id doesn't exist in the system");
 
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {

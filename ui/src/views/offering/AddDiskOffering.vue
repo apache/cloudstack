@@ -75,6 +75,15 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item name="disksizestrictness" ref="disksizestrictness">
+          <template #label>
+            {{ $t('label.disksizestrictness') }}
+            <a-tooltip :title="apiParams.disksizestrictness.description">
+              <info-circle-outlined />
+            </a-tooltip>
+          </template>
+          <a-switch v-model:checked="form.disksizestrictness" :checked="disksizestrictness" @change="val => { disksizestrictness = val }" />
+        </a-form-item>
         <a-form-item name="customdisksize" ref="customdisksize">
           <template #label>
             <tooltip-label :title="$t('label.customdisksize')" :tooltip="apiParams.customized.description"/>
@@ -306,7 +315,8 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
-      loading: false
+      loading: false,
+      disksizestrictness: false
     }
   },
   beforeCreate () {
@@ -332,7 +342,8 @@ export default {
         customdisksize: true,
         writecachetype: 'none',
         qostype: '',
-        ispublic: this.isPublic
+        ispublic: this.isPublic,
+        disksizestrictness: this.disksizestrictness
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -440,7 +451,8 @@ export default {
           storageType: values.storagetype,
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
-          customized: values.customdisksize
+          customized: values.customdisksize,
+          disksizestrictness: values.disksizestrictness
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize
@@ -507,6 +519,7 @@ export default {
           params.storagepolicy = values.storagepolicy
         }
         api('createDiskOffering', params).then(json => {
+          this.$emit('publish-disk-offering-id', json?.creatediskofferingresponse?.diskoffering?.id)
           this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
           this.$emit('refresh-data')
           this.closeAction()
