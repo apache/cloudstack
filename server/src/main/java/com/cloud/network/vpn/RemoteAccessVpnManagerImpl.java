@@ -142,10 +142,13 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (CollectionUtils.isNotEmpty(vpns)) {
             List<RemoteAccessVpnVO> validVpns = new ArrayList<>();
             for (RemoteAccessVpnVO vpn : vpns) {
-                Network network = _networkMgr.getNetwork(vpn.getNetworkId());
-                if (Network.State.Implemented.equals(network.getState())) {
-                    validVpns.add(vpn);
+                if (vpn.getNetworkId() != null) {
+                    Network network = _networkMgr.getNetwork(vpn.getNetworkId());
+                    if (!Network.State.Implemented.equals(network.getState())) {
+                        continue;
+                    }
                 }
+                validVpns.add(vpn);
             }
             vpns = validVpns;
         }
