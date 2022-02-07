@@ -78,9 +78,10 @@ public class SolidFireHostListener implements HypervisorHostListener {
             return false;
         }
 
-        SolidFireUtil.hostAddedToCluster(hostId, host.getClusterId(), SolidFireUtil.PROVIDER_NAME,
-                clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
-
+        if (host.getClusterId() != null) {
+            SolidFireUtil.hostAddedToCluster(hostId, host.getClusterId(), SolidFireUtil.PROVIDER_NAME,
+                    clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
+        }
         handleVMware(host, true, ModifyTargetsCommand.TargetTypeToRemove.NEITHER);
 
         return true;
