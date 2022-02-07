@@ -144,7 +144,7 @@ export default {
       const params = {}
       if (args.mapping) {
         Object.keys(args.mapping).map(key => {
-          params[key] = 'value' in args.mapping[key] ? args.mapping[key].value(this.resource) : null
+          params[key] = 'value' in args.mapping[key]?.value(this.resource) || null
         })
       }
       params.page = this.page
@@ -190,7 +190,7 @@ export default {
         this.listData[args.title].loading = false
         this.$notification.error({
           message: this.$t('message.request.failed'),
-          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          description: (error.response?.headers?.['x-description']) || error.message
         })
       }
       this.$forceUpdate()
