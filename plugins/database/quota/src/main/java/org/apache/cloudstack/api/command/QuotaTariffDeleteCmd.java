@@ -31,10 +31,10 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = QuotaTariffDeleteCmd.APINAME, description = "Marks a quota tariff as removed.", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
+@APICommand(name = QuotaTariffDeleteCmd.API_NAME, description = "Marks a quota tariff as removed.", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
 responseHasSensitiveInfo = false, since = "4.17.0.0", authorized = {RoleType.Admin})
 public class QuotaTariffDeleteCmd extends BaseCmd {
-    public static final String APINAME = "quotaTariffDelete";
+    public static final String API_NAME = "quotaTariffDelete";
     protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
