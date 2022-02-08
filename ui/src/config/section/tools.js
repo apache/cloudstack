@@ -27,6 +27,7 @@ export default {
       name: 'comment',
       title: 'label.comments',
       icon: 'message',
+      shortKey: ['x', 'c'],
       docHelp: 'adminguide/events.html',
       permission: ['listAnnotations'],
       columns: () => {

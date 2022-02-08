@@ -127,6 +127,7 @@ export default {
     },
     toggle () {
       this.$emit('toggle')
+      this.$store.dispatch('SetShowKeyboardShortkeys', false)
     }
   }
 }
