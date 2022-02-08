@@ -49,7 +49,9 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterGuestIpv6PrefixDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -58,6 +60,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -241,7 +244,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_ASSIGN, eventDescription = "releasing public IPv6", create = true)
     public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress) {
         final List<VlanVO> ranges = vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(network.getPhysicalNetworkId());
         if (CollectionUtils.isEmpty(ranges)) {
@@ -261,10 +263,12 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             }
         }
         IPv6Address ipv6Addr = NetUtils.EUI64Address(iPv6Network, nicMacAddress);
-        s_logger.info("Calculated IPv6 address " + ipv6Addr + " using EUI-64 for NIC with MAC " + nicMacAddress);
+        String event = EventTypes.EVENT_NET_IP6_ASSIGN;
+        String description = "Assigned public IPv6 address: " + ipv6Addr.toString() + " for network ID: " + network.getId();
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         final String guestType = selectedVlan.getVlanType().toString();
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_ASSIGN, network.getAccountId(), network.getDataCenterId(), 0l,
+        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0l,
                 ipv6Addr.toString(), false, guestType, false, usageHidden,
                 IPv6Network.class.getName(), null);
         return new Pair<>(ipv6Addr.toString(), selectedVlan);
@@ -293,10 +297,12 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NET_IP6_RELEASE, eventDescription = "releasing public IPv6", create = true)
     public void releasePublicIpv6ForNic(Network network, String nicIpv6Address) {
+        String event = EventTypes.EVENT_NET_IP6_RELEASE;
+        String description = "Releasing public IPv6 address: " + nicIpv6Address + " from network ID: " + network.getId();
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), 0L,
+        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
                 nicIpv6Address, false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
                 IPv6Address.class.getName(), null);
     }
@@ -306,10 +312,13 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         List<String> addresses = new ArrayList<>();
         List<DomainRouterVO> routers = domainRouterDao.findByNetwork(network.getId());
         for (DomainRouterVO router : routers) {
-            NicVO nic = nicDao.findByNtwkIdAndInstanceId(network.getPhysicalNetworkId(), router.getId());
-            String address = nic.getIPv6Address();
-            if (StringUtils.isNotEmpty(address)) {
-                addresses.add(nic.getIPv6Address());
+            List<NicVO> nics = nicDao.listByVmId(router.getId());
+            for (NicVO nic : nics) {
+                String address = nic.getIPv6Address();
+                if (!PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver()) || StringUtils.isEmpty(address)) {
+                    continue;
+                }
+                addresses.add(address);
             }
         }
         return addresses;
@@ -413,7 +422,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking IPv6 firewall rule", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking IPv6 firewall rule", async = true)
     public boolean revokeIpv6FirewallRule(Long id) {
         FirewallRuleVO rule = firewallDao.findById(id);
         if (rule == null) {
@@ -425,7 +434,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         return firewallManager.revokeEgressFirewallRule(rule.getId(), true);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_UPDATE, eventDescription = "updating IPv6 firewall rule", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_UPDATE, eventDescription = "updating IPv6 firewall rule", async = true)
     public FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd cmd) {
         final long id = cmd.getId();
         final boolean forDisplay = cmd.isDisplay();

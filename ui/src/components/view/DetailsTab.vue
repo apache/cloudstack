@@ -16,55 +16,54 @@
 // under the License.
 
 <template>
-  <a-list
-    size="small"
-    :dataSource="fetchDetails()">
-    <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource">
-      <div>
-        <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
-        <br/>
-        <div v-if="Array.isArray(resource[item]) && item === 'service'">
-          <div v-for="(service, idx) in resource[item]" :key="idx">
-            {{ service.name }} : {{ service.provider[0].name }}
+  <div>
+    <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
+      <p slot="description" v-html="ip6routes" />
+    </a-alert>
+    <a-list
+      size="small"
+      :dataSource="fetchDetails()">
+      <a-list-item slot="renderItem" slot-scope="item" v-if="item in resource && !customDisplayItems.includes(item)">
+        <div>
+          <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div v-if="Array.isArray(resource[item]) && item === 'service'">
+            <div v-for="(service, idx) in resource[item]" :key="idx">
+              {{ service.name }} : {{ service.provider[0].name }}
+            </div>
           </div>
-        </div>
-        <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
-          <div v-for="(volume, idx) in JSON.parse(resource[item])" :key="idx">
-            <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+          <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
+            <div v-for="(volume, idx) in JSON.parse(resource[item])" :key="idx">
+              <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+            </div>
           </div>
-        </div>
-        <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
-          <div>
-            {{ resource.rootdisksize }} GB
+          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
+            <div>
+              {{ resource.rootdisksize }} GB
+            </div>
           </div>
-        </div>
-        <div v-else-if="item === 'ip6routes'">
-          {{ 'Add upstream IPv6 route for:' }}
-          <div v-for="(route, idx) in resource[item]" :key="idx">
-            {{ route.subnet + ' via ' + route.gateway }}
+          <div v-else-if="['name', 'type'].includes(item)">
+            <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource[item])">{{ $t(resource[item].toLowerCase()) }}</span>
+            <span v-else>{{ resource[item] }}</span>
           </div>
+          <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
+            {{ $toLocaleDate(resource[item]) }}
+          </div>
+          <div v-else>{{ resource[item] }}</div>
         </div>
-        <div v-else-if="['name', 'type'].includes(item)">
-          <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource[item])">{{ $t(resource[item].toLowerCase()) }}</span>
-          <span v-else>{{ resource[item] }}</span>
+      </a-list-item>
+      <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ ipV6Address }}</div>
         </div>
-        <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
-          {{ $toLocaleDate(resource[item]) }}
-        </div>
-        <div v-else>{{ resource[item] }}</div>
-      </div>
-    </a-list-item>
-    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
-      <div>
-        <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
-        <br/>
-        <div>{{ ipV6Address }}</div>
-      </div>
-    </a-list-item>
-    <HostInfo :resource="resource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
-    <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
-    <VmwareData :resource="resource" v-if="$route.meta.name === 'zone' && 'listVmwareDcs' in $store.getters.apis" />
-  </a-list>
+      </a-list-item>
+      <HostInfo :resource="resource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
+      <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
+      <VmwareData :resource="resource" v-if="$route.meta.name === 'zone' && 'listVmwareDcs' in $store.getters.apis" />
+    </a-list>
+  </div>
 </template>
 
 <script>
@@ -100,11 +99,24 @@ export default {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
   },
   computed: {
+    customDisplayItems () {
+      return ['ip6routes']
+    },
     ipV6Address () {
       if (this.resource.nic && this.resource.nic.length > 0) {
         return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
       }
 
+      return null
+    },
+    ip6routes () {
+      if (this.resource.ip6routes && this.resource.ip6routes.length > 0) {
+        var routes = []
+        for (var route of this.resource.ip6routes) {
+          routes.push(route.subnet + ' via ' + route.gateway)
+        }
+        return routes.join('<br>')
+      }
       return null
     }
   },

@@ -75,11 +75,16 @@
         </a-form-item>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.internet.protocol')" :tooltip="apiParams.internetprotocol.description"/>
+          <a-alert type="warning" v-if="internetProtocolValue != 'ipv4'">
+            <span slot="message" v-html="$t('message.network.offering.internet.protocol.warning')" />
+          </a-alert>
+          <br/>
           <a-radio-group
             v-decorator="['internetprotocol', {
-              initialValue: 'ipv4'
+              initialValue: internetProtocolValue
             }]"
-            buttonStyle="solid">
+            buttonStyle="solid"
+            @change="e => { internetProtocolValue = e.target.value }" >
             <a-radio-button value="ipv4">
               {{ $t('label.ip.v4') }}
             </a-radio-button>
@@ -464,6 +469,7 @@ export default {
       hasAdvanceZone: false,
       requiredNetworkOfferingExists: false,
       guestType: 'isolated',
+      internetProtocolValue: 'ipv4',
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
