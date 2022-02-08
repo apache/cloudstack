@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.reflect.Whitebox;
 
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.InvalidParameterValueException;
@@ -75,7 +76,7 @@ public class ManagementServerImplTest {
     @Before
     public void setup() {
         mockConfig = Mockito.mock(ConfigKey.class);
-        ipAddressManagerImpl.SystemVmPublicIpReservationModeStrictness = mockConfig;
+        Whitebox.setInternalState(ipAddressManagerImpl.getClass(), "SystemVmPublicIpReservationModeStrictness", mockConfig);
     }
 
     @Test(expected = InvalidParameterValueException.class)
