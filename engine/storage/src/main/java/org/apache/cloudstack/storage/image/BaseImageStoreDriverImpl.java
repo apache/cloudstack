@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Upload;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
@@ -207,8 +208,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             if (tmpltStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                if (template.isDeployAsIs()) {
-                    boolean persistDeployAsIs = deployAsIsHelper.persistTemplateDeployAsIsDetails(template.getId(), answer, tmpltStoreVO);
+                if (template.isDeployAsIs() && answer != null) {
+                    OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
+                    boolean persistDeployAsIs = deployAsIsHelper.persistTemplateOVFInformationAndUpdateGuestOS(template.getId(), ovfInformationTO, tmpltStoreVO);
                     if (!persistDeployAsIs) {
                         LOGGER.info("Failed persisting deploy-as-is template details for template " + template.getName());
                         return null;

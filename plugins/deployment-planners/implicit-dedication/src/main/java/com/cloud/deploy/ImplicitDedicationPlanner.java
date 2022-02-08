@@ -107,7 +107,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
             }
         }
 
-        // Hosts running vms of other accounts created by ab implicit planner in strict mode should always be avoided.
+        // Hosts running vms of other accounts created by an implicit planner in strict mode should always be avoided.
         avoid.addHostList(hostRunningStrictImplicitVmsOfOtherAccounts);
 
         if (!hostRunningVmsOfAccount.isEmpty() && (hostsToAvoid == null || !hostsToAvoid.containsAll(hostRunningVmsOfAccount))) {

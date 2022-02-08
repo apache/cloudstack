@@ -209,7 +209,7 @@ public class CheckNetworkAnswerTest {
         Long newSize = 4194304L;
         Long currentSize = 1048576L;
 
-        ResizeVolumeCommand rv = new ResizeVolumeCommand("dummydiskpath", new StorageFilerTO(dummypool), currentSize, newSize, false, "vmName");
+        ResizeVolumeCommand rv = new ResizeVolumeCommand("dummydiskpath", new StorageFilerTO(dummypool), currentSize, newSize, false, "vmName", null);
 
         @Test
         public void testExecuteInSequence() {

@@ -151,7 +151,7 @@ public class QuotaManagerImplTest extends TestCase {
 
         QuotaUsageVO quotaUsageVO = new QuotaUsageVO();
         quotaUsageVO.setAccountId(2L);
-        Mockito.doReturn(quotaUsageVO).when(quotaManager).updateQuotaAllocatedVMUsage(Mockito.eq(usageVO), Mockito.any(BigDecimal.class));
+        Mockito.doReturn(quotaUsageVO).when(quotaManager).updateQuotaAllocatedVMUsage(Mockito.eq(usageVO));
 
         assertTrue(quotaManager.aggregatePendingQuotaRecordsForAccount(accountVO, new Pair<List<? extends UsageVO>, Integer>(null, 0)).size() == 0);
         assertTrue(quotaManager.aggregatePendingQuotaRecordsForAccount(accountVO, usageRecords).size() == 1);
@@ -172,11 +172,11 @@ public class QuotaManagerImplTest extends TestCase {
 
         QuotaUsageVO qu = quotaManager.updateQuotaNetwork(usageVO, UsageTypes.NETWORK_BYTES_SENT);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
-        qu = quotaManager.updateQuotaAllocatedVMUsage(usageVO, new BigDecimal(0.5));
+        qu = quotaManager.updateQuotaAllocatedVMUsage(usageVO);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
-        qu = quotaManager.updateQuotaDiskUsage(usageVO, new BigDecimal(0.5), UsageTypes.VOLUME);
+        qu = quotaManager.updateQuotaDiskUsage(usageVO, UsageTypes.VOLUME);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
-        qu = quotaManager.updateQuotaRaw(usageVO, new BigDecimal(0.5), UsageTypes.VPN_USERS);
+        qu = quotaManager.updateQuotaRaw(usageVO, UsageTypes.VPN_USERS);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
 
         Mockito.verify(quotaUsageDao, Mockito.times(4)).persistQuotaUsage(Mockito.any(QuotaUsageVO.class));

@@ -60,7 +60,7 @@ public class UsageStorageDaoImplTest {
 
         long id = 21, zoneId = 31, accountId = 41;
         int storageType = 1;
-        String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND id = ? AND storage_type = ? AND zone_id = ? and deleted IS NULL";
+        String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND entity_id = ? AND storage_type = ? AND zone_id = ? and deleted IS NULL";
         Date deleted = new Date();
 
         PowerMockito.mockStatic(TransactionLegacy.class);
@@ -68,7 +68,7 @@ public class UsageStorageDaoImplTest {
 
         when(transactionMock.prepareStatement(contains(UPDATE_DELETED))).thenReturn(preparedStatementMock);
         when(userStorageVOMock.getAccountId()).thenReturn(accountId);
-        when(userStorageVOMock.getId()).thenReturn(id);
+        when(userStorageVOMock.getEntityId()).thenReturn(id);
         when(userStorageVOMock.getStorageType()).thenReturn(storageType);
         when(userStorageVOMock.getZoneId()).thenReturn(zoneId);
         when(userStorageVOMock.getDeleted()).thenReturn(deleted);

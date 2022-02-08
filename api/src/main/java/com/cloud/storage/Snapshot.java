@@ -92,7 +92,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     boolean isRecursive();
 
-    short getsnapshotType();
+    short getSnapshotType();
 
     LocationType getLocationType(); // This type is in reference to the location where the snapshot resides (ex. primary storage, archive on secondary storage, etc.)
 }

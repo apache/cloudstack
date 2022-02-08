@@ -38,13 +38,13 @@ import com.cloud.utils.db.TransactionLegacy;
 public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBalancerPolicyVO, Long> implements UsageLoadBalancerPolicyDao {
     public static final Logger s_logger = Logger.getLogger(UsageLoadBalancerPolicyDaoImpl.class.getName());
 
-    protected static final String REMOVE_BY_USERID_LBID = "DELETE FROM usage_load_balancer_policy WHERE account_id = ? AND id = ?";
-    protected static final String UPDATE_DELETED = "UPDATE usage_load_balancer_policy SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
+    protected static final String REMOVE_BY_USERID_LBID = "DELETE FROM usage_load_balancer_policy WHERE account_id = ? AND lb_id = ?";
+    protected static final String UPDATE_DELETED = "UPDATE usage_load_balancer_policy SET deleted = ? WHERE account_id = ? AND lb_id = ? and deleted IS NULL";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT lb_id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
         + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT lb_id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
         + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT lb_id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
         + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsageLoadBalancerPolicyDaoImpl() {
@@ -80,7 +80,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
                     if (pstmt != null) {
                         pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
                         pstmt.setLong(2, usage.getAccountId());
-                        pstmt.setLong(3, usage.getId());
+                        pstmt.setLong(3, usage.getLbId());
                         pstmt.executeUpdate();
                     }
                 }catch (SQLException e) {

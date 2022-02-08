@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -304,6 +303,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.resource.RollingMaintenanceManager;
+import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
@@ -2613,6 +2613,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         hpvCapabilitiesResponse.setMaxDataVolumesLimit(hpvCapabilities.getMaxDataVolumesLimit());
         hpvCapabilitiesResponse.setMaxHostsPerCluster(hpvCapabilities.getMaxHostsPerCluster());
         hpvCapabilitiesResponse.setIsStorageMotionSupported(hpvCapabilities.isStorageMotionSupported());
+        hpvCapabilitiesResponse.setVmSnapshotEnabled(hpvCapabilities.isVmSnapshotEnabled());
         return hpvCapabilitiesResponse;
     }
 

@@ -98,7 +98,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -213,8 +212,7 @@ public class DeploymentPlanningManagerImplTest {
     public void dataCenterAvoidTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "FirstFitPlanner", true);
+                    false, VirtualMachine.Type.User, null, "FirstFitPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -228,8 +226,7 @@ public class DeploymentPlanningManagerImplTest {
     public void plannerCannotHandleTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "UserDispersingPlanner", true);
+                    false, VirtualMachine.Type.User, null, "UserDispersingPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -244,8 +241,7 @@ public class DeploymentPlanningManagerImplTest {
     public void emptyClusterListTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "FirstFitPlanner", true);
+                    false, VirtualMachine.Type.User, null, "FirstFitPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
