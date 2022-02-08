@@ -21,8 +21,12 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.serializer.Param;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import com.cloud.user.SSHKeyPair;
 
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.EntityReference;
+
+@EntityReference(value = SSHKeyPair.class)
 public class SSHKeyPairResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.ID)
