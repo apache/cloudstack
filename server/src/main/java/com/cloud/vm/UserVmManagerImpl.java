@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -50,8 +52,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.network.router.CommandSetupHelper;
-import com.cloud.network.router.NetworkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -117,6 +117,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -247,6 +248,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -355,10 +358,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import java.util.HashSet;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -3831,11 +3830,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
 
-        long size = configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
+        long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, offering);
 
         if (diskOfferingId != null) {
+            long size = 0;
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            if (diskOffering != null && diskOffering.isCustomized()) {
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Specified disk offering cannot be found");
+            }
+            if (diskOffering.isCustomized()) {
                 if (diskSize == null) {
                     throw new InvalidParameterValueException("This disk offering requires a custom size specified");
                 }
@@ -3845,16 +3848,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
                             + " Min:" + customDiskOfferingMinSize);
                 }
-                size += diskSize * GiB_TO_BYTES;
+                size = diskSize * GiB_TO_BYTES;
+            } else {
+                size = diskOffering.getDiskSize();
             }
-            size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
+            _volumeService.validateVolumeSizeInBytes(size);
+            volumesSize += size;
         }
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -4177,6 +4183,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(serviceOffering.getId());
         long rootDiskSizeInBytes = diskOffering.getDiskSize();
         if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
+            _volumeService.validateVolumeSizeInBytes(rootDiskSizeInBytes);
             long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
             customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSizeInGiB));
             return rootDiskSizeInBytes;
@@ -4187,7 +4194,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (rootDiskSize <= 0) {
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
-            return rootDiskSize * GiB_TO_BYTES;
+            rootDiskSize *= GiB_TO_BYTES;
+            _volumeService.validateVolumeSizeInBytes(rootDiskSize);
+            return rootDiskSize;
         } else {
             // For baremetal, size can be 0 (zero)
             Long templateSize = _templateDao.findById(template.getId()).getSize();
