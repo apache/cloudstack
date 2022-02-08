@@ -595,8 +595,7 @@ export default {
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.createvlaniprangeresponse
-              ? error.response.data.createvlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,
+            description: error.response.data.createvlaniprangeresponse?.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {
@@ -627,8 +626,7 @@ export default {
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.updatevlaniprangeresponse
-              ? error.response.data.updatevlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,
+            description: error.response.data.updatevlaniprangeresponse?.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {

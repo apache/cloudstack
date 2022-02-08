@@ -4502,7 +4502,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public HypervisorCapabilities updateHypervisorCapabilities(final Long id, final Long maxGuestsLimit, final Boolean securityGroupEnabled) {
+    public HypervisorCapabilities updateHypervisorCapabilities(UpdateHypervisorCapabilitiesCmd cmd) {
+        final Long id = cmd.getId();
+        final Boolean securityGroupEnabled = cmd.getSecurityGroupEnabled();
+        final Long maxGuestsLimit = cmd.getMaxGuestsLimit();
+        final Integer maxDataVolumesLimit = cmd.getMaxDataVolumesLimit();
+        final Boolean storageMotionSupported = cmd.getStorageMotionSupported();
+        final Integer maxHostsPerClusterLimit = cmd.getMaxHostsPerClusterLimit();
+        final Boolean vmSnapshotEnabled = cmd.getVmSnapshotEnabled();
         HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
 
         if (hpvCapabilities == null) {
@@ -4511,19 +4518,37 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        final boolean updateNeeded = maxGuestsLimit != null || securityGroupEnabled != null;
+        final boolean updateNeeded = securityGroupEnabled != null || maxGuestsLimit != null ||
+                maxDataVolumesLimit != null || storageMotionSupported != null || maxHostsPerClusterLimit != null ||
+                vmSnapshotEnabled != null;
         if (!updateNeeded) {
             return hpvCapabilities;
         }
 
         hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
 
+        if (securityGroupEnabled != null) {
+            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        }
+
         if (maxGuestsLimit != null) {
             hpvCapabilities.setMaxGuestsLimit(maxGuestsLimit);
         }
 
-        if (securityGroupEnabled != null) {
-            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        if (maxDataVolumesLimit != null) {
+            hpvCapabilities.setMaxDataVolumesLimit(maxDataVolumesLimit);
+        }
+
+        if (storageMotionSupported != null) {
+            hpvCapabilities.setStorageMotionSupported(storageMotionSupported);
+        }
+
+        if (maxHostsPerClusterLimit != null) {
+            hpvCapabilities.setMaxHostsPerCluster(maxHostsPerClusterLimit);
+        }
+
+        if (vmSnapshotEnabled != null) {
+            hpvCapabilities.setVmSnapshotEnabled(vmSnapshotEnabled);
         }
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {

@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
 import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
 import org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesList;
@@ -312,7 +313,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     }
 
     private Pair<Boolean, String> copyToSecondaryStorageNonVMware(final DataStore store, final String vmControlIp, String fileToCopy, Long vmHostId) {
-        CopyToSecondaryStorageCommand toSecondaryStorageCommand = new CopyToSecondaryStorageCommand(store.getUri(), vmControlIp, fileToCopy);
+        String nfsVersion = CapacityManager.ImageStoreNFSVersion.valueIn(store.getId());
+        CopyToSecondaryStorageCommand toSecondaryStorageCommand = new CopyToSecondaryStorageCommand(store.getUri(), vmControlIp, fileToCopy, nfsVersion);
         Answer copyToSecondaryAnswer = agentManager.easySend(vmHostId, toSecondaryStorageCommand);
         Pair<Boolean, String> copyAnswer;
         if (copyToSecondaryAnswer != null) {

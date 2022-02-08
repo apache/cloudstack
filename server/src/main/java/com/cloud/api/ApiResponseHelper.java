@@ -2675,6 +2675,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         hpvCapabilitiesResponse.setMaxDataVolumesLimit(hpvCapabilities.getMaxDataVolumesLimit());
         hpvCapabilitiesResponse.setMaxHostsPerCluster(hpvCapabilities.getMaxHostsPerCluster());
         hpvCapabilitiesResponse.setIsStorageMotionSupported(hpvCapabilities.isStorageMotionSupported());
+        hpvCapabilitiesResponse.setVmSnapshotEnabled(hpvCapabilities.isVmSnapshotEnabled());
         return hpvCapabilitiesResponse;
     }
 

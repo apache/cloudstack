@@ -30,4 +30,6 @@ public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
 
     List<DiskOfferingVO> listAllBySizeAndProvisioningType(long size, Storage.ProvisioningType provisioningType);
 
+    List<DiskOfferingVO> findCustomDiskOfferings();
+
 }

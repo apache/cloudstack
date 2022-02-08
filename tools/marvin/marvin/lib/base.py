@@ -5104,6 +5104,11 @@ class VmSnapshot:
         cmd.vmsnapshotid = vmsnapshotid
         return apiclient.deleteVMSnapshot(cmd)
 
+    def delete(self, apiclient):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = self.id
+        return apiclient.deleteVMSnapshot(cmd)
+
 
 class Region:
     """ Regions related Api """

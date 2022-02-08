@@ -22,6 +22,12 @@
 -- PR#5668 Change the type of the 'ipsec_psk' field to allow large PSK.
 ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
 
+
+-- PR#5832 Fix 'endpointe.url' global settings configruation typo.
+UPDATE `cloud`.`configuration` SET name='endpoint.url' WHERE name='endpointe.url';
+
+
+
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `uuid` varchar(40) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `name` varchar(255) NOT NULL;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `display_text` varchar(4096) DEFAULT NULL ;
