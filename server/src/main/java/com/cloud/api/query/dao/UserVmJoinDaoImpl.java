@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -220,6 +219,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         userVmResponse.setPublicIpId(userVm.getPublicIpUuid());
         userVmResponse.setPublicIp(userVm.getPublicIpAddress());
+        userVmResponse.setKeyPairNames(userVm.getKeypairNames());
         userVmResponse.setOsTypeId(userVm.getGuestOsUuid());
         GuestOS guestOS = ApiDBUtils.findGuestOSById(userVm.getGuestOsId());
         if (guestOS != null) {
@@ -344,10 +344,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                if (userVmDetailVO.getName().startsWith(VmDetailConstants.KEY_PAIR_NAMES)) {
-                    s_logger.info("SSH Keypair names saved in VMDetails are " + userVmDetailVO.getValue());
-                    userVmResponse.setKeyPairNames(userVmDetailVO.getValue());
-                }
                 if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
                         (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());

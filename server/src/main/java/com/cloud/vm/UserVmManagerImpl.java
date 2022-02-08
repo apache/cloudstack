@@ -922,7 +922,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     s_logger.info("the public key for keypair name " + pair.getName() + " is " + publicKey);
 
             }
-            keypairnames = String.join(", ", cmd.getNames());
+            keypairnames = String.join(",", cmd.getNames());
         }
         else {
             throw new InvalidParameterValueException("No keypair given as input");
@@ -983,7 +983,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
             userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
-            userVm.setDetail(VmDetailConstants.KEY_PAIR_NAMES, keypairnames);
+            userVm.setDetail(VmDetailConstants.SSH_KEY_PAIR_NAMES, keypairnames);
             _vmDao.saveDetails(userVm);
 
             if (vmInstance.getState() == State.Stopped) {
@@ -3962,7 +3962,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String keypairnames = "";
 
         if (!sshKeyPairs.isEmpty()) {
-            keypairnames = String.join(", ", sshKeyPairs);
+            keypairnames = String.join(",", sshKeyPairs);
             List<SSHKeyPairVO> pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), sshKeyPairs);
             for (SSHKeyPairVO pair : pairs) {
                 if (pair == null) {
@@ -4283,7 +4283,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 if (sshkeypairs != "") {
-                    vm.setDetail(VmDetailConstants.KEY_PAIR_NAMES, sshkeypairs);
+                    vm.setDetail(VmDetailConstants.SSH_KEY_PAIR_NAMES, sshkeypairs);
                 }
 
                 if (keyboard != null && !keyboard.isEmpty()) {

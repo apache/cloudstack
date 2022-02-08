@@ -524,7 +524,7 @@ FROM
             AND ISNULL(`vpc`.`removed`))))
         LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
         LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
-            AND (`ssh_details`.`name` = 'SSH.PublicKey'))))
+            AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)
             AND (`resource_tags`.`resource_type` = 'UserVm'))))
         LEFT JOIN `async_job` ON (((`async_job`.`instance_id` = `vm_instance`.`id`)
