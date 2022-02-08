@@ -125,7 +125,10 @@ export default {
   methods: {
     fetchData () {
       this.componentLoading = true
-      api('listStaticRoutes', { gatewayid: this.resource.id }).then(json => {
+      api('listStaticRoutes', {
+        gatewayid: this.resource.id,
+        listall: true
+      }).then(json => {
         this.routes = json.liststaticroutesresponse.staticroute
       }).catch(error => {
         this.$notifyError(error)
@@ -248,7 +251,7 @@ export default {
       this.tagsLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsLoading = false
           return

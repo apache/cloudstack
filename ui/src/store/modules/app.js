@@ -27,7 +27,8 @@ import {
   DEFAULT_FIXED_HEADER_HIDDEN,
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
-  USE_BROWSER_TIMEZONE
+  USE_BROWSER_TIMEZONE,
+  SERVER_MANAGER
 } from '@/store/mutation-types'
 
 const app = {
@@ -44,7 +45,9 @@ const app = {
     color: null,
     inverted: true,
     multiTab: true,
-    metrics: false
+    metrics: false,
+    listAllProjects: false,
+    server: ''
   },
   mutations: {
     SET_SIDEBAR_TYPE: (state, type) => {
@@ -97,9 +100,16 @@ const app = {
     SET_METRICS: (state, bool) => {
       state.metrics = bool
     },
+    SET_LIST_ALL_PROJECTS: (state, bool) => {
+      state.listAllProjects = bool
+    },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
       Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
+    },
+    SET_SERVER: (state, server) => {
+      Vue.ls.set(SERVER_MANAGER, server)
+      state.server = server
     }
   },
   actions: {
@@ -145,8 +155,14 @@ const app = {
     SetMetrics ({ commit }, bool) {
       commit('SET_METRICS', bool)
     },
+    SetListAllProjects ({ commit }, bool) {
+      commit('SET_LIST_ALL_PROJECTS', bool)
+    },
     SetUseBrowserTimezone ({ commit }, bool) {
       commit('SET_USE_BROWSER_TIMEZONE', bool)
+    },
+    SetServer ({ commit }, server) {
+      commit('SET_SERVER', server)
     }
   }
 }

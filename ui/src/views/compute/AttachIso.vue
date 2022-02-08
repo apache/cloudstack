@@ -28,7 +28,12 @@
               initialValue: this.selectedIso,
               rules: [{ required: true, message: `${this.$t('label.required')}`}]
             }]"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
@@ -112,7 +117,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -132,7 +137,7 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
+              title,
               description: values.id,
               successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,

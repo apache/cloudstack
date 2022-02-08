@@ -44,6 +44,7 @@
           v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"
+          ref="submit"
           @click="handleSubmit">{{ $t('label.submit') }}</a-button>
       </div>
     </a-form>
@@ -104,6 +105,7 @@ export default {
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
+        this.form.resetFields()
         this.formLoading = false
       } catch (e) {
         this.$notification.error({
@@ -118,7 +120,7 @@ export default {
 
       if (this.formLoading) return
 
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

@@ -19,10 +19,13 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -44,6 +47,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.log4j.Logger;
@@ -85,6 +90,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     StorageCacheManager cacheMgr;
+    @Inject
+    VolumeDataStoreDao volumeDataStoreDao;
 
     @Inject
     StorageManager storageManager;
@@ -324,6 +331,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    private void deleteVolumeOnSecondaryStore(DataObject objectInStore) {
+        ImageStoreEntity store = (ImageStoreEntity) objectInStore.getDataStore();
+        store.delete(objectInStore);
+        List<VolumeDataStoreVO> volumesOnStore =  volumeDataStoreDao.listByVolume(objectInStore.getId(), store.getId());
+        for (VolumeDataStoreVO volume : volumesOnStore) {
+            volumeDataStoreDao.remove(volume.getId());
+        }
+    }
+
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.CopyVolumeWait.key());
         int _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
@@ -359,10 +375,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             DataObject objOnImageStore = imageStore.create(srcData);
-            objOnImageStore.processEvent(Event.CreateOnlyRequested);
-
             Answer answer = null;
             try {
+                objOnImageStore.processEvent(Event.CreateOnlyRequested);
                 answer = copyObject(srcData, objOnImageStore);
 
                 if (answer == null || !answer.getResult()) {
@@ -401,11 +416,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                 }
+                s_logger.error("Failed to perform operation: "+ e.getLocalizedMessage());
                 throw e;
             }
 
             objOnImageStore.processEvent(Event.OperationSuccessed);
-            imageStore.delete(objOnImageStore);
+            deleteVolumeOnSecondaryStore(objOnImageStore);
             return answer;
         } else {
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
@@ -433,8 +449,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
 
         VolumeInfo volume = (VolumeInfo)srcData;
+        StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
-        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), volume.getVolumeType(), waitInterval);
+        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), volume.getVolumeType(), waitInterval, volume.getChainInfo());
+        if (srcPool.getParent() != 0) {
+            command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+        }
+
         EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);
         Answer answer = null;
         if (ep == null) {

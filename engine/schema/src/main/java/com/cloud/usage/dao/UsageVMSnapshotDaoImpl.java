@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -37,13 +37,13 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Long> implements UsageVMSnapshotDao {
     public static final Logger s_logger = Logger.getLogger(UsageVMSnapshotDaoImpl.class.getName());
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed, vm_snapshot_id "
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT volume_id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed, vm_snapshot_id "
         + " FROM usage_vmsnapshot" + " WHERE account_id = ? " + " AND ( (created BETWEEN ? AND ?) OR "
         + "      (created < ? AND processed is NULL) ) ORDER BY created asc";
-    protected static final String UPDATE_DELETED = "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND id = ? and vm_id = ?  and created = ?";
+    protected static final String UPDATE_DELETED = "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND volume_id = ? and vm_id = ?  and created = ?";
 
-    protected static final String PREVIOUS_QUERY = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed, vm_snapshot_id "
-        + "FROM usage_vmsnapshot " + "WHERE account_id = ? AND id = ? AND vm_id = ? AND created < ? AND processed IS NULL " + "ORDER BY created desc limit 1";
+    protected static final String PREVIOUS_QUERY = "SELECT volume_id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed, vm_snapshot_id "
+        + "FROM usage_vmsnapshot " + "WHERE account_id = ? AND volume_id = ? AND vm_id = ? AND created < ? AND processed IS NULL " + "ORDER BY created desc limit 1";
 
     @Override
     public void update(UsageVMSnapshotVO usage) {
@@ -54,7 +54,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
             pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
             pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getProcessed()));
             pstmt.setLong(2, usage.getAccountId());
-            pstmt.setLong(3, usage.getId());
+            pstmt.setLong(3, usage.getVolumeId());
             pstmt.setLong(4, usage.getVmId());
             pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getCreated()));
             pstmt.executeUpdate();
@@ -134,7 +134,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
             int i = 1;
             pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setLong(i++, rec.getAccountId());
-            pstmt.setLong(i++, rec.getId());
+            pstmt.setLong(i++, rec.getVolumeId());
             pstmt.setLong(i++, rec.getVmId());
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), rec.getCreated()));
 

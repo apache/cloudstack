@@ -535,7 +535,8 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                 self.apiclient.updatePod(cmd)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    # @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["TODO"])
     def test_RvR_multiprimarystorage(self):
         """Test RvR with multi primary storage
         """
@@ -773,7 +774,8 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                     self.apiclient.updateCluster(cmd)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    # @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["TODO"])
     def test_RvR_multihosts(self):
         """Test RvR with multi hosts
         """

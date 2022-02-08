@@ -89,18 +89,11 @@ class TestTemplates(cloudstackTestCase):
         self.cleanup.append(self.account)
 
     def tearDown(self):
-        # Clean up, terminate the created resources
-        cleanup_resources(self.apiClient, self.cleanup)
-        return
+        super(TestTemplates, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestTemplates, cls).tearDownClass()
 
     def __verify_values(self, expected_vals, actual_vals):
         """

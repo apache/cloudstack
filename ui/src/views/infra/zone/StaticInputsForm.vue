@@ -47,7 +47,11 @@
           }]"
           :allowClear="true"
           :autoFocus="index === 0"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="option in field.options"
             :key="option.id"
@@ -183,7 +187,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -212,21 +216,19 @@ export default {
       if (!conditions || Object.keys(conditions).length === 0) {
         return true
       }
-      let isShow = false
+      let isShow = true
       Object.keys(conditions).forEach(key => {
-        const condition = conditions[key]
-        const fieldVal = this.form.getFieldValue(key)
-          ? this.form.getFieldValue(key)
-          : (this.prefillContent[key] ? this.prefillContent[key].value : null)
-        if (Array.isArray(condition) && condition.includes(fieldVal)) {
-          isShow = true
-          return false
-        } else if (!Array.isArray(condition) && fieldVal === condition) {
-          isShow = true
-          return false
+        if (isShow) {
+          const condition = conditions[key]
+          const fieldVal = this.form.getFieldValue(key)
+            ? this.form.getFieldValue(key)
+            : (this.prefillContent[key] ? this.prefillContent[key].value : null)
+          if (Array.isArray(condition) && !condition.includes(fieldVal)) {
+            isShow = false
+          } else if (!Array.isArray(condition) && fieldVal !== condition) {
+            isShow = false
+          }
         }
-
-        return true
       })
 
       return isShow

@@ -24,6 +24,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -32,7 +33,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -41,6 +45,7 @@ public class VeeamClientTest {
     private String adminUsername = "administrator";
     private String adminPassword = "password";
     private VeeamClient client;
+    private VeeamClient mockClient;
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(9399);
@@ -53,6 +58,8 @@ public class VeeamClientTest {
                         .withHeader("X-RestSvcSessionId", "some-session-auth-id")
                         .withBody("")));
         client = new VeeamClient("http://localhost:9399/api/", adminUsername, adminPassword, true, 60);
+        mockClient = Mockito.mock(VeeamClient.class);
+        Mockito.when(mockClient.getRepositoryNameFromJob(Mockito.anyString())).thenCallRealMethod();
     }
 
     @Test
@@ -81,5 +88,55 @@ public class VeeamClientTest {
         verify(getRequestedFor(urlMatching(".*/jobs")));
         Assert.assertEquals(policies.size(), 1);
         Assert.assertEquals(policies.get(0).getName(), "ZONE1-GOLD");
+    }
+
+    @Test
+    public void getRepositoryNameFromJobTestExceptionCmdWithoutResult() throws Exception {
+        String backupName = "TEST-BACKUP";
+        try {
+            Mockito.doReturn(null).when(mockClient).executePowerShellCommands(Mockito.anyList());
+            mockClient.getRepositoryNameFromJob(backupName);
+            fail();
+        } catch (Exception e) {
+            Assert.assertEquals(CloudRuntimeException.class, e.getClass());
+            Assert.assertEquals("Failed to get Repository Name from Job [name: TEST-BACKUP].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getRepositoryNameFromJobTestExceptionCmdWithFalseResult() {
+        String backupName = "TEST-BACKUP2";
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.FALSE, "");
+        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
+        try {
+            mockClient.getRepositoryNameFromJob(backupName);
+            fail();
+        } catch (Exception e) {
+            Assert.assertEquals(CloudRuntimeException.class, e.getClass());
+            Assert.assertEquals("Failed to get Repository Name from Job [name: TEST-BACKUP2].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getRepositoryNameFromJobTestExceptionWhenResultIsInWrongFormat() {
+        String backupName = "TEST-BACKUP3";
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\nName:\n\nName-test");
+        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
+        try {
+            mockClient.getRepositoryNameFromJob(backupName);
+            fail();
+        } catch (Exception e) {
+            Assert.assertEquals(CloudRuntimeException.class, e.getClass());
+            Assert.assertEquals("Can't find any repository name for Job [name: TEST-BACKUP3].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getRepositoryNameFromJobTestSuccess() throws Exception {
+        String backupName = "TEST-BACKUP3";
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\n\nName : test");
+        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
+        String repositoryNameFromJob = mockClient.getRepositoryNameFromJob(backupName);
+        Assert.assertEquals("test", repositoryNameFromJob);
     }
 }

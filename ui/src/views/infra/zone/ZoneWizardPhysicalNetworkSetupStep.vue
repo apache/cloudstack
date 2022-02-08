@@ -37,7 +37,11 @@
           style="width: 100%"
           :defaultValue="text"
           @change="value => onCellChange(record.key, 'isolationMethod', value)"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option value="VLAN"> VLAN </a-select-option>
           <a-select-option value="VXLAN"> VXLAN </a-select-option>
           <a-select-option value="GRE"> GRE </a-select-option>
@@ -66,7 +70,11 @@
               :defaultValue="trafficLabelSelected"
               @change="val => { trafficLabelSelected = val }"
               style="min-width: 120px;"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="(traffic, index) in availableTrafficToAdd"
                 :value="traffic"
@@ -133,7 +141,7 @@
       :closable="true"
       :footer="null"
       @cancel="() => { showError = false }"
-      v-ctrl-enter="showError = false"
+      v-ctrl-enter="() => { showError = false }"
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
@@ -171,7 +179,13 @@
             <a-input v-decorator="['vlanId']" />
           </a-form-item>
           <a-form-item v-if="isAdvancedZone" :label="$t('label.vswitch.type')">
-            <a-select v-decorator="['vSwitchType']">
+            <a-select
+              v-decorator="['vSwitchType']"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
               <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
               <a-select-option value="vmwaredvs">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>
@@ -273,10 +287,10 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
+      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled?.value || false)
     },
     networkOfferingSelected () {
       return this.prefillContent.networkOfferingSelected
@@ -461,6 +475,7 @@ export default {
 
       Object.keys(fields).forEach(key => {
         this.form.getFieldDecorator([key], { initialValue: fields[key] })
+        this.form.setFieldsValue({ [key]: fields[key] })
       })
     },
     deleteTraffic (key, traffic, $event) {
@@ -475,7 +490,7 @@ export default {
       this.emitPhysicalNetworks()
     },
     updateTrafficLabel (trafficInEdit) {
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (!err) {
           this.showEditTraffic = false
           if (this.hypervisor === 'VMware') {

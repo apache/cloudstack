@@ -23,7 +23,7 @@ import br.com.autonomiccs.apacheCloudStack.exceptions.ApacheCloudStackClientRequ
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.ImmutableMap;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementDriver;
@@ -53,14 +53,14 @@ public final class NestedCloudStackOutOfBandManagementDriver extends AdapterBase
     }
 
     protected void ensureOptionExists(final ImmutableMap<OutOfBandManagement.Option, String> options, final OutOfBandManagement.Option option) {
-        if (options != null && option != null && options.containsKey(option) && !Strings.isNullOrEmpty(options.get(option))) {
+        if (options != null && option != null && options.containsKey(option) && StringUtils.isNotEmpty(options.get(option))) {
             return;
         }
         throw new CloudRuntimeException("Invalid out-of-band management configuration detected for the nested-cloudstack driver");
     }
 
     protected OutOfBandManagement.PowerState getNestedVMPowerState(final String jsonResponse) {
-        if (Strings.isNullOrEmpty(jsonResponse)) {
+        if (StringUtils.isEmpty(jsonResponse)) {
             return OutOfBandManagement.PowerState.Unknown;
         }
 

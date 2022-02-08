@@ -333,4 +333,9 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         return FirewallRule.class;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
 }

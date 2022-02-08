@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
@@ -159,4 +160,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listNonMigratingVmsByHostEqualsLastHost(long hostId);
 
+    void updateSystemVmTemplateId(long templateId, Hypervisor.HypervisorType hypervisorType);
+
+    List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId);
 }

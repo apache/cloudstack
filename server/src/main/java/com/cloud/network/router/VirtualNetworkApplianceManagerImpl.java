@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -66,7 +67,7 @@ import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,6 +169,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.OpRouterMonitorServiceVO;
@@ -349,6 +351,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao;
     @Inject private RouterHealthCheckResultDao routerHealthCheckResultDao;
     @Inject private LBStickinessPolicyDao lbStickinessPolicyDao;
+    @Inject private NetworkServiceMapDao _ntwkSrvcDao;
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
@@ -415,6 +418,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }
+        DiskOffering newDiskOffering = _entityMgr.findById(DiskOffering.class, newServiceOffering.getDiskOfferingId());
+        if (newDiskOffering == null) {
+            throw new InvalidParameterValueException("Unable to find disk offering: " + newServiceOffering.getDiskOfferingId());
+        }
 
         // check if it is a system service offering, if yes return with error as
         // it cannot be used for user vms
@@ -434,9 +441,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Check that the service offering being upgraded to has the same
         // storage pool preference as the VM's current service
         // offering
-        if (currentServiceOffering.isUseLocalStorage() != newServiceOffering.isUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.isUseLocalStorage() + " is different from "
-                    + "curruent local storage status: " + currentServiceOffering.isUseLocalStorage());
+        if (_itMgr.isRootVolumeOnLocalStorage(routerId) != newDiskOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newDiskOffering.isUseLocalStorage() + " is different from "
+                    + "current local storage status of router " +  routerId);
         }
 
         router.setServiceOfferingId(serviceOfferingId);
@@ -819,7 +826,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             final List<String> ipList = new ArrayList<String>();
             for (final Site2SiteVpnConnectionVO conn : conns) {
-                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected
+                    && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                     continue;
                 }
                 final Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
@@ -855,7 +863,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         throw new CloudRuntimeException("Unable to acquire lock for site to site vpn connection id " + conn.getId());
                     }
                     try {
-                        if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                        if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                             continue;
                         }
                         final Site2SiteVpnConnection.State oldState = conn.getState();
@@ -1774,6 +1782,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             SearchCriteria<UserVmJoinVO> scvm = sbvm.create();
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
+            boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
+            boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
             for (UserVmJoinVO vm : vms) {
                 if (vm.getState() != VirtualMachine.State.Running) {
                     continue;
@@ -1781,7 +1791,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
-                        .append(",ip=").append(vm.getIpAddress()).append(";");
+                        .append(",ip=").append(vm.getIpAddress())
+                        .append(",dhcp=").append(isDhcpSupported)
+                        .append(",dns=").append(isDnsSupported).append(";");
                 updateWithPortForwardingRules(routerJoinVO, vm, portData);
             }
             updateWithLbRules(routerJoinVO, loadBalancingData);
@@ -1938,6 +1950,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
             buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         NicProfile controlNic = null;
         String defaultDns1 = null;
@@ -2054,7 +2068,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(" dnssearchorder=").append(domain_suffix);
         }
 
-        if (profile.getHypervisorType() == HypervisorType.VMware || profile.getHypervisorType() == HypervisorType.Hyperv) {
+        if (profile.getHypervisorType() == HypervisorType.Hyperv) {
             buf.append(" extra_pubnics=" + _routerExtraPublicNics);
         }
 

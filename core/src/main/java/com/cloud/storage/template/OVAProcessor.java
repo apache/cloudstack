@@ -20,13 +20,10 @@
 package com.cloud.storage.template;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
@@ -36,7 +33,7 @@ import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
 import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -50,7 +47,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
-import org.xml.sax.SAXException;
 
 /**
  * processes the content of an OVA for registration of a template
@@ -107,7 +103,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
     private void validateOva(String templateFileFullPath, FormatInfo info) throws InternalErrorException {
         String ovfFilePath = getOVFFilePath(templateFileFullPath);
         OVFHelper ovfHelper = new OVFHelper();
-        Document doc = ovfHelper.getDocumentFromFile(ovfFilePath);
+        Document doc = ovfHelper.getOvfParser().parseOVFFile(ovfFilePath);
 
         OVFInformationTO ovfInformationTO = createOvfInformationTO(ovfHelper, doc, ovfFilePath);
         info.ovfInformationTO = ovfInformationTO;
@@ -235,59 +231,35 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String templateFileFullPath = templatePath.endsWith(File.separator) ? templatePath : templatePath + File.separator;
         templateFileFullPath += templateName.endsWith(ImageFormat.OVA.getFileExtension()) ? templateName : templateName + "." + ImageFormat.OVA.getFileExtension();
         String ovfFileName = getOVFFilePath(templateFileFullPath);
+        OVFHelper ovfHelper = new OVFHelper();
         if (ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath;
             LOGGER.error(msg);
             throw new InternalErrorException(msg);
         }
         try {
-            Document ovfDoc = null;
-            ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFileName));
-            NodeList diskElements = ovfDoc.getElementsByTagName("Disk");
+            Document ovfDoc = ovfHelper.getOvfParser().parseOVFFile(ovfFileName);
+            NodeList diskElements = ovfHelper.getOvfParser().getElementsFromOVFDocument(ovfDoc, "Disk");
             for (int i = 0; i < diskElements.getLength(); i++) {
                 Element disk = (Element)diskElements.item(i);
-                long diskSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
+                String diskSizeValue = disk.getAttribute("ovf:capacity");
+                long diskSize = 1;
+                try {
+                    diskSize = Long.parseLong(diskSizeValue);
+                } catch (NumberFormatException e) {
+                    // ASSUMEably the diskSize contains a property for replacement
+                    LOGGER.warn(String.format("the disksize for disk %s is not a valid number: %s", disk.getAttribute("diskId"), diskSizeValue));
+                    // TODO parse the property to get any value can not be done at registration time
+                    //  and will have to be done at deploytime, so for orchestration purposes
+                    //  we now assume, a value of one
+                }
                 String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
                 diskSize = OVFHelper.getDiskVirtualSize(diskSize, allocationUnits, ovfFileName);
                 virtualSize += diskSize;
             }
             return virtualSize;
-        } catch (InternalErrorException | IOException | NumberFormatException | ParserConfigurationException | SAXException e) {
+        } catch (InternalErrorException  | NumberFormatException e) {
             String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
-            LOGGER.error(msg);
-            throw new InternalErrorException(msg);
-        }
-    }
-
-    public Pair<Long, Long> getDiskDetails(String ovfFilePath, String diskName) throws InternalErrorException {
-        long virtualSize = 0;
-        long fileSize = 0;
-        String fileId = null;
-        try {
-            Document ovfDoc = null;
-            ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFilePath));
-            NodeList disks = ovfDoc.getElementsByTagName("Disk");
-            NodeList files = ovfDoc.getElementsByTagName("File");
-            for (int j = 0; j < files.getLength(); j++) {
-                Element file = (Element)files.item(j);
-                if (file.getAttribute("ovf:href").equals(diskName)) {
-                    fileSize = Long.parseLong(file.getAttribute("ovf:size"));
-                    fileId = file.getAttribute("ovf:id");
-                    break;
-                }
-            }
-            for (int i = 0; i < disks.getLength(); i++) {
-                Element disk = (Element)disks.item(i);
-                if (disk.getAttribute("ovf:fileRef").equals(fileId)) {
-                    virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
-                    String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-                    virtualSize = OVFHelper.getDiskVirtualSize(virtualSize, allocationUnits, ovfFilePath);
-                    break;
-                }
-            }
-            return new Pair<Long, Long>(virtualSize, fileSize);
-        } catch (InternalErrorException | IOException | NumberFormatException | ParserConfigurationException | SAXException e) {
-            String msg = "getDiskDetails: Unable to parse OVF XML document " + ovfFilePath + " to get the virtual disk " + diskName + " size due to " + e;
             LOGGER.error(msg);
             throw new InternalErrorException(msg);
         }

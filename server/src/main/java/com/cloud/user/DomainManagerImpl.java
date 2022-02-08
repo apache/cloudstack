@@ -25,6 +25,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.domain.dao.DomainDetailsDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
@@ -83,7 +85,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
@@ -127,6 +129,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ConfigurationManager _configMgr;
     @Inject
     private DomainDetailsDao _domainDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Inject
     MessageBus _messageBus;
@@ -253,7 +257,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     public Domain findDomainByIdOrPath(final Long id, final String domainPath) {
         Long domainId = id;
         if (domainId == null || domainId < 1L) {
-            if (Strings.isNullOrEmpty(domainPath) || domainPath.trim().isEmpty()) {
+            if (StringUtils.isBlank(domainPath)) {
                 domainId = Domain.ROOT_DOMAIN;
             } else {
                 final Domain domainVO = findDomainByPath(domainPath.trim());
@@ -338,6 +342,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
                 cleanupDomainDetails(domain.getId());
                 cleanupDomainOfferings(domain.getId());
+                annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
                 return true;
             } catch (Exception ex) {

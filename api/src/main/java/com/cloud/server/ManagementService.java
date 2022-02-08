@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
@@ -394,7 +395,8 @@ public interface ManagementService {
 
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
-     * volume can be migrated. Current pool is not included in the list.
+     * volume can be migrated. Current pool is not included in the list. In case of vSphere datastore cluster storage pools,
+     * this method removes the child storage pools and adds the corresponding parent datastore cluster for API response listing
      *
      * @param Long volumeId
      * @return Pair<List<? extends StoragePool>, List<? extends StoragePool>> List of storage pools in cluster and list
@@ -402,12 +404,14 @@ public interface ManagementService {
      */
     Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
 
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool);
+
     String[] listEventTypes();
 
     Pair<List<? extends HypervisorCapabilities>, Integer> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex,
             Long pageSizeVal);
 
-    HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled);
+    HypervisorCapabilities updateHypervisorCapabilities(UpdateHypervisorCapabilitiesCmd cmd);
 
     /**
      * list all the top consumed resources across different capacity types

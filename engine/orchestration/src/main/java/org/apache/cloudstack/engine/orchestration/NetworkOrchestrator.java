@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
-import static org.apache.commons.lang.StringUtils.isNotBlank;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,16 +38,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.CleanupPersistentNetworkResourceAnswer;
-import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
-import com.cloud.agent.api.SetupPersistentNetworkAnswer;
-import com.cloud.agent.api.SetupPersistentNetworkCommand;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -71,14 +63,20 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CleanupPersistentNetworkResourceAnswer;
+import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.SetupPersistentNetworkAnswer;
+import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -86,6 +84,7 @@ import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -93,6 +92,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -198,7 +198,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
@@ -243,7 +242,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -317,6 +316,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     ResourceManager resourceManager;
+    @Inject
+    private AnnotationDao annotationDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -638,10 +639,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void updateRouterIpInNetworkDetails(Long networkId, String routerIp, String routerIpv6) {
-        if (isNotBlank(routerIp)) {
+        if (StringUtils.isNotBlank(routerIp)) {
             networkDetailsDao.addDetail(networkId, ApiConstants.ROUTER_IP, routerIp, true);
         }
-        if (isNotBlank(routerIpv6)) {
+        if (StringUtils.isNotBlank(routerIpv6)) {
             networkDetailsDao.addDetail(networkId, ApiConstants.ROUTER_IPV6, routerIpv6, true);
         }
     }
@@ -2051,7 +2052,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     //Create nic profile for migration
                     s_logger.debug("Creating nic profile for migration. BroadcastUri: "+broadcastUri.toString()+" NetworkId: "+ntwkId+" Vm: "+vm.getId());
                     final NetworkVO network = _networksDao.findById(ntwkId);
-                    _networkModel.getNetworkRate(network.getId(), vm.getId());
                     final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                     final NicProfile profile = new NicProfile();
                     profile.setDeviceId(255); //dummyId
@@ -2065,7 +2065,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     profile.setIsolationUri(Networks.IsolationType.Vlan.toUri(publicIp.getVlanTag()));
                     profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
                     profile.setName(_networkModel.getNetworkTag(vm.getHypervisorType(), network));
-                    profile.setNetworId(network.getId());
+                    profile.setNetworkRate(_networkModel.getNetworkRate(network.getId(), vm.getId()));
+                    profile.setNetworkId(network.getId());
 
                     guru.updateNicProfile(profile, network);
                     vm.addNic(profile);
@@ -2268,8 +2269,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final NetworkVO network = _networksDao.findById(nic.getNetworkId());
         if (network != null && network.getTrafficType() == TrafficType.Guest) {
-            final String nicIp = Strings.isNullOrEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
-            if (!Strings.isNullOrEmpty(nicIp)) {
+            final String nicIp = StringUtils.isEmpty(nic.getIPv4Address()) ? nic.getIPv6Address() : nic.getIPv4Address();
+            if (StringUtils.isNotEmpty(nicIp)) {
                 NicProfile nicProfile = new NicProfile(nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress());
                 nicProfile.setId(nic.getId());
                 cleanupNicDhcpDnsEntry(network, vm, nicProfile);
@@ -2459,7 +2460,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         boolean ipv6 = false;
 
-        if (StringUtils.isNotBlank(ip6Gateway) && StringUtils.isNotBlank(ip6Cidr)) {
+        if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
             ipv6 = true;
         }
         // Validate zone
@@ -2538,7 +2539,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (vlanSpecified) {
             URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
             // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
-            URI secondaryUri = isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
+            URI secondaryUri = StringUtils.isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
             if (!(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag to use for new guest network, " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
@@ -2638,7 +2639,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)));
         if (cidr == null && ip6Cidr == null && cidrRequired) {
             if (ntwkOff.getGuestType() == GuestType.Shared) {
-                throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" + " type " + Network.GuestType.Shared);
+                throw new InvalidParameterValueException(String.format("Gateway/netmask are required when creating %s networks.", Network.GuestType.Shared));
             } else {
                 throw new InvalidParameterValueException("gateway/netmask are required when create network of" + " type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
             }
@@ -2677,7 +2678,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     userNetwork.setGateway(gateway);
                 }
 
-                if (StringUtils.isNotBlank(ip6Gateway) && StringUtils.isNotBlank(ip6Cidr)) {
+                if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
                     userNetwork.setIp6Cidr(ip6Cidr);
                     userNetwork.setIp6Gateway(ip6Gateway);
                 }
@@ -2686,11 +2687,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     userNetwork.setExternalId(externalId);
                 }
 
-                if (isNotBlank(routerIp)) {
+                if (StringUtils.isNotBlank(routerIp)) {
                     userNetwork.setRouterIp(routerIp);
                 }
 
-                if (isNotBlank(routerIpv6)) {
+                if (StringUtils.isNotBlank(routerIpv6)) {
                     userNetwork.setRouterIpv6(routerIpv6);
                 }
 
@@ -3112,6 +3113,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 if (networkAccount != null) {
                                     _networkAccountDao.remove(networkAccount.getId());
                                 }
+
+                                networkDetailsDao.removeDetails(networkFinal.getId());
                             }
 
                             final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
@@ -3673,6 +3676,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
         }
 
+        annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK.name(), network.getUuid());
+
         return success;
     }
 
@@ -4149,11 +4154,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (network.getTrafficType() == Networks.TrafficType.Management) {
                 privateIpAddress = address;
             }
-            if (network.getTrafficType() != null && !Strings.isNullOrEmpty(address)) {
+            if (network.getTrafficType() != null && StringUtils.isNotEmpty(address)) {
                 accessDetails.put(network.getTrafficType().name(), address);
             }
         }
-        if (privateIpAddress != null && Strings.isNullOrEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
+        if (privateIpAddress != null && StringUtils.isEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
             accessDetails.put(NetworkElementCommand.ROUTER_IP,  privateIpAddress);
         }
         return accessDetails;
@@ -4293,7 +4298,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
         String guestIp = null;
-        if (ipAddresses != null && !Strings.isNullOrEmpty(ipAddresses.getIp4Address())) {
+        if (ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getIp4Address())) {
             if (ipAddresses.getIp4Address().equals("auto")) {
                 ipAddresses.setIp4Address(null);
             }
@@ -4325,10 +4330,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddress);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
-                if (NetUtils.isValidIp4(finalGuestIp) && !Strings.isNullOrEmpty(network.getGateway())) {
+                if (NetUtils.isValidIp4(finalGuestIp) && StringUtils.isNotEmpty(network.getGateway())) {
                     vo.setIPv4Address(finalGuestIp);
                     vo.setIPv4Gateway(network.getGateway());
-                    if (!Strings.isNullOrEmpty(network.getCidr())) {
+                    if (StringUtils.isNotEmpty(network.getCidr())) {
                         vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
                     }
                 }
@@ -4395,6 +4400,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
-                PromiscuousMode, MacAddressChanges, ForgedTransmits, RollingRestartEnabled};
+                PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled};
     }
 }

@@ -62,6 +62,16 @@ export default {
         title: 'label.snapshots',
         param: 'volumeid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'state', 'tags'],
       actions: [
         {
@@ -113,6 +123,21 @@ export default {
           show: (record) => {
             return record.type !== 'ROOT' && record.virtualmachineid &&
               ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate)
+          }
+        },
+        {
+          api: 'updateVolume',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: ['name'],
+          mapping: {
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
           }
         },
         {
@@ -171,6 +196,17 @@ export default {
           show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) },
           popup: true,
           component: () => import('@/views/storage/MigrateVolume.vue')
+        },
+        {
+          api: 'changeOfferingForVolume',
+          icon: 'swap',
+          docHelp: 'adminguide/storage.html#id2',
+          label: 'label.change.offering.for.volume',
+          args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
+          dataView: true,
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          popup: true,
+          component: () => import('@/views/storage/ChangeOfferingForVolume.vue')
         },
         {
           api: 'extractVolume',
@@ -265,6 +301,16 @@ export default {
         return fields
       },
       details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       searchFilters: ['name', 'domainid', 'account', 'tags'],
       actions: [
         {
@@ -337,6 +383,16 @@ export default {
       },
       details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parentName', 'virtualmachineid', 'account', 'domain', 'created'],
       searchFilters: ['name', 'domainid', 'account', 'tags'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [
         {
           api: 'createSnapshotFromVMSnapshot',

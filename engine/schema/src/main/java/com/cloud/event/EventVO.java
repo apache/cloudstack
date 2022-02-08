@@ -224,4 +224,9 @@ public class EventVO implements Event {
     public Class<?> getEntityType() {
         return Event.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

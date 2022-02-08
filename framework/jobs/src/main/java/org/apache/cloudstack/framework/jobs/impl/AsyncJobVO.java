@@ -384,7 +384,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
-        sb.append("AsyncJobVO {id:").append(getId());
+        sb.append("AsyncJobVO: {id:").append(getId());
         sb.append(", userId: ").append(getUserId());
         sb.append(", accountId: ").append(getAccountId());
         sb.append(", instanceType: ").append(getInstanceType());

@@ -58,7 +58,7 @@
 
       <div :span="24" class="action-button">
         <a-button @click="onClose">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="submitTariff">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="submitTariff">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-modal>
@@ -86,7 +86,7 @@ export default {
       pattern: 'YYYY-MM-DD'
     }
   },
-  inject: ['parentEditTariffAction', 'parentFetchData'],
+  inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
@@ -97,12 +97,12 @@ export default {
   },
   methods: {
     onClose () {
-      this.parentEditTariffAction(false)
+      this.$emit('edit-tariff-action', false)
     },
     submitTariff (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) return
 
         const params = {}
@@ -122,7 +122,7 @@ export default {
             }
             this.parentFetchData()
           }
-
+          this.$message.success(`${this.$t('message.setting.updated')} ${this.resource.description}`)
           this.onClose()
         }).catch(error => {
           this.$notification.error({

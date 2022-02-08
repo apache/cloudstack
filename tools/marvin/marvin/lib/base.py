@@ -2305,6 +2305,12 @@ class ServiceOffering:
         if "dynamicscalingenabled" in services:
             cmd.dynamicscalingenabled = services["dynamicscalingenabled"]
 
+        if "diskofferingstrictness" in services:
+            cmd.diskofferingstrictness = services["diskofferingstrictness"]
+
+        if "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid
@@ -2546,6 +2552,7 @@ class GuestOs:
     @classmethod
     def listCategories(cls, apiclient, **kwargs):
         """List all Os Categories"""
+        cmd = listOsCategories.listOsCategoriesCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
 
         return (apiclient.listOsCategories(cmd))
@@ -2977,7 +2984,8 @@ class StoragePool:
     @classmethod
     def create(cls, apiclient, services, scope=None, clusterid=None,
                zoneid=None, podid=None, provider=None, tags=None,
-               capacityiops=None, capacitybytes=None, hypervisor=None):
+               capacityiops=None, capacitybytes=None, hypervisor=None,
+               details=None):
         """Create Storage pool (Primary Storage)"""
 
         cmd = createStoragePool.createStoragePoolCmd()
@@ -3028,6 +3036,13 @@ class StoragePool:
             cmd.hypervisor = hypervisor
         elif "hypervisor" in services:
             cmd.hypervisor = services["hypervisor"]
+
+        d = services.get("details", details)
+        if d:
+            count = 1
+            for key, value in d.items():
+                setattr(cmd, "details[{}].{}".format(count, key), value)
+                count = count + 1
 
         return StoragePool(apiclient.createStoragePool(cmd).__dict__)
 
@@ -4091,6 +4106,7 @@ class Project:
 
         cmd = deleteProject.deleteProjectCmd()
         cmd.id = self.id
+        cmd.cleanup = True
         apiclient.deleteProject(cmd)
 
     def update(self, apiclient, **kwargs):
@@ -4262,6 +4278,26 @@ class Configurations:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.listCapabilities(cmd))
 
+
+    @classmethod
+    def reset(cls, apiclient, name, zoneid=None, clusterid=None, storageid=None, domainid=None, accountid=None):
+        """Resets the specified configuration to original value"""
+
+        cmd = resetConfiguration.resetConfigurationCmd()
+        cmd.name = name
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        if clusterid:
+            cmd.clusterid = clusterid
+        if storageid:
+            cmd.storageid = storageid
+        if domainid:
+            cmd.domainid = domainid
+        if accountid:
+            cmd.accountid = accountid
+
+        apiclient.resetConfiguration(cmd)
 
 class NetScaler:
     """Manage external netscaler device"""
@@ -5065,6 +5101,11 @@ class VmSnapshot:
     def deleteVMSnapshot(cls, apiclient, vmsnapshotid):
         cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
+        return apiclient.deleteVMSnapshot(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = self.id
         return apiclient.deleteVMSnapshot(cmd)
 
 

@@ -38,7 +38,13 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
-          <a-select v-model="newRule.algorithm">
+          <a-select
+            v-model="newRule.algorithm"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
             <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
@@ -46,7 +52,14 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="min-width: 100px">
+          <a-select
+            v-model="newRule.protocol"
+            style="min-width: 100px"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
@@ -83,7 +96,7 @@
         {{ returnAlgorithmName(record.algorithm) }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="stickiness" slot-scope="record">
         <a-button @click="() => openStickinessModal(record.id)">
@@ -194,7 +207,7 @@
 
     <a-modal
       :title="$t('label.configure.sticky.policy')"
-      v-model="stickinessModalVisible"
+      :visible="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
@@ -209,7 +222,15 @@
 
       <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
         <a-form-item :label="$t('label.stickiness.method')">
-          <a-select autoFocus v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
+          <a-select
+            autoFocus
+            v-decorator="['methodname']"
+            @change="handleStickinessMethodSelectChange"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
             <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
@@ -267,7 +288,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -292,7 +313,13 @@
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
-          <a-select v-model="editRuleDetails.algorithm">
+          <a-select
+            v-model="editRuleDetails.algorithm"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
             <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
@@ -300,7 +327,13 @@
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
-          <a-select v-model="editRuleDetails.protocol">
+          <a-select
+            v-model="editRuleDetails.protocol"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
@@ -320,9 +353,7 @@
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      :okButtonProps="{ props:
-        {disabled: newRule.virtualmachineid === [] } }"
-      @cancel="closeModal"
+      :footer="null"
       v-ctrl-enter="handleAddNewRule"
     >
       <div>
@@ -333,7 +364,12 @@
             :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
-            :placeholder="$t('label.select.tier')" >
+            :placeholder="$t('label.select.tier')"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
@@ -368,7 +404,11 @@
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
               mode="multiple"
               v-model="newRule.vmguestip[index]"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
@@ -391,8 +431,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template slot="buildOptionText" slot-scope="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -402,7 +442,7 @@
 
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        <a-button :disabled="newRule.virtualmachineid === []" type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
@@ -597,12 +637,6 @@ export default {
       this.fetchData()
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   methods: {
     fetchData () {
       this.fetchListTiers()
@@ -701,6 +735,13 @@ export default {
       }
       return 'Configure'
     },
+    getCapitalise (val) {
+      if (!val) {
+        return
+      }
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     openTagsModal (id) {
       this.tagsModalLoading = true
       this.tagsModalVisible = true
@@ -724,7 +765,7 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsModalLoading = false
           return
@@ -849,6 +890,8 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
+      }).finally(() => {
+        this.closeModal()
       })
     },
     handleDeleteStickinessPolicy () {
@@ -885,7 +928,7 @@ export default {
       if (this.stickinessModalLoading) return
       this.stickinessModalLoading = true
       e.preventDefault()
-      this.stickinessPolicyForm.validateFields((err, values) => {
+      this.stickinessPolicyForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.stickinessModalLoading = false
           return
@@ -921,6 +964,7 @@ export default {
       })
     },
     handleStickinessMethodSelectChange (e) {
+      this.stickinessPolicyForm.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
@@ -1283,6 +1327,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value

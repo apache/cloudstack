@@ -29,5 +29,20 @@ DATE="$(date --iso-8601=seconds)"
 LABEL_DATE="--label \"org.opencontainers.image.created=${DATE}\""
 GIT_REV="$(git rev-parse HEAD)"
 LABEL_GIT_REV="--label \"org.opencontainers.image.revision=${GIT_REV}\""
-
+USE_PODMAN=0
+USE_DOCKER=0
+OPTIONS='pd'
+while getopts $OPTIONS OPTION
+do
+        case "$OPTION" in
+                p)USE_PODMAN=1;;
+                d)USE_DOCKER=1;;
+                *)echo "Please choose between -p for podman or -d for docker."
+                  exit;;
+        esac
+done
+if [[ $USE_PODMAN -eq 1 ]]; then
+        podman build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG} .
+		exit
+fi
 docker build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG} .

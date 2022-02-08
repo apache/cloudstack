@@ -149,7 +149,7 @@ export default {
       editModalVisible: false,
       selectedRole: null,
       projectPermisssions: [],
-      customStyle: 'margin-bottom: -10px; border-bottom-style: none'
+      customStyle: 'margin-bottom: 0; border: none'
     }
   },
   beforeCreate () {
@@ -213,7 +213,7 @@ export default {
     updateProjectRole (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -253,7 +253,7 @@ export default {
     createProjectRole (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

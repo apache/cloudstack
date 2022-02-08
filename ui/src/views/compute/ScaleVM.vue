@@ -32,19 +32,29 @@
       @handle-search-filter="($event) => fetchData($event)" />
 
     <compute-selection
-      v-if="selectedOffering && selectedOffering.iscustomized"
-      :cpuNumberInputDecorator="cpuNumberKey"
-      :cpuSpeedInputDecorator="cpuSpeedKey"
-      :memoryInputDecorator="memoryKey"
+      v-if="selectedOffering && (selectedOffering.iscustomized || selectedOffering.iscustomizediops)"
+      :cpu-number-input-decorator="cpuNumberKey"
+      :cpu-speed-input-decorator="cpuSpeedKey"
+      :memory-input-decorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
       :minCpu="getMinCpu()"
       :maxCpu="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
       :minMemory="getMinMemory()"
       :maxMemory="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+      :isCustomized="selectedOffering.iscustomized"
+      :isCustomizedIOps="'iscustomizediops' in selectedOffering && selectedOffering.iscustomizediops"
       @update-compute-cpunumber="updateFieldValue"
       @update-compute-cpuspeed="updateFieldValue"
       @update-compute-memory="updateFieldValue" />
+
+    <a-form-item :label="$t('label.automigrate.volume')">
+      <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      <a-switch
+        v-decorator="['autoMigrate']"
+        :checked="autoMigrate"
+        @change="val => { autoMigrate = val }"/>
+    </a-form-item>
 
     <div :span="24" class="action-button">
       <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
@@ -76,6 +86,7 @@ export default {
       offeringsMap: {},
       offerings: [],
       selectedOffering: {},
+      autoMigrate: true,
       total: 0,
       params: { id: this.resource.id },
       loading: false,
@@ -83,6 +94,10 @@ export default {
       cpuSpeedKey: 'details[0].cpuSpeed',
       memoryKey: 'details[0].memory'
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
+    this.apiParams = this.$getApiParams('scaleVirtualMachine')
   },
   created () {
     this.fetchData({
@@ -120,14 +135,14 @@ export default {
       if (this.resource.state === 'Running') {
         return this.resource.cpunumber
       }
-      return 'serviceofferingdetails' in this.selectedOffering ? this.selectedOffering.serviceofferingdetails.mincpunumber * 1 : 1
+      return this.selectedOffering?.serviceofferingdetails?.mincpunumber * 1 || 1
     },
     getMinMemory () {
       // We can only scale up while a VM is running
       if (this.resource.state === 'Running') {
         return this.resource.memory
       }
-      return 'serviceofferingdetails' in this.selectedOffering ? this.selectedOffering.serviceofferingdetails.minmemory * 1 : 32
+      return this.selectedOffering?.serviceofferingdetails?.minmemory * 1 || 32
     },
     getMessage () {
       if (this.resource.hypervisor === 'VMware') {
@@ -143,6 +158,7 @@ export default {
 
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]
+      this.params.automigrate = this.autoMigrate
     },
     updateFieldValue (name, value) {
       this.params[name] = value

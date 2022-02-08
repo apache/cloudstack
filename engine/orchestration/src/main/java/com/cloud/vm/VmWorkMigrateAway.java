@@ -30,6 +30,11 @@ public class VmWorkMigrateAway extends VmWork {
         this.srcHostId = srcHostId;
     }
 
+    public VmWorkMigrateAway(VmWork vmWork, long srcHostId) {
+        super(vmWork);
+        this.srcHostId = srcHostId;
+    }
+
     public long getSrcHostId() {
         return srcHostId;
     }

@@ -21,8 +21,12 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.DiskOffering;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -54,6 +58,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     private VmDiskStatisticsDao vmDiskStatsDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -173,10 +179,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         ApiResponseHelper.populateOwner(volResponse, volume);
 
         if (volume.getDiskOfferingId() > 0) {
-            if (ApiDBUtils.findServiceOfferingByUuid(volume.getDiskOfferingUuid()) != null) {
-                volResponse.setServiceOfferingId(volume.getDiskOfferingUuid());
-                volResponse.setServiceOfferingName(volume.getDiskOfferingName());
-                volResponse.setServiceOfferingDisplayText(volume.getDiskOfferingDisplayText());
+            DiskOffering computeOnlyDiskOffering  = ApiDBUtils.findComputeOnlyDiskOfferingById(volume.getDiskOfferingId());
+            if (computeOnlyDiskOffering != null) {
+                ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId());
+                volResponse.setServiceOfferingId(String.valueOf(serviceOffering.getId()));
+                volResponse.setServiceOfferingName(serviceOffering.getName());
+                volResponse.setServiceOfferingDisplayText(serviceOffering.getDisplayText());
             } else {
                 volResponse.setDiskOfferingId(volume.getDiskOfferingUuid());
                 volResponse.setDiskOfferingName(volume.getDiskOfferingName());
@@ -208,10 +216,13 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setStoragePoolId(volume.getPoolUuid());
             if (poolId != null) {
                 StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
-                if (poolVO != null && poolVO.getParent() != 0L) {
-                    StoragePoolVO datastoreClusterVO = primaryDataStoreDao.findById(poolVO.getParent());
-                    volResponse.setStoragePoolName(datastoreClusterVO.getName());
-                    volResponse.setStoragePoolId(datastoreClusterVO.getUuid());
+                if (poolVO != null) {
+                    volResponse.setStorageType(poolVO.isLocal() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
+                    if (poolVO.getParent() != 0L) {
+                        StoragePoolVO datastoreClusterVO = primaryDataStoreDao.findById(poolVO.getParent());
+                        volResponse.setStoragePoolName(datastoreClusterVO.getName());
+                        volResponse.setStoragePoolId(datastoreClusterVO.getUuid());
+                    }
                 }
             }
         }
@@ -235,6 +246,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         if (tag_id > 0) {
             addTagInformation(volume, volResponse);
         }
+
+        volResponse.setHasAnnotation(annotationDao.hasAnnotations(volume.getUuid(), AnnotationService.EntityType.VOLUME.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         volResponse.setExtractable(isExtractable);
         volResponse.setDisplayVolume(volume.isDisplayVolume());
@@ -263,6 +277,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         long tag_id = vol.getTagId();
         if (tag_id > 0) {
             addTagInformation(vol, volData);
+        }
+        if (volData.hasAnnotation() == null) {
+            volData.setHasAnnotation(annotationDao.hasAnnotations(vol.getUuid(), AnnotationService.EntityType.VOLUME.name(),
+                    _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
         return volData;
     }

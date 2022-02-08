@@ -33,6 +33,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -185,6 +186,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             pools = reorderPoolsByCapacity(plan, pools);
         }
 
+        if (vmProfile.getVirtualMachine() == null) {
+            s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            return pools;
+        }
+
         if (vmProfile.getHypervisorType() == HypervisorType.VMware &&
                 !storageMgr.DiskProvisioningStrictness.valueIn(plan.getDataCenterId())) {
             pools = reorderPoolsByDiskProvisioningType(pools, dskCh);
@@ -260,8 +266,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         // check capacity
-        List<Volume> requestVolumes = new ArrayList<>();
-        requestVolumes.add(volume);
+        List<Pair<Volume, DiskProfile>> requestVolumeDiskProfilePairs = new ArrayList<>();
+        requestVolumeDiskProfilePairs.add(new Pair<>(volume, dskCh));
         if (dskCh.getHypervisorType() == HypervisorType.VMware) {
             // Skip the parent datastore cluster, consider only child storage pools in it
             if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster && storageMgr.isStoragePoolDatastoreClusterParent(pool)) {
@@ -276,7 +282,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             }
 
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, pool);
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumeDiskProfilePairs, pool);
                 if (!isStoragePoolStoragepolicyComplaince) {
                     return false;
                 }
@@ -285,7 +291,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 return false;
             }
         }
-        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool, plan.getClusterId());
+        return storageMgr.storagePoolHasEnoughIops(requestVolumeDiskProfilePairs, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumeDiskProfilePairs, pool, plan.getClusterId());
     }
 
     private boolean checkDiskProvisioningSupport(DiskProfile dskCh, StoragePool pool) {

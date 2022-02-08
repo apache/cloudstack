@@ -63,7 +63,11 @@
                 }]"
                 :placeholder="field.description"
                 :autoFocus="fieldIndex === firstIndex"
-              >
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
                 </a-select-option>
@@ -98,7 +102,11 @@
                 }]"
                 :placeholder="field.description"
                 :autoFocus="fieldIndex === firstIndex"
-              >
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                 </a-select-option>
@@ -177,7 +185,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.action.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -240,8 +248,7 @@ export default {
                     description: this.resource.name,
                     successMethod: result => {
                       if (this.action.api === 'deleteDomain') {
-                        this.$set(this.resource, 'isDel', true)
-                        this.parentUpdActionData(this.resource)
+                        this.parentFetchData()
                       }
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)

@@ -26,6 +26,7 @@
           <a-form-item :label="$t('label.ip')">
             <a-input
               autoFocus
+              :placeholder="apiParams.hostname.description"
               v-decorator="['ip', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -36,6 +37,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.username')">
             <a-input
+              :placeholder="apiParams.username.description"
               v-decorator="['username', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -46,6 +48,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.password')">
             <a-input-password
+              :placeholder="apiParams.password.description"
               v-decorator="['password', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -65,6 +68,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.transportzoneuuid')">
             <a-input
+              :placeholder="apiParams.transportzoneuuid.description"
               v-decorator="['transportzoneuuid']" />
           </a-form-item>
         </a-col>
@@ -73,6 +77,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.l3gatewayserviceuuid')">
             <a-input
+              :placeholder="apiParams.l3gatewayserviceuuid.description"
               v-decorator="['l3gatewayserviceuuid']" />
           </a-form-item>
         </a-col>
@@ -81,6 +86,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.l2gatewayserviceuuid')">
             <a-input
+              :placeholder="apiParams.l2gatewayserviceuuid.description"
               v-decorator="['l2gatewayserviceuuid']" />
           </a-form-item>
         </a-col>
@@ -110,12 +116,16 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+  },
+  created () {
+    this.apiParams = this.$getApiParams('addNiciraNvpDevice')
   },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {
@@ -130,7 +140,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScroll(async (err, values) => {
         if (err) {
           return
         }

@@ -25,14 +25,18 @@
         <a-form-item>
           <tooltip-label slot="label" :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
           <a-select
-            showSearch
             allowClear
             v-decorator="['volumeid', {
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
             @change="onChangeVolume"
             :placeholder="apiParams.volumeid.description"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="volume in listVolumes"
               :key="volume.id">
@@ -108,7 +112,7 @@ export default {
       e.preventDefault()
 
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) return
 
         const params = {}
@@ -131,8 +135,8 @@ export default {
             if (jobId) {
               this.$pollJob({
                 jobId,
-                title: title,
-                description: description,
+                title,
+                description,
                 successMethod: result => {
                   const volumeId = result.jobresult.snapshot.volumeid
                   const snapshotId = result.jobresult.snapshot.id

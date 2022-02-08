@@ -30,7 +30,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff; text-align:
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; text-align:
               center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.privateendport"
@@ -48,7 +49,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff;
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none;
               text-align: center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.publicendport"
@@ -58,7 +60,14 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="width: 100%;">
+          <a-select
+            v-model="newRule.protocol"
+            style="width: 100%;"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
@@ -95,7 +104,7 @@
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="vm" slot-scope="record">
         <div><a-icon type="desktop"/>
@@ -161,7 +170,7 @@
           </a-form-item>
         </div>
 
-        <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider></a-divider>
@@ -184,9 +193,7 @@
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      :okButtonProps="{ props:
-        {disabled: newRule.virtualmachineid === null } }"
-      @cancel="closeModal"
+      :footer="null"
       v-ctrl-enter="addRule"
     >
       <div>
@@ -197,7 +204,12 @@
             :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
-            :placeholder="$t('label.select.tier')" >
+            :placeholder="$t('label.select.tier')"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
@@ -231,7 +243,11 @@
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"
               v-model="newRule.vmguestip"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
@@ -243,7 +259,13 @@
           </div>
 
           <div slot="action" slot-scope="text, record" style="text-align: center">
-            <a-radio :value="record.id" @change="e => fetchNics(e)" />
+            <a-radio-group
+              class="radio-group"
+              :key="record.id"
+              v-model="checked"
+              @change="($event) => checked = $event.target.value">
+              <a-radio :value="record.id" @change="e => fetchNics(e)" />
+            </a-radio-group>
           </div>
         </a-table>
         <a-pagination
@@ -254,8 +276,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template slot="buildOptionText" slot-scope="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -264,7 +286,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" :disabled="newRule.virtualmachineid === null" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
@@ -309,6 +331,7 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      checked: false,
       selectedRowKeys: [],
       showGroupActionModal: false,
       selectedItems: [],
@@ -434,12 +457,6 @@ export default {
       this.fetchData()
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   methods: {
     fetchData () {
       this.fetchListTiers()
@@ -528,6 +545,10 @@ export default {
       for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true
@@ -618,6 +639,7 @@ export default {
       this.addVmModalNicLoading = false
       this.showConfirmationAction = false
       this.nics = []
+      this.checked = false
       this.resetTagInputs()
     },
     openTagsModal (id) {
@@ -643,7 +665,7 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsModalLoading = false
           return
@@ -716,6 +738,7 @@ export default {
       this.fetchVirtualMachines()
     },
     fetchNics (e) {
+      this.nics = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
       api('listNics', {
@@ -770,6 +793,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value

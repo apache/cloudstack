@@ -75,6 +75,15 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item>
+          <span slot="label">
+            {{ $t('label.disksizestrictness') }}
+            <a-tooltip :title="apiParams.disksizestrictness.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-switch v-decorator="['disksizestrictness', { initialValue: this.disksizestrictness }]" :checked="this.disksizestrictness" @change="val => { this.disksizestrictness = val }" />
+        </a-form-item>
+        <a-form-item>
           <tooltip-label slot="label" :title="$t('label.customdisksize')" :tooltip="apiParams.customized.description"/>
           <a-switch v-decorator="['customdisksize', { initialValue: isCustomDiskSize }]" :checked="isCustomDiskSize" @change="val => { isCustomDiskSize = val }" />
         </a-form-item>
@@ -278,12 +287,16 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
-              {{ opt.path || opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -307,13 +320,17 @@
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @select="val => fetchvSphereStoragePolicies(val)"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px"/>
+                {{ opt.name || opt.description }}
+              </span>
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -321,7 +338,12 @@
           <tooltip-label slot="label" :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           <a-select
             v-decorator="['storagepolicy']"
-            :placeholder="apiParams.storagepolicy.description">
+            :placeholder="apiParams.storagepolicy.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="policy in storagePolicies" :key="policy.id">
               {{ policy.name || policy.id }}
             </a-select-option>
@@ -330,7 +352,7 @@
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -338,11 +360,14 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddDiskOffering',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   data () {
@@ -363,7 +388,8 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
-      loading: false
+      loading: false,
+      disksizestrictness: false
     }
   },
   beforeCreate () {
@@ -382,18 +408,18 @@ export default {
       }
     ]
     this.fetchData()
-    this.isPublic = this.isAdmin()
+    this.isPublic = isAdmin()
   },
   methods: {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      if (this.isAdmin()) {
+      if (isAdmin()) {
         this.fetchStorageTagData()
       }
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
@@ -401,6 +427,7 @@ export default {
     fetchDomainData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       params.details = 'min'
       this.domainLoading = true
       api('listDomains', params).then(json => {
@@ -413,6 +440,7 @@ export default {
     fetchZoneData () {
       const params = {}
       params.listAll = true
+      params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
@@ -466,7 +494,12 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }
@@ -478,7 +511,8 @@ export default {
           storageType: values.storagetype,
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
-          customized: values.customdisksize
+          customized: values.customdisksize,
+          disksizestrictness: values.disksizestrictness
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize
@@ -545,6 +579,7 @@ export default {
           params.storagepolicy = values.storagepolicy
         }
         api('createDiskOffering', params).then(json => {
+          this.$emit('publish-disk-offering-id', json?.creatediskofferingresponse?.diskoffering?.id)
           this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
           this.$emit('refresh-data')
           this.closeAction()

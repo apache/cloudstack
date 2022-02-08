@@ -226,6 +226,7 @@ public class UsageSanityChecker {
 
         checkItemCountByPstmt();
 
+        updateNewMaxId();
         return errors.toString();
     }
 
