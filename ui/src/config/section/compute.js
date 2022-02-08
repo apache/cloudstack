@@ -343,9 +343,31 @@ export default {
           message: 'message.desc.reset.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#resetting-ssh-keys',
           dataView: true,
+          args: ['keypair', 'account', 'domainid'],
           show: (record) => { return ['Stopped'].includes(record.state) },
-          component: () => import('@/views/compute/ResetSSH'),
-          popup: true
+          mapping: {
+            keypair: {
+              api: 'listSSHKeyPairs',
+              params: (record) => { return { account: record.account, domainid: record.domainid } }
+            },
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
+          }
         },
         {
           api: 'assignVirtualMachine',

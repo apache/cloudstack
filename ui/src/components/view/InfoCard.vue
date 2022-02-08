@@ -362,11 +362,11 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.keypairs">
-          <div class="resource-detail-item__label">{{ $t('SSH Key Pairs') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="key" />
             <li v-for="keypair in keypairs" :key="keypair">
-              <router-link :to="{ path: '/ssh/' + keypair }"><a-tag>{{ keypair }}</a-tag></router-link>
+              <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
             </li>
           </div>
         </div>
@@ -607,7 +607,7 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).route.name !== '404'"
-            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
+            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : item.param === 'keypair' ? resource.name : resource.id) }">
             <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).route.meta.icon" >
               {{ $t('label.view') + ' ' + $t(item.title) }}
             </a-button>
@@ -816,9 +816,13 @@ export default {
       return null
     },
     keypairs () {
-      if (this.resource.keypairs && this.resource.keypairs !== '') {
-        return this.resource.keypairs.split(', ')
+      if (!this.resource.keypairs) {
+        return null
       }
+      if (typeof this.resource.keypairs === 'string' || this.resource.keypairs instanceof String) {
+        return this.resource.keypairs.split(',')
+      }
+      return [this.resource.keypairs.toString()]
     },
     templateIcon () {
       return this.resource.templateid

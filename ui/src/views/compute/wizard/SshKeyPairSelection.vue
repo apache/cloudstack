@@ -25,8 +25,9 @@
     <a-table
       :loading="loading"
       :columns="columns"
-      :dataSource="tableSource"
+      :dataSource="items"
       :pagination="false"
+      :rowKey="item => item.name"
       :rowSelection="rowSelection"
       size="middle"
       :scroll="{ y: 225 }"
@@ -110,24 +111,10 @@ export default {
     }
   },
   computed: {
-    tableSource () {
-      const dataItems = []
-      this.items.map((item) => {
-        dataItems.push({
-          key: item.name,
-          name: item.name,
-          account: item.account,
-          domain: item.domain
-        })
-      })
-      console.table(dataItems)
-      return dataItems
-    },
     rowSelection () {
       return {
         type: 'checkbox',
         onChange: (selectedRowKeys, selectedRows) => {
-          console.table(selectedRowKeys)
           this.$emit('select-ssh-key-pair-item', selectedRows)
         }
       }
@@ -136,7 +123,7 @@ export default {
   watch: {
     value (newValue, oldValue) {
       if (newValue && newValue !== oldValue) {
-        this.selectedRowKeys = [newValue]
+        this.selectedRowKeys = newValue
       }
     },
     loading () {

@@ -1238,6 +1238,7 @@
 "label.keyboard": "Keyboard language",
 "label.keyboardtype": "Keyboard type",
 "label.keypair": "SSH Key Pair",
+"label.keypairs": "SSH Key Pair(s)",
 "label.kubeconfig.cluster": "Kubernetes Cluster Config",
 "label.kubernetes": "Kubernetes",
 "label.kubernetes.cluster": "Kubernetes cluster",

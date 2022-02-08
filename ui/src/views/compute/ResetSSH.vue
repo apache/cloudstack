@@ -17,9 +17,7 @@
 
 <template>
   <a-form class="form" v-ctrl-enter="handleSubmit">
-
     <p v-html="$t('Select SSH Keys from the list')" />
-
     <div v-if="loading" class="loading">
       <a-icon type="loading" style="color: #1890ff;" />
     </div>
@@ -39,7 +37,7 @@
         :loading="loading"
         :columns="columns"
         :dataSource="items"
-        :rowKey="record => record.id || record.name"
+        :rowKey="record => record.name"
         :pagination="{showSizeChanger: true, total: total}"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         @change="handleTableChange"
@@ -82,7 +80,8 @@ export default {
       options: {
         page: 1,
         pageSize: 10,
-        keyword: ''
+        keyword: '',
+        response: 'json'
       },
       filter: '',
       loading: false
@@ -96,11 +95,7 @@ export default {
       this.loading = true
       this.items = []
       this.total = 0
-      api('listSSHKeyPairs', {
-        page: this.options.page,
-        pageSize: this.options.pageSize,
-        response: 'json'
-      }).then(response => {
+      api('listSSHKeyPairs', this.options).then(response => {
         this.total = response.listsshkeypairsresponse.count
         if (this.total !== 0) {
           this.items = response.listsshkeypairsresponse.sshkeypair
@@ -129,11 +124,19 @@ export default {
         id: this.resource.id,
         keypairs: this.selectedRowKeys.join(',')
       }).then(response => {
-        this.$notification.success({
-          message: this.$t('SSH Key(s) resetted sucessfully')
-        })
-        this.$parent.$parent.close()
-        this.$emit('refresh-data')
+        const jobId = response.resetSSHKeyforvirtualmachineresponse.jobid
+        const title = `${this.$t('label.reset.ssh.key.pair')}`
+        if (jobId) {
+          this.$pollJob({
+            jobId,
+            title,
+            description: this.resource.name,
+            successMessage: `${title} ${this.$t('label.success')}`,
+            loadingMessage: `${title} ${this.$t('label.in.progress')}`,
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }
+        this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

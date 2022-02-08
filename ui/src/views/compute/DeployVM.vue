@@ -461,7 +461,7 @@
                       :items="options.sshKeyPairs"
                       :row-count="rowCount.sshKeyPairs"
                       :zoneId="zoneId"
-                      :value="keyPairs"
+                      :value="sshKeyPairs"
                       :loading="loading.sshKeyPairs"
                       :preFillContent="dataPreFill"
                       @select-ssh-key-pair-item="($event) => updateSshKeyPairs($event)"
@@ -936,9 +936,6 @@ export default {
     affinityGroupIds () {
       return _.map(this.affinityGroups, 'id')
     },
-    keyPairs () {
-      return _.map(this.sshKeyPairs, 'name')
-    },
     params () {
       return {
         serviceOfferings: {
@@ -1206,7 +1203,6 @@ export default {
       if (this.rootDiskSelected?.id) {
         instanceConfig.overridediskofferingid = this.rootDiskSelected.id
       }
-      console.log('overrided value ' + instanceConfig.overridediskofferingid)
       if (instanceConfig.overridediskofferingid) {
         this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
       } else {
@@ -1215,7 +1211,6 @@ export default {
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
       this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-      this.sshKeyPairs = _.filter(this.options.sshKeyPairs, (option) => _.includes(instanceConfig.keypairs, option.name))
 
       if (this.zone) {
         this.vm.zoneid = this.zone.id
@@ -1297,8 +1292,7 @@ export default {
         this.vm.affinitygroup = this.affinityGroups
       }
       if (this.sshKeyPairs) {
-        console.log(this.sshKeyPairs)
-        this.vm.keypairs = this.sshKeyPairs.map((sshKeyPair) => { return sshKeyPair.name })
+        this.vm.keypairs = this.sshKeyPairs
       }
     }
   },
@@ -1640,6 +1634,7 @@ export default {
       this.form.setFieldsValue({
         keypairs: names
       })
+      this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
