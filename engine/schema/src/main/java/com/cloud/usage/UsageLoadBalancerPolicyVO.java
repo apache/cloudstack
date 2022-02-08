@@ -20,6 +20,9 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -30,6 +33,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "usage_load_balancer_policy")
 public class UsageLoadBalancerPolicyVO implements InternalIdentity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
     @Column(name = "zone_id")
     private long zoneId;
 
@@ -39,8 +47,8 @@ public class UsageLoadBalancerPolicyVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name = "id")
-    private long id;
+    @Column(name = "lb_id")
+    private long lbId;
 
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -57,7 +65,7 @@ public class UsageLoadBalancerPolicyVO implements InternalIdentity {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.id = id;
+        this.lbId = id;
         this.created = created;
         this.deleted = deleted;
     }
@@ -89,5 +97,9 @@ public class UsageLoadBalancerPolicyVO implements InternalIdentity {
 
     public void setDeleted(Date deleted) {
         this.deleted = deleted;
+    }
+
+    public long getLbId() {
+        return lbId;
     }
 }

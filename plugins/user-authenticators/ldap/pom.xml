@@ -175,6 +175,10 @@
             <version>${ads.version}</version>
             <scope>test</scope>
             <exclusions>
+                <exclusion>
+                    <artifactId>log4j</artifactId>
+                    <groupId>log4j</groupId>
+                </exclusion>
                 <!--
                  shared-ldap-schema module needs to be excluded to avoid multiple schema resources on the classpath
                 -->

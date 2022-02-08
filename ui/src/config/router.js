@@ -43,7 +43,13 @@ function generateRouterMap (section) {
     name: section.name,
     path: '/' + section.name,
     hidden: section.hidden,
-    meta: { title: section.title, icon: section.icon, docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp), searchFilters: section.searchFilters },
+    meta: {
+      title: section.title,
+      icon: section.icon,
+      docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp),
+      searchFilters: section.searchFilters,
+      related: section.related
+    },
     component: RouteView
   }
 

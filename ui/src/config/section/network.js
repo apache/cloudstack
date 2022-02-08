@@ -99,7 +99,7 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: ['cleanup'],
+          args: (record) => record.vpcid == null ? ['cleanup'] : [], // if it is a tier in a VPC and so it has a vpc do not allow "cleanup
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,

@@ -189,7 +189,8 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         this.maxHostsPerCluster = maxHostsPerCluster;
     }
 
-    public Boolean getVmSnapshotEnabled() {
+    @Override
+    public Boolean isVmSnapshotEnabled() {
         return vmSnapshotEnabled;
     }
 

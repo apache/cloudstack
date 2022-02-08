@@ -24,6 +24,7 @@ import { CURRENT_PROJECT } from '@/store/mutation-types'
 import { i18n } from '@/locales'
 import store from '@/store'
 
+let source
 const service = axios.create({
   timeout: 600000
 })
@@ -128,6 +129,8 @@ const err = (error) => {
 
 // request interceptor
 service.interceptors.request.use(config => {
+  source = sourceToken.getSource()
+  config.cancelToken = source.token
   if (config && config.params) {
     config.params.response = 'json'
     const project = Vue.ls.get(CURRENT_PROJECT)
@@ -154,7 +157,23 @@ const installer = {
   }
 }
 
+const sourceToken = {
+  init: () => { source = axios.CancelToken.source() },
+  isCancel: (e) => {
+    return axios.isCancel(e)
+  },
+  getSource: () => {
+    if (!source) sourceToken.init()
+    return source
+  },
+  cancel: () => {
+    if (!source) sourceToken.init()
+    source.cancel()
+  }
+}
+
 export {
   installer as VueAxios,
-  service as axios
+  service as axios,
+  sourceToken
 }

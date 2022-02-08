@@ -21,6 +21,7 @@ import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
+import { sourceToken } from '@/utils/request'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -177,20 +178,22 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
-        let countNotify = store.getters.countNotify
-        countNotify++
-        store.commit('SET_COUNT_NOTIFY', countNotify)
-        notification.error({
-          top: '65px',
-          message: i18n.t('label.error'),
-          description: catchMessage,
-          duration: 0,
-          onClose: () => {
-            let countNotify = store.getters.countNotify
-            countNotify > 0 ? countNotify-- : countNotify = 0
-            store.commit('SET_COUNT_NOTIFY', countNotify)
-          }
-        })
+        if (!sourceToken.isCancel(e)) {
+          let countNotify = store.getters.countNotify
+          countNotify++
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+          notification.error({
+            top: '65px',
+            message: i18n.t('label.error'),
+            description: catchMessage,
+            duration: 0,
+            onClose: () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
+          })
+        }
         catchMethod && catchMethod()
       })
     }

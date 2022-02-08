@@ -42,6 +42,8 @@ public class DiskProfile {
     private Long iopsReadRate;
     private Long iopsWriteRate;
     private String cacheMode;
+    private Long minIops;
+    private Long maxIops;
 
     private HypervisorType hyperType;
 
@@ -227,4 +229,22 @@ public class DiskProfile {
     public String getCacheMode() {
         return cacheMode;
     }
+
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
 }

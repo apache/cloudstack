@@ -2160,7 +2160,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final List<String> implicitHostTags = ssCmd.getHostTags();
             if (!implicitHostTags.isEmpty()) {
                 if (hostTags == null) {
-                    hostTags = _hostTagsDao.gethostTags(host.getId());
+                    hostTags = _hostTagsDao.getHostTags(host.getId());
                 }
                 if (hostTags != null) {
                     implicitHostTags.removeAll(hostTags);
@@ -3172,7 +3172,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public String getHostTags(final long hostId) {
-        final List<String> hostTags = _hostTagsDao.gethostTags(hostId);
+        final List<String> hostTags = _hostTagsDao.getHostTags(hostId);
         if (hostTags == null) {
             return null;
         } else {
