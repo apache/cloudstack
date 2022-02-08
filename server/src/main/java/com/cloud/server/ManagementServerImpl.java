@@ -35,8 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
-
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -679,9 +677,9 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.org.Cluster;
@@ -780,7 +778,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
-    //, VirtualMachine.Type.DomainRouter };
 
     @Inject
     public AccountManager _accountMgr;
@@ -4529,7 +4526,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public HypervisorCapabilities updateHypervisorCapabilities(final Long id, final Long maxGuestsLimit, final Boolean securityGroupEnabled) {
+    public HypervisorCapabilities updateHypervisorCapabilities(UpdateHypervisorCapabilitiesCmd cmd) {
+        final Long id = cmd.getId();
+        final Boolean securityGroupEnabled = cmd.getSecurityGroupEnabled();
+        final Long maxGuestsLimit = cmd.getMaxGuestsLimit();
+        final Integer maxDataVolumesLimit = cmd.getMaxDataVolumesLimit();
+        final Boolean storageMotionSupported = cmd.getStorageMotionSupported();
+        final Integer maxHostsPerClusterLimit = cmd.getMaxHostsPerClusterLimit();
+        final Boolean vmSnapshotEnabled = cmd.getVmSnapshotEnabled();
         HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
 
         if (hpvCapabilities == null) {
@@ -4538,19 +4542,37 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        final boolean updateNeeded = maxGuestsLimit != null || securityGroupEnabled != null;
+        final boolean updateNeeded = securityGroupEnabled != null || maxGuestsLimit != null ||
+                maxDataVolumesLimit != null || storageMotionSupported != null || maxHostsPerClusterLimit != null ||
+                vmSnapshotEnabled != null;
         if (!updateNeeded) {
             return hpvCapabilities;
         }
 
         hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
 
+        if (securityGroupEnabled != null) {
+            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        }
+
         if (maxGuestsLimit != null) {
             hpvCapabilities.setMaxGuestsLimit(maxGuestsLimit);
         }
 
-        if (securityGroupEnabled != null) {
-            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        if (maxDataVolumesLimit != null) {
+            hpvCapabilities.setMaxDataVolumesLimit(maxDataVolumesLimit);
+        }
+
+        if (storageMotionSupported != null) {
+            hpvCapabilities.setStorageMotionSupported(storageMotionSupported);
+        }
+
+        if (maxHostsPerClusterLimit != null) {
+            hpvCapabilities.setMaxHostsPerCluster(maxHostsPerClusterLimit);
+        }
+
+        if (vmSnapshotEnabled != null) {
+            hpvCapabilities.setVmSnapshotEnabled(vmSnapshotEnabled);
         }
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
