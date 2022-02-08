@@ -346,11 +346,8 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      if (isAdminOrDomainAdmin()) {
-        params.supportedServices = 'SourceNat'
-        if (this.selectedDomain.id !== '-1') { // domain is visible only for admins
-          params.domainid = this.selectedDomain.id
-        }
+      if (this.selectedDomain.id !== '-1') { // domain is visible only for admins
+        params.domainid = this.selectedDomain.id
       }
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
