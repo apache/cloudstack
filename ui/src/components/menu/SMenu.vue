@@ -154,3 +154,9 @@ export default {
   }
 }
 </script>
+
+<style>
+.sider .ant-menu-vertical .ant-menu-item {
+  margin-right: 0;
+}
+</style>
