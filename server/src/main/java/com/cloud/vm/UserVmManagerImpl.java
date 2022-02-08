@@ -908,36 +908,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String keypairnames = "";
-
-        List<SSHKeyPairVO> s_list = new ArrayList<>();
+        String sshPublicKeys = "";
+        List<SSHKeyPairVO> pairs = new ArrayList<>();
 
         if (!cmd.getNames().isEmpty() && cmd.getNames() != null) {
-            s_list = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
+            pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
+            for (SSHKeyPairVO pair : pairs) {
+                if (pair == null) {
+                    throw new InvalidParameterValueException("A key pair with name '" + pair.getName() + "' was not found.");
+                }
+                    String publicKey = pair.getPublicKey();
+                    sshPublicKeys = sshPublicKeys + publicKey + "\n";
+                    s_logger.info("the public key for keypair name " + pair.getName() + " is " + publicKey);
+
+            }
             keypairnames = String.join(", ", cmd.getNames());
         }
         else {
             throw new InvalidParameterValueException("No keypair given as input");
         }
 
-        if (s_list.isEmpty() || s_list == null) {
+        if (pairs.isEmpty() || pairs == null) {
             throw new InvalidParameterValueException("Any key pair with the given names does not exist for account " + owner.getAccountName()
                     + " in specified domain id");
         }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
-        String sshPublicKey = "";
-
-        if (s_list != null) {
-            for (SSHKeyPairVO s_each : s_list) {
-                String publicKey = s_each.getPublicKey();
-                sshPublicKey = sshPublicKey + publicKey;
-                sshPublicKey = sshPublicKey + "\n";
-                s_logger.info("the public key for keypair name " + s_each.getName() + " is " + publicKey);
-            }
-        }
-
-        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, keypairnames);
+        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKeys, keypairnames);
 
         UserVmVO vm = _vmDao.findById(vmId);
         _vmDao.loadDetails(vm);
