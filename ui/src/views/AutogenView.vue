@@ -42,6 +42,13 @@
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-switch
+                  v-if="!projectView && hasProjectId"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
+                  :checked="$store.getters.listAllProjects"
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
                   <template slot="title">
                     {{ $t('label.filterby') }}
@@ -99,7 +106,7 @@
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -127,10 +134,14 @@
             :resource="resource"
             :loading="loading"
             :action="{currentAction}"
+            :selectedRowKeys="selectedRowKeys"
+            :selectedItems="selectedItems"
+            :chosenColumns="chosenColumns"
             v-bind="{currentAction}"
             @refresh-data="fetchData"
             @poll-action="pollActionCompletion"
-            @close-action="closeAction"/>
+            @close-action="closeAction"
+            @cancel-bulk-action="handleCancel"/>
         </a-modal>
       </keep-alive>
       <a-modal
@@ -507,6 +518,7 @@ export default {
       showAction: false,
       dataView: false,
       projectView: false,
+      hasProjectId: false,
       selectedFilter: '',
       filters: [],
       searchFilters: [],
@@ -637,6 +649,9 @@ export default {
     },
     '$store.getters.metrics' (oldVal, newVal) {
       this.fetchData()
+    },
+    '$store.getters.listAllProjects' (oldVal, newVal) {
+      this.fetchData()
     }
   },
   computed: {
@@ -743,6 +758,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -827,11 +843,19 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
+        if (['listSSHKeyPairs'].includes(this.apiName)) {
+          delete params.id
+          params.name = this.$route.params.id
+        }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
         }
+      }
+
+      if (this.$store.getters.listAllProjects && !this.projectView) {
+        params.projectid = '-1'
       }
 
       params.page = this.page
@@ -900,8 +924,10 @@ export default {
           }
         }
         if (this.items.length > 0) {
-          this.resource = this.items[0]
-          this.$emit('change-resource', this.resource)
+          if (!this.showAction) {
+            this.resource = this.items[0]
+            this.$emit('change-resource', this.resource)
+          }
         } else {
           if (this.dataView) {
             this.$router.push({ path: '/exception/404' })
@@ -963,7 +989,23 @@ export default {
       this.form = this.$form.createForm(this)
       this.formModel = {}
       if (action.component && action.api && !action.popup) {
-        this.$router.push({ name: action.api })
+        const query = {}
+        if (this.$route.path.startsWith('/vm')) {
+          switch (true) {
+            case ('templateid' in this.$route.query):
+              query.templateid = this.$route.query.templateid
+              break
+            case ('isoid' in this.$route.query):
+              query.isoid = this.$route.query.isoid
+              break
+            case ('networkid' in this.$route.query):
+              query.networkid = this.$route.query.networkid
+              break
+            default:
+              break
+          }
+        }
+        this.$router.push({ name: action.api, query })
         return
       }
       this.currentAction = action
@@ -1012,7 +1054,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -1131,8 +1173,7 @@ export default {
             if (action.response) {
               const description = action.response(result.jobresult)
               if (description) {
-                this.$showNotification({
-                  type: 'info',
+                this.$notification.info({
                   message: this.$t(action.label),
                   description: (<span domPropsInnerHTML={description}></span>),
                   duration: 0
@@ -1576,5 +1617,10 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+/deep/.ant-alert-message {
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -26,6 +26,14 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.vm.VmDetailConstants;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -179,6 +187,12 @@ public class CommandSetupHelper {
     private RouterControlHelper _routerControlHelper;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    private NetworkOfferingDetailsDao networkOfferingDetailsDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -848,6 +862,15 @@ public class CommandSetupHelper {
                         vifMacAddress, networkRate, ipAddr.isOneToOneNat());
 
                 setIpAddressNetworkParams(ip, network, router);
+                if (router.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                    Map<String, String> details = new HashMap<>();
+                    String defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
+                    if (defaultSystemVmNicAdapterType == null) {
+                        defaultSystemVmNicAdapterType = Config.VmwareSystemVmNicDeviceType.getDefaultValue();
+                    }
+                    details.put(VmDetailConstants.NIC_ADAPTER, defaultSystemVmNicAdapterType);
+                    ip.setDetails(details);
+                }
                 ipsToSend[i++] = ip;
                 /*
                  * send the firstIP = true for the first Add, this is to create
@@ -1152,6 +1175,41 @@ public class CommandSetupHelper {
             ipAddress.setPrivateGateway(false);
         }
         ipAddress.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
+
+        final NetworkOfferingVO networkOfferingVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        NicTO nicTO = new NicTO();
+        nicTO.setMac(ipAddress.getVifMacAddress());
+        nicTO.setType(ipAddress.getTrafficType());
+        nicTO.setGateway(ipAddress.getVlanGateway());
+        nicTO.setBroadcastUri(BroadcastDomainType.fromString(ipAddress.getBroadcastUri()));
+        nicTO.setType(network.getTrafficType());
+        nicTO.setName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
+        nicTO.setBroadcastType(network.getBroadcastDomainType());
+        nicTO.setIsolationuri(network.getBroadcastUri());
+        nicTO.setNetworkRateMbps(_configMgr.getNetworkOfferingNetworkRate(networkOfferingVO.getId(), network.getDataCenterId()));
+        nicTO.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
+        nicTO.setDetails(getNicDetails(network));
+
+        ipAddress.setNicTO(nicTO);
+    }
+
+    private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
+        if (network == null) {
+            s_logger.debug("Unable to get NIC details as the network is null");
+            return null;
+        }
+        Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+        if (details != null) {
+            details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacLearning, NetworkOrchestrationService.MacLearning.value().toString());
+        }
+        NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+        if (pvlantypeDetail != null) {
+            details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
+        }
+        return details;
     }
 
 }

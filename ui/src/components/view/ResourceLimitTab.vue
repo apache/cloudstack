@@ -105,10 +105,10 @@ export default {
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
+        this.form.resetFields()
         this.formLoading = false
       } catch (e) {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('message.request.failed'),
           description: e
         })

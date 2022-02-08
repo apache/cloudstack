@@ -1471,6 +1471,12 @@ export default {
           params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageKey.value
           index++
         }
+        if (this.prefillContent.secondaryStoragePolicy &&
+          this.prefillContent.secondaryStoragePolicy.value.length > 0) {
+          params['details[' + index.toString() + '].key'] = 'storagepolicy'
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
+          index++
+        }
       }
 
       try {
@@ -1547,8 +1553,7 @@ export default {
         this.$emit('refresh-data')
       } catch (e) {
         this.loading = false
-        await this.$showNotification({
-          type: 'error',
+        await this.$notification.error({
           message: this.$t('message.request.failed'),
           description: e
         })

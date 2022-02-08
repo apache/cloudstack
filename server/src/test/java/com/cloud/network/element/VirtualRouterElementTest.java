@@ -95,7 +95,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -336,10 +335,6 @@ public class VirtualRouterElementTest {
                 /* multicastRateMbps */ 0,
                 /* offerHA */ false,
                 "displayText",
-                ProvisioningType.THIN,
-                /* useLocalStorage */ false,
-                /* recreatable */ false,
-                "tags",
                 /* systemUse */ false,
                 VirtualMachine.Type.DomainRouter,
                 /* defaultUse */ false);

@@ -253,7 +253,7 @@
         <a-form-item :label="$t('label.service.lb.elasticlbcheckbox')" v-if="guestType == 'shared' && lbServiceChecked && lbServiceProvider === 'Netscaler'">
           <a-switch v-decorator="['elasticlb', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="(guestType === 'shared' || guestType === 'isolated') && lbServiceChecked && firewallServiceChecked && lbServiceProvider === 'F5BigIp' && firewallServiceProvider === 'JuniperSRX'">
+        <a-form-item :label="$t('label.service.lb.inlinemodedropdown')" v-if="['shared', 'isolated'].includes(guestType) && lbServiceChecked && firewallServiceChecked && ['F5BigIp', 'Netscaler'].includes(lbServiceProvider) && ['JuniperSRX'].includes(firewallServiceProvider)">
           <a-radio-group
             v-decorator="['inlinemode', {
               initialValue: 'false'
@@ -756,23 +756,14 @@ export default {
         this.loading = true
         var params = {}
 
-        var self = this
-        var selectedServices = null
         var keys = Object.keys(values)
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
         const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
-          if (self.isSupportedServiceObject(values[key])) {
-            if (selectedServices == null) {
-              selectedServices = {}
-            }
-            selectedServices[key] = values[key]
-          } else {
-            if (!ignoredKeys.includes(key) &&
-              values[key] != null && values[key] !== undefined &&
-              !(key === 'availability' && values[key] === 'Optional')) {
-              params[key] = values[key]
-            }
+          if (!ignoredKeys.includes(key) &&
+            values[key] != null && values[key] !== undefined &&
+            !(key === 'availability' && values[key] === 'Optional')) {
+            params[key] = values[key]
           }
         })
 
@@ -810,12 +801,12 @@ export default {
             params.conservemode = false
           }
         }
-        if (selectedServices != null) {
-          var supportedServices = Object.keys(selectedServices)
+        if (this.selectedServiceProviderMap != null) {
+          var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = supportedServices.join(',')
           for (var k in supportedServices) {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
-            params['serviceProviderList[' + k + '].provider'] = selectedServices[supportedServices[k]].provider
+            params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
           var serviceCapabilityIndex = 0
           if (supportedServices.includes('Connectivity')) {
@@ -871,7 +862,7 @@ export default {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true
               serviceCapabilityIndex++
             }
-            if (values.inlinemode === true && ((selectedServices.Lb.provider === 'F5BigIp') || (selectedServices.Lb.provider === 'Netscaler'))) {
+            if (values.inlinemode === true && ((this.selectedServiceProviderMap.Lb === 'F5BigIp') || (this.selectedServiceProviderMap.Lb === 'Netscaler'))) {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.inlinemode
@@ -881,7 +872,7 @@ export default {
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation'
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.isolation
             serviceCapabilityIndex++
-            if (selectedServices.Lb.provider === 'InternalLbVm') {
+            if (this.selectedServiceProviderMap.Lb === 'InternalLbVm') {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'lbSchemes'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal'

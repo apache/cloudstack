@@ -571,8 +571,7 @@ export default {
         data.aclid = this.resource.id
 
         api('createNetworkACL', {}, 'POST', data).then(() => {
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: this.$t('label.success'),
             description: this.$t('message.success.add.rule')
           })

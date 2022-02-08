@@ -166,7 +166,8 @@ export default {
       supportedServices: [],
       supportedServiceLoading: false,
       connectivityServiceChecked: false,
-      sourceNatServiceChecked: false
+      sourceNatServiceChecked: false,
+      selectedServiceProviderMap: {}
     }
   },
   beforeCreate () {
@@ -190,9 +191,6 @@ export default {
     },
     isAdmin () {
       return isAdmin()
-    },
-    isSupportedServiceObject (obj) {
-      return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
     },
     fetchDomainData () {
       const params = {}
@@ -307,6 +305,11 @@ export default {
       if (service === 'SourceNat') {
         this.sourceNatServiceChecked = checked
       }
+      if (checked && provider != null & provider !== undefined) {
+        this.selectedServiceProviderMap[service] = provider
+      } else {
+        delete this.selectedServiceProviderMap[service]
+      }
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -345,23 +348,12 @@ export default {
         if (zoneId) {
           params.zoneid = zoneId
         }
-        var selectedServices = null
-        var keys = Object.keys(values)
-        var self = this
-        keys.forEach(function (key, keyIndex) {
-          if (self.isSupportedServiceObject(values[key])) {
-            if (selectedServices == null) {
-              selectedServices = {}
-            }
-            selectedServices[key] = values[key]
-          }
-        })
-        if (selectedServices != null) {
-          var supportedServices = Object.keys(selectedServices)
+        if (this.selectedServiceProviderMap != null) {
+          var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = supportedServices.join(',')
           for (var k in supportedServices) {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
-            params['serviceProviderList[' + k + '].provider'] = selectedServices[supportedServices[k]].provider
+            params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
           }
           var serviceCapabilityIndex = 0
           if (supportedServices.includes('Connectivity')) {

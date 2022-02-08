@@ -30,6 +30,7 @@ const getters = {
   userInfo: state => state.user.info,
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
+  listAllProjects: state => state.app.listAllProjects,
   headerNotices: state => state.user.headerNotices,
   isLdapEnabled: state => state.user.isLdapEnabled,
   cloudian: state => state.user.cloudian,

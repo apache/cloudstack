@@ -21,6 +21,7 @@ import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
+import { sourceToken } from '@/utils/request'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -177,20 +178,22 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
-        let countNotify = store.getters.countNotify
-        countNotify++
-        store.commit('SET_COUNT_NOTIFY', countNotify)
-        notification.error({
-          top: '65px',
-          message: i18n.t('label.error'),
-          description: catchMessage,
-          duration: 0,
-          onClose: () => {
-            let countNotify = store.getters.countNotify
-            countNotify > 0 ? countNotify-- : countNotify = 0
-            store.commit('SET_COUNT_NOTIFY', countNotify)
-          }
-        })
+        if (!sourceToken.isCancel(e)) {
+          let countNotify = store.getters.countNotify
+          countNotify++
+          store.commit('SET_COUNT_NOTIFY', countNotify)
+          notification.error({
+            top: '65px',
+            message: i18n.t('label.error'),
+            description: catchMessage,
+            duration: 0,
+            onClose: () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
+          })
+        }
         catchMethod && catchMethod()
       })
     }
@@ -237,33 +240,47 @@ export const notifierPlugin = {
       })
     }
 
-    Vue.prototype.$showNotification = function (config) {
-      let countNotify = store.getters.countNotify
-      countNotify++
-      store.commit('SET_COUNT_NOTIFY', countNotify)
-      const defaultConfig = {
+    Vue.prototype.$notification = {
+      defaultConfig: {
         top: '65px',
         onClose: () => {
           let countNotify = store.getters.countNotify
           countNotify > 0 ? countNotify-- : countNotify = 0
           store.commit('SET_COUNT_NOTIFY', countNotify)
         }
-      }
-      config = Object.assign({}, defaultConfig, config)
-      switch (config.type) {
-        case 'info':
-          notification.info(config)
-          break
-        case 'error':
-          notification.error(config)
-          break
-        case 'success':
-          notification.success(config)
-          break
-        case 'warning':
-          notification.warning(config)
-          break
-      }
+      },
+      setCountNotify: () => {
+        let countNotify = store.getters.countNotify
+        countNotify++
+        store.commit('SET_COUNT_NOTIFY', countNotify)
+      },
+      info: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.info(config)
+      },
+      error: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.error(config)
+      },
+      success: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.success(config)
+      },
+      warning: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.warning(config)
+      },
+      warn: (config) => {
+        Vue.prototype.$notification.setCountNotify()
+        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        notification.warn(config)
+      },
+      close: (key) => notification.close(key),
+      destroy: () => notification.destroy()
     }
   }
 }

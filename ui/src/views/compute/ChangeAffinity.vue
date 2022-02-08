@@ -149,8 +149,7 @@ export default {
         id: this.resource.id,
         affinitygroupids: this.selectedRowKeys.join(',')
       }).then(response => {
-        this.$showNotification({
-          type: 'success',
+        this.$notification.success({
           message: this.$t('message.success.change.affinity.group')
         })
         this.$parent.$parent.close()

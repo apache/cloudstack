@@ -306,8 +306,7 @@ export default {
         })
         this.closeModal()
       }).catch(error => {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('message.request.failed'),
           description: (error.response?.headers?.['x-description']) || error.message,
           duration: 0

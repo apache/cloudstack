@@ -784,8 +784,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (newSize < oldSize) {
-                throw new Exception(
-                        "VMware doesn't support shrinking volume from larger size: " + oldSize / ResourceType.bytesToMiB + " GB to a smaller size: " + newSize / ResourceType.bytesToMiB + " GB");
+                String errorMsg = String.format("VMware doesn't support shrinking volume from larger size [%s] GB to a smaller size [%s] GB. Can't resize volume of VM [name: %s].",
+                        oldSize / Float.valueOf(ResourceType.bytesToMiB), newSize / Float.valueOf(ResourceType.bytesToMiB), vmName);
+                s_logger.error(errorMsg);
+                throw new Exception(errorMsg);
             } else if (newSize == oldSize) {
                 return new ResizeVolumeAnswer(cmd, true, "success", newSize * ResourceType.bytesToKiB);
             }
@@ -827,11 +829,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
 
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist in VMware datacenter";
-
-                s_logger.error(msg);
-
-                throw new Exception(msg);
+                String errorMsg = String.format("VM [name: %s] does not exist in VMware datacenter.", vmName);
+                s_logger.error(errorMsg);
+                throw new Exception(errorMsg);
             }
 
 
@@ -894,7 +894,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
             if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure VM to resize disk. vmName: " + vmName);
+                throw new Exception(String.format("Failed to configure VM [name: %s] to resize disk.", vmName));
             }
 
             ResizeVolumeAnswer answer = new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
@@ -909,11 +909,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             return answer;
         } catch (Exception e) {
-            s_logger.error("Unable to resize volume", e);
-
-            String error = "Failed to resize volume: " + e.getMessage();
-
-            return new ResizeVolumeAnswer(cmd, false, error);
+            String errorMsg = String.format("Failed to resize volume of VM [name: %s] due to: [%s].", vmName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            return new ResizeVolumeAnswer(cmd, false, errorMsg);
         } finally {
             // OfflineVmwareMigration: 6. check if a worker was used and destroy it if needed
             try {
@@ -924,7 +922,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.destroy();
                 }
             } catch (Throwable e) {
-                s_logger.info("Failed to destroy worker VM: " + vmName);
+                s_logger.error(String.format("Failed to destroy worker VM [name: %s] due to: [%s].", vmName, e.getMessage()), e);
             }
         }
     }
@@ -932,26 +930,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private VirtualDisk getDiskAfterResizeDiskValidations(VirtualMachineMO vmMo, String volumePath) throws Exception {
         Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(volumePath);
         if (vdisk == null) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("resize volume done (failed)");
-            }
-            throw new Exception("No such disk device: " + volumePath);
+            String errorMsg = String.format("Resize volume of VM [name: %s] failed because disk device [path: %s] doesn't exist.", vmMo.getVmName(), volumePath);
+            s_logger.error(errorMsg);
+            throw new Exception(errorMsg);
         }
 
         // IDE virtual disk cannot be re-sized if VM is running
-        if (vdisk.second() != null && vdisk.second().contains("ide")) {
-            throw new Exception("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. " +
-                    "Please re-try when virtual disk is attached to a VM using a SCSI controller.");
+        if (vdisk.second() != null && vdisk.second().toLowerCase().contains("ide")) {
+            String errorMsg = String.format("Re-sizing a virtual disk over an IDE controller is not supported in the VMware hypervisor. "
+                    + "Please re-try when virtual disk is attached to VM [name: %s] using a SCSI controller.", vmMo.getVmName());
+            s_logger.error(errorMsg);
+            throw new Exception(errorMsg);
         }
 
-        if (vdisk.second() != null && !vdisk.second().toLowerCase().startsWith("scsi")) {
-            s_logger.error("Unsupported disk device bus " + vdisk.second());
-            throw new Exception("Unsupported disk device bus " + vdisk.second());
-        }
         VirtualDisk disk = vdisk.first();
         if ((VirtualDiskFlatVer2BackingInfo) disk.getBacking() != null && ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent() != null) {
-            s_logger.error("Resize is not supported because Disk device has Parent " + ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent().getUuid());
-            throw new Exception("Resize is not supported because Disk device has Parent " + ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent().getUuid());
+            String errorMsg = String.format("Resize of volume in VM [name: %s] is not supported because Disk device [path: %s] has Parents: [%s].",
+                    vmMo.getVmName(), volumePath, ((VirtualDiskFlatVer2BackingInfo) disk.getBacking()).getParent().getUuid());
+            s_logger.error(errorMsg);
+            throw new Exception(errorMsg);
         }
         return disk;
     }
@@ -1254,26 +1251,42 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource PlugNicCommand " + _gson.toJson(cmd));
+        }
+
+        try {
+            VirtualEthernetCardType nicDeviceType = null;
+            if (cmd.getDetails() != null) {
+                nicDeviceType = VirtualEthernetCardType.valueOf(cmd.getDetails().get("nicAdapter"));
+            }
+            plugNicCommandInternal(cmd.getVmName(), nicDeviceType, cmd.getNic(), cmd.getVMType());
+            return new PlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
+        }
+    }
+
+    private void plugNicCommandInternal(String vmName, VirtualEthernetCardType nicDeviceType, NicTO nicTo, VirtualMachine.Type vmType) throws Exception {
         getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         VmwareContext context = getServiceContext();
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-            String vmName = cmd.getVmName();
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+        VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
 
-            if (vmMo == null) {
-                if (hyperHost instanceof HostMO) {
-                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
-                    vmMo = clusterMo.findVmOnHyperHost(vmName);
-                }
+        if (vmMo == null) {
+            if (hyperHost instanceof HostMO) {
+                ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
+                vmMo = clusterMo.findVmOnHyperHost(vmName);
             }
+        }
 
-            if (vmMo == null) {
-                String msg = "Router " + vmName + " no longer exists to execute PlugNic command";
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
+        if (vmMo == null) {
+            String msg = "Router " + vmName + " no longer exists to execute PlugNic command";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
 
             /*
             if(!isVMWareToolsInstalled(vmMo)){
@@ -1282,54 +1295,45 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg);
             }
              */
-            // Fallback to E1000 if no specific nicAdapter is passed
-            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
-            Map<String, String> details = cmd.getDetails();
-            if (details != null) {
-                nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
-            }
+        // Fallback to E1000 if no specific nicAdapter is passed
+        if (nicDeviceType == null) {
+            nicDeviceType = VirtualEthernetCardType.E1000;
+        }
 
-            // find a usable device number in VMware environment
-            VirtualDevice[] nicDevices = vmMo.getSortedNicDevices();
-            int deviceNumber = -1;
-            for (VirtualDevice device : nicDevices) {
-                if (device.getUnitNumber() > deviceNumber)
-                    deviceNumber = device.getUnitNumber();
-            }
-            deviceNumber++;
+        // find a usable device number in VMware environment
+        VirtualDevice[] nicDevices = vmMo.getSortedNicDevices();
+        int deviceNumber = -1;
+        for (VirtualDevice device : nicDevices) {
+            if (device.getUnitNumber() > deviceNumber)
+                deviceNumber = device.getUnitNumber();
+        }
+        deviceNumber++;
 
-            NicTO nicTo = cmd.getNic();
-            VirtualDevice nic;
-            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());
-            String dvSwitchUuid = null;
-            if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
-                ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
-                DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
-                ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
-                dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
-                s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
-                nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid,
-                        nicTo.getMac(), deviceNumber + 1, true, true);
-            } else {
-                s_logger.info("Preparing NIC device on network " + networkInfo.second());
-                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(),
-                        nicTo.getMac(), deviceNumber + 1, true, true);
-            }
+        VirtualDevice nic;
+        Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, vmType);
+        String dvSwitchUuid = null;
+        if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
+            ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+            ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
+            dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+            s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
+            nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid,
+                    nicTo.getMac(), deviceNumber + 1, true, true);
+        } else {
+            s_logger.info("Preparing NIC device on network " + networkInfo.second());
+            nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(),
+                    nicTo.getMac(), deviceNumber + 1, true, true);
+        }
 
-            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-            deviceConfigSpec.setDevice(nic);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        deviceConfigSpec.setDevice(nic);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
-            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure devices when running PlugNicCommand");
-            }
-
-            return new PlugNicAnswer(cmd, true, "success");
-        } catch (Exception e) {
-            s_logger.error("Unexpected exception: ", e);
-            return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
+        vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+        if (!vmMo.configureVm(vmConfigSpec)) {
+            throw new Exception("Failed to configure devices when running PlugNicCommand");
         }
     }
 
@@ -1591,7 +1595,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 if (addVif) {
-                    plugPublicNic(vmMo, vlanId, ip);
+                    NicTO nicTO = ip.getNicTO();
+                    VirtualEthernetCardType nicDeviceType = null;
+                    if (ip.getDetails() != null) {
+                        nicDeviceType = VirtualEthernetCardType.valueOf(ip.getDetails().get("nicAdapter"));
+                    }
+                    plugNicCommandInternal(routerName, nicDeviceType, nicTO, VirtualMachine.Type.DomainRouter);
                     publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
                     if (publicNicInfo.first().intValue() >= 0) {
                         networkUsage(controlIp, "addVif", "eth" + publicNicInfo.first());
@@ -2287,39 +2296,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualDevice nic;
             int nicMask = 0;
             int nicCount = 0;
-
-            if (vmSpec.getType() == VirtualMachine.Type.DomainRouter) {
-                int extraPublicNics = mgr.getRouterExtraPublicNics();
-                if (extraPublicNics > 0 && vmSpec.getDetails().containsKey("PeerRouterInstanceName")) {
-                    //Set identical MAC address for RvR on extra public interfaces
-                    String peerRouterInstanceName = vmSpec.getDetails().get("PeerRouterInstanceName");
-
-                    VirtualMachineMO peerVmMo = hyperHost.findVmOnHyperHost(peerRouterInstanceName);
-                    if (peerVmMo == null) {
-                        peerVmMo = hyperHost.findVmOnPeerHyperHost(peerRouterInstanceName);
-                    }
-
-                    if (peerVmMo != null) {
-                        String oldMacSequence = generateMacSequence(nics);
-
-                        for (int nicIndex = nics.length - extraPublicNics; nicIndex < nics.length; nicIndex++) {
-                            VirtualDevice nicDevice = peerVmMo.getNicDeviceByIndex(nics[nicIndex].getDeviceId());
-                            if (nicDevice != null) {
-                                String mac = ((VirtualEthernetCard) nicDevice).getMacAddress();
-                                if (mac != null) {
-                                    s_logger.info("Use same MAC as previous RvR, the MAC is " + mac + " for extra NIC with device id: " + nics[nicIndex].getDeviceId());
-                                    nics[nicIndex].setMac(mac);
-                                }
-                            }
-                        }
-
-                        if (StringUtils.isNotBlank(vmSpec.getBootArgs())) {
-                            String newMacSequence = generateMacSequence(nics);
-                            vmSpec.setBootArgs(replaceNicsMacSequenceInBootArgs(oldMacSequence, newMacSequence, vmSpec));
-                        }
-                    }
-                }
-            }
 
             VirtualEthernetCardType nicDeviceType;
 

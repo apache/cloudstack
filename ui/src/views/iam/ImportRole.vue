@@ -128,8 +128,7 @@ export default {
     },
     handleChange (info) {
       if (info.file.status === 'error') {
-        this.$showNotification({
-          type: 'error',
+        this.$notification.error({
           message: this.$t('label.error.file.upload'),
           description: this.$t('label.error.file.upload')
         })
@@ -186,8 +185,7 @@ export default {
         const role = json.importroleresponse.role
         if (role) {
           this.$emit('refresh-data')
-          this.$showNotification({
-            type: 'success',
+          this.$notification.success({
             message: 'Import Role',
             description: 'Sucessfully imported role ' + params.name
           })
