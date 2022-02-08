@@ -1842,8 +1842,7 @@ export default {
           deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
-        const KEYPAIRS = values.keypairs.map((keypair) => { return keypair.name })
-        deployVmData.keypairs = KEYPAIRS.join(',')
+        deployVmData.keypairs = this.sshKeyPairs.join(',')
         // deployVmData.keypairs = values.keypairs.map((keypair) => { return keypair.name })
         if (values.name) {
           deployVmData.name = values.name

@@ -58,7 +58,7 @@ import { api } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 
 export default {
-  name: 'ResetSSH',
+  name: 'ResetSshKeyPair',
   props: {
     resource: {
       type: Object,

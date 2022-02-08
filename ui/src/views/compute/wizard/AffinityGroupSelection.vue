@@ -116,7 +116,6 @@ export default {
         selectedRowKeys: this.selectedRowKeys,
         onChange: (rows) => {
           this.$emit('select-affinity-group-item', rows)
-          console.table(this.items)
         }
       }
     }
