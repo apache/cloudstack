@@ -121,7 +121,7 @@ export default {
       api('listDedicatedZones', {
         zoneid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedzonesresponse.dedicatedzone?.length > 0) {
+        if (response?.listdedicatedzonesresponse?.dedicatedzone?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedzonesresponse.dedicatedzone[0].domainid
           this.dedicatedAccountId = response.listdedicatedzonesresponse.dedicatedzone[0].accountid
         }
@@ -133,7 +133,7 @@ export default {
       api('listDedicatedPods', {
         podid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedpodsresponse.dedicatedpod?.length > 0) {
+        if (response?.listdedicatedpodsresponse?.dedicatedpod?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedpodsresponse.dedicatedpod[0].domainid
           this.dedicatedAccountId = response.listdedicatedpodsresponse.dedicatedpod[0].accountid
         }
@@ -145,7 +145,7 @@ export default {
       api('listDedicatedClusters', {
         clusterid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedclustersresponse.dedicatedcluster?.length > 0) {
+        if (response?.listdedicatedclustersresponse?.dedicatedcluster?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedclustersresponse.dedicatedcluster[0].domainid
           this.dedicatedAccountId = response.listdedicatedclustersresponse.dedicatedcluster[0].accountid
         }
@@ -157,7 +157,7 @@ export default {
       api('listDedicatedHosts', {
         hostid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedhostsresponse.dedicatedhost?.length > 0) {
+        if (response?.listdedicatedhostsresponse?.dedicatedhost?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedhostsresponse.dedicatedhost[0].domainid
           this.dedicatedAccountId = response.listdedicatedhostsresponse.dedicatedhost[0].accountid
         }
