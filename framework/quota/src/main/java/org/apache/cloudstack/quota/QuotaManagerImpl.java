@@ -450,6 +450,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         GenericPresetVariable project = presetVariables.getProject();
         if (project != null) {
             jsInterpreter.injectVariable("project", project.toString(), true);
+
         }
 
         jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
