@@ -300,18 +300,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     vm.setBackupOfferingId(offering.getId());
                     vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vmId)));
 
-                    if (vmInstanceDao.update(vmId, vm)) {
-                        if (backupProvider.assignVMToBackupOffering(vm, offering)) {
-                            vmInstanceDao.update(vmId, vm);
-                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vmId,
-                                    "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
-                                    Backup.class.getSimpleName(), vm.getUuid());
-                            LOG.debug(String.format("VM [%s] successfully added to Backup Offering [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName", "backupOfferingId", "backupVolumes"),
-                                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering, "uuid", "name", "externalId", "provider")));
-                            return vm;
-                        }
+                    if (backupProvider.assignVMToBackupOffering(vm, offering)) {
+                            if (vmInstanceDao.update(vmId, vm)) {
+                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vmId,
+                                        "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
+                                LOG.debug(String.format("VM [%s] successfully added to Backup Offering [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm,
+                                        "uuid", "instanceName", "backupOfferingId", "backupVolumes"), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering,
+                                                "uuid", "name", "externalId", "provider")));
+                            } else {
+                                backupProvider.removeVMFromBackupOffering(vm);
+                                throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
+                            }
                     } else {
-                        throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
+                        throw new CloudRuntimeException("Failed to assign the VM to the backup offering, please try removing the assignment and try again.");
                     }
                 } catch (Exception e) {
                     LOG.error(String.format("Failed to assign VM [%s] to the Backup Offering [%s], using provider [name: %s, class: %s], due to: [%s].",
@@ -319,7 +320,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                             ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering, "uuid", "name", "externalId", "provider"),
                             backupProvider.getName(), backupProvider.getClass().getSimpleName(), e.getMessage()), e);
                 }
-                throw new CloudRuntimeException("Failed to assign the VM to the backup offering, please try removing the assignment and try again.");
+                return vm;
             }
         });
     }
