@@ -1294,6 +1294,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     str.append(" WHERE ");
                     hasWhereClause = true;
                 }
+                str.append(" (").append(whereClause).append(") AND");
             }
             fromIndex += onClause.length();
         }
