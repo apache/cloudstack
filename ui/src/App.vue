@@ -36,7 +36,7 @@ export default {
     }
   },
   created () {
-    const userThemeSetting = this.$store.getters.themeSetting || {}
+    const userThemeSetting = this.$localStorage.get('THEME_SETTING', {}) || {}
     if (Object.keys(userThemeSetting).length === 0) {
       window.less.modifyVars(this.$config.theme)
     } else {

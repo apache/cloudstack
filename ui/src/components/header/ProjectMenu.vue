@@ -134,7 +134,7 @@ export default {
   font-size: 20px;
   position: absolute;
   top: 0;
-  right: 0;
-  margin-top: -5px;
+  right: 1px;
+  margin-top: -3px;
 }
 </style>

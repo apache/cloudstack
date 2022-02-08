@@ -21,6 +21,7 @@
       {{ tooltip }}
     </template>
     <a-button
+      style="margin-left: -5px"
       v-if="copyResource"
       shape="circle"
       :size="size"

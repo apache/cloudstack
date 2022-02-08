@@ -808,6 +808,7 @@ export default {
   .ant-tag {
     padding: 4px 10px;
     height: auto;
+    margin-left: 5px;
   }
 
   .title {

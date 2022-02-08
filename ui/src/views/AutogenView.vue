@@ -1645,7 +1645,7 @@ export default {
   vertical-align: text-bottom;
 }
 
-/deep/.ant-alert-message {
+:deep(.ant-alert-message) {
   display: flex;
   align-items: center;
 }

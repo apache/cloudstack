@@ -118,7 +118,6 @@
             <tooltip-button
               tooltipPlacement="right"
               :tooltip="$t('label.copyid')"
-              style="margin-left: -5px"
               icon="barcode-outlined"
               type="dashed"
               size="small"
@@ -1136,18 +1135,9 @@ export default {
   width: 100%;
 }
 
-.status {
-  margin-top: -5px;
-
-  &--end {
-    margin-left: 5px;
-  }
-
-}
-
 .upload-icon {
   position: absolute;
-  top: 65px;
+  top: 70px;
   opacity: 0.75;
   left: 70px;
   font-size: 0.75em;

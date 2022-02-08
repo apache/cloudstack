@@ -193,10 +193,18 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 :deep(.ant-badge-status-dot) {
   width: 12px;
   height: 12px;
   margin-top: 5px;
+}
+
+.status {
+  margin-top: -5px;
+
+  &--end {
+    margin-left: 5px;
+  }
 }
 </style>

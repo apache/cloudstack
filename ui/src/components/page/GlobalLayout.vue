@@ -242,7 +242,7 @@ export default {
 <style lang="less">
 .layout-content {
   &.is-header-fixed {
-    margin: 78px 20px 0;
+    margin: 78px 12px 0;
   }
 }
 
