@@ -39,7 +39,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.utils.ssh.SshHelper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesClusterUtil {
 
@@ -49,7 +49,7 @@ public class KubernetesClusterUtil {
                                                        String user, File sshKeyFile, String nodeName) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
-                String.format("sudo kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName.toLowerCase()),
+                String.format("sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName.toLowerCase()),
                 10000, 10000, 20000);
         if (result.first() && nodeName.equals(result.second().trim())) {
             return true;
@@ -103,14 +103,14 @@ public class KubernetesClusterUtil {
                                                         final UserVm userVm, final long timeoutTime,
                                                         final int waitDuration) {
         String hostName = userVm.getHostName();
-        if (!Strings.isNullOrEmpty(hostName)) {
+        if (StringUtils.isNotEmpty(hostName)) {
             hostName = hostName.toLowerCase();
         }
         while (System.currentTimeMillis() < timeoutTime) {
             Pair<Boolean, String> result = null;
             try {
                 result = SshHelper.sshExecute(ipAddress, port, user, sshKeyFile, null,
-                        String.format("sudo kubectl uncordon %s", hostName),
+                        String.format("sudo /opt/bin/kubectl uncordon %s", hostName),
                         10000, 10000, 30000);
                 if (result.first()) {
                     return true;
@@ -133,14 +133,14 @@ public class KubernetesClusterUtil {
                                                                  final int port, final String user, final File sshKeyFile,
                                                                  final String namespace, String serviceName) {
         try {
-            String cmd = "sudo kubectl get pods --all-namespaces";
-            if (!Strings.isNullOrEmpty(namespace)) {
-                cmd = String.format("sudo kubectl get pods --namespace=%s", namespace);
+            String cmd = "sudo /opt/bin/kubectl get pods --all-namespaces";
+            if (StringUtils.isNotEmpty(namespace)) {
+                cmd = String.format("sudo /opt/bin/kubectl get pods --namespace=%s", namespace);
             }
             Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, user,
                     sshKeyFile, null, cmd,
                     10000, 10000, 10000);
-            if (result.first() && !Strings.isNullOrEmpty(result.second())) {
+            if (result.first() && StringUtils.isNotEmpty(result.second())) {
                 String[] lines = result.second().split("\n");
                 for (String line :
                         lines) {
@@ -192,7 +192,7 @@ public class KubernetesClusterUtil {
                         sshKeyFile, null, "sudo cat /etc/kubernetes/admin.conf",
                         10000, 10000, 10000);
 
-                if (result.first() && !Strings.isNullOrEmpty(result.second())) {
+                if (result.first() && StringUtils.isNotEmpty(result.second())) {
                     kubeConfig = result.second();
                     break;
                 } else  {
@@ -211,7 +211,7 @@ public class KubernetesClusterUtil {
                                                           final int port, final String user, final File sshKeyFile) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
-                "sudo kubectl get nodes | awk '{if ($2 == \"Ready\") print $1}' | wc -l",
+                "sudo /opt/bin/kubectl get nodes | awk '{if ($2 == \"Ready\") print $1}' | wc -l",
                 10000, 10000, 20000);
         if (result.first()) {
             return Integer.parseInt(result.second().trim().replace("\"", ""));
@@ -235,7 +235,7 @@ public class KubernetesClusterUtil {
                 con.setSSLSocketFactory(sslContext.getSocketFactory());
                 BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 String versionOutput = br.lines().collect(Collectors.joining());
-                if (!Strings.isNullOrEmpty(versionOutput)) {
+                if (StringUtils.isNotEmpty(versionOutput)) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(String.format("Kubernetes cluster : %s API has been successfully provisioned, %s", kubernetesCluster.getName(), versionOutput));
                     }

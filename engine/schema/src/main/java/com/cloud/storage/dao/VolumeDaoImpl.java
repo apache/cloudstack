@@ -61,6 +61,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
+    protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -218,6 +219,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findReadyAndAllocatedRootVolumesByInstance(long instanceId) {
+        SearchCriteria<VolumeVO> sc = RootDiskStateSearch.create();
+        sc.setParameters("instanceId", instanceId);
+        sc.setParameters("state", Volume.State.Ready, State.Allocated);
+        sc.setParameters("vType", Volume.Type.ROOT);
+        return listBy(sc);
+    }
+
+    @Override
     public List<VolumeVO> findByPod(long podId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);
@@ -364,6 +374,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.done();
+
+        RootDiskStateSearch = createSearchBuilder();
+        RootDiskStateSearch.and("state", RootDiskStateSearch.entity().getState(), Op.IN);
+        RootDiskStateSearch.and("vType", RootDiskStateSearch.entity().getVolumeType(), Op.EQ);
+        RootDiskStateSearch.and("instanceId", RootDiskStateSearch.entity().getInstanceId(), Op.EQ);
+        RootDiskStateSearch.done();
 
         DetachedAccountIdSearch = createSearchBuilder();
         DetachedAccountIdSearch.and("accountId", DetachedAccountIdSearch.entity().getAccountId(), Op.EQ);

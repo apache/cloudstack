@@ -27,13 +27,20 @@ def main():
         print "No VMs running data available, skipping"
         exit(0)
 
-    with open('/etc/dhcphosts.txt', 'r') as hostsFile:
-        allHosts = hostsFile.readlines()
-        hostsFile.close()
+    try:
+        with open('/etc/dhcphosts.txt', 'r') as hostsFile:
+            allHosts = hostsFile.readlines()
+            hostsFile.close()
+    except IOError:
+        allHosts = []
 
     failedCheck = False
     failureMessage = "Missing elements in dhcphosts.txt - \n"
+    COUNT = 0
     for vM in vMs:
+        if vM["dhcp"] == "false":
+            continue
+        COUNT = COUNT + 1
         entry = vM["macAddress"] + " " + vM["ip"] + " " + vM["vmName"]
         foundEntry = False
         for host in allHosts:
@@ -60,7 +67,7 @@ def main():
         print failureMessage[:-2]
         exit(1)
     else:
-        print "All " + str(len(vMs)) + " VMs are present in dhcphosts.txt"
+        print "All " + str(COUNT) + " VMs are present in dhcphosts.txt"
         exit(0)
 
 

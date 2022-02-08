@@ -29,7 +29,6 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.offering.DiskOffering.Type;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.Attribute;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -47,48 +45,28 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     @Inject
     protected DiskOfferingDetailsDao detailsDao;
 
-    private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
-    private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
     private final String SizeDiskOfferingSearch = "SELECT * FROM disk_offering WHERE " +
             "disk_size = ? AND provisioning_type = ? AND removed IS NULL";
 
-    private final Attribute _typeAttr;
+    private final Attribute _computeOnlyAttr;
     protected final static long GB_UNIT_BYTES = 1024 * 1024 * 1024;
 
     protected DiskOfferingDaoImpl() {
-        PrivateDiskOfferingSearch = createSearchBuilder();
-        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
-        PrivateDiskOfferingSearch.done();
-
-        PublicDiskOfferingSearch = createSearchBuilder();
-        PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
-        PublicDiskOfferingSearch.and("removed", PublicDiskOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        PublicDiskOfferingSearch.done();
-
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
-        _typeAttr = _allAttributes.get("type");
-    }
-
-    @Override
-    public List<DiskOfferingVO> findPrivateDiskOffering() {
-        SearchCriteria<DiskOfferingVO> sc = PrivateDiskOfferingSearch.create();
-        sc.setParameters("diskSize", 0);
-        return listBy(sc);
+        _computeOnlyAttr = _allAttributes.get("computeOnly");
     }
 
     @Override
     public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.searchIncludingRemoved(sc, filter, lock, cache);
     }
 
     @Override
     public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
-        sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.customSearchIncludingRemoved(sc, filter);
     }
 
@@ -97,23 +75,12 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         StringBuilder builder = new StringBuilder(sql);
         int index = builder.indexOf("WHERE");
         if (index == -1) {
-            builder.append(" WHERE type=?");
+            builder.append(" WHERE compute_only=?");
         } else {
-            builder.insert(index + 6, "type=? ");
+            builder.insert(index + 6, "compute_only=? ");
         }
 
-        return super.executeList(sql, Type.Disk, params);
-    }
-
-    @Override
-    public List<DiskOfferingVO> findPublicDiskOfferings() {
-        SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
-        sc.setParameters("system", false);
-        List<DiskOfferingVO> offerings = listBy(sc);
-        if(offerings!=null) {
-            offerings.removeIf(o -> (!detailsDao.findDomainIds(o.getId()).isEmpty()));
-        }
-        return offerings;
+        return super.executeList(sql, false, params);
     }
 
     @Override
@@ -129,7 +96,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
-    public DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering) {
+    public DiskOfferingVO persistDefaultDiskOffering(DiskOfferingVO offering) {
         assert offering.getUniqueName() != null : "unique name shouldn't be null for the disk offering";
         DiskOfferingVO vo = findByUniqueName(offering.getUniqueName());
         if (vo != null) {
@@ -171,6 +138,16 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while listing disk offerings by size: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public List<DiskOfferingVO> findCustomDiskOfferings() {
+        SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
+        sb.and("customized", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<DiskOfferingVO> sc = sb.create();
+        sc.setParameters("customized", true);
+        return listBy(sc);
     }
 
     @Override

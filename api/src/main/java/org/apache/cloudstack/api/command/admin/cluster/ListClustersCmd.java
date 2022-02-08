@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -37,7 +36,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listClusters", description = "Lists clusters.", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListClustersCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListClustersCmd.class.getName());
 
     private static final String s_name = "listclustersresponse";
 

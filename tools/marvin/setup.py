@@ -27,7 +27,7 @@ except ImportError:
         raise RuntimeError("python setuptools is required to build Marvin")
 
 
-VERSION = "4.16.0.0-SNAPSHOT"
+VERSION = "4.17.0.0-SNAPSHOT"
 
 setup(name="Marvin",
       version=VERSION,
@@ -58,7 +58,9 @@ setup(name="Marvin",
           "pytz",
           "retries",
           "PyCrypt",
-          "urllib3"
+          "kubernetes",
+          "urllib3",
+          "setuptools >= 40.3.0"
       ],
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,

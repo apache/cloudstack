@@ -26,7 +26,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
 import com.cloud.utils.xmlobject.XmlObjectParser;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;

@@ -198,6 +198,17 @@ export default {
           component: () => import('@/views/storage/MigrateVolume.vue')
         },
         {
+          api: 'changeOfferingForVolume',
+          icon: 'swap',
+          docHelp: 'adminguide/storage.html#id2',
+          label: 'label.change.offering.for.volume',
+          args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
+          dataView: true,
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          popup: true,
+          component: () => import('@/views/storage/ChangeOfferingForVolume.vue')
+        },
+        {
           api: 'extractVolume',
           icon: 'cloud-download',
           label: 'label.action.download.volume',

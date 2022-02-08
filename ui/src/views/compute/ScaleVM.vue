@@ -48,6 +48,14 @@
       @update-compute-cpuspeed="updateFieldValue"
       @update-compute-memory="updateFieldValue" />
 
+    <a-form-item :label="$t('label.automigrate.volume')">
+      <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      <a-switch
+        v-decorator="['autoMigrate']"
+        :checked="autoMigrate"
+        @change="val => { autoMigrate = val }"/>
+    </a-form-item>
+
     <div :span="24" class="action-button">
       <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
       <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
@@ -78,6 +86,7 @@ export default {
       offeringsMap: {},
       offerings: [],
       selectedOffering: {},
+      autoMigrate: true,
       total: 0,
       params: { id: this.resource.id },
       loading: false,
@@ -85,6 +94,10 @@ export default {
       cpuSpeedKey: 'details[0].cpuSpeed',
       memoryKey: 'details[0].memory'
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
+    this.apiParams = this.$getApiParams('scaleVirtualMachine')
   },
   created () {
     this.fetchData({
@@ -145,6 +158,7 @@ export default {
 
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]
+      this.params.automigrate = this.autoMigrate
     },
     updateFieldValue (name, value) {
       this.params[name] = value

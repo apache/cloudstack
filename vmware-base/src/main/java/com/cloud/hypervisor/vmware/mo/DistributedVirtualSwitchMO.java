@@ -117,6 +117,15 @@ public class DistributedVirtualSwitchMO extends BaseMO {
         return dvsConfigInfo.getConfigVersion();
     }
 
+    public String getDVSProductVersion(ManagedObjectReference dvSwitchMor) throws Exception {
+        assert (dvSwitchMor != null);
+        DVSConfigInfo dvsConfigInfo = (DVSConfigInfo)_context.getVimClient().getDynamicProperty(dvSwitchMor, "config");
+        if (dvsConfigInfo != null && dvsConfigInfo.getProductInfo() != null) {
+            return dvsConfigInfo.getProductInfo().getVersion();
+        }
+        return null;
+    }
+
     public Map<Integer, HypervisorHostHelper.PvlanType> retrieveVlanPvlan(int vlanid, int secondaryvlanid, ManagedObjectReference dvSwitchMor) throws Exception {
         assert (dvSwitchMor != null);
 

@@ -119,7 +119,7 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     }
 
     @Override
-    public short getsnapshotType() {
+    public short getSnapshotType() {
         // TODO Auto-generated method stub
         return 0;
     }

@@ -19,7 +19,7 @@ package org.apache.cloudstack.diagnostics;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
@@ -35,7 +35,7 @@ public class DiagnosticsAnswer extends Answer {
 
     public Map<String, String> getExecutionDetails() {
         final Map<String, String> executionDetailsMap = new HashMap<>();
-        if (result == true && !Strings.isNullOrEmpty(details)) {
+        if (result == true && StringUtils.isNotEmpty(details)) {
             final String[] parseDetails = details.split("&&");
             if (parseDetails.length >= 3) {
                 executionDetailsMap.put(ApiConstants.STDOUT, parseDetails[0].trim());

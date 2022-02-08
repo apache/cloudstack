@@ -33,7 +33,9 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -41,7 +43,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
 
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -210,13 +211,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.MAX_MEMORY,
             type = CommandType.INTEGER,
-            description = "The maximum memroy size of the custom service offering in MB",
+            description = "The maximum memory size of the custom service offering in MB",
             since = "4.13")
     private Integer maxMemory;
 
     @Parameter(name = ApiConstants.MIN_MEMORY,
             type = CommandType.INTEGER,
-            description = "The minimum memroy size of the custom service offering in MB",
+            description = "The minimum memory size of the custom service offering in MB",
             since = "4.13")
     private Integer minMemory;
 
@@ -226,6 +227,20 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
             description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
     protected Boolean isDynamicScalingEnabled;
+
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID,
+            required = false,
+            type = CommandType.UUID,
+            entityType = DiskOfferingResponse.class,
+            description = "the ID of the disk offering to which service offering should be mapped",
+            since = "4.17")
+    private Long diskOfferingId;
+
+    @Parameter(name = ApiConstants.DISK_OFFERING_STRICTNESS,
+            type = CommandType.BOOLEAN,
+            description = "True/False to indicate the strictness of the disk offering association with the compute offering. When set to true, override of disk offering is not allowed when VM is deployed and change disk offering is not allowed for the ROOT disk after the VM is deployed",
+            since = "4.17")
+    private Boolean diskOfferingStrictness;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -240,7 +255,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        if (Strings.isNullOrEmpty(displayText)) {
+        if (StringUtils.isEmpty(displayText)) {
             throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
         }
         return displayText;
@@ -255,7 +270,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getServiceOfferingName() {
-        if (Strings.isNullOrEmpty(serviceOfferingName)) {
+        if (StringUtils.isEmpty(serviceOfferingName)) {
             throw new InvalidParameterValueException("Failed to create service offering because offering name has not been spified.");
         }
         return serviceOfferingName;
@@ -326,7 +341,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             for (Object prop : props) {
                 HashMap<String, String> detail = (HashMap<String, String>) prop;
                 // Compatibility with key and value pairs input from API cmd for details map parameter
-                if (!Strings.isNullOrEmpty(detail.get("key")) && !Strings.isNullOrEmpty(detail.get("value"))) {
+                if (StringUtils.isNoneEmpty(detail.get("key"), detail.get("value"))) {
                     detailsMap.put(detail.get("key"), detail.get("value"));
                     continue;
                 }
@@ -447,6 +462,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public boolean getDynamicScalingEnabled() {
         return isDynamicScalingEnabled == null ? true : isDynamicScalingEnabled;
+    }
+
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public boolean getDiskOfferingStrictness() {
+        return diskOfferingStrictness == null ? false : diskOfferingStrictness;
     }
 
     /////////////////////////////////////////////////////

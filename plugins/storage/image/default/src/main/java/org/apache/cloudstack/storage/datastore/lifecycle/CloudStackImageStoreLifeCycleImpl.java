@@ -188,7 +188,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
                 }
                 List<String> stringList = new ArrayList<String>();
                 Collections.addAll(stringList, temp);
-                cleanLogString = StringUtils.join(stringList, ",");
+                cleanLogString = org.apache.commons.lang3.StringUtils.join(stringList, ",");
             }
         }
         return cleanLogString;

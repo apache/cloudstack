@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType= Storage.StoragePoolType.PowerFlex)
@@ -69,7 +70,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk getPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        if (Strings.isNullOrEmpty(volumePath) || pool == null) {
+        if (StringUtils.isEmpty(volumePath) || pool == null) {
             LOGGER.error("Unable to get physical disk, volume path or pool not specified");
             return null;
         }
@@ -79,7 +80,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         try {
             String diskFilePath = null;
             String systemId = ScaleIOUtil.getSystemIdForVolume(volumeId);
-            if (!Strings.isNullOrEmpty(systemId) && systemId.length() == ScaleIOUtil.IDENTIFIER_LENGTH) {
+            if (StringUtils.isNotEmpty(systemId) && systemId.length() == ScaleIOUtil.IDENTIFIER_LENGTH) {
                 // Disk path format: /dev/disk/by-id/emc-vol-<SystemID>-<VolumeID>
                 final String diskFileName = ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
                 diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + diskFileName;
@@ -134,7 +135,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details) {
-        if (Strings.isNullOrEmpty(volumePath) || pool == null) {
+        if (StringUtils.isEmpty(volumePath) || pool == null) {
             LOGGER.error("Unable to connect physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data");
         }
@@ -144,7 +145,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         int waitTimeInSec = DEFAULT_DISK_WAIT_TIME_IN_SECS;
         if (details != null && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
             String waitTime = details.get(StorageManager.STORAGE_POOL_DISK_WAIT.toString());
-            if (!Strings.isNullOrEmpty(waitTime)) {
+            if (StringUtils.isNotEmpty(waitTime)) {
                 waitTimeInSec = Integer.valueOf(waitTime).intValue();
             }
         }
@@ -186,7 +187,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     private long getPhysicalDiskSize(String diskPath) {
-        if (Strings.isNullOrEmpty(diskPath)) {
+        if (StringUtils.isEmpty(diskPath)) {
             return 0;
         }
 
@@ -243,7 +244,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        if (Strings.isNullOrEmpty(name) || disk == null || destPool == null) {
+        if (StringUtils.isEmpty(name) || disk == null || destPool == null) {
             LOGGER.error("Unable to copy physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to copy physical disk due to insufficient data");
         }
@@ -268,12 +269,20 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
             destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
 
-            LOGGER.debug("Starting copy from source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
-            qemu.convert(srcFile, destFile);
-            LOGGER.debug("Succesfully converted source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
+            LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
+            qemu.convert(srcFile, destFile, true);
+            LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
-            destDisk = null;
+            try {
+                Map<String, String> srcInfo = qemu.info(srcFile);
+                LOGGER.debug("Source disk info: " + Arrays.asList(srcInfo));
+            } catch (Exception ignored) {
+                LOGGER.warn("Unable to get info from source disk: " + disk.getName());
+            }
+
+            String errMsg = String.format("Unable to convert/copy from %s to %s, due to: %s", disk.getName(), name, ((StringUtils.isEmpty(e.getMessage())) ? "an unknown error" : e.getMessage()));
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg, e);
         }
 
         return destDisk;
@@ -306,7 +315,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
-        if (Strings.isNullOrEmpty(templateFilePath) || Strings.isNullOrEmpty(destTemplatePath) || destPool == null) {
+        if (StringUtils.isAnyEmpty(templateFilePath, destTemplatePath) || destPool == null) {
             LOGGER.error("Unable to create template from direct download template file due to insufficient data");
             throw new CloudRuntimeException("Unable to create template from direct download template file due to insufficient data");
         }

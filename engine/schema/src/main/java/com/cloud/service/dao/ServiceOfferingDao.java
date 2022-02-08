@@ -53,4 +53,6 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
     ServiceOfferingVO findDefaultSystemOffering(String offeringName, Boolean useLocalStorage);
 
     List<ServiceOfferingVO> listPublicByCpuAndMemory(Integer cpus, Integer memory);
+
+    ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(long diskOfferingId);
 }

@@ -21,12 +21,16 @@ import mockRouter from '../mock/mockRouter'
 
 import localVue from '../setup'
 import { mount } from '@vue/test-utils'
-import { pollJobPlugin, notifierPlugin, configUtilPlugin, apiMetaUtilPlugin } from '@/utils/plugins'
+import { pollJobPlugin, notifierPlugin, configUtilPlugin, apiMetaUtilPlugin, toLocaleDatePlugin, showIconPlugin, resourceTypePlugin, fileSizeUtilPlugin } from '@/utils/plugins'
 
 localVue.use(pollJobPlugin)
 localVue.use(notifierPlugin)
 localVue.use(configUtilPlugin)
 localVue.use(apiMetaUtilPlugin)
+localVue.use(toLocaleDatePlugin)
+localVue.use(showIconPlugin)
+localVue.use(resourceTypePlugin)
+localVue.use(fileSizeUtilPlugin)
 
 function createMockRouter (newRoutes = []) {
   let routes = []

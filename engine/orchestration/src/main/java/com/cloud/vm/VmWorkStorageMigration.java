@@ -23,7 +23,7 @@ public class VmWorkStorageMigration extends VmWork {
 
     Map<Long, Long> volumeToPool;
 
-    public VmWorkStorageMigration(long userId, long accountId, long vmId, String handlerName, Map <Long, Long> volumeToPool) {
+    public VmWorkStorageMigration(long userId, long accountId, long vmId, String handlerName, Map<Long, Long> volumeToPool) {
         super(userId, accountId, vmId, handlerName);
 
         this.volumeToPool = volumeToPool;
@@ -31,5 +31,10 @@ public class VmWorkStorageMigration extends VmWork {
 
     public Map<Long, Long> getVolumeToPool() {
         return volumeToPool;
+    }
+
+    public VmWorkStorageMigration(VmWork vmWork, Map<Long, Long> volumeToPool) {
+        super(vmWork);
+        this.volumeToPool = volumeToPool;
     }
 }
