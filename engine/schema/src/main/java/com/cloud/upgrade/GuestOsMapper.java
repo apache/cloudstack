@@ -21,67 +21,58 @@ import org.apache.log4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.cloud.utils.Ternary;
+import javax.inject.Inject;
+
+import com.cloud.storage.GuestOSHypervisorMapping;
+import com.cloud.storage.GuestOSHypervisorVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSDaoImpl;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.GuestOSHypervisorDaoImpl;
 
 public class GuestOsMapper {
 
     final static Logger LOG = Logger.getLogger(GuestOsMapper.class);
 
-    private static final String selectGuestOsSql =
-            "SELECT id FROM `cloud`.`guest_os` WHERE category_id = ? AND display_name = ? AND is_user_defined = 0 AND removed IS NULL ORDER BY created DESC";
-    private static final String insertGuestOsSql =
-            "INSERT INTO `cloud`.`guest_os` (uuid, category_id, display_name, created) VALUES (UUID(), ?, ?, now())";
-    private static final String selectGuestOsHypervisorSql =
-            "SELECT guest_os_id FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type = ? AND hypervisor_version = ? AND guest_os_name = ? AND is_user_defined = 0 AND removed IS NULL ORDER BY created DESC";
-    private static final String insertGuestOsHypervisorSql =
-            "INSERT INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created) VALUES (UUID(), ?, ?, ?, ?, now())";
-    private static final String updateGuestOsSql =
-            "UPDATE `cloud`.`guest_os` SET display_name = ? WHERE id = ?";
+    @Inject
+    GuestOSHypervisorDao guestOSHypervisorDao;
+    @Inject
+    GuestOSDao guestOSDao;
+
     private static final String updateGuestOsHypervisorSql =
             "UPDATE `cloud`.`guest_os_hypervisor` SET guest_os_id = ? WHERE guest_os_id = ? AND hypervisor_type = ? AND hypervisor_version = ? AND guest_os_name = ? AND is_user_defined = 0 AND removed IS NULL";
 
     public GuestOsMapper() {
+        guestOSHypervisorDao = new GuestOSHypervisorDaoImpl();
+        guestOSDao = new GuestOSDaoImpl();
     }
 
-    private long getGuestOsId(Connection conn, long categoryId, String displayName) {
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(selectGuestOsSql);
-            pstmt.setLong(1, categoryId);
-            pstmt.setString(2, displayName);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs != null && rs.next()) {
-                return rs.getLong(1);
-            }
-        } catch (SQLException e) {
-            LOG.error("Failed to get the guest OS details with category id: " + categoryId + " and display name: " + displayName + ", due to: " + e.getMessage(), e);
+    private long getGuestOsId(long categoryId, String displayName) {
+        GuestOSVO guestOS = guestOSDao.findByCategoryIdAndDisplayNameOrderByCreatedDesc(categoryId, displayName);
+        if (guestOS != null) {
+            guestOS.getId();
         }
+
         LOG.warn("Unable to find the guest OS details with category id: " + categoryId + " and display name: " + displayName);
         return 0;
     }
 
-    private long getGuestOsIdFromHypervisorMapping(Connection conn, String hypervisorType, String hypervisorVersion, String guestOsName) {
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(selectGuestOsHypervisorSql);
-            pstmt.setString(1, hypervisorType);
-            pstmt.setString(2, hypervisorVersion);
-            pstmt.setString(3, guestOsName);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs != null && rs.next()) {
-                return rs.getLong(1);
-            }
-        } catch (SQLException e) {
-            LOG.error("Failed to get the guest OS hypervisor mapping details for Hypervisor(Version): " + hypervisorType + "(" + hypervisorVersion + "), Guest OS: " + guestOsName + ", due to: " + e.getMessage(), e);
+    private long getGuestOsIdFromHypervisorMapping(GuestOSHypervisorMapping mapping) {
+        GuestOSHypervisorVO guestOSHypervisorVO = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(mapping.getGuestOsName(), mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        if (guestOSHypervisorVO != null) {
+            guestOSHypervisorVO.getGuestOsId();
         }
-        LOG.debug("Unable to find the guest OS hypervisor mapping details for Hypervisor(Version): " + hypervisorType + "(" + hypervisorVersion + "), Guest OS: " + guestOsName);
+
+        LOG.debug("Unable to find the guest OS hypervisor mapping details for " + mapping.toString());
         return 0;
     }
 
-    public void addGuestOsAndHypervisorMappings(Connection conn, long categoryId, String displayName, List<Ternary<String, String, String>> mappings) {
-        if (!addGuestOs(conn, categoryId, displayName)) {
+    public void addGuestOsAndHypervisorMappings(long categoryId, String displayName, List<GuestOSHypervisorMapping> mappings) {
+        if (!addGuestOs(categoryId, displayName)) {
             LOG.warn("Couldn't add the guest OS with category id: " + categoryId + " and display name: " + displayName);
             return;
         }
@@ -90,72 +81,82 @@ public class GuestOsMapper {
             return;
         }
 
-        long guestOsId = getGuestOsId(conn, categoryId, displayName);
+        long guestOsId = getGuestOsId(categoryId, displayName);
         if (guestOsId == 0) {
             LOG.debug("No guest OS found with category id: " + categoryId + " and display name: " + displayName);
             return;
         }
 
-        for (final Ternary<String, String, String> mapping : mappings) {
-            addGuestOsHypervisorMapping(conn, mapping.first(), mapping.second(), mapping.third(), guestOsId);
+        for (final GuestOSHypervisorMapping mapping : mappings) {
+            addGuestOsHypervisorMapping(mapping, guestOsId);
         }
     }
 
-    private boolean addGuestOs(Connection conn, long categoryId, String displayName) {
+    private boolean addGuestOs(long categoryId, String displayName) {
         LOG.debug("Adding guest OS with category id: " + categoryId + " and display name: " + displayName);
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(insertGuestOsSql);
-            pstmt.setLong(1, categoryId);
-            pstmt.setString(2, displayName);
-            return (pstmt.executeUpdate() == 1);
-        } catch (SQLException e) {
-            LOG.error("Failed to add guest OS due to: " + e.getMessage(), e);
-        }
-        return false;
+        GuestOSVO guestOS = new GuestOSVO();
+        guestOS.setCategoryId(categoryId);
+        guestOS.setDisplayName(displayName);
+        guestOS = guestOSDao.persist(guestOS);
+        return (guestOS != null);
     }
 
-    public void addGuestOsHypervisorMapping(Connection conn, String hypervisorType, String hypervisorVersion, String guestOsName, long guestOsId) {
-        LOG.debug("Adding guest OS hypervisor mapping - Hypervisor(Version): " + hypervisorType + "(" + hypervisorVersion + "), Guest OS: " + guestOsName);
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(insertGuestOsHypervisorSql);
-            pstmt.setString(1, hypervisorType);
-            pstmt.setString(2, hypervisorVersion);
-            pstmt.setString(3, guestOsName);
-            pstmt.setLong(4, guestOsId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            LOG.error("Failed to add guest OS hypervisor mapping due to: " + e.getMessage(), e);
+    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+        if(!isValidGuestOSHypervisorMapping(mapping)) {
+            return;
         }
+
+        LOG.debug("Adding guest OS hypervisor mapping - " + mapping.toString());
+        GuestOSHypervisorVO guestOsMapping = new GuestOSHypervisorVO();
+        guestOsMapping.setHypervisorType(mapping.getHypervisorType());
+        guestOsMapping.setHypervisorVersion(mapping.getHypervisorVersion());
+        guestOsMapping.setGuestOsName(mapping.getGuestOsName());
+        guestOsMapping.setGuestOsId(guestOsId);
+        guestOSHypervisorDao.persist(guestOsMapping);
     }
 
-    public void updateGuestOsName(Connection conn, long categoryId, String oldDisplayName, String newDisplayName) {
-        long guestOsId = getGuestOsId(conn, categoryId, oldDisplayName);
-        if (guestOsId == 0) {
+    public void updateGuestOsName(long categoryId, String oldDisplayName, String newDisplayName) {
+        GuestOSVO guestOS = guestOSDao.findByCategoryIdAndDisplayNameOrderByCreatedDesc(categoryId, oldDisplayName);
+        if (guestOS == null) {
             LOG.debug("Unable to update guest OS name, as there is no guest OS with category id: " + categoryId + " and display name: " + oldDisplayName);
             return;
         }
 
-        updateGuestOs(conn, guestOsId, newDisplayName);
+        guestOS.setDisplayName(newDisplayName);
+        guestOSDao.update(guestOS.getId(), guestOS);
     }
 
-    public void updateGuestOsNameFromMapping(Connection conn, String newDisplayName, Ternary<String, String, String> mapping) {
-        long guestOsId = getGuestOsIdFromHypervisorMapping(conn, mapping.first(), mapping.second(), mapping.third());
-        if (guestOsId == 0) {
+    public void updateGuestOsNameFromMapping(String newDisplayName, GuestOSHypervisorMapping mapping) {
+        if(!isValidGuestOSHypervisorMapping(mapping)) {
+            return;
+        }
+
+        GuestOSHypervisorVO guestOSHypervisorVO = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(mapping.getGuestOsName(), mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        if (guestOSHypervisorVO == null) {
             LOG.debug("Unable to update guest OS name, as there is no guest os hypervisor mapping");
             return;
         }
 
-        updateGuestOs(conn, guestOsId, newDisplayName);
+        long guestOsId = guestOSHypervisorVO.getGuestOsId();
+        GuestOSVO guestOS = guestOSDao.findById(guestOsId);
+        if (guestOS != null) {
+            guestOS.setDisplayName(newDisplayName);
+            guestOSDao.update(guestOS.getId(), guestOS);
+        }
     }
 
-    public void updateGuestOsIdInHypervisorMapping(Connection conn, long categoryId, String displayName, Ternary<String, String, String> mapping) {
-        long oldGuestOsId = getGuestOsIdFromHypervisorMapping(conn, mapping.first(), mapping.second(), mapping.third());
-        if (oldGuestOsId == 0) {
-            LOG.debug("Unable to update guest OS in hypervisor mapping, as there is no guest os hypervisor mapping - Hypervisor(Version): " + mapping.first() + "(" + mapping.second() + "), Guest OS: " + mapping.third());
+    public void updateGuestOsIdInHypervisorMapping(Connection conn, long categoryId, String displayName, GuestOSHypervisorMapping mapping) {
+        if(!isValidGuestOSHypervisorMapping(mapping)) {
             return;
         }
 
-        long newGuestOsId = getGuestOsId(conn, categoryId, displayName);
+        long oldGuestOsId = getGuestOsIdFromHypervisorMapping(mapping);
+        if (oldGuestOsId == 0) {
+            LOG.debug("Unable to update guest OS in hypervisor mapping, as there is no guest os hypervisor mapping - " + mapping.toString());
+            return;
+        }
+
+        long newGuestOsId = getGuestOsId(categoryId, displayName);
         if (newGuestOsId == 0) {
             LOG.debug("Unable to update guest OS id in hypervisor mapping, as there is no guest OS with category id: " + categoryId + " and display name: " + displayName);
             return;
@@ -164,30 +165,27 @@ public class GuestOsMapper {
         updateGuestOsIdInMapping(conn, oldGuestOsId, newGuestOsId, mapping);
     }
 
-    private void updateGuestOs(Connection conn, long guestOsId, String newDisplayName) {
-        LOG.debug("Updating display name: " + newDisplayName + " in the guest OS with id: " + guestOsId);
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(updateGuestOsSql);
-            pstmt.setString(1, newDisplayName);
-            pstmt.setLong(2, guestOsId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            LOG.error("Failed to update guest OS due to: " + e.getMessage(), e);
-        }
-    }
-
-    private void updateGuestOsIdInMapping(Connection conn, long oldGuestOsId, long newGuestOsId, Ternary<String, String, String> mapping) {
-        LOG.debug("Updating guest os id: " + oldGuestOsId + " to id: " + newGuestOsId + " in hypervisor mapping - Hypervisor(Version): " + mapping.first() + "(" + mapping.second() + "), Guest OS: " + mapping.third());
+    private void updateGuestOsIdInMapping(Connection conn, long oldGuestOsId, long newGuestOsId, GuestOSHypervisorMapping mapping) {
+        LOG.debug("Updating guest os id: " + oldGuestOsId + " to id: " + newGuestOsId + " in hypervisor mapping - " + mapping.toString());
         try {
             PreparedStatement pstmt = conn.prepareStatement(updateGuestOsHypervisorSql);
             pstmt.setLong(1, newGuestOsId);
             pstmt.setLong(2, oldGuestOsId);
-            pstmt.setString(3, mapping.first());
-            pstmt.setString(4, mapping.second());
-            pstmt.setString(5, mapping.third());
+            pstmt.setString(3, mapping.getHypervisorType());
+            pstmt.setString(4, mapping.getHypervisorVersion());
+            pstmt.setString(5, mapping.getGuestOsName());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             LOG.error("Failed to update guest OS id in hypervisor mapping due to: " + e.getMessage(), e);
         }
+    }
+
+    private boolean isValidGuestOSHypervisorMapping(GuestOSHypervisorMapping mapping) {
+        if (mapping != null && mapping.isValid()) {
+            return true;
+        }
+
+        LOG.warn("Invalid Guest OS hypervisor mapping");
+        return false;
     }
 }

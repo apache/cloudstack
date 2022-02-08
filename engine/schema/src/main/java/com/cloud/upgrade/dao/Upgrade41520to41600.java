@@ -25,13 +25,13 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.storage.GuestOSHypervisorMapping;
 import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.RolePermissionChecker;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
@@ -79,7 +79,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     private void correctGuestOsIdsInHypervisorMapping(final Connection conn) {
         LOG.debug("Correcting guest OS ids in hypervisor mappings");
-        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new Ternary<String, String, String>("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
+        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
     }
 
     private void populateAnnotationPermissions(Connection conn) {
