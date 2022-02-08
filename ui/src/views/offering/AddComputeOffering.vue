@@ -228,7 +228,7 @@
             <a-radio-button value="strict">
               {{ $t('label.strict') }}
             </a-radio-button>
-            <a-radio-button value="preferred">
+            <a-radio-button value="Preferred">
               {{ $t('label.preferred') }}
             </a-radio-button>
           </a-radio-group>
