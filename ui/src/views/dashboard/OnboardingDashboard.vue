@@ -27,6 +27,15 @@
         <div class="subtitle">{{ $t('label.introduction.to.cloudstack') }}</div>
         <p>{{ $t('message.installwizard.copy.whatiscloudstack') }}</p>
         <img class="center" src="assets/bg-what-is-cloudstack.png">
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.header') }}</pre>
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.website') }}<a href="https://cloudstack.apache.org" target="_blank">https://cloudstack.apache.org</a></pre>
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.document') }}<a :href="'https://docs.cloudstack.apache.org/en/' + cloudstackminorversion" target="_blank">https://docs.cloudstack.apache.org/en/{{ cloudstackminorversion }}</a></pre>
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.releasenotes') }}<a :href="'https://docs.cloudstack.apache.org/en/' + cloudstackminorversion + '/releasenotes/'" target="_blank">https://docs.cloudstack.apache.org/en/{{ cloudstackminorversion }}/releasenotes/</a></pre>
+
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.mailinglists') }}<a href="https://cloudstack.apache.org/mailing-lists.html" target="_blank">https://cloudstack.apache.org/mailing-lists.html</a></pre>
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.survey') }}<a href="https://cloudstack.apache.org/survey.html" target="_blank">https://cloudstack.apache.org/survey.html</a></pre>
+        <pre>{{ $t('message.installwizard.cloudstack.helptext.issues') }}<a href="https://github.com/apache/cloudstack/issues/new" target="_blank">https://github.com/apache/cloudstack/issues/new</a></pre>
+
         <a-button @click="() => { this.step = 1 }" type="primary">
           {{ $t('label.continue.install') }}
           <a-icon type="double-right"/>
@@ -77,6 +86,7 @@ export default {
   data () {
     return {
       step: 0,
+      cloudstackminorversion: this.$store.getters.features.cloudstackversion.split('-')[0],
       resource: {
         id: this.$store.getters.userInfo.id,
         username: this.$store.getters.userInfo.username
@@ -135,6 +145,14 @@ p {
   font-size: 15px;
   line-height: 23px;
   white-space: pre-line;
+}
+
+pre {
+  font-family: sans-serif;
+  text-align: justify;
+  font-size: 15px;
+  white-space: pre-wrap;
+  margin: 0px 0px;
 }
 
 .center {
