@@ -3651,18 +3651,19 @@ public class VirtualMachineMO extends BaseMO {
 
     public String getVirtualDiskUUID(String datastoreVolumePath) throws Exception{
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
-        if (devices != null && devices.size() > 0 && datastoreVolumePath != null) {
-            for (VirtualDevice device : devices) {
-                if (device instanceof VirtualDisk) {
-                    if (device.getBacking() instanceof VirtualDiskFlatVer2BackingInfo){
-                        VirtualDiskFlatVer2BackingInfo backingInfo =(VirtualDiskFlatVer2BackingInfo) device.getBacking();
-                        if(backingInfo.getFileName().equals(datastoreVolumePath)){
-                           return backingInfo.getUuid();
-                        }
-                    }
+        if (CollectionUtils.isEmpty(devices) || datastoreVolumePath == null) {
+            return null;
+        }
+
+        for (VirtualDevice device : devices) {
+            if (device instanceof VirtualDisk && device.getBacking() instanceof VirtualDiskFlatVer2BackingInfo){
+                VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo) device.getBacking();
+                if(backingInfo.getFileName().equals(datastoreVolumePath)){
+                   return backingInfo.getUuid();
                 }
             }
         }
+
         return null;
     }
 
