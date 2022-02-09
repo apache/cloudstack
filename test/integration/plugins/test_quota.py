@@ -237,7 +237,7 @@ class TestQuota(cloudstackTestCase):
 
         self.debug(f"Quota Balance: {response.balance}")
 
-        self.assertEqual( response.startquota, 0, f"startQuota is supposed to be o but was {response.balance.startquota}")
+        self.assertEqual( response.startquota, 0, f"startQuota is supposed to be 0 but was {response.balance.startquota}")
         return
 
     #make credit deposit and check start and end date balances
@@ -259,6 +259,6 @@ class TestQuota(cloudstackTestCase):
 
         self.debug("Quota Balance: {response.balance}")
 
-        self.assertEqual( response.balance.startquota, 0, f"startquota was supposed to be 0 but was  {response.balance.startquota}")
+        self.assertEqual( response.balance.startquota, 0, f"startquota was supposed to be 0 but was {response.balance.startquota}")
         self.assertEqual( response.balance.endquota, 10, f"endquota was supposed to be 10 but was {response.balance.endquota}")
         return
