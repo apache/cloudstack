@@ -2297,12 +2297,11 @@ public class VirtualMachineMO extends BaseMO {
         switch (type) {
             case pvscsi:
                 return new ParaVirtualSCSIController();
-            case lsilogic:
-                return new VirtualLsiLogicController();
             case lsisas1068:
                 return new VirtualLsiLogicSASController();
             case buslogic:
                 return new VirtualBusLogicController();
+            case lsilogic:
             default:
                 return new VirtualLsiLogicController();
         }
