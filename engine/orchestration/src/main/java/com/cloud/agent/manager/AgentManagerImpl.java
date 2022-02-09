@@ -39,7 +39,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Config;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
