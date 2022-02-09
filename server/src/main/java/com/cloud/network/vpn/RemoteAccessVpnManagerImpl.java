@@ -532,12 +532,6 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @DB
     @Override
-    public void removeVpnUserWithoutValidVpnOwner(long id) {
-        _vpnUsersDao.remove(id);
-    }
-
-    @DB
-    @Override
     public boolean applyVpnUsers(long vpnOwnerId, String userName, boolean forRemove) throws  ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountDao.findById(vpnOwnerId);
