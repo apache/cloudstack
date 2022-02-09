@@ -2301,7 +2301,6 @@ public class VirtualMachineMO extends BaseMO {
                 return new VirtualLsiLogicSASController();
             case buslogic:
                 return new VirtualBusLogicController();
-            case lsilogic:
             default:
                 return new VirtualLsiLogicController();
         }
