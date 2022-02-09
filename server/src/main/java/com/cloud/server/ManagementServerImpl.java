@@ -4150,6 +4150,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(final ListSSHKeyPairsCmd cmd) {
+        final Long id = cmd.getId();
         final String name = cmd.getName();
         final String fingerPrint = cmd.getFingerprint();
         final String keyword = cmd.getKeyword();
@@ -4168,6 +4169,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchCriteria<SSHKeyPairVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
