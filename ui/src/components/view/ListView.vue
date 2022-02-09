@@ -83,7 +83,7 @@
           <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
           <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
         </span>
-        <span v-else style="margin-right: 5px">
+        <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
           <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" />
         </span>
 

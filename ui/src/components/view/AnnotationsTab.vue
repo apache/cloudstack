@@ -49,6 +49,7 @@
                   :cancelText="$t('label.no')" >
                   <eye-outlined
                     :style="[{
+                      paddingRight: '5px',
                       color: item.adminsonly ? $config.theme['@primary-color'] : $config.theme['@disabled-color']
                     }]" />
                   <span> {{ item.adminsonly ? $t('label.annotation.admins.only') : $t('label.annotation.everyone') }}</span>

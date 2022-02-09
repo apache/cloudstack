@@ -784,6 +784,7 @@ export default {
         if ('apikey' in this.resource) {
           this.getUserKeys()
         }
+        this.getIcons()
       }
     },
     async templateIcon () {
@@ -824,9 +825,6 @@ export default {
       }
       return null
     }
-  },
-  async mounted () {
-    this.getIcons()
   },
   methods: {
     showUploadModal (show) {

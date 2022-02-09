@@ -68,7 +68,7 @@
           <template #title>
             {{ item.name }}
           </template>
-          <template #description style="word-break: break-all">
+          <template #description>
             <div v-if="item.edit" style="display: flex">
               <a-auto-complete
                 style="width: 100%"
@@ -91,7 +91,7 @@
                 iconType="check-circle-two-tone"
                 iconTwoToneColor="#52c41a" />
             </div>
-            <span v-else>{{ item.value }}</span>
+            <span v-else style="word-break: break-all">{{ item.value }}</span>
           </template>
         </a-list-item-meta>
         <template #actions>

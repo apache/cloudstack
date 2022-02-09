@@ -27,6 +27,8 @@
       v-if="logo !== 'debian'" />
     <debian-icon
       v-else-if="logo === 'debian'"
+      :width="size === '4x' ? 56 : 16"
+      :height="size === '4x' ? 56 : 16"
       :style="{
         height: size === '4x' ? '56px' : '16px',
         width: size === '4x' ? '56px' : '16px',
