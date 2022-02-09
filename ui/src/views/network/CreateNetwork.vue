@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading" class="form-layout">
-    <a-tabs :activeKey="defaultNetworkTypeTabKey" :animated="false" v-if="!loading">
+    <a-tabs :default-active-key="defaultNetworkTypeTabKey" :animated="false" v-if="!loading">
       <a-tab-pane :tab="$t('label.isolated')" key="1" v-if="isAdvancedZoneWithoutSGAvailable">
         <CreateIsolatedNetworkForm
           :loading="loading"
@@ -69,7 +69,7 @@ export default {
   data () {
     return {
       isAdvancedZoneWithoutSGAvailable: false,
-      defaultNetworkTypeTabKey: '2',
+      defaultNetworkTypeTabKey: '1',
       loading: false,
       actionZones: [],
       actionZoneLoading: false
