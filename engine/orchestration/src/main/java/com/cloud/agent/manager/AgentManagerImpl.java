@@ -343,12 +343,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 Answer answer = null;
                 try {
-                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(host.getHypervisorType());
-                    Pair<Boolean, Long> result = hvGuru.getCommandHostDelegation(host.getId(), cmd);
-                    final long targetHostId = result.first() ? result.second() : host.getId();
+                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
-                    s_logger.error("Error sending command to host", e);
+                    s_logger.error("Error sending command " + cmd.getClass().getName() + " to host: " +
+                            host.getUuid(), e);
                 }
                 if (answer != null) {
                     return answer;
