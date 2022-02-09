@@ -652,3 +652,16 @@ INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
         INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
         WHERE ssh_keypairs.account_id = vm_instance.account_id;
 
+-- Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`vm_stats`;
+CREATE TABLE `cloud`.`vm_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `vm_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Update name for global configuration vm.stats.increment.metrics
+Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
