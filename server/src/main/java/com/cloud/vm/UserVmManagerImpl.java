@@ -2360,9 +2360,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
 
             if (vm.getBackupOfferingId() != null) {
-                s_logger.debug(String.format("Removing the VM [uuid: %s, name: %s] from Backup Offering [uuid: %s, externalId: %s] and destroying all saved backups.",
-                        vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(), vm.getBackupExternalId()));
-                backupManager.removeVMFromBackupOffering(vm.getId(), true);
+                List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+                if (CollectionUtils.isEmpty(backupsForVm)) {
+                    backupManager.removeVMFromBackupOffering(vm.getId(), true);
+                } else {
+                    throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
+                            + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
+                            + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                            vm.getBackupExternalId(), backupsForVm.size()));
+                }
             }
 
             releaseNetworkResourcesOnExpunge(vm.getId());
