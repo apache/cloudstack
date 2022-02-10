@@ -36,7 +36,7 @@
         <pre>{{ $t('message.installwizard.cloudstack.helptext.survey') }}<a href="https://cloudstack.apache.org/survey.html" target="_blank">https://cloudstack.apache.org/survey.html</a></pre>
         <pre>{{ $t('message.installwizard.cloudstack.helptext.issues') }}<a href="https://github.com/apache/cloudstack/issues/new" target="_blank">https://github.com/apache/cloudstack/issues/new</a></pre>
 
-        <a-button @click="() => { this.step = 1 }" type="primary">
+        <a-button @click="() => { step = 1 }" type="primary">
           {{ $t('label.continue.install') }}
           <double-right-outlined />
         </a-button>
