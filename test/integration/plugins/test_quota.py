@@ -56,11 +56,7 @@ class TestQuota(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestQuota, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -73,12 +69,7 @@ class TestQuota(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestQuota, self).tearDown()
 
     #Check quotaTariffList API returning 22 items
     @attr(tags=["smoke", "advanced"], required_hardware="false")
@@ -244,10 +235,9 @@ class TestQuota(cloudstackTestCase):
         cmd.startdate = today
         response = self.apiclient.quotaBalance(cmd)
 
-        self.debug("Quota Balance on: %s" % response.startdate)
-        self.debug("is: %s" % response.startquota)
+        self.debug(f"Quota Balance: {response.balance}")
 
-        self.assertEqual( response.startquota, 10)
+        self.assertEqual( response.startquota, 0, f"startQuota is supposed to be 0 but was {response.balance.startquota}")
         return
 
     #make credit deposit and check start and end date balances
@@ -267,9 +257,8 @@ class TestQuota(cloudstackTestCase):
         cmd.enddate = today 
         response = self.apiclient.quotaBalance(cmd)
 
-        self.debug("Quota Balance on: %s" % response.startdate)
-        self.debug("is: %s" % response.startquota)
+        self.debug("Quota Balance: {response.balance}")
 
-        self.assertEqual( response.startquota, 0)
-        self.assertEqual( response.endquota, 10)
+        self.assertEqual( response.balance.startquota, 0, f"startquota was supposed to be 0 but was {response.balance.startquota}")
+        self.assertEqual( response.balance.endquota, 10, f"endquota was supposed to be 10 but was {response.balance.endquota}")
         return
