@@ -503,7 +503,7 @@
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          v-decorator="['boottype', { initialValue: bootType ? bootType : options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
+                          v-decorator="['boottype', { initialValue: defaultBootType ? defaultBootType : options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
                           @change="onBootTypeChange"
                           showSearch
                           optionFilterProp="children"
@@ -515,7 +515,7 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode', { initialValue: bootMode ? bootMode : options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          v-decorator="['bootmode', { initialValue: defaultBootMode ? defaultBootMode : options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
                           showSearch
                           optionFilterProp="children"
                           :filterOption="filterOption" >
@@ -786,8 +786,8 @@ export default {
       },
       instanceConfig: {},
       template: {},
-      bootType: '',
-      bootMode: '',
+      defaultBootType: '',
+      defaultBootMode: '',
       templateConfigurations: [],
       templateNics: [],
       templateLicenses: [],
@@ -1444,9 +1444,9 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.bootType = this.template?.details?.UEFI ? 'UEFI' : ''
-          this.fetchBootModes(this.bootType)
-          this.bootMode = this.template?.details?.UEFI
+          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
+          this.fetchBootModes(this.defaultBootType)
+          this.defaultBootMode = this.template?.details?.UEFI
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2223,8 +2223,8 @@ export default {
     },
     onBootTypeChange (value) {
       this.fetchBootModes(value)
-      this.bootMode = this.options.bootModes?.[0]?.id || undefined
-      this.updateFieldValue('bootmode', this.bootMode)
+      this.defaultBootMode = this.options.bootModes?.[0]?.id || undefined
+      this.updateFieldValue('bootmode', this.defaultBootMode)
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection
