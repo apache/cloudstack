@@ -123,7 +123,7 @@
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis.version>1.4</cs.axis.version>
         <cs.batik.version>1.14</cs.batik.version>
-        <cs.bcprov.version>1.64</cs.bcprov.version>
+        <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cxf.version>3.2.14</cs.cxf.version>
@@ -145,7 +145,7 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.36.v20210114</cs.jetty.version>
+        <cs.jetty.version>9.4.44.v20210927</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.9</cs.joda-time.version>
@@ -555,6 +555,11 @@
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-jdk15on</artifactId>
+                <version>${cs.bcprov.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${cs.groovy.version}</version>
@@ -664,7 +669,7 @@
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesimpl</artifactId>
-                <version>2.12.0</version>
+                <version>${cs.xercesImpl.version}</version>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>

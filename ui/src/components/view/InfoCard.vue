@@ -601,11 +601,8 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).name !== '404'"
-            :to="{ path: '/' + item.name, query: getRouterQuery(item)}">
-            <a-button style="margin-right: 10px">
-              <template #icon>
-                <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
-              </template>
+            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : item.param === 'keypair' ? resource.name : resource.id) }">
+            <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).meta.icon" >
               {{ $t('label.view') + ' ' + $t(item.title) }}
             </a-button>
           </router-link>
