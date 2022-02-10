@@ -389,32 +389,10 @@
                 <template #description>
                   <div v-if="zoneSelected">
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
-                      <a-form-item
-                        v-for="(nic, nicIndex) in templateNics"
-                        :key="nicIndex"
-                        :v-bind="nic.name"
-                        :name="'networkMap.nic-' + nic.InstanceID.toString()"
-                        :ref="'networkMap.nic-' + nic.InstanceID.toString()">
-                        <template #label>
-                          <tooltip-label :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
-                        </template>
-                        <a-select
-                          showSearch
-                          optionFilterProp="label"
-                          v-model:value="form['networkMap.nic-' + nic.InstanceID.toString()]"
-                          :placeholder="nic.networkDescription"
-                          :filterOption="(input, option) => {
-                            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                          }"
-                        >
-                          <a-select-option v-for="opt in options.networks" :key="opt.id">
-                            <span v-if="opt.type!=='L2'">
-                              {{ opt.name || opt.description }} ({{ `${$t('label.cidr')}: ${opt.cidr}` }})
-                            </span>
-                            <span v-else>{{ opt.name || opt.description }}</span>
-                          </a-select-option>
-                        </a-select>
-                      </a-form-item>
+                      <instance-nics-network-select-list-view
+                        :nics="templateNics"
+                        :zoneid="selectedZone"
+                        @select="handleNicsNetworkSelection" />
                     </div>
                     <div v-show="!(vm.templateid && templateNics && templateNics.length > 0)" >
                       <network-selection
@@ -720,6 +698,7 @@ import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
 
 export default {
   name: 'Wizard',
@@ -737,7 +716,8 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InstanceNicsNetworkSelectListView
   },
   props: {
     visible: {
@@ -862,7 +842,8 @@ export default {
       maxIops: 0,
       zones: [],
       selectedZone: '',
-      formModel: {}
+      formModel: {},
+      nicToNetworkSelection: []
     }
   },
   computed: {
@@ -1776,13 +1757,11 @@ export default {
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
         // step 6: select network
         if (this.zone.networktype !== 'Basic') {
-          if ('networkMap' in values) {
-            const keys = Object.keys(values.networkMap)
-            for (var j = 0; j < keys.length; ++j) {
-              if (values.networkMap[keys[j]] && values.networkMap[keys[j]].length > 0) {
-                deployVmData['nicnetworklist[' + j + '].nic'] = keys[j].replace('nic-', '')
-                deployVmData['nicnetworklist[' + j + '].network'] = values.networkMap[keys[j]]
-              }
+          if (this.nicToNetworkSelection && this.nicToNetworkSelection.length > 0) {
+            for (var j in this.nicToNetworkSelection) {
+              var nicNetwork = this.nicToNetworkSelection[j]
+              deployVmData['nicnetworklist[' + j + '].nic'] = nicNetwork.nic
+              deployVmData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
             const arrNetwork = []
@@ -2157,6 +2136,17 @@ export default {
         nics.sort(function (a, b) {
           return a.InstanceID - b.InstanceID
         })
+        if (this.options.networks && this.options.networks.length > 0) {
+          this.nicToNetworkSelection = []
+          for (var i = 0; i < nics.length; ++i) {
+            var nic = nics[i]
+            nic.id = nic.InstanceID
+            var network = this.options.networks[Math.min(i, this.options.networks.length - 1)]
+            nic.selectednetworkid = network.id
+            nic.selectednetworkname = network.name
+            this.nicToNetworkSelection.push({ nic: nic.id, network: network.id })
+          }
+        }
       }
       return nics
     },
@@ -2323,6 +2313,9 @@ export default {
     onBootTypeChange (value) {
       this.fetchBootModes(value)
       this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
+    },
+    handleNicsNetworkSelection (nicToNetworkSelection) {
+      this.nicToNetworkSelection = nicToNetworkSelection
     }
   }
 }
