@@ -79,7 +79,7 @@ export default {
       const getNextPage = () => {
         this.loading = true
         api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500, showIcon: true }).then(json => {
-          if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
+          if (json?.listprojectsresponse?.listprojectsresponse.project) {
             projects.push(...json.listprojectsresponse.project)
           }
           if (projects.length < json.listprojectsresponse.count) {
