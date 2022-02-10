@@ -17,39 +17,43 @@
 
 <template>
   <a-form class="form" v-ctrl-enter="handleSubmit">
-    <p v-html="$t('Select SSH Keys from the list')" />
-    <div v-if="loading" class="loading">
-      <a-icon type="loading" style="color: #1890ff;" />
-    </div>
+    <p v-html="$t('message.desc.reset.ssh.key.pair')" />
+    <a-spin :spinning="loading">
 
-    <div class="form__item">
-      <a-input-search
-        style="margin-bottom: 10px;"
-        :placeholder="$t('label.search')"
-        v-model="filter"
-        @search="handleSearch"
-        autoFocus />
-    </div>
+      <div class="form__item">
+        <a-input-search
+          style="margin-bottom: 10px;"
+          :placeholder="$t('label.search')"
+          v-model="filter"
+          @search="handleSearch"
+          autoFocus />
+      </div>
 
-    <div class="form__item">
-      <a-table
-        size="small"
-        :loading="loading"
-        :columns="columns"
-        :dataSource="items"
-        :rowKey="record => record.name"
-        :pagination="{showSizeChanger: true, total: total}"
-        :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-        @change="handleTableChange"
-        @handle-search-filter="handleTableChange"
-        style="overflow-y: auto"/>
-    </div>
+      <div class="form__item">
+        <a-table
+          size="small"
+          :loading="loading"
+          :columns="columns"
+          :dataSource="items"
+          :rowKey="record => record.name"
+          :pagination="{showSizeChanger: true, total: total}"
+          :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
+          @change="handleTableChange"
+          @handle-search-filter="handleTableChange"
+          style="overflow-y: auto" >
 
-    <div :span="24" class="action-button">
-      <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-      <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
-    </div>
+          <template v-slot:account><a-icon type="user" /> {{ $t('label.account') }}</template>
+          <template v-slot:domain><a-icon type="block" /> {{ $t('label.domain') }}</template>
 
+        </a-table>
+      </div>
+
+      <div :span="24" class="action-button">
+        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      </div>
+
+    </a-spin>
   </a-form>
 </template>
 
@@ -73,7 +77,18 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          width: '40%'
+        },
+        {
+          dataIndex: 'account',
+          slots: { title: 'account' },
+          width: '30%'
+        },
+        {
+          dataIndex: 'domain',
+          slots: { title: 'domain' },
+          width: '30%'
         }
       ],
       selectedRowKeys: [],

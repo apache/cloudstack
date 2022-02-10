@@ -907,31 +907,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do SSH Key reset");
         }
 
+        if (cmd.getNames() == null || cmd.getNames().isEmpty()) {
+            throw new InvalidParameterValueException("'keypair' or 'keyparis' must be specified");
+        }
+
         String keypairnames = "";
         String sshPublicKeys = "";
         List<SSHKeyPairVO> pairs = new ArrayList<>();
 
-        if (!cmd.getNames().isEmpty() && cmd.getNames() != null) {
-            pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
-            for (SSHKeyPairVO pair : pairs) {
-                if (pair == null) {
-                    throw new InvalidParameterValueException("A key pair with name '" + pair.getName() + "' was not found.");
-                }
-                    String publicKey = pair.getPublicKey();
-                    sshPublicKeys = sshPublicKeys + publicKey + "\n";
-                    s_logger.info("the public key for keypair name " + pair.getName() + " is " + publicKey);
-
-            }
-            keypairnames = String.join(",", cmd.getNames());
+        pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
+        if (pairs == null || pairs.size() != cmd.getNames().size()) {
+            throw new InvalidParameterValueException("Not all specified keyparis exist");
         }
-        else {
-            throw new InvalidParameterValueException("No keypair given as input");
-        }
-
-        if (pairs.isEmpty() || pairs == null) {
-            throw new InvalidParameterValueException("Any key pair with the given names does not exist for account " + owner.getAccountName()
-                    + " in specified domain id");
-        }
+        sshPublicKeys = pairs.stream().map(p -> p.getPublicKey()).collect(Collectors.joining("\n"));
+        keypairnames = String.join(",", cmd.getNames());
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
@@ -953,7 +942,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         userVmDetailsDao.removeDetail(vmId, VmDetailConstants.ENCRYPTED_PASSWORD);
     }
 
-    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey, String keypairnames) throws ResourceUnavailableException, InsufficientCapacityException {
+    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKeys, String keypairnames) throws ResourceUnavailableException, InsufficientCapacityException {
         Long userId = CallContext.current().getCallingUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -974,7 +963,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (element == null) {
             throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for SSH Key reset");
         }
-        boolean result = element.saveSSHKey(defaultNetwork, defaultNicProfile, vmProfile, sshPublicKey);
+        boolean result = element.saveSSHKey(defaultNetwork, defaultNicProfile, vmProfile, sshPublicKeys);
         // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
         if (!result) {
             s_logger.debug("Failed to reset SSH Key for the virtual machine; no need to reboot the vm");
@@ -982,7 +971,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
-            userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
+            userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKeys);
             userVm.setDetail(VmDetailConstants.SSH_KEY_PAIR_NAMES, keypairnames);
             _vmDao.saveDetails(userVm);
 
@@ -3956,24 +3945,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // check if the user data is correct
         userData = validateUserData(userData, httpmethod);
+
         // Find an SSH public key corresponding to the key pair name, if one is
         // given
-        String sshPublicKey = "";
+        String sshPublicKeys = "";
         String keypairnames = "";
-
         if (!sshKeyPairs.isEmpty()) {
-            keypairnames = String.join(",", sshKeyPairs);
             List<SSHKeyPairVO> pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), sshKeyPairs);
-            for (SSHKeyPairVO pair : pairs) {
-                if (pair == null) {
-                    throw new InvalidParameterValueException("A key pair with name '" + pair.getName() + "' was not found.");
-                }
-                else {
-                    s_logger.info("publickey is " + pair.getPublicKey());
-                    sshPublicKey = sshPublicKey + pair.getPublicKey();
-                    sshPublicKey = sshPublicKey + "\n";
-                }
+            if (pairs == null || pairs.size() != sshKeyPairs.size()) {
+                throw new InvalidParameterValueException("Not all specified keyparis exist");
             }
+
+            sshPublicKeys = pairs.stream().map(p -> p.getPublicKey()).collect(Collectors.joining("\n"));
+            keypairnames = String.join(",", sshKeyPairs);
         }
 
         LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
@@ -4035,7 +4019,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
-                    if ((sshPublicKey != null) && (!sshPublicKey.isEmpty())) {
+                    if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
                         throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
@@ -4134,7 +4118,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         dynamicScalingEnabled = dynamicScalingEnabled && checkIfDynamicScalingCanBeEnabled(null, offering, template, zone.getId());
 
         UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,
-                isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dhcpOptionMap,
+                isIso, sshPublicKeys, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dhcpOptionMap,
                 datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, type, rootDiskOfferingId, keypairnames);
 
         // Assign instance to the group
@@ -4261,7 +4245,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private UserVmVO commitUserVm(final boolean isImport, final DataCenter zone, final Host host, final Host lastHost, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
                                   final Long diskOfferingId, final Long diskSize, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-                                  final long accountId, final long userId, final ServiceOffering offering, final boolean isIso, final String sshPublicKey, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
+                                  final long accountId, final long userId, final ServiceOffering offering, final boolean isIso, final String sshPublicKeys, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
                                   final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                                   final Map<String, Map<Integer, String>> extraDhcpOptionMap, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
                                   final Map<String, String> userVmOVFPropertiesMap, final VirtualMachine.PowerState powerState, final boolean dynamicScalingEnabled, String type, final Long rootDiskOfferingId, String sshkeypairs) throws InsufficientCapacityException {
@@ -4278,8 +4262,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.details.putAll(details);
                 }
 
-                if (sshPublicKey != "") {
-                    vm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
+                if (sshPublicKeys != "") {
+                    vm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKeys);
                 }
 
                 if (sshkeypairs != "") {
@@ -4462,13 +4446,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
             final Long diskOfferingId, final Long diskSize, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-            final long accountId, final long userId, final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
+            final long accountId, final long userId, final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKeys, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
             final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final Map<String,
             Map<Integer, String>> extraDhcpOptionMap, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
             Map<String, String> userVmOVFPropertiesMap, final boolean dynamicScalingEnabled, String type, final Long rootDiskOfferingId, String sshkeypairs) throws InsufficientCapacityException {
         return commitUserVm(false, zone, null, null, template, hostName, displayName, owner,
                 diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard,
-                accountId, userId, offering, isIso, sshPublicKey, networkNicMap,
+                accountId, userId, offering, isIso, sshPublicKeys, networkNicMap,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
                 userVmOVFPropertiesMap, null, dynamicScalingEnabled, type, rootDiskOfferingId, sshkeypairs);
@@ -7703,13 +7687,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void encryptAndStorePassword(UserVmVO vm, String password) {
-        String sshPublicKey = vm.getDetail(VmDetailConstants.SSH_PUBLIC_KEY);
-        if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
-            if (!sshPublicKey.startsWith("ssh-rsa")) {
+        String sshPublicKeys = vm.getDetail(VmDetailConstants.SSH_PUBLIC_KEY);
+        if (sshPublicKeys != null && !sshPublicKeys.equals("") && password != null && !password.equals("saved_password")) {
+            if (!sshPublicKeys.startsWith("ssh-rsa")) {
                 s_logger.warn("Only RSA public keys can be used to encrypt a vm password.");
                 return;
             }
-            String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+            String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKeys, password);
             if (encryptedPasswd == null) {
                 throw new CloudRuntimeException("Error encrypting password");
             }
@@ -7839,7 +7823,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName,
                            final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-                           final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
+                           final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKeys,
                            final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException {
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
@@ -7860,7 +7844,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
         return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                 null, null, userData, caller, isDisplayVm, keyboard,
-                accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKey, null,
+                accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, null,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null);
     }

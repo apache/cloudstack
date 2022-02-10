@@ -26,12 +26,15 @@
       :loading="loading"
       :columns="columns"
       :dataSource="items"
-      :pagination="false"
-      :rowKey="item => item.name"
       :rowSelection="rowSelection"
+      :rowKey="item => item.name"
+      :pagination="false"
       size="middle"
-      :scroll="{ y: 225 }"
-    >
+      :scroll="{ y: 225 }" >
+
+      <template v-slot:account><a-icon type="user" /> {{ $t('label.account') }}</template>
+      <template v-slot:domain><a-icon type="block" /> {{ $t('label.domain') }}</template>
+
     </a-table>
     <div style="display: block; text-align: right;">
       <a-pagination

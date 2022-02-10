@@ -1843,7 +1843,7 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
-        // deployVmData.keypairs = values.keypairs.map((keypair) => { return keypair.name })
+
         if (values.name) {
           deployVmData.name = values.name
           deployVmData.displayname = values.name
