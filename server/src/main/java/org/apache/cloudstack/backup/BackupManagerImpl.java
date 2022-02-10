@@ -315,10 +315,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         throw new CloudRuntimeException("Failed to assign the VM to the backup offering, please try removing the assignment and try again.");
                     }
                 } catch (Exception e) {
-                    LOG.error(String.format("Failed to assign VM [%s] to the Backup Offering [%s], using provider [name: %s, class: %s], due to: [%s].",
+                    String msg = String.format("Failed to assign VM [%s] to the Backup Offering [%s], using provider [name: %s, class: %s], due to: [%s].",
                             ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName", "backupOfferingId", "backupVolumes"),
                             ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering, "uuid", "name", "externalId", "provider"),
-                            backupProvider.getName(), backupProvider.getClass().getSimpleName(), e.getMessage()), e);
+                            backupProvider.getName(), backupProvider.getClass().getSimpleName(), e.getMessage());
+                    LOG.error(msg);
+                    LOG.debug(msg, e);
                 }
                 return vm;
             }
