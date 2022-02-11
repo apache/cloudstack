@@ -29,7 +29,7 @@ import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 
 @APICommand(name = ListVMsUsageHistoryCmd.APINAME, description = "Lists VM stats", responseObject = VmMetricsStatsResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0.4",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.17",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMsUsageHistoryCmd extends BaseListCmd {
     public static final String APINAME = "listVirtualMachinesUsageHistory";
