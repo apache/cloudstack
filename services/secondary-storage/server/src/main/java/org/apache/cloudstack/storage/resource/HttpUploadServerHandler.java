@@ -113,7 +113,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     @Override
     public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         if (msg instanceof HttpRequest) {
-            logger.trace(String.format("HTTP request: \n %s", msg));
+            logger.trace(String.format("HTTP request: %s", msg));
             HttpRequest request = this.request = (HttpRequest) msg;
             responseContent.setLength(0);
 
