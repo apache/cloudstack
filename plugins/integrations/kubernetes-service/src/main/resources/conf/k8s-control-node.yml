@@ -279,7 +279,7 @@ write_files:
       #!/bin/bash -e
       
       export registryConfig="\\        [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"{{registry.url.endpoint}}\"]\n \\         endpoint = [\"{{registry.url}}\"]"
-      export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url.endpoint}}\".auth]\n \tauth = \"\" \n \tidentitytoken = \"{{registry.token}}\""
+      export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url.endpoint}}\".auth]\n\tusername = \"{{registry.username}}\" \n\tpassword = \"{{registry.password}}\" \n\tidentitytoken = \"{{registry.token}}\""
       
       echo "creating config file for containerd"
       containerd config default > /etc/containerd/config.toml
