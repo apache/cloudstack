@@ -17,6 +17,12 @@
 package com.cloud.network.guru;
 
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
@@ -45,11 +51,6 @@ import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
 
 @Component
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
@@ -228,7 +229,8 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
                 EventVO.LEVEL_INFO,
                 EventTypes.EVENT_ZONE_VLAN_ASSIGN,
                 "Assigned Zone Vlan: " + vnet + " Network Id: "
-                    + network.getId(), 0);
+                    + network.getId(),
+                null, null, 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

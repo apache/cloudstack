@@ -205,7 +205,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnetId));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
-                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnetId + " Network Id: " + network.getId(), 0);
+                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnetId + " Network Id: " + network.getId(), null, null, 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

@@ -25,28 +25,27 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.Identity;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.projects.dao.ProjectDao;
-import com.cloud.projects.Project;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
@@ -91,11 +90,11 @@ public class ActionEventUtils {
         s_configDao = configDao;
     }
 
-    public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description) {
+    public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description, Long resourceId, String resourceType) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
 
-        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, null);
+        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, resourceId, resourceType, null);
 
         return event.getId();
     }
@@ -103,67 +102,67 @@ public class ActionEventUtils {
     /*
      * Save event after scheduling an async job
      */
-    public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, boolean eventDisplayEnabled, long startEventId) {
+    public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description);
 
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, startEventId);
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceId, resourceType, startEventId);
 
         return event.getId();
     }
 
-    public static void startNestedActionEvent(String eventType, String eventDescription) {
+    public static void startNestedActionEvent(String eventType, String eventDescription, Long resourceId, String resourceType) {
         CallContext.setActionEventInfo(eventType, eventDescription);
-        onStartedActionEventFromContext(eventType, eventDescription, true);
+        onStartedActionEventFromContext(eventType, eventDescription, resourceId, resourceType, true);
     }
 
-    public static void onStartedActionEventFromContext(String eventType, String eventDescription, boolean eventDisplayEnabled) {
+    public static void onStartedActionEventFromContext(String eventType, String eventDescription, Long resourceId, String resourceType, boolean eventDisplayEnabled) {
         CallContext ctx = CallContext.current();
         long userId = ctx.getCallingUserId();
         long accountId = ctx.getProject() != null ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
         long startEventId = ctx.getStartEventId();
 
         if (!eventType.equals(""))
-            ActionEventUtils.onStartedActionEvent(userId, accountId, eventType, eventDescription, eventDisplayEnabled, startEventId);
+            ActionEventUtils.onStartedActionEvent(userId, accountId, eventType, eventDescription, resourceId, resourceType, eventDisplayEnabled, startEventId);
     }
 
     /*
      * Save event after starting execution of an async job
      */
-    public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, boolean eventDisplayEnabled, long startEventId) {
+    public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description);
 
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, startEventId);
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, resourceId, resourceType, startEventId);
 
         return event.getId();
     }
 
-    public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
+    public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, String description, Long resourceId, String resourceType, long startEventId) {
 
-        return onCompletedActionEvent(userId, accountId, level, type, true, description, startEventId);
+        return onCompletedActionEvent(userId, accountId, level, type, true, description, resourceId, resourceType, startEventId);
     }
 
-    public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, long startEventId) {
+    public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType, long startEventId) {
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
 
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, startEventId);
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, resourceId, resourceType, startEventId);
 
         return event.getId();
 
     }
 
-    public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description) {
+    public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description);
 
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, null);
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, resourceId, resourceType, null);
 
         return event.getId();
     }
 
     private static Event persistActionEvent(Long userId, Long accountId, Long domainId, String level, String type,
-                                            Event.State state, boolean eventDisplayEnabled, String description, Long startEventId) {
+                                            Event.State state, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType, Long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);

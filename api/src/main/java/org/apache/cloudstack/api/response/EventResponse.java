@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.event.Event;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Event.class)
 @SuppressWarnings("unused")
@@ -69,6 +68,14 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the account's domain")
     private String domainName;
+
+    @SerializedName(ApiConstants.RESOURCE_ID)
+    @Param(description = "the id of the resource")
+    private String resourceId;
+
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "the type of the resource")
+    private String resourceType;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the event was created")
@@ -115,6 +122,14 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
     public void setCreated(Date created) {

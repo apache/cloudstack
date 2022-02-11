@@ -18,16 +18,19 @@ package com.cloud.event.dao;
 
 import java.util.List;
 
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.EventResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -42,6 +45,9 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
     private SearchBuilder<EventJoinVO> vrIdSearch;
 
     private SearchBuilder<EventJoinVO> CompletedEventSearch;
+
+    @Inject
+    EntityManager entityMgr;
 
     protected EventJoinDaoImpl() {
 
@@ -85,7 +91,15 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setParentId(event.getStartUuid());
         responseEvent.setState(event.getState());
         responseEvent.setUsername(event.getUserName());
-
+        Long resourceId = event.getResourceId();
+        Class<?> clazz = ApiCommandJobType.getTypeClass(event.getResourceType());
+        if (resourceId != null && clazz != null ) {
+            final Object objVO = entityMgr.findById(clazz, resourceId);
+            if (objVO instanceof Identity) {
+                responseEvent.setResourceType(event.getResourceType());
+                responseEvent.setResourceId(((Identity)objVO).getUuid());
+            }
+        }
         ApiResponseHelper.populateOwner(responseEvent, event);
         responseEvent.setObjectName("event");
         return responseEvent;

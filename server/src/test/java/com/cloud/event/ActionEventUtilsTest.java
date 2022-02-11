@@ -208,7 +208,7 @@ public class ActionEventUtilsTest {
         CallContext.current().putContextParameter(VirtualMachine.class, instanceUuid);
         CallContext.current().putContextParameter(IpAddress.class, ipUuid);
 
-        ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), "StaticNat", "Test event");
+        ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), "StaticNat", "Test event", null, null);
 
         //Assertions
         Assert.assertNotEquals(publishedEvents.size(), 0);

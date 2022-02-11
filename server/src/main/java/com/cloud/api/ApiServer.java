@@ -724,7 +724,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // save the scheduled event
             final Long eventId =
                     ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? (Long)User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                            asyncCmd.getEventDescription(), asyncCmd.isDisplay(), startEventId);
+                            asyncCmd.getEventDescription(), asyncCmd.getInstanceId(), asyncCmd.getInstanceType().toString(), asyncCmd.isDisplay(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;

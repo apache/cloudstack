@@ -24,6 +24,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
@@ -73,7 +74,8 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
                 String eventType = getEventType(actionEvent, ctx);
                 boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
 
-                ActionEventUtils.onStartedActionEventFromContext(eventType, eventDescription, isEventDisplayEnabled);
+                ActionEventUtils.onStartedActionEventFromContext(eventType, eventDescription,
+                        getEventResourceId(actionEvent), getEventResourceType(actionEvent), isEventDisplayEnabled);
             }
         }
         return event;
@@ -96,11 +98,13 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             if (actionEvent.create()) {
                 //This start event has to be used for subsequent events of this action
                 startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType,
-                        isEventDisplayEnabled, "Successfully created entity for " + eventDescription);
+                        isEventDisplayEnabled, "Successfully created entity for " + eventDescription,
+                        getEventResourceId(actionEvent), getEventResourceType(actionEvent));
                 ctx.setStartEventId(startEventId);
             } else {
                 ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType,
-                        isEventDisplayEnabled, "Successfully completed " + eventDescription, startEventId);
+                        isEventDisplayEnabled, "Successfully completed " + eventDescription,
+                        getEventResourceId(actionEvent), getEventResourceType(actionEvent), startEventId);
             }
         }
     }
@@ -121,11 +125,13 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
 
             if (actionEvent.create()) {
                 long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType,
-                            isEventDisplayEnabled, "Error while creating entity for " + eventDescription);
+                        isEventDisplayEnabled, "Error while creating entity for " + eventDescription,
+                        getEventResourceId(actionEvent), getEventResourceType(actionEvent));
                 ctx.setStartEventId(eventId);
             } else {
                 ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, isEventDisplayEnabled,
-                        "Error while " + eventDescription, startEventId);
+                        "Error while " + eventDescription,
+                        getEventResourceId(actionEvent), getEventResourceType(actionEvent), startEventId);
             }
         }
     }
@@ -182,5 +188,13 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
         }
 
         return eventDescription;
+    }
+
+    protected Long getEventResourceId(ActionEvent actionEvent) {
+        return actionEvent.resourceId() == -1? null : actionEvent.resourceId();
+    }
+
+    protected String getEventResourceType(ActionEvent actionEvent) {
+        return StringUtils.isEmpty(actionEvent.resourceType()) ? null : actionEvent.resourceType();
     }
 }

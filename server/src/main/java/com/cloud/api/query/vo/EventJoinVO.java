@@ -95,6 +95,12 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "domain_path")
     private String domainPath = null;
 
+    @Column(name = "resource_id")
+    private Long resourceId;
+
+    @Column(name = "resource_type")
+    private String resourceType;
+
     @Column(name = "project_id")
     private long projectId;
 
@@ -161,6 +167,14 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Override
     public String getDomainPath() {
         return domainPath;
+    }
+
+    public Long getResourceId() {
+        return resourceId;
+    }
+
+    public String getResourceType() {
+        return resourceType;
     }
 
     public long getProjectId() {
