@@ -345,8 +345,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
-                    s_logger.error("Error sending command " + cmd.getClass().getName() + " to host: " +
-                            host.getUuid(), e);
+                    String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
+                            host.getUuid(), e.getLocalizedMessage());
+                    s_logger.error(errorMsg);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(errorMsg, e);
+                    }
                 }
                 if (answer != null) {
                     return answer;
