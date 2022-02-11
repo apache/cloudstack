@@ -91,6 +91,9 @@ export default {
       selectOptionsTimer: null
     }
   },
+  created () {
+    this.checked = this.defaultCheckBoxValue
+  },
   watch: {
     selectOptions () {
       clearTimeout(this.selectOptionsTimer)
@@ -109,12 +112,6 @@ export default {
         return option
       })
     }
-  },
-  created () {
-    this.fields = {}
-    this.fields[this.checkBoxDecorator] = false
-    this.fields[this.selectDecorator] = this.selectedOption ? this.selectedOption : this.getSelectInitialValue()
-    this.checked = this.defaultCheckBoxValue
   },
   methods: {
     arrayHasItems (array) {

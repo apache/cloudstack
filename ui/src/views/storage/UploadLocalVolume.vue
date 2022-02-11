@@ -191,9 +191,7 @@ export default {
     fetchDiskOfferings (zoneId) {
       this.offeringLoading = true
       this.offerings = [{ id: -1, name: '' }]
-      this.form.setFieldsValue({
-        diskofferingid: undefined
-      })
+      this.form.diskofferingid = undefined
       api('listDiskOfferings', {
         zoneid: zoneId,
         listall: true

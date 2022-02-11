@@ -80,7 +80,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.migrateVmWithVolumeApiParams = this.$getApiParams('migrateVirtualMachineWithVolume')
   },
   computed: {

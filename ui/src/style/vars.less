@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+@import "common/function";
+
 @logo-width: 256px;
 @logo-height: 64px;
 @banner-width: 450px;
@@ -430,4 +432,8 @@ a {
 .ant-list-sm .ant-list-item {
   padding-left: 0;
   padding-right: 0;
+}
+
+.ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
 }

@@ -238,7 +238,7 @@ export default {
       this.osTypes.loading = true
       api('listOsTypes', params).then(json => {
         const listOsTypes = json.listostypesresponse.ostype
-        this.$set(this.osTypes, 'opts', listOsTypes)
+        this.osTypes.opts = listOsTypes
       }).finally(() => {
         this.osTypes.loading = false
       })
@@ -303,7 +303,7 @@ export default {
         })
       }
 
-      this.$set(this.rootDisk, 'opts', controller)
+      this.rootDisk.opts = controller
     },
     fetchNicAdapterTypes () {
       const nicAdapterType = []
@@ -328,7 +328,7 @@ export default {
         description: 'Vmxnet3'
       })
 
-      this.$set(this.nicAdapterType, 'opts', nicAdapterType)
+      this.nicAdapterType.opts = nicAdapterType
     },
     fetchKeyboardTypes () {
       const keyboardType = []
@@ -345,7 +345,7 @@ export default {
         })
       })
 
-      this.$set(this.keyboardType, 'opts', keyboardType)
+      this.keyboardType.opts = keyboardType
     },
     handleSubmit (e) {
       e.preventDefault()

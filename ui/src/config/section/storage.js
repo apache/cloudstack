@@ -200,7 +200,7 @@ export default {
         },
         {
           api: 'changeOfferingForVolume',
-          icon: 'swap',
+          icon: 'swap-outlined',
           docHelp: 'adminguide/storage.html#id2',
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],

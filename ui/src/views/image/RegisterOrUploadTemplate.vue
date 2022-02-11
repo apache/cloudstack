@@ -69,7 +69,6 @@
         <div v-if="currentForm === 'Create'">
           <a-form-item
             :label="$t('label.zone')"
-            :validate-status="zoneError"
             name="zoneids"
             ref="zoneids">
             <a-select
@@ -95,7 +94,6 @@
         <div v-else>
           <a-form-item
             :label="$t('label.zoneid')"
-            :validate-status="zoneError"
             ref="zoneid"
             name="zoneid">
             <a-select
@@ -764,8 +762,10 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        if (this.zoneError !== '') {
-          return
+        if (this.currentForm === 'Create') {
+          delete this.form.zoneid
+        } else {
+          delete this.form.zoneids
         }
         const values = toRaw(this.form)
         let params = {}

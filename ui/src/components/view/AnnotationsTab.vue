@@ -106,7 +106,8 @@
             <a-button
               style="margin-top: 10px; float: right"
               @click="saveNote"
-              type="primary" >
+              type="primary"
+              ref="submit">
               {{ $t('label.submit') }}
             </a-button>
           </div>

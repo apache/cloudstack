@@ -112,7 +112,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = {}
     if (this.$route.meta.name === 'vm') {
       this.apiConfig = this.$store.getters.apis.migrateVirtualMachineWithVolume || {}
