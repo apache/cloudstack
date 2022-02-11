@@ -198,11 +198,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             final String registryUrlKey = "{{registry.url}}";
             final String registryUrlEpKey = "{{registry.url.endpoint}}";
             final String registryAuthKey = "{{registry.token}}";
+            final String registryUname = "{{registry.username}}";
+            final String registryPsswd = "{{registry.password}}";
 
             final String usernamePasswordKey = registryUsername + ":" + registryPassword;
             String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes((com.cloud.utils.StringUtils.getPreferredCharset())));
             k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
             k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
+            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
+            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
             k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
         }
         return k8sConfig;
