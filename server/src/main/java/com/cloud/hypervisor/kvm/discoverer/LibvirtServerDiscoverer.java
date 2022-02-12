@@ -381,8 +381,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             if (sshConnection != null)
                 sshConnection.close();
         }
-
-        return null;
     }
 
     private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {
