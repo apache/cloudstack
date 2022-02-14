@@ -147,16 +147,20 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         }
         Long accountId = user.getAccountId();
         Account account = _accountService.getAccount(accountId);
+        return checkAccess(account, apiCommandName);
+    }
+
+    public boolean checkAccess(Account account, String commandName) {
         if (_accountService.isRootAdmin(account.getId())) {
             // no API throttling on root admin
             return true;
         }
-        StoreEntry entry = _store.get(accountId);
+        StoreEntry entry = _store.get(account.getId());
 
         if (entry == null) {
 
             /* Populate the entry, thus unlocking any underlying mutex */
-            entry = _store.create(accountId, timeToLive);
+            entry = _store.create(account.getId(), timeToLive);
         }
 
         /* Increment the client count and see whether we have hit the maximum allowed clients yet. */
@@ -172,6 +176,11 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
             s_logger.warn(msg);
             throw new RequestLimitException(msg);
         }
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
     }
 
     @Override

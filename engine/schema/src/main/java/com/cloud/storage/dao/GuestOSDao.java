@@ -23,4 +23,5 @@ public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
 
     GuestOSVO listByDisplayName(String displayName);
 
+    GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
 }
