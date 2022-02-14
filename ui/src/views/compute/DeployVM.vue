@@ -794,6 +794,8 @@ export default {
       },
       instanceConfig: {},
       template: {},
+      defaultBootType: '',
+      defaultBootMode: '',
       templateConfigurations: [],
       templateNics: [],
       templateLicenses: [],
@@ -1453,8 +1455,8 @@ export default {
       this.fetchInstaceGroups()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
-        this.form.boottype = this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
-        this.form.bootmode = this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
+        this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
+        this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.instanceConfig = toRaw(this.form)
       })
     },
@@ -1559,6 +1561,9 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
+          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
+          this.fetchBootModes(this.defaultBootType)
+          this.defaultBootMode = this.template?.details?.UEFI
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2312,7 +2317,8 @@ export default {
     },
     onBootTypeChange (value) {
       this.fetchBootModes(value)
-      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
+      this.defaultBootMode = this.options.bootModes?.[0]?.id || undefined
+      this.updateFieldValue('bootmode', this.defaultBootMode)
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection

@@ -107,6 +107,10 @@ export default {
       type: Boolean,
       default: true
     },
+    cpuSpeed: {
+      type: Number,
+      default: 0
+    },
     minCpu: {
       type: Number,
       default: 0
@@ -198,6 +202,7 @@ export default {
     fillValue () {
       this.cpuNumberInputValue = this.minCpu
       this.memoryInputValue = this.minMemory
+      this.cpuSpeedInputValue = this.cpuSpeed
 
       if (!this.preFillContent) {
         this.updateComputeCpuNumber(this.cpuNumberInputValue)

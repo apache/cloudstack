@@ -3016,6 +3016,7 @@
 "message.error.zone.name": "Please enter zone name",
 "message.error.zone.type": "Please select zone type",
 "message.error.linstor.resourcegroup": "Please enter the Linstor Resource-Group",
+"message.error.fixed.offering.kvm": "It's not possible to scale up VMs that utilize KVM hypervisor with a fixed compute offering.",
 "message.fail.to.delete": "Failed to delete.",
 "message.failed.to.add": "Failed to add",
 "message.failed.to.assign.vms": "Failed to assign VMs",
