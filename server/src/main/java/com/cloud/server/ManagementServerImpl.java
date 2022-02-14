@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
@@ -1685,7 +1686,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
-        if (volume.getDiskOfferingId() != diskOfferingId) {
+        if (!Objects.equals(volume.getDiskOfferingId(), diskOfferingId)) {
             diskProfile.setSize(newSize);
             diskProfile.setMinIops(newMinIops);
             diskProfile.setMaxIops(newMaxIops);
