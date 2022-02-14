@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,7 +34,8 @@ import javax.inject.Inject;
 
 import java.util.Date;
 
-@APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.7.0",
+requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffUpdateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaTariffUpdateCmd.class);
     private static final String s_name = "quotatariffupdateresponse";

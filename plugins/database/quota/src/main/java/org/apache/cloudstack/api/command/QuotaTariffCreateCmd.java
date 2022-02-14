@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,7 +35,7 @@ import javax.inject.Inject;
 import java.util.Date;
 
 @APICommand(name = QuotaTariffCreateCmd.API_NAME, responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.17.0.0",
-requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffCreateCmd extends BaseCmd {
     protected Logger logger = Logger.getLogger(getClass());
     public static final String API_NAME = "quotaTariffCreate";
