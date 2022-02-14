@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -2197,6 +2198,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             template.setTemplateType(templateType);
         }
 
+        validateDetails(template, details);
+
         if (cleanupDetails) {
             template.setDetails(null);
             _tmpltDetailsDao.removeDetails(id);
@@ -2209,6 +2212,28 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(id, template);
 
         return _tmpltDao.findById(id);
+    }
+
+    void validateDetails(VMTemplateVO template, Map<String, String> details) {
+        String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
+        if (bootMode == null) {
+            return;
+        }
+        if (template.isDeployAsIs()) {
+            String msg = "Deploy-as-is templates can not have UEFI parameter set. Settings are read directly from the template";
+            throw new InvalidParameterValueException(msg);
+        }
+        try {
+            String mode = bootMode.trim().toUpperCase();
+            ApiConstants.BootMode.valueOf(mode);
+            details.put(ApiConstants.BootType.UEFI.toString(), mode);
+            return;
+        } catch (IllegalArgumentException e) {
+            String msg = String.format("Invalid %s: %s specified. Valid values are: %s",
+                    ApiConstants.BOOT_MODE, bootMode, Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
     }
 
     void verifyTemplateId(Long id) {
