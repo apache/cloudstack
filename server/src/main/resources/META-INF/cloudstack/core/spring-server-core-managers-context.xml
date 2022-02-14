@@ -47,7 +47,9 @@
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
-        <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />        
+        <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />
+        <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
+        <property name="services" value="#{apiCommandsRegistry.registered}" />
     </bean>
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">

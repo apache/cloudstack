@@ -25,6 +25,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.storage.GuestOSHypervisorMapping;
+import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.RolePermissionChecker;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.acl.RoleType;
@@ -37,6 +39,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     final static Logger LOG = Logger.getLogger(Upgrade41520to41600.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
     private RolePermissionChecker rolePermissionChecker = new RolePermissionChecker();
+    private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     public Upgrade41520to41600() {
     }
@@ -71,6 +74,12 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
         generateUuidForExistingSshKeyPairs(conn);
         populateAnnotationPermissions(conn);
+        correctGuestOsIdsInHypervisorMapping(conn);
+    }
+
+    private void correctGuestOsIdsInHypervisorMapping(final Connection conn) {
+        LOG.debug("Correcting guest OS ids in hypervisor mappings");
+        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
     }
 
     private void populateAnnotationPermissions(Connection conn) {

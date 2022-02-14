@@ -53,6 +53,15 @@ Customize themes like colors, border color, etc.
 - `@navigation-background-color` changes the navigation menu background color.
 - `@navigation-text-color` changes the navigation text color.
 - `@primary-color` change the major background color of the page (background button, icon hover, etc).
+- `@primary-color-light` changes selected menu item bg-color and hovered table cell bg-color.
+- `@dashboard-graph-normal-color` changes the -normal- color of stroke in graphs in the Root admin's dashboard.
+- `@dashboard-graph-exception-color` changes the -danger- color of stroke in graphs in the Root admin's dashboard.
+- `@dashboard-tile-runningvms-bg` changes bg color of the "Running VMs" tile in the non-Root admin's dashboard.
+- `@dashboard-tile-stoppedvms-bg` changes bg color of the "Stopped VMs" tile in the non-Root admin's dashboard.
+- `@dashboard-tile-totalvms-bg` changes bg color of the "Total VMs" tile in the non-Root admin's dashboard.
+- `@dashboard-tile-totalvolumes-bg` changes bg color of the "Total volumes" tile in the non-Root admin's dashboard.
+- `@dashboard-tile-totalnetworks-bg` changes bg color of the "Total networks" tile in the non-Root admin's dashboard.
+- `@dashboard-tile-totalips-bg` changes bg color of the "Total IPs" tile in the non-Root admin's dashboard.
 - `@link-color` changes the link color.
 - `@link-hover-color` changes the link hover color.
 - `@loading-color` changes the message loading color and page loading bar at the top page.
