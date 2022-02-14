@@ -29,17 +29,9 @@
     </parent>
     <dependencies>
         <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis-jaxrpc</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.cloud.com.f5</groupId>
             <artifactId>icontrol</artifactId>
             <version>12.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-discovery</groupId>

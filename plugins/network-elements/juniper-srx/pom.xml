@@ -33,9 +33,5 @@
             <artifactId>icontrol</artifactId>
             <version>1.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis</artifactId>
-        </dependency>
     </dependencies>
 </project>

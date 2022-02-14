@@ -164,17 +164,6 @@
     </dependencies>
     <profiles>
         <profile>
-            <id>f5</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>network-elements/f5</module>
-            </modules>
-        </profile>
-        <profile>
             <id>srx</id>
             <activation>
                 <property>
