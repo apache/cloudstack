@@ -2634,7 +2634,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOsHandle.isUserDefined()) {
+        if (!guestOsHandle.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
@@ -2676,7 +2676,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOs.isUserDefined()) {
+        if (!guestOs.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to remove system defined guest OS");
         }
 
@@ -4192,6 +4192,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(final ListSSHKeyPairsCmd cmd) {
+        final Long id = cmd.getId();
         final String name = cmd.getName();
         final String fingerPrint = cmd.getFingerprint();
         final String keyword = cmd.getKeyword();
@@ -4210,6 +4211,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchCriteria<SSHKeyPairVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
