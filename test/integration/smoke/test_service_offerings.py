@@ -25,8 +25,10 @@ from marvin.lib.utils import (isAlmostEqual,
                               cleanup_resources,
                               random_gen)
 from marvin.lib.base import (ServiceOffering,
+                             Configurations,
                              DiskOffering,
                              Account,
+                             StoragePool,
                              VirtualMachine)
 from marvin.lib.common import (list_service_offering,
                                list_virtual_machines,
@@ -716,6 +718,8 @@ class TestServiceOfferings(cloudstackTestCase):
         if self.hypervisor.lower() == "lxc":
             self.skipTest("Skipping this test for {} due to bug CS-38153".format(self.hypervisor))
 
+        self.updateVmwareSettings(False)
+
         offering_data = {
             'displaytext': 'TestDiskOfferingStrictnessFalse',
             'cpuspeed': 512,
@@ -811,7 +815,26 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check service offering of the VM"
         )
 
+        self.updateVmwareSettings(True)
+
         return
+
+    def updateVmwareSettings(self, tearDown):
+        value = "false"
+        if not tearDown:
+            value = "true"
+        if self.hypervisor.lower() == 'vmware':
+            Configurations.update(self.apiclient,
+                                  "vmware.create.full.clone",
+                                  value)
+            allStoragePools = StoragePool.list(
+                self.apiclient
+            )
+            for pool in allStoragePools:
+                Configurations.update(self.apiclient,
+                                      storageid=pool.id,
+                                      name="vmware.create.full.clone",
+                                      value=value)
 
 class TestCpuCapServiceOfferings(cloudstackTestCase):
 
