@@ -681,8 +681,8 @@ public class SystemVmTemplateRegistration {
 
     /**
      * This method parses the metadata file consisting of the systemVM templates information
-     * @return the version of the systemvm template that is to be used. This is done to in order
-     * to fallback on the latest available version of the systemVM template when there does not
+     * @return the version of the systemvm template that is to be used. This is done in order
+     * to fallback on the latest available version of the systemVM template when there doesn't
      * exist a template corresponding to the current code version.
      */
     public static String parseMetadataFile() {

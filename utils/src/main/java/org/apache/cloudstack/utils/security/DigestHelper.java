@@ -146,7 +146,7 @@ public class DigestHelper {
             return DigestUtils.md5Hex(is);
         } catch (IOException e) {
             String errMsg = "Failed to calculate template checksum";
-            LOGGER.error(errMsg, e);
+            LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
     }

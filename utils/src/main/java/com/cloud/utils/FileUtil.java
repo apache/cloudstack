@@ -51,7 +51,7 @@ public class FileUtil {
                 return;
             } catch (Exception e) {
                 errMsg += ", retrying";
-                s_logger.error(errMsg, e);
+                s_logger.error(errMsg);
             }
         }
         throw new CloudRuntimeException(errMsg);

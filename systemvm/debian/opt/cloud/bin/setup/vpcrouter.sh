@@ -85,7 +85,6 @@ EOF
   enable_fwding 1
   enable_passive_ftp 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
-#  setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
   echo "" > /etc/dnsmasq.d/dhcphosts.txt
