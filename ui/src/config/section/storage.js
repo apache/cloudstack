@@ -100,7 +100,7 @@ export default {
           label: 'label.upload.volume.from.url',
           listView: true,
           popup: true,
-          component: () => import('@/views/storage/UploadVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadVolume.vue')))
         },
         {
           api: 'attachVolume',
