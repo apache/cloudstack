@@ -2118,7 +2118,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return template;
         }
 
-        template = _tmpltDao.createForUpdate(id);
+        template = _tmpltDao.findById(id);
 
         if (name != null) {
             template.setName(name);
@@ -2215,6 +2215,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     void validateDetails(VMTemplateVO template, Map<String, String> details) {
+        if (details == null || details.isEmpty()) {
+            return;
+        }
         String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
         if (bootMode == null) {
             return;

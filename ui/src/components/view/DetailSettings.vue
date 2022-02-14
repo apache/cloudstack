@@ -260,7 +260,6 @@ export default {
         this.showAddDetail = false
         this.newKey = ''
         this.newValue = ''
-        this.updateResource(this.resource)
       })
     },
     addDetail () {
