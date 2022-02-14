@@ -1329,7 +1329,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     nicTo.getMac(), deviceNumber + 1, true, true);
         }
 
-        configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.ADD);
+        configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.ADD, "PlugNicCommand");
     }
 
     private ReplugNicAnswer execute(ReplugNicCommand cmd) {
@@ -1390,7 +1390,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 VmwareHelper.updateNicDevice(nic, networkInfo.first(), networkInfo.second());
             }
 
-            configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.EDIT);
+            configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.EDIT, "ReplugNicCommand");
 
             return new ReplugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -1431,7 +1431,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (nic == null) {
                 return new UnPlugNicAnswer(cmd, true, "success");
             }
-            configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.REMOVE);
+            configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
 
             return new UnPlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -1478,7 +1478,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 device.setBacking(dataCenterMo.getDvPortBackingInfo(networkInfo));
             }
 
-            configureNicDevice(vmMo, device, VirtualDeviceConfigSpecOperation.EDIT);
+            configureNicDevice(vmMo, device, VirtualDeviceConfigSpecOperation.EDIT, "plugPublicNic");
         } catch (Exception e) {
 
             // restore allocation mask in case of exceptions
@@ -1598,7 +1598,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
             // command may sometimes be redirect to a wrong host, we relax
-            // the check and will try to find it within cluster
+            // the check and will try to find it within datacenter
             if (vmMo == null) {
                 if (hyperHost instanceof HostMO) {
                     final DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
@@ -1613,27 +1613,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             if (ips.length == 1 && !ips[0].isAdd()) {
-                IpAddressTO ip = ips[0];
-                NicTO nicTO = ip.getNicTO();
-                URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
-                if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
-                    throw new InternalErrorException(String.format("Unable to assign a public IP to a VIF on network %s", ip.getBroadcastUri()));
-                }
-                String vlanId = BroadcastDomainType.getValue(broadcastUri);
-
-                String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
-                Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Find public NIC index, public network name: %s , index: %s", publicNetworkName, publicNicInfo.first()));
-                }
-
-                VirtualDevice nic = findVirtualNicDevice(vmMo, nicTO.getMac());
+                VirtualDevice nic = getVirtualDevice(vmMo, ips[0]);
 
                 if (nic == null) {
                     return new ExecutionResult(false, "Couldn't find NIC");
                 }
-                configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.REMOVE);
+                configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
             }
         } catch (Throwable e) {
             s_logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
@@ -1642,7 +1627,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new ExecutionResult(true, null);
     }
 
-    private void configureNicDevice(VirtualMachineMO vmMo, VirtualDevice nic, VirtualDeviceConfigSpecOperation operation) throws Exception {
+    private VirtualDevice getVirtualDevice(VirtualMachineMO vmMo, IpAddressTO ip) throws Exception {
+        NicTO nicTO = ip.getNicTO();
+        URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
+        if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+            throw new InternalErrorException(String.format("Unable to assign a public IP to a VIF on network %s", ip.getBroadcastUri()));
+        }
+        String vlanId = BroadcastDomainType.getValue(broadcastUri);
+
+        String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
+        Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Find public NIC index, public network name: %s , index: %s", publicNetworkName, publicNicInfo.first()));
+        }
+
+        return findVirtualNicDevice(vmMo, nicTO.getMac());
+    }
+
+    private void configureNicDevice(VirtualMachineMO vmMo, VirtualDevice nic, VirtualDeviceConfigSpecOperation operation, String commandName) throws Exception {
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
         deviceConfigSpec.setDevice(nic);
@@ -1651,7 +1654,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
         if (!vmMo.configureVm(vmConfigSpec)) {
-            throw new Exception("Failed to configure devices when running unplugNicCommand");
+            throw new Exception(String.format("Failed to configure devices when running %s", commandName));
         }
     }
 
