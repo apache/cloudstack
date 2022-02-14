@@ -133,6 +133,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
@@ -324,11 +325,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<Boolean>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
             "If true, volume's disk offering can be changed only with the matched storage tags", true, ConfigKey.Scope.Zone);
 
-    private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+
+    private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -493,7 +495,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!diskOffering.isCustomized()) {
                 throw new InvalidParameterValueException("Please specify a custom sized disk offering.");
             }
-
             _configMgr.checkDiskOfferingAccess(volumeOwner, diskOffering, zone);
         }
 
@@ -504,12 +505,41 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return UUID.randomUUID().toString();
     }
 
+    private Long getDefaultCustomOfferingId(Account owner, DataCenter zone) {
+        DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName(CUSTOM_DISK_OFFERING_UNIQUE_NAME);
+        if (diskOfferingVO == null || !DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
+            return null;
+        }
+        try {
+            _configMgr.checkDiskOfferingAccess(owner, diskOfferingVO, zone);
+            return diskOfferingVO.getId();
+        } catch (PermissionDeniedException ignored) {
+        }
+        return null;
+    }
+
+    private Long getCustomDiskOfferingIdForVolumeUpload(Account owner, DataCenter zone) {
+        Long offeringId = getDefaultCustomOfferingId(owner, zone);
+        if (offeringId != null) {
+            return offeringId;
+        }
+        List<DiskOfferingVO> offerings = _diskOfferingDao.findCustomDiskOfferings();
+        for (DiskOfferingVO offering : offerings) {
+            try {
+                _configMgr.checkDiskOfferingAccess(owner, offering, zone);
+                return offering.getId();
+            } catch (PermissionDeniedException ignored) {}
+        }
+        return null;
+    }
+
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url, final String format, final Long diskOfferingId, final Volume.State state) {
-        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<VolumeVO, CloudRuntimeException>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
                 VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
+                DataCenter zone = _dcDao.findById(zoneId);
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
@@ -519,23 +549,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
 
-                if (diskOfferingId == null) {
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findByUniqueName("Cloud.com-Custom");
-                    if (diskOfferingVO != null) {
-                        long defaultDiskOfferingId = diskOfferingVO.getId();
-                        volume.setDiskOfferingId(defaultDiskOfferingId);
+                Long volumeDiskOfferingId = diskOfferingId;
+                if (volumeDiskOfferingId == null) {
+                    volumeDiskOfferingId = getCustomDiskOfferingIdForVolumeUpload(owner, zone);
+                    if (volumeDiskOfferingId == null) {
+                        throw new CloudRuntimeException(String.format("Unable to find custom disk offering in zone: %s for volume upload", zone.getUuid()));
                     }
-                } else {
-                    volume.setDiskOfferingId(diskOfferingId);
+                }
 
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(diskOfferingId);
+                volume.setDiskOfferingId(volumeDiskOfferingId);
+                DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volumeDiskOfferingId);
 
-                    Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
+                Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
 
-                    if (isCustomizedIops == null || !isCustomizedIops) {
-                        volume.setMinIops(diskOfferingVO.getMinIops());
-                        volume.setMaxIops(diskOfferingVO.getMaxIops());
-                    }
+                if (isCustomizedIops == null || !isCustomizedIops) {
+                    volume.setMinIops(diskOfferingVO.getMinIops());
+                    volume.setMaxIops(diskOfferingVO.getMaxIops());
                 }
 
                 // volume.setSize(size);
@@ -715,9 +744,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 maxIops = diskOffering.getMaxIops();
             }
 
-            if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
-                // for validation
-                throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
+            if (!validateVolumeSizeInBytes(size)) {
+                throw new InvalidParameterValueException(String.format("Invalid size for custom volume creation: %s, max volume size is: %s GB", NumbersUtil.toReadableSize(size), VolumeOrchestrationService.MaxVolumeSize.value()));
             }
         }
 
@@ -871,11 +899,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         });
     }
 
-    public boolean validateVolumeSizeRange(long size) {
+    @Override
+    public boolean validateVolumeSizeInBytes(long size) {
+        long maxVolumeSize = VolumeOrchestrationService.MaxVolumeSize.value();
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException("Please specify a size of at least 1 GB.");
-        } else if (size > (_maxVolumeSizeInGb * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException("Requested volume size is " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " GB.");
+        } else if (size > (maxVolumeSize * 1024 * 1024 * 1024)) {
+            throw new InvalidParameterValueException(String.format("Requested volume size is %s, but the maximum size allowed is %d GB.", NumbersUtil.toReadableSize(size), maxVolumeSize));
         }
 
         return true;
@@ -1114,7 +1144,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            if (!validateVolumeSizeRange(newSize)) {
+            if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
             }
 
@@ -1933,7 +1963,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            if (!validateVolumeSizeRange(newSize)) {
+            if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
             }
 
@@ -1995,20 +2025,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         UserVmVO vm = _userVmDao.findById(vmId);
-        VolumeVO exstingVolumeOfVm = null;
+        VolumeVO existingVolumeOfVm = null;
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
         if (rootVolumesOfVm.size() > 1 && template != null && !template.isDeployAsIs()) {
             throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
         } else {
             if (!rootVolumesOfVm.isEmpty()) {
-                exstingVolumeOfVm = rootVolumesOfVm.get(0);
+                existingVolumeOfVm = rootVolumesOfVm.get(0);
             } else {
                 // locate data volume of the vm
                 List<VolumeVO> diskVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
                 for (VolumeVO diskVolume : diskVolumesOfVm) {
                     if (diskVolume.getState() != Volume.State.Allocated) {
-                        exstingVolumeOfVm = diskVolume;
+                        existingVolumeOfVm = diskVolume;
                         break;
                     }
                 }
@@ -2022,8 +2052,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         //don't create volume on primary storage if its being attached to the vm which Root's volume hasn't been created yet
         StoragePoolVO destPrimaryStorage = null;
-        if (exstingVolumeOfVm != null && !exstingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
-            destPrimaryStorage = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
+        if (existingVolumeOfVm != null && !existingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
+            destPrimaryStorage = _storagePoolDao.findById(existingVolumeOfVm.getPoolId());
         }
 
         boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
@@ -2042,7 +2072,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // reload the volume from db
         newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
-        boolean moveVolumeNeeded = needMoveVolume(exstingVolumeOfVm, newVolumeOnPrimaryStorage);
+        boolean moveVolumeNeeded = needMoveVolume(existingVolumeOfVm, newVolumeOnPrimaryStorage);
 
         if (moveVolumeNeeded) {
             PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
@@ -2050,7 +2080,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new CloudRuntimeException(
                         "Failed to attach local data volume " + volumeToAttach.getName() + " to VM " + vm.getDisplayName() + " as migration of local data volume is not allowed");
             }
-            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
+            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(existingVolumeOfVm.getPoolId());
 
             try {
                 newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(),
@@ -3914,8 +3944,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.toString());
-        _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
         supportingDefaultHV = _hypervisorCapabilitiesDao.getHypervisorsWithDefaultEntries();
         return true;
     }

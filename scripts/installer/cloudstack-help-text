@@ -1,0 +1,43 @@
+#!/bin/sh
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+ACS_VERSION=
+ACL_MINOR_VERSION=$(echo $ACS_VERSION | cut -d'-' -f1)
+
+case $1 in
+    management)
+        PACKAGE="Managment Server"
+        ;;
+    usage)
+        PACKAGE="Usage Server"
+        ;;
+    agent)
+        PACKAGE="Agent"
+        ;;
+esac
+
+printf "\n"
+printf "Thank you for installing Apache CloudStack ${PACKAGE} ${ACS_VERSION} !\n"
+printf "\n"
+printf " * Project website:     https://cloudstack.apache.org/\n"
+printf " * Documentation:       https://docs.cloudstack.apache.org/en/${ACL_MINOR_VERSION:-latest}/\n"
+printf " * Release notes:       https://docs.cloudstack.apache.org/en/${ACL_MINOR_VERSION:-latest}/releasenotes/\n"
+printf " * Join mailing lists:  https://cloudstack.apache.org/mailing-lists.html\n"
+printf " * Take the survey:     https://cloudstack.apache.org/survey.html\n"
+printf " * Report issues:       https://github.com/apache/cloudstack/issues/new\n"
+printf "\n"

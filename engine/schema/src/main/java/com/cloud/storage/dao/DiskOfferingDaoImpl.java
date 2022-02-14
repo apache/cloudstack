@@ -141,6 +141,16 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
+    public List<DiskOfferingVO> findCustomDiskOfferings() {
+        SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
+        sb.and("customized", sb.entity().isCustomized(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<DiskOfferingVO> sc = sb.create();
+        sc.setParameters("customized", true);
+        return listBy(sc);
+    }
+
+    @Override
     public boolean remove(Long id) {
         DiskOfferingVO diskOffering = createForUpdate();
         diskOffering.setRemoved(new Date());

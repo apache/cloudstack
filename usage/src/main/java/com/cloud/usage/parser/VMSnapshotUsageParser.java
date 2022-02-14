@@ -74,7 +74,7 @@ public class VMSnapshotUsageParser {
         Map<String, UsageVMSnapshotVO> unprocessedUsage = new HashMap<String, UsageVMSnapshotVO>();
         for (UsageVMSnapshotVO usageRec : usageUsageVMSnapshots) {
             long zoneId = usageRec.getZoneId();
-            Long volId = usageRec.getId();
+            Long volId = usageRec.getVolumeId();
             long vmId = usageRec.getVmId();
             String key = vmId + ":" + volId;
             if (usageRec.getCreated().before(startDate)) {
@@ -114,7 +114,7 @@ public class VMSnapshotUsageParser {
                 created = startDate;
             }
             long duration = (endDate.getTime() - created.getTime()) + 1;
-            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, created, endDate, account, usageRec.getId(), usageRec.getZoneId(), usageRec.getDiskOfferingId(),
+            createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, created, endDate, account, usageRec.getVolumeId(), usageRec.getZoneId(), usageRec.getDiskOfferingId(),
                 usageRec.getVmId(), usageRec.getSize(), usageRec.getVmSnapshotId());
         }
 

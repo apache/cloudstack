@@ -73,13 +73,18 @@ public class SolidFireHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error("Failed to add host by SolidFireHostListener as host was not found with id = " + hostId);
+            LOGGER.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
+        if (host.getClusterId() == null) {
+            LOGGER.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
+            return false;
+        }
+
         SolidFireUtil.hostAddedToCluster(hostId, host.getClusterId(), SolidFireUtil.PROVIDER_NAME,
-                clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
+                    clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
 
         handleVMware(host, true, ModifyTargetsCommand.TargetTypeToRemove.NEITHER);
 

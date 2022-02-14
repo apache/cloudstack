@@ -95,7 +95,7 @@ public class VMSnapshotOnPrimaryParser {
                 s_logger.debug("Remoevd vm snapshot found endDateEffective " + endDateEffective + " period end data " + endDate);
             }
             long duration = (endDateEffective.getTime() - created.getTime()) + 1;
-            createUsageRecord(UsageTypes.VM_SNAPSHOT_ON_PRIMARY, duration, created, endDateEffective, account, usageRec.getId(), usageRec.getName(), usageRec.getZoneId(),
+            createUsageRecord(UsageTypes.VM_SNAPSHOT_ON_PRIMARY, duration, created, endDateEffective, account, usageRec.getVolumeId(), usageRec.getName(), usageRec.getZoneId(),
                     usageRec.getVirtualSize(), usageRec.getPhysicalSize(), usageRec.getVmSnapshotId());
         }
 

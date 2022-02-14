@@ -2750,11 +2750,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+
+                updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    private void updateVmPod(VMInstanceVO vm, long dstHostId) {
+        // update the VMs pod
+        HostVO host = _hostDao.findById(dstHostId);
+        VMInstanceVO newVm = _vmDao.findById(vm.getId());
+        newVm.setPodIdToDeployIn(host.getPodId());
+        _vmDao.persist(newVm);
     }
 
     /**
@@ -3847,7 +3857,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      * duplicated in {@see UserVmManagerImpl} for a {@see UserVmVO}
      */
-    private void checkIfNetworkExistsForVM(VirtualMachine virtualMachine, Network network) {
+    private void checkIfNetworkExistsForUserVM(VirtualMachine virtualMachine, Network network) {
+        if (virtualMachine.getType() != VirtualMachine.Type.User) {
+            return; // others may have multiple nics in the same network
+        }
         List<NicVO> allNics = _nicsDao.listByVmId(virtualMachine.getId());
         for (NicVO nic : allNics) {
             if (nic.getNetworkId() == network.getId()) {
@@ -3860,7 +3873,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     InsufficientCapacityException {
         final CallContext cctx = CallContext.current();
 
-        checkIfNetworkExistsForVM(vm, network);
+        checkIfNetworkExistsForUserVM(vm, network);
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
         final VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         final ReservationContext context = new ReservationContextImpl(null, null, cctx.getCallingUser(), cctx.getCallingAccount());
@@ -4330,6 +4343,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             } else {
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+
+                updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);

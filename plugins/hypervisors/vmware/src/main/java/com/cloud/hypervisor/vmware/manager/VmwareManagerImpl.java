@@ -252,7 +252,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private String _recycleHungWorker = "false";
     private int _additionalPortRangeStart;
     private int _additionalPortRangeSize;
-    private int _routerExtraPublicNics = 2;
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
     private String _rootDiskController = DiskControllerType.ide.toString();
 
@@ -372,8 +371,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
-
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
         _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         s_logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
@@ -1066,11 +1063,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public Pair<Integer, Integer> getAddiionalVncPortRange() {
         return new Pair<Integer, Integer>(_additionalPortRangeStart, _additionalPortRangeSize);
-    }
-
-    @Override
-    public int getRouterExtraPublicNics() {
-        return _routerExtraPublicNics;
     }
 
     @Override
