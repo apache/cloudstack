@@ -156,7 +156,7 @@
                           <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
-                          v-show="showRootDiskSizeChanger"
+                          v-if="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
                           :isCustomized="true"
@@ -1723,11 +1723,12 @@ export default {
           deployVmData.templateid = values.isoid
         }
 
-        if (values.rootdisksize && values.rootdisksize > 0) {
+        if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
-        } else if (this.rootDiskSizeFixed > 0) {
+        } else if (this.rootDiskSizeFixed > 0 && !this.template.deployasis) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
         }
+
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
