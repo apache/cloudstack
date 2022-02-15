@@ -187,7 +187,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 registryUrl = detail.getValue();
             }
         }
-        if (StringUtils.isNotEmpty(registryUsername) && StringUtils.isNotEmpty(registryPassword) && StringUtils.isNotEmpty(registryUrl)) {
+        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
             // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
             String runCmd = "- bash -x /opt/bin/setup-containerd";
 
