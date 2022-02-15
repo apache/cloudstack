@@ -189,7 +189,7 @@ export default {
       })
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     submitChangeOfferingForVolume () {
       if (this.loading) return

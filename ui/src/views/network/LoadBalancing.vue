@@ -376,10 +376,11 @@
       :maskClosable="false"
       :closable="true"
       v-if="addVmModalVisible"
-      v-model="addVmModalVisible"
+      :visible="addVmModalVisible"
       class="vm-modal"
       width="60vw"
       :footer="null"
+      @cancel="closeModal"
     >
       <div v-ctrl-enter="handleAddNewRule">
         <span
@@ -994,7 +995,7 @@ export default {
       })
     },
     handleStickinessMethodSelectChange (e) {
-      this.formRef.value.resetFields()
+      if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {

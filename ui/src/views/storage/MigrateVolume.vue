@@ -16,13 +16,13 @@
 // under the License.
 
 <template>
-  <div class="form" v-ctrl-enter="handleKeyboardSubmit">
+  <a-form class="form" layout="vertical" v-ctrl-enter="handleKeyboardSubmit">
     <a-alert class="top-spaced" type="warning">
       <template #message>
         <span v-html="$t('message.migrate.volume')" />
       </template>
     </a-alert>
-    <a-form-item>
+    <a-form-item style="margin-top: 10px;">
       <template #label>
         <tooltip-label :title="$t('label.storagepool')" :tooltip="$t('message.migrate.volume.tooltip')"/>
       </template>
@@ -66,8 +66,7 @@
       <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
       <a-button type="primary" ref="submit" :disabled="!selectedStoragePool" @click="submitForm">{{ $t('label.ok') }}</a-button>
     </div>
-
-  </div>
+  </a-form>
 </template>
 
 <script>

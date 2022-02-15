@@ -102,7 +102,7 @@
                 <tooltip-label :title="$t('label.promiscuousmode')" :tooltip="$t('message.network.offering.promiscuous.mode')"/>
               </template>
               <a-radio-group
-                v-model:value="promiscuousmode"
+                v-model:value="form.promiscuousmode"
                 buttonStyle="solid">
                 <a-radio-button value="">
                   {{ $t('label.none') }}

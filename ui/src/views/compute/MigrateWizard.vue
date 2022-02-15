@@ -97,7 +97,7 @@
     <a-form-item
       v-if="isUserVm"
       class="top-spaced">
-      <template #labbel>
+      <template #label>
         <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
       </template>
       <a-switch

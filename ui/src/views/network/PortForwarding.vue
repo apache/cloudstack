@@ -198,10 +198,11 @@
       :title="$t('label.add.vm')"
       :maskClosable="false"
       :closable="true"
-      v-model="addVmModalVisible"
+      :visible="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      :footer="null">
+      :footer="null"
+      @cancel="closeModal">
       <div v-ctrl-enter="addRule">
         <span
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
@@ -454,6 +455,7 @@ export default {
     }
   },
   created () {
+    console.log(this.resource)
     this.initForm()
     this.fetchData()
   },
@@ -646,7 +648,9 @@ export default {
       this.newRule.virtualmachineid = null
     },
     resetTagInputs () {
-      this.formRef.value.resetFields()
+      if (this.formRef.value) {
+        this.formRef.value.resetFields()
+      }
     },
     closeModal () {
       this.selectedRule = null

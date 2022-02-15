@@ -157,7 +157,7 @@
                 <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
               </template>
               <a-input
-                v-movel:value="form.hosttags"
+                v-model:value="form.hosttags"
                 :placeholder="apiParams.hosttags.description"/>
             </a-form-item>
           </a-col>
@@ -593,10 +593,7 @@
           </span>
           <a-form-item>
             <template #label>
-              {{ $t('label.diskofferingstrictness') }}
-              <a-tooltip :title="apiParams.diskofferingstrictness.description">
-                <info-circle-outlined />
-              </a-tooltip>
+              <tooltip-label :title="$t('label.diskofferingstrictness')"/>
             </template>
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>
@@ -686,7 +683,8 @@ export default {
       computeonly: true,
       diskOfferingLoading: false,
       diskOfferings: [],
-      selectedDiskOfferingId: ''
+      selectedDiskOfferingId: '',
+      qosType: ''
     }
   },
   beforeCreate () {

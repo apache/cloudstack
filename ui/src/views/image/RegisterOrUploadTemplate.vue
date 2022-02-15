@@ -399,12 +399,15 @@ export default {
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
+      console.log(this.form)
     },
     fetchData () {
       this.fetchZone()
       this.fetchOsTypes()
       if (Object.prototype.hasOwnProperty.call(store.getters.apis, 'listConfigurations')) {
-        this.fetchXenServerProvider()
+        if (this.allowed && this.hyperXenServerShow) {
+          this.fetchXenServerProvider()
+        }
       }
     },
     handleFormChange (e) {
@@ -415,9 +418,11 @@ export default {
       const newFileList = this.fileList.slice()
       newFileList.splice(index, 1)
       this.fileList = newFileList
+      this.form.file = undefined
     },
     beforeUpload (file) {
       this.fileList = [file]
+      this.form.file = file
       return false
     },
     handleUpload () {

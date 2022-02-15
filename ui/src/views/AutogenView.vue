@@ -1151,7 +1151,7 @@ export default {
               if (description) {
                 this.$notification.info({
                   message: this.$t(action.label),
-                  description: (<span domPropsInnerHTML={description}></span>),
+                  description: (<span v-html={description}></span>),
                   duration: 0
                 })
               }

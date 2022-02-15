@@ -253,9 +253,11 @@ export default {
       const newFileList = this.fileList.slice()
       newFileList.splice(index, 1)
       this.fileList = newFileList
+      this.form.file = undefined
     },
     beforeUpload (file) {
       this.fileList = [file]
+      this.form.file = file
       return false
     },
     handleUpload () {
