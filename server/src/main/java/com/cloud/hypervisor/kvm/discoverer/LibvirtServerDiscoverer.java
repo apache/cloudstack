@@ -273,7 +273,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             }
 
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "ls /dev/kvm")) {
-                String errorMsg = "It's not a KVM enabled machine";
+                String errorMsg = "This machine does not have KVM enabled.";
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(errorMsg);
                 }
@@ -338,7 +338,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 setupAgentCommand = "sudo cloudstack-setup-agent ";
             }
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, setupAgentCommand + parameters)) {
-                String errorMsg = "cloudstack agent setup command failed: " + setupAgentCommand + parameters;
+                String errorMsg = String.format("CloudStack Agent setup through command [%s] with parameters [%s] failed.",
+                        setupAgentCommand, parameters);
                 s_logger.info(errorMsg);
                 throw new DiscoveredWithErrorException(errorMsg);
             }
@@ -375,7 +376,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             throw e;
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
-            s_logger.warn(msg, e);
+            s_logger.warn(msg);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(msg, e);
+            }
             throw new DiscoveredWithErrorException(msg, e);
         } finally {
             if (sshConnection != null)
