@@ -2215,7 +2215,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     void validateDetails(VMTemplateVO template, Map<String, String> details) {
-        if (details == null || details.isEmpty()) {
+        if (MapUtils.isEmpty(details)) {
             return;
         }
         String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
@@ -2223,7 +2223,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return;
         }
         if (template.isDeployAsIs()) {
-            String msg = "Deploy-as-is templates can not have UEFI parameter set. Settings are read directly from the template";
+            String msg = String.format("Deploy-as-is template %s [%s] can not have the UEFI setting. Settings are read directly from the template",
+                template.getName(), template.getUuid());
             throw new InvalidParameterValueException(msg);
         }
         try {
@@ -2234,8 +2235,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } catch (IllegalArgumentException e) {
             String msg = String.format("Invalid %s: %s specified. Valid values are: %s",
                     ApiConstants.BOOT_MODE, bootMode, Arrays.toString(ApiConstants.BootMode.values()));
-            s_logger.error(msg);
-            throw new InvalidParameterValueException(msg);
+            s_logger.error(msg, new InvalidParameterValueException(msg));
         }
     }
 
