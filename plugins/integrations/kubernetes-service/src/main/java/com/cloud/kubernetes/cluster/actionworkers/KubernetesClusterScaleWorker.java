@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -192,13 +193,13 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         while (retryCounter < retries) {
             retryCounter++;
             try {
-                Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(),
                         pkFile, null, String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-local-data", hostName),
                         10000, 10000, 60000);
                 if (!result.first()) {
                     LOGGER.warn(String.format("Draining node: %s on VM : %s in Kubernetes cluster : %s unsuccessful", hostName, userVm.getDisplayName(), kubernetesCluster.getName()));
                 } else {
-                    result = SshHelper.sshExecute(ipAddress, port, CLUSTER_NODE_VM_USER,
+                    result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(),
                             pkFile, null, String.format("sudo /opt/bin/kubectl delete node %s", hostName),
                             10000, 10000, 30000);
                     if (result.first()) {
@@ -359,6 +360,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         launchPermissionDao.persist(launchPermission);
         try {
             clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress);
+            updateLoginUserDetails(clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toList()));
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to provision node VM in the cluster", kubernetesCluster.getName()), e);
         }
@@ -372,7 +374,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
         kubernetesClusterVO.setNodeCount(clusterSize);
         boolean readyNodesCountValid = KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesClusterVO, publicIpAddress, sshPort,
-                CLUSTER_NODE_VM_USER, sshKeyFile, scaleTimeoutTime, 15000);
+                getControlNodeLoginUser(), sshKeyFile, scaleTimeoutTime, 15000);
         detachIsoKubernetesVMs(clusterVMs);
         deleteTemplateLaunchPermission();
         if (!readyNodesCountValid) { // Scaling failed
