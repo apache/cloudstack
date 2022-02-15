@@ -83,7 +83,7 @@
                         </span>
                         <a-icon v-else type="block" style="margin-right: 5px" />
                       </span>
-                      {{ $t(opt.name) }}
+                      {{ $t(opt.path || opt.name) }}
                     </div>
                   </a-select-option>
                 </a-select>
