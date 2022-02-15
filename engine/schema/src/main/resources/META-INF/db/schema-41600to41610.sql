@@ -128,7 +128,7 @@ CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id
 -- Add PK to cloud_usage.usage_vpn_user
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_vpn_user', 'id', 'BIGINT(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)');
 
-UPDATE `cloud`.`vm_template` set deploy_as_is = 0 where id = 8;
+UPDATE `cloud`.`vm_template` SET deploy_as_is = 0 WHERE id = 8;
 
 CREATE PROCEDURE `cloud`.`UPDATE_KUBERNETES_NODE_DETAILS`()
 BEGIN
