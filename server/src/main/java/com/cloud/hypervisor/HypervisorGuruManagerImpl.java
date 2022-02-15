@@ -81,6 +81,13 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
         return hostId;
     }
 
+    @Override
+    public long getGuruProcessedCommandTargetHost(long hostId, Command cmd, HypervisorType hypervisorType) {
+        HypervisorGuru guru = getGuru(hypervisorType);
+        Pair<Boolean, Long> result = guru.getCommandHostDelegation(hostId, cmd);
+        return result.first() ? result.second() : hostId;
+    }
+
     public List<HypervisorGuru> getHvGuruList() {
         return _hvGuruList;
     }

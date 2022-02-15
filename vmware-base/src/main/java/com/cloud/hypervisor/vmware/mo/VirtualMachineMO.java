@@ -2294,6 +2294,41 @@ public class VirtualMachineMO extends BaseMO {
         throw new Exception("VMware Paravirtual SCSI Controller Not Found");
     }
 
+    protected VirtualSCSIController getScsiController(DiskControllerType type) {
+        switch (type) {
+            case pvscsi:
+                return new ParaVirtualSCSIController();
+            case lsisas1068:
+                return new VirtualLsiLogicSASController();
+            case buslogic:
+                return new VirtualBusLogicController();
+            default:
+                return new VirtualLsiLogicController();
+        }
+    }
+
+    public void addScsiDeviceControllers(DiskControllerType type) throws Exception {
+        VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+        int busNum = 0;
+        while (busNum < VmwareHelper.MAX_SCSI_CONTROLLER_COUNT) {
+            VirtualSCSIController scsiController = getScsiController(type);
+            scsiController.setSharedBus(VirtualSCSISharing.NO_SHARING);
+            scsiController.setBusNumber(busNum);
+            scsiController.setKey(busNum - VmwareHelper.MAX_SCSI_CONTROLLER_COUNT);
+            VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
+            scsiControllerSpec.setDevice(scsiController);
+            scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            vmConfig.getDeviceChange().add(scsiControllerSpec);
+            busNum++;
+        }
+
+        if (configureVm(vmConfig)) {
+            s_logger.info("Successfully added SCSI controllers.");
+        } else {
+            throw new Exception("Unable to add Scsi controllers to the VM " + getName());
+        }
+    }
+
     public void ensurePvScsiDeviceController(int requiredNumScsiControllers, int availableBusNum) throws Exception {
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
 

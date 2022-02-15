@@ -23,6 +23,10 @@
       <a-icon type="loading" style="color: #1890ff;"></a-icon>
     </div>
 
+    <a-alert v-if="fixedOfferingKvm" style="margin-bottom: 5px" type="error" show-icon>
+      <span slot="message" v-html="$t('message.error.fixed.offering.kvm')" />
+    </a-alert>
+
     <compute-offering-selection
       :compute-items="offerings"
       :loading="loading"
@@ -40,6 +44,7 @@
       :isConstrained="'serviceofferingdetails' in selectedOffering"
       :minCpu="getMinCpu()"
       :maxCpu="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
+      :cpuSpeed="getCPUSpeed()"
       :minMemory="getMinMemory()"
       :maxMemory="'serviceofferingdetails' in selectedOffering ? selectedOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
       :isCustomized="selectedOffering.iscustomized"
@@ -92,7 +97,8 @@ export default {
       loading: false,
       cpuNumberKey: 'details[0].cpuNumber',
       cpuSpeedKey: 'details[0].cpuSpeed',
-      memoryKey: 'details[0].memory'
+      memoryKey: 'details[0].memory',
+      fixedOfferingKvm: false
     }
   },
   beforeCreate () {
@@ -125,6 +131,13 @@ export default {
           return
         }
         this.offerings = response.listserviceofferingsresponse.serviceoffering
+        if (this.resource.state === 'Running' && this.resource.hypervisor === 'KVM') {
+          this.offerings = this.offerings.filter(offering => offering.id === this.resource.serviceofferingid)
+          this.currentOffer = this.offerings[0]
+          if (this.currentOffer === undefined) {
+            this.fixedOfferingKvm = true
+          }
+        }
         this.offerings.map(i => { this.offeringsMap[i.id] = i })
       }).finally(() => {
         this.loading = false
@@ -143,6 +156,13 @@ export default {
         return this.resource.memory
       }
       return this.selectedOffering?.serviceofferingdetails?.minmemory * 1 || 32
+    },
+    getCPUSpeed () {
+      // We can only scale up while a VM is running
+      if (this.resource.state === 'Running') {
+        return this.resource.cpuspeed
+      }
+      return this.selectedOffering?.serviceofferingdetails?.cpuspeed * 1 || 1
     },
     getMessage () {
       if (this.resource.hypervisor === 'VMware') {
