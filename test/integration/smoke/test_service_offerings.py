@@ -717,8 +717,10 @@ class TestServiceOfferings(cloudstackTestCase):
 
         if self.hypervisor.lower() == "lxc":
             self.skipTest("Skipping this test for {} due to bug CS-38153".format(self.hypervisor))
-
-        self.updateVmwareSettings(False)
+        fullClone = Configurations.list(self.apiclient, name="vmware.create.full.clone")
+        assert isinstance(fullClone, list), "Config list not retrieved for vmware.create.full.clone"
+        if fullClone[0].value.lower() == "false":
+            self.updateVmwareSettings(False)
 
         offering_data = {
             'displaytext': 'TestDiskOfferingStrictnessFalse',
@@ -815,7 +817,8 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check service offering of the VM"
         )
 
-        self.updateVmwareSettings(True)
+        if fullClone[0].value.lower() == "false":
+            self.updateVmwareSettings(True)
 
         return
 
