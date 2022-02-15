@@ -2234,9 +2234,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return;
         } catch (IllegalArgumentException e) {
             String msg = String.format("Invalid %s: %s specified. Valid values are: %s",
-                    ApiConstants.BOOT_MODE, bootMode, Arrays.toString(ApiConstants.BootMode.values()));
-            s_logger.error(msg, new InvalidParameterValueException(msg));
-        }
+                ApiConstants.BOOT_MODE, bootMode, Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);        }
     }
 
     void verifyTemplateId(Long id) {
