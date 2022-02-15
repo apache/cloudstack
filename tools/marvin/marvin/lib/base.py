@@ -2305,6 +2305,12 @@ class ServiceOffering:
         if "dynamicscalingenabled" in services:
             cmd.dynamicscalingenabled = services["dynamicscalingenabled"]
 
+        if "diskofferingstrictness" in services:
+            cmd.diskofferingstrictness = services["diskofferingstrictness"]
+
+        if "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid
@@ -5095,6 +5101,11 @@ class VmSnapshot:
     def deleteVMSnapshot(cls, apiclient, vmsnapshotid):
         cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
+        return apiclient.deleteVMSnapshot(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = self.id
         return apiclient.deleteVMSnapshot(cmd)
 
 

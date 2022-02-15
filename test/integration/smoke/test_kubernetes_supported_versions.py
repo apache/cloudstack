@@ -94,7 +94,9 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         #Waits for management to come up in 5 mins, when it's up it will continue
         timeout = time.time() + 300
         while time.time() < timeout:
-            if cls.isManagementUp() is True: return
+            if cls.isManagementUp() is True:
+                time.sleep(30)
+                return
             time.sleep(5)
         return cls.fail("Management server did not come up, failing")
 

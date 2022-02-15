@@ -186,8 +186,7 @@ public class CreateAccountCmd extends BaseCmd {
         validateParams();
         CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain Id:" + getDomainId());
         UserAccount userAccount =
-            _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getRoleId(),
-                getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
+            _accountService.createUserAccount(this);
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(ResponseView.Full, userAccount);
             response.setResponseName(getCommandName());

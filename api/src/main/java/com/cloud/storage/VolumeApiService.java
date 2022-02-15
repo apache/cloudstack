@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -152,4 +153,8 @@ public interface VolumeApiService {
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
 
     Volume recoverVolume(long volumeId);
+
+    boolean validateVolumeSizeInBytes(long size);
+
+    Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
 }

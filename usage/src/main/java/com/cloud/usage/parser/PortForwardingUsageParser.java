@@ -81,7 +81,7 @@ public class PortForwardingUsageParser {
 
         // loop through all the port forwarding rule, create a usage record for each
         for (UsagePortForwardingRuleVO usagePF : usagePFs) {
-            long pfId = usagePF.getId();
+            long pfId = usagePF.getPfId();
             String key = "" + pfId;
 
             pfMap.put(key, new PFInfo(pfId, usagePF.getZoneId()));
@@ -105,7 +105,7 @@ public class PortForwardingUsageParser {
 
             long currentDuration = (pfDeleteDate.getTime() - pfCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-            updatePFUsageData(usageMap, key, usagePF.getId(), currentDuration);
+            updatePFUsageData(usageMap, key, usagePF.getPfId(), currentDuration);
         }
 
         for (String pfIdKey : usageMap.keySet()) {

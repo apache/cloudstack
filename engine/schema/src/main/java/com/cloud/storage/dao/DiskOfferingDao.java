@@ -24,14 +24,12 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
 
-    List<DiskOfferingVO> findPrivateDiskOffering();
-
-    List<DiskOfferingVO> findPublicDiskOfferings();
-
     DiskOfferingVO findByUniqueName(String uniqueName);
 
-    DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering);
+    DiskOfferingVO persistDefaultDiskOffering(DiskOfferingVO offering);
 
     List<DiskOfferingVO> listAllBySizeAndProvisioningType(long size, Storage.ProvisioningType provisioningType);
+
+    List<DiskOfferingVO> findCustomDiskOfferings();
 
 }

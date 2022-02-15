@@ -83,7 +83,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false, description = "public IP of the site")
     private String gslbSitePublicIp;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false, description = "public IP of the site")
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false, description = "private IP of the site")
     private String gslbSitePrivateIp;
 
     @Parameter(name = ApiConstants.EXCLUSIVE_GSLB_PROVIDER,
