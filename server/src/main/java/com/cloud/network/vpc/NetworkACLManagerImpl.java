@@ -17,6 +17,7 @@
 package com.cloud.network.vpc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -24,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.ActionEvent;
@@ -41,6 +43,7 @@ import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -48,6 +51,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager {
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
@@ -72,8 +76,36 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     private VpcService _vpcSvc;
     @Inject
     private MessageBus _messageBus;
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
 
     private List<NetworkACLServiceProvider> _networkAclElements;
+
+    private boolean containsIpv6Cidr(List<String> cidrs) {
+        for (String cidr : cidrs) {
+            if (NetUtils.isValidIp6Cidr(cidr)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void updateACLRulesForIpv6Cidr(Network network, List<NetworkACLItemVO> rules) {
+        if (CollectionUtils.isEmpty(rules) || !networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+            return;
+        }
+        List<State> validStates = Arrays.asList(State.Add, State.Active);
+        for (NetworkACLItemVO rule : rules) {
+            List<String> cidrs = rule.getSourceCidrList();
+            if (validStates.contains(rule.getState()) &&
+                    rule.getProtocol().equalsIgnoreCase(NetUtils.ALL_PROTO) &&
+                    !containsIpv6Cidr(cidrs) &&
+                    cidrs.contains(NetUtils.ALL_IP4_CIDRS)) {
+                cidrs.add(NetUtils.ALL_IP6_CIDRS);
+                rule.setSourceCidrList(cidrs);
+            }
+        }
+    }
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
@@ -339,7 +371,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         if (network.getNetworkACLId() == null) {
             return null;
         }
-        return _networkACLItemDao.listByACL(network.getNetworkACLId());
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
+        updateACLRulesForIpv6Cidr(network, rules);
+        return rules;
     }
 
     private void removeRule(final NetworkACLItem rule) {
@@ -399,6 +433,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     public boolean applyACLItemsToNetwork(final long networkId, final List<NetworkACLItemVO> rules) throws ResourceUnavailableException {
         final Network network = _networkDao.findById(networkId);
+        updateACLRulesForIpv6Cidr(network, rules);
         boolean handled = false;
         boolean foundProvider = false;
         for (final NetworkACLServiceProvider element : _networkAclElements) {

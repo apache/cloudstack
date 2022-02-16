@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.command.user.ipv6.DeleteIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -147,6 +148,18 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         cmdList.add(UpdateIpv6FirewallRuleCmd.class);
         cmdList.add(DeleteIpv6FirewallRuleCmd.class);
         return cmdList;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return Ipv6Service.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+                Ipv6NetworkOfferingCreationEnabled
+        };
     }
 
     @Override

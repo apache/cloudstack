@@ -222,15 +222,22 @@ class CsNetfilters(object):
         The rule will not actually be removed on the host """
         self.rules[:] = [x for x in self.rules if not x == rule]
 
-    def apply_ip6_rules(self, rules):
+    def apply_ip6_rules(self, rules, type):
         logging.debug("Add IPv6 rules: %s", rules)
         if len(rules) == 0:
             return
         address_family = 'ip6'
         table = 'ip6_firewall'
-        CsHelper.execute("nft add table %s %s" % (address_family, table))
         chain = 'fw_chain_ingress'
-        CsHelper.execute("nft add chain %s %s %s '{type filter hook input priority 0; policy drop; }'" % (address_family, table, chain))
+        hook = 'input'
+        action = 'drop'
+        if type == "acl":
+            table = 'ip6_acl'
+            chain = 'default_egress_policy'
+            hook = 'output'
+            action = 'accept'
+        CsHelper.execute("nft add table %s %s" % (address_family, table))
+        CsHelper.execute("nft add chain %s %s %s '{type filter hook %s priority 0; policy %s; }'" % (address_family, table, chain, hook, action))
 #         CsHelper.execute("nft add rule %s %s %s icmpv6 type {echo-request,nd-neighbor-solicit} accept" % (address_family, table, chain))
         for fw in rules:
             chain = fw['chain']
@@ -243,7 +250,7 @@ class CsNetfilters(object):
                 CsHelper.execute("nft add chain %s %s %s '{type filter hook %s priority 0; policy %s; }'" % (address_family, table, chain, hook, rule))
             else:
                 logging.info("Add: rule=%s in address_family=%s table=%s, chain=%s", rule, address_family, table, chain)
-                CsHelper.execute("nft add rule ip6 ip6_firewall %s %s" % (chain, rule))
+                CsHelper.execute("nft add rule ip6 %s %s %s" % (table, chain, rule))
 
 
 class CsNetfilter(object):

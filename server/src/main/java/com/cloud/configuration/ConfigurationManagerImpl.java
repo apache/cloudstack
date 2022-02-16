@@ -5721,6 +5721,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("%s is supported only for %s guest type", ApiConstants.INTERNET_PROTOCOL, GuestType.Isolated));
         }
 
+        if (!Ipv6Service.Ipv6NetworkOfferingCreationEnabled.value() && !NetworkOffering.InternetProtocol.IPv4.equals(internetProtocol)) {
+            throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported network offering", Ipv6Service.Ipv6NetworkOfferingCreationEnabled.key()));
+        }
+
         // Verify availability
         for (final Availability avlb : Availability.values()) {
             if (avlb.name().equalsIgnoreCase(availabilityStr)) {

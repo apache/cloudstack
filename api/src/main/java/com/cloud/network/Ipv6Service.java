@@ -21,6 +21,8 @@ import java.util.List;
 import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -32,9 +34,15 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.NicProfile;
 
-public interface Ipv6Service extends PluggableService {
+public interface Ipv6Service extends PluggableService, Configurable {
 
     public static final int IPV6_SLAAC_CIDR_NETMASK = 64;
+
+    static final ConfigKey<Boolean> Ipv6NetworkOfferingCreationEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "network.offering.ipv6.enabled",
+            "false",
+            "Indicates whether creation of IPv6 network offering is enabled or not.",
+            true);
 
     Pair<Integer, Integer> getUsedTotalIpv6SubnetForPrefix(DataCenterGuestIpv6Prefix prefix);
 

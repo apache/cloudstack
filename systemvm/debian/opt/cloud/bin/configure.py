@@ -24,6 +24,7 @@ import sys
 import urllib
 import urllib2
 import time
+import copy
 
 from collections import OrderedDict
 from fcntl import flock, LOCK_EX, LOCK_UN
@@ -40,6 +41,22 @@ from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
+def removeUndesiredCidrs(cidrs, version):
+    version_char = ":"
+    if version == 4:
+        version_char = "."
+    if "," in cidrs:
+        cidrList = cidrs.split(",")
+        ipv4Cidrs = []
+        for cidr in cidrList:
+            if version_char not in cidr:
+                ipv4Cidrs.append(cidr)
+        if len(ipv4Cidrs) > 0:
+            return ",".join(ipv4Cidrs)
+    else:
+        if version_char not in cidrs:
+            return cidrs
+    return None
 
 class CsPassword(CsDataBag):
 
@@ -252,6 +269,7 @@ class CsAcl(CsDataBag):
             if "egress_rules" in obj.keys():
                 self.egress = obj['egress_rules']
             self.fw = config.get_fw()
+            self.ipv6_acl = config.get_ipv6_acl()
 
         def create(self):
             self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS)
@@ -260,9 +278,79 @@ class CsAcl(CsDataBag):
         def process(self, direction, rule_list, base):
             count = base
             for i in rule_list:
-                r = self.AclRule(direction, self, i, self.config, count)
+                ruleData = copy.copy(i)
+                ruleData['cidr'] = removeUndesiredCidrs(ruleData['cidr'], 6)
+                if ruleData['cidr'] == None or ruleData['cidr'] == "":
+                    continue
+                r = self.AclRule(direction, self, ruleData, self.config, count)
                 r.create()
                 count += 1
+
+            chain = "default_ingress_policy"
+            if direction == "ingress":
+                chain = "default_egress_policy"
+            else:
+                self.ipv6_acl.append({'type': "chain", 'chain': chain, 'rule': "drop"})
+            for rule in rule_list:
+                rule['cidr'] = removeUndesiredCidrs(rule['cidr'], 4)
+                if rule['cidr'] == None or rule['cidr'] == "":
+                    continue
+                saddr = ""
+                daddr = ""
+                if direction == "ingress":
+                    saddr = "ip6 saddr " + rule['cidr']
+                else:
+                    saddr = "ip6 daddr " + rule['cidr']
+
+                proto = ""
+                protocol = rule['type']
+                if protocol != "all":
+                    icmp_type = ""
+                    proto = protocol
+                    if protocol == "icmp":
+                        protocol = "icmpv6"
+                        icmp_type = "any"
+                    if 'icmp_type' in rule and rule['icmp_type'] != -1:
+                        icmp_type = rule['icmp_type']
+                    if proto and icmp_type:
+                        proto = proto + " type " + icmp_type
+                    if 'icmp_code' in rule and rule['icmp_code'] != -1:
+                        proto = proto + " code " + rule['icmp_code']
+
+                    if protocol == "protocol":
+                        protocol = rule['protocol']
+
+                    first_port = ""
+                    last_port = ""
+                    if 'first_port' in rule:
+                        first_port = rule['first_port']
+                    if 'last_port' in rule:
+                        last_port = rule['last_port']
+                    port = ""
+                    if first_port:
+                        port = first_port
+                    if last_port and port and \
+                       last_port != first_port:
+                        port = "{%s-%s}" % (port, last_port)
+                    proto = "%s dport %s" % (proto, port)
+
+                action = "drop"
+                if 'allowed' in rule.keys() and rule['allowed']:
+                    action = "accept"
+
+                rstr = saddr
+                type = ""
+                if rstr and daddr:
+                    rstr = rstr + " " + daddr
+                if rstr and proto:
+                    rstr = rstr + " " + proto
+                if rstr and action:
+                    rstr = rstr + " " + action
+                else:
+                    type = "chain"
+                    rstr = action
+                logging.debug("Process IPv6 ACL rule %s" % rstr)
+                self.ipv6_acl.append({'type': type, 'chain': chain, 'rule': rstr})
 
         class AclRule():
 
@@ -322,6 +410,14 @@ class CsAcl(CsDataBag):
         CsHelper.execute("iptables -F FW_EGRESS_RULES")
         CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset flush")
         CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset destroy")
+
+    def flushAllIpv6Rules(self):
+        logging.info("Flush all IPv6 ACL rules")
+        address_family = 'ip6'
+        table = 'ip6_acl'
+        tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
+        if any(table in t for t in tables):
+            CsHelper.execute("nft delete table %s %s" % (address_family, table))
 
     def process(self):
         for item in self.dbag:
@@ -1125,6 +1221,7 @@ class IpTablesExecutor:
 
     def process(self):
         acls = CsAcl('networkacl', self.config)
+        acls.flushAllIpv6Rules()
         acls.process()
 
         acls = CsAcl('firewallrules', self.config)
@@ -1151,9 +1248,13 @@ class IpTablesExecutor:
         nf = CsNetfilters()
         nf.compare(self.config.get_fw())
 
+        logging.info("Configuring nftables ACL rules %s" % self.config.get_ipv6_acl())
+        nf = CsNetfilters()
+        nf.apply_ip6_rules(self.config.get_ipv6_acl(), "acl")
+
         logging.info("Configuring nftables IPv6 rules %s" % self.config.get_ipv6_fw())
         nf = CsNetfilters()
-        nf.apply_ip6_rules(self.config.get_ipv6_fw())
+        nf.apply_ip6_rules(self.config.get_ipv6_fw(), "firewall")
 
         logging.debug("Configuring iptables rules done ...saving rules")
 
@@ -1229,7 +1330,6 @@ def main(argv):
     red = CsRedundant(config)
     red.set()
     return 0
-
 
 if __name__ == "__main__":
     main(sys.argv)

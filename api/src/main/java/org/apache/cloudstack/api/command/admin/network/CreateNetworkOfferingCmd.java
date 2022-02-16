@@ -94,7 +94,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
             type = CommandType.STRING,
-            description = "The internet protocol of network offering. Options are ip4 and dualstack. Default is IPv4. dualstack will create a network offering that supports both IPv4 and IPv6",
+            description = "The internet protocol of network offering. Options are ip4 and dualstack. Default is ipv4. dualstack will create a network offering that supports both IPv4 and IPv6",
             since = "4.17.0")
     private String internetProtocol;
 

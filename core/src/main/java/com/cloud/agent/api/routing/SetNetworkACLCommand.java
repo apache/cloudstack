@@ -28,6 +28,8 @@ import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 
 public class SetNetworkACLCommand extends NetworkElementCommand {
+    public static final String RULE_DETAIL_SEPARATOR = ";";
+
     NetworkACLTO[] rules;
     NicTO nic;
 
@@ -58,7 +60,8 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
             if (aclTO.revoked() == true) {
                 final StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
-                sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:");
+                List<String> revertRuleItems = Arrays.asList("", "reverted", "0", "0", "0", "");
+                sb.append(aclTO.getTrafficType().toString()).append(String.join(RULE_DETAIL_SEPARATOR, revertRuleItems));
                 final String aclRuleEntry = sb.toString();
                 result[0][i++] = aclRuleEntry;
                 continue;
@@ -66,11 +69,11 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
 
             List<String> cidr;
             final StringBuilder sb = new StringBuilder();
-            sb.append(aclTO.getTrafficType().toString()).append(":").append(aclTO.getProtocol()).append(":");
+            sb.append(aclTO.getTrafficType().toString()).append(RULE_DETAIL_SEPARATOR).append(aclTO.getProtocol()).append(RULE_DETAIL_SEPARATOR);
             if ("icmp".compareTo(aclTO.getProtocol()) == 0) {
-                sb.append(aclTO.getIcmpType()).append(":").append(aclTO.getIcmpCode()).append(":");
+                sb.append(aclTO.getIcmpType()).append(RULE_DETAIL_SEPARATOR).append(aclTO.getIcmpCode()).append(RULE_DETAIL_SEPARATOR);
             } else {
-                sb.append(aclTO.getStringPortRange()).append(":");
+                sb.append(aclTO.getStringPortRange().replace(":", RULE_DETAIL_SEPARATOR)).append(RULE_DETAIL_SEPARATOR);
             }
             cidr = aclTO.getSourceCidrList();
             if (cidr == null || cidr.isEmpty()) {
@@ -85,7 +88,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
                     firstEntry = false;
                 }
             }
-            sb.append(":").append(aclTO.getAction()).append(":");
+            sb.append(RULE_DETAIL_SEPARATOR).append(aclTO.getAction()).append(RULE_DETAIL_SEPARATOR);
             final String aclRuleEntry = sb.toString();
             result[0][i++] = aclRuleEntry;
         }

@@ -75,14 +75,15 @@
         </a-form-item>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.internet.protocol')" :tooltip="apiParams.internetprotocol.description"/>
-          <a-alert type="warning" v-if="internetProtocolValue != 'ipv4'">
-            <span slot="message" v-html="$t('message.network.offering.internet.protocol.warning')" />
+          <a-alert type="warning" v-if="!ipv6NetworkOfferingEnabled || internetProtocolValue!=='ipv4'">
+            <span slot="message" v-html="ipv6NetworkOfferingEnabled ? $t('message.network.offering.internet.protocol.warning') : $t('message.network.offering.ipv6.warning')" />
           </a-alert>
           <br/>
           <a-radio-group
             v-decorator="['internetprotocol', {
               initialValue: internetProtocolValue
             }]"
+            :disabled="!ipv6NetworkOfferingEnabled"
             buttonStyle="solid"
             @change="e => { internetProtocolValue = e.target.value }" >
             <a-radio-button value="ipv4">
@@ -498,6 +499,7 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
+      ipv6NetworkOfferingEnabled: false,
       loading: false
     }
   },
@@ -520,6 +522,7 @@ export default {
       this.fetchZoneData()
       this.fetchSupportedServiceData()
       this.fetchServiceOfferingData()
+      this.fetchIpv6NetworkOfferingConfiguration()
     },
     isAdmin () {
       return isAdmin()
@@ -538,6 +541,14 @@ export default {
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
         this.domainLoading = false
+      })
+    },
+    fetchIpv6NetworkOfferingConfiguration () {
+      this.ipv6NetworkOfferingEnabled = false
+      var params = { name: 'network.offering.ipv6.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.ipv6NetworkOfferingEnabled = value === true
       })
     },
     fetchZoneData () {

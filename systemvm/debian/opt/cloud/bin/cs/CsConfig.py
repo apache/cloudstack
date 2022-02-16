@@ -32,6 +32,7 @@ class CsConfig(object):
 
     def __init__(self):
         self.fw = []
+        self.ipv6_acl = []
         self.ipv6_fw = []
 
     def set_address(self):
@@ -51,6 +52,9 @@ class CsConfig(object):
 
     def get_fw(self):
         return self.fw
+
+    def get_ipv6_acl(self):
+        return self.ipv6_acl
 
     def get_ipv6_fw(self):
         return self.ipv6_fw
