@@ -1697,10 +1697,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean volumeResizeRequired = false;
 
         // VALIDATIONS
-        Long updateNewSize[] = {newSize};
-        Long updateNewMinIops[] = {newMinIops};
-        Long updateNewMaxIops[] = {newMaxIops};
-        Integer updateNewHypervisorSnapshotReserve[] = {newHypervisorSnapshotReserve};
+        Long[] updateNewSize = {newSize};
+        Long[] updateNewMinIops = {newMinIops};
+        Long[] updateNewMaxIops = {newMaxIops};
+        Integer[] updateNewHypervisorSnapshotReserve = {newHypervisorSnapshotReserve};
         validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];
