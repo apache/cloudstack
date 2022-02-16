@@ -872,7 +872,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.warn(msg);
             throw new DiscoveryException(msg);
         }
-        String errorMsg = "Unable to find the server resources at " + url;
+        String errorMsg = "Cannot find the server resources at " + url;
         s_logger.warn(errorMsg);
         throw new DiscoveryException("Unable to add the host: " + errorMsg);
     }
