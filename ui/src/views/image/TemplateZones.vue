@@ -424,7 +424,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

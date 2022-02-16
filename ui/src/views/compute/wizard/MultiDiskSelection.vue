@@ -110,7 +110,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.data.disk'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           dataIndex: 'offering',

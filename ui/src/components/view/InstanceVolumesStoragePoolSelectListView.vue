@@ -95,15 +95,15 @@ export default {
         },
         {
           title: this.$t('label.size'),
-          scopedSlots: { customRender: 'size' }
+          slots: { customRender: 'size' }
         },
         {
           title: this.$t('label.storage'),
-          scopedSlots: { customRender: 'selectedstorage' }
+          slots: { customRender: 'selectedstorage' }
         },
         {
           title: '',
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ],
       selectedVolumeForStoragePoolSelection: {},

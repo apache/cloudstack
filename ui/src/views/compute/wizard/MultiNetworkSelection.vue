@@ -104,17 +104,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.nic'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           dataIndex: 'network',
           title: this.$t('label.network'),
-          scopedSlots: { customRender: 'network' }
+          slots: { customRender: 'network' }
         },
         {
           dataIndex: 'ipaddress',
           title: this.$t('label.ipaddress'),
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         }
       ],
       loading: false,

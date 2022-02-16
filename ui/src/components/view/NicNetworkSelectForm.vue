@@ -114,7 +114,7 @@ export default {
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ]
     }

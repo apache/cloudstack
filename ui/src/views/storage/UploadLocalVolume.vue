@@ -192,6 +192,9 @@ export default {
       uploadPercentage: 0
     }
   },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('getUploadParamsForVolume')
+  },
   created () {
     this.initForm()
     this.fetchData()

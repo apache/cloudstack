@@ -133,7 +133,7 @@ export default {
       columns: [
         {
           title: this.$t('label.storageid'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.clusterid'),
@@ -145,27 +145,26 @@ export default {
         },
         {
           title: this.$t('label.disksizetotal'),
-          scopedSlots: { customRender: 'disksizetotal' }
+          slots: { customRender: 'disksizetotal' }
         },
         {
           title: this.$t('label.disksizeused'),
-          scopedSlots: { customRender: 'disksizeused' }
+          slots: { customRender: 'disksizeused' }
         },
         {
           title: this.$t('label.disksizefree'),
-          scopedSlots: { customRender: 'disksizefree' }
+          slots: { customRender: 'disksizefree' }
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ]
     }
   },
   created () {
     if (this.suitabilityEnabled) {
-      this.columns.splice(1, 0, { slots: { title: 'suitabilityCustomTitle' }, scopedSlots: { customRender: 'suitability' } }
-      )
+      this.columns.splice(1, 0, { title: 'suitabilityCustomTitle', slots: 'suitability' })
     }
     this.preselectStoragePool()
     this.fetchStoragePools()

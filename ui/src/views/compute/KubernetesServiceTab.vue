@@ -263,7 +263,7 @@ export default {
       this.vmColumns.push({
         title: this.$t('label.action'),
         dataIndex: 'action',
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
     this.handleFetchData()

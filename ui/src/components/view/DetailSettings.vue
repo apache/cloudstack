@@ -181,11 +181,10 @@ export default {
         })
       }
       api('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
-        const detailOptions = json.listdetailoptionsresponse.detailoptions.details
-        this.createDetailOptions(detailOptions)
+        this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
-      this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
-      api('listTemplates', { templatefilter: 'all', id: this.resource.templateid }).then(json => {
+      this.disableSettings = (this.$route.meta.name === 'vm' && resource.state !== 'Stopped')
+      api('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
         this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
     },
@@ -215,7 +214,7 @@ export default {
     isAdminOrOwner () {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
-        (this.resource.project && this.resource.projectid === this.$store.getters.project.id)
+        this.resource.project && this.resource.projectid === this.$store.getters.project.id
     },
     getDetailsParam (details) {
       var params = {}
@@ -318,9 +317,5 @@ export default {
 
 .detail-button {
   width: 30px;
-}
-
-:deep(.edit-button) {
-  margin-left: 5px;
 }
 </style>

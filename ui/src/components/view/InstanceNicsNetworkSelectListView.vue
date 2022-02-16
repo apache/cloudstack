@@ -88,15 +88,15 @@ export default {
       nicColumns: [
         {
           title: this.$t('label.nic'),
-          scopedSlots: { customRender: 'displaytext' }
+          slots: { customRender: 'displaytext' }
         },
         {
           title: this.$t('label.network'),
-          scopedSlots: { customRender: 'selectednetwork' }
+          slots: { customRender: 'selectednetwork' }
         },
         {
           title: '',
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ],
       selectedNicForNetworkSelection: {}
