@@ -391,7 +391,15 @@ public class PresetVariableHelper {
         value.setId(volumeVo.getUuid());
         value.setName(volumeVo.getName());
         value.setProvisioningType(volumeVo.getProvisioningType());
-        value.setStorage(getPresetVariableValueStorage(volumeVo.getPoolId(), usageType));
+
+        Long poolId = volumeVo.getPoolId();
+        if (poolId == null) {
+            logger.debug(String.format("Volume [%s] from usage record [%s] has a NULL pool ID; therefore, the preset variable \"storage\" will not be loaded for this record.",
+                    volumeId, usageRecordToString));
+        } else {
+            value.setStorage(getPresetVariableValueStorage(poolId, usageType));
+        }
+
         value.setTags(getPresetVariableValueResourceTags(volumeId, ResourceObjectType.Volume));
         value.setSize(ByteScaleUtils.bytesToMib(volumeVo.getSize()));
     }

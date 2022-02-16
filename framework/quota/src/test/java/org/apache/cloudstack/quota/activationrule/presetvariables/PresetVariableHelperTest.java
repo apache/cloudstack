@@ -605,11 +605,12 @@ public class PresetVariableHelperTest {
     }
 
     @Test
-    public void loadPresetVariableValueForVolumeTestRecordIsVolumeSetFields() {
+    public void loadPresetVariableValueForVolumeTestRecordIsVolumeAndHasStorageSetFields() {
         Value expected = getValueForTests();
 
         VolumeVO volumeVoMock = Mockito.mock(VolumeVO.class);
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        Mockito.doReturn(1l).when(volumeVoMock).getPoolId();
 
         mockMethodValidateIfObjectIsNull();
 
@@ -636,6 +637,42 @@ public class PresetVariableHelperTest {
         Assert.assertEquals(expectedSize, result.getSize());
 
         validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "storage", "tags", "size"), result);
+
+        Mockito.verify(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.eq(ResourceObjectType.Volume));
+    }
+
+    @Test
+    public void loadPresetVariableValueForVolumeTestRecordIsVolumeAndDoesNotHaveStorageSetFields() {
+        Value expected = getValueForTests();
+
+        VolumeVO volumeVoMock = Mockito.mock(VolumeVO.class);
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        Mockito.doReturn(null).when(volumeVoMock).getPoolId();
+
+        mockMethodValidateIfObjectIsNull();
+
+        Mockito.doReturn(expected.getId()).when(volumeVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(volumeVoMock).getName();
+        Mockito.doReturn(expected.getDiskOffering()).when(presetVariableHelperSpy).getPresetVariableValueDiskOffering(Mockito.anyLong());
+        Mockito.doReturn(expected.getProvisioningType()).when(volumeVoMock).getProvisioningType();
+        Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
+        Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
+
+        Mockito.doReturn(QuotaTypes.VOLUME).when(usageVoMock).getUsageType();
+
+        Value result = new Value();
+        presetVariableHelperSpy.loadPresetVariableValueForVolume(usageVoMock, result);
+
+        Long expectedSize = ByteScaleUtils.bytesToMib(expected.getSize());
+
+        assertPresetVariableIdAndName(expected, result);
+        Assert.assertEquals(expected.getDiskOffering(), result.getDiskOffering());
+        Assert.assertEquals(expected.getProvisioningType(), result.getProvisioningType());
+        Assert.assertEquals(null, result.getStorage());
+        Assert.assertEquals(expected.getTags(), result.getTags());
+        Assert.assertEquals(expectedSize, result.getSize());
+
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "tags", "size"), result);
 
         Mockito.verify(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.eq(ResourceObjectType.Volume));
     }
