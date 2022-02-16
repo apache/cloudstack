@@ -24,4 +24,6 @@ public interface HypervisorGuruManager extends Manager {
     HypervisorGuru getGuru(HypervisorType hypervisorType);
 
     long getGuruProcessedCommandTargetHost(long hostId, Command cmd);
+
+    long getGuruProcessedCommandTargetHost(long hostId, Command cmd, HypervisorType hypervisorType);
 }

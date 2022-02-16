@@ -180,7 +180,7 @@ export default {
       this.fillEditFormFieldValues()
     }
   },
-  inject: ['parentCloseAction', 'parentFetchData'],
+  inject: ['parentCloseAction', 'parentFetchData', 'parentForceRerender'],
   methods: {
     handleSubmit (e) {
       e.preventDefault()
@@ -249,6 +249,7 @@ export default {
                     successMethod: result => {
                       if (this.action.api === 'deleteDomain') {
                         this.parentFetchData()
+                        this.parentForceRerender()
                       }
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)

@@ -113,7 +113,7 @@ public class GuestOSVO implements GuestOS {
     }
 
     @Override
-    public boolean isUserDefined() {
+    public boolean getIsUserDefined() {
         return isUserDefined;
     }
 
