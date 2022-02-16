@@ -42,6 +42,7 @@
 </template>
 
 <script>
+import { shallowRef, defineAsyncComponent } from 'vue'
 import { api } from '@api'
 import { mixinDevice } from '@/utils/mixin.js'
 import eventBus from '@/config/eventBus'
@@ -64,11 +65,11 @@ export default {
       resource: {},
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }],
       defaultTabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }],
       activeTab: ''
     }
