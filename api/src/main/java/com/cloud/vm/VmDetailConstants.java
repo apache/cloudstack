@@ -75,4 +75,5 @@ public interface VmDetailConstants {
 
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
+    String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
 }

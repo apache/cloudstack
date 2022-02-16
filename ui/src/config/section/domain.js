@@ -47,7 +47,7 @@ export default {
     },
     {
       name: 'limits',
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+      show: (record, route, user) => { return ['Admin'].includes(user.roletype) || (['DomainAdmin'].includes(user.roletype) && record.id !== user.domainid) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     },
     {
