@@ -1612,13 +1612,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
             final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
-            if (ips.length == 1 && !ips[0].isAdd()) {
+            for (IpAddressTO ip : ips) {
+                if (ip.isAdd() || lastIp.equalsIgnoreCase("false")) {
+                    continue;
+                }
                 Pair<VirtualDevice, Integer> nicInfo = getVirtualDevice(vmMo, ips[0]);
 
-                if (nicInfo.first() == null && lastIp.equalsIgnoreCase("true")) {
-                    if (nicInfo.second() == 2) {
-                        return new ExecutionResult(false, "Unable to remove eth2 in network VR because it is the public NIC of source NAT");
-                    }
+                if (nicInfo.second() == 2) {
+                    return new ExecutionResult(true, "Not removing eth2 in network VR because it is the public NIC of source NAT");
+                }
+                if (nicInfo.first() == null) {
                     return new ExecutionResult(false, "Couldn't find NIC");
                 }
                 configureNicDevice(vmMo, nicInfo.first(), VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
@@ -1640,11 +1643,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
         Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
-
-        if (publicNicInfo.first() == 2) {
-            s_logger.debug("Do not remove eth2 in network VR because it is the public NIC of source NAT.");
-            return new Pair<>(null, publicNicInfo.first());
-        }
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Find public NIC index, public network name: %s , index: %s", publicNetworkName, publicNicInfo.first()));
