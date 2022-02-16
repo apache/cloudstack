@@ -1597,7 +1597,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
-            // command may sometimes be redirect to a wrong host, we relax
+            // command may sometimes be redirected to a wrong host, we relax
             // the check and will try to find it within datacenter
             if (vmMo == null) {
                 if (hyperHost instanceof HostMO) {
@@ -1611,14 +1611,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
-
+            final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
             if (ips.length == 1 && !ips[0].isAdd()) {
-                VirtualDevice nic = getVirtualDevice(vmMo, ips[0]);
+                Pair<VirtualDevice, Integer> nicInfo = getVirtualDevice(vmMo, ips[0]);
 
-                if (nic == null) {
+                if (nicInfo.first() == null && lastIp.equalsIgnoreCase("true")) {
+                    if (nicInfo.second() == 2) {
+                        return new ExecutionResult(false, "Unable to remove eth2 in network VR because it is the public NIC of source NAT");
+                    }
                     return new ExecutionResult(false, "Couldn't find NIC");
                 }
-                configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
+                configureNicDevice(vmMo, nicInfo.first(), VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
             }
         } catch (Throwable e) {
             s_logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
@@ -1627,7 +1630,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new ExecutionResult(true, null);
     }
 
-    private VirtualDevice getVirtualDevice(VirtualMachineMO vmMo, IpAddressTO ip) throws Exception {
+    private Pair<VirtualDevice, Integer> getVirtualDevice(VirtualMachineMO vmMo, IpAddressTO ip) throws Exception {
         NicTO nicTO = ip.getNicTO();
         URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
         if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
@@ -1638,11 +1641,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
         Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
 
+        if (publicNicInfo.first() == 2) {
+            s_logger.debug("Do not remove eth2 in network VR because it is the public NIC of source NAT.");
+            return new Pair<>(null, publicNicInfo.first());
+        }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Find public NIC index, public network name: %s , index: %s", publicNetworkName, publicNicInfo.first()));
         }
 
-        return findVirtualNicDevice(vmMo, nicTO.getMac());
+        return new Pair<>(findVirtualNicDevice(vmMo, nicTO.getMac()), publicNicInfo.first());
     }
 
     private void configureNicDevice(VirtualMachineMO vmMo, VirtualDevice nic, VirtualDeviceConfigSpecOperation operation, String commandName) throws Exception {
