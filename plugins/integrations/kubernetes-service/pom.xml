@@ -86,9 +86,9 @@
             <version>${cs.guava.version}</version>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${cs.log4j.version}</version>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+            <version>${cs.reload4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -124,6 +124,11 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
+            <version>${cs.bcprov.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk15on</artifactId>
             <version>${cs.bcprov.version}</version>
         </dependency>
         <dependency>

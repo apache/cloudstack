@@ -3819,18 +3819,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         DiskOfferingVO rootdiskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
-        long size = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootdiskOffering);
+        long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootdiskOffering);
 
         if (!isIso && diskOfferingId != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            size += verifyAndGetDiskSize(diskOffering, diskSize);
+            volumesSize += verifyAndGetDiskSize(diskOffering, diskSize);
         }
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -4136,7 +4136,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private long verifyAndGetDiskSize(DiskOfferingVO diskOffering, Long diskSize) {
         long size = 0l;
-        if (diskOffering != null && diskOffering.isCustomized() && !diskOffering.isComputeOnly()) {
+        if (diskOffering == null) {
+            throw new InvalidParameterValueException("Specified disk offering cannot be found");
+        }
+        if (diskOffering.isCustomized() && !diskOffering.isComputeOnly()) {
             if (diskSize == null) {
                 throw new InvalidParameterValueException("This disk offering requires a custom size specified");
             }
@@ -4146,9 +4149,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
                         + " Min:" + customDiskOfferingMinSize);
             }
-            size += diskSize * GiB_TO_BYTES;
+            size = diskSize * GiB_TO_BYTES;
+        } else {
+            size = diskOffering.getDiskSize();
         }
-        size += diskOffering.getDiskSize();
+        _volumeService.validateVolumeSizeInBytes(size);
         return size;
     }
 
@@ -4170,6 +4175,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorType);
         long rootDiskSizeInBytes = verifyAndGetDiskSize(rootDiskOffering, NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1));
         if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
+            _volumeService.validateVolumeSizeInBytes(rootDiskSizeInBytes);
             long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
             customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSizeInGiB));
             return rootDiskSizeInBytes;
@@ -4180,7 +4186,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (rootDiskSize <= 0) {
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
-            return rootDiskSize * GiB_TO_BYTES;
+            rootDiskSize *= GiB_TO_BYTES;
+            _volumeService.validateVolumeSizeInBytes(rootDiskSize);
+            return rootDiskSize;
         } else {
             // For baremetal, size can be 0 (zero)
             Long templateSize = _templateDao.findById(template.getId()).getSize();

@@ -19,6 +19,14 @@
 
 package com.cloud.utils.script;
 
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -36,15 +44,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.joda.time.Duration;
-
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
 public class Script implements Callable<String> {
     private static final Logger s_logger = Logger.getLogger(Script.class);
@@ -320,7 +319,7 @@ public class Script implements Callable<String> {
         try {
             _logger.trace("Checking exit value of process");
             _process.exitValue();
-            _logger.trace("Script ran within the alloted time");
+            _logger.trace("Script ran within the allotted time");
         } catch (IllegalThreadStateException e) {
             _logger.warn("Interrupting script.");
             _isTimeOut = true;

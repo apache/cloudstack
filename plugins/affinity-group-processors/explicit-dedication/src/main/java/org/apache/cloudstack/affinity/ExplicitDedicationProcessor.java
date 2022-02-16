@@ -305,6 +305,9 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 for (HostPodVO pod : podList) {
                     DedicatedResourceVO dPod = _dedicatedDao.findByPodId(pod.getId());
                     if (dPod != null && !dedicatedResources.contains(dPod)) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(String.format("Avoiding POD %s [%s] because it is not dedicated.", pod.getName(), pod.getUuid()));
+                        }
                         avoidList.addPod(pod.getId());
                     } else {
                         includeList.addPod(pod.getId());
@@ -343,6 +346,9 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
         for (HostPodVO pod : pods) {
             if (podsInIncludeList != null && !podsInIncludeList.contains(pod.getId())) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Avoiding POD %s [%s], as it is not in include list.", pod.getName(), pod.getUuid()));
+                }
                 avoidList.addPod(pod.getId());
             }
         }

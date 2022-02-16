@@ -71,6 +71,13 @@ if [ "$1" = configure ]; then
     grep -s -q "^db.usage.slaves=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.slaves=/db.usage.replicas=/g" ${CONFDIR}/${DBPROPS}
     grep -s -q "^db.usage.secondsBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.secondsBeforeRetryMaster=/db.usage.secondsBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
     grep -s -q "^db.usage.queriesBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.queriesBeforeRetryMaster=/db.usage.queriesBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+
+    # Print help message
+    if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+        acs_version=$(dpkg -l |grep cloudstack-management |head -n1 |awk '{print $3}')
+        sed -i "s,^ACS_VERSION=.*,ACS_VERSION=$acs_version,g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+        /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text management
+    fi
 fi
 
 #DEBHELPER#

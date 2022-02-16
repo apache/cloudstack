@@ -344,7 +344,6 @@ export default {
       var params = {
         zoneid: this.selectedZone.id,
         guestiptype: 'Isolated',
-        supportedServices: 'SourceNat',
         state: 'Enabled'
       }
       if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins

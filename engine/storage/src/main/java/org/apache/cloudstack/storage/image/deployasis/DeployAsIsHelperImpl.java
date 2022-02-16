@@ -176,8 +176,8 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             } else {
                 if (StringUtils.isNotEmpty(guestOsDescription)) {
                     for (GuestOSHypervisorVO guestOSHypervisorVO : guestOsMappings) {
-                        GuestOSVO guestOSVO = guestOSDao.findById(guestOSHypervisorVO.getGuestOsId());
-                        if (guestOsDescription.equalsIgnoreCase(guestOSVO.getDisplayName())) {
+                        GuestOSVO guestOSVO = guestOSDao.findByIdIncludingRemoved(guestOSHypervisorVO.getGuestOsId());
+                        if (guestOSVO != null && guestOsDescription.equalsIgnoreCase(guestOSVO.getDisplayName())) {
                             guestOsId = guestOSHypervisorVO.getGuestOsId();
                             break;
                         }
