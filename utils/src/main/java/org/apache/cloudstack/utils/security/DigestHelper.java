@@ -16,18 +16,23 @@
 // under the License.
 package org.apache.cloudstack.utils.security;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DigestHelper {
-
+    public static final Logger s_logger = Logger.getLogger(DigestHelper.class.getName());
     public static ChecksumValue digest(String algorithm, InputStream is) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         ChecksumValue checksum = null;
@@ -130,5 +135,15 @@ public class DigestHelper {
      */
     public static String getHashValueFromChecksumValue(String checksum) {
         return isAlgorithmPresent(checksum) ? new ChecksumValue(checksum).getChecksum() : checksum;
+    }
+
+    public static String calculateChecksum(File file) {
+        try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
+            return org.apache.commons.codec.digest.DigestUtils.md5Hex(is);
+        } catch (IOException e) {
+            String errMsg = "Failed to calculate template checksum";
+            s_logger.error(errMsg, e);
+            throw new CloudRuntimeException(errMsg, e);
+        }
     }
 }

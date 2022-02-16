@@ -355,7 +355,7 @@ public abstract class BaseCmd {
             if (roleIsAllowed) {
                 validFields.add(field);
             } else {
-                s_logger.debug("Ignoring paremeter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
+                s_logger.debug("Ignoring parameter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
             }
         }
 

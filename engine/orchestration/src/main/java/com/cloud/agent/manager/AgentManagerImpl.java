@@ -342,10 +342,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 Answer answer = null;
                 try {
-
-                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd);
+                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
+                    String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
+                            host.getUuid(), e.getLocalizedMessage());
+                    s_logger.error(errorMsg);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(errorMsg, e);
+                    }
                 }
                 if (answer != null) {
                     return answer;
