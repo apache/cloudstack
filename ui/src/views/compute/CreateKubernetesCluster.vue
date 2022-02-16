@@ -212,14 +212,6 @@
                 v-model:value="form.dockerregistryurl"
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
-            <a-form-item name="dockerregistryemail" ref="dockerregistryemail">
-              <template #label>
-                <tooltip-label :title="$t('label.email')" :tooltip="apiParams.dockerregistryemail.description"/>
-              </template>
-              <a-input
-                v-model:value="form.dockerregistryemail"
-                :placeholder="apiParams.dockerregistryemail.description"/>
-            </a-form-item>
           </div>
         </div>
         <div :span="24" class="action-button">
@@ -314,7 +306,6 @@ export default {
         dockerregistryusername: [{ required: true, message: this.$t('label.required') }],
         dockerregistrypassword: [{ required: true, message: this.$t('label.required') }],
         dockerregistryurl: [{ required: true, message: this.$t('label.required') }],
-        dockerregistryemail: [{ required: true, message: this.$t('label.required') }],
         controlnodes: [
           { required: true, message: this.$t('message.error.input.value') },
           {
@@ -484,7 +475,6 @@ export default {
           params.dockerregistryusername = values.dockerregistryusername
           params.dockerregistrypassword = values.dockerregistrypassword
           params.dockerregistryurl = values.dockerregistryurl
-          params.dockerregistryemail = values.dockerregistryemail
         }
 
         api('createKubernetesCluster', params).then(json => {
