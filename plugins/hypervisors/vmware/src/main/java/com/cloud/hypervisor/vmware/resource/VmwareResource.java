@@ -1616,7 +1616,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (ip.isAdd() || lastIp.equalsIgnoreCase("false")) {
                     continue;
                 }
-                Pair<VirtualDevice, Integer> nicInfo = getVirtualDevice(vmMo, ips[0]);
+                Pair<VirtualDevice, Integer> nicInfo = getVirtualDevice(vmMo, ip);
 
                 if (nicInfo.second() == 2) {
                     return new ExecutionResult(true, "Not removing eth2 in network VR because it is the public NIC of source NAT");
