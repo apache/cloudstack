@@ -17,6 +17,14 @@
 
 <template>
   <div>
+    <a-button
+      :disabled="!('addTungstenFabricInterfaceStaticRoute' in $store.getters.apis)"
+      type="dashed"
+      icon="plus"
+      style="width: 100%; margin-bottom: 15px"
+      @click="addInterfaceStaticRoute">
+      {{ $t('label.add.tungsten.interface.static.route') }}
+    </a-button>
     <a-table
       size="small"
       :loading="loading || fetchLoading"
@@ -58,6 +66,44 @@
         </template>
       </a-pagination>
     </div>
+
+    <a-modal
+      v-if="interfaceStaticRouteModal"
+      :visible="interfaceStaticRouteModal"
+      :title="$t('label.add.tungsten.network.static.route')"
+      :closable="true"
+      :footer="null"
+      @cancel="closeAction"
+      v-ctrl-enter="handleSubmit"
+      centered
+      width="450px">
+      <a-form :form="form" layout="vertical">
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.routeprefix')" :tooltip="apiParams.interfacerouteprefix.description"/>
+          <a-input
+            :auto-focus="true"
+            v-decorator="['interfacerouteprefix', {
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]"
+            :placeholder="apiParams.interfacerouteprefix.description"/>
+        </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.communities')" :tooltip="apiParams.interfacecommunities.description"/>
+          <a-select
+            mode="tags"
+            :token-separators="[',']"
+            v-decorator="['interfacecommunities', { rules: [{ type: 'array' }] }]"
+            :placeholder="apiParams.interfacecommunities.description">
+            <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button :loading="actionLoading" @click="closeAction"> {{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="actionLoading" type="primary" @click="handleSubmit" ref="submit">{{ this.$t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -65,10 +111,11 @@
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'TungstenInterfaceStaticRoute',
-  components: { TooltipButton },
+  components: { TooltipButton, TooltipLabel },
   mixins: [mixinDevice],
   props: {
     resource: {
@@ -85,6 +132,7 @@ export default {
       zoneId: null,
       fetchLoading: false,
       deleteLoading: false,
+      actionLoading: false,
       dataSource: [],
       itemCount: 0,
       page: 1,
@@ -106,7 +154,25 @@ export default {
           scopedSlots: { customRender: 'action' },
           width: 80
         }
-      ]
+      ],
+      interfaceStaticRouteModal: false,
+      listRouteNextHopType: [{
+        id: 'ip-address',
+        description: 'ip-address'
+      }],
+      listCommunities: [{
+        id: 'no-export',
+        name: 'no-export'
+      }, {
+        id: 'no-export-subconfed',
+        name: 'no-export-subconfed'
+      }, {
+        id: 'no-advertise',
+        name: 'no-advertise'
+      }, {
+        id: 'no-reoriginate',
+        name: 'no-reoriginate'
+      }]
     }
   },
   computed: {
@@ -124,6 +190,10 @@ export default {
     resource () {
       this.fetchData()
     }
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
+    this.apiParams = this.$getApiParams('addTungstenFabricInterfaceStaticRoute')
   },
   created () {
     this.fetchData()
@@ -165,6 +235,9 @@ export default {
             this.fetchData()
           },
           errorMessage: this.$t('message.error.delete.interface.static.route'),
+          errorMethod: () => {
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.loading.delete.interface.static.route'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -177,6 +250,56 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.deleteLoading = false })
+    },
+    addInterfaceStaticRoute () {
+      this.interfaceStaticRouteModal = true
+    },
+    handleSubmit () {
+      this.form.validateFields((error, values) => {
+        if (error) {
+          return
+        }
+
+        const params = {}
+        params.zoneid = this.zoneId
+        params.tungsteninterfaceroutetableuuid = this.resource.uuid
+        params.interfacerouteprefix = values.interfacerouteprefix
+        params.interfacecommunities = values.interfacecommunities ? values.interfacecommunities.join(',') : null
+
+        this.actionLoading = true
+        api('addTungstenFabricInterfaceStaticRoute', params).then(json => {
+          this.$pollJob({
+            jobId: json.addtungstenfabricinterfacestaticrouteresponse.jobid,
+            title: this.$t('label.add.tungsten.interface.static.route'),
+            description: values.routeprefix,
+            successMessage: `${this.$t('message.success.add.interface.static.route')} ${values.routeprefix}`,
+            successMethod: () => {
+              this.fetchData()
+            },
+            errorMessage: this.$t('message.error.add.interface.static.route'),
+            errorMethod: () => {
+              this.fetchData()
+            },
+            loadingMessage: this.$t('message.loading.add.interface.static.route'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.fetchData()
+            },
+            action: {
+              isFetchData: false
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.actionLoading = false
+          this.closeAction()
+        })
+      })
+    },
+    closeAction () {
+      this.interfaceStaticRouteModal = false
+      this.form.resetFields()
     },
     onChangePage (page, pageSize) {
       this.page = page

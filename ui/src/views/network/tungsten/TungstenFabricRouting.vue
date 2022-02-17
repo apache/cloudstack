@@ -90,8 +90,11 @@ export default {
             dataIndex: 'network',
             title: this.$t('label.network'),
             scopedSlots: { customRender: 'network' }
-          }
-          ]
+          }, {
+            title: this.$t('label.action'),
+            scopedSlots: { customRender: 'action' },
+            width: 150
+          }]
         },
         {
           name: 'interface.route.table',
@@ -128,6 +131,10 @@ export default {
             dataIndex: 'tungstenvms',
             title: this.$t('label.tungstenvms'),
             scopedSlots: { customRender: 'tungstenvms' }
+          }, {
+            title: this.$t('label.action'),
+            scopedSlots: { customRender: 'action' },
+            width: 150
           }]
         },
         {
@@ -148,7 +155,7 @@ export default {
             {
               api: 'addTungstenFabricNetworkGatewayToLogicalRouter',
               icon: 'plus',
-              label: 'label.add.logical.network',
+              label: 'label.add.tungsten.logical.route',
               dataView: true,
               popup: true,
               fields: [
@@ -206,6 +213,10 @@ export default {
             dataIndex: 'network',
             title: this.$t('label.network'),
             scopedSlots: { customRender: 'network' }
+          }, {
+            title: this.$t('label.action'),
+            scopedSlots: { customRender: 'action' },
+            width: 150
           }]
         }
       ]

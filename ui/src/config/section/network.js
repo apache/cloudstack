@@ -718,6 +718,7 @@ export default {
       title: 'label.tungsten.network.router.table',
       icon: tungsten,
       hidden: true,
+      disabledListView: true,
       permission: ['listTungstenFabricNetworkRouteTable'],
       details: ['uuid', 'name'],
       tabs: [
@@ -732,14 +733,6 @@ export default {
       ],
       actions: [
         {
-          api: 'addTungstenFabricNetworkStaticRoute',
-          icon: 'plus',
-          label: 'label.add.tungsten.network.static.route',
-          dataView: true,
-          popup: true,
-          component: () => import('@/views/network/tungsten/AddTungstenNetworkStaticRoute.vue')
-        },
-        {
           api: 'removeTungstenFabricNetworkRouteTable',
           icon: 'delete',
           label: 'label.remove.network.route.table',
@@ -753,6 +746,7 @@ export default {
       title: 'label.tungsten.interface.router.table',
       icon: tungsten,
       hidden: true,
+      disabledListView: true,
       permission: ['listTungstenFabricInterfaceRouteTable'],
       details: ['uuid', 'name'],
       tabs: [
@@ -767,14 +761,6 @@ export default {
       ],
       actions: [
         {
-          api: 'addTungstenFabricInterfaceStaticRoute',
-          icon: 'plus',
-          label: 'label.add.tungsten.interface.static.route',
-          dataView: true,
-          popup: true,
-          component: () => import('@/views/network/tungsten/AddTungstenInterfaceStaticRoute.vue')
-        },
-        {
           api: 'removeTungstenFabricInterfaceRouteTable',
           icon: 'delete',
           label: 'label.remove.interface.route.table',
@@ -788,6 +774,7 @@ export default {
       title: 'label.network.policy',
       icon: tungsten,
       hidden: true,
+      disabledListView: true,
       permission: ['listTungstenFabricPolicy'],
       details: ['name'],
       tabs: [
@@ -827,6 +814,41 @@ export default {
           dataView: true,
           mapping: {
             policyuuid: (record) => record.uuid
+          }
+        }
+      ]
+    },
+    {
+      name: 'tungstenpolicyset',
+      title: 'label.application.policy.set',
+      icon: tungsten,
+      hidden: true,
+      disabledListView: true,
+      permission: ['listTungstenFabricApplicationPolicySet'],
+      details: ['name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'firewall.policy',
+          component: () => import('@/views/network/tungsten/TungstenFabricFirewallPolicy.vue')
+        },
+        {
+          name: 'tag',
+          component: () => import('@/views/network/tungsten/TungstenFabricFirewallTag.vue')
+        }
+      ],
+      actions: [
+        {
+          api: 'deleteTungstenFabricApplicationPolicySet',
+          icon: 'delete',
+          label: 'label.delete.tungsten.policy.set',
+          message: 'label.confirm.delete.tungsten.policy.set',
+          dataView: true,
+          mapping: {
+            applicationpolicysetuuid: (record) => record.uuid
           }
         }
       ]

@@ -48,7 +48,8 @@ function generateRouterMap (section) {
       icon: section.icon,
       docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp),
       searchFilters: section.searchFilters,
-      related: section.related
+      related: section.related,
+      disabledListView: section.disabledListView
     },
     component: RouteView
   }
@@ -80,7 +81,8 @@ function generateRouterMap (section) {
           searchFilters: child.searchFilters,
           related: child.related,
           actions: child.actions,
-          tabs: child.tabs
+          tabs: child.tabs,
+          disabledListView: child.disabledListView
         },
         component: component,
         hideChildrenInMenu: true,

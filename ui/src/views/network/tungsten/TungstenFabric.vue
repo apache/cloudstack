@@ -144,6 +144,11 @@ export default {
               dataIndex: 'network',
               title: this.$t('label.network'),
               scopedSlots: { customRender: 'network' }
+            },
+            {
+              title: this.$t('label.action'),
+              scopedSlots: { customRender: 'action' },
+              width: 150
             }
           ]
         },
@@ -247,211 +252,11 @@ export default {
               dataIndex: 'tag',
               title: this.$t('label.tag'),
               scopedSlots: { customRender: 'tag' }
-            }
-          ]
-        },
-        {
-          name: 'firewall.policy',
-          api: 'listTungstenFabricFirewallPolicy',
-          actions: [
-            {
-              api: 'createTungstenFabricFirewallPolicy',
-              icon: 'plus',
-              label: 'label.add.firewall.policy',
-              dataView: false,
-              listView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'name',
-                  required: true
-                }
-              ]
             },
             {
-              api: 'addTungstenFabricFirewallRule',
-              icon: 'form',
-              label: 'label.add.tungsten.firewall.rule',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'firewallruleuuid',
-                  required: true,
-                  type: 'uuid',
-                  api: 'listTungstenFabricFirewallRule',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'sequence',
-                  required: true,
-                  type: 'number'
-                }
-              ],
-              show: (record) => record.firewallrule.length === 0,
-              args: {
-                firewallpolicyuuid: (record) => record.uuid
-              }
-            },
-            {
-              api: 'removeTungstenFabricFirewallRule',
-              icon: 'close',
-              label: 'label.remove.tungsten.firewall.rule',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'firewallruleuuid',
-                  required: true,
-                  type: 'uuid',
-                  loading: false,
-                  opts: [],
-                  optGet: (record) => record.firewallrule
-                }
-              ],
-              show: (record) => record.firewallrule.length > 0,
-              args: {
-                firewallpolicyuuid: (record) => record.uuid
-              }
-            },
-            {
-              api: 'deleteTungstenFabricFirewallPolicy',
-              icon: 'delete',
-              label: 'label.delete.tungsten.firewall.policy',
-              dataView: true,
-              confirm: true,
-              message: 'label.confirm.delete.tungsten.firewall.policy',
-              args: {
-                firewallpolicyuuid: (record) => record.uuid
-              }
-            }
-          ],
-          columns: [
-            {
-              dataIndex: 'name',
-              title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
-            },
-            {
-              dataIndex: 'firewallrule',
-              title: this.$t('label.firewallrule'),
-              scopedSlots: { customRender: 'firewallrule' }
-            }
-          ]
-        },
-        {
-          name: 'firewallrule',
-          api: 'listTungstenFabricFirewallRule',
-          actions: [
-            {
-              api: 'createTungstenFabricFirewallRule',
-              icon: 'plus',
-              label: 'label.add.tungsten.firewall.rule',
-              dataView: false,
-              listView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'name',
-                  required: true
-                },
-                {
-                  name: 'action',
-                  required: true,
-                  type: 'uuid',
-                  loading: false,
-                  opts: [{
-                    uuid: 'pass',
-                    name: 'PASS'
-                  }, {
-                    uuid: 'deny',
-                    name: 'DENY'
-                  }]
-                },
-                {
-                  name: 'servicegroupuuid',
-                  required: true,
-                  type: 'uuid',
-                  api: 'listTungstenFabricServiceGroup',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'srctaguuid',
-                  required: false,
-                  type: 'uuid',
-                  api: 'listTungstenFabricTag',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'srcaddressgroupuuid',
-                  required: false,
-                  type: 'uuid',
-                  api: 'listTungstenFabricAddressGroup',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'direction',
-                  required: true,
-                  type: 'uuid',
-                  loading: false,
-                  opts: [
-                    {
-                      id: 'oneway',
-                      name: 'ONE WAY'
-                    },
-                    {
-                      id: 'twoway',
-                      name: 'TWO WAY'
-                    }
-                  ]
-                },
-                {
-                  name: 'desttaguuid',
-                  required: false,
-                  type: 'uuid',
-                  api: 'listTungstenFabricTag',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'destaddressgroupuuid',
-                  required: false,
-                  type: 'uuid',
-                  api: 'listTungstenFabricAddressGroup',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'tagtypeuuid',
-                  required: false,
-                  type: 'uuid',
-                  api: 'listTungstenFabricTagType',
-                  loading: false,
-                  opts: []
-                }
-              ]
-            },
-            {
-              api: 'deleteTungstenFabricFirewallRule',
-              icon: 'delete',
-              label: 'label.delete.tungsten.firewall.rule',
-              dataView: true,
-              confirm: true,
-              message: 'label.confirm.delete.tungsten.firewall.rule',
-              args: {
-                firewallruleuuid: (record) => record.uuid
-              }
-            }
-          ],
-          columns: [
-            {
-              dataIndex: 'name',
-              title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
+              title: this.$t('label.action'),
+              scopedSlots: { customRender: 'action' },
+              width: 150
             }
           ]
         },
@@ -469,6 +274,7 @@ export default {
               fields: [
                 {
                   name: 'tagtype',
+                  label: 'label.tag.type',
                   required: true,
                   type: 'uuid',
                   api: 'listTungstenFabricTagType',
@@ -477,45 +283,10 @@ export default {
                 },
                 {
                   name: 'tagvalue',
+                  label: 'label.tag.value',
                   required: true
                 }
               ]
-            },
-            {
-              api: 'applyTungstenFabricTag',
-              icon: 'form',
-              label: 'label.apply.tungsten.tag',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'networkuuid',
-                  type: 'uuid',
-                  multiple: true,
-                  loading: false,
-                  opts: [],
-                  api: 'listTungstenFabricNetwork'
-                },
-                {
-                  name: 'vmuuid',
-                  type: 'uuid',
-                  multiple: true,
-                  loading: false,
-                  opts: [],
-                  api: 'listTungstenFabricVm'
-                },
-                {
-                  name: 'nicuuid',
-                  type: 'uuid',
-                  multiple: true,
-                  loading: false,
-                  opts: [],
-                  api: 'listTungstenFabricNic'
-                }
-              ],
-              args: {
-                taguuid: (record) => record.uuid
-              }
             },
             {
               api: 'removeTungstenFabricTag',
@@ -573,19 +344,9 @@ export default {
               scopedSlots: { customRender: 'name' }
             },
             {
-              dataIndex: 'network',
-              title: this.$t('label.network'),
-              scopedSlots: { customRender: 'network' }
-            },
-            {
-              dataIndex: 'vm',
-              title: this.$t('label.instance'),
-              scopedSlots: { customRender: 'vm' }
-            },
-            {
-              dataIndex: 'nic',
-              title: this.$t('label.nic'),
-              scopedSlots: { customRender: 'nic' }
+              title: this.$t('label.action'),
+              scopedSlots: { customRender: 'action' },
+              width: 150
             }
           ]
         },
@@ -621,6 +382,10 @@ export default {
             dataIndex: 'name',
             title: this.$t('label.name'),
             scopedSlots: { customRender: 'name' }
+          }, {
+            title: this.$t('label.action'),
+            scopedSlots: { customRender: 'action' },
+            width: 150
           }]
         },
         {
@@ -685,6 +450,11 @@ export default {
               dataIndex: 'endport',
               title: this.$t('label.endport'),
               scopedSlots: { customRender: 'endport' }
+            },
+            {
+              title: this.$t('label.action'),
+              scopedSlots: { customRender: 'action' },
+              width: 150
             }
           ]
         },
@@ -740,6 +510,11 @@ export default {
               dataIndex: 'ipprefixlen',
               title: this.$t('label.ipprefixlen'),
               scopedSlots: { customRender: 'ipprefixlen' }
+            },
+            {
+              title: this.$t('label.action'),
+              scopedSlots: { customRender: 'action' },
+              width: 150
             }
           ]
         }

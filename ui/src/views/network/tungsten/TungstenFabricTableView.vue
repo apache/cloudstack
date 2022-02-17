@@ -53,7 +53,7 @@
           v-if="!currentAction.mapping || !field.name in currentAction.mapping">
           <tooltip-label
             slot="label"
-            :title="$t('label.' + field.name)"
+            :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
             :tooltip="apiParams[field.name].description" />
           <a-select
             v-if="field.type==='uuid'"
@@ -221,6 +221,7 @@ export default {
       if (uuidApiFields.length > 0) {
         uuidApiFields.forEach(field => {
           const params = {}
+          params.listAll = true
           params.zoneid = this.resource.zoneid
           if (field.args) {
             for (const arg in field.args) {

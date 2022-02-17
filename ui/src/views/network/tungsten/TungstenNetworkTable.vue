@@ -26,21 +26,22 @@
       :rowKey="(record, idx) => record.id || record.name || idx + '-' + Math.random()"
       :scroll="{ y: 350 }">
       <template slot="name" slot-scope="text, record">
-        <QuickView
+        <!-- <QuickView
           :actions="actions"
           :enabled="true"
           :resource="record"
-          @exec-action="(action) => execAction(action, record)"/>
+          @exec-action="(action) => execAction(action, record)"/> -->
         <router-link v-if="apiName === 'listTungstenFabricNetworkRouteTable'" :to="{ path: '/tungstennetworkroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricInterfaceRouteTable'" :to="{ path: '/tungsteninterfaceroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
+        <router-link v-else-if="apiName === 'listTungstenFabricApplicationPolicySet'" :to="{ path: '/tungstenpolicyset/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template slot="tungstenvms" slot-scope="text, record">
         <ul><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template slot="network" slot-scope="text, record">
-        <ul><li v-for="item in record.network" :key="item.uuid">{{ item.name }}</li></ul>
+        <ul><li v-for="item in record.network" :key="item.uuid" v-if="item.name">{{ item.name }}</li></ul>
       </template>
       <template slot="firewallpolicy" slot-scope="text, record">
         <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy[0].name }}</span>
@@ -58,6 +59,17 @@
         <div class="tags" v-for="tag in record.tag" :key="tag.uuid">
           <a-tag :key="tag.uuid">{{ tag.name }}</a-tag>
         </div>
+      </template>
+      <template slot="action" slot-scope="text, record">
+        <span v-for="(action, index) in actions" :key="index">
+          <tooltip-button
+            v-if="action.dataView && ('show' in action ? action.show(record, $store.getters) : true)"
+            style="margin-right: 5px"
+            :tooltip="$t(action.label)"
+            :type="action.icon === 'delete' ? 'danger' : 'default'"
+            :icon="action.icon"
+            @click="() => execAction(action, record)" />
+        </span>
       </template>
     </a-table>
     <a-pagination

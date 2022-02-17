@@ -849,6 +849,18 @@ export default {
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
         }
+        if (this.$route.path.startsWith('/tungstenpolicy/')) {
+          params.policyuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicyset/')) {
+          params.applicationpolicysetuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstennetworkroutertable/')) {
+          params.tungstennetworkroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungsteninterfaceroutertable/')) {
+          params.tungsteninterfaceroutetableuuid = this.$route.params.id
+        }
       }
 
       if (this.$store.getters.listAllProjects && !this.projectView) {
@@ -1391,7 +1403,7 @@ export default {
               if (!action.mapping[key].value) {
                 continue
               }
-              params[key] = action.mapping[key].value(this.resource, params)
+              params[key] = action.mapping[key].value(this.resource, params, this.$route.query)
             }
           }
         }

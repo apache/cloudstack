@@ -19,12 +19,13 @@
   <a-breadcrumb class="breadcrumb">
     <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
       <router-link
-        v-if="item && item.name"
+        v-if="item && item.name && !item.meta.disabledListView"
         :to="{ path: item.path === '' ? '/' : item.path }"
       >
         <a-icon v-if="index == 0" :type="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
         {{ $t(item.meta.title) }}
       </router-link>
+      <span v-else-if="item.meta.disabledListView">{{ $t(item.meta.title) }}</span>
       <span v-else-if="$route.params.id">
         <label
           v-if="'name' in resource &&
@@ -96,6 +97,7 @@ export default {
         }
         this.breadList.push(item)
       })
+      console.log(this.breadList)
     },
     resetToMainView () {
       this.$store.dispatch('SetProject', {})
