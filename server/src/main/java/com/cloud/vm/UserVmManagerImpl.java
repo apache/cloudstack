@@ -4336,6 +4336,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.setUserVmType(type);
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
+                    // BIOS was explicitly passed as the boot type, so honour it
+                    if (key.equalsIgnoreCase(ApiConstants.BootType.BIOS.toString())) {
+                        vm.details.remove(ApiConstants.BootType.UEFI.toString());
+                        continue;
+                    }
+
+                    // Deploy as is, Don't care about the boot type or template settings
+                    if (key.equalsIgnoreCase(ApiConstants.BootType.UEFI.toString()) && template.isDeployAsIs()) {
+                        vm.details.remove(ApiConstants.BootType.UEFI.toString());
+                        continue;
+                    }
+
                     if (key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
                             key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
                             key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
@@ -4343,11 +4355,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
                     } else {
                         vm.setDetail(key, customParameters.get(key));
-                    }
-
-                    if (key.equalsIgnoreCase(ApiConstants.BootType.UEFI.toString())) {
-                        vm.setDetail(key, customParameters.get(key));
-                        continue;
                     }
                 }
                 vm.setDetail(VmDetailConstants.DEPLOY_VM, "true");
@@ -4702,8 +4709,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             podId = adminCmd.getPodId();
             clusterId = adminCmd.getClusterId();
         }
-        if (MapUtils.isNotEmpty(details) && details.containsKey(ApiConstants.BootType.UEFI.toString())) {
-            addVmUefiBootOptionsToParams(additionalParams, ApiConstants.BootType.UEFI.toString(), details.get(ApiConstants.BootType.UEFI.toString()));
+        UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getEntityId(), ApiConstants.BootType.UEFI.toString());
+        if (uefiDetail != null) {
+            addVmUefiBootOptionsToParams(additionalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
         if (cmd.getBootIntoSetup() != null) {
             additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
