@@ -598,6 +598,7 @@
 "label.clustertype": "Cluster Type",
 "label.clvm": "CLVM",
 "label.code": "Code",
+"label.columns": "Columns",
 "label.comma.separated.list.description": "Enter comma-separated list of commands",
 "label.comments": "Comments",
 "label.community": "Community",
