@@ -3019,7 +3019,7 @@
 "message.host.dedication.released": "Host dedication released",
 "message.info.cloudian.console": "Cloudian Management Console should open in another window",
 "message.installwizard.click.retry": "Click the button to retry launch.",
-"message.installwizard.cloudstack.helptext.header": "\nFind more information on pages below.\n",
+"message.installwizard.cloudstack.helptext.header": "\nYou can find more information about Apache CloudStack™ on the pages listed below.\n",
 "message.installwizard.cloudstack.helptext.website": " * Project website:\t ",
 "message.installwizard.cloudstack.helptext.document": " * Documentation:\t ",
 "message.installwizard.cloudstack.helptext.releasenotes": " * Release notes:\t ",
