@@ -187,7 +187,7 @@ export default {
         showicon: true,
         details: 'min'
       }).then(response => {
-        this.domains = response.listdomainsresponse.domain
+        this.domains = response.listdomainsresponse.domain || []
         this.selectedDomain = this.domains[0].id
         this.fetchAccounts()
         this.fetchProjects()
@@ -206,7 +206,7 @@ export default {
         state: 'Enabled',
         isrecursive: false
       }).then(response => {
-        this.accounts = response.listaccountsresponse.account
+        this.accounts = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -223,7 +223,7 @@ export default {
         details: 'min',
         isrecursive: false
       }).then(response => {
-        this.projects = response.listprojectsresponse.project
+        this.projects = response.listprojectsresponse.project || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -245,7 +245,7 @@ export default {
         params.ignoreproject = true
       }
       api('listNetworks', params).then(response => {
-        this.networks = response.listnetworksresponse.network
+        this.networks = response.listnetworksresponse.network || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
