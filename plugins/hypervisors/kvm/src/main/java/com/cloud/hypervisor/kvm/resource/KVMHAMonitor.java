@@ -239,7 +239,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private Script createRbdHeartBeatCommand(RbdStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
         Script cmd = new Script(s_heartBeatPathRbd, _heartBeatUpdateTimeout, s_logger);
-        cmd.add("-i", getRbdMonIpAddress(primaryStoragePool._poolSourceHost));
+        cmd.add("-i", primaryStoragePool._poolSourceHost);
         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
         cmd.add("-n", primaryStoragePool._poolAuthUserName);
         cmd.add("-s", primaryStoragePool._poolAuthSecret);
