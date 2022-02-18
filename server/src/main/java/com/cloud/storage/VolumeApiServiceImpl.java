@@ -1910,10 +1910,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
-
         if (newDiskOffering.getDiskSize() > 0 && !newDiskOffering.isComputeOnly()) {
             newSize[0] = (Long) newDiskOffering.getDiskSize();
-        } else if (newDiskOffering.isCustomized()) {
+        } else if (newDiskOffering.isCustomized() && !newDiskOffering.isComputeOnly()) {
             if (newSize[0] == null) {
                 throw new InvalidParameterValueException("The new disk offering requires that a size be specified.");
             }
