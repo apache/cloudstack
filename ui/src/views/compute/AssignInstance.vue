@@ -232,15 +232,19 @@ export default {
     },
     fetchNetworks () {
       this.loading = true
-      api('listNetworks', {
-        response: 'json',
+      var params = {
         domainId: this.selectedDomain,
         listAll: true,
         isrecursive: false,
-        showicon: true,
-        account: this.selectedAccount,
-        projectid: this.selectedProject
-      }).then(response => {
+        showicon: true
+      }
+      if (this.selectedProject != null) {
+        params.projectid = this.selectedProject
+      } else {
+        params.account = this.selectedAccount
+        params.ignoreproject = true
+      }
+      api('listNetworks', params).then(response => {
         this.networks = response.listnetworksresponse.network
       }).catch(error => {
         this.$notifyError(error)
@@ -250,15 +254,19 @@ export default {
     },
     changeDomain () {
       this.selectedAccount = null
+      this.selectedProject = null
+      this.selectedNetwork = null
       this.fetchAccounts()
       this.fetchProjects()
     },
     changeAccount () {
       this.selectedProject = null
+      this.selectedNetwork = null
       this.fetchNetworks()
     },
     changeProject () {
       this.selectedAccount = null
+      this.selectedNetwork = null
       this.fetchNetworks()
     },
     closeAction () {
