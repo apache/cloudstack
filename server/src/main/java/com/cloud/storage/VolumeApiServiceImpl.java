@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -366,9 +367,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String format = sanitizeFormat(cmd.getFormat());
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
+        Long sizeInGB = cmd.getSize();
+
         DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        if (diskOffering != null && diskOffering.isCustomized()) {
+            if (sizeInGB == null) {
+                throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+            }
+            Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
+            Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
+
+            if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
+                throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" + customDiskOfferingMinSize);
+            }
+        }
 
         VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
 
@@ -377,7 +392,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), format);
         vol.addPayload(payload);
 
-        volService.registerVolume(vol, store);
+        try {
+            AsyncCallFuture<VolumeApiResult> future = volService.registerVolume(vol, store);
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.warn("Failed to resize the volume " + volume);
+                String details = "";
+                if (result.getResult() != null && !result.getResult().isEmpty()) {
+                    details = result.getResult();
+                }
+                throw new CloudRuntimeException(details);
+            }
+            volume = _volsDao.findById(vol.getId());
+            if (!Objects.equals(sizeInGB, vol.getSize())) {
+                if (sizeInGB !=null) {
+                    volume.setSize(sizeInGB * GiB_TO_BYTES);
+                    _volsDao.persist(volume);
+                }
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to register volume due to - %s", e.getMessage()), e);
+        }
         return volume;
     }
 
@@ -706,7 +741,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            // Check that the the disk offering is specified
+            // Check that the disk offering is specified
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if ((diskOffering == null) || diskOffering.getRemoved() != null || diskOffering.isComputeOnly()) {
                 throw new InvalidParameterValueException("Please specify a valid disk offering.");
@@ -1439,7 +1474,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     HostVO hostVO = _hostDao.findById(hosts[0]);
 
                     if (hostVO.getHypervisorType() != HypervisorType.KVM) {
-                        volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
+                        volService.resizeVolumeOnHypervisor(volumeId, volume.getSize(), newSize, hosts[0], instanceName);
                     }
                 }
             }

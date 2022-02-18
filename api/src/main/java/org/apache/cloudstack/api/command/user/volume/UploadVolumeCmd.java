@@ -96,6 +96,9 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, required = false, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering. This must be a custom sized offering since during uploadVolume volume size is unknown.")
     private Long diskOfferingId;
 
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "Arbitrary volume size")
+    private Long size;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -134,6 +137,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    public Long getSize() {
+        return size;
     }
 
     /////////////////////////////////////////////////////

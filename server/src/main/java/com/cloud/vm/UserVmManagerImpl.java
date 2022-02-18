@@ -4951,7 +4951,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     for (VolumeVO vol : vols) {
                         if (vol.getVolumeType() == Volume.Type.DATADISK) {
                             DiskOffering doff =  _entityMgr.findById(DiskOffering.class, vol.getDiskOfferingId());
-                            _volService.resizeVolumeOnHypervisor(vol.getId(), doff.getDiskSize(), tmpVm.getHostId(), vm.getInstanceName());
+                            _volService.resizeVolumeOnHypervisor(vol.getId(), vol.getSize(), doff.getDiskSize(), tmpVm.getHostId(), vm.getInstanceName());
                         }
                     }
                 }
