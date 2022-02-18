@@ -1910,10 +1910,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
-
         if (newDiskOffering.getDiskSize() > 0 && !newDiskOffering.isComputeOnly()) {
             newSize[0] = (Long) newDiskOffering.getDiskSize();
-        } else if (newDiskOffering.isCustomized()) {
+        } else if (newDiskOffering.isCustomized() && !newDiskOffering.isComputeOnly()) {
             if (newSize[0] == null) {
                 throw new InvalidParameterValueException("The new disk offering requires that a size be specified.");
             }
@@ -3049,7 +3048,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), Arrays.asList(storageTagsAsStringArray));
     }
 
-    public boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
+    public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
         String[] oldDOStorageTags = oldDO.getTagsArray();
         String[] newDOStorageTags = newDO.getTagsArray();
         if (oldDOStorageTags.length == 0) {
