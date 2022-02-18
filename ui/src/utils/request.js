@@ -137,6 +137,8 @@ service.interceptors.request.use(config => {
     if (!config.params.projectid && project && project.id) {
       if (config.params.command === 'listTags') {
         config.params.projectid = '-1'
+      } else if (config.params.command === 'assignVirtualMachine') {
+        // Do not set the project ID
       } else {
         config.params.projectid = project.id
       }
