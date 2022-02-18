@@ -351,6 +351,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _gson = GsonHelper.getGsonLogger();
     }
 
+    private void validateDiskSize(DiskOfferingVO diskOffering, Long sizeInGB) {
+        if (diskOffering != null && diskOffering.isCustomized()) {
+            if (sizeInGB == null) {
+                throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+            }
+            Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
+            Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
+
+            if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
+                throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" + customDiskOfferingMinSize);
+            }
+        }
+    }
+
     /*
      * Upload the volume to secondary storage.
      */
@@ -373,17 +387,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        if (diskOffering != null && diskOffering.isCustomized()) {
-            if (sizeInGB == null) {
-                throw new InvalidParameterValueException("This disk offering requires a custom size specified");
-            }
-            Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-            Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
-
-            if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
-                throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" + customDiskOfferingMinSize);
-            }
-        }
+        validateDiskSize(diskOffering, sizeInGB);
 
         VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
 
@@ -392,18 +396,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), format);
         vol.addPayload(payload);
 
+        return registerVolume(vol, store, sizeInGB);
+    }
+
+    VolumeVO registerVolume(VolumeInfo vol, DataStore store, Long sizeInGB ) {
+        VolumeVO volume = _volsDao.findById(vol.getId());
         try {
             AsyncCallFuture<VolumeApiResult> future = volService.registerVolume(vol, store);
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.warn("Failed to resize the volume " + volume);
+                s_logger.warn("Failed to register the volume");
                 String details = "";
                 if (result.getResult() != null && !result.getResult().isEmpty()) {
                     details = result.getResult();
                 }
                 throw new CloudRuntimeException(details);
             }
-            volume = _volsDao.findById(vol.getId());
             if (!Objects.equals(sizeInGB, vol.getSize())) {
                 if (sizeInGB !=null) {
                     volume.setSize(sizeInGB * GiB_TO_BYTES);
