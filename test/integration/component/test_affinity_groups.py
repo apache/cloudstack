@@ -65,7 +65,7 @@ class Services:
                     "type": "host anti-affinity",
                 },
             "virtual_machine" : {
-                
+
             },
             "new_domain": {
                 "name": "New Domain",
