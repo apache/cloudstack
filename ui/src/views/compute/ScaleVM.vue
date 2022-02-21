@@ -53,6 +53,16 @@
       @update-compute-cpuspeed="updateFieldValue"
       @update-compute-memory="updateFieldValue" />
 
+    <disk-size-selection
+      v-if="selectedDiskOffering && (selectedDiskOffering.iscustomized || selectedDiskOffering.iscustomizediops)"
+      :inputDecorator="rootDiskSizeKey"
+      :minDiskSize="minDiskSize"
+      :rootDiskSelected="selectedDiskOffering"
+      :isCustomized="selectedDiskOffering.iscustomized"
+      @handler-error="handlerError"
+      @update-disk-size="updateFieldValue"
+      @update-root-disk-iops-value="updateIOPSValue"/>
+
     <a-form-item :label="$t('label.automigrate.volume')">
       <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
       <a-switch
@@ -72,12 +82,14 @@
 import { api } from '@/api'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
+import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 
 export default {
   name: 'ScaleVM',
   components: {
     ComputeOfferingSelection,
-    ComputeSelection
+    ComputeSelection,
+    DiskSizeSelection
   },
   props: {
     resource: {
@@ -91,6 +103,7 @@ export default {
       offeringsMap: {},
       offerings: [],
       selectedOffering: {},
+      selectedDiskOffering: {},
       autoMigrate: true,
       total: 0,
       params: { id: this.resource.id },
@@ -98,7 +111,11 @@ export default {
       cpuNumberKey: 'details[0].cpuNumber',
       cpuSpeedKey: 'details[0].cpuSpeed',
       memoryKey: 'details[0].memory',
-      fixedOfferingKvm: false
+      rootDiskSizeKey: 'details[0].rootdisksize',
+      minIopsKey: 'details[0].minIops',
+      maxIopsKey: 'details[0].maxIops',
+      fixedOfferingKvm: false,
+      minDiskSize: 0
     }
   },
   beforeCreate () {
@@ -162,13 +179,36 @@ export default {
       if (this.resource.state === 'Running') {
         return this.resource.cpuspeed
       }
+      this.getMinDiskSize()
       return this.selectedOffering?.serviceofferingdetails?.cpuspeed * 1 || 1
+    },
+    getTemplate () {
+      return new Promise((resolve, reject) => {
+        api('listTemplates', {
+          templatefilter: 'all',
+          id: this.resource.templateid
+        }).then(response => {
+          var template = response?.listtemplatesresponse?.template?.[0] || null
+          resolve(template)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+    async getMinDiskSize () {
+      const template = await this.getTemplate()
+      this.minDiskSize = Math.ceil(template?.size / (1024 * 1024 * 1024) || 0)
     },
     getMessage () {
       if (this.resource.hypervisor === 'VMware') {
         return this.$t('message.read.admin.guide.scaling.up')
       }
       return this.$t('message.change.offering.confirm')
+    },
+    updateIOPSValue (input, value) {
+      console.log(input)
+      const key = input === 'minIops' ? this.minIopsKey : this.maxIopsKey
+      this.params[key] = value
     },
     updateComputeOffering (id) {
       // Delete custom details
@@ -178,6 +218,16 @@ export default {
 
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]
+      api('listDiskOfferings', {
+        id: this.selectedOffering.diskofferingid
+      }).then(response => {
+        const diskOfferings = response.listdiskofferingsresponse.diskoffering || []
+        if (this.offerings) {
+          this.selectedDiskOffering = diskOfferings[0]
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
       this.params.automigrate = this.autoMigrate
     },
     updateFieldValue (name, value) {
@@ -185,6 +235,9 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    handlerError (error) {
+      this.error = error
     },
     handleSubmit () {
       if (this.loading) return
