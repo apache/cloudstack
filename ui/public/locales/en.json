@@ -2668,7 +2668,7 @@
 "message.after.enable.s3": "S3-backed Secondary Storage configured. Note: When you leave this page, you will not be able to re-configure S3 again.",
 "message.after.enable.swift": "Swift configured. Note: When you leave this page, you will not be able to re-configure Swift again.",
 "message.alert.state.detected": "Alert state detected",
-"message.allowed": "Allewed",
+"message.allowed": "Allowed",
 "message.allow.vpn.access": "Please enter a username and password of the user that you want to allow VPN access.",
 "message.apply.snapshot.policy": "You have successfully updated your current snapshot policy.",
 "message.apply.success": "Apply Successfully",
