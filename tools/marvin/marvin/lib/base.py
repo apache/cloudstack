@@ -3629,15 +3629,23 @@ class PublicIpRange:
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
-        cmd.gateway = services["gateway"]
-        cmd.netmask = services["netmask"]
+        if "gateway" in services:
+            cmd.gateway = services["gateway"]
+        if "netmask" in services:
+            cmd.netmask = services["netmask"]
         cmd.forvirtualnetwork = services["forvirtualnetwork"]
-        cmd.startip = services["startip"]
-        cmd.endip = services["endip"]
+        if "startip" in services:
+            cmd.startip = services["startip"]
+        if "endip" in services:
+            cmd.endip = services["endip"]
         cmd.zoneid = services["zoneid"]
         if "podid" in services:
             cmd.podid = services["podid"]
         cmd.vlan = services["vlan"]
+        if "ip6gateway" in services:
+            cmd.ip6gateway = services["ip6gateway"]
+        if "ip6cidr" in services:
+            cmd.ip6cidr = services["ip6cidr"]
 
         if account:
             cmd.account = account

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -41,18 +40,25 @@ public class ListGuestNetworkIpv6PrefixesCmd extends BaseListCmd {
 
     public static final String APINAME = "listGuestNetworkIpv6Prefixes";
 
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = DataCenterGuestIpv6PrefixResponse.class,
+            description = "UUID of the IPv6 prefix.")
+    private Long id;
+
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            required = true,
-            description = "UUID of zone to which the IPv6 prefix belongs to.",
-            validations = {ApiArgValidator.PositiveNumber})
+            description = "UUID of zone to which the IPv6 prefix belongs to.")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Long getId() {
+        return id;
+    }
 
     public Long getZoneId() {
         return zoneId;

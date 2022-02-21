@@ -17,8 +17,6 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    IPv6 Ranges
-
     <a-button
       :disabled="!('createGuestNetworkIpv6Prefix' in $store.getters.apis)"
       type="dashed"

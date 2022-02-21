@@ -186,7 +186,6 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMap;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
@@ -1925,12 +1924,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public List<? extends DataCenterGuestIpv6Prefix> listDataCenterGuestIpv6Prefixes(final ListGuestNetworkIpv6PrefixesCmd cmd) throws ConcurrentOperationException {
-        final long zoneId = cmd.getZoneId();
-        final DataCenterVO zone = _zoneDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id: " + zoneId);
+        final Long id = cmd.getId();
+        final Long zoneId = cmd.getZoneId();
+        if (id != null) {
+            DataCenterGuestIpv6PrefixVO prefix = dataCenterGuestIpv6PrefixDao.findById(id);
+            List<DataCenterGuestIpv6PrefixVO> prefixes = new ArrayList<>();
+            if (prefix != null) {
+                prefixes.add(prefix);
+            }
+            return prefixes;
         }
-        return dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+        if (zoneId != null) {
+            final DataCenterVO zone = _zoneDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Unable to find zone by id: " + zoneId);
+            }
+            return dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+        }
+        return dataCenterGuestIpv6PrefixDao.listAll();
     }
 
     @Override
@@ -1940,11 +1951,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (prefix == null) {
             throw new InvalidParameterValueException("Unable to find guest network IPv6 prefix by id: " + prefixId);
         }
-        List<Ipv6GuestPrefixSubnetNetworkMapVO> prefixSubnets = ipv6GuestPrefixSubnetNetworkMapDao.findPrefixesInStates(Ipv6GuestPrefixSubnetNetworkMap.State.Allocated, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
+        List<Ipv6GuestPrefixSubnetNetworkMapVO> prefixSubnets = ipv6GuestPrefixSubnetNetworkMapDao.listUsedByPrefix(prefixId);
         if (CollectionUtils.isNotEmpty(prefixSubnets)) {
             List<String> usedSubnets = prefixSubnets.stream().map(Ipv6GuestPrefixSubnetNetworkMapVO::getSubnet).collect(Collectors.toList());
             s_logger.error(String.format("Subnets for guest IPv6 prefix {ID: %s, %s} are in use: %s", prefix.getUuid(), prefix.getPrefix(), String.join(", ", usedSubnets)));
-            throw new CloudRuntimeException("Unable to delete guest network IPv6 prefix ID: %s. Prefix subnets are in use.");
+            throw new CloudRuntimeException(String.format("Unable to delete guest network IPv6 prefix ID: %s. Prefix subnets are in use.", prefix.getUuid()));
         }
         ipv6GuestPrefixSubnetNetworkMapDao.deleteByPrefixId(prefixId);
         dataCenterGuestIpv6PrefixDao.remove(prefixId);
@@ -4660,11 +4671,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     continue;
                 }
                 if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag())) {
-                    if (NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
-                        throw new InvalidParameterValueException("The IPv6 range with tag: " + vlan.getVlanTag()
-                                + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+                    if (StringUtils.isNotEmpty(ipv6Range) &&
+                            StringUtils.isNotEmpty(vlan.getIp6Range()) &&
+                            NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
+                        throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range. Please specify a different start IP/end IP.",
+                                vlan.getVlanTag()));
                     }
-
+                    if ((StringUtils.isEmpty(ipv6Range) ||
+                            StringUtils.isEmpty(vlan.getIp6Range())) &&
+                            NetUtils.ipv6NetworksOverlap(IPv6Network.fromString(vlanIp6Cidr), IPv6Network.fromString(vlan.getIp6Cidr()))) {
+                        throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range.",
+                                vlan.getVlanTag()));
+                    }
                     if (!vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
                         throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + vlan.getIp6Gateway()
                                 + ". Please specify a different tag.");

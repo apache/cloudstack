@@ -1681,7 +1681,7 @@ public class NetUtils {
     public static boolean ipv6NetworksOverlap(IPv6Network n1, IPv6Network n2) {
         IPv6Network higher = n1;
         IPv6Network lower = n2;
-        if (lower.getNetmask().asPrefixLength() > higher.getNetmask().asPrefixLength()) {
+        if (lower.getNetmask().asPrefixLength() < higher.getNetmask().asPrefixLength()) {
             lower = n1;
             higher = n2;
         }

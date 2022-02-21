@@ -20,11 +20,14 @@
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (listNetworkOfferings,
-                                  listGuestNetworkIpv6Prefixes)
+                                  createGuestNetworkIpv6Prefix,
+                                  listGuestNetworkIpv6Prefixes,
+                                  deleteGuestNetworkIpv6Prefix)
 from marvin.lib.utils import (isAlmostEqual,
                               cleanup_resources,
                               random_gen)
-from marvin.lib.base import (Domain,
+from marvin.lib.base import (Configurations,
+                             Domain,
                              NetworkOffering,
                              Account,
                              PublicIpRange,
@@ -49,6 +52,28 @@ _multiprocess_shared_ = True
 
 class TestCreateIpv6NetworkOffering(cloudstackTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestCreateIpv6NetworkOffering, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.initial_ipv6_offering_enabled = Configurations.list(
+            cls.apiclient,
+            name="network.offering.ipv6.enabled")[0].value
+        Configurations.update(cls.apiclient,
+            "network.offering.ipv6.enabled",
+            "true")
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.initial_ipv6_offering_enabled != None:
+            Configurations.update(cls.apiclient,
+                "network.offering.ipv6.enabled",
+                cls.initial_ipv6_offering_enabled)
+        super(TestCreateIpv6NetworkOffering, cls).tearDownClass()
+
     def setUp(self):
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
@@ -64,26 +89,6 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-
-    @classmethod
-    def setUpClass(cls):
-        testClient = super(TestCreateIpv6NetworkOffering, cls).getClsTestClient()
-        cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
-        cls._cleanup = []
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestCreateIpv6NetworkOffering,
-                cls).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during class cleanup : %s" % e)
 
     @attr(
         tags=[
@@ -138,6 +143,178 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
         )
         return
 
+class TestIpv6PublicIpRange(cloudstackTestCase):
+
+    def setUp(self):
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestIpv6PublicIpRange, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestIpv6PublicIpRange, cls).tearDownClass()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_01_create_ipv6_public_ip_range(self):
+        """Test to create network offering
+
+        # Validate the following:
+        # 1. createVlanIpRange should return valid info for new public range
+        # 2. The Cloud Database contains the valid information
+        """
+        ipv6_publiciprange_service = self.services["publicip6range"]
+        ipv6_publiciprange_service["zoneid"] = self.zone.id
+        ipv6_publiciprange = PublicIpRange.create(
+            self.apiclient,
+            ipv6_publiciprange_service
+        )
+        self.cleanup.append(ipv6_publiciprange)
+
+        self.debug("Created IPv6 public IP range with ID: %s" % ipv6_publiciprange.vlan.id)
+        ipv6_publiciprange = ipv6_publiciprange.vlan
+
+        public_ip_ranges = PublicIpRange.list(
+                    self.apiclient,
+                    id=ipv6_publiciprange.id
+                )
+        self.assertEqual(
+            isinstance(public_ip_ranges, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(public_ip_ranges),
+            0,
+            "Check public IP range is created"
+        )
+        public_ip_range = public_ip_ranges[0]
+
+        self.assertEqual(
+            public_ip_range.id,
+            ipv6_publiciprange.id,
+            "Check server id"
+        )
+        self.assertEqual(
+            public_ip_range.ip6cidr,
+            ipv6_publiciprange_service["ip6cidr"],
+            "Check ip6cidr for IPv6 public IP range"
+        )
+        return
+
+class TestIpv6GuestPrefix(cloudstackTestCase):
+
+    def setUp(self):
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestIpv6GuestPrefix, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestIpv6GuestPrefix, cls).tearDownClass()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_01_create_ipv6_guest_prefix(self):
+        """Test to create network offering
+
+        # Validate the following:
+        # 1. createGuestNetworkIpv6Prefix should return valid info for new IPv6 prefix
+        # 2. The Cloud Database contains the valid information
+        """
+        ipv6_guestprefix_service = self.services["guestip6prefix"]
+        cmd = createGuestNetworkIpv6Prefix.createGuestNetworkIpv6PrefixCmd()
+        cmd.zoneid = self.zone.id
+        cmd.prefix = ipv6_guestprefix_service["prefix"]
+        ipv6_guestprefix = self.apiclient.createGuestNetworkIpv6Prefix(cmd)
+
+        self.debug("Created IPv6 guest prefix with ID: %s" % ipv6_guestprefix.id)
+
+        cmd = listGuestNetworkIpv6Prefixes.listGuestNetworkIpv6PrefixesCmd()
+        cmd.id = ipv6_guestprefix.id
+        ipv6_guestprefixes = self.apiclient.listGuestNetworkIpv6Prefixes(cmd)
+        self.assertEqual(
+            isinstance(ipv6_guestprefixes, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(ipv6_guestprefixes),
+            0,
+            "Check guest IPv6 prefix is created"
+        )
+        ipv6_guestprefix_response = ipv6_guestprefixes[0]
+
+        self.assertEqual(
+            ipv6_guestprefix.id,
+            ipv6_guestprefix_response.id,
+            "Check server id"
+        )
+        self.assertEqual(
+            ipv6_guestprefix_response.prefix,
+            ipv6_guestprefix_service["prefix"],
+            "Check prefix for IPv6"
+        )
+
+        cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
+        cmd.id = ipv6_guestprefix.id
+        self.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
+        return
+
 class TestIpv6Network(cloudstackTestCase):
 
     @classmethod
@@ -146,31 +323,29 @@ class TestIpv6Network(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
         cls.apiclient = testClient.getApiClient()
         cls.dbclient = testClient.getDbConnection()
+        cls.test_ipv6_guestprefix = None
+        cls.initial_ipv6_offering_enabled = None
         cls._cleanup = []
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.ipv6NotSupported = False
 
-
-        cmd = listGuestNetworkIpv6Prefixes.listGuestNetworkIpv6PrefixesCmd()
-        cmd.zoneid = cls.zone.id
-        ipv6_prefixes_response = cls.apiclient.listGuestNetworkIpv6Prefixes(cmd)
-        if isinstance(ipv6_prefixes_response, list) == False or len(ipv6_prefixes_response) == 0:
+        ipv6_guestprefix = cls.getGuestIpv6Prefix()
+        if ipv6_guestprefix == None:
             cls.ipv6NotSupported = True
         if cls.ipv6NotSupported == False:
-            cls.ipv6NotSupported = True
-            list_public_ip_range_response = PublicIpRange.list(
+            ipv6_publiciprange = cls.getPublicIpv6Range()
+            if ipv6_publiciprange == None:
+                cls.ipv6NotSupported = True
+
+        if cls.ipv6NotSupported == False:
+            cls.initial_ipv6_offering_enabled = Configurations.list(
                 cls.apiclient,
-                zoneid=cls.zone.id
-            )
-            if isinstance(list_public_ip_range_response, list) == True or len(list_public_ip_range_response) > 0:
-                for ip_range in list_public_ip_range_response:
-                    if ip_range.ip6cidr != None and ip_range.ip6gateway != None:
-                        cls.ipv6NotSupported = False
-                        break
-
-        if cls.ipv6NotSupported == False:
+                name="network.offering.ipv6.enabled")[0].value
+            Configurations.update(cls.apiclient,
+                "network.offering.ipv6.enabled",
+                "true")
             cls.domain = get_domain(cls.apiclient)
             cls.account = Account.create(
                 cls.apiclient,
@@ -226,7 +401,50 @@ class TestIpv6Network(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if cls.initial_ipv6_offering_enabled != None:
+            Configurations.update(cls.apiclient,
+                "network.offering.ipv6.enabled",
+                cls.initial_ipv6_offering_enabled)
         super(TestIpv6Network, cls).tearDownClass()
+        if cls.test_ipv6_guestprefix != None:
+            cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
+            cmd.id = cls.test_ipv6_guestprefix.id
+            cls.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
+
+    @classmethod
+    def getGuestIpv6Prefix(cls):
+        cmd = listGuestNetworkIpv6Prefixes.listGuestNetworkIpv6PrefixesCmd()
+        cmd.zoneid = cls.zone.id
+        ipv6_prefixes_response = cls.apiclient.listGuestNetworkIpv6Prefixes(cmd)
+        if isinstance(ipv6_prefixes_response, list) == True and len(ipv6_prefixes_response) > 1:
+            return ipv6_prefixes_response[0]
+        ipv6_guestprefix_service = cls.services["guestip6prefix"]
+        cmd = createGuestNetworkIpv6Prefix.createGuestNetworkIpv6PrefixCmd()
+        cmd.zoneid = cls.zone.id
+        cmd.prefix = ipv6_guestprefix_service["prefix"]
+        ipv6_guestprefix = cls.apiclient.createGuestNetworkIpv6Prefix(cmd)
+        cls.test_ipv6_guestprefix = ipv6_guestprefix
+        return ipv6_guestprefix
+
+    @classmethod
+    def getPublicIpv6Range(cls):
+        list_public_ip_range_response = PublicIpRange.list(
+            cls.apiclient,
+            zoneid=cls.zone.id
+        )
+        if isinstance(list_public_ip_range_response, list) == True and len(list_public_ip_range_response) > 2:
+            for ip_range in list_public_ip_range_response:
+                ip_range = ip_range.vlan
+                if ip_range.ip6cidr != None and ip_range.ip6gateway != None:
+                    return ip_range
+        ipv6_publiciprange_service = cls.services["publicip6range"]
+        ipv6_publiciprange_service["zoneid"] = cls.zone.id
+        ipv6_publiciprange = PublicIpRange.create(
+            cls.apiclient,
+            ipv6_publiciprange_service
+        )
+        cls._cleanup.append(ipv6_publiciprange)
+        return ipv6_publiciprange
 
     def setUp(self):
         self.services = self.testClient.getParsedTestDataConfig()
