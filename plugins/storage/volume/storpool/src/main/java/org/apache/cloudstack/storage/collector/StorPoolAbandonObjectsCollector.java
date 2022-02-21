@@ -110,8 +110,12 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
             if (spPools != null && spPools.size() > 0) {
                 Map<String, String> volumes = new HashMap<>();
                 for (StoragePoolVO storagePoolVO : spPools) {
-                    JsonArray arr = StorpoolUtil.volumesList(StorpoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
-                    volumes.putAll(getStorPoolNamesAndCsTag(arr));
+                    try {
+                        JsonArray arr = StorpoolUtil.volumesList(StorpoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
+                        volumes.putAll(getStorPoolNamesAndCsTag(arr));
+                    } catch (Exception e) {
+                        log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
+                    }
                 }
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
@@ -185,8 +189,12 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
             Map<String, String> snapshots = new HashMap<String, String>();
             if (spPools != null && spPools.size() > 0) {
                 for (StoragePoolVO storagePoolVO : spPools) {
-                    JsonArray arr = StorpoolUtil.snapshotsList(StorpoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
-                    snapshots.putAll(getStorPoolNamesAndCsTag(arr));
+                    try {
+                        JsonArray arr = StorpoolUtil.snapshotsList(StorpoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
+                        snapshots.putAll(getStorPoolNamesAndCsTag(arr));
+                    } catch (Exception e) {
+                        log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
+                    }
                 }
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override

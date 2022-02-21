@@ -82,7 +82,13 @@ public class StorpoolHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         //Will update storage pool's connection details if they aren't updated in DB, before connecting pool to host
         StoragePoolVO poolVO = primaryStoreDao.findById(poolId);
-        SpConnectionDesc conn = StorpoolUtil.getSpConnection(poolVO.getUuid(), poolId, storagePoolDetailsDao, primaryStoreDao);
+
+        SpConnectionDesc conn = null;
+        try {
+            conn = StorpoolUtil.getSpConnection(poolVO.getUuid(), poolId, storagePoolDetailsDao, primaryStoreDao);
+        } catch (Exception e) {
+            return false;
+        }
 
         StoragePool pool = (StoragePool)this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
 

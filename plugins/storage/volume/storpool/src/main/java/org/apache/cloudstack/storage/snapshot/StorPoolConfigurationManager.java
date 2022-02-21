@@ -28,6 +28,11 @@ public class StorPoolConfigurationManager implements Configurable {
             "For StorPool Managed storage backup to secondary", true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<String> StorPoolClusterId = new ConfigKey<String>(String.class, "sp.cluster.id", "Advanced", "n/a",
                                     "For StorPool multi cluster authorization", true, ConfigKey.Scope.Cluster, null);
+    public static final ConfigKey<Boolean> AlternativeEndPointEnabled = new ConfigKey<Boolean>(Boolean.class, "sp.enable.alternative.endpoint", "Advanced", "false",
+            "Used for StorPool primary storage, definse if there is a need to be used alternative endpoint", true, ConfigKey.Scope.StoragePool, null);
+
+    public static final ConfigKey<String> AlternativeEndpoint = new ConfigKey<String>(String.class, "sp.alternative.endpoint", "Advanced", "",
+            "Used for StorPool primary storage for an alternative endpoint. Structure of the endpoint is - SP_API_HTTP=address:port;SP_AUTH_TOKEN=token;SP_TEMPLATE=template_name", true, ConfigKey.Scope.StoragePool, null);
 
     @Override
     public String getConfigComponentName() {
@@ -36,6 +41,6 @@ public class StorPoolConfigurationManager implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { BypassSecondaryStorage, StorPoolClusterId };
+        return new ConfigKey<?>[] { BypassSecondaryStorage, StorPoolClusterId, AlternativeEndPointEnabled, AlternativeEndpoint };
     }
 }

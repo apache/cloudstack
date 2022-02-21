@@ -40,7 +40,9 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -256,6 +258,15 @@ public class StorpoolUtil {
 
     public static SpConnectionDesc getSpConnection(String url, long poolId, StoragePoolDetailsDao poolDetails,
             PrimaryDataStoreDao storagePool) {
+        boolean isElternateEndpointEnabled = StorPoolConfigurationManager.AlternativeEndPointEnabled.valueIn(poolId);
+        if (isElternateEndpointEnabled) {
+            String alternateEndpoint = StorPoolConfigurationManager.AlternativeEndpoint.valueIn(poolId);
+            if (StringUtils.isNotEmpty(alternateEndpoint)) {
+                return new SpConnectionDesc(alternateEndpoint);
+            } else {
+                throw new CloudRuntimeException(String.format("Using an alternative endpoint of StorPool primary storage with id [%s] is enabled but no endpoint URL is provided", poolId));
+            }
+        }
         List<StoragePoolDetailVO> details = poolDetails.listDetails(poolId);
         String host = null;
         String authToken = null;

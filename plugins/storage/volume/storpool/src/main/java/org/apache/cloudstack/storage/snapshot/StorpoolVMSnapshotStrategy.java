@@ -226,7 +226,12 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
         DataStore dataStore = dataStoreManager.getPrimaryDataStore(volumeTOs.get(0).getDataStore().getUuid());
-        SpConnectionDesc conn = StorpoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
+        SpConnectionDesc conn = null;
+        try {
+            conn = StorpoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
+        } catch (CloudRuntimeException e) {
+            throw e;
+        }
 
         SpApiResponse resp = null;
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -260,6 +265,8 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         vmSnapshotDetailsDao.removeDetails(vmSnapshot.getId());
 
         finalizeDelete(vmSnapshotVO, volumeTOs);
+        vmSnapshotDao.remove(vmSnapshot.getId());
+
         long full_chain_size = 0;
         for (VolumeObjectTO volumeTo : volumeTOs) {
             publishUsageEvents(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
@@ -338,7 +345,7 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             }
             finalizeRevert(vmSnapshotVO, volumeTOs);
             result = vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
-        } catch (NoTransitionException e) {
+        } catch (CloudRuntimeException | NoTransitionException  e) {
             String errMsg = String.format("Error while finalize create vm snapshot [%s] due to %s", vmSnapshot.getName(), e.getMessage());
             log.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);

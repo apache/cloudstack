@@ -271,11 +271,17 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
         List<VMTemplateStoragePoolVO> lstTemplatePoolRefs = vmTemplatePoolDao.listByPoolId(storagePoolId);
 
+        SpConnectionDesc conn = null;
+        try {
+            conn = StorpoolUtil.getSpConnection(store.getUuid(), store.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
+        } catch (CloudRuntimeException e) {
+            throw e;
+        }
+
         if (lstTemplatePoolRefs != null) {
             for (VMTemplateStoragePoolVO templatePoolRef : lstTemplatePoolRefs) {
                 SpApiResponse resp = StorpoolUtil.snapshotDelete(
-                        StorpoolStorageAdaptor.getVolumeNameFromPath(templatePoolRef.getLocalDownloadPath(), true),
-                        StorpoolUtil.getSpConnection(store.getUuid(), store.getId(), storagePoolDetailsDao, _primaryDataStoreDao));
+                        StorpoolStorageAdaptor.getVolumeNameFromPath(templatePoolRef.getLocalDownloadPath(), true), conn);
                 if (resp.getError() != null) {
                     throw new CloudRuntimeException(String.format("Could not delete StorPool's snapshot from template_spool_ref table due to %s", resp.getError()));
                 }
@@ -287,8 +293,7 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
             List<StoragePoolDetailVO> volumesOnHosts = storagePoolDetailsDao.listDetails(storagePoolId);
             for (StoragePoolDetailVO storagePoolDetailVO : volumesOnHosts) {
                 if (storagePoolDetailVO.getValue() != null && storagePoolDetailVO.getName().contains(StorpoolUtil.SP_VOLUME_ON_CLUSTER)) {
-                    StorpoolUtil.volumeDelete(StorpoolStorageAdaptor.getVolumeNameFromPath(storagePoolDetailVO.getValue(), true),
-                            StorpoolUtil.getSpConnection(store.getUuid(), store.getId(), storagePoolDetailsDao, _primaryDataStoreDao));
+                    StorpoolUtil.volumeDelete(StorpoolStorageAdaptor.getVolumeNameFromPath(storagePoolDetailVO.getValue(), true), conn);
                 }
             }
             storagePoolDetailsDao.removeDetails(storagePoolId);

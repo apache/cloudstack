@@ -49,6 +49,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 
@@ -100,19 +101,23 @@ public class StorpoolSnapshotStrategy implements SnapshotStrategy {
         // clean-up snapshot from Storpool storage pools
         StoragePoolVO storage = _primaryDataStoreDao.findById(volume.getPoolId());
         if (storage.getStorageProviderName().equals(StorpoolUtil.SP_PROVIDER_NAME)) {
-            SpConnectionDesc conn = StorpoolUtil.getSpConnection(storage.getUuid(), storage.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
-            SpApiResponse resp = StorpoolUtil.snapshotDelete(name, conn);
-            if (resp.getError() != null) {
-                final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
-                log.error(err);
-                StorpoolUtil.spLog(err);
-            } else {
-                SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, snapshotVO.getUuid());
-                if (snapshotDetails != null) {
-                    _snapshotDetailsDao.removeDetails(snapshotId);
+            try {
+                SpConnectionDesc conn = StorpoolUtil.getSpConnection(storage.getUuid(), storage.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
+                SpApiResponse resp = StorpoolUtil.snapshotDelete(name, conn);
+                if (resp.getError() != null) {
+                    final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
+                    StorpoolUtil.spLog(err);
+                } else {
+                    SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, snapshotVO.getUuid());
+                    if (snapshotDetails != null) {
+                        _snapshotDetailsDao.removeDetails(snapshotId);
+                    }
+                    res = deleteSnapshotFromDb(snapshotId);
+                    StorpoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfuly=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
                 }
-                res = deleteSnapshotFromDb(snapshotId);
-                StorpoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfuly=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
+            } catch (Exception e) {
+                String errMsg = String.format("Cannot delete snapshot due to %s", e.getMessage());
+                throw new CloudRuntimeException(errMsg);
             }
         }
 
