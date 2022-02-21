@@ -16,12 +16,17 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.user.User;
 import com.cloud.utils.component.PluggableService;
 
+import java.util.List;
+
 public interface ApiDiscoveryService extends PluggableService {
+    List<String> listApiNames(Account account);
+
     ListResponse<? extends BaseResponse> listApis(User user, String apiName);
 }

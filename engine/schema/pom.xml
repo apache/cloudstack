@@ -147,7 +147,7 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>templateConfig.sh</argument>
-                                <armument>${project.systemvm.template.version}</armument>
+                                <argument>${project.systemvm.template.version}</argument>
                             </arguments>
                         </configuration>
                     </execution>

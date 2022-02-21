@@ -58,9 +58,13 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         throw new PermissionDeniedException("The API " + commandName + " is denied for the user's/account's project role.");
     }
 
+    @Override
+    public boolean isEnabled() {
+        return roleService.isEnabled();
+    }
 
     public boolean isDisabled() {
-        return !roleService.isEnabled();
+        return !isEnabled();
     }
 
     @Override
@@ -101,6 +105,11 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
             return true;
         }
         throw new UnavailableCommandException("The API " + apiCommandName + " does not exist or is not available for this account/user in project "+project.getUuid());
+    }
+
+    @Override
+    public boolean checkAccess(Account account, String apiCommandName) throws PermissionDeniedException {
+        return true;
     }
 
     private boolean isPermitted(Project project, ProjectAccount projectUser, String apiCommandName) {

@@ -19,15 +19,14 @@
 
 package com.cloud.utils.ssh;
 
-import java.io.IOException;
-import java.io.InputStream;
-
+import com.trilead.ssh2.ChannelCondition;
+import com.trilead.ssh2.Session;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.trilead.ssh2.ChannelCondition;
-import com.trilead.ssh2.Session;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class SSHCmdHelper {
     private static final Logger s_logger = Logger.getLogger(SSHCmdHelper.class);

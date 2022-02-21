@@ -360,24 +360,24 @@ public class SystemVmTemplateRegistration {
     }
 
     private static String fetchTemplatesPath() {
-            String filePath = RELATIVE_TEMPLATE_PATH + METADATA_FILE_NAME;
+        String filePath = RELATIVE_TEMPLATE_PATH + METADATA_FILE_NAME;
+        LOGGER.debug(String.format("Looking for file [ %s ] in the classpath.", filePath));
+        File metaFile = new File(filePath);
+        String templatePath = null;
+        if (metaFile.exists()) {
+            templatePath = RELATIVE_TEMPLATE_PATH;
+        }
+        if (templatePath == null) {
+            filePath = ABSOLUTE_TEMPLATE_PATH + METADATA_FILE_NAME;
+            metaFile = new File(filePath);
+            templatePath = ABSOLUTE_TEMPLATE_PATH;
             LOGGER.debug(String.format("Looking for file [ %s ] in the classpath.", filePath));
-            File metaFile = new File(filePath);
-            String templatePath = null;
-            if (metaFile.exists()) {
-                templatePath = RELATIVE_TEMPLATE_PATH;
+            if (!metaFile.exists()) {
+                String errMsg = String.format("Unable to locate metadata file in your setup at %s", filePath.toString());
+                LOGGER.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
             }
-            if (templatePath == null) {
-                filePath = ABSOLUTE_TEMPLATE_PATH + METADATA_FILE_NAME;
-                metaFile = new File(filePath);
-                templatePath = ABSOLUTE_TEMPLATE_PATH;
-                LOGGER.debug(String.format("Looking for file [ %s ] in the classpath.", filePath));
-                if (!metaFile.exists()) {
-                    String errMsg = String.format("Unable to locate metadata file in your setup at %s", filePath.toString());
-                    LOGGER.error(errMsg);
-                    throw new CloudRuntimeException(errMsg);
-                }
-            }
+        }
         return templatePath;
     }
 
@@ -566,12 +566,12 @@ public class SystemVmTemplateRegistration {
     }
 
     private void updateTemplateTablesOnFailure(long templateId) {
-            VMTemplateVO template = vmTemplateDao.createForUpdate(templateId);
-            template.setState(VirtualMachineTemplate.State.Inactive);
-            vmTemplateDao.update(template.getId(), template);
-            vmTemplateDao.remove(templateId);
-            TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
-            templateDataStoreDao.remove(templateDataStoreVO.getId());
+        VMTemplateVO template = vmTemplateDao.createForUpdate(templateId);
+        template.setState(VirtualMachineTemplate.State.Inactive);
+        vmTemplateDao.update(template.getId(), template);
+        vmTemplateDao.remove(templateId);
+        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
+        templateDataStoreDao.remove(templateDataStoreVO.getId());
     }
 
     public static void unmountStore(String filePath) {
@@ -592,7 +592,7 @@ public class SystemVmTemplateRegistration {
     }
 
     private void setupTemplate(String templateName, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
-        String destTempFolder) throws CloudRuntimeException {
+                               String destTempFolder) throws CloudRuntimeException {
         String setupTmpltScript = Script.findScript(storageScriptsDir, "setup-sysvm-tmplt");
         if (setupTmpltScript == null) {
             throw new CloudRuntimeException("Unable to find the createtmplt.sh");
@@ -640,7 +640,7 @@ public class SystemVmTemplateRegistration {
     }
 
     public void registerTemplate(Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
-                                        Pair<String, Long> storeUrlAndId, VMTemplateVO templateVO, String filePath) {
+                                 Pair<String, Long> storeUrlAndId, VMTemplateVO templateVO, String filePath) {
         Long templateId = null;
         try {
             templateId = templateVO.getId();

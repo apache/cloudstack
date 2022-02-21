@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -50,8 +52,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.network.router.CommandSetupHelper;
-import com.cloud.network.router.NetworkHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -118,6 +118,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -248,6 +249,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -357,10 +360,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import java.util.HashSet;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -2365,6 +2364,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
                 if (CollectionUtils.isEmpty(backupsForVm)) {
                     backupManager.removeVMFromBackupOffering(vm.getId(), true);
+                } else {
+                    throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
+                            + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
+                            + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                            vm.getBackupExternalId(), backupsForVm.size()));
                 }
             }
 
@@ -3819,18 +3823,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         DiskOfferingVO rootdiskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
-        long size = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootdiskOffering);
+        long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootdiskOffering);
 
         if (!isIso && diskOfferingId != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            size += verifyAndGetDiskSize(diskOffering, diskSize);
+            volumesSize += verifyAndGetDiskSize(diskOffering, diskSize);
         }
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -4136,7 +4140,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private long verifyAndGetDiskSize(DiskOfferingVO diskOffering, Long diskSize) {
         long size = 0l;
-        if (diskOffering != null && diskOffering.isCustomized() && !diskOffering.isComputeOnly()) {
+        if (diskOffering == null) {
+            throw new InvalidParameterValueException("Specified disk offering cannot be found");
+        }
+        if (diskOffering.isCustomized() && !diskOffering.isComputeOnly()) {
             if (diskSize == null) {
                 throw new InvalidParameterValueException("This disk offering requires a custom size specified");
             }
@@ -4146,9 +4153,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
                         + " Min:" + customDiskOfferingMinSize);
             }
-            size += diskSize * GiB_TO_BYTES;
+            size = diskSize * GiB_TO_BYTES;
+        } else {
+            size = diskOffering.getDiskSize();
         }
-        size += diskOffering.getDiskSize();
+        _volumeService.validateVolumeSizeInBytes(size);
         return size;
     }
 
@@ -4170,6 +4179,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorType);
         long rootDiskSizeInBytes = verifyAndGetDiskSize(rootDiskOffering, NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1));
         if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
+            _volumeService.validateVolumeSizeInBytes(rootDiskSizeInBytes);
             long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
             customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSizeInGiB));
             return rootDiskSizeInBytes;
@@ -4180,7 +4190,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (rootDiskSize <= 0) {
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
-            return rootDiskSize * GiB_TO_BYTES;
+            rootDiskSize *= GiB_TO_BYTES;
+            _volumeService.validateVolumeSizeInBytes(rootDiskSize);
+            return rootDiskSize;
         } else {
             // For baremetal, size can be 0 (zero)
             Long templateSize = _templateDao.findById(template.getId()).getSize();
@@ -4329,6 +4341,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.setUserVmType(type);
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
+                    // BIOS was explicitly passed as the boot type, so honour it
+                    if (key.equalsIgnoreCase(ApiConstants.BootType.BIOS.toString())) {
+                        vm.details.remove(ApiConstants.BootType.UEFI.toString());
+                        continue;
+                    }
+
+                    // Deploy as is, Don't care about the boot type or template settings
+                    if (key.equalsIgnoreCase(ApiConstants.BootType.UEFI.toString()) && template.isDeployAsIs()) {
+                        vm.details.remove(ApiConstants.BootType.UEFI.toString());
+                        continue;
+                    }
+
                     if (key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
                             key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
                             key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
@@ -4336,11 +4360,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
                     } else {
                         vm.setDetail(key, customParameters.get(key));
-                    }
-
-                    if (key.equalsIgnoreCase(ApiConstants.BootType.UEFI.toString())) {
-                        vm.setDetail(key, customParameters.get(key));
-                        continue;
                     }
                 }
                 vm.setDetail(VmDetailConstants.DEPLOY_VM, "true");
@@ -4695,8 +4714,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             podId = adminCmd.getPodId();
             clusterId = adminCmd.getClusterId();
         }
-        if (MapUtils.isNotEmpty(details) && details.containsKey(ApiConstants.BootType.UEFI.toString())) {
-            addVmUefiBootOptionsToParams(additionalParams, ApiConstants.BootType.UEFI.toString(), details.get(ApiConstants.BootType.UEFI.toString()));
+        UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getEntityId(), ApiConstants.BootType.UEFI.toString());
+        if (uefiDetail != null) {
+            addVmUefiBootOptionsToParams(additionalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
         if (cmd.getBootIntoSetup() != null) {
             additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());

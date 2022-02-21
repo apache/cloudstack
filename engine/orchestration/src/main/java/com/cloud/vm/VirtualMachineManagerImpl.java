@@ -45,6 +45,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -2758,11 +2759,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+
+                updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    private void updateVmPod(VMInstanceVO vm, long dstHostId) {
+        // update the VMs pod
+        HostVO host = _hostDao.findById(dstHostId);
+        VMInstanceVO newVm = _vmDao.findById(vm.getId());
+        newVm.setPodIdToDeployIn(host.getPodId());
+        _vmDao.persist(newVm);
     }
 
     /**
@@ -3763,9 +3774,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final List<String> currentTags = StringUtils.csvTagsToList(currentDiskOffering.getTags());
         final List<String> newTags = StringUtils.csvTagsToList(newDiskOffering.getTags());
-        if (!newTags.containsAll(currentTags)) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine; the current service offering " + " should have tags as subset of " +
-                    "the new service offering tags. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
+        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(vmInstance.getDataCenterId())) {
+            if (!VolumeApiServiceImpl.doesNewDiskOfferingHasTagsAsOldDiskOffering(currentDiskOffering, newDiskOffering)) {
+                    throw new InvalidParameterValueException("Unable to upgrade virtual machine; the current service offering " + " should have tags as subset of " +
+                            "the new service offering tags. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
+            }
         }
     }
 
@@ -4341,6 +4354,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             } else {
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+
+                updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);

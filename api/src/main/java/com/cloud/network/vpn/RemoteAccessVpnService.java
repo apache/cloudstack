@@ -43,6 +43,8 @@ public interface RemoteAccessVpnService {
 
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
 
+    boolean applyVpnUsers(long vpnOwnerId, String userName, boolean forRemove) throws ResourceUnavailableException;
+
     boolean applyVpnUsers(long vpnOwnerId, String userName) throws ResourceUnavailableException;
 
     Pair<List<? extends RemoteAccessVpn>, Integer> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);

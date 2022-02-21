@@ -16,6 +16,26 @@
 // under the License.
 package com.cloud.agent;
 
+import com.cloud.agent.Agent.ExitStatus;
+import com.cloud.agent.dao.StorageComponent;
+import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.ProcessUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.backoff.BackoffAlgorithm;
+import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+
+import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,28 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.commons.daemon.Daemon;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-
-import com.cloud.agent.Agent.ExitStatus;
-import com.cloud.agent.dao.StorageComponent;
-import com.cloud.agent.dao.impl.PropertiesStorage;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.ProcessUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.backoff.BackoffAlgorithm;
-import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
