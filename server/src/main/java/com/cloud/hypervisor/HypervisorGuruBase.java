@@ -55,6 +55,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeGroupVO;
+import com.cloud.storage.dao.VolumeGroupDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
@@ -94,8 +96,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     private NetworkDetailsDao networkDetailsDao;
     @Inject
-    protected
-    HostDao hostDao;
+    protected HostDao hostDao;
+    @Inject
+    private VolumeGroupDao _volumeGroupDao;
 
     public static ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
@@ -250,7 +253,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
 
         to.setNics(nics);
-        to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
+        List<DiskTO> disks = addGroupsToDisks(vm.getId(), vmProfile.getDisks());
+        to.setDisks(disks.toArray(new DiskTO[vmProfile.getDisks().size()]));
 
         if (vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
@@ -302,6 +306,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         s_logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         return null;
+    }
+
+    private List<DiskTO> addGroupsToDisks(long vmId, List<DiskTO> disks){
+        disks.forEach((DiskTO disk) -> {
+            VolumeGroupVO volumeGroup = _volumeGroupDao.findByVmAndVolume(vmId, disk.getData().getId());
+            if(volumeGroup != null){
+                disk.setGroupNumber(volumeGroup.getGroupNumber());
+            }
+        });
+        return disks;
     }
 
     @Override

@@ -154,6 +154,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.dao.VolumeGroupDao;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -239,6 +240,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private VolumeDao _volsDao;
     @Inject
     private VolumeDetailsDao _volsDetailsDao;
+    @Inject
+    private VolumeGroupDao _volsGroupDao;
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -958,7 +961,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // if VM Id is provided, attach the volume to the VM
                 if (cmd.getVirtualMachineId() != null) {
                     try {
-                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId());
+                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId(),-1);
                     } catch (Exception ex) {
                         StringBuilder message = new StringBuilder("Volume: ");
                         message.append(volume.getUuid());
@@ -1690,6 +1693,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         try {
             _volsDao.detachVolume(volume.getId());
+            _volsGroupDao.deleteVolumeFromGroup(volume.getId());
             stateTransitTo(volume, Volume.Event.RecoverRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to recover volume" + volume.getId(), e);
@@ -2065,10 +2069,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
-        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
+        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId(), command.getVolumeGroup());
     }
 
-    private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
+    private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId, int groubNumber) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
 
         if (volumeToAttach.isAttachedVM()) {
@@ -2169,11 +2173,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("VM not found.");
             }
         }
-        newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
+        newVol = sendAttachVolumeCommand(vm, newVol, deviceId, groubNumber);
         return newVol;
     }
 
-    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
+    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, int groupNumber) {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
@@ -2217,14 +2221,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
 
         if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
+            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId, groupNumber);
         } else {
-            return getVolumeAttachJobResult(vmId, volumeId, deviceId);
+            return getVolumeAttachJobResult(vmId, volumeId, deviceId, groupNumber);
         }
     }
 
-    @Nullable private Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId) {
-        Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId);
+    @Nullable private Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId, int groupNumber) {
+        Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId, groupNumber);
 
         Volume vol = null;
         try {
@@ -2250,13 +2254,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return vol;
     }
 
-    private Volume safelyOrchestrateAttachVolume(Long vmId, Long volumeId, Long deviceId) {
+    private Volume safelyOrchestrateAttachVolume(Long vmId, Long volumeId, Long deviceId, int groupNumber) {
         // avoid re-entrance
 
         VmWorkJobVO placeHolder = null;
         placeHolder = createPlaceHolderWork(vmId);
         try {
-            return orchestrateAttachVolumeToVM(vmId, volumeId, deviceId);
+            return orchestrateAttachVolumeToVM(vmId, volumeId, deviceId, groupNumber);
         } finally {
             _workJobDao.expunge(placeHolder.getId());
         }
@@ -2730,6 +2734,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
+            _volsGroupDao.deleteVolumeFromGroup(volume.getId());
 
             if (answer != null) {
                 String datastoreName = answer.getContextParam("datastoreName");
@@ -3843,7 +3848,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return host;
     }
 
-    private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId) {
+    private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId, int groupNumber) {
         String errorMsg = "Failed to attach volume " + volumeToAttach.getName() + " to VM " + vm.getHostName();
         boolean sendCommand = vm.getState() == State.Running;
         AttachAnswer answer = null;
@@ -3897,6 +3902,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 DiskTO disk = storageMgr.getDiskWithThrottling(volTO, volumeToAttach.getVolumeType(), deviceId, volumeToAttach.getPath(), vm.getServiceOfferingId(),
                         volumeToAttach.getDiskOfferingId());
+                disk.setGroupNumber(groupNumber);
 
                 AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 
@@ -3952,6 +3958,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     DiskTO disk = answer.getDisk();
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), disk.getDiskSeq());
+                    _volsGroupDao.addVolumeToGroup(vm.getId(),volumeToAttach.getId(),deviceId,groupNumber);
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
@@ -3976,6 +3983,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     deviceId = getDeviceId(vm, deviceId);
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
+                    _volsGroupDao.addVolumeToGroup(vm.getId(),volumeToAttach.getId(),deviceId,groupNumber);
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
@@ -4182,7 +4190,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    public Outcome<Volume> attachVolumeToVmThroughJobQueue(final Long vmId, final Long volumeId, final Long deviceId) {
+    public Outcome<Volume> attachVolumeToVmThroughJobQueue(final Long vmId, final Long volumeId, final Long deviceId, final int groubNumber) {
 
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
@@ -4203,7 +4211,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
 
         // save work context info (there are some duplications)
-        VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
+        VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId, groubNumber);
         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -4382,7 +4390,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateAttachVolumeToVM(VmWorkAttachVolume work) throws Exception {
-        Volume vol = orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
+        Volume vol = orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId(), work.getGroupNumber());
 
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(new Long(vol.getId())));
     }

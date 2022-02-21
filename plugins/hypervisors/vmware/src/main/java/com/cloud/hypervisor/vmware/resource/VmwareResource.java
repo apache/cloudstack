@@ -2148,7 +2148,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             int i = 0;
             int ideUnitNumber = !deployAsIs ? 0 : vmMo.getNextIDEDeviceNumber();
-            int scsiUnitNumber = !deployAsIs ? 0 : vmMo.getNextScsiDiskDeviceNumber();
+            Map<Integer,Integer> scsiUnitNumberMap = new HashMap<>();
+            scsiUnitNumberMap.put(-1,!deployAsIs ? 0 : vmMo.getNextScsiDiskDeviceNumber());
             int ideControllerKey = vmMo.getIDEDeviceControllerKey();
             int scsiControllerKey = vmMo.getScsiDeviceControllerKeyNoException();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
@@ -2293,17 +2294,17 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         }
                     }
                 } else {
-                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber)) {
-                        scsiUnitNumber++;
+                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(),0))) {
+                        scsiUnitNumberMap.merge(-1, 0, (a,b) -> a + 1);
                     }
 
-                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumber);
+                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(), 0), vol.getGroupNumber());
                     if (controllerKey == -1) {
                         // This may happen for ROOT legacy VMs which doesn't have recommended disk controller when global configuration parameter 'vmware.root.disk.controller' is set to "osdefault"
                         // Retrieve existing controller and use.
                         Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
                         DiskControllerType existingControllerType = vmScsiControllerInfo.third();
-                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumber);
+                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(), 0), vol.getGroupNumber());
                     }
                 }
                 if (!hasSnapshot) {
@@ -2361,8 +2362,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
                         ideUnitNumber++;
                     } else {
-                        deviceNumber = scsiUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
-                        scsiUnitNumber++;
+                        deviceNumber = scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(), 0) % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
+                        scsiUnitNumberMap.merge(vol.getGroupNumber(), 0, (a,b) -> a + 1);
                     }
 
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
@@ -2392,7 +2393,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber))
                         ideUnitNumber++;
                     else
-                        scsiUnitNumber++;
+                        scsiUnitNumberMap.merge(vol.getGroupNumber(), 0, (a,b) -> a + 1);
                 }
             }
 
@@ -3661,7 +3662,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private static DiskTO[] sortVolumesByDeviceId(DiskTO[] volumes) {
-
         List<DiskTO> listForSort = new ArrayList<DiskTO>();
         for (DiskTO vol : volumes) {
             listForSort.add(vol);
@@ -3670,12 +3670,31 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             @Override
             public int compare(DiskTO arg0, DiskTO arg1) {
+                if (arg0.getType().equals(Volume.Type.ROOT)){
+                    return -1;
+                }
+                if(arg1.getType().equals(Volume.Type.ROOT)){
+                    return 1;
+                }
+                if(arg0.getGroupNumber() > -1 && arg1.getGroupNumber() > -1){
+                    return checkDiskSeq(arg0, arg1);
+                }
+                if(arg0.getGroupNumber() > -1){
+                    return -1;
+                }
+                if(arg1.getGroupNumber() > -1){
+                    return 1;
+                }
+                return checkDiskSeq(arg0, arg1);
+            }
+
+            private int checkDiskSeq(DiskTO arg0, DiskTO arg1){
                 if (arg0.getDiskSeq() < arg1.getDiskSeq()) {
                     return -1;
-                } else if (arg0.getDiskSeq().equals(arg1.getDiskSeq())) {
+                }
+                if (arg0.getDiskSeq().equals(arg1.getDiskSeq())) {
                     return 0;
                 }
-
                 return 1;
             }
         });

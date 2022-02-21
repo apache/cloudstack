@@ -62,6 +62,9 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="    the ID of the virtual machine")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.VOLUME_GROUP, type = CommandType.INTEGER, required = false, description = "group of volume")
+    private int volumeGroup=-1;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,6 +117,10 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public String getEventDescription() {
         return  "attaching volume: " + this._uuidMgr.getUuid(Volume.class, getId()) + " to vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId());
+    }
+
+    public int getVolumeGroup() {
+        return volumeGroup;
     }
 
     @Override

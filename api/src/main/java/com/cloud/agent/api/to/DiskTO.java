@@ -46,9 +46,10 @@ public class DiskTO {
     private String path;
     private Volume.Type type;
     private Map<String, String> _details;
+    private int groupNumber;
 
     public DiskTO() {
-
+        this.groupNumber = -1;
     }
 
     public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type) {
@@ -56,6 +57,7 @@ public class DiskTO {
         this.diskSeq = diskSeq;
         this.path = path;
         this.type = type;
+        this.groupNumber = -1;
     }
 
     public DataTO getData() {
@@ -96,5 +98,13 @@ public class DiskTO {
 
     public Map<String, String> getDetails() {
         return _details;
+    }
+
+    public int getGroupNumber() {
+        return groupNumber;
+    }
+
+    public void setGroupNumber(int groupNumber) {
+        this.groupNumber = groupNumber;
     }
 }

@@ -21,11 +21,13 @@ public class VmWorkAttachVolume extends VmWork {
 
     private Long volumeId;
     private Long deviceId;
+    private int groupNumber;
 
-    public VmWorkAttachVolume(long userId, long accountId, long vmId, String handlerName, Long volumeId, Long deviceId) {
+    public VmWorkAttachVolume(long userId, long accountId, long vmId, String handlerName, Long volumeId, Long deviceId, int groupNumber) {
         super(userId, accountId, vmId, handlerName);
         this.volumeId = volumeId;
         this.deviceId = deviceId;
+        this.groupNumber = groupNumber;
     }
 
     public Long getVolumeId() {
@@ -34,5 +36,9 @@ public class VmWorkAttachVolume extends VmWork {
 
     public Long getDeviceId() {
         return deviceId;
+    }
+
+    public int getGroupNumber() {
+        return groupNumber;
     }
 }
