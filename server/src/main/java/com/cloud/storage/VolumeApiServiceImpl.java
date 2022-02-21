@@ -1605,6 +1605,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _volsDao.remove(volume.getId());
                 try {
                     stateTransitTo(volume, Volume.Event.DestroyRequested);
+                    stateTransitTo(volume, Volume.Event.OperationSucceeded);
                 } catch (NoTransitionException e) {
                     s_logger.debug("Failed to destroy volume" + volume.getId(), e);
                     return null;
