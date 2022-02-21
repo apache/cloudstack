@@ -361,7 +361,7 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      hypervisors: ['KVM', 'VMware', 'Hyperv', 'Any'],
+      hypervisors: ['KVM', 'VMware', 'Hyperv', 'Any', 'Simulator'],
       protocols: [],
       providers: [],
       scope: 'cluster',

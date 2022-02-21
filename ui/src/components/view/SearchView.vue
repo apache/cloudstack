@@ -60,6 +60,7 @@
                     v-if="field.type==='list'"
                     v-model:value="form[field.name]"
                     showSearch
+                    :dropdownMatchSelectWidth="false"
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -83,7 +84,7 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        {{ $t(opt.name) }}
+                        {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -119,6 +120,7 @@
                     class="filter-group-button-search"
                     type="primary"
                     size="small"
+                    ref="submit"
                     html-type="submit">
                     <template #icon><search-outlined /></template>
                     {{ $t('label.search') }}
@@ -314,25 +316,25 @@ export default {
         if (zoneIndex > -1) {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
-            this.fields[zoneIndex].opts = zones[0].data
+            this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
           }
         }
         if (domainIndex > -1) {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
-            this.fields[domainIndex].opts = domain[0].data
+            this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
           }
         }
         if (podIndex > -1) {
           const pod = response.filter(item => item.type === 'podid')
           if (pod && pod.length > 0) {
-            this.fields[podIndex].opts = pod[0].data
+            this.fields[podIndex].opts = this.sortArray(pod[0].data)
           }
         }
         if (clusterIndex > -1) {
           const cluster = response.filter(item => item.type === 'clusterid')
           if (cluster && cluster.length > 0) {
-            this.fields[clusterIndex].opts = cluster[0].data
+            this.fields[clusterIndex].opts = this.sortArray(cluster[0].data)
           }
         }
       }).finally(() => {
@@ -349,6 +351,14 @@ export default {
           this.fields[clusterIndex].loading = false
         }
         this.fillFormFieldValues()
+      })
+    },
+    sortArray (data, key = 'name') {
+      return data.sort(function (a, b) {
+        if (a[key] < b[key]) { return -1 }
+        if (a[key] > b[key]) { return 1 }
+
+        return 0
       })
     },
     fillFormFieldValues () {
