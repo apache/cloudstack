@@ -134,12 +134,15 @@ service.interceptors.request.use(config => {
   if (config && config.params) {
     config.params.response = 'json'
     const project = Vue.ls.get(CURRENT_PROJECT)
-    if (!config.params.projectid && project && project.id) {
+    if (!config.params.projectid && !config.params.ignoreproject && project && project.id) {
       if (config.params.command === 'listTags') {
         config.params.projectid = '-1'
       } else if (config.params.command !== 'assignVirtualMachine') {
         config.params.projectid = project.id
       }
+    }
+    if (config.params.ignoreproject !== undefined) {
+      config.params.ignoreproject = null
     }
   }
   return config
