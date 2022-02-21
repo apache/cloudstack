@@ -28,7 +28,8 @@ import {
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
   USE_BROWSER_TIMEZONE,
-  SERVER_MANAGER
+  SERVER_MANAGER,
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const app = {
@@ -110,6 +111,10 @@ const app = {
     SET_SERVER: (state, server) => {
       Vue.ls.set(SERVER_MANAGER, server)
       state.server = server
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      Vue.ls.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
     }
   },
   actions: {
@@ -163,6 +168,9 @@ const app = {
     },
     SetServer ({ commit }, server) {
       commit('SET_SERVER', server)
+    },
+    SetCustomColumns ({ commit }, bool) {
+      commit('SET_CUSTOM_COLUMNS', bool)
     }
   }
 }

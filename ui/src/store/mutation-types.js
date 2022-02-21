@@ -36,6 +36,7 @@ export const SERVER_MANAGER = 'SERVER_MANAGER'
 export const DOMAIN_STORE = 'DOMAIN_STORE'
 export const DARK_MODE = 'DARK_MODE'
 export const THEME_SETTING = 'THEME_SETTING'
+export const CUSTOM_COLUMNS = 'CUSTOM_COLUMNS'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',
