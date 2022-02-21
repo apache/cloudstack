@@ -68,7 +68,8 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
-      eventBus.on('update-job-details', (jobId, resourceId) => {
+      eventBus.on('update-job-details', (args) => {
+        const { jobId, resourceId } = args
         const fullPath = this.$route.fullPath
         const path = this.$route.path
         var jobs = this.$store.getters.headerNotices.map(job => {
@@ -87,7 +88,7 @@ export const pollJobPlugin = {
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
-        eventBus.emit('update-job-details', jobId, resourceId)
+        eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {
@@ -108,7 +109,7 @@ export const pollJobPlugin = {
             status: 'done',
             duration: 2
           })
-          eventBus.emit('update-job-details', jobId, resourceId)
+          eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
@@ -156,7 +157,7 @@ export const pollJobPlugin = {
             status: 'failed',
             duration: 2
           })
-          eventBus.emit('update-job-details', jobId, resourceId)
+          eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')

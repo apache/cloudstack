@@ -336,7 +336,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -370,7 +370,7 @@ export default {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deletefirewallruleresponse.jobid
-        eventBus.emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.delete.firewall'),
           description: rule.id,
@@ -378,14 +378,14 @@ export default {
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, rule.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'success' })
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.remove.firewall.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'failed' })
             }
             this.fetchData()
           },

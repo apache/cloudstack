@@ -394,7 +394,7 @@ export default {
       this.onShowDeleteModal(this.selectedItems[0])
     },
     handleCancel () {
-      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -450,7 +450,7 @@ export default {
       this.deleteLoading = true
       api('deleteTemplate', params).then(json => {
         const jobId = json.deletetemplateresponse.jobid
-        eventBus.emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
@@ -470,7 +470,7 @@ export default {
               }
             }
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, template.zoneid, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: template.zoneid, state: 'success' })
             }
           },
           errorMethod: () => {
@@ -478,7 +478,7 @@ export default {
               this.fetchData()
             }
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, template.zoneid, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: template.zoneid, state: 'failed' })
             }
           },
           showLoading: !(this.selectedItems.length > 0 && this.showGroupActionModal),
@@ -543,7 +543,7 @@ export default {
         this.copyLoading = true
         api('copyTemplate', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          eventBus.emit('update-job-details', jobId, null)
+          eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({
             jobId,
             title: this.$t('label.action.copy.template'),

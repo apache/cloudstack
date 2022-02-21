@@ -203,7 +203,7 @@ export default {
       this.loading = !this.loading
     },
     execAction (action, isGroupAction) {
-      eventBus.emit('exec-action', action, isGroupAction)
+      eventBus.emit('exec-action', { action, isGroupAction })
     }
   }
 }

@@ -375,7 +375,7 @@ export default {
       })
     },
     handleCancel () {
-      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -407,7 +407,7 @@ export default {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
-        eventBus.emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.release.ip'),
           description: ip.id,
@@ -415,14 +415,14 @@ export default {
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, ip.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: ip.id, state: 'success' })
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.release.ip.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, ip.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: ip.id, state: 'failed' })
             }
             this.fetchData()
           },

@@ -511,7 +511,8 @@ export default {
     eventBus.off('exec-action')
   },
   mounted () {
-    eventBus.on('exec-action', (action, isGroupAction) => {
+    eventBus.on('exec-action', (args) => {
+      const { action, isGroupAction } = args
       this.execAction(action, isGroupAction)
     })
   },
@@ -546,7 +547,8 @@ export default {
       }
       this.fetchData()
     })
-    eventBus.on('update-bulk-job-status', (items, action) => {
+    eventBus.on('update-bulk-job-status', (args) => {
+      var { items, action } = args
       for (const item of items) {
         this.$store.getters.headerNotices.map(function (j) {
           if (j.jobid === item.jobid) {
@@ -556,11 +558,18 @@ export default {
       }
     })
 
-    eventBus.on('update-resource-state', (selectedItems, resource, state, jobid) => {
+    eventBus.on('update-resource-state', (args) => {
+      var {
+        selectedItems,
+        resource,
+        state,
+        jobid
+      } = args
       if (selectedItems.length === 0) {
         return
       }
       var tempResource = []
+      this.selectedItems = selectedItems
       if (selectedItems && resource) {
         if (resource.includes(',')) {
           resource = resource.split(',')
@@ -576,10 +585,10 @@ export default {
             objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
           }
           if (state && objIndex !== -1) {
-            selectedItems[objIndex].status = state
+            this.selectedItems[objIndex].status = state
           }
           if (jobid && objIndex !== -1) {
-            selectedItems[objIndex].jobid = jobid
+            this.selectedItems[objIndex].jobid = jobid
           }
         }
       }
@@ -1144,7 +1153,7 @@ export default {
           name: resourceName,
           successMethod: result => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, resource, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
               const description = action.response(result.jobresult)
@@ -1160,7 +1169,7 @@ export default {
           },
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', this.selectedItems, resource, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'failed' })
             }
             resolve(true)
           },
@@ -1189,7 +1198,7 @@ export default {
       })
     },
     handleCancel () {
-      eventBus.emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -1258,7 +1267,7 @@ export default {
           }
           if (this.selectedItems.length !== 0) {
             this.$notifyError(error)
-            eventBus.emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+            eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: this.getDataIdentifier(params), state: 'failed' })
           }
         })
       })
@@ -1277,7 +1286,7 @@ export default {
               jobId = response[obj].jobid
             } else {
               if (this.selectedItems.length > 0) {
-                eventBus.emit('update-resource-state', this.selectedItems, resource, 'success')
+                eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
                 if (resource) {
                   this.selectedItems.filter(item => item === resource)
                 }
@@ -1304,7 +1313,7 @@ export default {
           this.$store.dispatch('UpdateConfiguration')
         }
         if (jobId) {
-          eventBus.emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'InProgress', jobid: jobId })
           resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
         }
         resolve(false)
@@ -1404,7 +1413,7 @@ export default {
           }
 
           console.log(error)
-          eventBus.emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+          eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: this.getDataIdentifier(params), state: 'failed' })
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false
