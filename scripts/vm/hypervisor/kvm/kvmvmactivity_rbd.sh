@@ -72,7 +72,7 @@ if [ ! -f $keyringFile ]; then
 fi
 
 # First check: heartbeat watcher
-status=$(rbd status hb-$HostIP -m $SourceHostIP -k $keyringFile)
+status=$(rbd status hb-$HostIP --pool $PoolName -m $SourceHostIP -k $keyringFile)
 if [ "$status" != "Watchers: none" ]; then
     echo "=====> ALIVE <====="
     exit 0
@@ -86,7 +86,7 @@ fi
 # Second check: disk activity check
 statusFlag=true
 for UUID in $(echo $UUIDList | sed 's/,/ /g'); do
-    diskStatus=$(rbd status $UUID -m $SourceHostIP -k $keyringFile)
+    diskStatus=$(rbd status $UUID --pool $PoolName -m $SourceHostIP -k $keyringFile)
     if [ "$status" == "Watchers: none" ]; then
         statusFlag=false
         break

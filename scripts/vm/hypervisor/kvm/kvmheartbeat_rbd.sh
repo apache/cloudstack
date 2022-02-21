@@ -88,14 +88,14 @@ delete_cephKeyring() {
 
 cretae_hbWatcher() {
 #Create HB RBD Image and watcher
-  status=$(rbd status hb-$HostIP -m $SourceHostIP -k $keyringFile)
+  status=$(rbd status hb-$HostIP --pool $PoolName -m $SourceHostIP -k $keyringFile)
   if [ $? == 2 ]; then
-    rbd create hb-$HostIP --size 1 -m $SourceHostIP -k $keyringFile
-    setsid sh -c 'exec rbd watch hb-'$HostIP' -m '$SourceHostIP' -k '$keyringFile' <> /dev/tty20 >&0 2>&1'
+    rbd create hb-$HostIP --size 1 --pool $PoolName
+    setsid sh -c 'exec rbd watch hb-'$HostIP' --pool $PoolName -m '$SourceHostIP' -k '$keyringFile' <> /dev/tty20 >&0 2>&1'
   fi
 
   if [ "$status" == "Watchers: none" ]; then
-    setsid sh -c 'exec rbd watch hb-'$HostIP' -m '$SourceHostIP' -k '$keyringFile' <> /dev/tty20 >&0 2>&1'
+    setsid sh -c 'exec rbd watch hb-'$HostIP' --pool $PoolName -m '$SourceHostIP' -k '$keyringFile' <> /dev/tty20 >&0 2>&1'
   fi
   
   return 0
@@ -103,7 +103,7 @@ cretae_hbWatcher() {
 
 check_hbWatcher() {
 #check the heart beat watcher
-  hb=$(rbd status hb-$HostIP -m $SourceHostIP -k $keyringFile)
+  hb=$(rbd status hb-$HostIP --pool $PoolName -m $SourceHostIP -k $keyringFile)
   if [ "$hb" == "Watchers: none" ]; then
     return 2
   else
