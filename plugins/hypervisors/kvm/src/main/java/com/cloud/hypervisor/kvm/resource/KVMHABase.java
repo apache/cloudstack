@@ -17,8 +17,6 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
@@ -204,26 +202,6 @@ public class KVMHABase {
         }
 
         return result;
-    }
-
-    public static String getRbdMonIpAddress(String sourceHost) {
-        try {
-            String[] hostArr = sourceHost.split(",");
-            String sourceHostIP = "";
-            for (String host : hostArr) {
-                String ipRegex = "(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d{1,2}|1\\d\\d|2[0-4]\\d|25[0-5])";
-                if (host.matches(ipRegex)) {
-                    sourceHostIP += host + ",";
-                } else {
-                    InetAddress addr = InetAddress.getByName(host);
-                    sourceHostIP += addr.getHostAddress() + ",";
-                }
-            }
-            return sourceHostIP;
-        } catch (UnknownHostException e) {
-            s_logger.warn("Failed to get connection: " + e);
-            return null;
-        }
     }
 
     public Boolean checkingHeartBeat() {

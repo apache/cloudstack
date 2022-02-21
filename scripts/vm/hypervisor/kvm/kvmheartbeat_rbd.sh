@@ -23,9 +23,8 @@ help() {
                     -s pool auth secret
                     -h host
                     -i source host ip
-                    -r write/read hb log 
-                    -c cleanup
-                    -t interval between read hb log\n"
+                    -r cretae/read hb watcher
+                    -c cleanup"
   exit 1
 }
 #set -x
@@ -34,11 +33,10 @@ PoolAuthUserName=
 PoolAuthSecret=
 HostIP=
 SourceHostIP=
-interval=
 rflag=0
 cflag=0
 
-while getopts 'p:n:s:h:i:t:rc' OPTION
+while getopts 'p:n:s:h:i:rc' OPTION
 do
   case $OPTION in
   p)
@@ -56,9 +54,6 @@ do
   i)
      SourceHostIP="$OPTARG"
      ;;
-  t)
-     interval="$OPTARG"
-     ;;
   r)
      rflag=1 
      ;;
@@ -75,77 +70,67 @@ if [ -z "$PoolName" ]; then
   exit 2
 fi
 
-keyringFile="/etc/ceph/keyring"
-confFile="/etc/ceph/ceph.conf"
+keyringFile="/etc/cloudstack/agent/keyring"
 
-create_cephConf() {
-#Creating Ceph keyring and conf for executing rados commands
+create_cephKeyring() {
+#Creating Ceph keyring for executing rbd commands
   if [ ! -f $keyringFile ]; then
     echo -e "[client.$PoolAuthUserName]\n key=$PoolAuthSecret" > $keyringFile
   fi
-  
-  if [ ! -f $confFile ]; then
-    confContents="[global]\n mon host = "
-    for ip in $(echo $SourceHostIP | sed 's/,/ /g'); do
-        confContents+="[v2:${ip}:3300/0,v1:${ip}:6789/0], "
-    done
-    echo -e "$confContents" | sed 's/, $//' > $confFile
-  fi
 }
 
-delete_cephConf() {
+delete_cephKeyring() {
 #Deleting Ceph keyring
   if [ -f $keyringFile ]; then
     rm -rf $keyringFile
   fi
 }
 
-write_hbLog() {
-#write the heart beat log
-  timestamp=$(date +%s)
-  obj=$(rados -p $PoolName ls --id $PoolAuthUserName | grep hb-$HostIP)
-  if [ $? -gt 0 ]; then
-     rados -p $PoolName create hb-$HostIP --id $PoolAuthUserName
+cretae_hbWatcher() {
+#Create HB RBD Image and watcher
+  status=$(rbd status hb-$HostIP --pool $PoolName -m $SourceHostIP -k $keyringFile)
+  if [ $? == 2 ]; then
+    rbd create hb-$HostIP --size 1 --pool $PoolName
+    setsid sh -c 'exec rbd watch hb-'$HostIP' --pool $PoolName -m '$SourceHostIP' -k '$keyringFile' <> /dev/tty20 >&0 2>&1'
   fi
-  echo $timestamp | rados -p $PoolName put hb-$HostIP - --id $PoolAuthUserName
-  if [ $? -gt 0 ]; then
-   	printf "Failed to create rbd file"
-    return 2
+
+  if [ "$status" == "Watchers: none" ]; then
+    setsid sh -c 'exec rbd watch hb-'$HostIP' --pool $PoolName -m '$SourceHostIP' -k '$keyringFile' <> /dev/tty20 >&0 2>&1'
   fi
+  
   return 0
 }
 
-check_hbLog() {
-#check the heart beat log
-  now=$(date +%s)
-  hb=$(rados -p $PoolName get hb-$HostIP - --id $PoolAuthUserName)
-  diff=$(expr $now - $hb)
-  if [ $diff -gt $interval ]; then
-    return $diff
+check_hbWatcher() {
+#check the heart beat watcher
+  hb=$(rbd status hb-$HostIP --pool $PoolName -m $SourceHostIP -k $keyringFile)
+  if [ "$hb" == "Watchers: none" ]; then
+    return 2
+  else
+    return 0
   fi
-  return 0
 }
 
 if [ "$rflag" == "1" ]; then
-  create_cephConf
-  check_hbLog
-  diff=$?
-  if [ $diff == 0 ]; then
+  create_cephKeyring
+  check_hbWatcher
+  hb=$?
+  if [ "$hb" != "Watchers: none" ]; then
     echo "=====> ALIVE <====="
   else
-    echo "=====> Considering host as DEAD because last write on [RBD pool] was [$diff] seconds ago, but the max interval is [$interval] <======"
+    echo "=====> Considering host as DEAD due to [hb-$HostIP] watcher that the host is seeing is not running. <======"
   fi
-  delete_cephConf
+  delete_cephKeyring
   exit 0
 elif [ "$cflag" == "1" ]; then
-  /usr/bin/logger -t heartbeat "kvmheartbeat_rbd.sh will reboot system because it was unable to write the heartbeat to the storage."
+  /usr/bin/logger -t heartbeat "kvmheartbeat_rbd.sh reboots the system because there is no heartbeat watcher."
   sync &
   sleep 5
   echo b > /proc/sysrq-trigger
   exit $?
 else
-  create_cephConf
-  write_hbLog
-  delete_cephConf
+  create_cephKeyring
+  cretae_hbWatcher
+  delete_cephKeyring
   exit 0
 fi

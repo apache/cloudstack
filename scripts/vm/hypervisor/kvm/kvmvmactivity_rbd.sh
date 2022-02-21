@@ -22,9 +22,7 @@ help() {
                     -s pool auth secret
                     -h host
                     -i source host ip
-                    -u volume uuid list
-                    -t time on ms
-                    -d suspect time\n"
+                    -u volume uuid list"
   exit 1
 }
 #set -x
@@ -34,10 +32,8 @@ PoolAuthSecret=
 HostIP=
 SourceHostIP=
 UUIDList=
-MSTime=
-SuspectTime=
 
-while getopts 'p:n:s:h:i:u:t:d:' OPTION
+while getopts 'p:n:s:h:i:u:d:' OPTION
 do
   case $OPTION in
   p)
@@ -58,12 +54,6 @@ do
   u)
      UUIDList="$OPTARG"
      ;;
-  t)
-     MSTime="$OPTARG"
-     ;;
-  d)
-     SuspectTime="$OPTARG"
-     ;;
   *)
      help
      ;;
@@ -74,31 +64,16 @@ if [ -z "$PoolName" ]; then
   exit 2
 fi
 
-if [ -z "$SuspectTime" ]; then
-  exit 2
-fi
-
-#Creating Ceph keyring and conf for executing rados commands
-keyringFile="/etc/ceph/keyring.bin"
-confFile="/etc/ceph/ceph.conf"
+#Creating Ceph keyring for executing rbd commands
+keyringFile="/etc/cloudstack/agent/keyring.bin"
 
 if [ ! -f $keyringFile ]; then
     echo -e "[client.$PoolAuthUserName]\n key=$PoolAuthSecret" > $keyringFile
 fi
 
-if [ ! -f $confFile ]; then
-    confContents="[global]\n mon host = "
-    for ip in $(echo $SourceHostIP | sed 's/,/ /g'); do
-        confContents+="[v2:${ip}:3300/0,v1:${ip}:6789/0], "
-    done
-    echo -e "$confContents" | sed 's/, $//' > $confFile
-fi
-
-# First check: heartbeat file
-now=$(date +%s)
-hb=$(rados -p $PoolName get hb-$HostIP - --id $PoolAuthUserName)
-diff=$(expr $now - $hb)
-if [ $diff -lt 61 ]; then
+# First check: heartbeat watcher
+status=$(rbd status hb-$HostIP --pool $PoolName -m $SourceHostIP -k $keyringFile)
+if [ "$status" != "Watchers: none" ]; then
     echo "=====> ALIVE <====="
     exit 0
 fi
@@ -109,44 +84,19 @@ if [ -z "$UUIDList" ]; then
 fi
 
 # Second check: disk activity check
-lastestUUIDList=
+statusFlag=true
 for UUID in $(echo $UUIDList | sed 's/,/ /g'); do
-    time=$(rbd info $UUID --id $PoolAuthUserName | grep modify_timestamp)
-    time=${time#*modify_timestamp: }
-    time=$(date -d "$time" +%s)
-    lastestUUIDList+="${time}\n"
+    diskStatus=$(rbd status $UUID --pool $PoolName -m $SourceHostIP -k $keyringFile)
+    if [ "$status" == "Watchers: none" ]; then
+        statusFlag=false
+        break
+    fi
 done
 
-latestUpdateTime=$(echo -e $lastestUUIDList 2> /dev/null | sort -nr | head -1)
-obj=$(rados -p $PoolName ls --id $PoolAuthUserName | grep ac-$HostIP)
-if [ $? -gt 0 ]; then
-    rados -p $PoolName create ac-$HostIP --id $PoolAuthUserName
-    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP - --id $PoolAuthUserName
-    if [[ $latestUpdateTime -gt $SuspectTime ]]; then
-        echo "=====> ALIVE <====="
-    else
-        echo "=====> Considering host as DEAD due to file [RBD pool] does not exists and condition [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
-    fi
+if [ statusFlag == "true" ]; then
+    echo "=====> ALIVE <====="
 else
-    acTime=$(rados -p $PoolName get ac-$HostIP - --id $PoolAuthUserName)
-    arrTime=(${acTime//:/ })
-    lastSuspectTime=${arrTime[0]}
-    lastUpdateTime=${arrTime[1]}
-    echo "$SuspectTime:$latestUpdateTime:$MSTime" | rados -p $PoolName put ac-$HostIP - --id $PoolAuthUserName
-    suspectTimeDiff=$(expr $SuspectTime - $lastSuspectTime)
-    if [ $suspectTimeDiff -lt 0 ]; then
-        if [[ $latestUpdateTime -gt $SuspectTime ]]; then
-            echo "=====> ALIVE <====="
-        else
-            echo "=====> Considering host as DEAD due to file [RBD pool] exist, condition [suspectTimeDiff -lt 0] was satisfied and [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
-        fi
-    else
-        if [[ $latestUpdateTime -gt $lastUpdateTime ]]; then
-            echo "=====> ALIVE <====="
-        else
-            echo "=====> Considering host as DEAD due to file [RBD pool] exist and conditions [suspectTimeDiff -lt 0] and [latestUpdateTime -gt SuspectTime] have not been satisfied. <======"
-        fi
-    fi
+    echo "=====> Considering host as DEAD due to [RBD '$PoolName' pool] Image Watcher does not exists <======"
 fi
 
 #Deleting Ceph keyring

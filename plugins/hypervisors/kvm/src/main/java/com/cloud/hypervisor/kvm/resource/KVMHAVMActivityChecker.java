@@ -54,9 +54,11 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
             cmd.add("-i", nfsStoragePool._poolIp);
             cmd.add("-p", nfsStoragePool._poolMountSourcePath);
             cmd.add("-m", nfsStoragePool._mountDestPath);
+            cmd.add("-t", String.valueOf(String.valueOf(System.currentTimeMillis() / 1000)));
+            cmd.add("-d", String.valueOf(suspectTimeInSeconds));
             poolIp = nfsStoragePool._poolIp;
         } else if (poolType == StoragePoolType.RBD) {
-            cmd.add("-i", getRbdMonIpAddress(rbdStoragePool._poolSourceHost));
+            cmd.add("-i", rbdStoragePool._poolSourceHost);
             cmd.add("-p", rbdStoragePool._poolMountSourcePath);
             cmd.add("-n", rbdStoragePool._poolAuthUserName);
             cmd.add("-s", rbdStoragePool._poolAuthSecret);
@@ -64,8 +66,6 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
         }
         cmd.add("-h", hostIP);
         cmd.add("-u", volumeUuidList);
-        cmd.add("-t", String.valueOf(String.valueOf(System.currentTimeMillis() / 1000)));
-        cmd.add("-d", String.valueOf(suspectTimeInSeconds));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 
         String result = cmd.execute(parser);
