@@ -96,25 +96,7 @@ public class DefaultHostListener implements HypervisorHostListener {
             s_logger.warn(String.format("Host with id %ld can't be found", hostId));
             return false;
         }
-
-        List<NetworkVO> allPersistentNetworks = networkDao.getAllPersistentNetworksFromZone(host.getDataCenterId());
-
-        for (NetworkVO networkVO : allPersistentNetworks) {
-            NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
-
-            SetupPersistentNetworkCommand persistentNetworkCommand =
-                    new SetupPersistentNetworkCommand(createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, host));
-            Answer answer = agentMgr.easySend(hostId, persistentNetworkCommand);
-            if (answer == null) {
-                throw new CloudRuntimeException("Unable to get answer to the setup persistent network command " + networkVO.getId());
-            }
-            if (!answer.getResult()) {
-                String msg = String.format("Unable to create L2 persistent network resources from network %ld on the host %ld in zone %ld", networkVO.getId(), hostId, networkVO.getDataCenterId());
-                alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, networkVO.getDataCenterId(), host.getPodId(), msg, msg);
-                throw new CloudRuntimeException("Unable to create persistent network resources from network " + networkVO.getId() +
-                        " on " + hostId + " due to " + answer.getDetails());
-            }
-        }
+        setupPersistentNetwork(host);
         return true;
     }
 
@@ -224,12 +206,12 @@ public class DefaultHostListener implements HypervisorHostListener {
                     new CleanupPersistentNetworkResourceCommand(createNicTOFromNetworkAndOffering(persistentNetworkVO, networkOfferingVO, host));
             Answer answer = agentMgr.easySend(hostId, cleanupCmd);
             if (answer == null) {
-                throw new CloudRuntimeException("Unable to get answer to the cleanup persistent network command " + persistentNetworkVO.getId());
+                s_logger.error("Unable to get answer to the cleanup persistent network command " + persistentNetworkVO.getId());
+                continue;
             }
             if (!answer.getResult()) {
-                String msg = String.format("Unable to cleanup L2 persistent network resources from network %ld on the host %ld", persistentNetworkVO.getId(), hostId);
-
-                alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, persistentNetworkVO.getDataCenterId(), host.getPodId(), msg, msg);
+                String msg = String.format("Unable to cleanup persistent network resources from network %d on the host %d", persistentNetworkVO.getId(), hostId);
+               s_logger.error(msg);
             }
         }
         return true;
@@ -238,5 +220,35 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Override
     public boolean hostRemoved(long hostId, long clusterId) {
         return true;
+    }
+
+    @Override
+    public boolean hostEnabled(long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn(String.format("Host with id %d can't be found", hostId));
+            return false;
+        }
+        setupPersistentNetwork(host);
+        return true;
+    }
+
+    private void setupPersistentNetwork(HostVO host) {
+        List<NetworkVO> allPersistentNetworks = networkDao.getAllPersistentNetworksFromZone(host.getDataCenterId());
+
+        for (NetworkVO networkVO : allPersistentNetworks) {
+            NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+
+            SetupPersistentNetworkCommand persistentNetworkCommand =
+                    new SetupPersistentNetworkCommand(createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, host));
+            Answer answer = agentMgr.easySend(host.getId(), persistentNetworkCommand);
+            if (answer == null) {
+                throw new CloudRuntimeException("Unable to get answer to the setup persistent network command " + networkVO.getId());
+            }
+            if (!answer.getResult()) {
+                String msg = String.format("Unable to create persistent network resources for network %d on the host %d in zone %d", networkVO.getId(), host.getId(), networkVO.getDataCenterId());
+                s_logger.error(msg);
+            }
+        }
     }
 }
