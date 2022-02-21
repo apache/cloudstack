@@ -62,7 +62,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="    the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.VOLUME_GROUP, type = CommandType.INTEGER, required = false, description = "group of volume")
+    @Parameter(name = ApiConstants.VOLUME_GROUP, type = CommandType.INTEGER, required = false, description = "group of volume", since = "4.17.0")
     private int volumeGroup=-1;
 
     /////////////////////////////////////////////////////
