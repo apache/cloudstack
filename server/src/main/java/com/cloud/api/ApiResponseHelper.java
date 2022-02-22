@@ -2310,6 +2310,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.isPersistent());
+            if (Network.GuestType.Isolated.equals(network.getGuestType())) {
+                response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
+            }
         }
 
         if (network.getAclType() != null) {

@@ -25,8 +25,10 @@ from marvin.lib.utils import (isAlmostEqual,
                               cleanup_resources,
                               random_gen)
 from marvin.lib.base import (ServiceOffering,
+                             Configurations,
                              DiskOffering,
                              Account,
+                             StoragePool,
                              VirtualMachine)
 from marvin.lib.common import (list_service_offering,
                                list_virtual_machines,
@@ -715,6 +717,16 @@ class TestServiceOfferings(cloudstackTestCase):
 
         if self.hypervisor.lower() == "lxc":
             self.skipTest("Skipping this test for {} due to bug CS-38153".format(self.hypervisor))
+        self.storeCloneValues = {}
+        if self.hypervisor.lower() == "vmware":
+            self.fullClone = Configurations.list(self.apiclient, name="vmware.create.full.clone")
+            assert isinstance(self.fullClone, list), "Config list not retrieved for vmware.create.full.clone"
+            allStoragePools = StoragePool.list(
+                self.apiclient
+            )
+            for pool in allStoragePools:
+                self.storeCloneValues[pool.id] = Configurations.list(self.apiclient, name="vmware.create.full.clone", storageid=pool.id)[0].value.lower()
+            self.updateVmwareCreateFullCloneSetting(False)
 
         offering_data = {
             'displaytext': 'TestDiskOfferingStrictnessFalse',
@@ -811,7 +823,36 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check service offering of the VM"
         )
 
+        if self.hypervisor.lower() == "vmware":
+            self.updateVmwareCreateFullCloneSetting(True)
+
         return
+
+    def updateVmwareCreateFullCloneSetting(self, tearDown):
+        if not tearDown:
+            Configurations.update(self.apiclient,
+                                  "vmware.create.full.clone",
+                                  "true")
+            allStoragePools = StoragePool.list(
+                self.apiclient
+            )
+            for pool in allStoragePools:
+                Configurations.update(self.apiclient,
+                                      storageid=pool.id,
+                                      name="vmware.create.full.clone",
+                                      value="true")
+        else:
+            Configurations.update(self.apiclient,
+                                  "vmware.create.full.clone",
+                                  self.fullClone[0].value.lower())
+            allStoragePools = StoragePool.list(
+                self.apiclient
+            )
+            for pool in allStoragePools:
+                Configurations.update(self.apiclient,
+                                      storageid=pool.id,
+                                      name="vmware.create.full.clone",
+                                      value=self.storeCloneValues[pool.id])
 
 class TestCpuCapServiceOfferings(cloudstackTestCase):
 

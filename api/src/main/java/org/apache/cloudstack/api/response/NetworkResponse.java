@@ -271,6 +271,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "the total number of network traffic bytes sent")
     private Long bytesSent;
 
+    @SerializedName((ApiConstants.EGRESS_DEFAULT_POLICY))
+    @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
+    private Boolean egressDefaultPolicy;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -543,5 +547,13 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setBytesSent(final Long bytesSent) {
         this.bytesSent = bytesSent;
+    }
+
+    public boolean getEgressDefaultPolicy() {
+        return egressDefaultPolicy;
+    }
+
+    public void setEgressDefaultPolicy(Boolean egressDefaultPolicy) {
+        this.egressDefaultPolicy = egressDefaultPolicy;
     }
 }

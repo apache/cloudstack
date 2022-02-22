@@ -1605,6 +1605,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _volsDao.remove(volume.getId());
                 try {
                     stateTransitTo(volume, Volume.Event.DestroyRequested);
+                    stateTransitTo(volume, Volume.Event.OperationSucceeded);
                 } catch (NoTransitionException e) {
                     s_logger.debug("Failed to destroy volume" + volume.getId(), e);
                     return null;
@@ -1697,10 +1698,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean volumeResizeRequired = false;
 
         // VALIDATIONS
-        Long updateNewSize[] = {newSize};
-        Long updateNewMinIops[] = {newMinIops};
-        Long updateNewMaxIops[] = {newMaxIops};
-        Integer updateNewHypervisorSnapshotReserve[] = {newHypervisorSnapshotReserve};
+        Long[] updateNewSize = {newSize};
+        Long[] updateNewMinIops = {newMinIops};
+        Long[] updateNewMaxIops = {newMaxIops};
+        Integer[] updateNewHypervisorSnapshotReserve = {newHypervisorSnapshotReserve};
         validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];
@@ -1910,10 +1911,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         _configMgr.checkDiskOfferingAccess(_accountMgr.getActiveAccountById(volume.getAccountId()), newDiskOffering, _dcDao.findById(volume.getDataCenterId()));
-
         if (newDiskOffering.getDiskSize() > 0 && !newDiskOffering.isComputeOnly()) {
             newSize[0] = (Long) newDiskOffering.getDiskSize();
-        } else if (newDiskOffering.isCustomized()) {
+        } else if (newDiskOffering.isCustomized() && !newDiskOffering.isComputeOnly()) {
             if (newSize[0] == null) {
                 throw new InvalidParameterValueException("The new disk offering requires that a size be specified.");
             }
@@ -3049,7 +3049,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), Arrays.asList(storageTagsAsStringArray));
     }
 
-    public boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
+    public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
         String[] oldDOStorageTags = oldDO.getTagsArray();
         String[] newDOStorageTags = newDO.getTagsArray();
         if (oldDOStorageTags.length == 0) {
