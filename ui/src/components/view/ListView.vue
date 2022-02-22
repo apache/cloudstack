@@ -268,6 +268,10 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
+    <span slot="requiresupgrade" slot-scope="text, record">
+      <status :text="record.requiresupgrade ? 'warning' : ''" />
+      {{ record.requiresupgrade ? 'Yes' : 'No' }}
+    </span>
     <span slot="autoscalingenabled" slot-scope="text, record">
       <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
       {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
