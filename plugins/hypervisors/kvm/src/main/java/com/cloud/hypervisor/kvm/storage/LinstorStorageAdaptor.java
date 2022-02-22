@@ -289,7 +289,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect)
     {
         s_logger.debug("Linstor: disconnectPhysicalDisk map");
-        return true;
+        return false;
     }
 
     private Optional<ResourceWithVolumes> getResourceByPath(final List<ResourceWithVolumes> resources, String path) {

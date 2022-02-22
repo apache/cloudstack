@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.reflections.Reflections;
 
@@ -165,6 +166,20 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        if (MapUtils.isEmpty(volumeToDisconnect)) {
+            return false;
+        }
+
+        if (volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE) != null) {
+            String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
+            StorageAdaptor adaptor = _storageMapper.get(poolType);
+            if (adaptor == null) {
+                return false;
+            }
+
+            return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
+        }
+
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
