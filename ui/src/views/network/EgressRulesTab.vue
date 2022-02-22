@@ -18,7 +18,8 @@
 <template>
   <div>
     <div>
-      <div
+      <a-alert
+        type="info"
         v-html="$t('message.egress.rules.info.for.network').replace('%x', resource.egressdefaultpolicy ? '<b>' + $t('label.allow') + '</b>' :
           '<b>' + $t('label.deny') + '</b>').replace('%y', resource.egressdefaultpolicy ? '<b>' + $t('message.denied') + '</b>' : '<b>' + $t('message.allowed') + '</b>')" />
       <a-divider />
