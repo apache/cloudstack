@@ -73,7 +73,7 @@
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
-                <a-dropdown style="margin-left: 8px" :trigger="['click']" v-if="!$store.getters.metrics" v-model="customColumnsDropdownVisible">
+                <a-dropdown style="margin-left: 8px" :trigger="['click']" v-if="!dataView && !$store.getters.metrics" v-model="customColumnsDropdownVisible">
                   <a-button>
                     {{ $t('label.columns') }} <a-icon type="down" style="color: rgba(0,0,0,.45)" />
                   </a-button>
