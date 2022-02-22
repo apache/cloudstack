@@ -29,7 +29,8 @@ import {
   DEFAULT_MULTI_TAB,
   USE_BROWSER_TIMEZONE,
   SERVER_MANAGER,
-  VUE_VERSION
+  VUE_VERSION,
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const app = {
@@ -116,6 +117,10 @@ const app = {
     SET_VUE_VERSION: (state, version) => {
       vueProps.$localStorage.set(VUE_VERSION, version)
       state.vueVersion = version
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
     }
   },
   actions: {
@@ -169,6 +174,9 @@ const app = {
     },
     SetServer ({ commit }, server) {
       commit('SET_SERVER', server)
+    },
+    SetCustomColumns ({ commit }, bool) {
+      commit('SET_CUSTOM_COLUMNS', bool)
     }
   }
 }

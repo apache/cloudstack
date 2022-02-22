@@ -79,6 +79,21 @@
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
+                <span style="margin-left: 8px">
+                  <a-dropdown :trigger="['click']" v-if="!$store.getters.metrics" :visible="customColumnsDropdownVisible" @visibleChange="(visible) => customColumnsDropdownVisible = visible">
+                    <a-button>
+                      {{ $t('label.columns') }} <down-outlined />
+                    </a-button>
+                    <template #overlay>
+                      <a-menu>
+                        <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
+                          <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
+                          {{ $t('label.' + getColumnKey(column)) }}
+                        </a-menu-item>
+                      </a-menu>
+                    </template>
+                  </a-dropdown>
+                </span>
               </template>
             </breadcrumb>
           </a-col>
@@ -422,7 +437,7 @@
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
       :selectedItems="selectedItems"
-      :selectedColumns="selectedColumns"
+      :selectedColumns="bulkColumns"
       :message="modalInfo"
       @handle-cancel="handleCancel" />
   </div>
@@ -477,9 +492,13 @@ export default {
       apiName: '',
       loading: false,
       actionLoading: false,
+      columnKeys: [],
+      allColumns: [],
       columns: [],
+      bulkColumns: [],
       selectedColumns: [],
       chosenColumns: [],
+      customColumnsDropdownVisible: false,
       showGroupActionModal: false,
       selectedItems: [],
       items: [],
@@ -702,6 +721,7 @@ export default {
       this.actions = []
       this.columns = []
       this.columnKeys = []
+      this.selectedColumns = []
       const refreshed = ('irefresh' in params)
 
       params.listall = true
@@ -811,7 +831,20 @@ export default {
           slots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
+        this.selectedColumns.push(key)
       }
+      this.allColumns = this.columns
+
+      if (!store.getters.metrics) {
+        if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
+          this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
+          this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumns
+        } else {
+          this.selectedColumns = this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] || this.selectedColumns
+          this.updateSelectedColumns()
+        }
+      }
+
       this.chosenColumns = this.columns.filter(column => {
         return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
           this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
@@ -1201,7 +1234,7 @@ export default {
       eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
-      this.selectedColumns = []
+      this.bulkColumns = []
       this.selectedRowKeys = []
       this.message = {}
     },
@@ -1210,9 +1243,9 @@ export default {
       this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {
-          this.selectedColumns = this.chosenColumns
+          this.bulkColumns = this.chosenColumns
           this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
-          this.selectedColumns.splice(0, 0, {
+          this.bulkColumns.splice(0, 0, {
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
             slots: { customRender: 'status' },
@@ -1424,6 +1457,30 @@ export default {
     },
     shouldNavigateBack (action) {
       return ((['delete-outlined', 'DeleteOutlined'].includes(action.icon) || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
+    },
+    getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name)[0]
+      }
+      return name
+    },
+    updateSelectedColumns (name) {
+      if (name) {
+        name = this.getColumnKey(name)
+        if (this.selectedColumns.includes(name)) {
+          this.selectedColumns = this.selectedColumns.filter(x => x !== name)
+        } else {
+          this.selectedColumns.push(name)
+        }
+      }
+
+      this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
+
+      if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
+        this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
+      }
+      this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumns
+      this.$store.dispatch('SetCustomColumns', this.$store.getters.customColumns)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
@@ -1657,5 +1714,9 @@ export default {
 :deep(.ant-alert-message) {
   display: flex;
   align-items: center;
+}
+
+.hide {
+  display: none !important;
 }
 </style>

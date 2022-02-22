@@ -46,6 +46,9 @@
           <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
+          <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
+            {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
