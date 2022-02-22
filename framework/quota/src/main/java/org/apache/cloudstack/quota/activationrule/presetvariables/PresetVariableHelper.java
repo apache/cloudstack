@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -40,6 +41,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -75,7 +77,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.constants.VmDetails;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -152,6 +157,9 @@ public class PresetVariableHelper {
 
     @Inject
     VMSnapshotDao vmSnapshotDao;
+
+    @Inject
+    UserVmDetailsDao userVmDetailsDao;
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
@@ -298,7 +306,9 @@ public class PresetVariableHelper {
         value.setId(vmVo.getUuid());
         value.setName(vmVo.getName());
         value.setOsName(getPresetVariableValueOsName(vmVo.getGuestOSId()));
-        value.setComputeOffering(getPresetVariableValueComputeOffering(vmVo.getServiceOfferingId()));
+
+        setPresetVariableValueServiceOfferingAndComputingResources(value, usageType, vmVo);
+
         value.setTags(getPresetVariableValueResourceTags(vmId, ResourceObjectType.UserVm));
         value.setTemplate(getPresetVariableValueTemplate(vmVo.getTemplateId()));
     }
@@ -340,10 +350,7 @@ public class PresetVariableHelper {
         return guestOsVo.getDisplayName();
     }
 
-    protected ComputeOffering getPresetVariableValueComputeOffering(Long computeOfferingId) {
-        ServiceOfferingVO serviceOfferingVo = serviceOfferingDao.findByIdIncludingRemoved(computeOfferingId);
-        validateIfObjectIsNull(serviceOfferingVo, computeOfferingId, "compute offering");
-
+    protected ComputeOffering getPresetVariableValueComputeOffering(ServiceOfferingVO serviceOfferingVo) {
         ComputeOffering computeOffering = new ComputeOffering();
         computeOffering.setId(serviceOfferingVo.getUuid());
         computeOffering.setName(serviceOfferingVo.getName());
@@ -352,6 +359,60 @@ public class PresetVariableHelper {
         return computeOffering;
     }
 
+
+    protected void setPresetVariableValueServiceOfferingAndComputingResources(Value value, int usageType, VMInstanceVO vmVo) {
+        long computeOfferingId = vmVo.getServiceOfferingId();
+        ServiceOfferingVO serviceOfferingVo = serviceOfferingDao.findByIdIncludingRemoved(computeOfferingId);
+        validateIfObjectIsNull(serviceOfferingVo, computeOfferingId, "compute offering");
+        value.setComputeOffering(getPresetVariableValueComputeOffering(serviceOfferingVo));
+
+        if (usageType == QuotaTypes.RUNNING_VM) {
+            value.setComputingResources(getPresetVariableValueComputingResource(vmVo, serviceOfferingVo));
+        }
+    }
+
+    protected ComputingResources getPresetVariableValueComputingResource(VMInstanceVO vmVo, ServiceOfferingVO serviceOfferingVo) {
+        ComputingResources computingResources = new ComputingResources();
+        computingResources.setMemory(serviceOfferingVo.getRamSize());
+        computingResources.setCpuNumber(serviceOfferingVo.getCpu());
+        computingResources.setCpuSpeed(serviceOfferingVo.getSpeed());
+
+        if (serviceOfferingVo.isDynamic()) {
+            List<UserVmDetailVO> details = userVmDetailsDao.listDetails(vmVo.getId());
+
+            computingResources.setMemory(getDetailByName(details, VmDetails.MEMORY.getName(), computingResources.getMemory()));
+            computingResources.setCpuNumber(getDetailByName(details, VmDetails.CPU_NUMBER.getName(), computingResources.getCpuNumber()));
+            computingResources.setCpuSpeed(getDetailByName(details, VmDetails.CPU_SPEED.getName(), computingResources.getCpuSpeed()));
+        }
+
+        warnIfComputingResourceIsNull(VmDetails.MEMORY.getName(), computingResources.getMemory(), vmVo);
+        warnIfComputingResourceIsNull(VmDetails.CPU_NUMBER.getName(), computingResources.getCpuNumber(), vmVo);
+        warnIfComputingResourceIsNull(VmDetails.CPU_SPEED.getName(), computingResources.getCpuSpeed(), vmVo);
+
+        return computingResources;
+    }
+
+    protected void warnIfComputingResourceIsNull(String name, Integer value, VMInstanceVO vmVo) {
+        if (value == null) {
+            logger.warn(String.format("Could not get %s of %s. Injecting \"value.computingResources.[%s]\" as null.", name, vmVo, name));
+        }
+    }
+
+    protected Integer getDetailByName(List<UserVmDetailVO> details, String name, Integer defaultValue) {
+        List<UserVmDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(detailFiltered)) {
+            return defaultValue;
+        }
+
+        UserVmDetailVO detail = detailFiltered.get(0);
+
+        if (detail.getValue() != null) {
+            return Integer.valueOf(detail.getValue());
+        }
+
+        return defaultValue;
+    }
     protected GenericPresetVariable getPresetVariableValueTemplate(Long templateId) {
         VMTemplateVO vmTemplateVo = vmTemplateDao.findByIdIncludingRemoved(templateId);
         validateIfObjectIsNull(vmTemplateVo, templateId, "template");

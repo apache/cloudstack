@@ -38,6 +38,7 @@ public class Value extends GenericPresetVariable {
     private GenericPresetVariable template;
     private GenericPresetVariable diskOffering;
     private Storage storage;
+    private ComputingResources computingResources;
 
     public Host getHost() {
         return host;
@@ -156,4 +157,12 @@ public class Value extends GenericPresetVariable {
         fieldNamesToIncludeInToString.add("storage");
     }
 
+    public ComputingResources getComputingResources() {
+        return computingResources;
+    }
+
+    public void setComputingResources(ComputingResources computingResources) {
+        this.computingResources = computingResources;
+        fieldNamesToIncludeInToString.add("computingResources");
+    }
 }
