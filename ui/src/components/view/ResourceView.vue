@@ -116,12 +116,16 @@ export default {
         }
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setActiveTab()
     }
   },
-  mounted () {
+  created () {
+    const self = this
     this.setActiveTab()
+    window.addEventListener('popstate', function () {
+      self.setActiveTab()
+    })
   },
   methods: {
     onTabChange (key) {

@@ -111,7 +111,8 @@ export default {
       fileList: [],
       defaultRoles: ['Admin', 'DomainAdmin', 'ResourceAdmin', 'User'],
       rulesCsv: '',
-      loading: false
+      loading: false,
+      csvFileType: ['.csv', 'text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']
     }
   },
   beforeCreate () {
@@ -152,7 +153,7 @@ export default {
       }
     },
     beforeUpload (file) {
-      if (file.type !== 'text/csv') {
+      if (!this.csvFileType.includes(file.type)) {
         return false
       }
 
@@ -258,23 +259,24 @@ export default {
       return result
     },
     async checkCsvRulesFile (rule, value) {
-      if (!value || value === '' || value.file === '') {
+      if (!value || value === '') {
         return Promise.resolve()
       } else {
-        if (value.file.type !== 'text/csv') {
+        if (!this.csvFileType.includes(value.type)) {
           return Promise.reject(rule.message)
         }
 
-        this.readCsvFile(value.file).then((validFile) => {
+        try {
+          const validFile = await this.readCsvFile(value)
           if (!validFile) {
             return Promise.reject(rule.message)
           } else {
             return Promise.resolve()
           }
-        }).catch((reason) => {
+        } catch (reason) {
           console.log(reason)
           return Promise.reject(rule.message)
-        })
+        }
       }
     },
     readCsvFile (file) {

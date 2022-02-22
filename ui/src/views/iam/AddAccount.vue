@@ -232,7 +232,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        domainid: this.$store.getters.userInfo.domainid
+      })
       this.rules = reactive({
         roleid: [{ required: true, message: this.$t('message.error.select') }],
         username: [{ required: true, message: this.$t('message.error.required.input') }],

@@ -481,6 +481,10 @@ export default {
     this.initForm()
     this.setCurrentTab()
     this.handleFetchData()
+    const self = this
+    window.addEventListener('popstate', function () {
+      self.setCurrentTab()
+    })
   },
   methods: {
     initForm () {

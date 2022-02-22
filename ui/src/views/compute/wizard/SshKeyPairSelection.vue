@@ -191,11 +191,9 @@ export default {
     },
     onClickRow (record) {
       return {
-        on: {
-          click: () => {
-            this.selectedRowKeys = [record.key]
-            this.$emit('select-ssh-key-pair-item', record.key)
-          }
+        onClick: () => {
+          this.selectedRowKeys = [record.key]
+          this.$emit('select-ssh-key-pair-item', record.key)
         }
       }
     }

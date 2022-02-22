@@ -388,9 +388,13 @@ export default {
     }
   },
   created () {
+    const self = this
     this.dataResource = this.resource
     this.vm = this.dataResource
     this.fetchData()
+    window.addEventListener('popstate', function () {
+      self.setCurrentTab()
+    })
   },
   watch: {
     resource: {

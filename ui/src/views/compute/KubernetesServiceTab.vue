@@ -239,6 +239,10 @@ export default {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
     this.handleFetchData()
+    const self = this
+    window.addEventListener('popstate', function () {
+      self.setCurrentTab()
+    })
   },
   watch: {
     resource: {
@@ -254,7 +258,7 @@ export default {
         }
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setCurrentTab()
     }
   },

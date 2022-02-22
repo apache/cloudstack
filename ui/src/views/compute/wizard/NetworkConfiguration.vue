@@ -260,12 +260,10 @@ export default {
     },
     onClickRow (record, index) {
       return {
-        on: {
-          click: (event) => {
-            if (event.target.tagName.toLowerCase() !== 'input') {
-              this.selectedRowKeys = [record.id]
-              this.$emit('select-default-network-item', record.id)
-            }
+        onClick: (event) => {
+          if (event.target.tagName.toLowerCase() !== 'input') {
+            this.selectedRowKeys = [record.id]
+            this.$emit('select-default-network-item', record.id)
           }
         }
       }

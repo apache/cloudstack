@@ -113,7 +113,7 @@ export default {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
         this.dataResource.forEach(item => {
-          form[item.resourcetype] = item.max | -1
+          form[item.resourcetype] = item.max || -1
         })
         this.form = form
         this.formRef.value.resetFields()

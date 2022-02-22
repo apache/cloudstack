@@ -601,7 +601,7 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).name !== '404'"
-            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : item.param === 'keypair' ? resource.name : resource.id) }">
+            :to="{ name: item.name, query: getRouterQuery(item) }">
             <a-button style="margin-right: 10px">
               <template #icon>
                 <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
@@ -1020,6 +1020,8 @@ export default {
         if (item.param === 'account') {
           query[item.param] = this.resource.name
           query.domainid = this.resource.domainid
+        } else if (item.param === 'keypair') {
+          query[item.param] = this.resource.name
         } else {
           query[item.param] = this.resource.id
         }

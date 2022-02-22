@@ -243,14 +243,12 @@ export default {
     },
     onClickRow (record) {
       return {
-        on: {
-          click: () => {
-            if (record.disabled) {
-              return
-            }
-            this.selectedRowKeys = [record.key]
-            this.$emit('select-compute-item', record.key)
+        onClick: () => {
+          if (record.disabled) {
+            return
           }
+          this.selectedRowKeys = [record.key]
+          this.$emit('select-compute-item', record.key)
         }
       }
     }

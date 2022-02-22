@@ -735,7 +735,6 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
-      startvm: true,
       dynamicscalingenabled: true,
       vm: {
         name: null,
@@ -1597,14 +1596,10 @@ export default {
     },
     updateOverrideDiskOffering (id) {
       if (id === '0') {
-        this.form.setFieldsValue({
-          overridediskofferingid: undefined
-        })
+        this.form.overridediskofferingid = undefined
         return
       }
-      this.form.setFieldsValue({
-        overridediskofferingid: id
-      })
+      this.form.overridediskofferingid = id
     },
     updateMultiDiskOffering (value) {
       this.form.multidiskoffering = value
@@ -2073,6 +2068,7 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.form.startvm = true
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
       this.form.clusterid = undefined
