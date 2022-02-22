@@ -416,7 +416,7 @@ class TestIpv6Network(cloudstackTestCase):
         cmd = listGuestNetworkIpv6Prefixes.listGuestNetworkIpv6PrefixesCmd()
         cmd.zoneid = cls.zone.id
         ipv6_prefixes_response = cls.apiclient.listGuestNetworkIpv6Prefixes(cmd)
-        if isinstance(ipv6_prefixes_response, list) == True and len(ipv6_prefixes_response) > 1:
+        if isinstance(ipv6_prefixes_response, list) == True and len(ipv6_prefixes_response) > 0:
             return ipv6_prefixes_response[0]
         ipv6_guestprefix_service = cls.services["guestip6prefix"]
         cmd = createGuestNetworkIpv6Prefix.createGuestNetworkIpv6PrefixCmd()
@@ -432,7 +432,7 @@ class TestIpv6Network(cloudstackTestCase):
             cls.apiclient,
             zoneid=cls.zone.id
         )
-        if isinstance(list_public_ip_range_response, list) == True and len(list_public_ip_range_response) > 2:
+        if isinstance(list_public_ip_range_response, list) == True and len(list_public_ip_range_response) > 0:
             for ip_range in list_public_ip_range_response:
                 ip_range = ip_range.vlan
                 if ip_range.ip6cidr != None and ip_range.ip6gateway != None:
