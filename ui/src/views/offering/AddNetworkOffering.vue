@@ -342,7 +342,7 @@
           <tooltip-label slot="label" :title="$t('label.egressdefaultpolicy')" :tooltip="apiParams.egressdefaultpolicy.description"/>
           <a-radio-group
             v-decorator="['egressdefaultpolicy', {
-              initialValue: 'allow'
+              initialValue: 'deny'
             }]"
             buttonStyle="solid">
             <a-radio-button value="allow">
