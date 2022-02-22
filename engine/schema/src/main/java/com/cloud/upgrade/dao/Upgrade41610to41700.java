@@ -70,6 +70,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         convertQuotaTariffsToNewParadigm(conn);
+        convertVmResourcesQuotaTypesToRunningVmQuotaType(conn);
     }
 
     @Override
@@ -191,6 +192,42 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
                 LOG.error(message, e);
                 throw new CloudRuntimeException(message, e);
             }
+        }
+    }
+
+    protected void convertVmResourcesQuotaTypesToRunningVmQuotaType(Connection conn) {
+        LOG.info("Converting quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" to \"RUNNING_VM\".");
+
+        String insertSql = String.format("INSERT INTO cloud_usage.quota_tariff (usage_type, usage_name, usage_unit, usage_discriminator, currency_value, effective_on, updated_on,"
+                + " updated_by, uuid, name, description, removed, end_date, activation_rule)\n"
+                + "SELECT  1, 'RUNNING_VM', usage_unit, '', 0, effective_on, updated_on, updated_by, UUID(), name, description, removed, end_date,\n"
+                + "        CASE\n"
+                + "            WHEN usage_type = 15 THEN CONCAT('((value.computingResources.cpuSpeed * value.computingResources.cpuNumber) / 100) * ', currency_value)\n"
+                + "            WHEN usage_type = 16 THEN CONCAT('value.computingResources.cpuNumber * ', currency_value)\n"
+                + "            WHEN usage_type = 17 THEN CONCAT('value.computingResources.memory * ', currency_value)\n"
+                + "        END\n"
+                + "FROM    cloud_usage.quota_tariff \n"
+                + "WHERE   usage_type in (15, 16, 17) \n"
+                + "AND     currency_value > 0.0;");
+
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            String message = String.format("Failed to convert quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" to \"RUNNING_VM\" due to [%s].", e.getMessage());
+            LOG.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
+
+        LOG.info("Disabling unused quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\".");
+
+        String updateSql = String.format("UPDATE cloud_usage.quota_tariff SET removed = now() WHERE usage_type in (15, 16, 17) and removed is null;");
+
+        try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            String message = String.format("Failed disable quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" due to [%s].", e.getMessage());
+            LOG.error(message, e);
+            throw new CloudRuntimeException(message, e);
         }
     }
 }
