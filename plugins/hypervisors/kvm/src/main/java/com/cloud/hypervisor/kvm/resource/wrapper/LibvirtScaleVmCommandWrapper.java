@@ -39,8 +39,10 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
 
         long newMemory = ByteScaleUtils.bytesToKib(vmSpec.getMaxRam());
         int newVcpus = vmSpec.getCpus();
+        int newCpuSpeed = vmSpec.getMinSpeed() != null ? vmSpec.getMinSpeed() : vmSpec.getSpeed();
+        int newCpuShares = newVcpus * newCpuSpeed;
         String vmDefinition = vmSpec.toString();
-        String scalingDetails = String.format("%s memory to [%s KiB] and CPU cores to [%s]", vmDefinition, newMemory, newVcpus);
+        String scalingDetails = String.format("%s memory to [%s KiB], CPU cores to [%s] and cpu_shares to [%s]", vmDefinition, newMemory, newVcpus, newCpuShares);
 
         try {
             LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -51,6 +53,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
             logger.debug(String.format("Scaling %s.", scalingDetails));
             scaleMemory(dm, newMemory, vmDefinition);
             scaleVcpus(dm, newVcpus, vmDefinition);
+            updateCpuShares(dm, newCpuShares);
 
             return new ScaleVmAnswer(command, true, String.format("Successfully scaled %s.", scalingDetails));
         } catch (LibvirtException | CloudRuntimeException e) {
@@ -65,6 +68,23 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
                     logger.warn(String.format("Error trying to close libvirt connection [%s]", ex.getMessage()), ex);
                 }
             }
+        }
+    }
+
+    /**
+     * Set the cpu_shares (priority) of the running VM. This is necessary because the priority is only calculated when deploying the VM.
+     * When the number of cores and/or speed of the CPU is changed the cpu_shares is only updated if the VM is restarted or manually, using the command schedinfo.
+     * To correct this behaviour when live scaling, this command changes the cpu_shares of a running VM.
+     * @param dm domain of the VM.
+     * @param newCpuShares new priority of the running VM.
+     * @throws org.libvirt.LibvirtException
+     **/
+    protected void updateCpuShares(Domain dm, int newCpuShares) throws LibvirtException {
+        int oldCpuShares = LibvirtComputingResource.getCpuShares(dm);
+
+        if (oldCpuShares < newCpuShares) {
+            LibvirtComputingResource.setCpuShares(dm, newCpuShares);
+            logger.info(String.format("Successfully increased cpu_shares of VM [%s] from [%s] to [%s].", dm.getName(), oldCpuShares, newCpuShares));
         }
     }
 
