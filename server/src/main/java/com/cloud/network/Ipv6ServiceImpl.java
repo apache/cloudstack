@@ -168,12 +168,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
         Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
         int total = 0;
-        if (splits.hasNext()) {
+        while(splits.hasNext()) {
+            total++;
             splits.next();
-            while(splits.hasNext()) {
-                total++;
-                splits.next();
-            }
         }
         return new Pair<>(usedSubnets.size(), total);
     }
@@ -205,9 +202,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 String lastUsedSubnet = last != null ? last.getSubnet() : null;
                 final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
                 Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
-                if (splits.hasNext()) {
-                    splits.next();
-                }
                 while (splits.hasNext()) {
                     IPv6Network i = splits.next();
                     if (lastUsedSubnet == null) {

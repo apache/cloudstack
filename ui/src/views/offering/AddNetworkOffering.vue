@@ -548,7 +548,7 @@ export default {
       var params = { name: 'network.offering.ipv6.enabled' }
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-        this.ipv6NetworkOfferingEnabled = value === true
+        this.ipv6NetworkOfferingEnabled = value === 'true'
       })
     },
     fetchZoneData () {

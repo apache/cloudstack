@@ -5751,12 +5751,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
 
-        if (!GuestType.Isolated.equals(guestType) && internetProtocol != null) {
-            throw new InvalidParameterValueException(String.format("%s is supported only for %s guest type", ApiConstants.INTERNET_PROTOCOL, GuestType.Isolated));
-        }
+        if (internetProtocol != null) {
+            if (!GuestType.Isolated.equals(guestType)) {
+                throw new InvalidParameterValueException(String.format("%s is supported only for %s guest type", ApiConstants.INTERNET_PROTOCOL, GuestType.Isolated));
+            }
 
-        if (!Ipv6Service.Ipv6NetworkOfferingCreationEnabled.value() && !NetworkOffering.InternetProtocol.IPv4.equals(internetProtocol)) {
-            throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported network offering", Ipv6Service.Ipv6NetworkOfferingCreationEnabled.key()));
+            if (!Ipv6Service.Ipv6NetworkOfferingCreationEnabled.value() && !NetworkOffering.InternetProtocol.IPv4.equals(internetProtocol)) {
+                throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported network offering", Ipv6Service.Ipv6NetworkOfferingCreationEnabled.key()));
+            }
         }
 
         // Verify availability
