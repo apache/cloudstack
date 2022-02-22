@@ -83,7 +83,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -155,6 +157,9 @@ public class PresetVariableHelperTest {
     @Mock
     VolumeDao volumeDaoMock;
 
+    @Mock
+    UserVmDetailsDao userVmDetailsDaoMock;
+
     @InjectMocks
     PresetVariableHelper presetVariableHelperSpy = Mockito.spy(PresetVariableHelper.class);
 
@@ -166,6 +171,9 @@ public class PresetVariableHelperTest {
 
     @Mock
     VMInstanceVO vmInstanceVoMock;
+
+    @Mock
+    ServiceOfferingVO serviceOfferingVoMock;
 
     List<Integer> runningAndAllocatedVmQuotaTypes = Arrays.asList(QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM);
     List<Integer> templateAndIsoQuotaTypes = Arrays.asList(QuotaTypes.TEMPLATE, QuotaTypes.ISO);
@@ -200,7 +208,16 @@ public class PresetVariableHelperTest {
         value.setSnapshotType(Snapshot.Type.HOURLY);
         value.setTag("tag_test");
         value.setVmSnapshotType(VMSnapshot.Type.Disk);
+        value.setComputingResources(getComputingResourcesForTests());
         return value;
+    }
+
+    private ComputingResources getComputingResourcesForTests() {
+        ComputingResources computingResources = new ComputingResources();
+        computingResources.setCpuNumber(1);
+        computingResources.setCpuSpeed(1000);
+        computingResources.setMemory(512);
+        return computingResources;
     }
 
     private ComputeOffering getComputeOfferingForTests() {
@@ -238,6 +255,14 @@ public class PresetVariableHelperTest {
         }
 
         return quotaTypesMap.entrySet();
+    }
+
+    private List<UserVmDetailVO> getVmDetailsForTests() {
+        List<UserVmDetailVO> details = new LinkedList<>();
+        details.add(new UserVmDetailVO(1l, "test_with_value", "277", false));
+        details.add(new UserVmDetailVO(1l, "test_with_invalid_value", "invalid", false));
+        details.add(new UserVmDetailVO(1l, "test_with_null", null, false));
+        return details;
     }
 
     private void assertPresetVariableIdAndName(GenericPresetVariable expected, GenericPresetVariable result) {
@@ -462,7 +487,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getId()).when(vmInstanceVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(vmInstanceVoMock).getName();
         Mockito.doReturn(expected.getOsName()).when(presetVariableHelperSpy).getPresetVariableValueOsName(Mockito.anyLong());
-        Mockito.doReturn(expected.getComputeOffering()).when(presetVariableHelperSpy).getPresetVariableValueComputeOffering(Mockito.anyLong());
+        Mockito.doNothing().when(presetVariableHelperSpy).setPresetVariableValueServiceOfferingAndComputingResources(Mockito.any(), Mockito.anyInt(), Mockito.any());
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
         Mockito.doReturn(expected.getTemplate()).when(presetVariableHelperSpy).getPresetVariableValueTemplate(Mockito.anyLong());
 
@@ -474,11 +499,10 @@ public class PresetVariableHelperTest {
 
             assertPresetVariableIdAndName(expected, result);
             Assert.assertEquals(expected.getOsName(), result.getOsName());
-            Assert.assertEquals(expected.getComputeOffering(), result.getComputeOffering());
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expected.getTemplate(), result.getTemplate());
 
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "osName", "computeOffering", "tags", "template"), result);
+            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "osName", "tags", "template"), result);
         });
 
         Mockito.verify(presetVariableHelperSpy, Mockito.times(runningAndAllocatedVmQuotaTypes.size())).getPresetVariableValueResourceTags(Mockito.anyLong(),
@@ -546,15 +570,11 @@ public class PresetVariableHelperTest {
     @Test
     public void getPresetVariableValueComputeOfferingTestSetFieldsAndReturnObject() {
         ComputeOffering expected = getComputeOfferingForTests();
-        ServiceOfferingVO serviceOfferingVoMock = Mockito.mock(ServiceOfferingVO.class);
-
-        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
-        mockMethodValidateIfObjectIsNull();
         Mockito.doReturn(expected.getId()).when(serviceOfferingVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(serviceOfferingVoMock).getName();
         Mockito.doReturn(expected.isCustomized()).when(serviceOfferingVoMock).isDynamic();
 
-        ComputeOffering result = presetVariableHelperSpy.getPresetVariableValueComputeOffering(1l);
+        ComputeOffering result = presetVariableHelperSpy.getPresetVariableValueComputeOffering(serviceOfferingVoMock);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.isCustomized(), result.isCustomized());
@@ -979,5 +999,91 @@ public class PresetVariableHelperTest {
     @Test
     public void validateIfObjectIsNullTestObjectIsNotNullDoNothing() {
         presetVariableHelperSpy.validateIfObjectIsNull(new Object(), null, null);
+    }
+
+    @Test
+    public void setPresetVariableValueServiceOfferingAndComputingResourcesTestSetComputingResourcesOnlyToRunningVm() {
+        Value expected = getValueForTests();
+
+        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        mockMethodValidateIfObjectIsNull();
+
+        Mockito.doReturn(expected.getComputeOffering()).when(presetVariableHelperSpy).getPresetVariableValueComputeOffering(Mockito.any());
+        Mockito.doReturn(expected.getComputingResources()).when(presetVariableHelperSpy).getPresetVariableValueComputingResource(Mockito.any(), Mockito.any());
+
+        QuotaTypes.listQuotaTypes().entrySet().forEach(type -> {
+            Integer typeInt = type.getKey();
+
+            Value result = new Value();
+            presetVariableHelperSpy.setPresetVariableValueServiceOfferingAndComputingResources(result, typeInt, vmInstanceVoMock);
+
+            Assert.assertEquals(expected.getComputeOffering(), result.getComputeOffering());
+
+            if (typeInt == QuotaTypes.RUNNING_VM) {
+                Assert.assertEquals(expected.getComputingResources(), result.getComputingResources());
+                validateFieldNamesToIncludeInToString(Arrays.asList("computeOffering", "computingResources"), result);
+            } else {
+                validateFieldNamesToIncludeInToString(Arrays.asList("computeOffering"), result);
+            }
+        });
+    }
+
+    @Test
+    public void getDetailByNameTestKeyDoesNotExistsReturnsDefaultValue() {
+        int expected = 874;
+        int result = presetVariableHelperSpy.getDetailByName(getVmDetailsForTests(), "detail_that_does_not_exist", expected);
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getDetailByNameTestValueIsNullReturnsDefaultValue() {
+        int expected = 749;
+        int result = presetVariableHelperSpy.getDetailByName(getVmDetailsForTests(), "test_with_null", expected);
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void getDetailByNameTestValueIsInvalidThrowsNumberFormatException() {
+        presetVariableHelperSpy.getDetailByName(getVmDetailsForTests(), "test_with_invalid_value", 0);
+    }
+
+    @Test
+    public void getDetailByNameTestReturnsValue() {
+        int expected = Integer.valueOf(getVmDetailsForTests().get(0).getValue());
+        int result = presetVariableHelperSpy.getDetailByName(getVmDetailsForTests(), "test_with_value", expected);
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getPresetVariableValueComputingResourceTestServiceOfferingIsNotDynamicReturnsServiceOfferingValues() {
+        ComputingResources expected = getComputingResourcesForTests();
+
+        Mockito.doReturn(expected.getCpuNumber()).when(serviceOfferingVoMock).getCpu();
+        Mockito.doReturn(expected.getCpuSpeed()).when(serviceOfferingVoMock).getSpeed();
+        Mockito.doReturn(expected.getMemory()).when(serviceOfferingVoMock).getRamSize();
+        Mockito.doReturn(false).when(serviceOfferingVoMock).isDynamic();
+
+        ComputingResources result = presetVariableHelperSpy.getPresetVariableValueComputingResource(vmInstanceVoMock, serviceOfferingVoMock);
+
+        Assert.assertEquals(expected.toString(), result.toString());
+        Mockito.verify(userVmDetailsDaoMock, Mockito.never()).listDetails(Mockito.anyLong());
+    }
+
+    @Test
+    public void getPresetVariableValueComputingResourceTestServiceOfferingIsDynamicReturnsVmDetails() {
+        ComputingResources expected = getComputingResourcesForTests();
+
+        Mockito.doReturn(1).when(serviceOfferingVoMock).getCpu();
+        Mockito.doReturn(2).when(serviceOfferingVoMock).getSpeed();
+        Mockito.doReturn(3).when(serviceOfferingVoMock).getRamSize();
+        Mockito.doReturn(true).when(serviceOfferingVoMock).isDynamic();
+
+        Mockito.doReturn(expected.getMemory(), expected.getCpuNumber(), expected.getCpuSpeed()).when(presetVariableHelperSpy).getDetailByName(Mockito.anyList(),
+                Mockito.anyString(), Mockito.anyInt());
+
+        ComputingResources result = presetVariableHelperSpy.getPresetVariableValueComputingResource(vmInstanceVoMock, serviceOfferingVoMock);
+
+        Assert.assertEquals(expected.toString(), result.toString());
+        Mockito.verify(userVmDetailsDaoMock).listDetails(Mockito.anyLong());
     }
 }

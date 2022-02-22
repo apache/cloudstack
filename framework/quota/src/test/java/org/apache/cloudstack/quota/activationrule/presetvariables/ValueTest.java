@@ -115,4 +115,11 @@ public class ValueTest {
         variable.setStorage(null);
         Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("storage"));
     }
+
+    @Test
+    public void setComputingResourcesTestAddFieldComputingResourcesToCollection() {
+        Value variable = new Value();
+        variable.setComputingResources(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("computingResources"));
+    }
 }
