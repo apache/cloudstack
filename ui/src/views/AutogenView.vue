@@ -82,7 +82,7 @@
                     slot="overlay" >
                     <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
                       <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-                      {{ $t('label.' + getColumnKey(column)) }}
+                      {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
                     </a-menu-item>
                   </a-menu>
                 </a-dropdown>
@@ -923,18 +923,6 @@ export default {
           this.columns.map(col => {
             if (col.title === 'Account') {
               col.title = this.$t('label.project.owner')
-            }
-          })
-        }
-
-        if (this.apiName === 'listAnnotations') {
-          this.columns.map(col => {
-            if (col.title === 'label.entityid') {
-              col.title = this.$t('label.annotation.entity')
-            } else if (col.title === 'label.entitytype') {
-              col.title = this.$t('label.annotation.entity.type')
-            } else if (col.title === 'label.adminsonly') {
-              col.title = this.$t('label.annotation.admins.only')
             }
           })
         }
