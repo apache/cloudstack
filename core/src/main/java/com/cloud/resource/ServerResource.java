@@ -28,8 +28,6 @@ import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
-import java.io.File;
-
 /**
  * ServerResource is a generic container to execute commands sent
  */
@@ -39,7 +37,7 @@ public interface ServerResource extends Manager {
     String[] certificateFiles = new String[] {KeyStoreUtils.CERT_FILENAME, KeyStoreUtils.CACERT_FILENAME, KeyStoreUtils.PKEY_FILENAME};
 
     String SSHKEYSPATH = "/root/.ssh";
-    String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
+    String SSHPRVKEYPATH = SSHKEYSPATH +"/id_rsa.cloud";
 
     /**
      * @return Host.Type type of the computing server we have.

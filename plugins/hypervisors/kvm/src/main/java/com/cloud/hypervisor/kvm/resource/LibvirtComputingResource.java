@@ -332,7 +332,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _hostDistro;
     protected String _networkDirectSourceMode;
     protected String _networkDirectDevice;
-    protected String _sysvmISOPath;
     protected String _privNwName;
     protected String _privBridgeName;
     protected String _linkLocalBridgeName;
@@ -2887,7 +2886,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
             final DiskDef iso = new DiskDef();
-            iso.defISODisk(_sysvmISOPath);
             if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
                 iso.setBusType(DiskDef.DiskBus.SCSI);
             }

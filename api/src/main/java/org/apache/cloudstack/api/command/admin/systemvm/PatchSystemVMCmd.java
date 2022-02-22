@@ -35,10 +35,10 @@ import org.apache.log4j.Logger;
 
 @APICommand(name = PatchSystemVMCmd.APINAME, description = "Attempts to live patch systemVMs - CPVM, SSVM ",
         responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, authorized = { RoleType.Admin })
+        responseHasSensitiveInfo = false, authorized = { RoleType.Admin }, since = "4.17.0")
 public class PatchSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PatchSystemVMCmd.class.getName());
-    public static final String APINAME = "PatchSystemVM";
+    public static final String APINAME = "patchSystemVm";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
