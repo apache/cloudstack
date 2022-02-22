@@ -21,7 +21,7 @@
       class="form-content"
       :form="form"
       @submit="handleSubmit"
-      v-ctrl-enter="handleSubmit">
+      @keyup.ctrl.enter="handleSubmit">
       <a-form-item>
         <a-radio-group
           v-decorator="['zoneType', {

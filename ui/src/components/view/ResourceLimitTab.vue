@@ -21,7 +21,7 @@
       :form="form"
       @submit="handleSubmit"
       layout="vertical"
-      v-ctrl-enter="handleSubmit"
+      @keyup.ctrl.enter="handleSubmit"
     >
       <a-form-item
         v-for="(item, index) in dataResource"

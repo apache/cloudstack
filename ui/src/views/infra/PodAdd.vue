@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form v-ctrl-enter="handleSubmit" :form="form" layout="vertical" class="form">
+    <a-form @keyup.ctrl.enter="handleSubmit" :form="form" layout="vertical" class="form">
 
       <a-form-item class="form__item" :label="$t('label.zone')">
         <a-select

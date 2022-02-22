@@ -65,7 +65,7 @@
       :maskClosable="false"
       :footer="null"
       @cancel="modal = false"
-      v-ctrl-enter="handleSubmit">
+      @keyup.ctrl.enter="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
           :form="form"

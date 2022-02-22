@@ -20,7 +20,7 @@
     <a-spin :spinning="loading" v-if="!isSubmitted">
       <p v-html="$t('message.desc.create.ssh.key.pair')"></p>
       <a-form
-        v-ctrl-enter="handleSubmit"
+        @keyup.ctrl.enter="handleSubmit"
         :form="form"
         @submit="handleSubmit"
         layout="vertical">

@@ -24,7 +24,7 @@
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
-        v-ctrl-enter="handleSubmit"
+        @keyup.ctrl.enter="handleSubmit"
         :form="form"
         @submit="handleSubmit"
         layout="vertical">

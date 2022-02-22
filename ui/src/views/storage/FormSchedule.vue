@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout" v-ctrl-enter="handleSubmit">
+    <div class="form-layout" @keyup.ctrl.enter="handleSubmit">
       <a-alert type="warning">
         <span slot="message" v-html="$t('label.header.volume.snapshot')" />
       </a-alert>

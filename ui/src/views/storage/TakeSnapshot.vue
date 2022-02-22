@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="take-snapshot" v-ctrl-enter="handleSubmit">
+  <div class="take-snapshot" @keyup.ctrl.enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
         <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />

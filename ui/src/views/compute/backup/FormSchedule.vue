@@ -21,7 +21,7 @@
       <label>
         {{ $t('label.header.backup.schedule') }}
       </label>
-      <div class="form" v-ctrl-enter="handleSubmit">
+      <div class="form" @keyup.ctrl.enter="handleSubmit">
         <a-form
           :form="form"
           layout="vertical"

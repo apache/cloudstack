@@ -26,7 +26,7 @@
       :footer="null"
       @cancel="parentCloseAction"
       style="top: 20px;"
-      v-ctrl-enter="handleSubmit"
+      @keyup.ctrl.enter="handleSubmit"
     >
       <span slot="title">
         {{ $t(action.label) }}

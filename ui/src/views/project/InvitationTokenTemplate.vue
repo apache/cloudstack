@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="row-project-invitation" v-ctrl-enter="handleSubmit">
+  <div class="row-project-invitation" @keyup.ctrl.enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"

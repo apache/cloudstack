@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div v-ctrl-enter="handleSubmit">
+    <div @keyup.ctrl.enter="handleSubmit">
       <div class="vm-modal__header">
         <span style="min-width: 200px;">{{ $t('label.name') }}</span>
         <span>{{ $t('label.state') }}</span>

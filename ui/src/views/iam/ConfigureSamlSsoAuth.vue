@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout" @keyup.ctrl.enter="handleSubmit">
     <a-form :form="form" @submit="handleSubmit" layout="vertical" :loading="loading">
       <a-form-item :label="$t('label.samlenable')">
         <a-switch

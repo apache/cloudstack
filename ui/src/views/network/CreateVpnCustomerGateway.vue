@@ -16,7 +16,7 @@
 // under the License.
 <template>
   <div>
-    <a-form class="form-layout" :form="form" layout="vertical" v-ctrl-enter="handleSubmit">
+    <a-form class="form-layout" :form="form" layout="vertical" @keyup.ctrl.enter="handleSubmit">
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input

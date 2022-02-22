@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div :class="['form-layout', { 'form-list': selectedRowKeys.length > 0 }]" v-ctrl-enter="handleSubmit">
+  <div :class="['form-layout', { 'form-list': selectedRowKeys.length > 0 }]" @keyup.ctrl.enter="handleSubmit">
     <div v-if="selectedRowKeys.length === 0">
       <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
       <a-spin :spinning="loading">

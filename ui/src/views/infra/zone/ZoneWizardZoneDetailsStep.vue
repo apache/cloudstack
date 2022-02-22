@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div v-ctrl-enter="handleSubmit">
+  <div @keyup.ctrl.enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 24px;"

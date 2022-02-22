@@ -21,7 +21,7 @@
       class="form-layout"
       layout="vertical"
       :form="form"
-      v-ctrl-enter="handleSubmit"
+      @keyup.ctrl.enter="handleSubmit"
       @submit="handleSubmit">
       <a-alert style="margin-bottom: 5px" type="warning" show-icon>
         <span slot="message" v-html="$t('message.restart.vm.to.update.settings')" />

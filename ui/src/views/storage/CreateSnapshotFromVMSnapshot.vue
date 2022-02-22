@@ -21,7 +21,7 @@
       class="form"
       :form="form"
       @submit="handleSubmit"
-      v-ctrl-enter="handleSubmit"
+      @keyup.ctrl.enter="handleSubmit"
       layout="vertical">
       <a-form-item :label="$t('label.name')">
         <a-input

@@ -67,7 +67,7 @@
         :maskClosable="false"
         :footer="null"
         @cancel="onCloseAction"
-        v-ctrl-enter="handleSubmit"
+        @keyup.ctrl.enter="handleSubmit"
         style="top: 20px;"
         centered
       >

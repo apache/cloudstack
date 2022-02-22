@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout" @keyup.ctrl.enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
