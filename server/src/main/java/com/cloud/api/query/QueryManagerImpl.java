@@ -3891,7 +3891,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 .map(TemplateJoinVO::getDomainId)
                 .distinct()
                 .filter(domainId -> domainId != caller.getDomainId())
-                .filter(Predicate.not(QueryService.SharePublicTemplates::valueIn))
+                .filter(Predicate.not(QueryService.SharePublicTemplatesWithOtherDomains::valueIn))
                 .collect(Collectors.toList());
 
         return templates.stream()
@@ -4381,6 +4381,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
-                AllowUserViewAllDomainAccounts, SharePublicTemplates};
+                AllowUserViewAllDomainAccounts, SharePublicTemplatesWithOtherDomains};
     }
 }
