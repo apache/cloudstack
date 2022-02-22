@@ -527,7 +527,7 @@ export default {
         isolation: 'dedicated',
         conservemode: true,
         availability: 'optional',
-        egressdefaultpolicy: 'allow',
+        egressdefaultpolicy: 'deny',
         ispublic: this.isPublic
       })
       this.rules = reactive({

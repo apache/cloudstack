@@ -16,6 +16,7 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
 
 export default {
   name: 'domain',
@@ -55,7 +56,7 @@ export default {
     {
       name: 'settings',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
+      show: () => { return 'listConfigurations' in store.getters.apis }
     }, {
       name: 'comments',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))

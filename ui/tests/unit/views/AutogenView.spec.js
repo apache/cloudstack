@@ -58,19 +58,24 @@ const state = {
     apis: mockData.apis,
     info: mockData.info,
     defaultListViewPageSize: 20,
-    headerNotices: []
+    headerNotices: [],
+    customColumns: []
   }
 }
 
 const mutations = {
   SET_HEADER_NOTICES: (state, jobsJsonArray) => {
     state.user.headerNotices = jobsJsonArray
+  },
+  SET_CUSTOM_COLUMNS: (state, customColumns) => {
+    state.user.customColumns = customColumns
   }
 }
 
 const actions = {
   SetProject: jest.fn(({ commit }, project) => {}),
-  ToggleTheme: jest.fn(({ commit }, theme) => {})
+  ToggleTheme: jest.fn(({ commit }, theme) => {}),
+  SetCustomColumns: jest.fn(({ commit }, columns) => {})
 }
 
 mockData.routes.push({

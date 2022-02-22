@@ -42,7 +42,8 @@ const mockStore = {
         apis: () => mockStore.state.user.apis,
         userInfo: () => mockStore.state.user.info,
         defaultListViewPageSize: () => mockStore.state.user.defaultListViewPageSize,
-        headerNotices: () => mockStore.state.user.headerNotices
+        headerNotices: () => mockStore.state.user.headerNotices,
+        customColumns: () => mockStore.state.user.customColumns
       },
       mutations,
       actions
