@@ -264,6 +264,10 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "the total number of network traffic bytes sent")
     private Long bytesSent;
 
+    @SerializedName((ApiConstants.EGRESS_DEFAULT_POLICY))
+    @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
+    private Boolean egressDefaultPolicy;
+
     @SerializedName(ApiConstants.INTERNET_PROTOCOL)
     @Param(description = "The internet protocol of network offering")
     private String internetProtocol;
@@ -542,6 +546,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setBytesSent(final Long bytesSent) {
         this.bytesSent = bytesSent;
+    }
+
+    public boolean getEgressDefaultPolicy() {
+        return egressDefaultPolicy;
+    }
+
+    public void setEgressDefaultPolicy(Boolean egressDefaultPolicy) {
+        this.egressDefaultPolicy = egressDefaultPolicy;
     }
 
     public void setInternetProtocol(String internetProtocol) {
