@@ -77,7 +77,7 @@ public class ListProjectRolesCmd extends BaseListCmd {
         if (getProjectId() != null && getProjectRoleId() != null) {
             projectRoles = Collections.singletonList(projRoleService.findProjectRole(getProjectRoleId(), getProjectId()));
         } else if (StringUtils.isNotBlank(getRoleName())) {
-            projectRoles = projRoleService.findProjectRolesByName(getProjectId(), getRoleName(), getKeyword());
+            projectRoles = projRoleService.findProjectRolesByName(getProjectId(), getRoleName());
         } else {
             projectRoles = projRoleService.findProjectRoles(getProjectId(), getKeyword());
         }

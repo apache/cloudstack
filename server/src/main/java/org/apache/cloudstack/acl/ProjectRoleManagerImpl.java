@@ -238,10 +238,10 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     }
 
     @Override
-    public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName, String keyword) {
+    public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName) {
         List<? extends ProjectRole> roles = null;
         if (StringUtils.isNotBlank(roleName)) {
-            roles = projRoleDao.findByName(roleName, projectId, keyword);
+            roles = projRoleDao.findByName(roleName, projectId);
         }
         return ListUtils.toListOfInterface(roles);
     }

@@ -39,18 +39,13 @@ public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  imp
 
     }
     @Override
-    public List<ProjectRoleVO> findByName(String name, Long projectId, String keyword) {
+    public List<ProjectRoleVO> findByName(String name, Long projectId) {
         SearchCriteria<ProjectRoleVO> sc = ProjectRoleSearch.create();
         if (StringUtils.isNotEmpty(name)) {
             sc.setParameters("name", name);
         }
         if (projectId != null) {
             sc.setParameters("project_id", projectId);
-        }
-        if (StringUtils.isNotEmpty(keyword)) {
-            SearchCriteria<ProjectRoleVO> ssc = createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
         return listBy(sc);

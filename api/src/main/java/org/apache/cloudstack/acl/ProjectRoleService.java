@@ -48,7 +48,7 @@ public interface ProjectRoleService {
      * @param roleName name/ part of a project role name
      * @return List of Project roles matching the given name in the project
      */
-    List<ProjectRole> findProjectRolesByName(Long projectId, String roleName, String keyword);
+    List<ProjectRole> findProjectRolesByName(Long projectId, String roleName);
 
     /**
      *
