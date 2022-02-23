@@ -2193,7 +2193,7 @@
 "label.templatetype": "Template Type",
 "label.tftp.dir": "TFTP Directory",
 "label.tftpdir": "Tftp root directory",
-"label.theme.alert": "The settings panel is only visible in the development environment, please save for the changes to take effect.",
+"label.theme.alert": "Please save for the changes to take effect.",
 "label.theme.color": "Theme Color",
 "label.theme.cyan": "Cyan",
 "label.theme.dark": "Dark Style",
