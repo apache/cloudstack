@@ -73,8 +73,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
 
     /**
      * Sets the cpu_shares (priority) of the running VM. This is necessary because the priority is only calculated when deploying the VM.
-     * When the number of cores and/or speed of the CPU is changed the cpu_shares is only updated if the VM is restarted or manually, using the command schedinfo.
-     * To correct this behaviour when live scaling, this command changes the cpu_shares of a running VM.
+     * To prevent the cpu_shares to be manually updated by using the command virsh schedinfo or restarting the VM. This method updates the cpu_shares of a running VM on the fly.
      * @param dm domain of the VM.
      * @param newCpuShares new priority of the running VM.
      * @throws org.libvirt.LibvirtException
