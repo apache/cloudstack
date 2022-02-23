@@ -2932,10 +2932,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
                 }
-            } else { // domain + all ancestors
-                sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
             }
-
         }
 
         if (volumeId != null && storagePoolId != null) {

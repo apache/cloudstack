@@ -146,6 +146,7 @@ export default {
         case 'maintenance':
         case 'pending':
         case 'unsecure':
+        case 'warning':
           status = 'warning'
           break
       }

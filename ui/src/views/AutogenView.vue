@@ -80,7 +80,7 @@
                   </a-select>
                 </a-tooltip>
                 <span style="margin-left: 8px">
-                  <a-dropdown :trigger="['click']" v-if="!$store.getters.metrics && !dataView" :visible="customColumnsDropdownVisible" @visibleChange="(visible) => customColumnsDropdownVisible = visible">
+                  <a-dropdown :trigger="['click']" v-if="!dataView && !$store.getters.metrics" :visible="customColumnsDropdownVisible" @visibleChange="(visible) => customColumnsDropdownVisible = visible">
                     <a-button>
                       {{ $t('label.columns') }} <down-outlined />
                     </a-button>

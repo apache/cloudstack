@@ -41,6 +41,7 @@ import {
   CheckCircleOutlined,
   CheckCircleTwoTone,
   CheckOutlined,
+  CheckSquareOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   CloseCircleTwoTone,
@@ -179,6 +180,7 @@ export default {
     app.component('CheckCircleOutlined', CheckCircleOutlined)
     app.component('CheckCircleTwoTone', CheckCircleTwoTone)
     app.component('CheckOutlined', CheckOutlined)
+    app.component('CheckSquareOutlined', CheckSquareOutlined)
     app.component('ClockCircleOutlined', ClockCircleOutlined)
     app.component('CloseCircleOutlined', CloseCircleOutlined)
     app.component('CloseCircleTwoTone', CloseCircleTwoTone)
