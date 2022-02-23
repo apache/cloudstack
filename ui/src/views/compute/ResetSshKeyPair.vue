@@ -104,6 +104,9 @@ export default {
   },
   created () {
     this.fetchData()
+    if (this.resource.keypairs) {
+      this.selectedRowKeys = this.resource.keypairs.split(',')
+    }
   },
   methods: {
     fetchData () {
