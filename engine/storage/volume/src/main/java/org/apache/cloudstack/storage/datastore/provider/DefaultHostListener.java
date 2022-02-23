@@ -211,7 +211,7 @@ public class DefaultHostListener implements HypervisorHostListener {
             }
             if (!answer.getResult()) {
                 String msg = String.format("Unable to cleanup persistent network resources from network %d on the host %d", persistentNetworkVO.getId(), hostId);
-               s_logger.error(msg);
+                s_logger.error(msg);
             }
         }
         return true;
@@ -235,7 +235,6 @@ public class DefaultHostListener implements HypervisorHostListener {
 
     private void setupPersistentNetwork(HostVO host) {
         List<NetworkVO> allPersistentNetworks = networkDao.getAllPersistentNetworksFromZone(host.getDataCenterId());
-
         for (NetworkVO networkVO : allPersistentNetworks) {
             NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
 

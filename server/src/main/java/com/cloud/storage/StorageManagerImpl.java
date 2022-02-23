@@ -1121,15 +1121,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException {
+    public void enableHost(long hostId) {
         List<DataStoreProvider> providers = _dataStoreProviderMgr.getProviders();
-
         if (providers != null) {
             for (DataStoreProvider provider : providers) {
                 if (provider instanceof PrimaryDataStoreProvider) {
                     try {
                         HypervisorHostListener hypervisorHostListener = provider.getHostListener();
-
                         if (hypervisorHostListener != null) {
                             hypervisorHostListener.hostEnabled(hostId);
                         }
