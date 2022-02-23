@@ -377,7 +377,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         List<String> keypairs = new ArrayList<String>();
-        keypairs.add(kubernetesCluster.getKeyPair());
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,

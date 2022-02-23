@@ -214,7 +214,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         List<String> keypairs = new ArrayList<String>();
-        keypairs.add(kubernetesCluster.getKeyPair());
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
         controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
@@ -276,7 +278,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         List<String> keypairs = new ArrayList<String>();
-        keypairs.add(kubernetesCluster.getKeyPair());
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
         additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
