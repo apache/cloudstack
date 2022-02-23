@@ -2150,7 +2150,7 @@
 "message.generate.keys": "Si us plau confirmeu que voleu generar noves claus per aquest usuari.",
 "message.gslb.delete.confirm": "Please confirm you want to delete this GSLB",
 "message.gslb.lb.remove.confirm": "Please confirm you want to remove load balancing from GSLB",
-"message.guest.traffic.in.advanced.zone": "Guest network traffic is communication between end-user virtual machines. Specify a range of VLAN IDs to carry guest traffic for each physical network.",
+"message.guest.traffic.in.advanced.zone": "Guest network traffic is communication between end-user virtual machines. Specify a range of VLAN IDs or VXLAN network identifiers (VNIs) to carry guest traffic for each physical network.",
 "message.guest.traffic.in.basic.zone": "Guest network traffic is communication between end-user virtual machines. Specify a range of IP addresses that CloudStack can assign to guest VMs. Make sure this range does not overlap the reserved system IP range.",
 "message.host.dedicated": "Host Dedicated",
 "message.host.dedication.released": "Host dedication released",
