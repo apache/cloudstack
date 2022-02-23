@@ -173,17 +173,19 @@ public class KVMStoragePoolManager {
         if (volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE) != null) {
             String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
             StorageAdaptor adaptor = _storageMapper.get(poolType);
-            if (adaptor == null) {
-                return false;
+            if (adaptor != null) {
+                s_logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
+                return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
             }
 
-            return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
+            s_logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
         }
 
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
+                s_logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
                 return true;
             }
         }
@@ -196,6 +198,7 @@ public class KVMStoragePoolManager {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDiskByPath(path)) {
+                s_logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
                 return true;
             }
         }
