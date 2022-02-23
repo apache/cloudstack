@@ -20,7 +20,7 @@
   <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
     <a-spin :spinning="loadingAnnotations">
       <div class="title">
-        {{ $t('label.comments') }} ({{ this.itemCount }})
+        {{ $t('label.comments') }} ({{ itemCount }})
       </div>
       <a-divider :dashed="true" />
       <a-list
@@ -41,7 +41,7 @@
               </template>
               <template #actions>
                 <a-popconfirm
-                  :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.annotation.admins.only')) + ' ?'"
+                  :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.adminsonly')) + ' ?'"
                   v-if="['Admin'].includes($store.getters.userInfo.roletype)"
                   key="visibility"
                   @confirm="updateVisibility(item)"
@@ -49,10 +49,11 @@
                   :cancelText="$t('label.no')" >
                   <eye-outlined
                     :style="[{
-                      paddingRight: '5px',
                       color: item.adminsonly ? $config.theme['@primary-color'] : $config.theme['@disabled-color']
                     }]" />
-                  <span> {{ item.adminsonly ? $t('label.annotation.admins.only') : $t('label.annotation.everyone') }}</span>
+                  <span>
+                    {{ item.adminsonly ? $t('label.adminsonly') : $t('label.annotation.everyone') }}
+                  </span>
                 </a-popconfirm>
               </template>
             </a-comment>
@@ -88,8 +89,7 @@
       <a-divider :dashed="true" />
       <a-comment v-if="'addAnnotation' in $store.getters.apis">
         <template #avatar>
-          <a-avatar
-            @click="showNotesInput = true">
+          <a-avatar @click="showNotesInput = true">
             <template #icon><edit-outlined /></template>
           </a-avatar>
         </template>
@@ -100,8 +100,8 @@
               @change="handleNoteChange"
               v-model:value="annotation"
               :placeholder="$t('label.add.note')" />
-            <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes(this.$store.getters.userInfo.roletype)" style="margin-top: 10px">
-              {{ $t('label.annotation.admins.only') }}
+            <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes($store.getters.userInfo.roletype)" style="margin-top: 10px">
+              {{ $t('label.adminsonly') }}
             </a-checkbox>
             <a-button
               style="margin-top: 10px; float: right"

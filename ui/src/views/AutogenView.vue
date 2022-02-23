@@ -88,7 +88,7 @@
                       <a-menu>
                         <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
                           <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-                          {{ $t('label.' + getColumnKey(column)) }}
+                          {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
                         </a-menu-item>
                       </a-menu>
                     </template>
