@@ -4637,7 +4637,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
         s_logger.warn(String.format("Could not get cpu_shares of domain: [%s]. Returning default value of 0. ", dm.getName()));
-        return o;
+        return 0;
     }
 
     /**
