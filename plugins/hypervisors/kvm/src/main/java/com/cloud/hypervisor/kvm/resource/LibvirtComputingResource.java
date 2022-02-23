@@ -4631,19 +4631,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @throws org.libvirt.LibvirtException
      **/
     public static Integer getCpuShares(Domain dm) throws LibvirtException {
-        int cpu_shares = 0;
         for (SchedParameter c : dm.getSchedulerParameters()) {
             if (c.field.equals("cpu_shares")) {
-                cpu_shares = Integer.parseInt(c.getValueAsString());
-                return cpu_shares;
+                return Integer.parseInt(c.getValueAsString());
             }
         }
         s_logger.warn(String.format("Could not get cpu_shares of domain: [%s]. Returning default value of 0. ", dm.getName()));
-        return cpu_shares;
+        return o;
     }
 
     /**
-     * Set the cpu_shares (priority) of the running VM <br/>
+     * Sets the cpu_shares (priority) of the running VM <br/>
      * @param dm domain of the VM.
      * @param cpuShares new priority of the running VM.
      * @throws org.libvirt.LibvirtException
