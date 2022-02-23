@@ -17,7 +17,6 @@
 package com.cloud.host;
 
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.vm.VirtualMachine;
 import java.util.Arrays;
 import static org.junit.Assert.assertFalse;
@@ -32,7 +31,8 @@ public class HostVOTest {
     @Before
     public void setUp() throws Exception {
         host = new HostVO();
-        offering = new ServiceOfferingVO("TestSO", 0, 0, 0, 0, 0, false, "TestSO", ProvisioningType.THIN, true, true,"",false,VirtualMachine.Type.User,false);
+        offering = new ServiceOfferingVO("TestSO", 0, 0, 0, 0, 0,
+                false, "TestSO", false,VirtualMachine.Type.User,false);
     }
 
     @Test

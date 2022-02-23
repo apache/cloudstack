@@ -37,7 +37,7 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -73,11 +73,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         super(resource);
     }
 
-    private void mountNfs(Connection conn, String remoteDir, String localDir) {
+    private void mountNfs(Connection conn, String remoteDir, String localDir, String nfsVersion) {
         if (localDir == null) {
             localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
-        String result = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir", remoteDir);
+        String result = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir", remoteDir, "nfsVersion", nfsVersion);
         if (StringUtils.isBlank(result)) {
             String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
             s_logger.warn(errMsg);
@@ -244,9 +244,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
     }
 
-    protected SR createFileSr(Connection conn, String remotePath, String dir) {
+    protected SR createFileSr(Connection conn, String remotePath, String dir, String nfsVersion) {
         String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remotePath.getBytes());
-        mountNfs(conn, remotePath, localDir);
+        mountNfs(conn, remotePath, localDir, nfsVersion);
         return createFileSR(conn, localDir + "/" + dir);
     }
 
@@ -269,6 +269,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 final String storeUrl = srcImageStore.getUrl();
                 final URI uri = new URI(storeUrl);
                 String volumePath = srcData.getPath();
+                String nfsVersion = srcImageStore.getNfsVersion();
 
                 volumePath = StringUtils.stripEnd(volumePath, "/");
 
@@ -282,7 +283,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     volumeDirectory = volumePath.substring(0, index);
                 }
 
-                srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory);
+                srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory, nfsVersion);
 
                 final Set<VDI> setVdis = srcSr.getVDIs(conn);
 
@@ -416,7 +417,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     }
 
     protected String backupSnapshot(final Connection conn, final String primaryStorageSRUuid, final String localMountPoint, final String path, final String secondaryStorageMountPath,
-            final String snapshotUuid, String prevBackupUuid, final String prevSnapshotUuid, final Boolean isISCSI, int wait) {
+            final String snapshotUuid, String prevBackupUuid, final String prevSnapshotUuid, final Boolean isISCSI, int wait, String nfsVersion) {
         boolean filesrcreated = false;
         // boolean copied = false;
 
@@ -427,7 +428,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         final String remoteDir = secondaryStorageMountPath;
         try {
-            ssSR = createFileSr(conn, remoteDir, path);
+            ssSR = createFileSr(conn, remoteDir, path, nfsVersion);
             filesrcreated = true;
 
             final VDI snapshotvdi = VDI.getByUuid(conn, snapshotUuid);
@@ -509,6 +510,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             secondaryStorageUrl = cacheStore.getUrl();
             destPath = destData.getPath();
         }
+        String nfsVersion = cacheStore != null ? cacheStore.getNfsVersion() : null;
 
         final SnapshotObjectTO snapshotTO = (SnapshotObjectTO)srcData;
         final SnapshotObjectTO snapshotOnImage = (SnapshotObjectTO)destData;
@@ -569,7 +571,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 Task task = null;
                 try {
                     final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
-                    mountNfs(conn, secondaryStorageMountPath, localDir);
+                    mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
                     final boolean result = makeDirectory(conn, localDir + "/" + folder);
                     if (!result) {
                         details = " Failed to create folder " + folder + " in secondary storage";
@@ -577,7 +579,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         return new CopyCmdAnswer(details);
                     }
 
-                    snapshotSr = createFileSr(conn, secondaryStorageMountPath, folder);
+                    snapshotSr = createFileSr(conn, secondaryStorageMountPath, folder, nfsVersion);
 
                     task = snapshotVdi.copyAsync(conn, snapshotSr, null, null);
                     // poll every 1 seconds ,
@@ -649,7 +651,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         throw new CloudRuntimeException("S3 upload of snapshots " + snapshotPaUuid + " failed");
                     }
                 } else {
-                    final String result = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, prevSnapshotUuid, isISCSI, wait);
+                    final String result = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, prevSnapshotUuid, isISCSI, wait, nfsVersion);
                     final String[] tmp = result.split("#");
                     snapshotBackupUuid = tmp[0];
                     physicalSize = Long.parseLong(tmp[1]);
@@ -695,6 +697,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         final String secondaryStoragePoolURL = destStore.getUrl();
         final String volumeUUID = volume.getPath();
+        final String nfsVersion = destStore.getNfsVersion();
 
         final String userSpecifiedName = template.getName();
 
@@ -708,7 +711,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final URI uri = new URI(secondaryStoragePoolURL);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             installPath = template.getPath();
-            if (!hypervisorResource.createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath)) {
+            if (!hypervisorResource.createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath, nfsVersion)) {
                 details = " Filed to create folder " + installPath + " in secondary storage";
                 s_logger.warn(details);
                 return new CopyCmdAnswer(details);
@@ -716,7 +719,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
             final VDI vol = getVDIbyUuid(conn, volumeUUID);
             // create template SR
-            tmpltSR = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), installPath);
+            tmpltSR = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), installPath, nfsVersion);
 
             // copy volume to template SR
             task = vol.copyAsync(conn, tmpltSR, null, null);
@@ -736,7 +739,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final long physicalSize = tmpltVDI.getPhysicalUtilisation(conn);
             // create the template.properties file
             final String templatePath = secondaryStorageMountPath + "/" + installPath;
-            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, template.getId());
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, template.getId(), nfsVersion);
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
             }
@@ -756,7 +759,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 hypervisorResource.removeSR(conn, tmpltSR);
             }
             if (secondaryStorageMountPath != null) {
-                hypervisorResource.deleteSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath);
+                hypervisorResource.deleteSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath, nfsVersion);
             }
             details = "Creating template from volume " + volumeUUID + " failed due to " + e.toString();
             s_logger.error(details, e);
@@ -805,6 +808,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
 
         final NfsTO nfsImageStore = (NfsTO)imageStore;
+        final String nfsVersion = nfsImageStore.getNfsVersion();
         final String primaryStorageNameLabel = pool.getUuid();
         final String secondaryStorageUrl = nfsImageStore.getUrl();
         final int wait = cmd.getWait();
@@ -851,7 +855,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final String snapshotUuid = getSnapshotUuid(snapshotInstallPath);
 
             final URI uri = new URI(secondaryStorageUrl);
-            srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), snapshotDirectory);
+            srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), snapshotDirectory, nfsVersion);
 
             final String[] parents = snapshot.getParents();
             final List<VDI> snapshotChains = new ArrayList<VDI>();
@@ -940,14 +944,15 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             Task task = null;
             try {
                 final NfsTO nfsStore = (NfsTO)destStore;
+                final String nfsVersion = nfsStore.getNfsVersion();
                 final URI uri = new URI(nfsStore.getUrl());
                 // Create the volume folder
-                if (!hypervisorResource.createSecondaryStorageFolder(conn, uri.getHost() + ":" + uri.getPath(), destVolume.getPath())) {
+                if (!hypervisorResource.createSecondaryStorageFolder(conn, uri.getHost() + ":" + uri.getPath(), destVolume.getPath(), nfsVersion)) {
                     throw new InternalErrorException("Failed to create the volume folder.");
                 }
 
                 // Create a SR for the volume UUID folder
-                secondaryStorage = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), destVolume.getPath());
+                secondaryStorage = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), destVolume.getPath(), nfsVersion);
                 // Look up the volume on the source primary storage pool
                 final VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
                 // Copy the volume to secondary storage
@@ -992,6 +997,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         if (srcStore instanceof NfsTO) {
             final NfsTO nfsStore = (NfsTO)srcStore;
+            final String nfsVersion = nfsStore.getNfsVersion();
             final String volumePath = srcVolume.getPath();
             int index = volumePath.lastIndexOf("/");
             final String volumeDirectory = volumePath.substring(0, index);
@@ -1006,7 +1012,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             } catch (final Exception e) {
                 return new CopyCmdAnswer(e.toString());
             }
-            final SR srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory);
+            final SR srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory, nfsVersion);
             Task task = null;
             try {
                 final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn,
@@ -1089,12 +1095,14 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         boolean result = false;
 
         try {
-            srcSr = createFileSr(conn, srcUri.getHost() + ":" + srcUri.getPath(), srcDir);
+            String srcNfsVersion = srcStore.getNfsVersion();
+            srcSr = createFileSr(conn, srcUri.getHost() + ":" + srcUri.getPath(), srcDir, srcNfsVersion);
 
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
             final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
 
-            mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir);
+            String destNfsVersion = destStore.getNfsVersion();
+            mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir, destNfsVersion);
             makeDirectory(conn, localDir + "/" + destDir);
 
             destSr = createFileSR(conn, localDir + "/" + destDir);
@@ -1148,7 +1156,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
             templatePath = templatePath.replaceAll("//", "/");
 
-            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null, physicalSize, virtualSize, destObj.getId());
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null, physicalSize, virtualSize, destObj.getId(), destNfsVersion);
 
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
@@ -1236,7 +1244,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
             final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
 
-            mountNfs(conn, destNfsPath, localDir);
+            String nfsVersion = destStore.getNfsVersion();
+            mountNfs(conn, destNfsPath, localDir, nfsVersion);
             makeDirectory(conn, localDir + "/" + destDir);
 
             destSr = createFileSR(conn, localDir + "/" + destDir);
@@ -1263,7 +1272,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
             templatePath = templatePath.replaceAll("//", "/");
 
-            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null, physicalSize, virtualSize, templateObjTO.getId());
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null, physicalSize, virtualSize, templateObjTO.getId(), nfsVersion);
 
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");

@@ -238,6 +238,8 @@ def umount(localDir):
 def mountNfsSecondaryStorage(session, args):
     remoteDir = args['remoteDir']
     localDir  = args['localDir']
+    nfsVersion = args['nfsVersion']
+    logging.debug("mountNfsSecondaryStorage with params: " + str(args))
     mounted = False
     f = open("/proc/mounts", 'r')
     for line in f:
@@ -250,6 +252,8 @@ def mountNfsSecondaryStorage(session, args):
 
     makedirs(localDir)
     options = "soft,tcp,timeo=133,retrans=1"
+    if nfsVersion:
+        options += ",vers=" + nfsVersion
     try:
         cmd = ['mount', '-o', options, remoteDir, localDir]
         txt = util.pread2(cmd)

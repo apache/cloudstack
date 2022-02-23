@@ -144,7 +144,7 @@ export default {
   },
   computed: {
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     isBasicZone () {
       return this.zoneType === BASIC_ZONE
@@ -153,25 +153,25 @@ export default {
       return this.zoneType === ADVANCED_ZONE
     },
     isDedicated () {
-      return this.prefillContent.isDedicated ? this.prefillContent.isDedicated.value : false
+      return this.prefillContent.isDedicated?.value || false
     },
     sgEnabled () {
-      return this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false
+      return this.prefillContent.securityGroupsEnabled?.value || false
     },
     havingNetscaler () {
-      return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.havingNetscaler : false
+      return this.prefillContent.networkOfferingSelected?.havingNetscaler || false
     },
     havingSG () {
-      return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.havingSG : false
+      return this.prefillContent.networkOfferingSelected?.havingSG || false
     },
     havingEIP () {
-      return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.havingEIP : false
+      return this.prefillContent.networkOfferingSelected?.havingEIP || false
     },
     havingELB () {
-      return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.havingELB : false
+      return this.prefillContent.networkOfferingSelected?.havingELB || false
     },
     selectedBaremetalProviders () {
-      return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.selectedBaremetalProviders : []
+      return this.prefillContent.networkOfferingSelected?.selectedBaremetalProviders || []
     }
   },
   mounted () {
@@ -193,8 +193,8 @@ export default {
     addStep (title, step) {
       this.steps.push({
         index: this.currentStep,
-        title: title,
-        step: step,
+        title,
+        step,
         status: STATUS_PROCESS
       })
       this.setStepStatus(STATUS_PROCESS)
@@ -301,7 +301,7 @@ export default {
     async stepAddZone () {
       this.addStep('message.creating.zone', 'stepAddZone')
 
-      const guestcidraddress = this.prefillContent.guestcidraddress ? this.prefillContent.guestcidraddress.value : null
+      const guestcidraddress = this.prefillContent.guestcidraddress?.value || null
       const params = {}
       params.networktype = this.zoneType
 
@@ -322,14 +322,14 @@ export default {
         }
       }
       params.name = this.prefillContent.name.value
-      params.localstorageenabled = this.prefillContent.localstorageenabled ? this.prefillContent.localstorageenabled.value : false
+      params.localstorageenabled = this.prefillContent.localstorageenabled?.value || false
       params.dns1 = this.prefillContent.ipv4Dns1.value
-      params.dns2 = this.prefillContent.ipv4Dns2 ? this.prefillContent.ipv4Dns2.value : null
-      params.ip6dns1 = this.prefillContent.ipv6Dns1 ? this.prefillContent.ipv6Dns1.value : null
-      params.ip6dns2 = this.prefillContent.ipv6Dns2 ? this.prefillContent.ipv6Dns2.value : null
-      params.internaldns1 = this.prefillContent.internalDns1 ? this.prefillContent.internalDns1.value : null
-      params.internaldns2 = this.prefillContent.internalDns2 ? this.prefillContent.internalDns2.value : null
-      params.domain = this.prefillContent.networkDomain ? this.prefillContent.networkDomain.value : null
+      params.dns2 = this.prefillContent.ipv4Dns2?.value || null
+      params.ip6dns1 = this.prefillContent.ipv6Dns1?.value || null
+      params.ip6dns2 = this.prefillContent.ipv6Dns2?.value || null
+      params.internaldns1 = this.prefillContent.internalDns1?.value || null
+      params.internaldns2 = this.prefillContent.internalDns2?.value || null
+      params.domain = this.prefillContent.networkDomain?.value || null
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {
@@ -355,8 +355,8 @@ export default {
 
       const params = {}
       params.zoneid = this.stepData.zoneReturned.id
-      params.domainid = this.prefillContent.domainId ? this.prefillContent.domainId.value : null
-      params.account = this.prefillContent.account ? this.prefillContent.account.value : null
+      params.domainid = this.prefillContent.domainId?.value || null
+      params.account = this.prefillContent.account?.value || null
 
       try {
         await this.dedicateZone(params)
@@ -378,8 +378,8 @@ export default {
       if (this.isBasicZone) {
         const requestedTrafficTypeCount = this.prefillContent.physicalNetworks[0].traffics.length
         this.stepData.requestedTrafficTypeCount = requestedTrafficTypeCount
-        this.stepData.returnedTrafficTypes = this.stepData.returnedTrafficTypes ? this.stepData.returnedTrafficTypes : []
-        this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkReturned ? this.stepData.physicalNetworkReturned : {}
+        this.stepData.returnedTrafficTypes = this.stepData?.returnedTrafficTypes || []
+        this.stepData.physicalNetworkReturned = this.stepData?.physicalNetworkReturned || {}
 
         if (this.prefillContent.physicalNetworks && this.prefillContent.physicalNetworks.length > 0) {
           params.name = this.prefillContent.physicalNetworks[0].name
@@ -434,8 +434,8 @@ export default {
           this.setStepStatus(STATUS_FAILED)
         }
       } else {
-        this.stepData.physicalNetworksReturned = this.stepData.physicalNetworksReturned ? this.stepData.physicalNetworksReturned : []
-        this.stepData.physicalNetworkItem = this.stepData.physicalNetworkItem ? this.stepData.physicalNetworkItem : {}
+        this.stepData.physicalNetworksReturned = this.stepData?.physicalNetworksReturned || []
+        this.stepData.physicalNetworkItem = this.stepData?.physicalNetworkItem || {}
         let physicalNetworkReturned = {}
 
         if (this.stepData.physicalNetworksReturned.length === this.prefillContent.physicalNetworks.length) {
@@ -732,18 +732,18 @@ export default {
 
       const params = {}
       params.physicalnetworkid = this.stepData.physicalNetworkReturned.id
-      params.username = this.prefillContent.netscalerUsername ? this.prefillContent.netscalerUsername.value : null
-      params.password = this.prefillContent.netscalerPassword ? this.prefillContent.netscalerPassword.value : null
-      params.networkdevicetype = this.prefillContent.netscalerType ? this.prefillContent.netscalerType.value : null
-      params.gslbprovider = this.prefillContent.gslbprovider ? this.prefillContent.gslbprovider.value : false
-      params.gslbproviderpublicip = this.prefillContent.gslbproviderpublicip ? this.prefillContent.gslbproviderpublicip.value : null
-      params.gslbproviderprivateip = this.prefillContent.gslbproviderprivateip ? this.prefillContent.gslbproviderprivateip.value : null
+      params.username = this.prefillContent.netscalerUsername?.value || null
+      params.password = this.prefillContent.netscalerPassword?.value || null
+      params.networkdevicetype = this.prefillContent.netscalerType?.value || null
+      params.gslbprovider = this.prefillContent.gslbprovider?.value || false
+      params.gslbproviderpublicip = this.prefillContent.gslbproviderpublicip?.value || null
+      params.gslbproviderprivateip = this.prefillContent.gslbproviderprivateip?.value || null
 
       const url = []
       const ip = this.prefillContent.netscalerIp.value
       url.push('https://' + ip)
       let isQuestionMarkAdded = false
-      const publicInterface = this.prefillContent.publicinterface ? this.prefillContent.publicinterface.value : null
+      const publicInterface = this.prefillContent.publicinterface?.value || null
       if (publicInterface != null && publicInterface.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -754,7 +754,7 @@ export default {
         url.push('publicinterface=' + publicInterface)
       }
 
-      const privateInterface = this.prefillContent.privateinterface ? this.prefillContent.privateinterface.value : null
+      const privateInterface = this.prefillContent.privateinterface?.value || null
       if (privateInterface != null && privateInterface.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -765,7 +765,7 @@ export default {
         url.push('privateinterface=' + publicInterface)
       }
 
-      const numretries = this.prefillContent.numretries ? this.prefillContent.numretries.value : null
+      const numretries = this.prefillContent.value || null
       if (numretries != null && numretries.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -776,7 +776,7 @@ export default {
         url.push('numretries=' + numretries)
       }
 
-      const capacity = this.prefillContent.capacity ? this.prefillContent.capacity.value : null
+      const capacity = this.prefillContent.capacity?.value || null
       if (capacity != null && capacity.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -813,11 +813,11 @@ export default {
 
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
-      params.name = this.prefillContent.podName ? this.prefillContent.podName.value : null
-      params.gateway = this.prefillContent.podReservedGateway ? this.prefillContent.podReservedGateway.value : null
-      params.netmask = this.prefillContent.podReservedNetmask ? this.prefillContent.podReservedNetmask.value : null
-      params.startIp = this.prefillContent.podReservedStartIp ? this.prefillContent.podReservedStartIp.value : null
-      params.endIp = this.prefillContent.podReservedStopIp ? this.prefillContent.podReservedStopIp.value : null
+      params.name = this.prefillContent.podName?.value || null
+      params.gateway = this.prefillContent.podReservedGateway?.value || null
+      params.netmask = this.prefillContent.podReservedNetmask?.value || null
+      params.startIp = this.prefillContent.podReservedStartIp?.value || null
+      params.endIp = this.prefillContent.podReservedStopIp?.value || null
 
       try {
         if (!this.stepData.stepMove.includes('createPod')) {
@@ -840,14 +840,14 @@ export default {
       params.zoneid = this.stepData.zoneReturned.id
       params.name = 'defaultGuestNetwork'
       params.displaytext = 'defaultGuestNetwork'
-      params.networkofferingid = this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.id : null
+      params.networkofferingid = this.prefillContent.networkOfferingSelected?.id || null
 
       if (this.isAdvancedZone && this.sgEnabled) {
-        params.gateway = this.prefillContent.guestGateway ? this.prefillContent.guestGateway.value : null
-        params.netmask = this.prefillContent.guestNetmask ? this.prefillContent.guestNetmask.value : null
-        params.startip = this.prefillContent.guestStartIp ? this.prefillContent.guestStartIp.value : null
-        params.endip = this.prefillContent.guestStopIp ? this.prefillContent.guestStopIp.value : null
-        params.vlan = this.prefillContent.guestVlan ? this.prefillContent.guestVlan.value : null
+        params.gateway = this.prefillContent.guestGateway?.value || null
+        params.netmask = this.prefillContent.guestNetmask?.value || null
+        params.startip = this.prefillContent.guestStartIp?.value || null
+        params.endip = this.prefillContent.guestStopIp?.value || null
+        params.vlan = this.prefillContent.guestVlan?.value || null
       }
 
       try {
@@ -872,7 +872,7 @@ export default {
         this.addStep('message.configuring.public.traffic', 'publicTraffic')
 
         let stopNow = false
-        this.stepData.returnedPublicTraffic = this.stepData.returnedPublicTraffic ? this.stepData.returnedPublicTraffic : []
+        this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
         for (let index = 0; index < this.prefillContent['public-ipranges'].length; index++) {
           const publicVlanIpRange = this.prefillContent['public-ipranges'][index]
           let isExisting = false
@@ -968,7 +968,7 @@ export default {
       this.currentStep++
       this.addStep('message.configuring.storage.traffic', 'storageTraffic')
 
-      this.stepData.tasks = this.stepData.tasks ? this.stepData.tasks : []
+      this.stepData.tasks = this.stepData?.tasks || []
       await this.prefillContent['storage-ipranges'].map(async (storageIpRange, index) => {
         const params = {}
         params.vlan = storageIpRange.vlan
@@ -1052,10 +1052,10 @@ export default {
         const params = {}
         params.podid = this.stepData.podReturned.id
         params.networkid = this.stepData.networkReturned.id
-        params.gateway = this.prefillContent.guestGateway ? this.prefillContent.guestGateway.value : null
-        params.netmask = this.prefillContent.guestNetmask ? this.prefillContent.guestNetmask.value : null
-        params.startip = this.prefillContent.guestStartIp ? this.prefillContent.guestStartIp.value : null
-        params.endip = this.prefillContent.guestStopIp ? this.prefillContent.guestStopIp.value : null
+        params.gateway = this.prefillContent.guestGateway?.value || null
+        params.netmask = this.prefillContent.guestNetmask?.value || null
+        params.startip = this.prefillContent.guestStartIp?.value || null
+        params.endip = this.prefillContent.guestStopIp?.value || null
         params.forVirtualNetwork = false
 
         try {
@@ -1141,14 +1141,14 @@ export default {
       let clusterName = this.prefillContent.clusterName.value
 
       if (hypervisor === 'VMware') {
-        params.username = this.prefillContent.vCenterUsername ? this.prefillContent.vCenterUsername.value : null
-        params.password = this.prefillContent.vCenterPassword ? this.prefillContent.vCenterPassword.value : null
-        params.vsmipaddress = this.prefillContent.vsmipaddress ? this.prefillContent.vsmipaddress.value : null
-        params.vsmusername = this.prefillContent.vsmusername ? this.prefillContent.vsmusername.value : null
-        params.vsmpassword = this.prefillContent.vsmpassword ? this.prefillContent.vsmpassword.value : null
+        params.username = this.prefillContent.vCenterUsername?.value || null
+        params.password = this.prefillContent.vCenterPassword?.value || null
+        params.vsmipaddress = this.prefillContent.vsmipaddress?.value || null
+        params.vsmusername = this.prefillContent.vsmusername?.value || null
+        params.vsmpassword = this.prefillContent.vsmpassword?.value || null
 
-        const hostname = this.prefillContent.vCenterHost ? this.prefillContent.vCenterHost.value : null
-        const dcName = this.prefillContent.vCenterDatacenter ? this.prefillContent.vCenterDatacenter.value : null
+        const hostname = this.prefillContent.vCenterHost?.value || null
+        const dcName = this.prefillContent.vCenterDatacenter?.value || null
         let url = null
         if (hostname.indexOf('http://') === -1) {
           url = ['http://', hostname].join('')
@@ -1165,10 +1165,10 @@ export default {
       if (hypervisor === 'VMware') {
         const vmwareData = {}
         vmwareData.zoneId = this.stepData.zoneReturned.id
-        vmwareData.username = this.prefillContent.vCenterUsername ? this.prefillContent.vCenterUsername.value : null
-        vmwareData.password = this.prefillContent.vCenterPassword ? this.prefillContent.vCenterPassword.value : null
-        vmwareData.name = this.prefillContent.vCenterDatacenter ? this.prefillContent.vCenterDatacenter.value : null
-        vmwareData.vcenter = this.prefillContent.vCenterHost ? this.prefillContent.vCenterHost.value : null
+        vmwareData.username = this.prefillContent.vCenterUsername?.value || null
+        vmwareData.password = this.prefillContent.vCenterPassword?.value || null
+        vmwareData.name = this.prefillContent.vCenterDatacenter?.value || null
+        vmwareData.vcenter = this.prefillContent.vCenterHost?.value || null
 
         try {
           if (!this.stepData.stepMove.includes('addVmwareDc')) {
@@ -1213,10 +1213,10 @@ export default {
       hostData.clusterid = this.stepData.clusterReturned.id
       hostData.hypervisor = this.stepData.clusterReturned.hypervisortype
       hostData.clustertype = this.stepData.clusterReturned.clustertype
-      hostData.hosttags = this.prefillContent.hostTags ? this.prefillContent.hostTags.value : null
-      hostData.username = this.prefillContent.hostUserName ? this.prefillContent.hostUserName.value : null
-      hostData.password = this.prefillContent.hostPassword ? this.prefillContent.hostPassword.value : null
-      const hostname = this.prefillContent.hostName ? this.prefillContent.hostName.value : null
+      hostData.hosttags = this.prefillContent.hostTags?.value || null
+      hostData.username = this.prefillContent.hostUserName?.value || null
+      hostData.password = this.prefillContent.hostPassword?.value || null
+      const hostname = this.prefillContent.hostName?.value || null
       let url = null
       if (hostname.indexOf('http://') === -1) {
         url = ['http://', hostname].join('')
@@ -1227,8 +1227,8 @@ export default {
       const hypervisor = this.prefillContent.hypervisor.value
 
       if (hypervisor === 'Ovm') {
-        hostData.agentusername = this.prefillContent.agentUserName ? this.prefillContent.agentUserName.value : null
-        hostData.agentpassword = this.prefillContent.agentPassword ? this.prefillContent.agentPassword.value : null
+        hostData.agentusername = this.prefillContent.agentUserName?.value || null
+        hostData.agentpassword = this.prefillContent.agentPassword?.value || null
       }
 
       if (this.prefillContent.localstorageenabledforsystemvm.value) {
@@ -1340,6 +1340,7 @@ export default {
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)
+        params.provider = 'Linstor'
         params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup.value
       } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
         let path = this.prefillContent.primaryStorageVmfsDatacenter.value
@@ -1388,7 +1389,7 @@ export default {
       this.addStep('message.creating.secondary.storage', 'secondaryResource')
 
       const params = {}
-      params.name = this.prefillContent.secondaryStorageName ? this.prefillContent.secondaryStorageName.value : null
+      params.name = this.prefillContent.secondaryStorageName?.value || null
       if (this.prefillContent.secondaryStorageProvider.value === 'NFS') {
         const nfsServer = this.prefillContent.secondaryStorageServer.value
         const path = this.prefillContent.secondaryStoragePath.value
@@ -1420,7 +1421,7 @@ export default {
         params['details[2].key'] = 'bucket'
         params['details[2].value'] = this.prefillContent.secondaryStorageBucket.value
         params['details[3].key'] = 'usehttps'
-        params['details[3].value'] = this.prefillContent.secondaryStorageHttps ? this.prefillContent.secondaryStorageHttps.value : false
+        params['details[3].value'] = this.prefillContent.secondaryStorageHttps?.value || false
 
         let index = 4
         if (this.prefillContent.secondaryStorageEndpoint &&
@@ -1468,6 +1469,12 @@ export default {
           this.prefillContent.secondaryStorageKey.value.length > 0) {
           params['details[' + index.toString() + '].key'] = 'key'
           params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageKey.value
+          index++
+        }
+        if (this.prefillContent.secondaryStoragePolicy &&
+          this.prefillContent.secondaryStoragePolicy.value.length > 0) {
+          params['details[' + index.toString() + '].key'] = 'storagepolicy'
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
           index++
         }
       }

@@ -33,6 +33,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import com.cloud.utils.HumanReadableJson;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -55,7 +57,6 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -465,7 +466,7 @@ public class Request {
             int i = 0;
             if (temp != null) {
                 while (i < temp.length) {
-                    temp[i] = StringUtils.cleanString(temp[i]);
+                    temp[i] = com.cloud.utils.StringUtils.cleanString(temp[i]);
                     i++;
                 }
                 List<String> stringList = new ArrayList<String>();

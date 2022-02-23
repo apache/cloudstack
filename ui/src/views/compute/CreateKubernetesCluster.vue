@@ -226,14 +226,6 @@
                 }]"
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.dockerregistryemail.description"/>
-              <a-input
-                v-decorator="['dockerregistryemail', {
-                  rules: [{ required: true, message: $t('label.required') }]
-                }]"
-                :placeholder="apiParams.dockerregistryemail.description"/>
-            </a-form-item>
           </div>
         </div>
         <div :span="24" class="action-button">
@@ -432,7 +424,12 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }

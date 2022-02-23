@@ -56,7 +56,6 @@ import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -80,7 +79,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -138,7 +137,7 @@ public class VeeamClient {
             final HttpResponse response = httpClient.execute(request);
             checkAuthFailure(response);
             veeamSessionId = response.getFirstHeader(SESSION_HEADER).getValue();
-            if (Strings.isNullOrEmpty(veeamSessionId)) {
+            if (StringUtils.isEmpty(veeamSessionId)) {
                 throw new CloudRuntimeException("Veeam Session ID is not available to perform API requests");
             }
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
@@ -338,23 +337,42 @@ public class VeeamClient {
     //////////////// Public Veeam APIs /////////////////////
     ////////////////////////////////////////////////////////
 
-    public Ref listBackupRepository(final String backupServerId) {
-        LOG.debug("Trying to list backup repository for backup server id: " + backupServerId);
+    public Ref listBackupRepository(final String backupServerId, final String backupName) {
+        LOG.debug(String.format("Trying to list backup repository for backup job [name: %s] in server [id: %s].", backupName, backupServerId));
         try {
+            String repositoryName = getRepositoryNameFromJob(backupName);
             final HttpResponse response = get(String.format("/backupServers/%s/repositories", backupServerId));
             checkResponseOK(response);
             final ObjectMapper objectMapper = new XmlMapper();
             final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
-                if (ref.getType().equals("RepositoryReference")) {
+                if (ref.getType().equals("RepositoryReference") && ref.getName().equals(repositoryName)) {
                     return ref;
                 }
             }
         } catch (final IOException e) {
-            LOG.error("Failed to list Veeam jobs due to:", e);
+            LOG.error(String.format("Failed to list Veeam backup repository used by backup job [name: %s] due to: [%s].", backupName, e.getMessage()), e);
             checkResponseTimeOut(e);
         }
         return null;
+    }
+
+    protected String getRepositoryNameFromJob(String backupName) {
+        final List<String> cmds = Arrays.asList(
+                String.format("$Job = Get-VBRJob -name \"%s\"", backupName),
+                "$Job.GetBackupTargetRepository() ^| select Name | Format-List"
+        );
+        Pair<Boolean, String> result = executePowerShellCommands(cmds);
+        if (result == null || !result.first()) {
+            throw new CloudRuntimeException(String.format("Failed to get Repository Name from Job [name: %s].", backupName));
+        }
+
+        for (String block : result.second().split("\n\n")) {
+           if (block.matches("Name(\\s)+:(.)*")) {
+               return block.split(":")[1].trim();
+           }
+        }
+        throw new CloudRuntimeException(String.format("Can't find any repository name for Job [name: %s].", backupName));
     }
 
     public void listAllBackups() {
@@ -440,7 +458,12 @@ public class VeeamClient {
     public boolean cloneVeeamJob(final Job parentJob, final String clonedJobName) {
         LOG.debug("Trying to clone veeam job: " + parentJob.getUid() + " with backup uuid: " + clonedJobName);
         try {
-            final Ref repositoryRef =  listBackupRepository(parentJob.getBackupServerId());
+            final Ref repositoryRef = listBackupRepository(parentJob.getBackupServerId(), parentJob.getName());
+            if (repositoryRef == null) {
+                throw new CloudRuntimeException(String.format("Failed to clone backup job because couldn't find any "
+                        + "repository associated with backup job [id: %s, uid: %s, backupServerId: %s, name: %s].",
+                        parentJob.getId(), parentJob.getUid(), parentJob.getBackupServerId(), parentJob.getName()));
+            }
             final BackupJobCloneInfo cloneInfo = new BackupJobCloneInfo();
             cloneInfo.setJobName(clonedJobName);
             cloneInfo.setFolderName(clonedJobName);

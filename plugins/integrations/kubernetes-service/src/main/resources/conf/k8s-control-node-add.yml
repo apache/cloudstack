@@ -18,7 +18,7 @@
 
 ---
 users:
-  - name: core
+  - name: cloud
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     ssh_authorized_keys:
@@ -31,7 +31,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -107,6 +107,8 @@ write_files:
         mkdir -p /etc/systemd/system/kubelet.service.d
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
+        echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd" > /etc/default/kubelet
+
         output=`ls ${BINARIES_DIR}/docker/`
         if [ "$output" != "" ]; then
           while read -r line; do
@@ -118,7 +120,7 @@ write_files:
               fi
               retval=0
               set +e
-              docker load < "${BINARIES_DIR}/docker/$line"
+              ctr image import "${BINARIES_DIR}/docker/$line"
               retval=$?
               set -e
               if [ $retval -eq 0 ]; then
@@ -165,7 +167,7 @@ write_files:
       fi
 
       systemctl enable kubelet && systemctl start kubelet
-      modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+      modprobe overlay && modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
 
       if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
         crucial_cmd_attempts=1
@@ -176,7 +178,7 @@ write_files:
           fi
           retval=0
           set +e
-          kubeadm config images pull
+          kubeadm config images pull --cri-socket /run/containerd/containerd.sock
           retval=$?
           set -e
           if [ $retval -eq 0 ]; then
@@ -192,7 +194,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
         echo "Already provisioned!"
         exit 0
       fi
@@ -210,16 +212,33 @@ write_files:
       fi
       kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
 
-      sudo touch /home/core/success
-      echo "true" > /home/core/success
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
+
+  - path: /opt/bin/setup-containerd
+    permissions: '0755'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      
+      export registryConfig="\\        [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"{{registry.url.endpoint}}\"]\n \\         endpoint = [\"{{registry.url}}\"]"
+      export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url.endpoint}}\".auth]\n\tusername = \"{{registry.username}}\" \n\tpassword = \"{{registry.password}}\" \n\tidentitytoken = \"{{registry.token}}\""
+      
+      echo "creating config file for containerd"
+      containerd config default > /etc/containerd/config.toml
+      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry\]/a '"${registryCredentials}"'' /etc/containerd/config.toml
+      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry.mirrors\]/a '"${registryConfig}"'' /etc/containerd/config.toml
+      
+      echo "Restarting containerd service"
+      systemctl restart containerd
 
   - path: /etc/systemd/system/setup-kube-system.service
     permissions: '0755'
     owner: root:root
     content: |
       [Unit]
-      Requires=docker.service
-      After=docker.service
+      Requires=containerd.service
+      After=containerd.service
 
       [Service]
       Type=simple
@@ -241,6 +260,10 @@ write_files:
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
+  - chown -R cloud:cloud /home/cloud/.ssh
+  - containerd config default > /etc/containerd/config.toml
+  - sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/a '"\\            SystemdCgroup=true"'' /etc/containerd/config.toml
+  - systemctl restart containerd
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
 

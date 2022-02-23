@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading" class="form-layout">
-    <a-tabs defaultActiveKey="1" :animated="false" v-if="!loading">
+    <a-tabs :default-active-key="defaultNetworkTypeTabKey" :animated="false" v-if="!loading">
       <a-tab-pane :tab="$t('label.isolated')" key="1" v-if="isAdvancedZoneWithoutSGAvailable">
         <CreateIsolatedNetworkForm
           :loading="loading"
@@ -34,7 +34,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.shared')" key="3" v-if="this.isAdmin()">
+      <a-tab-pane :tab="$t('label.shared')" key="3" v-if="isAdmin()">
         <CreateSharedNetworkForm
           :loading="loading"
           :resource="resource"
@@ -48,6 +48,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import CreateIsolatedNetworkForm from '@/views/network/CreateIsolatedNetworkForm'
 import CreateL2NetworkForm from '@/views/network/CreateL2NetworkForm'
 import CreateSharedNetworkForm from '@/views/network/CreateSharedNetworkForm'
@@ -67,7 +68,7 @@ export default {
   },
   data () {
     return {
-      isAdvancedZoneWithoutSGAvailable: true,
+      isAdvancedZoneWithoutSGAvailable: false,
       defaultNetworkTypeTabKey: '1',
       loading: false,
       actionZones: [],
@@ -78,20 +79,20 @@ export default {
     const promises = []
     promises.push(this.fetchActionZoneData())
     Promise.all(promises).then(() => {
+      this.isAdvancedZoneWithoutSGAvailable = false
+      this.defaultNetworkTypeTabKey = '2'
+
       for (const i in this.actionZones) {
         const zone = this.actionZones[i]
         if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
           this.isAdvancedZoneWithoutSGAvailable = true
+          this.defaultNetworkTypeTabKey = '1'
           return
         }
       }
-      this.isAdvancedZoneWithoutSGAvailable = false
     })
   },
   methods: {
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
     fetchActionZoneData () {
       this.loading = true
       const params = {}
@@ -106,6 +107,9 @@ export default {
         this.actionZoneLoading = false
         this.loading = false
       })
+    },
+    isAdmin () {
+      return isAdmin()
     },
     handleRefresh () {
     },
