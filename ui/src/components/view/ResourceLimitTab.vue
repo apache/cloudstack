@@ -17,39 +17,37 @@
 
 <template>
   <a-spin :spinning="formLoading">
-    <div
-      @keyup.ctrl.enter="handleSubmit">
-      <a-form
-        :form="form"
-        layout="vertical"
-        @submit="handleSubmit"
-      >
-        <a-form-item
-          v-for="(item, index) in dataResource"
-          :key="index"
-          v-if="item.resourcetypename !== 'project'"
-          :v-bind="item.resourcetypename"
-          :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
-          <a-input-number
-            :disabled="!('updateResourceLimit' in $store.getters.apis)"
-            style="width: 100%;"
-            v-decorator="[item.resourcetype, {
-              initialValue: item.max
-            }]"
-            :autoFocus="index === 0"
-          />
-        </a-form-item>
-        <div class="card-footer">
-          <a-button
-            :disabled="!('updateResourceLimit' in $store.getters.apis)"
-            v-if="!($route.meta.name === 'domain' && resource.level === 0)"
-            :loading="formLoading"
-            type="primary"
-            ref="submit"
-            @click="handleSubmit">{{ $t('label.submit') }}</a-button>
-        </div>
-      </a-form>
-    </div>
+    <a-form
+      :form="form"
+      @submit="handleSubmit"
+      layout="vertical"
+      v-ctrl-enter="handleSubmit"
+    >
+      <a-form-item
+        v-for="(item, index) in dataResource"
+        :key="index"
+        v-if="item.resourcetypename !== 'project'"
+        :v-bind="item.resourcetypename"
+        :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
+        <a-input-number
+          :disabled="!('updateResourceLimit' in $store.getters.apis)"
+          style="width: 100%;"
+          v-decorator="[item.resourcetype, {
+            initialValue: item.max
+          }]"
+          :autoFocus="index === 0"
+        />
+      </a-form-item>
+      <div class="card-footer">
+        <a-button
+          :disabled="!('updateResourceLimit' in $store.getters.apis)"
+          v-if="!($route.meta.name === 'domain' && resource.level === 0)"
+          :loading="formLoading"
+          type="primary"
+          ref="submit"
+          @click="handleSubmit">{{ $t('label.submit') }}</a-button>
+      </div>
+    </a-form>
   </a-spin>
 </template>
 

@@ -21,7 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
-            @keyup.ctrl.enter="handleSubmit"
+            v-ctrl-enter="handleSubmit"
             :form="form"
             @submit="handleSubmit"
             layout="vertical"

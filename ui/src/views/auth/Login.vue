@@ -22,7 +22,7 @@
     ref="formLogin"
     :form="form"
     @submit="handleSubmit"
-    @keyup.ctrl.enter="handleSubmit"
+    v-ctrl-enter="handleSubmit"
   >
     <a-tabs
       :activeKey="customActiveKey"

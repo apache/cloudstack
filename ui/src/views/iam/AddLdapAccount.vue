@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="ldap-account-layout" @keyup.ctrl.enter="handleSubmit">
+  <div class="ldap-account-layout" v-ctrl-enter="handleSubmit">
     <a-row :gutter="0">
       <a-col :md="24" :lg="16">
         <a-card :bordered="false">

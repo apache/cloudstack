@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" @keyup.ctrl.enter="handleSubmit">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>

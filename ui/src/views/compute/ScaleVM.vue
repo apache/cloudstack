@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form" @keyup.ctrl.enter="handleSubmit">
+  <a-form class="form" v-ctrl-enter="handleSubmit">
     <p v-html="getMessage()"></p>
 
     <div v-if="loading" class="loading">

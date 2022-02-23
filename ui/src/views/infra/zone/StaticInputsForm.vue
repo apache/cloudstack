@@ -23,7 +23,7 @@
       v-html="$t(description)">
     </a-card>
     <a-form
-      @keyup.ctrl.enter="handleSubmit"
+      v-ctrl-enter="handleSubmit"
       class="form-content"
       :form="form"
       @submit="handleSubmit">

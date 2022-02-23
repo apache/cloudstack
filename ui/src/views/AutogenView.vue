@@ -153,7 +153,7 @@
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         @cancel="closeAction"
-        @keyup.ctrl.enter="handleSubmit"
+        v-ctrl-enter="handleSubmit"
         centered
       >
         <span slot="title">

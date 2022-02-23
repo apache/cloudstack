@@ -115,7 +115,7 @@
         </a-form>
       </template>
     </a-table>
-    <div class="form-action" @keyup.ctrl.enter="handleSubmit">
+    <div class="form-action" v-ctrl-enter="handleSubmit">
       <a-button
         v-if="!isFixError"
         class="button-prev"
