@@ -45,8 +45,9 @@ function getGenericName() {
 function getChecksum() {
   local fileData="$1"
   local hvName=$2
+  local buildingVersion="$CS_VERSION.$CS_MINOR_VERSION"
   while IFS= read -r line; do
-    if [[ $line == *"$hvName"* ]]; then
+    if [[ "$line" == *"$buildingVersion-$hvName"* ]]; then
       echo "$(cut -d' ' -f1 <<<"$line")"
     fi
   done <<< "$fileData"
