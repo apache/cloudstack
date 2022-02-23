@@ -2148,7 +2148,7 @@
 "message.generate.keys": "\u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u062a\u0623\u0643\u064a\u062f \u0628\u0623\u0646\u0643 \u062a\u0631\u063a\u0628 \u0628\u0625\u0646\u0634\u0627\u0621 \u0645\u0641\u0627\u062a\u064a\u062d \u062c\u062f\u064a\u062f\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645",
 "message.gslb.delete.confirm": "Please confirm you want to delete this GSLB",
 "message.gslb.lb.remove.confirm": "Please confirm you want to remove load balancing from GSLB",
-"message.guest.traffic.in.advanced.zone": "Guest network traffic is communication between end-user virtual machines. Specify a range of VLAN IDs to carry guest traffic for each physical network.",
+"message.guest.traffic.in.advanced.zone": "Guest network traffic is communication between end-user virtual machines. Specify a range of VLAN IDs or VXLAN network identifiers (VNIs) to carry guest traffic for each physical network.",
 "message.guest.traffic.in.basic.zone": "Guest network traffic is communication between end-user virtual machines. Specify a range of IP addresses that CloudStack can assign to guest VMs. Make sure this range does not overlap the reserved system IP range.",
 "message.host.dedicated": "Host Dedicated",
 "message.host.dedication.released": "Host dedication released",

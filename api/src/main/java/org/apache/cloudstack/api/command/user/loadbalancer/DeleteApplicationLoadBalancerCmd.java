@@ -33,7 +33,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "deleteLoadBalancer", description = "Deletes a load balancer", responseObject = SuccessResponse.class, since = "4.2.0",
+@APICommand(name = "deleteLoadBalancer", description = "Deletes an internal load balancer", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteApplicationLoadBalancerCmd.class.getName());
