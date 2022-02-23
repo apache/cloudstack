@@ -166,6 +166,7 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        s_logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
         if (MapUtils.isEmpty(volumeToDisconnect)) {
             return false;
         }
@@ -194,6 +195,7 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDiskByPath(String path) {
+        s_logger.debug(String.format("Disconnect physical disk by path: %s", path));
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
