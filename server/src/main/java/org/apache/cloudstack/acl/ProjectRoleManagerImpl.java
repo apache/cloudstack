@@ -169,12 +169,12 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     }
 
     @Override
-    public List<ProjectRole> findProjectRoles(Long projectId) {
+    public List<ProjectRole> findProjectRoles(Long projectId, String keyword) {
         if (projectId == null || projectId < 1L || projectDao.findById(projectId) == null) {
             LOGGER.warn("Invalid project ID provided");
             return null;
         }
-        return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId));
+        return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId, keyword));
     }
 
     @Override
@@ -238,10 +238,10 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     }
 
     @Override
-    public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName) {
+    public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName, String keyword) {
         List<? extends ProjectRole> roles = null;
         if (StringUtils.isNotBlank(roleName)) {
-            roles = projRoleDao.findByName(roleName, projectId);
+            roles = projRoleDao.findByName(roleName, projectId, keyword);
         }
         return ListUtils.toListOfInterface(roles);
     }

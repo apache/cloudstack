@@ -34,11 +34,12 @@ public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  imp
         ProjectRoleSearch = createSearchBuilder();
         ProjectRoleSearch.and("name", ProjectRoleSearch.entity().getName(), SearchCriteria.Op.EQ);
         ProjectRoleSearch.and("project_id", ProjectRoleSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
+        ProjectRoleSearch.and("keyword", ProjectRoleSearch.entity().getName(), SearchCriteria.Op.LIKE);
         ProjectRoleSearch.done();
 
     }
     @Override
-    public List<ProjectRoleVO> findByName(String name, Long projectId) {
+    public List<ProjectRoleVO> findByName(String name, Long projectId, String keyword) {
         SearchCriteria<ProjectRoleVO> sc = ProjectRoleSearch.create();
         if (StringUtils.isNotEmpty(name)) {
             sc.setParameters("name", name);
@@ -46,14 +47,25 @@ public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  imp
         if (projectId != null) {
             sc.setParameters("project_id", projectId);
         }
+        if (StringUtils.isNotEmpty(keyword)) {
+            SearchCriteria<ProjectRoleVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
         return listBy(sc);
     }
 
     @Override
-    public List<ProjectRoleVO> findAllRoles(Long projectId) {
+    public List<ProjectRoleVO> findAllRoles(Long projectId, String keyword) {
         SearchCriteria<ProjectRoleVO> sc = ProjectRoleSearch.create();
         if (projectId != null) {
             sc.setParameters("project_id", projectId);
+        }
+        if (StringUtils.isNotEmpty(keyword)) {
+            SearchCriteria<ProjectRoleVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
         return listBy(sc);
     }
