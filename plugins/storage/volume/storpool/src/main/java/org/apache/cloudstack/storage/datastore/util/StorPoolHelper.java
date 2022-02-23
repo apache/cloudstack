@@ -33,7 +33,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -48,7 +48,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
@@ -76,7 +76,7 @@ public class StorPoolHelper {
 
     public static void updateVolumeInfo(VolumeObjectTO volumeObjectTO, Long size, SpApiResponse resp,
             VolumeDao volumeDao) {
-        String volumePath = StorpoolUtil.devPath(StorpoolUtil.getNameFromResponse(resp, false));
+        String volumePath = StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false));
         VolumeVO volume = volumeDao.findById(volumeObjectTO.getId());
         if (volume != null) {
             volumeObjectTO.setSize(size);
@@ -101,12 +101,12 @@ public class StorPoolHelper {
         SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshotId, snapshotUuid);
 
         if (snapshotDetails != null) {
-            return StorpoolStorageAdaptor.getVolumeNameFromPath(snapshotDetails.getValue(), true);
+            return StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetails.getValue(), true);
         } else {
             List<SnapshotDataStoreVO> snapshots = snapshotStoreDao.findBySnapshotId(snapshotId);
             if (!CollectionUtils.isEmpty(snapshots)) {
                 for (SnapshotDataStoreVO snapshotDataStoreVO : snapshots) {
-                    String name = StorpoolStorageAdaptor.getVolumeNameFromPath(snapshotDataStoreVO.getInstallPath(), true);
+                    String name = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDataStoreVO.getInstallPath(), true);
                     if (name == null) {
                         continue;
                     } else {
@@ -129,7 +129,7 @@ public class StorPoolHelper {
             } else if (snapshotOrVolume.equals("volume")) {
                 sql = UPDATE_VOLUME_DETAILS_NAME;
             } else {
-                StorpoolUtil.spLog("Could not update snapshot detail with id=%s", id);
+                StorPoolUtil.spLog("Could not update snapshot detail with id=%s", id);
             }
             if (sql != null) {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -140,13 +140,13 @@ public class StorPoolHelper {
             }
         } catch (Exception e) {
             txn.rollback();
-            StorpoolUtil.spLog("Could not update snapshot detail with id=%s", id);
+            StorPoolUtil.spLog("Could not update snapshot detail with id=%s", id);
         }
     }
 
     public static String getVcPolicyTag(Long vmId, ResourceTagDao resourceTagDao) {
         if (vmId != null) {
-            ResourceTag tag = resourceTagDao.findByKey(vmId, ResourceObjectType.UserVm, StorpoolUtil.SP_VC_POLICY);
+            ResourceTag tag = resourceTagDao.findByKey(vmId, ResourceObjectType.UserVm, StorPoolUtil.SP_VC_POLICY);
             if (tag != null) {
                 return tag.getValue();
             }
@@ -168,7 +168,7 @@ public class StorPoolHelper {
         Map<String, String> tags = new HashMap<>();
         tags.put("uuid", name);
         tags.put("cvm", vmUuid);
-        tags.put(StorpoolUtil.SP_VC_POLICY, vcPolicy);
+        tags.put(StorPoolUtil.SP_VC_POLICY, vcPolicy);
         if (csTag != null) {
             tags.put("cs", csTag);
         }
@@ -191,11 +191,11 @@ public class StorPoolHelper {
             e.printStackTrace();
         }
         if (kindOfLog.equals("update")) {
-            StorpoolUtil.spLog(
+            StorPoolUtil.spLog(
                     "You can find information about volumes and snapshots, which will be updated in Database with their globalIs in %s log file",
                     path);
         } else if (kindOfLog.equals("abandon")) {
-            StorpoolUtil.spLog(
+            StorPoolUtil.spLog(
                     "You can find information about volumes and snapshots, for which CloudStack doesn't have information in %s log file",
                     path);
         }
@@ -221,13 +221,13 @@ public class StorPoolHelper {
     public static Long findClusterIdByGlobalId(String globalId, ClusterDao clusterDao) {
         List<ClusterVO> clusterVo = clusterDao.listAll();
         if (clusterVo.size() == 1) {
-            StorpoolUtil.spLog("There is only one cluster, sending backup to secondary command");
+            StorPoolUtil.spLog("There is only one cluster, sending backup to secondary command");
             return null;
         }
         for (ClusterVO clusterVO2 : clusterVo) {
             if (globalId != null && StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()) != null
                     && globalId.contains(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()).toString())) {
-                StorpoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterVO2.getId(),
+                StorPoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterVO2.getId(),
                         globalId);
                 return clusterVO2.getId();
             }

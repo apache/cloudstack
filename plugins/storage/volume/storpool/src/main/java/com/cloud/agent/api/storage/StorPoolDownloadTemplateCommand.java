@@ -21,9 +21,9 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.to.DataTO;
 
-public class StorpoolDownloadTemplateCommand extends StorpoolCopyCommand<DataTO, DataTO> {
+public class StorPoolDownloadTemplateCommand extends StorPoolCopyCommand<DataTO, DataTO> {
     protected String objectType;
-    public StorpoolDownloadTemplateCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence, String objectType) {
+    public StorPoolDownloadTemplateCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence, String objectType) {
         super(srcTO, dstTO, timeout, executeInSequence);
         this.objectType = objectType;
     }

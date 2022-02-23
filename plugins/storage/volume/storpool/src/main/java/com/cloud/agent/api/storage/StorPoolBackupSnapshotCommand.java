@@ -23,8 +23,8 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 import com.cloud.agent.api.to.DataTO;
 
-public class StorpoolBackupSnapshotCommand extends StorpoolCopyCommand<SnapshotObjectTO, SnapshotObjectTO> {
-    public StorpoolBackupSnapshotCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
+public class StorPoolBackupSnapshotCommand extends StorPoolCopyCommand<SnapshotObjectTO, SnapshotObjectTO> {
+    public StorPoolBackupSnapshotCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
         super(srcTO, dstTO, timeout, executeInSequence);
     }
 }

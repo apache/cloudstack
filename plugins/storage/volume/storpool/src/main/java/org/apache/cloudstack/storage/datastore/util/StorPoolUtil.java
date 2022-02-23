@@ -55,7 +55,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 //import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -66,8 +66,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
-public class StorpoolUtil {
-    private static final Logger log = Logger.getLogger(StorpoolUtil.class);
+public class StorPoolUtil {
+    private static final Logger log = Logger.getLogger(StorPoolUtil.class);
 
     private static final File spLogFile = new File("/var/log/cloudstack/management/storpool-plugin.log");
     private static PrintWriter spLogPrinterWriter = spLogFileInitialize();
@@ -258,8 +258,8 @@ public class StorpoolUtil {
 
     public static SpConnectionDesc getSpConnection(String url, long poolId, StoragePoolDetailsDao poolDetails,
             PrimaryDataStoreDao storagePool) {
-        boolean isElternateEndpointEnabled = StorPoolConfigurationManager.AlternativeEndPointEnabled.valueIn(poolId);
-        if (isElternateEndpointEnabled) {
+        boolean isAlternateEndpointEnabled = StorPoolConfigurationManager.AlternativeEndPointEnabled.valueIn(poolId);
+        if (isAlternateEndpointEnabled) {
             String alternateEndpoint = StorPoolConfigurationManager.AlternativeEndpoint.valueIn(poolId);
             if (StringUtils.isNotEmpty(alternateEndpoint)) {
                 return new SpConnectionDesc(alternateEndpoint);
@@ -300,7 +300,7 @@ public class StorpoolUtil {
         StoragePoolVO pool = storagePool.findById(poolId);
         pool.setUuid(conn.getTemplateName() + ";" + UUID.randomUUID().toString());
         storagePool.update(poolId, pool);
-        StorpoolUtil.spLog(
+        StorPoolUtil.spLog(
                 "Storage pool with id=%s and template's name=%s was updated and its connection details are hidden from UI.",
                 pool.getId(), conn.getTemplateName());
         return conn;
@@ -542,7 +542,7 @@ public class StorpoolUtil {
         List<Map<String, Object>> volumes = new ArrayList<>();
         for (VolumeObjectTO volumeTO : volumeTOs) {
             Map<String, Object> vol = new LinkedHashMap<>();
-            String name = StorpoolStorageAdaptor.getVolumeNameFromPath(volumeTO.getPath(), true);
+            String name = StorPoolStorageAdaptor.getVolumeNameFromPath(volumeTO.getPath(), true);
             vol.put("name", "");
             vol.put("volume", name);
             volumes.add(vol);

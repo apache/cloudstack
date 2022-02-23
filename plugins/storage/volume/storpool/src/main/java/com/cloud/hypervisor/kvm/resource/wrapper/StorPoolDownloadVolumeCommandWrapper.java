@@ -19,7 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import static com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor.SP_LOG;
+import static com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor.SP_LOG;
 
 import java.util.List;
 
@@ -32,26 +32,26 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 //import java.io.File;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.storage.StorpoolDownloadVolumeCommand;
+import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 
-@ResourceWrapper(handles = StorpoolDownloadVolumeCommand.class)
-public final class StorpoolDownloadVolumeCommandWrapper extends CommandWrapper<StorpoolDownloadVolumeCommand, CopyCmdAnswer, LibvirtComputingResource> {
+@ResourceWrapper(handles = StorPoolDownloadVolumeCommand.class)
+public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<StorPoolDownloadVolumeCommand, CopyCmdAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorpoolDownloadVolumeCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(StorPoolDownloadVolumeCommandWrapper.class);
 
     @Override
-    public CopyCmdAnswer execute(final StorpoolDownloadVolumeCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
+    public CopyCmdAnswer execute(final StorPoolDownloadVolumeCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
         String dstPath = null;
         KVMStoragePool secondaryPool = null;
 
@@ -127,10 +127,10 @@ public final class StorpoolDownloadVolumeCommandWrapper extends CommandWrapper<S
             final QemuImgFile srcFile = new QemuImgFile(srcPath, PhysicalDiskFormat.RAW);
 
             final QemuImg qemu = new QemuImg(cmd.getWaitInMillSeconds());
-            StorpoolStorageAdaptor.resize( Long.toString(srcDisk.getVirtualSize()), dst.getPath());
+            StorPoolStorageAdaptor.resize( Long.toString(srcDisk.getVirtualSize()), dst.getPath());
 
             dstPath = dst.getPath();
-            StorpoolStorageAdaptor.attachOrDetachVolume("attach", "volume", dstPath);
+            StorPoolStorageAdaptor.attachOrDetachVolume("attach", "volume", dstPath);
 
             final QemuImgFile dstFile = new QemuImgFile(dstPath, srcFile.getFormat());
             SP_LOG("SRC format=%s, DST format=%s",srcFile.getFormat(), dstFile.getFormat());
@@ -147,7 +147,7 @@ public final class StorpoolDownloadVolumeCommandWrapper extends CommandWrapper<S
             return new CopyCmdAnswer(error);
         } finally {
             if (dstPath != null) {
-                StorpoolStorageAdaptor.attachOrDetachVolume("detach", "volume", dstPath);
+                StorPoolStorageAdaptor.attachOrDetachVolume("detach", "volume", dstPath);
             }
 
             if (secondaryPool != null) {

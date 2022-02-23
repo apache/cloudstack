@@ -33,9 +33,9 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpApiResponse;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpConnectionDesc;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -49,15 +49,15 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorpoolHostListener implements HypervisorHostListener {
-    private static final Logger log = Logger.getLogger(StorpoolHostListener .class);
+public class StorPoolHostListener implements HypervisorHostListener {
+    private static final Logger log = Logger.getLogger(StorPoolHostListener .class);
 
     @Inject
     private AgentManager agentMgr;
@@ -85,7 +85,7 @@ public class StorpoolHostListener implements HypervisorHostListener {
 
         SpConnectionDesc conn = null;
         try {
-            conn = StorpoolUtil.getSpConnection(poolVO.getUuid(), poolId, storagePoolDetailsDao, primaryStoreDao);
+            conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolId, storagePoolDetailsDao, primaryStoreDao);
         } catch (Exception e) {
             return false;
         }
@@ -114,7 +114,7 @@ public class StorpoolHostListener implements HypervisorHostListener {
         if (!answer.getResult()) {
             if (answer.getDetails() != null) {
                 if (answer.getDetails().equals("objectDoesNotExist")) {
-                    StorpoolUtil.volumeDelete(StorpoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
+                    StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
                     storagePoolDetailsDao.remove(volumeOnPool.getId());
                     return false;
                 } else if (answer.getDetails().equals("spNotFound")) {
@@ -128,7 +128,7 @@ public class StorpoolHostListener implements HypervisorHostListener {
                 pool.getId());
         }
 
-        StorpoolUtil.spLog("hostConnect: hostId=%d, poolId=%d", hostId, poolId);
+        StorPoolUtil.spLog("hostConnect: hostId=%d, poolId=%d", hostId, poolId);
 
         StorPoolModifyStoragePoolAnswer mspAnswer = (StorPoolModifyStoragePoolAnswer)answer;
         if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
@@ -157,14 +157,14 @@ public class StorpoolHostListener implements HypervisorHostListener {
     }
 
     private synchronized StoragePoolDetailVO verifyVolumeIsOnCluster(long poolId, SpConnectionDesc conn, long clusterId) {
-        StoragePoolDetailVO volumeOnPool = storagePoolDetailsDao.findDetail(poolId, StorpoolUtil.SP_VOLUME_ON_CLUSTER + "-" + clusterId);
+        StoragePoolDetailVO volumeOnPool = storagePoolDetailsDao.findDetail(poolId, StorPoolUtil.SP_VOLUME_ON_CLUSTER + "-" + clusterId);
         if (volumeOnPool == null) {
-            SpApiResponse resp = StorpoolUtil.volumeCreate(conn);
+            SpApiResponse resp = StorPoolUtil.volumeCreate(conn);
             if (resp.getError() != null) {
                 return volumeOnPool;
             }
-            String volumeName = StorpoolUtil.getNameFromResponse(resp, false);
-            volumeOnPool = new StoragePoolDetailVO(poolId, StorpoolUtil.SP_VOLUME_ON_CLUSTER  + "-" + clusterId, StorpoolUtil.devPath(volumeName), false);
+            String volumeName = StorPoolUtil.getNameFromResponse(resp, false);
+            volumeOnPool = new StoragePoolDetailVO(poolId, StorPoolUtil.SP_VOLUME_ON_CLUSTER  + "-" + clusterId, StorPoolUtil.devPath(volumeName), false);
             storagePoolDetailsDao.persist(volumeOnPool);
         }
         return volumeOnPool;
@@ -177,7 +177,7 @@ public class StorpoolHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        StorpoolUtil.spLog("hostDisconnected: hostId=%d, poolId=%d", hostId, poolId);
+        StorPoolUtil.spLog("hostDisconnected: hostId=%d, poolId=%d", hostId, poolId);
         return true;
     }
 
@@ -210,7 +210,7 @@ public class StorpoolHostListener implements HypervisorHostListener {
             field.set(null, allowedCmdsInMaintenanceNew);
         } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
             String err = "Could not add StorPoolModifyStoragePoolCommand to s_commandsAllowedInMaintenanceMode array due to: %s";
-            StorpoolUtil.spLog(err, e.getMessage());
+            StorPoolUtil.spLog(err, e.getMessage());
             log.warn(String.format(err, e.getMessage()));
         }
     }

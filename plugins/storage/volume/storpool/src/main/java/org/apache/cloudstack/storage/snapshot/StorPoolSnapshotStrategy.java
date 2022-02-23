@@ -33,14 +33,14 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpApiResponse;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpConnectionDesc;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -54,8 +54,8 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 
 @Component
-public class StorpoolSnapshotStrategy implements SnapshotStrategy {
-    private static final Logger log = Logger.getLogger(StorpoolSnapshotStrategy.class);
+public class StorPoolSnapshotStrategy implements SnapshotStrategy {
+    private static final Logger log = Logger.getLogger(StorPoolSnapshotStrategy.class);
 
     @Inject
     private SnapshotDao _snapshotDao;
@@ -81,11 +81,11 @@ public class StorpoolSnapshotStrategy implements SnapshotStrategy {
             snapshotObj.processEvent(Snapshot.Event.BackupToSecondary);
             snapshotObj.processEvent(Snapshot.Event.OperationSucceeded);
         } catch (NoTransitionException ex) {
-            StorpoolUtil.spLog("Failed to change state: " + ex.toString());
+            StorPoolUtil.spLog("Failed to change state: " + ex.toString());
             try {
                 snapshotObj.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException ex2) {
-                StorpoolUtil.spLog("Failed to change state: " + ex2.toString());
+                StorPoolUtil.spLog("Failed to change state: " + ex2.toString());
             }
         }
         return snapshotInfo;
@@ -100,20 +100,20 @@ public class StorpoolSnapshotStrategy implements SnapshotStrategy {
         boolean res = false;
         // clean-up snapshot from Storpool storage pools
         StoragePoolVO storage = _primaryDataStoreDao.findById(volume.getPoolId());
-        if (storage.getStorageProviderName().equals(StorpoolUtil.SP_PROVIDER_NAME)) {
+        if (storage.getStorageProviderName().equals(StorPoolUtil.SP_PROVIDER_NAME)) {
             try {
-                SpConnectionDesc conn = StorpoolUtil.getSpConnection(storage.getUuid(), storage.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
-                SpApiResponse resp = StorpoolUtil.snapshotDelete(name, conn);
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(storage.getUuid(), storage.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
+                SpApiResponse resp = StorPoolUtil.snapshotDelete(name, conn);
                 if (resp.getError() != null) {
                     final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
-                    StorpoolUtil.spLog(err);
+                    StorPoolUtil.spLog(err);
                 } else {
                     SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, snapshotVO.getUuid());
                     if (snapshotDetails != null) {
                         _snapshotDetailsDao.removeDetails(snapshotId);
                     }
                     res = deleteSnapshotFromDb(snapshotId);
-                    StorpoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfuly=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
+                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfuly=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
                 }
             } catch (Exception e) {
                 String errMsg = String.format("Cannot delete snapshot due to %s", e.getMessage());
@@ -126,7 +126,7 @@ public class StorpoolSnapshotStrategy implements SnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
-        StorpoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op);
+        StorPoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op);
 
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
@@ -135,9 +135,9 @@ public class StorpoolSnapshotStrategy implements SnapshotStrategy {
         VolumeVO volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
         StoragePoolVO storage = _primaryDataStoreDao.findById(volume.getPoolId());
         String name = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), _snapshotStoreDao, _snapshotDetailsDao);
-        if (storage.getStorageProviderName().equals(StorpoolUtil.SP_PROVIDER_NAME)) {
+        if (storage.getStorageProviderName().equals(StorPoolUtil.SP_PROVIDER_NAME)) {
             if (name != null) {
-                StorpoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: globalId=%s", name);
+                StorPoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: globalId=%s", name);
 
                 return StrategyPriority.HIGHEST;
             }
@@ -179,7 +179,7 @@ public class StorpoolSnapshotStrategy implements SnapshotStrategy {
                 }
                 if (!deleted) {
                     SnapshotInfo snap = snapshotDataFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-                    if (StorpoolStorageAdaptor.getVolumeNameFromPath(snap.getPath(), true) == null) {
+                    if (StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getPath(), true) == null) {
                         try {
                             boolean r = snapshotSvr.deleteSnapshot(snapshot);
                             if (r) {

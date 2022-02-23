@@ -30,9 +30,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpApiResponse;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpConnectionDesc;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
 import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
@@ -42,7 +42,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
@@ -65,8 +65,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 @Component
-public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
-    private static final Logger log = Logger.getLogger(StorpoolVMSnapshotStrategy.class);
+public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
+    private static final Logger log = Logger.getLogger(StorPoolVMSnapshotStrategy.class);
 
     @Inject
     private VMSnapshotHelper vmSnapshotHelper;
@@ -109,7 +109,7 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
             DataStore dataStore = dataStoreManager.getPrimaryDataStore(volumeTOs.get(0).getDataStore().getUuid());
-            SpConnectionDesc conn = StorpoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
+            SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
 
             long prev_chain_size = 0;
             long virtual_size = 0;
@@ -131,32 +131,32 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 vmSnapshotVO.setParent(current.getId());
             }
 
-            SpApiResponse resp = StorpoolUtil.volumesGroupSnapshot(volumeTOs, userVm.getUuid(), vmSnapshotVO.getUuid(), "group", conn);
+            SpApiResponse resp = StorPoolUtil.volumesGroupSnapshot(volumeTOs, userVm.getUuid(), vmSnapshotVO.getUuid(), "group", conn);
             JsonObject obj = resp.fullJson.getAsJsonObject();
             JsonArray snapshots = obj.getAsJsonObject("data").getAsJsonArray("snapshots");
-            StorpoolUtil.spLog("Volumes=%s attached to virtual machine", volumeTOs.toString());
+            StorPoolUtil.spLog("Volumes=%s attached to virtual machine", volumeTOs.toString());
             for (VolumeObjectTO vol : volumeTOs) {
                 for (JsonElement jsonElement : snapshots) {
                     JsonObject snapshotObject = jsonElement.getAsJsonObject();
-                    String snapshot = StorpoolUtil
-                            .devPath(snapshotObject.getAsJsonPrimitive(StorpoolUtil.GLOBAL_ID).getAsString());
-                    if (snapshotObject.getAsJsonPrimitive("volume").getAsString().equals(StorpoolStorageAdaptor.getVolumeNameFromPath(vol.getPath(), true))
-                            || snapshotObject.getAsJsonPrimitive("volumeGlobalId").getAsString().equals(StorpoolStorageAdaptor.getVolumeNameFromPath(vol.getPath(), false))) {
+                    String snapshot = StorPoolUtil
+                            .devPath(snapshotObject.getAsJsonPrimitive(StorPoolUtil.GLOBAL_ID).getAsString());
+                    if (snapshotObject.getAsJsonPrimitive("volume").getAsString().equals(StorPoolStorageAdaptor.getVolumeNameFromPath(vol.getPath(), true))
+                            || snapshotObject.getAsJsonPrimitive("volumeGlobalId").getAsString().equals(StorPoolStorageAdaptor.getVolumeNameFromPath(vol.getPath(), false))) {
                         VMSnapshotDetailsVO vmSnapshotDetailsVO = new VMSnapshotDetailsVO(vmSnapshot.getId(), vol.getUuid(), snapshot, false);
                         vmSnapshotDetailsDao.persist(vmSnapshotDetailsVO);
                         Long poolId = volumeDao.findById(vol.getId()).getPoolId();
                         if (poolId != null) {
                             VMSnapshotDetailsVO vmSnapshotDetailStoragePoolId = new VMSnapshotDetailsVO(
-                                    vmSnapshot.getId(), StorpoolUtil.SP_STORAGE_POOL_ID, String.valueOf(poolId), false);
+                                    vmSnapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID, String.valueOf(poolId), false);
                             vmSnapshotDetailsDao.persist(vmSnapshotDetailStoragePoolId);
                         }
-                        StorpoolUtil.spLog("Snapshot=%s of volume=%s for a group snapshot=%s.", snapshot, vol.getUuid(), vmSnapshot.getUuid());
+                        StorPoolUtil.spLog("Snapshot=%s of volume=%s for a group snapshot=%s.", snapshot, vol.getUuid(), vmSnapshot.getUuid());
                     }
                 }
             }
 
             if (resp.getError() == null) {
-                StorpoolUtil.spLog("StorpoolVMSnapshotStrategy.takeSnapshot answer=%s", resp.getError());
+                StorPoolUtil.spLog("StorpoolVMSnapshotStrategy.takeSnapshot answer=%s", resp.getError());
                 finalizeCreate(vmSnapshotVO, volumeTOs);
                 result = vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
                 long new_chain_size = 0;
@@ -205,7 +205,7 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         for (VolumeObjectTO volumeTO : volumeTOs) {
             Long poolId = volumeTO.getPoolId();
             StoragePoolVO pool = storagePool.findById(poolId);
-            if (!pool.getStorageProviderName().equals(StorpoolUtil.SP_PROVIDER_NAME)) {
+            if (!pool.getStorageProviderName().equals(StorPoolUtil.SP_PROVIDER_NAME)) {
                 return StrategyPriority.CANT_HANDLE;
             }
         }
@@ -228,7 +228,7 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         DataStore dataStore = dataStoreManager.getPrimaryDataStore(volumeTOs.get(0).getDataStore().getUuid());
         SpConnectionDesc conn = null;
         try {
-            conn = StorpoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
+            conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
         } catch (CloudRuntimeException e) {
             throw e;
         }
@@ -237,14 +237,14 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
             String err = null;
             VMSnapshotDetailsVO snapshotDetailsVO = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), volumeObjectTO.getUuid());
-            String snapshotName = StorpoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
+            String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
             if (snapshotName == null) {
                 err = String.format("Could not find StorPool's snapshot vm snapshot uuid=%s and volume uui=%s",
                         vmSnapshot.getUuid(), volumeObjectTO.getUuid());
                 log.error("Could not delete snapshot for vm:" + err);
             }
-            StorpoolUtil.spLog("StorpoolVMSnapshotStrategy.deleteVMSnapshot snapshotName=%s", snapshotName);
-            resp = StorpoolUtil.snapshotDelete(snapshotName, conn);
+            StorPoolUtil.spLog("StorpoolVMSnapshotStrategy.deleteVMSnapshot snapshotName=%s", snapshotName);
+            resp = StorPoolUtil.snapshotDelete(snapshotName, conn);
             if (resp.getError() != null) {
                 err = String.format("Could not delete storpool vm error=%s", resp.getError());
                 log.error("Could not delete snapshot for vm:" + err);
@@ -255,7 +255,7 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
             }
             if (err != null) {
-                StorpoolUtil.spLog(
+                StorPoolUtil.spLog(
                         "StorpoolVMSnapshotStrategy.deleteVMSnapshot delete snapshot=%s of gropusnapshot=%s failed due to %s",
                         snapshotName, userVm.getInstanceName(), err);
                 throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm "
@@ -297,37 +297,37 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
 
             DataStore dataStore = dataStoreManager.getPrimaryDataStore(volumeTOs.get(0).getDataStore().getUuid());
-            SpConnectionDesc conn = StorpoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
+            SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, storagePool);
             for (VolumeObjectTO volumeObjectTO : volumeTOs) {
                 String err = null;
                 VMSnapshotDetailsVO snapshotDetailsVO = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(),
                         volumeObjectTO.getUuid());
-                String snapshotName = StorpoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
+                String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
                 if (snapshotName == null) {
                     err = String.format("Could not find StorPool's snapshot vm snapshot uuid=%s and volume uui=%s",
                             vmSnapshot.getUuid(), volumeObjectTO.getUuid());
                     log.error("Could not delete snapshot for vm:" + err);
                 }
-                String volumeName = StorpoolStorageAdaptor.getVolumeNameFromPath(volumeObjectTO.getPath(), true);
-                VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeObjectTO.getId(), StorpoolUtil.SP_PROVIDER_NAME);
+                String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(volumeObjectTO.getPath(), true);
+                VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeObjectTO.getId(), StorPoolUtil.SP_PROVIDER_NAME);
                 if (detail != null) {
-                    SpApiResponse updateVolumeResponse = StorpoolUtil.volumeUpdateRename(volumeName, "", StorpoolStorageAdaptor.getVolumeNameFromPath(detail.getValue(), false), conn);
+                    SpApiResponse updateVolumeResponse = StorPoolUtil.volumeUpdateRename(volumeName, "", StorPoolStorageAdaptor.getVolumeNameFromPath(detail.getValue(), false), conn);
 
                     if (updateVolumeResponse.getError() != null) {
-                        StorpoolUtil.spLog("StorpoolVMSnapshotStrategy.canHandle - Could not update StorPool's volume %s to it's globalId due to %s", volumeName, updateVolumeResponse.getError().getDescr());
+                        StorPoolUtil.spLog("StorpoolVMSnapshotStrategy.canHandle - Could not update StorPool's volume %s to it's globalId due to %s", volumeName, updateVolumeResponse.getError().getDescr());
                         err = String.format("StorpoolVMSnapshotStrategy.canHandle - Could not update StorPool's volume %s to it's globalId due to %s", volumeName, updateVolumeResponse.getError().getDescr());
                     } else {
                         volumeDetailsDao.remove(detail.getId());
                     }
                 }
 
-                SpApiResponse resp = StorpoolUtil.detachAllForced(volumeName, false, conn);
+                SpApiResponse resp = StorPoolUtil.detachAllForced(volumeName, false, conn);
                 if (resp.getError() != null) {
                     err = String.format("Could not detach StorPool volume %s from a group snapshot, due to %s",
                             volumeName, resp.getError());
                     throw new CloudRuntimeException(err);
                 }
-                resp = StorpoolUtil.volumeRevert(volumeName, snapshotName, conn);
+                resp = StorPoolUtil.volumeRevert(volumeName, snapshotName, conn);
                 if (resp.getError() != null) {
                     err = String.format("Create Could not complete revert task for volumeName=%s , and snapshotName=%s",
                             volumeName, snapshotName);
@@ -335,10 +335,10 @@ public class StorpoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
                 VolumeInfo vinfo = volFactory.getVolume(volumeObjectTO.getId());
                 if (vinfo.getMaxIops() != null) {
-                    resp = StorpoolUtil.volumeUpadateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
+                    resp = StorPoolUtil.volumeUpadateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
 
                     if (resp.getError() != null) {
-                        StorpoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s",
+                        StorPoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s",
                                 resp.getError().getDescr());
                     }
                 }

@@ -24,7 +24,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
-public class StorpoolStoragePool implements KVMStoragePool {
+public class StorPoolStoragePool implements KVMStoragePool {
     private String _uuid;
     private String _sourceHost;
     private int _sourcePort;
@@ -35,7 +35,7 @@ public class StorpoolStoragePool implements KVMStoragePool {
     private String _sourceDir;
     private String _localPath;
 
-    public StorpoolStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+    public StorPoolStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;

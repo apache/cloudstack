@@ -32,7 +32,7 @@ import com.cloud.agent.api.storage.StorPoolModifyStoragePoolCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.template.TemplateProp;
@@ -83,7 +83,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
         if (err != null) {
             final String errMsg = String.format("Could not execute storpool_confget. Error: %s", err);
             log.warn(errMsg);
-            StorpoolStorageAdaptor.SP_LOG("Could not execute storpool_confget. Error: %s", err);
+            StorPoolStorageAdaptor.SP_LOG("Could not execute storpool_confget. Error: %s", err);
             return SP_CLUSTER_ID;
         }
 
@@ -101,7 +101,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
     }
 
     public String attachOrDetachVolume(String command, String type, String volumeUuid) {
-        final String name = StorpoolStorageAdaptor.getVolumeNameFromPath(volumeUuid, true);
+        final String name = StorPoolStorageAdaptor.getVolumeNameFromPath(volumeUuid, true);
         if (name == null) {
             return null;
         }

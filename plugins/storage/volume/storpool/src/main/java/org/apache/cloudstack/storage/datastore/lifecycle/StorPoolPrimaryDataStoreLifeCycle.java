@@ -34,16 +34,16 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpApiResponse;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil.SpConnectionDesc;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.SnapshotVO;
@@ -60,8 +60,8 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger log = Logger.getLogger(StorpoolPrimaryDataStoreLifeCycle.class);
+public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+    private static final Logger log = Logger.getLogger(StorPoolPrimaryDataStoreLifeCycle.class);
 
     @Inject
     protected PrimaryDataStoreHelper dataStoreHelper;
@@ -86,11 +86,11 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        StorpoolUtil.spLog("initialize:");
+        StorPoolUtil.spLog("initialize:");
         for (Map.Entry<String, Object> e: dsInfos.entrySet()) {
-            StorpoolUtil.spLog("    %s=%s", e.getKey(), e.getValue());
+            StorPoolUtil.spLog("    %s=%s", e.getKey(), e.getValue());
         }
-        StorpoolUtil.spLog("");
+        StorPoolUtil.spLog("");
 
         log.debug("initialize");
 
@@ -109,7 +109,7 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         if (conn.getTemplateName() == null)
             throw new IllegalArgumentException("No SP_TEMPLATE");
 
-        if (!StorpoolUtil.templateExists(conn)) {
+        if (!StorPoolUtil.templateExists(conn)) {
             throw new IllegalArgumentException("No such storpool template " + conn.getTemplateName() + " or credentials are invalid");
         }
 
@@ -121,13 +121,13 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
             SpConnectionDesc old = null;
             for (StoragePoolDetailVO storagePoolDetailVO : spDetails) {
                 switch (storagePoolDetailVO.getName()) {
-                case StorpoolUtil.SP_AUTH_TOKEN:
+                case StorPoolUtil.SP_AUTH_TOKEN:
                     authToken = storagePoolDetailVO.getValue();
                     break;
-                case StorpoolUtil.SP_HOST_PORT:
+                case StorPoolUtil.SP_HOST_PORT:
                     host = storagePoolDetailVO.getValue();
                     break;
-                case StorpoolUtil.SP_TEMPLATE:
+                case StorPoolUtil.SP_TEMPLATE:
                     template = storagePoolDetailVO.getValue();
                     break;
                 default:
@@ -155,9 +155,9 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
-        details.put(StorpoolUtil.SP_AUTH_TOKEN, conn.getAuthToken());
-        details.put(StorpoolUtil.SP_HOST_PORT, conn.getHostPort());
-        details.put(StorpoolUtil.SP_TEMPLATE, conn.getTemplateName());
+        details.put(StorPoolUtil.SP_AUTH_TOKEN, conn.getAuthToken());
+        details.put(StorPoolUtil.SP_HOST_PORT, conn.getHostPort());
+        details.put(StorPoolUtil.SP_TEMPLATE, conn.getTemplateName());
 
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
         parameters.setName(name);
@@ -169,7 +169,7 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         parameters.setManaged(false);
         parameters.setHost("n/a");
         parameters.setPort(0);
-        parameters.setPath(StorpoolUtil.SP_DEV_PATH);
+        parameters.setPath(StorPoolUtil.SP_DEV_PATH);
         parameters.setUsedBytes(0);
         parameters.setCapacityBytes(capacityBytes);
         parameters.setTags(tags);
@@ -180,11 +180,11 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
-        StorpoolUtil.spLog("updateStoragePool:");
+        StorPoolUtil.spLog("updateStoragePool:");
         for (Map.Entry<String, String> e: details.entrySet()) {
-            StorpoolUtil.spLog("    %s=%s", e.getKey(), e.getValue());
+            StorPoolUtil.spLog("    %s=%s", e.getKey(), e.getValue());
         }
-        StorpoolUtil.spLog("");
+        StorPoolUtil.spLog("");
 
         log.debug("updateStoragePool");
         return;
@@ -250,7 +250,7 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
         if (lstSnapshots != null) {
             for (SnapshotVO snapshot : lstSnapshots) {
-                SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(), StorpoolUtil.SP_STORAGE_POOL_ID);
+                SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID);
 
                 // if this snapshot belongs to the storagePool that was passed in
                 if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == storagePoolId) {
@@ -263,7 +263,7 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
         if (lstTemplateDetails != null) {
             for (VMTemplateDetailVO vmTemplateDetailVO : lstTemplateDetails) {
-                if (vmTemplateDetailVO.getName().equals(StorpoolUtil.SP_STORAGE_POOL_ID) && Long.parseLong(vmTemplateDetailVO.getValue()) == storagePoolId) {
+                if (vmTemplateDetailVO.getName().equals(StorPoolUtil.SP_STORAGE_POOL_ID) && Long.parseLong(vmTemplateDetailVO.getValue()) == storagePoolId) {
                     throw new CloudRuntimeException("This primary storage cannot be deleted because it currently contains one or more template snapshots.");
                 }
             }
@@ -273,15 +273,15 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
         SpConnectionDesc conn = null;
         try {
-            conn = StorpoolUtil.getSpConnection(store.getUuid(), store.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
+            conn = StorPoolUtil.getSpConnection(store.getUuid(), store.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
         } catch (CloudRuntimeException e) {
             throw e;
         }
 
         if (lstTemplatePoolRefs != null) {
             for (VMTemplateStoragePoolVO templatePoolRef : lstTemplatePoolRefs) {
-                SpApiResponse resp = StorpoolUtil.snapshotDelete(
-                        StorpoolStorageAdaptor.getVolumeNameFromPath(templatePoolRef.getLocalDownloadPath(), true), conn);
+                SpApiResponse resp = StorPoolUtil.snapshotDelete(
+                        StorPoolStorageAdaptor.getVolumeNameFromPath(templatePoolRef.getLocalDownloadPath(), true), conn);
                 if (resp.getError() != null) {
                     throw new CloudRuntimeException(String.format("Could not delete StorPool's snapshot from template_spool_ref table due to %s", resp.getError()));
                 }
@@ -292,8 +292,8 @@ public class StorpoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         if (isDeleted) {
             List<StoragePoolDetailVO> volumesOnHosts = storagePoolDetailsDao.listDetails(storagePoolId);
             for (StoragePoolDetailVO storagePoolDetailVO : volumesOnHosts) {
-                if (storagePoolDetailVO.getValue() != null && storagePoolDetailVO.getName().contains(StorpoolUtil.SP_VOLUME_ON_CLUSTER)) {
-                    StorpoolUtil.volumeDelete(StorpoolStorageAdaptor.getVolumeNameFromPath(storagePoolDetailVO.getValue(), true), conn);
+                if (storagePoolDetailVO.getValue() != null && storagePoolDetailVO.getName().contains(StorPoolUtil.SP_VOLUME_ON_CLUSTER)) {
+                    StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(storagePoolDetailVO.getValue(), true), conn);
                 }
             }
             storagePoolDetailsDao.removeDetails(storagePoolId);

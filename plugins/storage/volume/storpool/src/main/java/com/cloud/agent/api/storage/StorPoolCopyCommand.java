@@ -23,12 +23,12 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
 import com.cloud.agent.api.to.DataTO;
 
-public class StorpoolCopyCommand<S extends DataTO, D extends DataTO> extends StorageSubSystemCommand {
+public class StorPoolCopyCommand<S extends DataTO, D extends DataTO> extends StorageSubSystemCommand {
     private S srcTO;
     private D dstTO;
     private boolean executeInSequence = false;
 
-    public StorpoolCopyCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
+    public StorPoolCopyCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
         super();
         this.srcTO = (S)srcTO;
         this.dstTO = (D)dstTO;

@@ -19,7 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import static com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor.SP_LOG;
+import static com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor.SP_LOG;
 
 import java.io.File;
 
@@ -31,23 +31,23 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.storage.StorpoolBackupSnapshotCommand;
+import com.cloud.agent.api.storage.StorPoolBackupSnapshotCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles = StorpoolBackupSnapshotCommand.class)
-public final class StorpoolBackupSnapshotCommandWrapper extends CommandWrapper<StorpoolBackupSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource> {
+@ResourceWrapper(handles = StorPoolBackupSnapshotCommand.class)
+public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<StorPoolBackupSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorpoolBackupSnapshotCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(StorPoolBackupSnapshotCommandWrapper.class);
 
     @Override
-    public CopyCmdAnswer execute(final StorpoolBackupSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
+    public CopyCmdAnswer execute(final StorPoolBackupSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
         String srcPath = null;
         KVMStoragePool secondaryPool = null;
 
@@ -57,7 +57,7 @@ public final class StorpoolBackupSnapshotCommandWrapper extends CommandWrapper<S
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
             SP_LOG("StorpoolBackupSnapshotCommandWrapper.execute: src=" + src.getPath() + "dst=" + dst.getPath());
-            StorpoolStorageAdaptor.attachOrDetachVolume("attach", "snapshot", src.getPath());
+            StorPoolStorageAdaptor.attachOrDetachVolume("attach", "snapshot", src.getPath());
             srcPath = src.getPath();
 
             final QemuImgFile srcFile = new QemuImgFile(srcPath, PhysicalDiskFormat.RAW);
@@ -94,7 +94,7 @@ public final class StorpoolBackupSnapshotCommandWrapper extends CommandWrapper<S
             return new CopyCmdAnswer(error);
         } finally {
             if (srcPath != null) {
-                StorpoolStorageAdaptor.attachOrDetachVolume("detach", "snapshot", srcPath);
+                StorPoolStorageAdaptor.attachOrDetachVolume("detach", "snapshot", srcPath);
             }
 
             if (secondaryPool != null) {

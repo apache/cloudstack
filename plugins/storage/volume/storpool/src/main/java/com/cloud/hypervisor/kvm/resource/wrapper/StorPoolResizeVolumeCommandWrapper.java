@@ -22,25 +22,25 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
-import com.cloud.agent.api.storage.StorpoolResizeVolumeCommand;
+import com.cloud.agent.api.storage.StorPoolResizeVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.hypervisor.kvm.storage.StorpoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
 
-@ResourceWrapper(handles = StorpoolResizeVolumeCommand.class)
-public final class StorpoolResizeVolumeCommandWrapper extends CommandWrapper<StorpoolResizeVolumeCommand, ResizeVolumeAnswer, LibvirtComputingResource> {
+@ResourceWrapper(handles = StorPoolResizeVolumeCommand.class)
+public final class StorPoolResizeVolumeCommandWrapper extends CommandWrapper<StorPoolResizeVolumeCommand, ResizeVolumeAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorpoolResizeVolumeCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(StorPoolResizeVolumeCommandWrapper.class);
 
     @Override
-    public ResizeVolumeAnswer execute(final StorpoolResizeVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+    public ResizeVolumeAnswer execute(final StorPoolResizeVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String volid = command.getPath();
         final long newSize = command.getNewSize();
         final long currentSize = command.getCurrentSize();
@@ -63,7 +63,7 @@ public final class StorpoolResizeVolumeCommandWrapper extends CommandWrapper<Sto
             final String path = vol.getPath();
             volPath = path;
             if (!command.isAttached()) {
-                StorpoolStorageAdaptor.attachOrDetachVolume("attach", "volume", path);
+                StorPoolStorageAdaptor.attachOrDetachVolume("attach", "volume", path);
             }
             final Script resizecmd = new Script(libvirtComputingResource.getResizeVolumePath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
             resizecmd.add("-s", String.valueOf(newSize));
@@ -91,7 +91,7 @@ public final class StorpoolResizeVolumeCommandWrapper extends CommandWrapper<Sto
             return new ResizeVolumeAnswer(command, false, error);
         } finally {
             if (!command.isAttached() && volPath != null) {
-                StorpoolStorageAdaptor.attachOrDetachVolume("detach", "volume", volPath);
+                StorPoolStorageAdaptor.attachOrDetachVolume("detach", "volume", volPath);
             }
         }
     }

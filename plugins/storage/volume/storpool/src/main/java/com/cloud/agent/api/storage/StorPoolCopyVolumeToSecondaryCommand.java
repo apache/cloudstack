@@ -19,12 +19,12 @@
 
 package com.cloud.agent.api.storage;
 
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.to.DataTO;
 
-public class StorpoolBackupTemplateFromSnapshotCommand extends StorpoolCopyCommand<DataTO, TemplateObjectTO> {
-    public StorpoolBackupTemplateFromSnapshotCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
+public class StorPoolCopyVolumeToSecondaryCommand extends StorPoolCopyCommand<VolumeObjectTO, VolumeObjectTO> {
+    public StorPoolCopyVolumeToSecondaryCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
         super(srcTO, dstTO, timeout, executeInSequence);
     }
 }

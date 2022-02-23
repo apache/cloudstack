@@ -19,21 +19,12 @@
 
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.to.StorageFilerTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
+import com.cloud.agent.api.to.DataTO;
 
-public class StorpoolResizeVolumeCommand extends ResizeVolumeCommand {
-    protected boolean isAttached;
-    protected StorpoolResizeVolumeCommand() {
-        super();
-    }
-
-    public StorpoolResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance, boolean isAttached) {
-        super(path, pool, currentSize, newSize, shrinkOk, vmInstance);
-        this.isAttached = isAttached;
-    }
-
-    public boolean isAttached() {
-        return isAttached;
+public class StorPoolDownloadVolumeCommand extends StorPoolCopyCommand<VolumeObjectTO, VolumeObjectTO> {
+    public StorPoolDownloadVolumeCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
+        super(srcTO, dstTO, timeout, executeInSequence);
     }
 }

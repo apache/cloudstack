@@ -40,7 +40,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 @StorageAdaptorInfo(storagePoolType=StoragePoolType.SharedMountPoint)
-public class StorpoolStorageAdaptor implements StorageAdaptor {
+public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static void SP_LOG(String fmt, Object... args) {
         try (PrintWriter spLogFile = new PrintWriter(new BufferedWriter(new FileWriter("/var/log/cloudstack/agent/storpool-agent.log", true)))) {
             final String line = String.format(fmt, args);
@@ -52,7 +52,7 @@ public class StorpoolStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private static final Logger log = Logger.getLogger(StorpoolStorageAdaptor.class);
+    private static final Logger log = Logger.getLogger(StorPoolStorageAdaptor.class);
 
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
@@ -60,7 +60,7 @@ public class StorpoolStorageAdaptor implements StorageAdaptor {
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
         SP_LOG("StorpooolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
-        StorpoolStoragePool storagePool = new StorpoolStoragePool(uuid, host, port, storagePoolType, this);
+        StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);
         storageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
     }

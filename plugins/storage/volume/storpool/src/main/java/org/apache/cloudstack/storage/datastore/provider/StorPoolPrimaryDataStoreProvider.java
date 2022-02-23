@@ -26,24 +26,24 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.storage.datastore.driver.StorpoolPrimaryDataStoreDriver;
-import org.apache.cloudstack.storage.datastore.lifecycle.StorpoolPrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil;
+import org.apache.cloudstack.storage.datastore.driver.StorPoolPrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.datastore.lifecycle.StorPoolPrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 
 import com.cloud.utils.component.ComponentContext;
 
-public class StorpoolPrimaryDataStoreProvider implements PrimaryDataStoreProvider {
+public class StorPoolPrimaryDataStoreProvider implements PrimaryDataStoreProvider {
 
     protected DataStoreLifeCycle lifecycle;
     protected DataStoreDriver driver;
     protected HypervisorHostListener listener;
 
-    StorpoolPrimaryDataStoreProvider() {
+    StorPoolPrimaryDataStoreProvider() {
     }
 
     @Override
     public String getName() {
-        return StorpoolUtil.SP_PROVIDER_NAME;
+        return StorPoolUtil.SP_PROVIDER_NAME;
     }
 
     @Override
@@ -63,9 +63,9 @@ public class StorpoolPrimaryDataStoreProvider implements PrimaryDataStoreProvide
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecycle = ComponentContext.inject(StorpoolPrimaryDataStoreLifeCycle.class);
-        driver = ComponentContext.inject(StorpoolPrimaryDataStoreDriver.class);
-        listener = ComponentContext.inject(StorpoolHostListener.class);
+        lifecycle = ComponentContext.inject(StorPoolPrimaryDataStoreLifeCycle.class);
+        driver = ComponentContext.inject(StorPoolPrimaryDataStoreDriver.class);
+        listener = ComponentContext.inject(StorPoolHostListener.class);
         return true;
     }
 

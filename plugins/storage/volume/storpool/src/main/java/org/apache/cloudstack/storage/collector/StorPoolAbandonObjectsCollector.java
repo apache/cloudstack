@@ -38,7 +38,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
-import org.apache.cloudstack.storage.datastore.util.StorpoolUtil;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
@@ -106,12 +106,12 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         @Override
         @DB
         protected void runInContext() {
-            List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorpoolUtil.SP_PROVIDER_NAME);
+            List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
             if (spPools != null && spPools.size() > 0) {
                 Map<String, String> volumes = new HashMap<>();
                 for (StoragePoolVO storagePoolVO : spPools) {
                     try {
-                        JsonArray arr = StorpoolUtil.volumesList(StorpoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
+                        JsonArray arr = StorPoolUtil.volumesList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
                         volumes.putAll(getStorPoolNamesAndCsTag(arr));
                     } catch (Exception e) {
                         log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
@@ -185,12 +185,12 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         @Override
         @DB
         protected void runInContext() {
-            List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorpoolUtil.SP_PROVIDER_NAME);
+            List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
             Map<String, String> snapshots = new HashMap<String, String>();
             if (spPools != null && spPools.size() > 0) {
                 for (StoragePoolVO storagePoolVO : spPools) {
                     try {
-                        JsonArray arr = StorpoolUtil.snapshotsList(StorpoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
+                        JsonArray arr = StorPoolUtil.snapshotsList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
                         snapshots.putAll(getStorPoolNamesAndCsTag(arr));
                     } catch (Exception e) {
                         log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
@@ -282,7 +282,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
     private void addRecordToDb(String name, PreparedStatement pstmt, String tag, boolean pathNeeded)
             throws SQLException {
         name = name.startsWith("~") ? name.split("~")[1] : name;
-        pstmt.setString(1, pathNeeded ? StorpoolUtil.devPath(name) : name);
+        pstmt.setString(1, pathNeeded ? StorPoolUtil.devPath(name) : name);
         pstmt.setString(2, tag);
         pstmt.addBatch();
     }
