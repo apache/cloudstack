@@ -1635,7 +1635,7 @@ class TestIngressRule(cloudstackTestCase):
             # Sleep to ensure that VM is in running state
             time.sleep(self.testdata["sleep"])
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         # SSH should be allowed on 22 port after restart
         try:
