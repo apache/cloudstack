@@ -184,7 +184,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
             return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.commandExecutor);
 
         }
-        if (StorageManager.SecStorageVMScaleDown.value()) {
+        if (StorageManager.SecStorageVMAutoScaleDown.value()) {
             scaleDownSSVMOnLoad(alreadyRunning, activeCmds, copyCmdsInPipeline);
         }
         return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
