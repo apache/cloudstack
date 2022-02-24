@@ -648,4 +648,7 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
     SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`
         FROM `cloud`.`user_vm_details`
-        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value ;
+        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value
+        INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
+        WHERE ssh_keypairs.account_id = vm_instance.account_id;
+
