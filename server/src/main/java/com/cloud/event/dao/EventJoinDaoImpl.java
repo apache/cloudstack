@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.event.dao;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -100,6 +102,12 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
             final Object objVO = entityMgr.findByIdIncludingRemoved(clazz, resourceId);
             if (objVO instanceof Identity) {
                 responseEvent.setResourceId(((Identity)objVO).getUuid());
+            }
+            if (objVO != null) {
+                try {
+                    Method m = objVO.getClass().getMethod("getName");
+                    responseEvent.setResourceName((String)m.invoke(objVO));
+                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
             }
         }
         ApiResponseHelper.populateOwner(responseEvent, event);

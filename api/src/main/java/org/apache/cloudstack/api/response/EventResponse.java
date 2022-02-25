@@ -70,12 +70,16 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     private String domainName;
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Param(description = "the id of the resource")
+    @Param(description = "the id of the resource", since = "4.17.0")
     private String resourceId;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
-    @Param(description = "the type of the resource")
+    @Param(description = "the type of the resource", since = "4.17.0")
     private String resourceType;
+
+    @SerializedName(ApiConstants.RESOURCE_NAME)
+    @Param(description = "the name of the resource", since = "4.17.0")
+    private String resourceName;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the event was created")
@@ -130,6 +134,10 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
     }
 
     public void setCreated(Date created) {
