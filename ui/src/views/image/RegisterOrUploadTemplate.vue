@@ -16,7 +16,9 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div
+    class="form-layout"
+    @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
@@ -24,7 +26,6 @@
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
-        v-ctrl-enter="handleSubmit"
         :ref="formRef"
         :model="form"
         :rules="rules"

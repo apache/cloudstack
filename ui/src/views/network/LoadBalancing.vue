@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div v-ctrl-enter="handleOpenAddVMModal">
+    <div @keyup.ctrl.enter="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -382,7 +382,7 @@
       :footer="null"
       @cancel="closeModal"
     >
-      <div v-ctrl-enter="handleAddNewRule">
+      <div @keyup.ctrl.enter="handleAddNewRule">
         <span
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
@@ -457,8 +457,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -1352,6 +1352,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value

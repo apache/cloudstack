@@ -53,7 +53,7 @@
             class="detail-input"
             :filterOption="filterOption"
             v-model:value="newValue"
-            :options="detailOptions[newKey]"
+            :options="detailValues"
             :placeholder="$t('label.value')"
             @change="e => onAddInputChange(e, 'newValue')" />
           <tooltip-button :tooltip="$t('label.add.setting')" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
@@ -141,7 +141,6 @@ export default {
     return {
       details: [],
       detailOptions: {},
-      detailKeys: [],
       showAddDetail: false,
       disableSettings: false,
       newKey: '',
@@ -158,6 +157,24 @@ export default {
       handler (newItem) {
         this.updateResource(newItem)
       }
+    }
+  },
+  computed: {
+    detailKeys () {
+      return Object.keys(this.detailOptions).map(key => {
+        return { value: key }
+      })
+    },
+    detailValues () {
+      if (!this.newKey) {
+        return []
+      }
+      if (!Array.isArray(this.detailOptions[this.newKey])) {
+        return { value: this.detailOptions[this.newKey] }
+      }
+      return this.detailOptions[this.newKey].map(value => {
+        return { value: value }
+      })
     }
   },
   created () {
