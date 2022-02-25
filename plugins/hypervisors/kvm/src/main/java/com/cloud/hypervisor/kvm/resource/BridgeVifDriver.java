@@ -28,10 +28,9 @@ import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
@@ -224,7 +223,7 @@ public class BridgeVifDriver extends VifDriverBase {
                         String brName = createVnetBr(vNetId, trafficLabel, protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     } else {
-                        String brName = createVnetBr(vNetId, "private", protocol);
+                        String brName = createVnetBr(vNetId, _bridges.get("private"), protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     }
             } else {
@@ -267,8 +266,8 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(LibvirtVMDef.InterfaceDef iface) {
-        deleteVnetBr(iface.getBrName());
+    public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
+        deleteVnetBr(iface.getBrName(), deleteBr);
     }
 
     @Override
@@ -291,7 +290,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
-        if (nic == null) {
+        if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
             // if not found in bridge map, maybe traffic label refers to pif already?
             File pif = new File("/sys/class/net/" + pifKey);
             if (pif.isDirectory()) {
@@ -327,7 +326,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void deleteVnetBr(String brName) {
+    private void deleteVnetBr(String brName, boolean deleteBr) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
             if (cmdout == null)
@@ -376,6 +375,9 @@ public class BridgeVifDriver extends VifDriverBase {
             command.add("-v", vNetId);
             command.add("-p", pName);
             command.add("-b", brName);
+            if (cmdout != null && !cmdout.contains("vxlan")) {
+                command.add("-d", String.valueOf(deleteBr));
+            }
 
             final String result = command.execute();
             if (result != null) {
@@ -399,7 +401,7 @@ public class BridgeVifDriver extends VifDriverBase {
                     continue;
                 }
                 final String device = tokens[2];
-                if (!Strings.isNullOrEmpty(device) && !device.equalsIgnoreCase(linkLocalBr)) {
+                if (StringUtils.isNotEmpty(device) && !device.equalsIgnoreCase(linkLocalBr)) {
                     Script.runSimpleBashScript("ip route del " + _controlCidr + " dev " + tokens[2]);
                 } else {
                     foundLinkLocalBr = true;
@@ -434,6 +436,24 @@ public class BridgeVifDriver extends VifDriverBase {
             return true;
         } else {
             return false;
+        }
+    }
+
+    @Override
+    public void deleteBr(NicTO nic) {
+        String vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+        String trafficLabel = nic.getName();
+        String pifName = _pifs.get(trafficLabel);
+        if (pifName == null) {
+            // if not found in bridge map, maybe traffic label refers to pif already?
+            File pif = new File("/sys/class/net/" + trafficLabel);
+            if (pif.isDirectory()) {
+                pifName = trafficLabel;
+            }
+        }
+        if (vlanId != null && pifName != null) {
+            String brName = generateVnetBrName(pifName, vlanId);
+            deleteVnetBr(brName, true);
         }
     }
 }

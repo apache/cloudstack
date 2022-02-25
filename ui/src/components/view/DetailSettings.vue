@@ -44,7 +44,11 @@
             :dataSource="Object.keys(detailOptions)"
             :placeholder="$t('label.name')"
             @change="e => onAddInputChange(e, 'newKey')" />
-          <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+          <a-input
+            class="tag-disabled-input"
+            style=" width: 30px; border-left: 0; pointer-events: none; text-align: center"
+            placeholder="="
+            disabled />
           <a-auto-complete
             class="detail-input"
             :filterOption="filterOption"
@@ -80,11 +84,12 @@
           slot="actions"
           v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
             'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
-          <tootip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
-          <tootip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
+          <tooltip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
+          <tooltip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
           <tooltip-button
             :tooltip="$t('label.edit')"
             icon="edit"
+            :disabled="deployasistemplate === true"
             v-if="!item.edit"
             @click="showEditDetail(index)" />
         </div>
@@ -99,7 +104,7 @@
             :cancelText="$t('label.no')"
             placement="left"
           >
-            <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </a-list-item>
@@ -109,7 +114,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from './TooltipButton.vue'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   components: { TooltipButton },
@@ -130,6 +135,7 @@ export default {
       newValue: '',
       loading: false,
       resourceType: 'UserVm',
+      deployasistemplate: false,
       error: false
     }
   },
@@ -163,17 +169,13 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
-    },
-    filterOrReadOnlyDetails () {
-      for (var i = 0; i < this.details.length; i++) {
-        if (!this.allowEditOfDetail(this.details[i].name)) {
-          this.details.splice(i, 1)
-        }
-      }
+      api('listTemplates', { templatefilter: 'all', id: this.resource.templateid }).then(json => {
+        this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
+      })
     },
     allowEditOfDetail (name) {
-      if (this.resource.readonlyuidetails) {
-        if (this.resource.readonlyuidetails.split(',').map(item => item.trim()).includes(name)) {
+      if (this.resource.readonlydetails) {
+        if (this.resource.readonlydetails.split(',').map(item => item.trim()).includes(name)) {
           return false
         }
       }
@@ -202,6 +204,27 @@ export default {
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         this.resource.project && this.resource.projectid === this.$store.getters.project.id
     },
+    getDetailsParam (details) {
+      var params = {}
+      var filteredDetails = details
+      if (this.resource.readonlydetails && filteredDetails) {
+        filteredDetails = []
+        var readOnlyDetailNames = this.resource.readonlydetails.split(',').map(item => item.trim())
+        for (var detail of this.details) {
+          if (!readOnlyDetailNames.includes(detail.name)) {
+            filteredDetails.push(detail)
+          }
+        }
+      }
+      if (filteredDetails.length === 0) {
+        params.cleanupdetails = true
+      } else {
+        filteredDetails.forEach(function (item, index) {
+          params['details[0].' + item.name] = item.value
+        })
+      }
+      return params
+    },
     runApi () {
       var apiName = ''
       if (this.resourceType === 'UserVm') {
@@ -217,14 +240,8 @@ export default {
         return
       }
 
-      const params = { id: this.resource.id }
-      if (this.details.length === 0) {
-        params.cleanupdetails = true
-      } else {
-        this.details.forEach(function (item, index) {
-          params['details[0].' + item.name] = item.value
-        })
-      }
+      var params = { id: this.resource.id }
+      params = Object.assign(params, this.getDetailsParam(this.details))
       this.loading = true
       api(apiName, params).then(json => {
         var details = {}
@@ -250,18 +267,19 @@ export default {
         this.error = this.$t('message.error.provide.setting')
         return
       }
+      if (!this.allowEditOfDetail(this.newKey)) {
+        this.error = this.$t('error.unable.to.proceed')
+        return
+      }
       this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
-      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     updateDetail (index) {
-      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     deleteDetail (index) {
       this.details.splice(index, 1)
-      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     onShowAddDetail () {

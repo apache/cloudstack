@@ -93,6 +93,10 @@ public class BackupOfferingVO implements BackupOffering {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getExternalId() {
         return externalId;
     }
@@ -118,6 +122,10 @@ public class BackupOfferingVO implements BackupOffering {
 
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Date getCreated() {

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -92,13 +94,13 @@ public interface QueryService {
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
-    static final ConfigKey<String> UserVMBlacklistedDetails = new ConfigKey<String>("Advanced", String.class,
-            "user.vm.blacklisted.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
+    static final ConfigKey<String> UserVMDeniedDetails = new ConfigKey<String>("Advanced", String.class,
+            "user.vm.denied.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
             "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true);
 
-    static final ConfigKey<String> UserVMReadOnlyUIDetails = new ConfigKey<String>("Advanced", String.class,
-            "user.vm.readonly.ui.details", "dataDiskController, rootDiskController",
-            "List of UI read-only VM settings/details as comma separated string", true);
+    static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<String>("Advanced", String.class,
+            "user.vm.readonly.details", "dataDiskController, rootDiskController",
+            "List of read-only VM settings/details as comma separated string", true);
 
     ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
             "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +
@@ -158,6 +160,8 @@ public interface QueryService {
     ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
 
     DetailOptionsResponse listDetailOptions(ListDetailOptionsCmd cmd);
+
+    ListResponse<ResourceIconResponse> listResourceIcons(ListResourceIconCmd cmd);
 
     ListResponse<AffinityGroupResponse> searchForAffinityGroups(ListAffinityGroupsCmd cmd);
 

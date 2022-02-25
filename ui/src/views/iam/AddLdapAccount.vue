@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="ldap-account-layout">
+  <div class="ldap-account-layout" v-ctrl-enter="handleSubmit">
     <a-row :gutter="0">
       <a-col :md="24" :lg="16">
         <a-card :bordered="false">
@@ -50,7 +50,15 @@
             @submit="handleSubmit"
             layout="vertical" >
             <a-form-item :label="$t('label.filterby')">
-              <a-select @change="fetchListLdapUsers" v-model="selectedFilter" autoFocus >
+              <a-select
+                @change="fetchListLdapUsers"
+                v-model="selectedFilter"
+                autoFocus
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in filters" :key="opt.id" >
                   {{ opt.name }}
                 </a-select-option>
@@ -58,13 +66,17 @@
             </a-form-item>
             <a-form-item :label="$t('label.domain')">
               <a-select
-                showSearch
                 v-decorator="['domainid', {
                   rules: [{ required: true, memessage: `${this.$t('message.error.select')}` }]
                 }]"
                 :placeholder="apiParams.domainid.description"
                 :loading="domainLoading"
-                @change="fetchListLdapUsers($event)" >
+                @change="fetchListLdapUsers($event)"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in listDomains" :key="opt.name">
                   {{ opt.name }}
                 </a-select-option>
@@ -78,12 +90,16 @@
             </a-form-item>
             <a-form-item :label="$t('label.role')">
               <a-select
-                showSearch
                 v-decorator="['roleid', {
                   rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                 }]"
                 :placeholder="apiParams.roleid.description"
-                :loading="roleLoading">
+                :loading="roleLoading"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in listRoles" :key="opt.name">
                   {{ opt.name }}
                 </a-select-option>
@@ -91,10 +107,14 @@
             </a-form-item>
             <a-form-item :label="$t('label.timezone')">
               <a-select
-                showSearch
                 v-decorator="['timezone']"
                 :placeholder="apiParams.timezone.description"
-                :loading="timeZoneLoading">
+                :loading="timeZoneLoading"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -123,7 +143,12 @@
                     rules: [{ required: samlEnable, message: `${this.$t('message.error.select')}` }]
                   }]"
                   :placeholder="$t('label.choose.saml.indentity')"
-                  :loading="loading">
+                  :loading="loading"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
                     {{ idp.orgName }}
                   </a-select-option>
@@ -131,9 +156,9 @@
               </a-form-item>
             </div>
 
-            <div class="card-footer">
+            <div class="action-button">
               <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
+              <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
             </div>
           </a-form>
         </a-card>
@@ -338,7 +363,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -468,20 +494,20 @@ export default {
   }
 }
 
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
-  }
-}
-
 /deep/ .light-row {
   background-color: #fff;
 }
 
 /deep/ .dark-row {
   background-color: #f9f9f9;
+}
+
+.card-footer {
+  text-align: right;
+
+  button + button {
+    margin-left: 8px;
+  }
 }
 
 </style>

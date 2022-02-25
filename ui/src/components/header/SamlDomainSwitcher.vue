@@ -22,6 +22,11 @@
       :loading="loading"
       :defaultValue="currentAccount"
       :value="currentAccount"
+      showSearch
+      optionFilterProp="children"
+      :filterOption="(input, option) => {
+        return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      }"
       @change="changeAccount"
       @focus="fetchData" >
 
@@ -98,7 +103,7 @@ export default {
         userid: account.userId,
         domainid: account.domainId
       }).then(response => {
-        store.dispatch('GetInfo').then(() => {
+        store.dispatch('GetInfo', true).then(() => {
           this.$message.success(`Switched to "${account.accountName} (${account.domainPath})"`)
           this.$router.go()
         })

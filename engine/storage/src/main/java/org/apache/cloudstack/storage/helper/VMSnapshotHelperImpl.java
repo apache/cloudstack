@@ -37,6 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -148,4 +149,33 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         return result;
     }
 
+    @Override
+    public Long getStoragePoolForVM(Long vmId) {
+        List<VolumeVO> rootVolumes = volumeDao.findReadyRootVolumesByInstance(vmId);
+        if (rootVolumes == null || rootVolumes.isEmpty()) {
+            throw new InvalidParameterValueException("Failed to find root volume for the user vm:" + vmId);
+        }
+
+        VolumeVO rootVolume = rootVolumes.get(0);
+        StoragePoolVO rootVolumePool = primaryDataStoreDao.findById(rootVolume.getPoolId());
+        if (rootVolumePool == null) {
+            throw new InvalidParameterValueException("Failed to find root volume storage pool for the user vm:" + vmId);
+        }
+
+        if (rootVolumePool.isInMaintenance()) {
+            throw new InvalidParameterValueException("Storage pool for the user vm:" + vmId + " is in maintenance");
+        }
+
+        return rootVolumePool.getId();
+    }
+
+    @Override
+    public Storage.StoragePoolType getStoragePoolType(Long poolId) {
+        StoragePoolVO storagePool = primaryDataStoreDao.findById(poolId);
+        if (storagePool == null) {
+            throw new InvalidParameterValueException("storage pool is not found");
+        }
+
+        return storagePool.getPoolType();
+    }
 }

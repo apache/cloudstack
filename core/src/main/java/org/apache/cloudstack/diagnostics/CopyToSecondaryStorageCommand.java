@@ -22,11 +22,13 @@ public class CopyToSecondaryStorageCommand extends StorageSubSystemCommand {
     private String secondaryStorageUrl;
     private String systemVmIp;
     private String fileName;
+    private String nfsVersion;
 
-    public CopyToSecondaryStorageCommand(String secondaryStorageUrl, String systemVmIp, String fileName) {
+    public CopyToSecondaryStorageCommand(String secondaryStorageUrl, String systemVmIp, String fileName, String nfsVersion) {
         this.secondaryStorageUrl = secondaryStorageUrl;
         this.systemVmIp = systemVmIp;
         this.fileName = fileName;
+        this.nfsVersion = nfsVersion;
     }
 
     public String getSecondaryStorageUrl() {
@@ -39,6 +41,10 @@ public class CopyToSecondaryStorageCommand extends StorageSubSystemCommand {
 
     public String getFileName() {
         return fileName;
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
     }
 
     @Override

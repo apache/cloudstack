@@ -27,8 +27,6 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import com.cloud.utils.StringUtils;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -74,7 +72,7 @@ import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -150,7 +148,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length = 32768)
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
+            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
+            length = 1048576)
     private String userData;
 
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
@@ -235,6 +235,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map vAppNetworks;
 
+    @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
+            description = "true if virtual machine needs to be dynamically scalable")
+    protected Boolean dynamicScalingEnabled;
+
+    @Parameter(name = ApiConstants.OVERRIDE_DISK_OFFERING_ID, type = CommandType.UUID, since = "4.17", entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine to be used for root volume instead of the disk offering mapped in service offering." +
+            "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
+    private Long overrideDiskOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -265,7 +273,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return domainId;
     }
 
-    public ApiConstants.BootType  getBootType() {
+    public ApiConstants.BootType getBootType() {
         if (StringUtils.isNotBlank(bootType)) {
             try {
                 String type = bootType.trim().toUpperCase();
@@ -292,7 +300,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
-        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+        if (getBootType() != null) {
             customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
@@ -310,11 +318,17 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String errMesg = "Invalid bootMode " + bootMode + "Specified for vm " + getName()
-                        + " Valid values are:  "+ Arrays.toString(ApiConstants.BootMode.values());
-                s_logger.warn(errMesg);
-                throw new InvalidParameterValueException(errMesg);
-                }
+                String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
+                        ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+            String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
+                    ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
         }
         return null;
     }
@@ -349,7 +363,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
-                if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
+                if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
                 map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
@@ -621,6 +635,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Boolean getBootIntoSetup() {
         return bootIntoSetup;
+    }
+
+    public boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled == null ? true : dynamicScalingEnabled;
+    }
+
+    public Long getOverrideDiskOfferingId() {
+        return overrideDiskOfferingId;
     }
 
     /////////////////////////////////////////////////////

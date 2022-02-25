@@ -62,6 +62,16 @@ export default {
         title: 'label.snapshots',
         param: 'volumeid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'state', 'tags'],
       actions: [
         {
@@ -88,12 +98,8 @@ export default {
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
           listView: true,
-          args: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
-          mapping: {
-            format: {
-              options: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/storage/UploadVolume.vue')
         },
         {
           api: 'attachVolume',
@@ -113,6 +119,21 @@ export default {
           show: (record) => {
             return record.type !== 'ROOT' && record.virtualmachineid &&
               ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate)
+          }
+        },
+        {
+          api: 'updateVolume',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: ['name'],
+          mapping: {
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
           }
         },
         {
@@ -173,6 +194,17 @@ export default {
           component: () => import('@/views/storage/MigrateVolume.vue')
         },
         {
+          api: 'changeOfferingForVolume',
+          icon: 'swap',
+          docHelp: 'adminguide/storage.html#id2',
+          label: 'label.change.offering.for.volume',
+          args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
+          dataView: true,
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          popup: true,
+          component: () => import('@/views/storage/ChangeOfferingForVolume.vue')
+        },
+        {
           api: 'extractVolume',
           icon: 'cloud-download',
           label: 'label.action.download.volume',
@@ -223,12 +255,14 @@ export default {
           label: 'label.action.delete.volume',
           message: 'message.action.delete.volume',
           dataView: true,
-          groupAction: true,
           show: (record, store) => {
             return ['Expunging', 'Expunged', 'UploadError'].includes(record.state) ||
               ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
               ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
         {
           api: 'destroyVolume',
@@ -263,6 +297,16 @@ export default {
         return fields
       },
       details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       searchFilters: ['name', 'domainid', 'account', 'tags'],
       actions: [
         {
@@ -311,7 +355,10 @@ export default {
           label: 'label.action.delete.snapshot',
           message: 'message.action.delete.snapshot',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -332,6 +379,16 @@ export default {
       },
       details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parentName', 'virtualmachineid', 'account', 'domain', 'created'],
       searchFilters: ['name', 'domainid', 'account', 'tags'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [
         {
           api: 'createSnapshotFromVMSnapshot',
@@ -369,7 +426,10 @@ export default {
             vmsnapshotid: {
               value: (record) => { return record.id }
             }
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { vmsnapshotid: x } }) }
         }
       ]
     },

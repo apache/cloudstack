@@ -476,7 +476,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (defaultDns2 != null) {
             buf.append(" dns2=").append(defaultDns2);
         }
-
+        String msPublicKey = _configDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }

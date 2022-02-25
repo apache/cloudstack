@@ -31,12 +31,16 @@ export default {
     title: 'label.hosts',
     param: 'podid'
   }],
+  resourceType: 'Pod',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
     name: 'resources',
     component: () => import('@/views/infra/Resources.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   actions: [
     {

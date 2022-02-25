@@ -185,7 +185,7 @@ public interface IpAddressManager {
     IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp, String ipaddress)
             throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
-    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
+    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, String requestedGateway, boolean isSystem)
             throws InsufficientAddressCapacityException;
 
     PublicIp getAvailablePublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
@@ -219,6 +219,7 @@ public interface IpAddressManager {
                                              final boolean assign,
                                              final boolean allocate,
                                              final String requestedIp,
+                                             final String requestedGateway,
                                              final boolean isSystem,
                                              final Long vpcId,
                                              final Boolean displayIp,

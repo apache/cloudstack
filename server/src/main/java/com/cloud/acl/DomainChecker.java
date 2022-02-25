@@ -105,7 +105,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         if (caller.getState() != Account.State.enabled) {
-            throw new PermissionDeniedException(caller + " is disabled.");
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " is disabled.");
         }
 
         if (domain == null) {
@@ -116,10 +116,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
         if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+                throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
         }
 
         return true;
@@ -155,7 +155,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 // account can launch a VM from this template
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
-                    throw new PermissionDeniedException(caller + " does not have permission to launch instances from " + template);
+                    throw new PermissionDeniedException("Account " + caller.getAccountName() +
+                            " does not have permission to launch instances from template " + template.getName());
                 }
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
@@ -177,19 +178,20 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         } else {
             if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
+                String errorMessage = String.format("%s does not have permission to operate with resource", caller);
                 if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
                         if (!_projectMgr.canModifyProjectAccount(caller, account.getId())) {
-                            throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                            throw new PermissionDeniedException(errorMessage);
                         }
                     } else if (!_projectMgr.canAccessProjectAccount(caller, account.getId())) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                        throw new PermissionDeniedException(errorMessage);
                     }
                     checkOperationPermitted(caller, entity);
                 } else {
                     if (caller.getId() != entity.getAccountId()) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                        throw new PermissionDeniedException(errorMessage);
                     }
                 }
             }

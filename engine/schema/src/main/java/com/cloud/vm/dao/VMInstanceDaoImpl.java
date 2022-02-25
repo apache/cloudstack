@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.DateUtil;
@@ -125,6 +126,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             "INNER JOIN `cloud`.`host` ON vm.host_id = host.id WHERE vm.state = 'Running' AND host.data_center_id = ? ";
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
             "GROUP BY offering.service_offering_id) results GROUP BY pci, type";
+
+    private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
 
     @Inject
     protected HostDao _hostDao;
@@ -300,6 +303,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LastHostAndStatesSearch.and("lastHost", LastHostAndStatesSearch.entity().getLastHostId(), Op.EQ);
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
         LastHostAndStatesSearch.done();
+
     }
 
     @Override
@@ -939,5 +943,41 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 update(instance, sc);
             }
         });
+    }
+
+
+    @Override
+    public void updateSystemVmTemplateId(long templateId, Hypervisor.HypervisorType hypervisorType) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+        StringBuilder sql = new StringBuilder(UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR);
+        try {
+            PreparedStatement updateStatement = txn.prepareAutoCloseStatement(sql.toString());
+            updateStatement.setLong(1, templateId);
+            updateStatement.setString(2, hypervisorType.toString());
+            updateStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
+
+    @Override
+    public List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId) {
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.or().op("hostId", sb.entity().getHostId(), Op.EQ);
+        sb.or("lastHostId", sb.entity().getLastHostId(), Op.EQ);
+        sb.and().op("hostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
+        sb.and("lastHostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
+        sb.and("podId", sb.entity().getPodIdToDeployIn(), Op.EQ);
+        sb.cp();
+        sb.cp();
+        sb.done();
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("hostId", String.valueOf(hostId));
+        sc.setParameters("lastHostId", String.valueOf(hostId));
+        sc.setParameters("podId", String.valueOf(podId));
+        return listBy(sc);
     }
 }

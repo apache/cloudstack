@@ -45,6 +45,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected String authSecret;
     protected String sourceHost;
     protected int sourcePort;
+
     protected String sourceDir;
 
     public LibvirtStoragePool(String uuid, String name, StoragePoolType type, StorageAdaptor adaptor, StoragePool pool) {
@@ -56,7 +57,6 @@ public class LibvirtStoragePool implements KVMStoragePool {
         this.used = 0;
         this.available = 0;
         this._pool = pool;
-
     }
 
     public void setCapacity(long capacity) {
@@ -101,7 +101,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public PhysicalDiskFormat getDefaultFormat() {
-        if (getStoragePoolType() == StoragePoolType.CLVM || getStoragePoolType() == StoragePoolType.RBD) {
+        if (getStoragePoolType() == StoragePoolType.CLVM || getStoragePoolType() == StoragePoolType.RBD || getStoragePoolType() == StoragePoolType.PowerFlex) {
             return PhysicalDiskFormat.RAW;
         } else {
             return PhysicalDiskFormat.QCOW2;
@@ -270,5 +270,13 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public boolean createFolder(String path) {
         return this._storageAdaptor.createFolder(this.uuid, path);
+    }
+
+    @Override
+    public boolean supportsConfigDriveIso() {
+        if (this.type == StoragePoolType.NetworkFilesystem) {
+            return true;
+        }
+        return false;
     }
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.agent.api.Answer;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
@@ -25,6 +26,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.exception.StorageAccessException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
@@ -62,13 +64,17 @@ public interface VolumeService {
      */
     AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume);
 
+    void ensureVolumeIsExpungeReady(long volumeId);
+
     boolean cloneVolume(long volumeId, long baseVolId);
 
     AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(VolumeInfo volume, DataStore store, SnapshotInfo snapshot);
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    AsyncCallFuture<VolumeApiResult> createManagedStorageVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId, TemplateInfo srcTemplateInfo, long destHostId);
+    TemplateInfo createManagedStorageTemplate(long srcTemplateId, long destDataStoreId, long destHostId) throws StorageAccessException;
+
+    AsyncCallFuture<VolumeApiResult> createManagedStorageVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId, TemplateInfo srcTemplateInfo, long destHostId) throws StorageAccessException;
 
     AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template);
 
@@ -95,4 +101,11 @@ public interface VolumeService {
     VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, long volumeId, HypervisorType hyperType);
 
     void unmanageVolume(long volumeId);
+
+    /**
+     * After volume migration, copies snapshot policies from the source volume to destination volume; then, it destroys and expunges the source volume.
+     * @return If no exception happens, it will return false, otherwise true.
+     */
+    boolean copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event destinationEvent, Answer destinationEventAnswer,
+      VolumeInfo sourceVolume, VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync);
 }

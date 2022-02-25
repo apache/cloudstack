@@ -66,6 +66,10 @@ export default {
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
       }],
+      defaultTabs: [{
+        name: 'details',
+        component: () => import('@/components/view/DetailsTab.vue')
+      }],
       activeTab: ''
     }
   },
@@ -100,38 +104,63 @@ export default {
       }
 
       this.loading = true
-      this.portFWRuleCount = await this.fetchPortFWRule()
-
-      // disable load balancing rules only if port forwarding is enabled and
-      // network belongs to VPC
-      if (this.portFWRuleCount > 0 && this.resource.vpcid) {
-        this.tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'loadbalancing')
-      } else {
-        this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
-
-        // for isolated networks, display both LB and PF
-        // for VPC they are mutually exclusive
-        if (this.loadBalancerRuleCount > 0) {
-          this.tabs =
-            this.resource.vpcid ? this.$route.meta.tabs.filter(tab => tab.name !== 'portforwarding') : this.$route.meta.tabs
-          this.loading = false
-        } else {
-          this.tabs = this.$route.meta.tabs
-        }
-      }
-
+      await this.filterTabs()
       await this.fetchAction()
       this.loading = false
     },
-    fetchAction () {
-      this.actions = []
-      if (this.$route.meta.actions) {
-        this.actions = this.$route.meta.actions
+    async filterTabs () {
+      // VPC IPs with source nat have only VPN
+      if (this.resource && this.resource.vpcid && this.resource.issourcenat) {
+        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+        return
+      }
+      // VPC IPs with vpnenabled have only VPN
+      if (this.resource && this.resource.vpcid && this.resource.vpnenabled) {
+        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+        return
+      }
+      // VPC IPs with static nat have nothing
+      if (this.resource && this.resource.vpcid && this.resource.isstaticnat) {
+        return
+      }
+      if (this.resource && this.resource.vpcid) {
+        // VPC IPs don't have firewall
+        let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
+
+        this.portFWRuleCount = await this.fetchPortFWRule()
+        this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
+
+        // VPC IPs with PF only have PF
+        if (this.portFWRuleCount > 0) {
+          tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'portforwarding'))
+        }
+
+        // VPC IPs with LB rules only have LB
+        if (this.loadBalancerRuleCount > 0) {
+          tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'loadbalancing'))
+        }
+        this.tabs = tabs
+        return
       }
 
-      if (this.portFWRuleCount > 0 || this.loadBalancerRuleCount > 0) {
-        this.actions = this.actions.filter(action => action.api !== 'enableStaticNat')
+      // Regular guest networks with Source Nat have everything
+      if (this.resource && !this.resource.vpcid && this.resource.issourcenat) {
+        this.tabs = this.$route.meta.tabs
+        return
       }
+      // Regular guest networks with Static Nat only have Firewall
+      if (this.resource && !this.resource.vpcid && this.resource.isstaticnat) {
+        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'firewall'))
+        return
+      }
+
+      // Regular guest networks have all tabs
+      if (this.resource && !this.resource.vpcid) {
+        this.tabs = this.$route.meta.tabs
+      }
+    },
+    fetchAction () {
+      this.actions = this.$route.meta.actions || []
     },
     fetchPortFWRule () {
       return new Promise((resolve, reject) => {

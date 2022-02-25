@@ -44,7 +44,8 @@ from marvin.lib.common import (get_domain,
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from ddt import ddt, data
 import time
 
@@ -878,7 +879,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         # 1. create account and isolated network with network
         #    offering which has ispersistent field enabled
         #    and supporting Redundant Virtual Router in it
-        # 2. Check the Master and Backup Routers are present
+        # 2. Check the Primary and Backup Routers are present
         # 3. Deploy VM ,acquire IP, create Firewall, NAT rules
         # 4. Verify the working of NAT, Firewall rules
         #
@@ -927,7 +928,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         self.assertEqual(
             len(routers),
             2,
-            "Length of the list router should be 2 (Backup & master)")
+            "Length of the list router should be 2 (Backup & Primary)")
 
         # Check if routers are reachable from the host
         for router in routers:
@@ -1372,7 +1373,8 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_delete_account(self):
         # steps
         # 1. create persistent network and deploy VM in it
@@ -2923,7 +2925,8 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         self.VerifyNetworkCleanup(persistent_network_2.id)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_vpc_delete_account(self):
         # steps
         # 1. Create account and create VPC network in the account

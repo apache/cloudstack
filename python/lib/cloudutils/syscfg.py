@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7Later
+from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7Later,serviceOpsSUSE
 from .serviceConfig import *
 class sysConfigFactory:
     @staticmethod
@@ -45,6 +45,8 @@ class sysConfigAgentFactory:
             return sysConfigRedhat7(glbEnv)
         elif distribution == "RHEL8":
             return sysConfigRedhat8(glbEnv)
+        elif distribution == "SUSE":
+            return sysConfigSUSE(glbEnv)
         else:
             print("Can't find the distribution version")
             return sysConfig()
@@ -154,12 +156,18 @@ class sysConfigAgentRedhat8Base(sysConfigAgent):
         self.svo = serviceOpsRedhat7Later()
         super(sysConfigAgentRedhat8Base, self).__init__(env)
 
+class sysConfigAgentSUSE(sysConfigAgent):
+    def __init__(self, env):
+        self.svo = serviceOpsSUSE()
+        super(sysConfigAgentSUSE, self).__init__(env)
+
 class sysConfigAgentUbuntu(sysConfigAgent):
     def __init__(self, glbEnv):
         super(sysConfigAgentUbuntu, self).__init__(glbEnv)
         self.svo = serviceOpsUbuntu()
 
-        self.services = [securityPolicyConfigUbuntu(self),
+        self.services = [hostConfig(self),
+                         securityPolicyConfigUbuntu(self),
                          networkConfigUbuntu(self),
                          libvirtConfigUbuntu(self),
                          firewallConfigUbuntu(self),
@@ -170,7 +178,8 @@ class sysConfigAgentUbuntu(sysConfigAgent):
 class sysConfigRedhat6(sysConfigAgentRedhatBase):
     def __init__(self, glbEnv):
         super(sysConfigRedhat6, self).__init__(glbEnv)
-        self.services = [cgroupConfig(self),
+        self.services = [hostConfig(self),
+                         cgroupConfig(self),
                          securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
@@ -182,7 +191,7 @@ class sysConfigRedhat6(sysConfigAgentRedhatBase):
 class sysConfigRedhat5(sysConfigAgentRedhatBase):
     def __init__(self, glbEnv):
         super(sysConfigRedhat5, self).__init__(glbEnv)
-        self.services = [
+        self.services = [hostConfig(self),
                          securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
@@ -193,7 +202,8 @@ class sysConfigRedhat5(sysConfigAgentRedhatBase):
 class sysConfigRedhat7(sysConfigAgentRedhat7Base):
     def __init__(self, glbEnv):
         super(sysConfigRedhat7, self).__init__(glbEnv)
-        self.services = [securityPolicyConfigRedhat(self),
+        self.services = [hostConfig(self),
+                         securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
@@ -204,9 +214,21 @@ class sysConfigRedhat7(sysConfigAgentRedhat7Base):
 class sysConfigRedhat8(sysConfigAgentRedhat8Base):
     def __init__(self, glbEnv):
         super(sysConfigRedhat8, self).__init__(glbEnv)
-        self.services = [securityPolicyConfigRedhat(self),
+        self.services = [hostConfig(self),
+                         securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
+                         firewallConfigAgent(self),
+                         nfsConfig(self),
+                         cloudAgentConfig(self)]
+
+class sysConfigSUSE(sysConfigAgentSUSE):
+    def __init__(self, glbEnv):
+        super(sysConfigSUSE, self).__init__(glbEnv)
+        self.services = [hostConfig(self),
+                         securityPolicyConfigSUSE(self),
+                         networkConfigSUSE(self),
+                         libvirtConfigSUSE(self),
                          firewallConfigAgent(self),
                          nfsConfig(self),
                          cloudAgentConfig(self)]

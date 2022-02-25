@@ -61,8 +61,12 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     private String zoneName;
 
     @SerializedName(ApiConstants.SUPPORTS_HA)
-    @Param(description = "whether Kubernetes supported version supports HA, multi-master")
+    @Param(description = "whether Kubernetes supported version supports HA, multi-control nodes")
     private Boolean supportsHA;
+
+    @SerializedName(ApiConstants.SUPPORTS_AUTOSCALING)
+    @Param(description = "whether Kubernetes supported version supports Autoscaling")
+    private Boolean supportsAutoscaling;
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the enabled or disabled state of the Kubernetes supported version")
@@ -170,5 +174,13 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setMinimumRamSize(Integer minimumRamSize) {
         this.minimumRamSize = minimumRamSize;
+    }
+
+    public Boolean getSupportsAutoscaling() {
+        return supportsAutoscaling;
+    }
+
+    public void setSupportsAutoscaling(Boolean supportsAutoscaling) {
+        this.supportsAutoscaling = supportsAutoscaling;
     }
 }

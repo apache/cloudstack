@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.ServiceOffering;
@@ -28,7 +28,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ServiceOffering.class)
-public class ServiceOfferingResponse extends BaseResponse {
+public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the id of the service offering")
     private String id;
@@ -76,7 +76,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
-    @SerializedName("tags")
+    @SerializedName("storagetags")
     @Param(description = "the tags for the service offering")
     private String tags;
 
@@ -203,6 +203,28 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROOT_DISK_SIZE)
     @Param(description = "Root disk size in GB", since = "4.15")
     private Long rootDiskSize;
+
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
+    private Boolean dynamicScalingEnabled;
+
+    @SerializedName(ApiConstants.DISK_OFFERING_STRICTNESS)
+    @Param(description = "True/False to indicate the strictness of the disk offering association with the compute offering. " +
+            "When set to true, override of disk offering is not allowed when VM is deployed and " +
+            "change disk offering is not allowed for the ROOT disk after the VM is deployed", since = "4.17")
+    private Boolean diskOfferingStrictness;
+
+    @SerializedName(ApiConstants.DISK_OFFERING_ID)
+    @Param(description = "the ID of the disk offering to which service offering is linked", since = "4.17")
+    private String diskOfferingId;
+
+    @SerializedName("diskofferingname")
+    @Param(description = "name of the disk offering", since = "4.17")
+    private String diskOfferingName;
+
+    @SerializedName("diskofferingdisplaytext")
+    @Param(description = "the display text of the disk offering", since = "4.17")
+    private String diskOfferingDisplayText;
 
     public ServiceOfferingResponse() {
     }
@@ -457,7 +479,6 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setIscutomized(boolean iscutomized) {
         this.isCustomized = iscutomized;
-
     }
 
     public void setCacheMode(String cacheMode) {
@@ -474,5 +495,45 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setRootDiskSize(Long rootDiskSize) {
         this.rootDiskSize = rootDiskSize;
+    }
+
+    public Boolean getDynamicScalingEnabled() {
+        return dynamicScalingEnabled;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public Boolean getDiskOfferingStrictness() {
+        return diskOfferingStrictness;
+    }
+
+    public void setDiskOfferingStrictness(Boolean diskOfferingStrictness) {
+        this.diskOfferingStrictness = diskOfferingStrictness;
+    }
+
+    public void setDiskOfferingId(String diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
+
+    public void setDiskOfferingName(String diskOfferingName) {
+        this.diskOfferingName = diskOfferingName;
+    }
+
+    public void setDiskOfferingDisplayText(String diskOfferingDisplayText) {
+        this.diskOfferingDisplayText = diskOfferingDisplayText;
+    }
+
+    public String getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
+    public String getDiskOfferingDisplayText() {
+        return diskOfferingDisplayText;
     }
 }

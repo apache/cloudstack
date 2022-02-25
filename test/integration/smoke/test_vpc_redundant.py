@@ -300,11 +300,11 @@ class TestVPCRedundancy(cloudstackTestCase):
             "Check that %s routers were indeed created" % count)
 
     def wait_for_vrrp(self):
-        # Wait until 3*advert_int+skew time to get one of the routers as MASTER
+        # Wait until 3*advert_int+skew time to get one of the routers as PRIMARY
         time.sleep(3 * self.advert_int + 5)
 
-    def check_routers_state(self,count=2, status_to_check="MASTER", expected_count=1, showall=False):
-        vals = ["MASTER", "BACKUP", "UNKNOWN", "FAULT"]
+    def check_routers_state(self,count=2, status_to_check="PRIMARY", expected_count=1, showall=False):
+        vals = ["PRIMARY", "BACKUP", "UNKNOWN", "FAULT"]
         cnts = [0, 0, 0, 0]
 
         self.wait_for_vrrp()
@@ -437,7 +437,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             )
 
             self.logger.debug("Created network with ID: %s" % obj_network.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
 
@@ -543,7 +543,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.add_nat_rules()
         self.do_vpc_test(False)
         
-        self.stop_router_by_type("MASTER")
+        self.stop_router_by_type("PRIMARY")
         self.check_routers_state(1)
         self.do_vpc_test(False)
 
@@ -578,11 +578,11 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.add_nat_rules()
         self.do_vpc_test(False)
         
-        self.reboot_router_by_type("MASTER")
+        self.reboot_router_by_type("PRIMARY")
         self.check_routers_state()
         self.do_vpc_test(False)
 
-        self.reboot_router_by_type("MASTER")
+        self.reboot_router_by_type("PRIMARY")
         self.check_routers_state()
         self.do_vpc_test(False)
 
@@ -604,18 +604,18 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.logger.debug("network.gc.wait is ==> %s" % gc_wait)
         self.logger.debug("network.gc.interval is ==> %s" % gc_interval)
 
-        total_sleep = 120
+        total_sleep = 360
         if gc_wait and gc_interval:
-            total_sleep = int(gc_wait[0].value) + int(gc_interval[0].value)
+            total_sleep = max(int(gc_wait[0].value), int(gc_interval[0].value)) * 2 + 60
         else:
-            self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 2 minutes.")
+            self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 6 minutes.")
 
-        time.sleep(total_sleep * 3)
+        time.sleep(total_sleep)
 
         # Router will be in FAULT state, i.e. keepalived is stopped
         self.check_routers_state(status_to_check="FAULT", expected_count=2)
         self.start_vm()
-        self.check_routers_state(status_to_check="MASTER")
+        self.check_routers_state(status_to_check="PRIMARY")
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_rvpc_multi_tiers(self):
@@ -636,7 +636,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         network.get_net().delete(self.apiclient)
         self.networks.remove(network)
         
-        self.check_routers_state(status_to_check="MASTER")
+        self.check_routers_state(status_to_check="PRIMARY")
         self.do_vpc_test(False)
 
     def destroy_vm(self, network):

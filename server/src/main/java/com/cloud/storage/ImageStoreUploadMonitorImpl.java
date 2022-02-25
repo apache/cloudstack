@@ -25,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.Pair;
+import com.cloud.agent.api.to.OVFInformationTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -412,18 +411,14 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
 
                             VMTemplateVO templateUpdate = _templateDao.createForUpdate();
                             templateUpdate.setSize(answer.getVirtualSize());
-                            if (template.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                                Pair<String, String> guestOsInfo = answer.getGuestOsInfo();
-                                String minimumHardwareVersion = answer.getMinimumHardwareVersion();
-                                String osType = guestOsInfo.first();
-                                String osDescription = guestOsInfo.second();
-                                s_logger.info("Guest OS information retrieved from the template: " + osType + " - " + osDescription);
-                                try {
-                                    Long guestOsId = deployAsIsHelper.retrieveTemplateGuestOsIdFromGuestOsInfo(template.getId(),
-                                            osType, osDescription, minimumHardwareVersion);
-                                    templateUpdate.setGuestOSId(guestOsId);
-                                } catch (CloudRuntimeException e) {
-                                    s_logger.error("Could not map the guest OS to a CloudStack guest OS", e);
+
+                            OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
+                            if (template.isDeployAsIs() && ovfInformationTO != null) {
+                                s_logger.debug("Received OVF information from the uploaded template");
+                                boolean persistDeployAsIs = deployAsIsHelper.persistTemplateOVFInformationAndUpdateGuestOS(tmpTemplate.getId(), ovfInformationTO, tmpTemplateDataStore);
+                                if (!persistDeployAsIs) {
+                                    s_logger.info("Failed persisting deploy-as-is template details for template " + template.getName());
+                                    break;
                                 }
                             }
                             _templateDao.update(tmpTemplate.getId(), templateUpdate);

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -50,6 +52,12 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.13")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the volume, tags of the volume are used to filter the offerings", since = "4.17")
+    private Long volumeId;
+
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "The ID of the storage pool, tags of the storage pool are used to filter the offerings", since = "4.17")
+    private Long storagePoolId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +72,14 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public Long getStoragePoolId() {
+        return storagePoolId;
     }
 
     /////////////////////////////////////////////////////

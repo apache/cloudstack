@@ -21,8 +21,13 @@ import java.util.Map;
 
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.user.AccountManager;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -42,8 +47,19 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
+
+    /**
+     * Constant used to convert GB into Bytes (or the other way around).
+     * GB   *  MB  *  KB  = Bytes //
+     * 1024 * 1024 * 1024 = 1073741824
+     */
+    private static final long GB_TO_BYTES = 1073741824;
 
     protected ServiceOfferingJoinDaoImpl() {
 
@@ -113,6 +129,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
+        offeringResponse.setDynamicScalingEnabled(offering.isDynamicScalingEnabled());
 
         if (offeringDetails != null && !offeringDetails.isEmpty()) {
             String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
@@ -123,7 +140,18 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             }
         }
 
-        offeringResponse.setRootDiskSize(offering.getRootDiskSize());
+        long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
+        offeringResponse.setRootDiskSize(rootDiskSizeInGb);
+        offeringResponse.setDiskOfferingStrictness(offering.getDiskOfferingStrictness());
+        DiskOfferingVO diskOfferingVO = ApiDBUtils.findDiskOfferingById(offering.getDiskOfferingId());
+        if (diskOfferingVO != null) {
+            offeringResponse.setDiskOfferingId(offering.getDiskOfferingUuid());
+            offeringResponse.setDiskOfferingName(offering.getDiskOfferingName());
+            offeringResponse.setDiskOfferingDisplayText(offering.getDiskOfferingDisplayText());
+        }
+
+        offeringResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.SERVICE_OFFERING.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         return offeringResponse;
     }
@@ -136,5 +164,4 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         assert offerings != null && offerings.size() == 1 : "No service offering found for offering id " + offering.getId();
         return offerings.get(0);
     }
-
 }

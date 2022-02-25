@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="domain_view")
+@Table(name = "domain_view")
 public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
@@ -52,6 +52,9 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
 
     @Column(name="level")
     private int level;
+
+    @Column(name=GenericDao.CREATED_COLUMN)
+    private Date created;
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -206,6 +209,10 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
 
     public long getAccountId() {
         return accountId;
+    }
+
+    public Date getCreated() {
+        return created;
     }
 
     public Date getRemoved() {

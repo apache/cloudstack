@@ -42,10 +42,11 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -64,6 +65,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.cluster.ClusterManager;
@@ -452,8 +454,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private ServiceOfferingVO createServiceOfferingForVMImporting(Integer cpus, Integer memory, Integer maxCpuUsage) {
         String name = "Imported-" + cpus + "-" + memory;
-        ServiceOfferingVO vo = new ServiceOfferingVO(name, cpus, memory, maxCpuUsage, null, null, false, name, Storage.ProvisioningType.THIN, false, false, null, false, Type.User,
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, name, Storage.ProvisioningType.THIN, false, null, false, false, true);
+        diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
+        ServiceOfferingVO vo = new ServiceOfferingVO(name, cpus, memory, maxCpuUsage, null, null, false, name, false, Type.User,
                 false);
+        vo.setDiskOfferingId(diskOfferingVO.getId());
         return serviceOfferingDao.persist(vo);
     }
 
@@ -499,7 +506,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private void checkBackingInfo(VirtualDeviceBackingInfo backingInfo) {
         if (!(backingInfo instanceof VirtualDiskFlatVer2BackingInfo)) {
-            throw new CloudRuntimeException("Unsopported backing, expected " + VirtualDiskFlatVer2BackingInfo.class.getSimpleName());
+            String errorMessage = String.format("Unsupported backing info. Expected: [%s], but received: [%s].", VirtualDiskFlatVer2BackingInfo.class.getSimpleName(), backingInfo.getClass().getSimpleName());
+            s_logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
         }
     }
 
@@ -641,8 +650,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      * If VM exists: update VM
      */
     private VMInstanceVO getVM(String vmInternalName, long templateId, long guestOsId, long serviceOfferingId, long zoneId, long accountId, long userId, long domainId) {
+        s_logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].", vmInternalName,
+                templateId, guestOsId, serviceOfferingId));
         VMInstanceVO vm = _vmDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
         if (vm != null) {
+            s_logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName: [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName));
             vm.setState(VirtualMachine.State.Stopped);
             vm.setPowerState(VirtualMachine.PowerState.PowerOff);
             _vmDao.update(vm.getId(), vm);
@@ -654,8 +666,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             return _vmDao.findById(vm.getId());
         } else {
             long id = userVmDao.getNextInSequence(Long.class, "id");
+            s_logger.debug(String.format("Can't find an existing VM with internalName: [%s]. Creating a new VM with: [id: %s, name: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].",
+                    vmInternalName, id, vmInternalName, templateId, guestOsId, serviceOfferingId));
+
             UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware, guestOsId, false, false, domainId, accountId, userId,
-                    serviceOfferingId, null, vmInternalName, null);
+                    serviceOfferingId, null, vmInternalName);
             vmInstanceVO.setDataCenterId(zoneId);
             return userVmDao.persist(vmInstanceVO);
         }
@@ -742,15 +757,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         long templateId = vmInstanceVO.getTemplateId();
         long instanceId = vmInstanceVO.getId();
 
+        String operation = "";
         for (VirtualDisk disk : virtualDisks) {
             Long poolId = getPoolId(disk);
             Volume volume = null;
             if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
                 volume = updateVolume(disk, disksMapping, vmToImport, poolId, vmInstanceVO);
+                operation = "updated";
             } else {
                 volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
+                operation = "created";
             }
-            s_logger.debug("VM backup restored (updated/created) volume id:" + volume.getId() + " for VM id:" + instanceId);
+            s_logger.debug(String.format("VM [id: %s, instanceName: %s] backup restore operation %s volume [id: %s].", instanceId, vmInstanceVO.getInstanceName(),
+                    operation, volume.getUuid()));
         }
     }
 
@@ -967,7 +986,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return info.getDatastore();
     }
 
-    @Override public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
+    @Override
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
+        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmToImport = dcMo.findVm(vmInternalName);
         if (vmToImport == null) {
@@ -1067,22 +1089,28 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return hostGuidInTargetCluster;
     }
 
-    @Override public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
         List<Command> commands = new ArrayList<Command>();
 
         // OfflineVmwareMigration: specialised migration command
-        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
-        List<VolumeTO> vols = new ArrayList<>();
-        for (Volume volume : volumes) {
-            VolumeTO vol = new VolumeTO(volume, destination);
-            vols.add(vol);
+        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
+        Long poolClusterId = null;
+        for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
+            Volume volume = entry.getKey();
+            StoragePool pool = entry.getValue();
+            VolumeTO volumeTo = new VolumeTO(volume, _storagePoolDao.findById(pool.getId()));
+            StorageFilerTO filerTo = new StorageFilerTO(pool);
+            if (pool.getClusterId() != null) {
+                poolClusterId = pool.getClusterId();
+            }
+            volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
         }
-
-        final Long destClusterId = destination.getClusterId();
+        final Long destClusterId = poolClusterId;
         final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
-                vols, destination.getUuid(), getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
+                volumeToFilerTo, getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
         commands.add(migrateVmToPoolCommand);
 
         // OfflineVmwareMigration: cleanup if needed

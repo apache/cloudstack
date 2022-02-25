@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-popover v-if="enabled && actionsExist" triggers="hover" placement="topLeft">
+  <a-popover v-if="enabled && actionsExist" triggers="hover" placement="topLeft" v-model="visible">
     <template slot="content">
       <action-button
         :size="size"
@@ -58,13 +58,14 @@ export default {
     }
   },
   watch: {
-    actions (item) {
+    resource () {
       this.actionsExist = this.doActionsExist()
     }
   },
   data () {
     return {
-      actionsExist: false
+      actionsExist: false,
+      visible: false
     }
   },
   mounted () {
@@ -72,6 +73,7 @@ export default {
   },
   methods: {
     execAction (action) {
+      this.visible = false
       this.$emit('exec-action', action)
     },
     doActionsExist () {

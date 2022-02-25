@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Assert;
 import org.junit.Before;

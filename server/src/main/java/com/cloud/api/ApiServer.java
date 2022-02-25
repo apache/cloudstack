@@ -317,9 +317,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // Get the event type from the cmdInfo json string
         String info = job.getCmdInfo();
         String cmdEventType = "unknown";
+        Map<String, Object> cmdInfoObj = new HashMap<String, Object>();
         if (info != null) {
             Type type = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
+            cmdInfoObj.putAll(cmdInfo);
             String eventTypeObj = cmdInfo.get("cmdEventType");
             if (eventTypeObj != null) {
                 cmdEventType = eventTypeObj;
@@ -330,6 +332,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("Unable to locate cmdEventType marker in job info. publish as unknown event");
             }
+            String contextDetails = cmdInfo.get("ctxDetails");
+            if(contextDetails != null) {
+                Type objectMapType = new TypeToken<Map<Object, Object>>() {}.getType();
+                Map<Object, Object> ctxDetails = ApiGsonHelper.getBuilder().create().fromJson(contextDetails, objectMapType);
+                cmdInfoObj.put("ctxDetails", ctxDetails);
+            }
         }
         // For some reason, the instanceType / instanceId are not abstract, which means we may get null values.
         String instanceType = job.getInstanceType() != null ? job.getInstanceType() : "unknown";
@@ -337,7 +345,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.ASYNC_JOB_CHANGE_EVENT.getName(),
                 jobEvent, instanceType, instanceUuid);
 
-        Map<String, String> eventDescription = new HashMap<String, String>();
+        Map<String, Object> eventDescription = new HashMap<String, Object>();
         eventDescription.put("command", job.getCmd());
         eventDescription.put("user", userJobOwner.getUuid());
         eventDescription.put("account", jobOwner.getUuid());
@@ -347,9 +355,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("instanceType", instanceType);
         eventDescription.put("commandEventType", cmdEventType);
         eventDescription.put("jobId", job.getUuid());
-        eventDescription.put("jobResult", job.getResult());
-        eventDescription.put("cmdInfo", job.getCmdInfo());
-        eventDescription.put("status", "" + job.getStatus() );
+        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(job.getResult()));
+        eventDescription.put("cmdInfo", cmdInfoObj);
+        eventDescription.put("status", "" + job.getStatus());
         // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
         if (UseEventAccountInfo.value()) {
             DomainVO domain = domainDao.findById(jobOwner.getDomainId());

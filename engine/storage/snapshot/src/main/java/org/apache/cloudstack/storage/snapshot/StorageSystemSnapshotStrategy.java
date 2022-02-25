@@ -16,6 +16,37 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyTargetsCommand;
@@ -38,55 +69,24 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.storage.VolumeDetailVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.common.base.Preconditions;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
-import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
 
 @Component
 public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
@@ -241,15 +241,16 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     private boolean isAcceptableRevertFormat(VolumeVO volumeVO) {
-        return ImageFormat.VHD.equals(volumeVO.getFormat()) || ImageFormat.OVA.equals(volumeVO.getFormat()) || ImageFormat.QCOW2.equals(volumeVO.getFormat());
+        return ImageFormat.VHD.equals(volumeVO.getFormat()) || ImageFormat.OVA.equals(volumeVO.getFormat())
+                || ImageFormat.QCOW2.equals(volumeVO.getFormat()) || ImageFormat.RAW.equals(volumeVO.getFormat());
     }
 
     private void verifyFormat(VolumeInfo volumeInfo) {
         ImageFormat imageFormat = volumeInfo.getFormat();
 
-        if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2) {
+        if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2 && imageFormat != ImageFormat.RAW) {
             throw new CloudRuntimeException("Only the following image types are currently supported: " +
-                    ImageFormat.VHD.toString() + ", " + ImageFormat.OVA.toString() + ", and " + ImageFormat.QCOW2);
+                    ImageFormat.VHD.toString() + ", " + ImageFormat.OVA.toString() + ", " + ImageFormat.QCOW2 + ", and " + ImageFormat.RAW);
         }
     }
 
@@ -456,7 +457,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
             computeClusterSupportsVolumeClone = clusterDao.getSupportsResigning(hostVO.getClusterId());
         }
-        else if (volumeInfo.getFormat() == ImageFormat.OVA || volumeInfo.getFormat() == ImageFormat.QCOW2) {
+        else if (volumeInfo.getFormat() == ImageFormat.OVA || volumeInfo.getFormat() == ImageFormat.QCOW2 || volumeInfo.getFormat() == ImageFormat.RAW) {
             computeClusterSupportsVolumeClone = true;
         }
         else {
@@ -760,6 +761,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         sourceDetails.put(DiskTO.STORAGE_HOST, storagePoolVO.getHostAddress());
         sourceDetails.put(DiskTO.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
         sourceDetails.put(DiskTO.IQN, volumeVO.get_iScsiName());
+        sourceDetails.put(DiskTO.PROTOCOL_TYPE, (storagePoolVO.getPoolType() != null) ? storagePoolVO.getPoolType().toString() : null);
 
         ChapInfo chapInfo = volService.getChapInfo(volumeInfo, volumeInfo.getDataStore());
 
@@ -778,6 +780,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         destDetails.put(DiskTO.STORAGE_HOST, storagePoolVO.getHostAddress());
         destDetails.put(DiskTO.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
+        destDetails.put(DiskTO.PROTOCOL_TYPE, (storagePoolVO.getPoolType() != null) ? storagePoolVO.getPoolType().toString() : null);
 
         long snapshotId = snapshotInfo.getId();
 

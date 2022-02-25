@@ -28,7 +28,10 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -37,6 +40,7 @@ import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
@@ -51,10 +55,13 @@ import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
@@ -78,6 +85,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private UserDao _userDao;
     @Inject
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
+    @Inject
+    private AnnotationDao annotationDao;
+    @Inject
+    UserStatisticsDao userStatsDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -138,6 +149,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setDomainName(userVm.getDomainName());
 
         userVmResponse.setCreated(userVm.getCreated());
+        userVmResponse.setLastUpdated(userVm.getLastUpdated());
         userVmResponse.setDisplayVm(userVm.isDisplayVm());
 
         if (userVm.getState() != null) {
@@ -172,8 +184,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setServiceOfferingName(userVm.getServiceOfferingName());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.diskoff)) {
-            userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
-            userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+            DiskOfferingVO diskOfferingVO = ApiDBUtils.findDiskOfferingById(userVm.getDiskOfferingId());
+            if (diskOfferingVO != null) {
+                userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
+                userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+            }
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.backoff)) {
             userVmResponse.setBackupOfferingId(userVm.getBackupOfferingUuid());
@@ -277,6 +292,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     nicResponse.setType(userVm.getGuestType().toString());
                 }
                 nicResponse.setIsDefault(userVm.isDefaultNic());
+                nicResponse.setDeviceId(String.valueOf(userVm.getNicDeviceId()));
                 List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(userVm.getNicId());
                 if (secondaryIps != null) {
                     List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
@@ -304,6 +320,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (tag_id > 0 && !userVmResponse.containTag(tag_id)) {
             addTagInformation(userVm, userVmResponse);
         }
+
+        userVmResponse.setHasAnnotation(annotationDao.hasAnnotations(userVm.getUuid(),
+                AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(caller.getId())));
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.affgrp)) {
             Long affinityGroupId = userVm.getAffinityGroupId();
@@ -339,16 +358,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setBootType("Bios");
                 userVmResponse.setBootMode("legacy");
             }
-            // Remove blacklisted settings if user is not admin
+
+            if (userVm.getPoolType() != null) {
+                userVmResponse.setPoolType(userVm.getPoolType().toString());
+            }
+
+            // Remove deny listed settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                String[] userVmSettingsToHide = QueryService.UserVMBlacklistedDetails.value().split(",");
+                String[] userVmSettingsToHide = QueryService.UserVMDeniedDetails.value().split(",");
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
             }
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
+                userVmResponse.setReadOnlyDetails(QueryService.UserVMReadOnlyDetails.value());
             }
         }
 
@@ -359,7 +383,24 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
 
+        addVmRxTxDataToResponse(userVm, userVmResponse);
+
         return userVmResponse;
+    }
+
+    private void addVmRxTxDataToResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {
+        Long bytesReceived = 0L;
+        Long bytesSent = 0L;
+        SearchBuilder<UserStatisticsVO> sb = userStatsDao.createSearchBuilder();
+        sb.and("deviceId", sb.entity().getDeviceId(), Op.EQ);
+        SearchCriteria<UserStatisticsVO> sc = sb.create();
+        sc.setParameters("deviceId", userVm.getId());
+        for (UserStatisticsVO stat: userStatsDao.search(sc, null)) {
+            bytesReceived += stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
+            bytesSent += stat.getNetBytesSent() + stat.getCurrentBytesSent();
+        }
+        userVmResponse.setBytesReceived(bytesReceived);
+        userVmResponse.setBytesSent(bytesSent);
     }
 
     /**
@@ -432,6 +473,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
             /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
+            nicResponse.setDeviceId(String.valueOf(uvo.getNicDeviceId()));
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
@@ -457,6 +499,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         long tag_id = uvo.getTagId();
         if (tag_id > 0 && !userVmData.containTag(tag_id)) {
             addTagInformation(uvo, userVmData);
+        }
+
+        if (userVmData.hasAnnotation() == null) {
+            userVmData.setHasAnnotation(annotationDao.hasAnnotations(uvo.getUuid(),
+                    AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
 
         Long affinityGroupId = uvo.getAffinityGroupId();

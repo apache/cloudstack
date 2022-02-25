@@ -111,7 +111,7 @@ class CsAcl(CsDataBag):
             self.rule['allowed'] = True
             self.rule['action'] = "ACCEPT"
 
-            if self.rule['type'] == 'all' and obj['source_cidr_list']:
+            if self.rule['type'] == 'all' and not obj['source_cidr_list']:
                 self.rule['cidr'] = []
             else:
                 self.rule['cidr'] = obj['source_cidr_list']
@@ -742,7 +742,7 @@ class CsRemoteAccessVpn(CsDataBag):
 
         secret = CsFile(vpnsecretfilte)
         secret.empty()
-        secret.addeq("%s %%any : PSK \"%s\"" % (left, psk))
+        secret.addeq("%s : PSK \"%s\"" % (left, psk))
         secret.commit()
 
         xl2tpdconf = CsFile(xl2tpdconffile)
@@ -1008,7 +1008,7 @@ class CsForwardingRules(CsDataBag):
 
         # Configure the hairpin snat
         self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o %s --to-source %s" %
-                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getDeviceByIp(rule["internal_ip"]), self.getGuestIp())])
+                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getDeviceByIp(rule["internal_ip"]), self.getGuestIpByIp(rule["internal_ip"]))])
 
 
 class IpTablesExecutor:
@@ -1070,6 +1070,7 @@ def main(argv):
     config.address().process()
 
     databag_map = OrderedDict([("guest_network",     {"process_iptables": True,  "executor": []}),
+                               ("ip_aliases",        {"process_iptables": True,  "executor": []}),
                                ("vm_password",       {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
                                ("vm_metadata",       {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),
                                ("network_acl",       {"process_iptables": True,  "executor": []}),

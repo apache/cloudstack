@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form :form="form" layout="vertical" class="form">
+    <a-form v-ctrl-enter="handleSubmit" :form="form" layout="vertical" class="form">
 
       <a-form-item class="form__item" :label="$t('label.zone')">
         <a-select
@@ -25,12 +25,22 @@
             initialValue: this.zoneId,
             rules: [{ required: true, message: `${$t('label.required')}` }] }
           ]"
-          autoFocus>
+          autoFocus
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
-            :key="zone.id">
-            {{ zone.name }}
+            :key="zone.id"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -100,9 +110,9 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmit" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>
@@ -112,11 +122,13 @@
 <script>
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ClusterAdd',
   components: {
-    DedicateDomain
+    DedicateDomain,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -156,7 +168,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones').then(response => {
+      api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id
         this.params = this.$store.getters.apis.createPod.params
@@ -174,7 +186,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) return
 
         this.loading = true
@@ -212,15 +225,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatepodresponse.jobid,
+          title: this.$t('message.pod.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.pod.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.pod.dedicated'),
-              jobid: response.dedicatepodresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.pod.failed'),
           errorMethod: () => {
@@ -266,18 +275,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
 

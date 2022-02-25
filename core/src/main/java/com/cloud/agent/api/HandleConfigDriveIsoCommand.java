@@ -25,16 +25,19 @@ public class HandleConfigDriveIsoCommand extends Command {
 
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String isoData;
-
     private String isoFile;
     private boolean create = false;
     private DataStoreTO destStore;
+    private boolean useHostCacheOnUnsupportedPool = false;
+    private boolean preferHostCache = false;
 
-    public HandleConfigDriveIsoCommand(String isoFile, String isoData, DataStoreTO destStore, boolean create) {
+    public HandleConfigDriveIsoCommand(String isoFile, String isoData, DataStoreTO destStore, boolean useHostCacheOnUnsupportedPool, boolean preferHostCache, boolean create) {
         this.isoFile = isoFile;
         this.isoData = isoData;
         this.destStore = destStore;
         this.create = create;
+        this.useHostCacheOnUnsupportedPool = useHostCacheOnUnsupportedPool;
+        this.preferHostCache = preferHostCache;
     }
 
     @Override
@@ -56,5 +59,13 @@ public class HandleConfigDriveIsoCommand extends Command {
 
     public String getIsoFile() {
         return isoFile;
+    }
+
+    public boolean isHostCachePreferred() {
+        return preferHostCache;
+    }
+
+    public boolean getUseHostCacheOnUnsupportedPool() {
+        return useHostCacheOnUnsupportedPool;
     }
 }

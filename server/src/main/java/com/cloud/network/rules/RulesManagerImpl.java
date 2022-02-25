@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -605,7 +606,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 // enable static nat on the backend
                 s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
                 if (applyStaticNatForIp(ipId, false, caller, false)) {
-                    applyUserData(vmId, network, guestNic);
+                    applyUserDataIfNeeded(vmId, network, guestNic);
                     performedIpAssoc = false; // ignor unassignIPFromVpcNetwork in finally block
                     return true;
                 } else {
@@ -629,21 +630,30 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         return false;
     }
 
-    protected void applyUserData(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
-        UserVmVO vm = _vmDao.findById(vmId);
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        NicProfile nicProfile = new NicProfile(guestNic, network, null, null, null,
-                    _networkModel.isSecurityGroupSupportedInNetwork(network),
-                    _networkModel.getNetworkTag(template.getHypervisorType(), network));
-        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
-        UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
+    protected void applyUserDataIfNeeded(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
+        UserDataServiceProvider element = null;
+        try {
+            element = _networkModel.getUserDataUpdateProvider(network);
+        } catch (UnsupportedServiceException ex) {
+            s_logger.info(String.format("%s is not supported by network %s, skipping.", Service.UserData.getName(), network));
+            return;
+        }
         if (element == null) {
             s_logger.error("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
         } else {
-            boolean result = element.saveUserData(network, nicProfile, vmProfile);
-            if (!result) {
+            UserVmVO vm = _vmDao.findById(vmId);
+            try {
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                NicProfile nicProfile = new NicProfile(guestNic, network, null, null, null,
+                            _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(template.getHypervisorType(), network));
+                VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+                if (!element.saveUserData(network, nicProfile, vmProfile)) {
                     s_logger.error("Failed to update userdata for vm " + vm + " and nic " + guestNic);
                 }
+            } catch (Exception e) {
+                s_logger.error("Failed to update userdata for vm " + vm + " and nic " + guestNic + " due to " + e.getMessage(), e);
+            }
         }
     }
 
@@ -1141,7 +1151,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             Nic guestNic = _networkModel.getNicInNetwork(vmId, guestNetwork.getId());
             if (applyStaticNatForIp(ipId, false, caller, true)) {
                 if (ipAddress.getState() == IpAddress.State.Releasing) {
-                    applyUserData(vmId, guestNetwork, guestNic);
+                    applyUserDataIfNeeded(vmId, guestNetwork, guestNic);
                 }
             } else {
                 success = false;
@@ -1286,7 +1296,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (disableStaticNat(ipId, caller, ctx.getCallingUserId(), false)) {
             Nic guestNic = _networkModel.getNicInNetworkIncludingRemoved(vmId, guestNetwork.getId());
-            applyUserData(vmId, guestNetwork, guestNic);
+            applyUserDataIfNeeded(vmId, guestNetwork, guestNic);
             return true;
         }
         return false;

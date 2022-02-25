@@ -18,14 +18,14 @@
 
 # Version 1.14 and below needs extra flags with kubeadm upgrade node
 if [ $# -lt 4 ]; then
-    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_MASTER IS_OLD_VERSION IS_EJECT_ISO"
+    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO"
     echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false"
     exit 1
 fi
 UPGRADE_VERSION="${1}"
-IS_MAIN_MASTER=""
+IS_MAIN_CONTROL=""
 if [ $# -gt 1 ]; then
-  IS_MAIN_MASTER="${2}"
+  IS_MAIN_CONTROL="${2}"
 fi
 IS_OLD_VERSION=""
 if [ $# -gt 2 ]; then
@@ -93,26 +93,36 @@ if [ -d "$BINARIES_DIR" ]; then
   output=`ls ${BINARIES_DIR}/docker/`
   if [ "$output" != "" ]; then
     while read -r line; do
-        docker load < "${BINARIES_DIR}/docker/$line"
+        ctr image import "${BINARIES_DIR}/docker/$line"
     done <<< "$output"
   fi
+  if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
+    mkdir -p /opt/provider
+    cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
+  fi
 
-  tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
-  tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
+  # Fetch the autoscaler if present
+  if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+    mkdir -p /opt/autoscaler
+    cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+  fi
 
-  if [ "${IS_MAIN_MASTER}" == 'true' ]; then
+  tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
+  tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
+
+  if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     set +e
-    kubeadm upgrade apply ${UPGRADE_VERSION} -y
+    kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} -y
     retval=$?
     set -e
     if [ $retval -ne 0 ]; then
-      kubeadm upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
+      kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
     fi
   else
     if [ "${IS_OLD_VERSION}" == 'true' ]; then
-      kubeadm upgrade node config --kubelet-version ${UPGRADE_VERSION}
+      kubeadm --v=5 upgrade node config --kubelet-version ${UPGRADE_VERSION}
     else
-      kubeadm upgrade node
+      kubeadm --v=5 upgrade node
     fi
   fi
 
@@ -121,9 +131,9 @@ if [ -d "$BINARIES_DIR" ]; then
   chmod +x {kubelet,kubectl}
   systemctl restart kubelet
 
-  if [ "${IS_MAIN_MASTER}" == 'true' ]; then
-    kubectl apply -f ${BINARIES_DIR}/network.yaml
-    kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
+  if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"

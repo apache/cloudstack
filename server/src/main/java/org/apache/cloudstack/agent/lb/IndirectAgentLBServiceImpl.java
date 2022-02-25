@@ -45,7 +45,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
     public static final Logger LOG = Logger.getLogger(IndirectAgentLBServiceImpl.class);
@@ -74,7 +74,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     @Override
     public List<String> getManagementServerList(final Long hostId, final Long dcId, final List<Long> orderedHostIdList) {
         final String msServerAddresses = ApiServiceConfiguration.ManagementServerAddresses.value();
-        if (Strings.isNullOrEmpty(msServerAddresses)) {
+        if (StringUtils.isEmpty(msServerAddresses)) {
             throw new CloudRuntimeException(String.format("No management server addresses are defined in '%s' setting",
                     ApiServiceConfiguration.ManagementServerAddresses.key()));
         }
@@ -221,7 +221,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
             final Answer answer = agentManager.easySend(host.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                LOG.warn("Failed to setup management servers list to the agent of host id=" + host.getId());
+                LOG.warn(String.format("Failed to setup management servers list to the agent of %s", host));
             }
         }
     }

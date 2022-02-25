@@ -94,6 +94,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Boolean> ForgedTransmits = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.forged.transmits", "true",
             "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
+    ConfigKey<Boolean> MacLearning = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.learning", "false",
+            "Whether to allow or deny MAC learning on nics for applicable network elements such as for dvswitch portgroups.", true);
+
     ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rolling.restart", "true",
             "Whether to allow or deny rolling restart of network routers.", true);
 
@@ -182,7 +185,7 @@ public interface NetworkOrchestrationService {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain, Account owner,
                                Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
-                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 

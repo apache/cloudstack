@@ -39,12 +39,16 @@ export default {
     title: 'label.volumes',
     param: 'storageid'
   }],
+  resourceType: 'PrimaryStorage',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
   }, {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   actions: [
     {
@@ -82,6 +86,14 @@ export default {
       show: (record) => { return record.state === 'Disabled' }
     },
     {
+      api: 'syncStoragePool',
+      icon: 'sync',
+      label: 'label.sync.storage',
+      message: 'message.confirm.sync.storage',
+      dataView: true,
+      show: (record) => { return record.state === 'Up' && record.type === 'DatastoreCluster' }
+    },
+    {
       api: 'enableStorageMaintenance',
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',
@@ -103,7 +115,8 @@ export default {
       label: 'label.action.delete.primary.storage',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return (record.state === 'Down' || record.state === 'Maintenance' || record.state === 'Disconnected') }
+      show: (record) => { return (record.state === 'Down' || record.state === 'Maintenance' || record.state === 'Disconnected') },
+      displayName: (record) => { return record.name || record.displayName || record.id }
     }
   ]
 }

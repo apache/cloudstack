@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.capacity.CapacityVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -260,15 +261,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 }
                 podsWithCapacity.removeAll(avoid.getPodsToAvoid());
             }
-            if (!isRootAdmin(vmProfile)) {
-                List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
-                if (!disabledPods.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the podId list these pods that are disabled: " + disabledPods);
-                    }
-                    podsWithCapacity.removeAll(disabledPods);
-                }
-            }
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No pods found having a host with enough capacity, returning.");
@@ -306,7 +298,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     private Map<Short, Float> getCapacityThresholdMap() {
         // Lets build this real time so that the admin wont have to restart MS
-        // if he changes these values
+        // if anyone changes these values
         Map<Short, Float> disableThresholdMap = new HashMap<Short, Float>();
 
         String cpuDisableThresholdString = ClusterCPUCapacityDisableThreshold.value().toString();
@@ -362,12 +354,16 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 return;
             }
 
+            String configurationName = ClusterCPUCapacityDisableThreshold.key();
+            float configurationValue = ClusterCPUCapacityDisableThreshold.value();
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
                 clustersCrossingThreshold =
                         capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterCPUCapacityDisableThreshold.key(), cpu_requested);
             } else if (capacity == Capacity.CAPACITY_TYPE_MEMORY) {
                 clustersCrossingThreshold =
                         capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterMemoryCapacityDisableThreshold.key(), ram_requested);
+                configurationName = ClusterMemoryCapacityDisableThreshold.key();
+                configurationValue = ClusterMemoryCapacityDisableThreshold.value();
             }
 
             if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0) {
@@ -376,8 +372,11 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 // Remove clusters crossing disabled threshold
                 clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
-                s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-                        " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
+                String warnMessageForClusterReachedCapacityThreshold = String.format(
+                        "Cannot allocate cluster list %s for VM creation since their allocated percentage crosses the disable capacity threshold defined at each cluster at"
+                        + " Global Settings Configuration [name: %s, value: %s] for capacity Type : %s, skipping these clusters", clustersCrossingThreshold.toString(),
+                        configurationName, String.valueOf(configurationValue), CapacityVO.getCapacityName(capacity));
+                s_logger.warn(warnMessageForClusterReachedCapacityThreshold);
             }
 
         }
@@ -392,7 +391,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
 
         //list clusters under this zone by cpu and ram capacity
-        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, requiredCpu, requiredRam, avoid, isZone);
+        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, vmProfile.getId(), requiredCpu, requiredRam, avoid, isZone);
         List<Long> prioritizedClusterIds = clusterCapacityInfo.first();
         if (!prioritizedClusterIds.isEmpty()) {
             if (avoid.getClustersToAvoid() != null) {
@@ -400,21 +399,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                     s_logger.debug("Removing from the clusterId list these clusters from avoid set: " + avoid.getClustersToAvoid());
                 }
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
-            }
-
-            if (!isRootAdmin(vmProfile)) {
-                List<Long> disabledClusters = new ArrayList<Long>();
-                if (isZone) {
-                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
-                } else {
-                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
-                }
-                if (!disabledClusters.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: " + disabledClusters);
-                    }
-                    prioritizedClusterIds.removeAll(disabledClusters);
-                }
             }
 
             removeClustersCrossingThreshold(prioritizedClusterIds, avoid, vmProfile, plan);
@@ -465,22 +449,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         return podIdsByCapacity;
     }
 
-    private List<Long> listDisabledClusters(long zoneId, Long podId) {
-        List<Long> disabledClusters = clusterDao.listDisabledClusters(zoneId, podId);
-        if (podId == null) {
-            //list all disabled clusters under this zone + clusters under any disabled pod of this zone
-            List<Long> clustersWithDisabledPods = clusterDao.listClustersWithDisabledPods(zoneId);
-            disabledClusters.addAll(clustersWithDisabledPods);
-        }
-        return disabledClusters;
-    }
-
-    private List<Long> listDisabledPods(long zoneId) {
-        List<Long> disabledPods = podDao.listDisabledPods(zoneId);
-        return disabledPods;
-    }
-
-    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {
+    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, long vmId, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {
         //look at the aggregate available cpu and ram per cluster
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 
@@ -495,11 +464,11 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             capacityType = Capacity.CAPACITY_TYPE_MEMORY;
         }
 
-        List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone);
+        List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, vmId, requiredCpu, requiredRam, capacityType, isZone);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
         }
-        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(id, capacityType, isZone);
+        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
         List<Long> clusterIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
         if (s_logger.isTraceEnabled()) {

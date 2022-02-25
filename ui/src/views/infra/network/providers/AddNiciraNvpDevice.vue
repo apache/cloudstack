@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
       :form="form"
       layout="vertical"
@@ -26,6 +26,7 @@
           <a-form-item :label="$t('label.ip')">
             <a-input
               autoFocus
+              :placeholder="apiParams.hostname.description"
               v-decorator="['ip', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -36,6 +37,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.username')">
             <a-input
+              :placeholder="apiParams.username.description"
               v-decorator="['username', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -46,6 +48,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.password')">
             <a-input-password
+              :placeholder="apiParams.password.description"
               v-decorator="['password', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -65,6 +68,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.transportzoneuuid')">
             <a-input
+              :placeholder="apiParams.transportzoneuuid.description"
               v-decorator="['transportzoneuuid']" />
           </a-form-item>
         </a-col>
@@ -73,6 +77,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.l3gatewayserviceuuid')">
             <a-input
+              :placeholder="apiParams.l3gatewayserviceuuid.description"
               v-decorator="['l3gatewayserviceuuid']" />
           </a-form-item>
         </a-col>
@@ -81,13 +86,14 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.l2gatewayserviceuuid')">
             <a-input
+              :placeholder="apiParams.l2gatewayserviceuuid.description"
               v-decorator="['l2gatewayserviceuuid']" />
           </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -110,12 +116,16 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+  },
+  created () {
+    this.apiParams = this.$getApiParams('addNiciraNvpDevice')
   },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {
@@ -129,7 +139,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields(async (err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll(async (err, values) => {
         if (err) {
           return
         }
@@ -154,17 +165,9 @@ export default {
           }
           params.id = this.nsp.id
           const jobId = await this.addNiciraNvpDevice(params)
-          if (jobId) {
-            await this.$store.dispatch('AddAsyncJob', {
-              title: this.$t(this.action.label),
-              jobid: jobId,
-              description: this.$t(this.nsp.name),
-              status: 'progress'
-            })
-            await this.parentPollActionCompletion(jobId, this.action)
-          }
+          this.parentPollActionCompletion(jobId, this.action, this.$t(this.nsp.name))
+          this.provideCloseAction()
           this.loading = false
-          await this.provideCloseAction()
         } catch (error) {
           this.loading = false
           this.$notification.error({
@@ -177,15 +180,19 @@ export default {
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
         api('addNetworkServiceProvider', args).then(async json => {
-          const jobId = json.addnetworkserviceproviderresponse.jobid
-          if (jobId) {
-            const result = await this.pollJob(jobId)
-            if (result.jobstatus === 2) {
+          this.$pollJob({
+            jobId: json.addnetworkserviceproviderresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.networkserviceprovider)
+            },
+            errorMethod: (result) => {
               reject(result.jobresult.errortext)
-              return
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            action: {
+              isFetchData: false
             }
-            resolve(result.jobresult.networkserviceprovider)
-          }
+          })
         }).catch(error => {
           reject(error)
         })
@@ -200,35 +207,7 @@ export default {
           reject(error)
         })
       })
-    },
-    async pollJob (jobId) {
-      return new Promise(resolve => {
-        const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
-            const result = json.queryasyncjobresultresponse
-            if (result.jobstatus === 0) {
-              return
-            }
-
-            clearInterval(asyncJobInterval)
-            resolve(result)
-          })
-        }, 1000)
-      })
     }
   }
 }
 </script>
-
-<style scoped lang="less">
-.form-layout {
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
-  }
-}
-</style>

@@ -49,18 +49,43 @@
               <a-form-item
                 v-for="(field, index) in fields"
                 :key="index"
-                :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
+                :label="field.name==='keyword' ?
+                  ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) :
+                  (field.name==='entitytype' ? $t('label.entity.type') : $t('label.' + field.name))">
                 <a-select
                   allowClear
                   v-if="field.type==='list'"
                   v-decorator="[field.name, {
                     initialValue: fieldValues[field.name] || null
                   }]"
+                  showSearch
+                  :dropdownMatchSelectWidth="false"
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
                   :loading="field.loading">
                   <a-select-option
                     v-for="(opt, idx) in field.opts"
                     :key="idx"
-                    :value="opt.id">{{ $t(opt.name) }}</a-select-option>
+                    :value="opt.id"
+                    :label="$t(opt.name)">
+                    <div>
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="global" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="block" style="margin-right: 5px" />
+                      </span>
+                      {{ $t(opt.path || opt.name) }}
+                    </div>
+                  </a-select-option>
                 </a-select>
                 <a-input
                   v-else-if="field.type==='input'"
@@ -74,9 +99,13 @@
                       size="small"
                       compact>
                       <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                      <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                      <a-input
+                        class="tag-disabled-input"
+                        style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
+                        placeholder="="
+                        disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <tooltip-button icon="close" size="small" @click="inputKey = inputValue = ''" />
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
                 </div>
@@ -112,9 +141,15 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'SearchView',
+  components: {
+    TooltipButton,
+    ResourceIcon
+  },
   props: {
     searchFilters: {
       type: Array,
@@ -129,7 +164,6 @@ export default {
       default: () => {}
     }
   },
-  inject: ['parentSearch', 'parentChangeFilter'],
   data () {
     return {
       searchQuery: null,
@@ -206,7 +240,7 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid'].includes(item)) {
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -265,29 +299,36 @@ export default {
         promises.push(await this.fetchClusters())
       }
 
+      if (arrayField.includes('entitytype')) {
+        const entityTypeIndex = this.fields.findIndex(item => item.name === 'entitytype')
+        this.fields[entityTypeIndex].loading = true
+        this.fields[entityTypeIndex].opts = this.fetchEntityType()
+        this.fields[entityTypeIndex].loading = false
+      }
+
       Promise.all(promises).then(response => {
         if (zoneIndex > -1) {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
-            this.fields[zoneIndex].opts = zones[0].data
+            this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
           }
         }
         if (domainIndex > -1) {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
-            this.fields[domainIndex].opts = domain[0].data
+            this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
           }
         }
         if (podIndex > -1) {
           const pod = response.filter(item => item.type === 'podid')
           if (pod && pod.length > 0) {
-            this.fields[podIndex].opts = pod[0].data
+            this.fields[podIndex].opts = this.sortArray(pod[0].data)
           }
         }
         if (clusterIndex > -1) {
           const cluster = response.filter(item => item.type === 'clusterid')
           if (cluster && cluster.length > 0) {
-            this.fields[clusterIndex].opts = cluster[0].data
+            this.fields[clusterIndex].opts = this.sortArray(cluster[0].data)
           }
         }
         this.$forceUpdate()
@@ -307,6 +348,14 @@ export default {
         this.fillFormFieldValues()
       })
     },
+    sortArray (data, key = 'name') {
+      return data.sort(function (a, b) {
+        if (a[key] < b[key]) { return -1 }
+        if (a[key] > b[key]) { return 1 }
+
+        return 0
+      })
+    },
     fillFormFieldValues () {
       this.fieldValues = {}
       if (Object.keys(this.$route.query).length > 0) {
@@ -320,7 +369,7 @@ export default {
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
-        api('listZones', { listAll: true }).then(json => {
+        api('listZones', { listAll: true, showicon: true }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -333,7 +382,7 @@ export default {
     },
     fetchDomains () {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true }).then(json => {
+        api('listDomains', { listAll: true, showicon: true }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -396,6 +445,45 @@ export default {
       }
       return state
     },
+    fetchEntityType () {
+      const entityType = []
+      if (this.apiName.indexOf('listAnnotations') > -1) {
+        const allowedTypes = {
+          VM: 'Virtual Machine',
+          HOST: 'Host',
+          VOLUME: 'Volume',
+          SNAPSHOT: 'Snapshot',
+          VM_SNAPSHOT: 'VM Snapshot',
+          INSTANCE_GROUP: 'Instance Group',
+          NETWORK: 'Network',
+          VPC: 'VPC',
+          PUBLIC_IP_ADDRESS: 'Public IP Address',
+          VPN_CUSTOMER_GATEWAY: 'VPC Customer Gateway',
+          TEMPLATE: 'Template',
+          ISO: 'ISO',
+          SSH_KEYPAIR: 'SSH Key Pair',
+          DOMAIN: 'Domain',
+          SERVICE_OFFERING: 'Service Offfering',
+          DISK_OFFERING: 'Disk Offering',
+          NETWORK_OFFERING: 'Network Offering',
+          POD: 'Pod',
+          ZONE: 'Zone',
+          CLUSTER: 'Cluster',
+          PRIMARY_STORAGE: 'Primary Storage',
+          SECONDARY_STORAGE: 'Secondary Storage',
+          VR: 'Virtual Router',
+          SYSTEM_VM: 'System VM',
+          KUBERNETES_CLUSTER: 'Kubernetes Cluster'
+        }
+        for (var key in allowedTypes) {
+          entityType.push({
+            id: key,
+            name: allowedTypes[key]
+          })
+        }
+      }
+      return entityType
+    },
     fetchLevel () {
       const levels = []
       levels.push({
@@ -415,7 +503,7 @@ export default {
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
-      this.parentSearch({ searchQuery: this.searchQuery })
+      this.$emit('search', { searchQuery: this.searchQuery })
     },
     onClear () {
       this.searchFilters.map(item => {
@@ -428,12 +516,12 @@ export default {
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
-      this.parentSearch(this.paramsFilter)
+      this.$emit('search', this.paramsFilter)
     },
     handleSubmit (e) {
       e.preventDefault()
       this.paramsFilter = {}
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -451,7 +539,7 @@ export default {
             this.paramsFilter['tags[0].value'] = this.inputValue
           }
         }
-        this.parentSearch(this.paramsFilter)
+        this.$emit('search', this.paramsFilter)
       })
     },
     handleKeyChange (e) {
@@ -461,7 +549,7 @@ export default {
       this.inputValue = e.target.value
     },
     changeFilter (filter) {
-      this.parentChangeFilter(filter)
+      this.$emit('change-filter', filter)
     }
   }
 }

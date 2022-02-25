@@ -16,64 +16,94 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.kubernetes.cluster.scale')" />
+        <span
+          slot="message"
+          v-html="resource.autoscalingenabled ? $t('message.action.scale.kubernetes.cluster.warning') : $t('message.kubernetes.cluster.scale')" />
       </a-alert>
       <br />
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.cks.cluster.size') }}
-            <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-input
-            v-decorator="['size', {
-              initialValue: originalSize,
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+        <a-form-item v-if="apiParams.autoscalingenabled">
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
+          <a-switch :checked="this.autoscalingenabled" @change="val => { this.autoscalingenabled = val }" />
+        </a-form-item>
+        <span v-if="this.autoscalingenabled">
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.cks.cluster.minsize')" :tooltip="apiParams.minsize.description"/>
+            <a-input
+              v-decorator="['minsize', {
+                initialValue: minsize,
+                rules: [{
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
                   }
-                  callback()
-                }
-              }]
-            }]"
-            :placeholder="apiParams.size.description"
-            autoFocus />
-        </a-form-item>
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.serviceofferingid') }}
-            <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-select
-            id="offering-selection"
-            v-decorator="['serviceofferingid', {}]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="serviceOfferingLoading"
-            :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
-              {{ opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-
+                }]
+              }]"
+              :placeholder="apiParams.minsize.description"/>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.cks.cluster.maxsize')" :tooltip="apiParams.maxsize.description"/>
+            <a-input
+              v-decorator="['maxsize', {
+                initialValue: maxsize,
+                rules: [{
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
+                  }
+                }]
+              }]"
+              :placeholder="apiParams.maxsize.description"/>
+          </a-form-item>
+        </span>
+        <span v-else>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+            <a-select
+              id="offering-selection"
+              v-decorator="['serviceofferingid', {}]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="serviceOfferingLoading"
+              :placeholder="apiParams.serviceofferingid.description">
+              <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+            <a-input
+              v-decorator="['size', {
+                initialValue: originalSize,
+                rules: [{
+                  validator: (rule, value, callback) => {
+                    if (value && (isNaN(value) || value <= 0)) {
+                      callback(this.$t('message.error.number'))
+                    }
+                    callback()
+                  }
+                }]
+              }]"
+              :placeholder="apiParams.size.description"/>
+          </a-form-item>
+        </span>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -82,9 +112,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ScaleKubernetesCluster',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -97,19 +131,28 @@ export default {
       serviceOfferingLoading: false,
       minCpu: 2,
       minMemory: 2048,
-      loading: false
+      loading: false,
+      originalSize: 1,
+      autoscalingenabled: null,
+      minsize: null,
+      maxsize: null
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.scaleKubernetesCluster || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('scaleKubernetesCluster')
   },
   created () {
-    this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
+    if (!this.isObjectEmpty(this.resource)) {
+      this.originalSize = this.resource.size
+      if (this.apiParams.autoscalingenabled) {
+        this.autoscalingenabled = this.resource.autoscalingenabled ? true : null
+        this.minsize = this.resource.minsize
+        this.maxsize = this.resource.maxsize
+      }
+    }
+  },
+  mounted () {
     this.fetchData()
   },
   methods: {
@@ -170,7 +213,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -178,31 +222,32 @@ export default {
         const params = {
           id: this.resource.id
         }
+        if (this.autoscalingenabled != null) {
+          params.autoscalingenabled = this.autoscalingenabled
+        }
         if (this.isValidValueForKey(values, 'size') && values.size > 0) {
           params.size = values.size
         }
-        if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings)) {
+        if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings) && this.autoscalingenabled == null) {
           params.serviceofferingid = this.serviceOfferings[values.serviceofferingid].id
+        }
+        if (this.isValidValueForKey(values, 'minsize')) {
+          params.minsize = values.minsize
+        }
+        if (this.isValidValueForKey(values, 'maxsize')) {
+          params.maxsize = values.maxsize
         }
         api('scaleKubernetesCluster', params).then(json => {
           const jobId = json.scalekubernetesclusterresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.kubernetes.cluster.scale'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.kubernetes.cluster.scale'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.scale')} ${this.resource.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`
           })
           this.closeAction()
-          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
@@ -226,11 +271,4 @@ export default {
     }
   }
 
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
-  }
 </style>

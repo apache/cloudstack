@@ -28,7 +28,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -62,7 +62,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     protected final SearchBuilder<VMTemplateStoragePoolVO> updateStateSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> templatePathSearch;
 
-    protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
+    protected static final String UPDATE_TEMPLATE_SPOOL_HOST_REF = "UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
         + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE pool_id = ? and template_id = ?";
 
     protected static final String DOWNLOADS_STATE_DC = "SELECT * FROM template_spool_ref t, storage_pool p where t.pool_id = p.id and p.data_center_id=? "

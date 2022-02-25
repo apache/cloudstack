@@ -38,6 +38,7 @@ export default {
     title: 'label.hosts',
     param: 'clusterid'
   }],
+  resourceType: 'Cluster',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
@@ -47,6 +48,9 @@ export default {
   }, {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   actions: [
     {
@@ -110,8 +114,7 @@ export default {
       message: 'label.outofbandmanagement.enable',
       dataView: true,
       show: (record) => {
-        return record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled &&
-          record.resourcedetails.outOfBandManagementEnabled === 'false'
+        return record?.resourcedetails?.outOfBandManagementEnabled === 'false'
       },
       args: ['clusterid'],
       mapping: {
@@ -127,8 +130,7 @@ export default {
       message: 'label.outofbandmanagement.disable',
       dataView: true,
       show: (record) => {
-        return !(record.resourcedetails && record.resourcedetails.outOfBandManagementEnabled &&
-          record.resourcedetails.outOfBandManagementEnabled === 'false')
+        return !(record?.resourcedetails?.outOfBandManagementEnabled === 'false')
       },
       args: ['clusterid'],
       mapping: {
@@ -144,8 +146,7 @@ export default {
       message: 'label.ha.enable',
       dataView: true,
       show: (record) => {
-        return record.resourcedetails && record.resourcedetails.resourceHAEnabled &&
-          record.resourcedetails.resourceHAEnabled === 'false'
+        return record?.resourcedetails?.resourceHAEnabled === 'false'
       },
       args: ['clusterid'],
       mapping: {
@@ -161,8 +162,7 @@ export default {
       message: 'label.ha.disable',
       dataView: true,
       show: (record) => {
-        return !(record.resourcedetails && record.resourcedetails.resourceHAEnabled &&
-          record.resourcedetails.resourceHAEnabled === 'false')
+        return !(record?.resourcedetails?.resourceHAEnabled === 'false')
       },
       args: ['clusterid'],
       mapping: {

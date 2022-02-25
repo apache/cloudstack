@@ -27,6 +27,11 @@ public class VmWorkRestore extends VmWork {
         this.templateId = templateId;
     }
 
+    public VmWorkRestore(VmWork vmWork, Long templateId) {
+        super(vmWork);
+        this.templateId = templateId;
+    }
+
     public Long getTemplateId() {
         return templateId;
     }

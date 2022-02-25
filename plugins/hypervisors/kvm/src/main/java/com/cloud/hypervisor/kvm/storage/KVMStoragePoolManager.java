@@ -22,15 +22,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.reflections.Reflections;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -43,8 +44,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-
-import org.reflections.Reflections;
 
 public class KVMStoragePoolManager {
     private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);
@@ -100,6 +99,7 @@ public class KVMStoragePoolManager {
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
         this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
+        this._storageMapper.put(StoragePoolType.PowerFlex.toString(), new ScaleIOStorageAdaptor(storagelayer));
 
         // add any adaptors that wish to register themselves via annotation
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
@@ -108,7 +108,7 @@ public class KVMStoragePoolManager {
             StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
             if (info != null && info.storagePoolType() != null) {
                 if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
-                    s_logger.error("Duplicate StorageAdaptor type " + info.storagePoolType().toString() + ", not loading " + storageAdaptor.getName());
+                    s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
                 } else {
                     try {
                         this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.newInstance());
@@ -166,10 +166,27 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        s_logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
+        if (MapUtils.isEmpty(volumeToDisconnect)) {
+            return false;
+        }
+
+        if (volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE) != null) {
+            String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
+            StorageAdaptor adaptor = _storageMapper.get(poolType);
+            if (adaptor != null) {
+                s_logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
+                return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
+            }
+
+            s_logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
+        }
+
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
+                s_logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
                 return true;
             }
         }
@@ -178,10 +195,12 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDiskByPath(String path) {
+        s_logger.debug(String.format("Disconnect physical disk by path: %s", path));
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDiskByPath(path)) {
+                s_logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
                 return true;
             }
         }
@@ -253,7 +272,7 @@ public class KVMStoragePoolManager {
             if (info != null) {
                 pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.type);
             } else {
-                throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt");
+                throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt due to " + e.getMessage());
             }
         }
         return pool;
@@ -286,36 +305,38 @@ public class KVMStoragePoolManager {
 
     public KVMPhysicalDisk getPhysicalDisk(StoragePoolType type, String poolUuid, String volName) {
         int cnt = 0;
-        int retries = 10;
+        int retries = 100;
         KVMPhysicalDisk vol = null;
         //harden get volume, try cnt times to get volume, in case volume is created on other host
+        //Poll more frequently and return immediately once disk is found
         String errMsg = "";
         while (cnt < retries) {
             try {
                 KVMStoragePool pool = getStoragePool(type, poolUuid);
                 vol = pool.getPhysicalDisk(volName);
                 if (vol != null) {
-                    break;
+                    return vol;
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to find volume:" + volName + " due to" + e.toString() + ", retry:" + cnt);
+                s_logger.debug("Failed to find volume:" + volName + " due to " + e.toString() + ", retry:" + cnt);
                 errMsg = e.toString();
             }
 
             try {
-                Thread.sleep(30000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 s_logger.debug("[ignored] interupted while trying to get storage pool.");
             }
             cnt++;
         }
 
+        KVMStoragePool pool = getStoragePool(type, poolUuid);
+        vol = pool.getPhysicalDisk(volName);
         if (vol == null) {
             throw new CloudRuntimeException(errMsg);
         } else {
             return vol;
         }
-
     }
 
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type) {
@@ -377,6 +398,10 @@ public class KVMStoragePoolManager {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.DIR, provisioningType,
                     size, destPool, timeout);
+        } else if (destPool.getType() == StoragePoolType.PowerFlex || destPool.getType() == StoragePoolType.Linstor) {
+            return adaptor.createDiskFromTemplate(template, name,
+                    PhysicalDiskFormat.RAW, provisioningType,
+                    size, destPool, timeout);
         } else {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.QCOW2, provisioningType,
@@ -405,9 +430,9 @@ public class KVMStoragePoolManager {
         return adaptor.createDiskFromTemplateBacking(template, name, format, size, destPool, timeout);
     }
 
-    public KVMPhysicalDisk createPhysicalDiskFromDirectDownloadTemplate(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+    public KVMPhysicalDisk createPhysicalDiskFromDirectDownloadTemplate(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.createTemplateFromDirectDownloadFile(templateFilePath, destPool, isIso);
+        return adaptor.createTemplateFromDirectDownloadFile(templateFilePath, destTemplatePath, destPool, format, timeout);
     }
 
 }

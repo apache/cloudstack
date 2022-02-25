@@ -221,7 +221,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
                 // call retry it.
                 return UUID.randomUUID().toString();
             } else {
-                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId(),
+                throw new InsufficientServerCapacityException("No destination found for a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId(),
                     areAffinityGroupsAssociated(vmProfile));
             }
         }
@@ -253,6 +253,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
                     }
 
                     _itMgr.start(vm.getUuid(), params, plan, null);
+                } else {
+                    throw ex;
                 }
             }
         } else {

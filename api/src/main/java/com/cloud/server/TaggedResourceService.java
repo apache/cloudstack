@@ -43,15 +43,11 @@ public interface TaggedResourceService {
 
     List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId);
 
-    //FIXME - the methods below should be extracted to its separate manager/service responsible just for retrieving object details
-    ResourceObjectType getResourceType(String resourceTypeStr);
-
     /**
+     * Retrieves tags from resource.
+     * @param type
      * @param resourceId
-     * @param resourceType
-     * @return
+     * @return If the list of tags is not null, returns a map with the tags, otherwise, returns null.
      */
-    String getUuid(String resourceId, ResourceObjectType resourceType);
-
-    public long getResourceId(String resourceId, ResourceObjectType resourceType);
+    public Map<String, String> getTagsFromResource(ResourceObjectType type, long resourceId);
 }

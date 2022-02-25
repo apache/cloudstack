@@ -19,9 +19,9 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class IscsiAdmStoragePool implements KVMStoragePool {
@@ -164,5 +164,10 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     @Override
     public String getLocalPath() {
         return _localPath;
+    }
+
+    @Override
+    public boolean supportsConfigDriveIso() {
+        return false;
     }
 }

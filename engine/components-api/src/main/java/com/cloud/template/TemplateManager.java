@@ -18,19 +18,18 @@ package com.cloud.template;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
@@ -49,7 +48,8 @@ public interface TemplateManager {
     static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
             "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
 
-
+    static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
+    static final String XS_TOOLS_ISO = "xs-tools.iso";
 
     /**
      * Prepares a template for vm creation for a certain storage pool.
@@ -101,8 +101,6 @@ public interface TemplateManager {
      * @param templatePoolVO
      */
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
-
-    boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
 
     boolean templateIsDeleteable(long templateId);
 

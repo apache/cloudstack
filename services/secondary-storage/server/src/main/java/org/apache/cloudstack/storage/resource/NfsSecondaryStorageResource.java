@@ -22,11 +22,9 @@ import static com.cloud.network.NetworkModel.PASSWORD_FILE;
 import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
 import static com.cloud.network.NetworkModel.USERDATA_DIR;
 import static com.cloud.network.NetworkModel.USERDATA_FILE;
-import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -80,7 +78,7 @@ import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -101,6 +99,7 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
@@ -139,6 +138,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -320,7 +320,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private Answer execute(HandleConfigDriveIsoCommand cmd) {
         if (cmd.isCreate()) {
             if (cmd.getIsoData() == null) {
-                return new Answer(cmd, false, "Invalid config drive ISO data");
+                return new HandleConfigDriveIsoAnswer(cmd, "Invalid config drive ISO data");
             }
             String nfsMountPoint = getRootDir(cmd.getDestStore().getUrl(), _nfsVersion);
             File isoFile = new File(nfsMountPoint, cmd.getIsoFile());
@@ -333,7 +333,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 File tmpIsoFile = ConfigDriveBuilder.base64StringToFile(cmd.getIsoData(), tempDir.toAbsolutePath().toString(), cmd.getIsoFile());
                 copyLocalToNfs(tmpIsoFile, new File(cmd.getIsoFile()), cmd.getDestStore());
             } catch (IOException | ConfigurationException e) {
-                return new Answer(cmd, false, "Failed due to exception: " + e.getMessage());
+                return new HandleConfigDriveIsoAnswer(cmd, "Failed due to exception: " + e.getMessage());
             } finally {
                 try {
                     if (tempDir != null) {
@@ -343,7 +343,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     s_logger.warn("Failed to delete ConfigDrive temporary directory: " + tempDir.toString(), ioe);
                 }
             }
-            return new Answer(cmd, true, "Successfully saved config drive at secondary storage");
+            return new HandleConfigDriveIsoAnswer(cmd, NetworkElement.Location.SECONDARY, "Successfully saved config drive at secondary storage");
         } else {
             DataStoreTO dstore = cmd.getDestStore();
             if (dstore instanceof NfsTO) {
@@ -354,11 +354,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 try {
                     Files.deleteIfExists(tmpltPath.toPath());
                 } catch (IOException e) {
-                    return new Answer(cmd, e);
+                    return new HandleConfigDriveIsoAnswer(cmd, e);
                 }
-                return new Answer(cmd);
+                return new HandleConfigDriveIsoAnswer(cmd);
             } else {
-                return new Answer(cmd, false, "Not implemented yet");
+                return new HandleConfigDriveIsoAnswer(cmd, "Not implemented yet");
             }
         }
     }
@@ -796,7 +796,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     return new CopyCmdAnswer(errMsg);
                 }
             }
-            File destFile = new File(downloadDirectory, substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
+            File destFile = new File(downloadDirectory, StringUtils.substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
             S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), destFile).waitForCompletion();
 
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
@@ -1091,7 +1091,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String determineS3TemplateDirectory(final Long accountId, final Long templateId, final String templateUniqueName) {
-        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
+        return StringUtils.join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
     }
 
     private String determineS3TemplateNameFromKey(String key) {
@@ -1099,7 +1099,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String determineS3VolumeDirectory(final Long accountId, final Long volId) {
-        return join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
+        return StringUtils.join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
     }
 
     protected Long determineS3VolumeIdFromKey(String key) {
@@ -1107,7 +1107,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private String determineStorageTemplatePath(final String storagePath, String dataPath, String nfsVersion) {
-        return join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
+        return StringUtils.join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
     }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
@@ -2278,8 +2278,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
-                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
-                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
+                if (uploadEntity.getOvfInformationTO() != null) {
+                    answer.setOvfInformationTO(uploadEntity.getOvfInformationTO());
+                }
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -3258,7 +3259,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         long accountTemplateDirSize = 0;
         File accountTemplateDir = new File(rootDir + getTemplatePathForAccount(accountId));
         if (accountTemplateDir.exists()) {
-            FileUtils.sizeOfDirectory(accountTemplateDir);
+            accountTemplateDirSize = FileUtils.sizeOfDirectory(accountTemplateDir);
         }
         long accountVolumeDirSize = 0;
         File accountVolumeDir = new File(rootDir + getVolumePathForAccount(accountId));
@@ -3422,12 +3423,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
                 if (info.ovfInformationTO != null) {
-                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
-                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
-                    }
-                    if (info.ovfInformationTO.getHardwareSection() != null) {
-                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
-                    }
+                    uploadEntity.setOvfInformationTO(info.ovfInformationTO);
                 }
                 break;
             }
@@ -3468,7 +3464,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     public void validatePostUploadRequest(String signature, String metadata, String timeout, String hostname, long contentLength, String uuid)
             throws InvalidParameterValueException {
         // check none of the params are empty
-        if (StringUtils.isEmpty(signature) || StringUtils.isEmpty(metadata) || StringUtils.isEmpty(timeout)) {
+        if (StringUtils.isAnyEmpty(signature, metadata, timeout)) {
             updateStateMapWithError(uuid, "signature, metadata and expires are compulsory fields.");
             throw new InvalidParameterValueException("signature, metadata and expires are compulsory fields.");
         }

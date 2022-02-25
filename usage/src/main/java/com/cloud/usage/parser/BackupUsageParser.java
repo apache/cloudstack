@@ -17,15 +17,13 @@
 
 package com.cloud.usage.parser;
 
+import java.text.DecimalFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -68,65 +66,33 @@ public class BackupUsageParser {
             return true;
         }
 
-        final Map<Long, BackupInfo> vmUsageMap = new HashMap<>();
         for (final UsageBackupVO usageBackup : usageBackups) {
             final Long vmId = usageBackup.getVmId();
             final Long zoneId = usageBackup.getZoneId();
             final Long offeringId = usageBackup.getBackupOfferingId();
-            if (vmUsageMap.get(vmId) == null) {
-                vmUsageMap.put(vmId, new BackupUsageParser.BackupInfo(new Backup.Metric(0L, 0L), zoneId, vmId, offeringId));
+            Date createdDate = usageBackup.getCreated();
+            Date removedDate = usageBackup.getRemoved();
+            if (createdDate.before(startDate)) {
+                createdDate = startDate;
             }
-            final Backup.Metric metric = vmUsageMap.get(vmId).getMetric();
-            metric.setBackupSize(metric.getBackupSize() + usageBackup.getSize());
-            metric.setDataSize(metric.getDataSize() + usageBackup.getProtectedSize());
-        }
+            if (removedDate == null || removedDate.after(endDate)) {
+                removedDate = endDate;
+            }
+            final long duration = (removedDate.getTime() - createdDate.getTime()) + 1;
+            final float usage = duration / 1000f / 60f / 60f;
+            DecimalFormat dFormat = new DecimalFormat("#.######");
+            String usageDisplay = dFormat.format(usage);
 
-        for (final BackupInfo backupInfo : vmUsageMap.values()) {
-            final Long vmId = backupInfo.getVmId();
-            final Long zoneId = backupInfo.getZoneId();
-            final Long offeringId = backupInfo.getOfferingId();
-            final Double rawUsage = (double) backupInfo.getMetric().getBackupSize();
-            final Double sizeGib = rawUsage / (1024.0 * 1024.0 * 1024.0);
-            final String description = String.format("Backup usage VM ID: %d", vmId);
-            final String usageDisplay = String.format("%.4f GiB", sizeGib);
+            final Double rawUsage = (double) usageBackup.getSize();
+            final String description = String.format("Backup usage VM ID: %d, backup offering: %d", vmId, offeringId);
 
             final UsageVO usageRecord =
-                    new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), description, usageDisplay,
-                            UsageTypes.BACKUP, rawUsage, vmId, null, offeringId, null, vmId,
-                            backupInfo.getMetric().getBackupSize(), backupInfo.getMetric().getDataSize(), startDate, endDate);
+                    new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), description, usageDisplay + " Hrs",
+                            UsageTypes.BACKUP, new Double(usage), vmId, null, offeringId, null, vmId,
+                            usageBackup.getSize(), usageBackup.getProtectedSize(), startDate, endDate);
             s_usageDao.persist(usageRecord);
         }
 
         return true;
-    }
-
-    static class BackupInfo {
-        Backup.Metric metric;
-        Long zoneId;
-        Long vmId;
-        Long offeringId;
-
-        public BackupInfo(Backup.Metric metric, Long zoneId, Long vmId, Long offeringId) {
-            this.metric = metric;
-            this.zoneId = zoneId;
-            this.vmId = vmId;
-            this.offeringId = offeringId;
-        }
-
-        public Backup.Metric getMetric() {
-            return metric;
-        }
-
-        public Long getZoneId() {
-            return zoneId;
-        }
-
-        public Long getVmId() {
-            return vmId;
-        }
-
-        public Long getOfferingId() {
-            return offeringId;
-        }
     }
 }

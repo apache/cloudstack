@@ -19,15 +19,14 @@
 
 package com.cloud.utils.ssh;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Strings;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Session;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class SSHCmdHelper {
     private static final Logger s_logger = Logger.getLogger(SSHCmdHelper.class);
@@ -77,8 +76,33 @@ public class SSHCmdHelper {
     }
 
     public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password) {
+        return acquireAuthorizedConnection(ip, 22, username, password, null);
+    }
+
+    public static boolean acquireAuthorizedConnectionWithPublicKey(final com.trilead.ssh2.Connection sshConnection, final String username, final String privateKey) {
+        if (StringUtils.isNotBlank(privateKey)) {
+            try {
+                if (!sshConnection.authenticateWithPublicKey(username, privateKey.toCharArray(), null)) {
+                    s_logger.warn("Failed to authenticate with ssh key");
+                    return false;
+                }
+                return true;
+            } catch (IOException e) {
+                s_logger.warn("An exception occurred when authenticate with ssh key");
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password, String privateKey) {
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(ip, port);
         try {
+            sshConnection.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
+            if (acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
+                return sshConnection;
+            };
+            sshConnection = new com.trilead.ssh2.Connection(ip, port);
             sshConnection.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
             if (!sshConnection.authenticateWithPassword(username, password)) {
                 String[] methods = sshConnection.getRemainingAuthMethods(username);
@@ -201,7 +225,7 @@ public class SSHCmdHelper {
             }
 
             final SSHCmdResult result = new SSHCmdResult(-1, sbStdoutResult.toString(), sbStdErrResult.toString());
-            if (!Strings.isNullOrEmpty(result.getStdOut()) || !Strings.isNullOrEmpty(result.getStdErr())) {
+            if (!StringUtils.isAllEmpty(result.getStdOut(), result.getStdErr())) {
                 s_logger.debug("SSH command: " + cmd.split(KeyStoreUtils.KS_FILENAME)[0] + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
             }
 
@@ -216,8 +240,8 @@ public class SSHCmdHelper {
             }
             return result;
         } catch (Exception e) {
-            s_logger.debug("Ssh executed failed", e);
-            throw new SshException("Ssh executed failed " + e.getMessage());
+            s_logger.debug("SSH execution failed", e);
+            throw new SshException("SSH execution failed " + e.getMessage());
         } finally {
             if (sshSession != null)
                 sshSession.close();

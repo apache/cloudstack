@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.template;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -29,6 +30,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -135,6 +138,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     private VMTemplateDetailsDao templateDetailsDao;
     @Inject
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Override
     public String getName() {
@@ -145,12 +150,23 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
      * Validate on random running KVM host that URL is reachable
      * @param url url
      */
-    private Long performDirectDownloadUrlValidation(final String url) {
-        HostVO host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM);
+    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds) {
+        HostVO host = null;
+        if (zoneIds != null && !zoneIds.isEmpty()) {
+            for (Long zoneId : zoneIds) {
+                host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+                if (host != null) {
+                    break;
+                }
+            }
+        } else {
+            host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, null);
+        }
+
         if (host == null) {
             throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
         }
-        CheckUrlCommand cmd = new CheckUrlCommand(url);
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url);
         s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -173,7 +189,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(url);
+            List<Long> zoneIds = null;
+            if (cmd.getZoneId() != null) {
+                zoneIds =  new ArrayList<>();
+                zoneIds.add(cmd.getZoneId());
+            }
+            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -195,10 +216,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        UriUtils.validateUrl(cmd.getFormat(), url);
+        UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(url);
+            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -604,6 +625,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
             if (iStores == null || iStores.size() == 0) {
+                // remove any references from template_zone_ref
+                List<VMTemplateZoneVO> templateZones = templateZoneDao.listByTemplateId(template.getId());
+                if (templateZones != null) {
+                    for (VMTemplateZoneVO templateZone : templateZones) {
+                        templateZoneDao.remove(templateZone.getId());
+                    }
+                }
+
                 // Mark template as Inactive.
                 template.setState(VirtualMachineTemplate.State.Inactive);
                 _tmpltDao.remove(template.getId());
@@ -626,9 +655,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // Remove deploy-as-is details (if any)
             templateDeployAsIsDetailsDao.removeDetails(template.getId());
 
+            // Remove comments (if any)
+            AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
+                    AnnotationService.EntityType.ISO : AnnotationService.EntityType.TEMPLATE;
+            annotationDao.removeByEntityType(entityType.name(), template.getUuid());
+
         }
         return success;
-
     }
 
     @Override

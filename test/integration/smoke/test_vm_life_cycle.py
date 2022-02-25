@@ -357,12 +357,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVMLifeCycle, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -499,6 +494,40 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_04_reboot_vm_forced(self):
+        """Test Force Reboot Virtual Machine
+        """
+
+        try:
+            self.debug("Force rebooting VM - ID: %s" % self.virtual_machine.id)
+            self.small_virtual_machine.reboot(self.apiclient, forced=True)
+        except Exception as e:
+            self.fail("Failed to force reboot VM: %s" % e)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.small_virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+        return
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """
@@ -583,6 +612,9 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 1. Environment has enough hosts for migration
         # 2. DeployVM on suitable host (with another host in the cluster)
         # 3. Migrate the VM and assert migration successful
+
+        if self.zone.localstorageenabled :
+            self.skipTest("Migration is not supported on zones with local storage")
 
         suitable_hosts = None
 
@@ -744,7 +776,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                       (self.virtual_machine.ipaddress, e))
         mount_dir = "/mnt/tmp"
         cmds = "mkdir -p %s" % mount_dir
-        self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
+        self.assertTrue(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
         iso_unsupported = False
         for diskdevice in self.services["diskdevice"]:
@@ -754,8 +786,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                 break
             if str(res).find("mount: unknown filesystem type 'iso9660'") != -1:
                 iso_unsupported = True
-                self.debug("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
-                print "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                log_msg = "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                self.debug(log_msg)
+                print(log_msg)
                 break
         else:
             self.fail("No mount points matched. Mount was unsuccessful")
@@ -899,11 +932,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestSecuredVmMigration, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestSecuredVmMigration, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -917,7 +946,8 @@ class TestSecuredVmMigration(cloudstackTestCase):
             self.apiclient,
             zoneid=self.zone.id,
             type='Routing',
-            hypervisor='KVM')
+            hypervisor='KVM',
+            state='Up')
 
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
@@ -928,10 +958,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
     def tearDown(self):
         self.secure_all_hosts()
         self.updateConfiguration("ca.plugin.root.auth.strictness", "true")
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestSecuredVmMigration, self).tearDown()
 
     def get_target_host(self, secured, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -949,8 +976,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
         if protocol not in resp[0]:
             cloudstackTestCase.fail(self, "Libvirt listen protocol expected: '" + protocol + "\n"
-                                                                                             "does not match actual: " +
-                                    resp[0])
+                                    "does not match actual: " + resp[0])
 
     def migrate_and_check(self, vm, src_host, dest_host, proto='tls'):
         """
@@ -963,7 +989,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def waitUntilHostInState(self, hostId, state="Up", interval=5, retries=20):
         while retries > -1:
-            print("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries))
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
@@ -981,12 +1006,17 @@ class TestSecuredVmMigration(cloudstackTestCase):
     def unsecure_host(self, host):
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]) \
             .execute("rm -f /etc/cloudstack/agent/cloud* && \
+                      service cloudstack-agent stop ; \
+                      service libvirtd stop ; \
+                      service libvirt-bin stop ; \
                       sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
-                      service libvirtd restart && \
-                      sleep 30 && \
-                      service cloudstack-agent restart")
+                      service libvirtd start ; \
+                      service libvirt-bin start ; \
+                      sleep 30 ; \
+                      service cloudstack-agent start")
+        time.sleep(30)
         print("Unsecuring Host: %s" % (host.name))
         self.waitUntilHostInState(hostId=host.id, state="Up")
         self.check_connection(host=host, secured='false')
@@ -1172,11 +1202,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestMigrateVMwithVolume, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestMigrateVMwithVolume,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1186,24 +1212,21 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         if self.hypervisor.lower() not in ["vmware"]:
             self.skipTest("VM Migration with Volumes is not supported on other than VMware")
 
-            self.hosts = Host.list(
-                self.apiclient,
-                zoneid=self.zone.id,
-                type='Routing',
-                hypervisor='KVM')
+        self.hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor='VMware')
 
-            if len(self.hosts) < 2:
-                self.skipTest("Requires at least two hosts for performing migration related tests")
+        if len(self.hosts) < 2:
+            self.skipTest("Requires at least two hosts for performing migration related tests")
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestMigrateVMwithVolume,self).tearDown()
 
     def get_target_host(self, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
-                                             virtualmachineid=virtualmachineid)[0]
+                                             virtualmachineid=virtualmachineid)
         if len(target_hosts) < 1:
             self.skipTest("No target hosts found")
 
@@ -1229,7 +1252,8 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
             serviceofferingid=self.small_offering.id,
             mode=self.services["mode"])
 
-    def migrate_vm_with_pools(self, target_pool, id):
+    def migrate_vm_to_pool(self, target_pool, id):
+
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
 
         cmd.storageid = target_pool.id
@@ -1250,17 +1274,17 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         )
 
     """
-    BVT for Vmware Offline VM and Volume Migration
+    BVT for Vmware Offline and Live VM and Volume Migration
     """
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
-    def test_01_migrate_VM_and_root_volume(self):
+    def test_01_offline_migrate_VM_and_root_volume(self):
         """Test VM will be migrated with it's root volume"""
         # Validate the following
         # 1. Deploys a VM
-        # 2. Finds suitable host for migration
+        # 2. Stops the VM
         # 3. Finds suitable storage pool for root volume
-        # 4. Migrate the VM to new host and storage pool and assert migration successful
+        # 4. Migrate the VM to new storage pool and assert migration successful
 
         vm = self.deploy_vm()
 
@@ -1270,19 +1294,19 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
         vm.stop(self.apiclient)
 
-        self.migrate_vm_with_pools(target_pool, vm.id)
+        self.migrate_vm_to_pool(target_pool, vm.id)
 
         root_volume = self.get_vm_volumes(vm.id)[0]
         self.assertEqual(root_volume.storageid, target_pool.id, "Pool ID was not as expected")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
-    def test_02_migrate_VM_with_two_data_disks(self):
+    def test_02_offline_migrate_VM_with_two_data_disks(self):
         """Test VM will be migrated with it's root volume"""
         # Validate the following
         # 1. Deploys a VM and attaches 2 data disks
-        # 2. Finds suitable host for migration
+        # 2. Stops the VM
         # 3. Finds suitable storage pool for volumes
-        # 4. Migrate the VM to new host and storage pool and assert migration successful
+        # 4. Migrate the VM to new storage pool and assert migration successful
 
         vm = self.deploy_vm()
 
@@ -1298,7 +1322,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
         vm.stop(self.apiclient)
 
-        self.migrate_vm_with_pools(target_pool, vm.id)
+        self.migrate_vm_to_pool(target_pool, vm.id)
 
         volume1 = Volume.list(self.apiclient, id=volume1.id)[0]
         volume2 = Volume.list(self.apiclient, id=volume2.id)[0]
@@ -1309,7 +1333,54 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         self.assertEqual(volume2.storageid, target_pool.id, "Pool ID was not as expected")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
-    def test_03_migrate_detached_volume(self):
+    def test_03_live_migrate_VM_with_two_data_disks(self):
+        """Test VM will be migrated with it's root volume"""
+        # Validate the following
+        # 1. Deploys a VM and attaches 2 data disks
+        # 2. Finds suitable host for migration
+        # 3. Finds suitable storage pool for volumes
+        # 4. Migrate the VM to new host and storage pool and assert migration successful
+
+        vm = self.deploy_vm()
+
+        root_volume = self.get_vm_volumes(vm.id)[0]
+        volume1 = self.create_volume()
+        volume2 = self.create_volume()
+        vm.attach_volume(self.apiclient, volume1)
+        vm.attach_volume(self.apiclient, volume2)
+
+        target_host = self.get_target_host(vm.id)
+        target_pool = self.get_target_pool(root_volume.id)
+        volume1.target_pool = self.get_target_pool(volume1.id)
+        volume2.target_pool = self.get_target_pool(volume2.id)
+
+        cmd = migrateVirtualMachineWithVolume.migrateVirtualMachineWithVolumeCmd()
+        cmd.migrateto = [{"volume": str(root_volume.id), "pool": str(target_pool.id)},
+                         {"volume": str(volume1.id), "pool": str(volume1.target_pool.id)},
+                         {"volume": str(volume2.id), "pool": str(volume2.target_pool.id)}]
+        cmd.virtualmachineid = vm.id
+        cmd.hostid = target_host.id
+
+        response = self.apiclient.migrateVirtualMachineWithVolume(cmd)
+
+        self.assertEqual(Volume.list(self.apiclient, id=root_volume.id)[0].storageid,
+                         target_pool.id,
+                         "Pool ID not as expected")
+
+        self.assertEqual(Volume.list(self.apiclient, id=volume1.id)[0].storageid,
+                         volume1.target_pool.id,
+                         "Pool ID not as expected")
+
+        self.assertEqual(Volume.list(self.apiclient, id=volume2.id)[0].storageid,
+                         volume2.target_pool.id,
+                         "Pool ID not as expected")
+
+        self.assertEqual(response.hostid,
+                         target_host.id,
+                         "HostID not as expected")
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
+    def test_04_migrate_detached_volume(self):
         """Test VM will be migrated with it's root volume"""
         # Validate the following
         # 1. Deploys a VM and attaches 1 data disk
@@ -1385,11 +1456,7 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestKVMLiveMigration, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestKVMLiveMigration,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1408,16 +1475,12 @@ class TestKVMLiveMigration(cloudstackTestCase):
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
 
-
         for host in self.hosts:
             if host.details['Host.OS'] in ['CentOS']:
                 self.skipTest("live migration is not stabily supported on CentOS")
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestKVMLiveMigration,self).tearDown()
 
     def get_target_host(self, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,

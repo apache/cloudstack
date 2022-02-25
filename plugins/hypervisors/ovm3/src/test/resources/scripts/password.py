@@ -42,7 +42,7 @@ def getCon(host, port):
 
     return server
 
-# hmm master actions don't apply to a slave
+# hmm primary actions don't apply to a secondary
 port = 8899
 user = "oracle"
 password = "test123"

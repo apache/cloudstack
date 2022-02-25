@@ -35,6 +35,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -78,7 +83,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.TaggedResourceService;
@@ -153,7 +157,11 @@ public class VolumeApiServiceImplTest {
     @Mock
     private StoragePoolTagsDao storagePoolTagsDao;
     @Mock
-    private HypervisorCapabilitiesDao hypervisorCapabilitiesDao;
+    private VMTemplateDao templateDao;
+    @Mock
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -209,7 +217,7 @@ public class VolumeApiServiceImplTest {
             VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(volumeDaoMock.findById(1L)).thenReturn(volumeOfRunningVm);
 
-            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             runningVm.setState(State.Running);
             runningVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(1L)).thenReturn(runningVm);
@@ -219,13 +227,13 @@ public class VolumeApiServiceImplTest {
             volumeOfStoppedVm.setPoolId(1L);
             when(volumeDaoMock.findById(2L)).thenReturn(volumeOfStoppedVm);
 
-            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             stoppedVm.setState(State.Stopped);
             stoppedVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(2L)).thenReturn(stoppedVm);
 
             // volume of hyperV vm id=3
-            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             hyperVVm.setState(State.Stopped);
             hyperVVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(3L)).thenReturn(hyperVVm);
@@ -281,7 +289,7 @@ public class VolumeApiServiceImplTest {
             when(volumeDaoMock.findById(7L)).thenReturn(managedVolume1);
 
             // vm having root volume
-            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             vmHavingRootVolume.setState(State.Stopped);
             vmHavingRootVolume.setDataCenterId(1L);
             when(userVmDaoMock.findById(4L)).thenReturn(vmHavingRootVolume);
@@ -566,6 +574,27 @@ public class VolumeApiServiceImplTest {
     @Test
     public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolume() {
         Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.ROOT);
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(_vmInstanceDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getServiceOfferingId()).thenReturn(1L);
+        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+        serviceOfferingVO.setDiskOfferingStrictness(false);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOfferingVO);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolumeWithDiskOfferingStrictnessTrue() {
+        Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.ROOT);
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(_vmInstanceDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getServiceOfferingId()).thenReturn(1L);
+        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOfferingVO);
+        when(serviceOfferingVO.getDiskOfferingStrictness()).thenReturn(true);
 
         volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
     }
@@ -1078,5 +1107,53 @@ public class VolumeApiServiceImplTest {
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isNotPossibleToResizeTestAllFormats() {
+        Storage.ImageFormat[] imageFormat = Storage.ImageFormat.values();
+        for (int i = 0; i < imageFormat.length - 1; i++) {
+            if (imageFormat[i] != Storage.ImageFormat.ISO) {
+                prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 10l, imageFormat[i], true);
+            } else {
+                prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 10l, imageFormat[i], false);
+            }
+        }
+    }
+
+    @Test
+    public void isNotPossibleToResizeTestAllTypes() {
+        Type[] types = Type.values();
+        for (int i = 0; i < types.length - 1; i++) {
+            if (types[i] != Type.ROOT) {
+                prepareAndRunTestOfIsNotPossibleToResize(types[i], 10l, Storage.ImageFormat.QCOW2, false);
+            } else {
+                prepareAndRunTestOfIsNotPossibleToResize(types[i], 10l, Storage.ImageFormat.QCOW2, true);
+            }
+        }
+    }
+
+    @Test
+    public void isNotPossibleToResizeTestNoRootDiskSize() {
+        prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 0l, Storage.ImageFormat.QCOW2, false);
+    }
+
+    private void prepareAndRunTestOfIsNotPossibleToResize(Type volumeType, Long rootDisk, Storage.ImageFormat imageFormat, boolean expectedIsNotPossibleToResize) {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getVolumeType()).thenReturn(volumeType);
+
+        when(volume.getTemplateId()).thenReturn(1l);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+
+        ServiceOfferingJoinVO serviceOfferingJoinVO = Mockito.mock(ServiceOfferingJoinVO.class);
+        when(serviceOfferingJoinVO.getRootDiskSize()).thenReturn(rootDisk);
+        when(serviceOfferingJoinDao.findById(Mockito.anyLong())).thenReturn(serviceOfferingJoinVO);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(imageFormat);
+        when(templateDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(template);
+
+        boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume, diskOffering);
+        Assert.assertEquals(expectedIsNotPossibleToResize, result);
     }
 }

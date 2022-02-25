@@ -30,7 +30,6 @@ import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -40,9 +39,9 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
 
 @APICommand(name = ImportRoleCmd.APINAME, description = "Imports a role based on provided map of rule permissions", responseObject = RoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
@@ -56,7 +55,7 @@ public class ImportRoleCmd extends RoleCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "Creates a role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "Creates a role with this unique name")
     private String roleName;
 
     @Parameter(name = ApiConstants.RULES, type = CommandType.MAP, required = true,
@@ -91,19 +90,20 @@ public class ImportRoleCmd extends RoleCmd {
             HashMap<String, String> detail = (HashMap<String, String>)iter.next();
             Map<String, Object> ruleDetails = new HashMap<>();
             String rule = detail.get(ApiConstants.RULE);
-            if (Strings.isNullOrEmpty(rule)) {
+
+            if (StringUtils.isEmpty(rule)) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty rule provided in rules param");
             }
             ruleDetails.put(ApiConstants.RULE, new Rule(rule));
 
             String permission = detail.get(ApiConstants.PERMISSION);
-            if (Strings.isNullOrEmpty(permission)) {
+            if (StringUtils.isEmpty(permission)) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid permission: "+ permission + " provided in rules param");
             }
             ruleDetails.put(ApiConstants.PERMISSION, roleService.getRolePermission(permission));
 
             String description = detail.get(ApiConstants.DESCRIPTION);
-            if (!Strings.isNullOrEmpty(permission)) {
+            if (StringUtils.isNotEmpty(permission)) {
                 ruleDetails.put(ApiConstants.DESCRIPTION, description);
             }
 

@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.account;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -186,8 +186,7 @@ public class CreateAccountCmd extends BaseCmd {
         validateParams();
         CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain Id:" + getDomainId());
         UserAccount userAccount =
-            _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getRoleId(),
-                getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
+            _accountService.createUserAccount(this);
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(ResponseView.Full, userAccount);
             response.setResponseName(getCommandName());

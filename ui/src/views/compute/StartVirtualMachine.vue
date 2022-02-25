@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
         <span slot="message" v-html="$t('message.action.start.instance')" />
@@ -28,12 +28,7 @@
         layout="vertical">
         <div v-if="this.$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.podid') }}
-              <a-tooltip :title="apiParams.podid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               v-decorator="['podid', {}]"
               showSearch
@@ -51,12 +46,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.clusterid') }}
-              <a-tooltip :title="apiParams.clusterid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
             <a-select
               id="cluster-selection"
               v-decorator="['clusterid', {}]"
@@ -74,12 +64,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.hostid') }}
-              <a-tooltip :title="apiParams.hostid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
             <a-select
               id="host-selection"
               v-decorator="['hostid', {}]"
@@ -98,12 +83,7 @@
         </div>
 
         <a-form-item v-if="resource.hypervisor === 'VMware'">
-          <span slot="label">
-            {{ $t('label.bootintosetup') }}
-            <a-tooltip :title="apiParams.bootintosetup.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
           <a-switch
             v-decorator="['bootintosetup']">
           </a-switch>
@@ -111,7 +91,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -120,9 +100,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'StartVirtualMachine',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -140,14 +124,9 @@ export default {
       loading: false
     }
   },
-  inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {
@@ -226,7 +205,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -242,20 +222,13 @@ export default {
         }
         api('startVirtualMachine', params).then(json => {
           const jobId = json.startvirtualmachineresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.start.instance'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.start.instance'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
-            successMethod: () => {
-              this.parentFetchData()
-            },
             response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
           this.closeAction()
@@ -279,14 +252,6 @@ export default {
 
     @media (min-width: 500px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

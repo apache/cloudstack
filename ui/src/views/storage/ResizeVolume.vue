@@ -16,40 +16,37 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form :form="form" layout="vertical">
-      <a-form-item :label="$t('label.diskoffering')" v-if="resource.type !== 'ROOT'">
-        <a-select
-          v-decorator="['diskofferingid', {
-            initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]}]"
-          :loading="loading"
-          :placeholder="$t('label.diskoffering')"
-          @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
-          :autoFocus="resource.type !== 'ROOT'"
-        >
-          <a-select-option
-            v-for="(offering, index) in offerings"
-            :value="offering.id"
-            :key="index"
-          >{{ offering.displaytext || offering.name }}</a-select-option>
-        </a-select>
+      <a-form-item :label="$t('label.sizegb')">
+        <a-input
+          v-decorator="['size', {
+            rules: [{ required: true, message: $t('message.error.size') }]}]"
+          :placeholder="$t('label.disksize')"/>
       </a-form-item>
-      <div v-if="customDiskOffering || resource.type === 'ROOT'">
-        <a-form-item :label="$t('label.sizegb')">
+      <div v-if="customDiskOfferingIops">
+        <a-form-item :label="$t('label.miniops')">
           <a-input
-            v-decorator="['size', {
-              rules: [{ required: true, message: $t('message.error.size') }]}]"
-            :placeholder="$t('label.disksize')"
-            :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
+            v-decorator="['miniops', {
+              rules: [{ required: true, message: $t('message.error.number') }]}]"
+            :placeholder="$t('label.miniops')"/>
+        </a-form-item>
+        <a-form-item :label="$t('label.maxiops')">
+          <a-input
+            v-decorator="['maxiops', {
+              rules: [{ required: true, message: $t('message.error.number') }]}]"
+            :placeholder="$t('label.maxiops')"/>
         </a-form-item>
       </div>
-      <a-form-item :label="$t('label.shrinkok')">
-        <a-checkbox v-decorator="['shrinkok']" />
+      <a-form-item :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
+        <a-switch
+          v-decorator="['shrinkOk']"
+          :checked="shrinkOk"
+          @change="val => { shrinkOk = val }"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -94,7 +91,8 @@ export default {
       })
     },
     handleSubmit (e) {
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -103,15 +101,10 @@ export default {
         api('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
+            title: this.$t('message.success.resize.volume'),
+            description: values.name,
             successMessage: this.$t('message.success.resize.volume'),
-            successMethod: () => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: this.$t('message.success.resize.volume'),
-                jobid: response.resizevolumeresponse.jobid,
-                description: values.name,
-                status: 'progress'
-              })
-            },
+            successMethod: () => {},
             errorMessage: this.$t('message.resize.volume.failed'),
             errorMethod: () => {
               this.closeModal()
@@ -148,12 +141,6 @@ export default {
 
   @media (min-width: 760px) {
     width: 500px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

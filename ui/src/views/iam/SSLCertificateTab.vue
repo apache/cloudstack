@@ -68,7 +68,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'SSLCertificate',
@@ -209,7 +209,7 @@ export default {
       const title = `${this.$t('label.deleteconfirm')} ${this.$t('label.certificate')}`
 
       this.$confirm({
-        title: title,
+        title,
         okText: this.$t('label.ok'),
         okType: 'danger',
         cancelText: this.$t('label.cancel'),

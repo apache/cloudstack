@@ -16,7 +16,9 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div
+    class="form-layout"
+    @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <a-icon type="loading" />
       {{ $t('message.upload.file.processing') }}
@@ -98,12 +100,16 @@
                   mode="multiple"
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   :placeholder="apiParams.zoneids.description"
                   @change="handlerSelectZone">
-                  <a-select-option v-for="opt in zones.opts" :key="opt.id">
-                    {{ opt.name || opt.description }}
+                  <a-select-option v-for="opt in zones.opts" :key="opt.id" :label="opt.name || opt.description">
+                    <span>
+                      <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else type="global" style="margin-right: 5px" />
+                      {{ opt.name || opt.description }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -130,13 +136,17 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   @change="handlerSelectZone"
                   :placeholder="apiParams.zoneid.description"
                   :loading="zones.loading">
-                  <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id">
-                    {{ zone.name || zone.description }}
+                  <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id" :label="zone.name || zone.description">
+                    <span>
+                      <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <a-icon v-else type="global" style="margin-right: 5px" />
+                      {{ zone.name || zone.description }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -157,7 +167,12 @@
                 }]"
                 :loading="hyperVisor.loading"
                 :placeholder="apiParams.hypervisor.description"
-                @change="handlerSelectHyperVisor">
+                @change="handlerSelectHyperVisor"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -175,7 +190,13 @@
                     }
                   ]
                 }]"
-                :placeholder="apiParams.format.description">
+                :placeholder="apiParams.format.description"
+                @change="val => { selectedFormat = val }"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -209,7 +230,7 @@
           </a-form-item>
         </a-row>
 
-        <a-form-item :label="$t('label.deployasis')" v-if="hyperVMWShow">
+        <a-form-item :label="$t('label.deployasis')" v-if="selectedFormat === 'OVA'">
           <a-switch
             v-decorator="['deployasis', {
               initialValue: false,
@@ -219,7 +240,7 @@
         </a-form-item>
 
         <a-row :gutter="12" v-if="hyperKVMShow || hyperVMWShow">
-          <a-col :md="24" :lg="24" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
+          <a-col :md="24" :lg="hyperKVMShow ? 24 : 12" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
@@ -232,17 +253,22 @@
                   ]
                 }]"
                 :loading="rootDisk.loading"
-                :placeholder="$t('label.rootdiskcontrollertype')">
+                :placeholder="$t('label.rootdiskcontrollertype')"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
-            <a-form-item v-if="hyperVMWShow && !deployasis" :label="$t('label.keyboardtype')">
+          <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
+            <a-form-item :label="$t('label.nicadaptertype')">
               <a-select
-                v-decorator="['keyboardType', {
+                v-decorator="['nicAdapterType', {
                   rules: [
                     {
                       required: false,
@@ -250,41 +276,63 @@
                     }
                   ]
                 }]"
-                :placeholder="$t('label.keyboard')">
-                <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
-                  {{ opt.name || opt.description }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
-          <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.ostypeid')">
-              <a-select
                 showSearch
                 optionFilterProp="children"
                 :filterOption="(input, option) => {
                   return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                v-decorator="['ostypeid', {
-                  initialValue: defaultOsId,
-                  rules: [
-                    {
-                      required: true,
-                      message: `${this.$t('message.error.select')}`
-                    }
-                  ]
-                }]"
-                :loading="osTypes.loading"
-                :placeholder="apiParams.ostypeid.description">
-                <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+                :placeholder="$t('label.nicadaptertype')">
+                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item :label="$t('label.keyboardtype')" :lg="12" v-if="hyperVMWShow && !deployasis">
+          <a-select
+            v-decorator="['keyboardType', {
+              rules: [
+                {
+                  required: false,
+                  message: `${this.$t('message.error.select')}`
+                }
+              ]
+            }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="$t('label.keyboard')">
+            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.ostypeid')" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+          <a-select
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-decorator="['ostypeid', {
+              initialValue: defaultOsId,
+              rules: [
+                {
+                  required: true,
+                  message: `${this.$t('message.error.select')}`
+                }
+              ]
+            }]"
+            :loading="osTypes.loading"
+            :placeholder="apiParams.ostypeid.description">
+            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
             <a-form-item>
@@ -303,8 +351,6 @@
                       {{ $t('label.passwordenabled') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
                   <a-col :span="12">
                     <a-checkbox value="isdynamicallyscalable">
                       {{ $t('label.isdynamicallyscalable') }}
@@ -315,23 +361,17 @@
                       {{ $t('label.requireshvm') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
-                  <a-col :span="12">
+                  <a-col :span="12" v-if="isAdminRole">
                     <a-checkbox value="isfeatured">
                       {{ $t('label.isfeatured') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12">
-                    <a-checkbox
-                      value="ispublic"
-                      v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+                  <a-col :span="12" v-if="isAdminRole || $store.getters.features.userpublictemplateenabled">
+                    <a-checkbox value="ispublic">
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
-                  <a-col :span="12" v-if="$store.getters.userInfo.roletype === 'Admin'">
+                  <a-col :span="12" v-if="isAdminRole">
                     <a-checkbox value="isrouting">
                       {{ $t('label.isrouting') }}
                     </a-checkbox>
@@ -344,7 +384,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -355,6 +395,7 @@
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -367,6 +408,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -388,6 +432,7 @@ export default {
       hyperKVMShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
+      selectedFormat: '',
       deployasis: false,
       zoneError: '',
       zoneErrorMessage: '',
@@ -401,11 +446,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.registerTemplate || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('registerTemplate')
   },
   created () {
     this.$set(this.zones, 'loading', false)
@@ -425,6 +466,9 @@ export default {
     this.fetchData()
   },
   computed: {
+    isAdminRole () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
+    }
   },
   methods: {
     fetchData () {
@@ -486,7 +530,7 @@ export default {
       const params = {}
       let listZones = []
       params.listAll = true
-
+      params.showicon = true
       this.allowed = false
 
       if (store.getters.userInfo.roletype === this.rootAdmin && this.currentForm === 'Create') {
@@ -785,7 +829,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      if (this.loading) return
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err || this.zoneError !== '') {
           return
         }
@@ -836,6 +881,9 @@ export default {
               params[key] = input
             }
           }
+        }
+        if (!('requireshvm' in params)) { // handled as default true by API
+          params.requireshvm = false
         }
         if (this.currentForm === 'Create') {
           this.loading = true
@@ -907,14 +955,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

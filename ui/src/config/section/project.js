@@ -50,7 +50,7 @@ export default {
     },
     {
       name: 'limits',
-      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) || record.isCurrentUserProjectAdmin },
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     }
   ],
@@ -70,6 +70,7 @@ export default {
       docHelp: 'adminguide/projects.html#accepting-a-membership-invitation',
       listView: true,
       popup: true,
+      show: (record, store) => { return store.features.projectinviterequired },
       component: () => import('@/views/project/InvitationTokenTemplate.vue')
     },
     {
@@ -84,6 +85,7 @@ export default {
       param: {
         state: 'Pending'
       },
+      show: (record, store) => { return store.features.projectinviterequired },
       component: () => import('@/views/project/InvitationsTemplate.vue')
     },
     {
@@ -104,7 +106,10 @@ export default {
       dataView: true,
       show: (record, store) => {
         return ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin) && record.state === 'Suspended'
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'suspendProject',
@@ -116,7 +121,10 @@ export default {
       show: (record, store) => {
         return ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) ||
         record.isCurrentUserProjectAdmin) && record.state !== 'Suspended'
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'addAccountToProject',
@@ -139,6 +147,16 @@ export default {
       dataView: true,
       show: (record, store) => {
         return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+      args: (record, store) => {
+        const fields = []
+        if (store.apis.deleteProject.params.filter(x => x.name === 'cleanup').length > 0) {
+          fields.push('cleanup')
+        }
+        return fields
       }
     }
   ]

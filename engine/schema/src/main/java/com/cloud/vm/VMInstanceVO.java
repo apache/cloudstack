@@ -50,7 +50,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine.State;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 
 @Entity
@@ -174,9 +174,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "uuid")
     protected String uuid = UUID.randomUUID().toString();
 
-    @Column(name = "disk_offering_id")
-    protected Long diskOfferingId;
-
     //
     // Power state for VM state sync
     //
@@ -232,13 +229,12 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
-                        long domainId, long accountId, long userId, boolean haEnabled, boolean limitResourceUse, Long diskOfferingId) {
+                        long domainId, long accountId, long userId, boolean haEnabled, boolean limitResourceUse) {
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, userId, haEnabled);
         limitCpuUse = limitResourceUse;
-        this.diskOfferingId = diskOfferingId;
     }
 
-    protected VMInstanceVO() {
+    public VMInstanceVO() {
     }
 
     public Date getRemoved() {
@@ -504,14 +500,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.removed = removed;
     }
 
-    transient String toString;
-
     @Override
     public String toString() {
-        if (toString == null) {
-            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(getInstanceName()).append("]").toString();
-        }
-        return toString;
+        return String.format("VM instance {id: \"%s\", name: \"%s\", uuid: \"%s\", type=\"%s\"}", id, getInstanceName(), uuid, type);
     }
 
     @Override
@@ -540,22 +531,22 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.serviceOfferingId = serviceOfferingId;
     }
 
-    @Override
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
-    }
-
     public void setDynamicallyScalable(boolean dynamicallyScalable) {
         this.dynamicallyScalable = dynamicallyScalable;
     }
 
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
     }
 
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    @Override
+    public String getName() {
+        return instanceName;
     }
 
     public VirtualMachine.PowerState getPowerState() {
@@ -619,7 +610,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Override
     public List<Backup.VolumeInfo> getBackupVolumeList() {
-        if (Strings.isNullOrEmpty(this.backupVolumes)) {
+        if (StringUtils.isEmpty(this.backupVolumes)) {
             return Collections.emptyList();
         }
         return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));

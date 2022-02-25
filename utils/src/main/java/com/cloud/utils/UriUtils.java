@@ -64,7 +64,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -263,6 +263,10 @@ public class UriUtils {
     }
 
     public static Pair<String, Integer> validateUrl(String format, String url) throws IllegalArgumentException {
+        return validateUrl(format, url, false);
+    }
+
+    public static Pair<String, Integer> validateUrl(String format, String url, boolean skipIpv6Check) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
             if ((uri.getScheme() == null) ||
@@ -283,7 +287,7 @@ public class UriUtils {
                 if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
                     throw new IllegalArgumentException("Illegal host specified in url");
                 }
-                if (hostAddr instanceof Inet6Address) {
+                if (!skipIpv6Check && hostAddr instanceof Inet6Address) {
                     throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
                 }
             } catch (UnknownHostException uhe) {
@@ -584,11 +588,11 @@ public class UriUtils {
      */
     public static List<Integer> expandVlanUri(final String vlanAuthority) {
         final List<Integer> expandedVlans = new ArrayList<>();
-        if (Strings.isNullOrEmpty(vlanAuthority)) {
+        if (StringUtils.isEmpty(vlanAuthority)) {
             return expandedVlans;
         }
         for (final String vlanPart: vlanAuthority.split(",")) {
-            if (Strings.isNullOrEmpty(vlanPart)) {
+            if (StringUtils.isEmpty(vlanPart)) {
                 continue;
             }
             final String[] range = vlanPart.split("-");
@@ -627,7 +631,7 @@ public class UriUtils {
 
     public static List<Integer> expandPvlanUri(String pvlanRange) {
         final List<Integer> expandedVlans = new ArrayList<>();
-        if (Strings.isNullOrEmpty(pvlanRange)) {
+        if (StringUtils.isEmpty(pvlanRange)) {
             return expandedVlans;
         }
         String[] parts = pvlanRange.split("-\\w");

@@ -376,7 +376,7 @@ class TestPublicIp(cloudstackTestCase):
         )
 
         # Step 2. Associate IP in range dedicated to domain1
-        ip_address_1 = self.get_free_ipaddress(self.public_ip_range1.vlan.id)
+        ip_address_1 = self.get_free_ipaddress(self.public_ip_range1.vlan.id, self.account1.domainid, self.account1.name)
         ipaddress = PublicIPAddress.create(
             self.apiclient,
             zoneid=self.zone.id,
@@ -473,7 +473,7 @@ class TestPublicIp(cloudstackTestCase):
     def test_03_list_publicip_user_domain(self):
         """
         A regular user should be able to display public ip address
-        only in his domain
+        only in their domain
 
         Step 1: Create an isolated network in the user domain
         Step 2: Display all public ip address in that domain
@@ -511,7 +511,7 @@ class TestPublicIp(cloudstackTestCase):
             listall=True,
             forvirtualnetwork=True)
 
-        # Step 3: Ensure that sub domain can list only the ip address in his domain
+        # Step 3: Ensure that sub domain can list only the ip address in their domain
         self.assertEqual(
             len(ipAddresses),
             10,
@@ -519,7 +519,7 @@ class TestPublicIp(cloudstackTestCase):
         )
 
         # Step 4: Associate IP in range dedicated to sub domain
-        ip_address_1 = self.get_free_ipaddress(self.public_ip_range2.vlan.id)
+        ip_address_1 = self.get_free_ipaddress(self.public_ip_range2.vlan.id, self.sub_account.domainid, self.sub_account.name)
         ipaddress = PublicIPAddress.create(
             sub_user_api_client,
             zoneid=self.zone.id,
@@ -610,7 +610,7 @@ class TestPublicIp(cloudstackTestCase):
     def test_04_list_publicip_all_subdomains(self):
         """
         A domain admin should be able to display public ip address
-        in his domain and also all child domains
+        in their domain and also all child domains
 
         Step 1: Display all public ip address in that domain and sub domain
         Step 2: Ensure that the count is 11 (all ip from parent domain and allocated from sub domain)
@@ -677,7 +677,7 @@ class TestPublicIp(cloudstackTestCase):
     def test_05_list_publicip_user_domain(self):
         """
         A domain admin should be able to display public ip address
-        in his domain and also all child domains
+        in their domain and also all child domains
 
         Step 1: Display all public ip address in that domain and sub domain
         Step 2: Ensure that the count is 20
@@ -729,7 +729,7 @@ class TestPublicIp(cloudstackTestCase):
         )
 
         # Acquire public ip address from VPC
-        ip_address_1 = self.get_free_ipaddress(self.public_ip_range3.vlan.id)
+        ip_address_1 = self.get_free_ipaddress(self.public_ip_range3.vlan.id, self.account2.domainid, self.account2.name)
         PublicIPAddress.create(
             user_api_client,
             zoneid=self.zone.id,
@@ -828,10 +828,12 @@ class TestPublicIp(cloudstackTestCase):
         except Exception as e:
             self.info("Got exception as expected since domain2 cant access network of domain1")
 
-    def get_free_ipaddress(self, vlanId):
+    def get_free_ipaddress(self, vlanId, domainId, account):
         ipaddresses = PublicIPAddress.list(
             self.apiclient,
             vlanid=vlanId,
+            domainId=domainId,
+            account=account,
             state='Free'
         )
         self.assertEqual(

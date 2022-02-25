@@ -35,7 +35,7 @@
         </div>
         <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
           <div>
-            {{ parseFloat( resource.rootdisksize / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB
+            {{ resource.rootdisksize }} GB
           </div>
         </div>
         <div v-else-if="['name', 'type'].includes(item)">
@@ -45,12 +45,13 @@
         <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
           {{ $toLocaleDate(resource[item]) }}
         </div>
-        <div v-else>
-          {{ resource[item] }}
+        <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
+          {{ resource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
         </div>
+        <div v-else>{{ resource[item] }}</div>
       </div>
     </a-list-item>
-    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address.length > 0">
+    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
       <div>
         <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
         <br/>

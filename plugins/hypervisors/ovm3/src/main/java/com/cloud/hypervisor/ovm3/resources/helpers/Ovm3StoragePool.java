@@ -138,7 +138,7 @@ public class Ovm3StoragePool {
      * @throws ConfigurationException
      */
     public boolean prepareForPool() throws ConfigurationException {
-        /* need single master uuid */
+        /* need single primary uuid */
         try {
             Linux host = new Linux(c);
             Pool pool = new Pool(c);
@@ -201,7 +201,7 @@ public class Ovm3StoragePool {
 
         Pool poolHost = new Pool(c);
         PoolOCFS2 poolFs = new PoolOCFS2(c);
-        if (config.getAgentIsMaster()) {
+        if (config.getAgentIsPrimary()) {
             try {
                 LOGGER.debug("Create poolfs on " + config.getAgentHostname()
                         + " for repo " + primUuid);
@@ -218,7 +218,7 @@ public class Ovm3StoragePool {
             } catch (Ovm3ResourceException e) {
                 throw e;
             }
-        } else if (config.getAgentHasMaster()) {
+        } else if (config.getAgentHasPrimary()) {
             try {
                 poolHost.joinServerPool(poolAlias, primUuid,
                         config.getOvm3PoolVip(), poolSize + 1,
@@ -262,15 +262,15 @@ public class Ovm3StoragePool {
         try {
             Connection m = new Connection(config.getOvm3PoolVip(), c.getPort(),
                     c.getUserName(), c.getPassword());
-            Pool poolMaster = new Pool(m);
-            if (poolMaster.isInAPool()) {
-                members.addAll(poolMaster.getPoolMemberList());
-                if (!poolMaster.getPoolMemberList().contains(c.getIp())
+            Pool poolPrimary = new Pool(m);
+            if (poolPrimary.isInAPool()) {
+                members.addAll(poolPrimary.getPoolMemberList());
+                if (!poolPrimary.getPoolMemberList().contains(c.getIp())
                         && c.getIp().equals(config.getOvm3PoolVip())) {
                     members.add(c.getIp());
                 }
             } else {
-                LOGGER.warn(c.getIp() + " noticed master "
+                LOGGER.warn(c.getIp() + " noticed primary "
                         + config.getOvm3PoolVip() + " is not part of pool");
                 return false;
             }
@@ -306,7 +306,7 @@ public class Ovm3StoragePool {
         try {
             Pool pool = new Pool(c);
             pool.leaveServerPool(cmd.getPool().getUuid());
-            /* also connect to the master and update the pool list ? */
+            /* also connect to the primary and update the pool list ? */
         } catch (Ovm3ResourceException e) {
             LOGGER.debug(
                     "Delete storage pool on host "
@@ -448,8 +448,8 @@ public class Ovm3StoragePool {
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {
             /* double check */
-            if (config.getAgentHasMaster() && config.getAgentInOvm3Pool()) {
-                LOGGER.debug("Skip systemvm iso copy, leave it to the master");
+            if (config.getAgentHasPrimary() && config.getAgentInOvm3Pool()) {
+                LOGGER.debug("Skip systemvm iso copy, leave it to the primary");
                 return;
             }
             if (lock.lock(3600)) {

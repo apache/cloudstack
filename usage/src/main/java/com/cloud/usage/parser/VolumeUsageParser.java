@@ -82,7 +82,7 @@ public class VolumeUsageParser {
 
         // loop through all the usage volumes, create a usage record for each
         for (UsageVolumeVO usageVol : usageUsageVols) {
-            long volId = usageVol.getId();
+            long volId = usageVol.getVolumeId();
             Long doId = usageVol.getDiskOfferingId();
             long zoneId = usageVol.getZoneId();
             Long templateId = usageVol.getTemplateId();
@@ -110,7 +110,7 @@ public class VolumeUsageParser {
 
             long currentDuration = (volDeleteDate.getTime() - volCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-            updateVolUsageData(usageMap, key, usageVol.getId(), currentDuration);
+            updateVolUsageData(usageMap, key, usageVol.getVolumeId(), currentDuration);
         }
 
         for (String volIdKey : usageMap.keySet()) {
