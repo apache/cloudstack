@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -106,13 +106,13 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Network;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Network;
     }
     @Override
     public long getEntityOwnerId() {

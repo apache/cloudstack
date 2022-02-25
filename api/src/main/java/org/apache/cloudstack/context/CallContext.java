@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
@@ -58,7 +58,7 @@ public class CallContext {
     private String eventType;
     private boolean isEventDisplayEnabled = true; // default to true unless specifically set
     private Long eventResourceId;
-    private ApiCommandJobType eventResourceType;
+    private ApiCommandResourceType eventResourceType;
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
@@ -338,18 +338,12 @@ public class CallContext {
         this.eventResourceId = eventResourceId;
     }
 
-    public ApiCommandJobType getEventResourceType() {
+    public ApiCommandResourceType getEventResourceType() {
         return eventResourceType;
     }
 
-    public void setEventResourceType(ApiCommandJobType eventResourceType) {
+    public void setEventResourceType(ApiCommandResourceType eventResourceType) {
         this.eventResourceType = eventResourceType;
-    }
-
-    public void setEventResourceAndDetails(ApiCommandJobType eventResourceType, Long eventResourceId, String eventDetails) {
-        setEventResourceType(eventResourceType);
-        setEventResourceId(eventResourceId);
-        setEventDetails(eventDetails);
     }
 
     public Project getProject() {

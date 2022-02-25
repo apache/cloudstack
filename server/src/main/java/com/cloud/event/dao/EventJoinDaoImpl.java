@@ -20,7 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.commons.lang3.ObjectUtils;
@@ -94,7 +94,8 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setUsername(event.getUserName());
         Long resourceId = event.getResourceId();
         responseEvent.setResourceType(event.getResourceType());
-        Class<?> clazz = ApiCommandJobType.getTypeClass(event.getResourceType());
+        ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(event.getResourceType());
+        Class<?> clazz = resourceType != null ? resourceType.getAssociatedClass() : null;
         if (ObjectUtils.allNotNull(resourceId, clazz)) {
             final Object objVO = entityMgr.findByIdIncludingRemoved(clazz, resourceId);
             if (objVO instanceof Identity) {

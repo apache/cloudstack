@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
@@ -946,7 +946,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                 final Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(),
                         EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
-                        vmId, ApiCommandJobType.VirtualMachine.toString(),
+                        vmId, ApiCommandResourceType.VirtualMachine.toString(),
                         true, 0);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmId);
@@ -962,7 +962,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), CreateBackupCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), vmId,
-                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
+                        cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
                 job.setDispatcher(asyncJobDispatcher.getName());
 
                 final long jobId = asyncJobManager.submitAsyncJob(job);

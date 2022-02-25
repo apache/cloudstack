@@ -25,6 +25,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -114,6 +115,13 @@ public class ApiDispatcher {
             Project project = _entityMgr.findByUuidIncludingRemoved(Project.class, params.get(ApiConstants.PROJECT_ID));
             ctx.setProject(project);
         }
+        if (cmd.getApiResourceId() != null) {
+            ctx.setEventResourceId(cmd.getApiResourceId());
+        }
+        final ApiCommandResourceType resourceType = cmd.getApiResourceType();
+        if (resourceType != null && !ApiCommandResourceType.None.equals(resourceType)) {
+            ctx.setEventResourceType(resourceType);
+        }
 
         // TODO This if shouldn't be here. Use polymorphism and move it to validateSpecificParameters
         if (cmd instanceof BaseAsyncCmd) {
@@ -121,12 +129,6 @@ public class ApiDispatcher {
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
             ctx.setStartEventId(Long.parseLong(startEventId));
-            if (asyncCmd.getInstanceId() != null) {
-                ctx.setEventResourceId(asyncCmd.getInstanceId());
-            }
-            if (asyncCmd.getInstanceType() != null) {
-                ctx.setEventResourceType(asyncCmd.getInstanceType());
-            }
 
             // Synchronise job on the object if needed
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {

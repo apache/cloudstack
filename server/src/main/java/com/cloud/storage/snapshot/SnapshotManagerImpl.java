@@ -31,7 +31,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
@@ -556,7 +556,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (deleteSnapshot(oldSnapId)) {
                 //log Snapshot delete event
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE,
-                        "Successfully deleted oldest snapshot: " + oldSnapId, oldSnapId, ApiCommandJobType.Snapshot.toString(), 0);
+                        "Successfully deleted oldest snapshot: " + oldSnapId, oldSnapId, ApiCommandResourceType.Snapshot.toString(), 0);
             }
             snaps.remove(oldestSnapshot);
         }

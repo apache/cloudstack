@@ -30,7 +30,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
@@ -139,7 +139,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                 generateReportHostsUpdated(hostsUpdated), generateReportHostsSkipped(hostsSkipped));
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                 EventVO.LEVEL_INFO, cmd.getEventType(),
-                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, null, ApiCommandJobType.Host.toString(), 0);
+                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, null, ApiCommandResourceType.Host.toString(), 0);
     }
 
     private String generateReportHostsUpdated(List<HostUpdated> hostsUpdated) {

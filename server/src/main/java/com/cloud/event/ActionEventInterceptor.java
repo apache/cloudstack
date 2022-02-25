@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -205,7 +205,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
     }
 
     protected String getEventResourceType(ActionEvent actionEvent, CallContext ctx) {
-        ApiCommandJobType resourceType = ctx.getEventResourceType();
+        ApiCommandResourceType resourceType = ctx.getEventResourceType();
         if (resourceType != null) {
             return resourceType.toString();
         }

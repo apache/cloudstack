@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -164,8 +164,8 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.LoadBalancerRule;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.LoadBalancerRule;
     }
 
     public String getSourceIp() {

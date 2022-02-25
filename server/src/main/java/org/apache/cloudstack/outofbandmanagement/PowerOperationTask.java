@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.outofbandmanagement;
 
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -56,7 +56,7 @@ public class PowerOperationTask implements Runnable {
                     .format("Error while issuing out-of-band management action %s for host: %s", powerOperation.name(), host.getName());
 
             ActionEventUtils.onCreatedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_WARN,
-                    EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, true, eventMessage, host.getId(), ApiCommandJobType.Host.toString());
+                    EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, true, eventMessage, host.getId(), ApiCommandResourceType.Host.toString());
         }
     }
 }

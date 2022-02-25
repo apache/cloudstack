@@ -25,11 +25,15 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -44,6 +48,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
@@ -91,11 +96,9 @@ public class ActionEventUtils {
     }
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description, Long resourceId, String resourceType) {
-
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
-
-        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, resourceId, resourceType, null);
-
+        Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
+        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
+        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, resourceDetails.first(), resourceDetails.third(), null);
         return event.getId();
     }
 
@@ -103,11 +106,9 @@ public class ActionEventUtils {
      * Save event after scheduling an async job
      */
     public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
-
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description);
-
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceId, resourceType, startEventId);
-
+        Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
+        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
         return event.getId();
     }
 
@@ -130,11 +131,9 @@ public class ActionEventUtils {
      * Save event after starting execution of an async job
      */
     public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
-
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description);
-
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, resourceId, resourceType, startEventId);
-
+        Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
+        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description, resourceDetails.second(), resourceDetails.third());
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
         return event.getId();
     }
 
@@ -144,20 +143,17 @@ public class ActionEventUtils {
     }
 
     public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType, long startEventId) {
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description);
-
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, resourceId, resourceType, startEventId);
-
+        Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
+        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
         return event.getId();
 
     }
 
     public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType) {
-
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description);
-
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, resourceId, resourceType, null);
-
+        Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
+        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description, resourceDetails.second(), resourceDetails.third());
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), null);
         return event.getId();
     }
 
@@ -193,7 +189,7 @@ public class ActionEventUtils {
         return event;
     }
 
-    private static void publishOnEventBus(long userId, long accountId, String eventCategory, String eventType, Event.State state, String description) {
+    private static void publishOnEventBus(long userId, long accountId, String eventCategory, String eventType, Event.State state, String description, String resourceUuid, String resourceType) {
         String configKey = Config.PublishActionEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
@@ -205,27 +201,8 @@ public class ActionEventUtils {
             return; // no provider is configured to provide events bus, so just return
         }
 
-        // get the entity details for which ActionEvent is generated
-        String entityType = null;
-        String entityUuid = null;
-        CallContext context = CallContext.current();
-        //Get entity Class(Example - VirtualMachine.class) from the event Type eg. - VM.CREATE
-        Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
-        if (entityClass != null){
-            //Get uuid from id
-            Object param = context.getContextParameter(entityClass);
-            if(param != null){
-                try {
-                    entityUuid = getEntityUuid(entityClass, param);
-                    entityType = entityClass.getName();
-                } catch (Exception e){
-                    s_logger.debug("Caught exception while finding entityUUID, moving on");
-                }
-            }
-        }
-
         org.apache.cloudstack.framework.events.Event event =
-            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), entityUuid);
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, resourceType, resourceUuid);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Project project = s_projectDao.findByProjectAccountId(accountId);
@@ -242,8 +219,8 @@ public class ActionEventUtils {
         eventDescription.put("account", account.getUuid());
         eventDescription.put("event", eventType);
         eventDescription.put("status", state.toString());
-        eventDescription.put("entity", entityType);
-        eventDescription.put("entityuuid", entityUuid);
+        eventDescription.put("entity", resourceType);
+        eventDescription.put("entityuuid", resourceUuid);
         //Put all the first class entities that are touched during the action. For now atleast put in the vmid.
         populateFirstClassEntities(eventDescription);
         eventDescription.put("description", description);
@@ -260,27 +237,78 @@ public class ActionEventUtils {
         }
     }
 
+    private static Ternary<Long, String, String> getResourceDetailsUsingEventTypeAndContext(ApiCommandResourceType resourceType, String eventType) {
+        CallContext context = CallContext.current();
+        Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
+        Long entityId = null;
+        String entityType = null;
+        String entityUuid = null;
+        if (entityClass != null){
+            if (resourceType == null) {
+                resourceType = ApiCommandResourceType.valueFromAssociatedClass(entityClass);
+            }
+            entityType = resourceType == null ? entityClass.getSimpleName() : resourceType.toString();
+            Object param = context.getContextParameter(entityClass);
+            if(param != null){
+                try {
+                    entityUuid = getEntityUuid(entityClass, param);
+                } catch (Exception e){
+                    s_logger.debug("Caught exception while finding entityUUID, moving on");
+                }
+            }
+            if (param instanceof Long) {
+                entityId = (Long)param;
+            } else if (entityUuid != null) {
+                Object obj = s_entityMgr.findByUuid(entityClass, entityUuid);
+                if (obj instanceof InternalIdentity) {
+                    entityId = ((InternalIdentity)obj).getId();
+                }
+            }
+        }
+        return new Ternary<>(entityId, entityUuid, entityType);
+    }
+
     private static String getEntityUuid(Class<?> entityType, Object entityId){
 
-        // entityId can be internal db id or UUID so accordingly call findbyId or return uuid directly
+        // entityId can be internal db id or UUID so accordingly call findById or return uuid directly
 
         if (entityId instanceof Long){
             // Its internal db id - use findById
-            final Object objVO = s_entityMgr.findById(entityType, (Long)entityId);
-            return ((Identity)objVO).getUuid();
-        } else if(entityId instanceof String){
+            final Object objVO = s_entityMgr.findByIdIncludingRemoved(entityType, (Long)entityId);
+            if (objVO != null) {
+                return ((Identity) objVO).getUuid();
+            }
+        } else if(entityId instanceof String) {
             try{
                 // In case its an async job the internal db id would be a string because of json deserialization
                 Long internalId = Long.valueOf((String) entityId);
-                final Object objVO = s_entityMgr.findById(entityType, internalId);
-                return ((Identity)objVO).getUuid();
-            } catch (NumberFormatException e){
+                final Object objVO = s_entityMgr.findByIdIncludingRemoved(entityType, internalId);
+                if (objVO != null) {
+                    return ((Identity) objVO).getUuid();
+                }
+            } catch (NumberFormatException e) {
                 // It is uuid - so return it
                 return (String)entityId;
             }
         }
 
         return null;
+    }
+
+    private static Ternary<Long, String, String> getResourceDetails(Long resourceId, String resourceType, String eventType) {
+        Class<?> clazz = null;
+        ApiCommandResourceType type = null;
+        if (StringUtils.isNotEmpty(resourceType)) {
+            type = ApiCommandResourceType.fromString(resourceType);
+            if (type != null) {
+                clazz = type.getAssociatedClass();
+            }
+        }
+        if (ObjectUtils.allNotNull(resourceId, clazz)) {
+            String uuid = getEntityUuid(clazz, resourceId);
+            return new Ternary<>(resourceId, uuid, resourceType);
+        }
+        return getResourceDetailsUsingEventTypeAndContext(type, eventType);
     }
 
     private static long getDomainId(long accountId) {

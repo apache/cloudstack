@@ -57,6 +57,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -684,6 +685,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final Long callerUserId = ctx.getCallingUserId();
         final Account caller = ctx.getCallingAccount();
 
+        if (cmdObj.getApiResourceId() != null) {
+            ctx.setEventResourceId(cmdObj.getApiResourceId());
+        }
+        final ApiCommandResourceType resourceType = cmdObj.getApiResourceType();
+        if (resourceType != null && !ApiCommandResourceType.None.equals(resourceType)) {
+            ctx.setEventResourceType(resourceType);
+        }
+
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
         // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
@@ -707,12 +716,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
-            if (asyncCmd.getInstanceId() != null) {
-                ctx.setEventResourceId(asyncCmd.getInstanceId());
-            }
-            if (asyncCmd.getInstanceType() != null) {
-                ctx.setEventResourceType(asyncCmd.getInstanceType());
-            }
 
             if (callerUserId != null) {
                 params.put("ctxUserId", callerUserId.toString());
@@ -730,7 +733,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // save the scheduled event
             final Long eventId =
                     ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? (Long)User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                            asyncCmd.getEventDescription(), asyncCmd.getInstanceId(), asyncCmd.getInstanceType().toString(), asyncCmd.isDisplay(), startEventId);
+                            asyncCmd.getEventDescription(), asyncCmd.getApiResourceId(), asyncCmd.getApiResourceType().toString(), asyncCmd.isDisplay(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;
@@ -740,7 +743,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("cmdEventType", asyncCmd.getEventType().toString());
             params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
 
-            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
+            Long instanceId = (objectId == null) ? asyncCmd.getApiResourceId() : objectId;
 
             // users can provide the job id they want to use, so log as it is a uuid and is unique
             String injectedJobId = asyncCmd.getInjectedJobId();
@@ -748,7 +751,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
-                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null,
+                    asyncCmd.getApiResourceType() != null ? asyncCmd.getApiResourceType().toString() : null,
                             injectedJobId);
             job.setDispatcher(asyncDispatcher.getName());
 
@@ -803,9 +806,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // list all jobs for ROOT admin
             if (accountMgr.isRootAdmin(account.getId())) {
-                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), null);
+                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getApiResourceType().toString(), null);
             } else {
-                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), account.getId());
+                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getApiResourceType().toString(), account.getId());
             }
 
             if (jobs.size() == 0) {
