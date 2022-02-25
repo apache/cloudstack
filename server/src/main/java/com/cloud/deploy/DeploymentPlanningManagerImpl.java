@@ -422,14 +422,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 if (host.getStatus() == Status.Up) {
-                    boolean hostTagsMatch = true;
-                    if(offering.getHostTag() != null){
-                        _hostDao.loadHostTags(host);
-                        if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
-                            hostTagsMatch = false;
-                        }
-                    }
-                    if (hostTagsMatch) {
+                    if (checkVmProfileAndHost(vmProfile, host)) {
                         long cluster_id = host.getClusterId();
                         ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
                                 "cpuOvercommitRatio");
