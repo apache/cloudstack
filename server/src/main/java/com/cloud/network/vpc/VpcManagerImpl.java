@@ -708,7 +708,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Remove offerings that are not associated with caller's domain
         // TODO: Better approach
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+        if (caller.getType() != Account.Type.ADMIN && CollectionUtils.isNotEmpty(offerings)) {
             ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 VpcOfferingJoinVO offering = it.next();

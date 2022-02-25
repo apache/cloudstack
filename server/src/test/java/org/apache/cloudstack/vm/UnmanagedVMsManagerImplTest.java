@@ -195,7 +195,7 @@ public class UnmanagedVMsManagerImplTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
@@ -359,7 +359,7 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = PermissionDeniedException.class)
     public void listUnmanagedInstancesInvalidCallerTest() {
         CallContext.unregister();
-        AccountVO account = new AccountVO("user", 1L, "", Account.ACCOUNT_TYPE_NORMAL, "uuid");
+        AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);

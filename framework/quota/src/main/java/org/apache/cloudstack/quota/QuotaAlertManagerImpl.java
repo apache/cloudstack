@@ -248,11 +248,11 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
             Account account = _accountDao.findById(accountId);
             if (account != null) {
-                if (account.getState() == State.locked) {
+                if (account.getState() == State.LOCKED) {
                     return true; // already locked, no-op
-                } else if (account.getState() == State.enabled) {
+                } else if (account.getState() == State.ENABLED) {
                     AccountVO acctForUpdate = _accountDao.createForUpdate();
-                    acctForUpdate.setState(State.locked);
+                    acctForUpdate.setState(State.LOCKED);
                     success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
                 } else {
                     if (s_logger.isInfoEnabled()) {

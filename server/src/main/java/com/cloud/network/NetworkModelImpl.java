@@ -1664,7 +1664,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                     ", network does not have an owner");
-            if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (owner.getType() != Account.Type.PROJECT && networkOwner.getType() == Account.Type.PROJECT) {
                 User user = CallContext.current().getCallingUser();
                 Project project = projectDao.findByProjectAccountId(network.getAccountId());
                 if (project == null) {

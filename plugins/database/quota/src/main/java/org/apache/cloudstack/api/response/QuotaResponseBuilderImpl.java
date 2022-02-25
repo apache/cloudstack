@@ -434,12 +434,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
         if (lockAccountEnforcement) {
             if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
-                if (account.getState() == Account.State.locked) {
+                if (account.getState() == Account.State.LOCKED) {
                     s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
                     _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
                 }
             } else { // currentAccountBalance < 0 then lock the account
-                if (_quotaManager.isLockable(account) && account.getState() == Account.State.enabled && enforce) {
+                if (_quotaManager.isLockable(account) && account.getState() == Account.State.ENABLED && enforce) {
                     s_logger.info("Locking account " + account.getAccountName() + " , due to negative balance " + currentAccountBalance);
                     _accountMgr.lockAccount(account.getAccountName(), domainId, accountId);
                 }
