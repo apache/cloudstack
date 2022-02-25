@@ -1894,6 +1894,7 @@
 "label.resourcename": "Resource Name",
 "label.resources": "Resources",
 "label.resourcestate": "Resource state",
+"label.resourcetype": "Resource Type",
 "label.response.timeout.in.sec": "Response Timeout (in sec)",
 "label.restart.network": "Restart network",
 "label.restart.vpc": "Restart VPC",

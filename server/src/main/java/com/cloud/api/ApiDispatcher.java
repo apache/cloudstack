@@ -21,10 +21,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.projects.Project;
-import com.cloud.utils.db.EntityManager;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -38,12 +34,15 @@ import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.db.EntityManager;
 
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
@@ -122,6 +121,12 @@ public class ApiDispatcher {
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
             ctx.setStartEventId(Long.parseLong(startEventId));
+            if (asyncCmd.getInstanceId() != null) {
+                ctx.setEventResourceId(asyncCmd.getInstanceId());
+            }
+            if (asyncCmd.getInstanceType() != null) {
+                ctx.setEventResourceType(asyncCmd.getInstanceType());
+            }
 
             // Synchronise job on the object if needed
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {

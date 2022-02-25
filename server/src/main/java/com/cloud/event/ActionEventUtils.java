@@ -162,7 +162,8 @@ public class ActionEventUtils {
     }
 
     private static Event persistActionEvent(Long userId, Long accountId, Long domainId, String level, String type,
-                                            Event.State state, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType, Long startEventId) {
+                                            Event.State state, boolean eventDisplayEnabled, String description,
+                                            Long resourceId, String resourceType, Long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
@@ -175,6 +176,12 @@ public class ActionEventUtils {
             event.setDomainId(domainId);
         } else {
             event.setDomainId(getDomainId(accountId));
+        }
+        if (resourceId != null) {
+            event.setResourceId(resourceId);
+        }
+        if (resourceType != null) {
+            event.setResourceType(resourceType);
         }
         if (level != null && !level.isEmpty()) {
             event.setLevel(level);

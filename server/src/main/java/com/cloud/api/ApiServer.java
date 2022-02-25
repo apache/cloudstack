@@ -707,6 +707,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
+            if (asyncCmd.getInstanceId() != null) {
+                ctx.setEventResourceId(asyncCmd.getInstanceId());
+            }
+            if (asyncCmd.getInstanceType() != null) {
+                ctx.setEventResourceType(asyncCmd.getInstanceType());
+            }
 
             if (callerUserId != null) {
                 params.put("ctxUserId", callerUserId.toString());

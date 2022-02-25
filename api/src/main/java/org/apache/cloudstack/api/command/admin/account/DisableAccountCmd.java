@@ -136,4 +136,9 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Account;
     }
+
+    @Override
+    public Long getInstanceId() {
+        return id;
+    }
 }
