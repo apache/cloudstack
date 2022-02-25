@@ -74,8 +74,10 @@ export default {
       }, {
         name: 'tungsten.router.table',
         component: () => import('@/views/network/tungsten/TungstenNetworkRouterTable.vue')
-      },
-      {
+      }, {
+        name: 'tungsten.routing.polices',
+        component: () => import('@/views/network/tungsten/NetworkRoutingPolicy.vue')
+      }, {
         name: 'comments',
         component: () => import('@/components/view/AnnotationsTab.vue')
       }],
@@ -850,6 +852,25 @@ export default {
           mapping: {
             applicationpolicysetuuid: (record) => record.uuid
           }
+        }
+      ]
+    },
+    {
+      name: 'tungstenroutingpolicy',
+      title: 'label.routing.policy',
+      icon: tungsten,
+      hidden: true,
+      disabledListView: true,
+      permission: ['listTungstenFabricRoutingPolicy'],
+      details: ['uuid', 'name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'routing.policy.terms',
+          component: () => import('@/views/network/tungsten/RoutingPolicyTermsTab.vue')
         }
       ]
     }

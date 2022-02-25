@@ -32,75 +32,101 @@
       :page-size="pageSize"
       :item-count="itemCount"
       :actions="detailAction"/>
-    <a-modal
-      v-if="showAddModal"
-      :closable="true"
-      :maskClosable="false"
-      style="top: 20px;"
-      :visible="showAddModal"
-      :confirm-loading="fetchLoading"
-      :footer="null"
-      centered
-      width="auto"
-      @cancel="closeAction">
-      <span slot="title">
-        {{ $t(currentAction.label) }}
-      </span>
-      <a-form :form="form" layout="vertical" class="form-layout">
-        <a-form-item
-          v-for="(field, index) in currentAction.fields"
-          :key="field.name"
-          v-if="!currentAction.mapping || !field.name in currentAction.mapping">
-          <tooltip-label
-            slot="label"
-            :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
-            :tooltip="apiParams[field.name].description" />
-          <a-select
-            v-if="field.type==='uuid'"
-            :auto-focus="index === 0"
-            :mode="field.multiple ? 'multiple' : 'default'"
-            v-decorator="[field.name, {
-              rules: [{
-                required: field.required,
-                message: $t('message.error.required.input')
-              }]
-            }]"
-            :loading="field.loading"
-            :placeholder="apiParams[field.name].description">
-            <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
-              {{ opt.name || opt.displayName || opt.description }}
-            </a-select-option>
-          </a-select>
-          <a-input-number
-            style="width: 100%"
-            v-else-if="field.type === 'number'"
-            :auto-focus="index === 0"
-            v-decorator="[field.name, {
-              initialValue: 0,
-              rules: [{
-                required: field.required,
-                message: $t('message.error.required.input')
-              }]
-            }]"
-            :placeholder="apiParams[field.name].description"/>
-          <a-input
-            v-else
-            :auto-focus="index === 0"
-            v-decorator="[field.name, {
-              rules: [{
-                required: field.required,
-                message: $t('message.error.required.input')
-              }]
-            }]"
-            :placeholder="apiParams[field.name].description"/>
-        </a-form-item>
+    <div v-if="showAddModal">
+      <keep-alive v-if="currentAction.component">
+        <a-modal
+          :visible="showAddModal"
+          :closable="true"
+          :maskClosable="false"
+          style="top: 20px;"
+          @cancel="closeAction"
+          :confirmLoading="fetchLoading"
+          :footer="null"
+          centered
+          width="auto"
+        >
+          <span slot="title">
+            {{ $t(currentAction.title || currentAction.label) }}
+          </span>
+          <component
+            :is="currentAction.component"
+            :resource="resource"
+            :loading="loading"
+            :action="{currentAction}"
+            v-bind="{currentAction}"
+            @close-action="closeAction" />
+        </a-modal>
+      </keep-alive>
+      <a-modal
+        v-else
+        :closable="true"
+        :maskClosable="false"
+        style="top: 20px;"
+        :visible="showAddModal"
+        :confirm-loading="fetchLoading"
+        :footer="null"
+        centered
+        width="auto"
+        @cancel="closeAction">
+        <span slot="title">
+          {{ $t(currentAction.label) }}
+        </span>
+        <a-form :form="form" layout="vertical" class="form-layout">
+          <a-form-item
+            v-for="(field, index) in currentAction.fields"
+            :key="field.name"
+            v-if="!currentAction.mapping || !field.name in currentAction.mapping">
+            <tooltip-label
+              slot="label"
+              :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
+              :tooltip="apiParams[field.name].description" />
+            <a-select
+              v-if="field.type==='uuid'"
+              :auto-focus="index === 0"
+              :mode="field.multiple ? 'multiple' : 'default'"
+              v-decorator="[field.name, {
+                rules: [{
+                  required: field.required,
+                  message: $t('message.error.required.input')
+                }]
+              }]"
+              :loading="field.loading"
+              :placeholder="apiParams[field.name].description">
+              <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
+                {{ opt.name || opt.displayName || opt.description }}
+              </a-select-option>
+            </a-select>
+            <a-input-number
+              style="width: 100%"
+              v-else-if="field.type === 'number'"
+              :auto-focus="index === 0"
+              v-decorator="[field.name, {
+                initialValue: 0,
+                rules: [{
+                  required: field.required,
+                  message: $t('message.error.required.input')
+                }]
+              }]"
+              :placeholder="apiParams[field.name].description"/>
+            <a-input
+              v-else
+              :auto-focus="index === 0"
+              v-decorator="[field.name, {
+                rules: [{
+                  required: field.required,
+                  message: $t('message.error.required.input')
+                }]
+              }]"
+              :placeholder="apiParams[field.name].description"/>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </a-modal>
+          <div :span="24" class="action-button">
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </a-modal>
+    </div>
   </div>
 </template>
 
@@ -266,6 +292,10 @@ export default {
     execAction (action, record) {
       this.currentAction = action
       this.currentAction.record = record
+      if (this.currentAction.component) {
+        this.showAddModal = true
+        return
+      }
       if (this.currentAction.popup) {
         this.fetchOptions(record)
         this.apiParams = this.$getApiParams(this.currentAction.api)

@@ -138,6 +138,45 @@ export default {
           }]
         },
         {
+          name: 'routing.policy',
+          api: 'listTungstenFabricRoutingPolicy',
+          actions: [
+            {
+              api: 'createTungstenFabricRoutingPolicy',
+              icon: 'plus',
+              label: 'label.add.routing.policy',
+              title: 'label.create.tungsten.routing.policy',
+              listView: true,
+              popup: true,
+              component: () => import('@/views/network/tungsten/AddRoutingPolicy.vue')
+            },
+            {
+              api: 'removeTungstenFabricRoutingPolicy',
+              icon: 'delete',
+              label: 'label.remove.routing.policy',
+              dataView: true,
+              confirm: true,
+              message: 'message.confirm.remove.routing.policy',
+              args: {
+                tungstenroutingpolicyuuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [{
+            dataIndex: 'name',
+            title: this.$t('label.name'),
+            scopedSlots: { customRender: 'name' }
+          }, {
+            dataIndex: 'tungstenroutingpolicyterm',
+            title: this.$t('label.tungstenroutingpolicyterm'),
+            scopedSlots: { customRender: 'tungstenroutingpolicyterm' }
+          }, {
+            title: this.$t('label.action'),
+            scopedSlots: { customRender: 'action' },
+            width: 150
+          }]
+        },
+        {
           name: 'logical.router',
           api: 'listTungstenFabricLogicalRouter',
           actions: [
@@ -151,26 +190,6 @@ export default {
                 name: 'name',
                 required: true
               }]
-            },
-            {
-              api: 'addTungstenFabricNetworkGatewayToLogicalRouter',
-              icon: 'plus',
-              label: 'label.add.tungsten.logical.route',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'networkuuid',
-                  required: true,
-                  type: 'uuid',
-                  loading: false,
-                  opts: [],
-                  api: 'listTungstenFabricNetwork'
-                }
-              ],
-              args: {
-                logicalrouteruuid: record => record.uuid
-              }
             },
             {
               api: 'removeTungstenFabricNetworkGatewayFromLogicalRouter',

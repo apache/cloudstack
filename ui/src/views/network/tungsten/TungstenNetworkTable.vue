@@ -35,16 +35,17 @@
         <router-link v-else-if="apiName === 'listTungstenFabricInterfaceRouteTable'" :to="{ path: '/tungsteninterfaceroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricApplicationPolicySet'" :to="{ path: '/tungstenpolicyset/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
+        <router-link v-else-if="apiName === 'listTungstenFabricRoutingPolicy'" :to="{ path: '/tungstenroutingpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template slot="tungstenvms" slot-scope="text, record">
         <ul><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template slot="network" slot-scope="text, record">
-        <ul><li v-for="item in record.network" :key="item.uuid" v-if="item.name">{{ item.name }}</li></ul>
+        <ul><li v-for="item in record.network" :key="item.uuid"><span v-if="item.name">{{ item.name }}</span></li></ul>
       </template>
       <template slot="firewallpolicy" slot-scope="text, record">
-        <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy[0].name }}</span>
+        <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
       </template>
       <template slot="firewallrule" slot-scope="text, record">
         <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>

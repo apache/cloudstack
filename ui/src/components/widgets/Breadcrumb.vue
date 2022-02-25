@@ -97,7 +97,6 @@ export default {
         }
         this.breadList.push(item)
       })
-      console.log(this.breadList)
     },
     resetToMainView () {
       this.$store.dispatch('SetProject', {})

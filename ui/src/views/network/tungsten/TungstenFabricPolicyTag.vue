@@ -27,7 +27,7 @@
     </a-button>
     <a-table
       size="small"
-      :loading="loading || fetchLoading"
+      :loading="fetchLoading"
       :columns="columns"
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
